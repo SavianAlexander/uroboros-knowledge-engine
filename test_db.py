@@ -96,12 +96,21 @@ def main():
         # 5. LAN Sync peers DB check
         with sqlite3.connect(TEST_DB) as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO sync_peers (address, name) VALUES ('http://127.0.0.1:8000', 'Local Peer')")
+            cursor.execute("INSERT OR IGNORE INTO sync_peers (address, name) VALUES ('http://127.0.0.1:8000', 'Local Peer')")
             conn.commit()
             cursor.execute("SELECT COUNT(*) FROM sync_peers")
             assert cursor.fetchone()[0] == 1
             
-        print("All database query operators, duplicates, indexing, auto-tag rules, semantic checks, and sync peers DB checks passed successfully!")
+        # 6. Snapshot checks
+        import know
+        ts = know.create_db_snapshot()
+        snaps = know.list_db_snapshots()
+        assert ts in snaps
+        # clean up snapshot file
+        import os
+        os.remove(f"{know.DB_FILE}.snapshot-{ts}")
+            
+        print("All database query operators, duplicates, indexing, auto-tag rules, semantic checks, sync peers DB, and snapshot checks passed successfully!")
     finally:
         print("Cleaning up sandbox...")
         teardown_sandbox()

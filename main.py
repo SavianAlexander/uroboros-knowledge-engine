@@ -750,5 +750,113 @@ def exchange_payload(req: SyncExchangeRequest):
     conn.close()
     return {"status": "success", "synced": synced_files}
 
+class FileEditRequest(BaseModel):
+    filepath: str
+    content: str
+
+@app.post("/api/file/edit")
+def edit_file(req: FileEditRequest):
+    if not os.path.exists(req.filepath):
+        raise HTTPException(status_code=404, detail="File does not exist")
+    try:
+        with open(req.filepath, "w", encoding="utf-8", errors="ignore") as f:
+            f.write(req.content)
+            
+        stat = os.stat(req.filepath)
+        file_size = stat.st_size
+        modified_at = stat.st_mtime
+        sha256 = know.calculate_sha256(req.filepath)
+        
+        # Extract content & coords tuple
+        content_txt, coords = know.extract_content(req.filepath, os.path.splitext(req.filepath)[1].lower())
+        
+        conn = know.get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE files 
+            SET file_size = ?, sha256 = ?, modified_at = ?, content = ?
+            WHERE filepath = ?
+        """, (file_size, sha256, modified_at, content_txt, req.filepath))
+        
+        cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (req.filepath,))
+        cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))",
+                       (req.filepath, os.path.basename(req.filepath), content_txt, req.filepath))
+        
+        cursor.execute("DELETE FROM ocr_coords WHERE file_id = (SELECT id FROM files WHERE filepath = ?)", (req.filepath,))
+        for coord in coords:
+            cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES ((SELECT id FROM files WHERE filepath = ?), ?, ?, ?, ?, ?)",
+                           (req.filepath, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
+            
+        conn.commit()
+        conn.close()
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/snapshots")
+def get_snapshots():
+    return {"snapshots": know.list_db_snapshots()}
+
+@app.post("/api/snapshots")
+def create_snapshot():
+    ts = know.create_db_snapshot()
+    return {"status": "success", "timestamp": ts}
+
+@app.post("/api/snapshots/restore")
+def restore_snapshot(timestamp: int):
+    ok = know.restore_db_snapshot(timestamp)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Snapshot not found")
+    return {"status": "success"}
+
+@app.delete("/api/snapshots")
+def delete_snapshot(timestamp: int):
+    path = f"knowledge.db.snapshot-{timestamp}"
+    if os.path.exists(path):
+        os.remove(path)
+        return {"status": "success"}
+    raise HTTPException(status_code=404, detail="Snapshot file not found")
+
+@app.get("/api/graph")
+def get_graph():
+    conn = know.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, filepath, filename, content FROM files")
+    files = [dict(row) for row in cursor.fetchall()]
+    
+    nodes = []
+    links = []
+    
+    file_map = {}
+    for f in files:
+        nodes.append({"id": f["id"], "label": f["filename"], "type": "document"})
+        file_map[f["filename"].lower()] = f["id"]
+        
+    for f in files:
+        text = f["content"] or ""
+        # 1. Wiki link matching: [[Filename]]
+        matches = re.findall(r'\[\[([^\]]+)\]\]', text)
+        for m in matches:
+            target_name = m.strip().lower()
+            if target_name in file_map:
+                links.append({"source": f["id"], "target": file_map[target_name], "weight": 2})
+                
+        # 2. Extract matching tag links
+        cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (f["id"],))
+        file_tags = {t['tag'] for t in cursor.fetchall()}
+        
+        # Link files sharing same tags
+        for f2 in files:
+            if f2["id"] <= f["id"]:
+                continue
+            cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (f2["id"],))
+            f2_tags = {t['tag'] for t in cursor.fetchall()}
+            shared = file_tags.intersection(f2_tags)
+            if shared:
+                links.append({"source": f["id"], "target": f2["id"], "weight": len(shared)})
+                
+    conn.close()
+    return {"nodes": nodes, "links": links}
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

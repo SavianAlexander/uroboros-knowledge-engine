@@ -417,6 +417,37 @@ def search_files(query):
             print(f"- {row['filename']} ({row['filepath']})")
     conn.close()
 
+import shutil
+import glob
+
+def create_db_snapshot():
+    # ponytail: copy database file using shutil
+    import time
+    timestamp = int(time.time())
+    dest = f"{DB_FILE}.snapshot-{timestamp}"
+    shutil.copy2(DB_FILE, dest)
+    return timestamp
+
+def restore_db_snapshot(timestamp):
+    src = f"{DB_FILE}.snapshot-{timestamp}"
+    if os.path.exists(src):
+        shutil.copy2(src, DB_FILE)
+        return True
+    return False
+
+def list_db_snapshots():
+    files = glob.glob(f"{DB_FILE}.snapshot-*")
+    snapshots = []
+    for f in files:
+        parts = f.split('-')
+        if len(parts) >= 2:
+            try:
+                snapshots.append(int(parts[-1]))
+            except ValueError:
+                pass
+    snapshots.sort(reverse=True)
+    return snapshots
+
 def db_status():
     conn = get_db()
     cursor = conn.cursor()

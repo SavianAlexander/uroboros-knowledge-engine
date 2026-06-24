@@ -101,6 +101,17 @@
                     <span class="rules-empty">No syncing nodes registered.</span>
                 </div>
             </div>
+
+            <!-- Database Snapshot Vault Sidebar Component -->
+            <div class="snapshots-sidebar">
+                <div class="explorer-header">
+                    <h3>DB Snapshot Vault</h3>
+                    <button onclick="createSnapshot()" title="Create Snapshot">📸</button>
+                </div>
+                <div id="sidebar-snapshots" class="rules-list-container">
+                    <span class="rules-empty">No snapshots captured.</span>
+                </div>
+            </div>
         </header>
 
         <!-- Main Workspace -->
@@ -172,6 +183,7 @@
                     <button class="tab-btn" data-category="code" onclick="selectCategory(this)">Code</button>
                     <button class="tab-btn" data-category="images" onclick="selectCategory(this)">Images</button>
                     <button class="tab-btn" data-category="duplicates" onclick="selectCategory(this)">Duplicates</button>
+                    <button class="tab-btn" data-category="graph" onclick="selectCategory(this)">Concept Graph</button>
                 </div>
 
                 <!-- Active filters banner -->
@@ -180,7 +192,7 @@
                     <button class="clear-filter-btn" onclick="clearTagFilter()">✕ Clear Tag Filter</button>
                 </div>
 
-                <div class="results-container">
+                <div class="results-container" id="results-list-wrapper">
                     <div class="results-header">
                         <h2 id="results-title-header">Matching Records</h2>
                         <span id="results-count" class="count-badge">0 found</span>
@@ -188,6 +200,12 @@
                     <div id="results-list" class="results-list">
                         <div class="empty-state">Enter a query above to explore indexed knowledge.</div>
                     </div>
+                </div>
+
+                <!-- Dynamic 2D Physics-based Concept Graph view -->
+                <div class="graph-container-card hidden" id="graph-wrapper">
+                    <h3>Document Tag Network Connections</h3>
+                    <canvas id="concept-graph-canvas" width="600" height="400"></canvas>
                 </div>
             </div>
 
@@ -207,6 +225,7 @@
                 <!-- CRUD Actions Section -->
                 <div class="preview-crud-actions">
                     <button class="action-btn rename-btn" onclick="renameFileAction()">✏️ Rename</button>
+                    <button class="action-btn edit-toggle-btn" id="edit-toggle-btn" onclick="toggleInlineEdit()">📝 Edit File</button>
                     <button class="action-btn delete-btn" onclick="deleteFileAction()">🗑️ Delete File</button>
                 </div>
 
@@ -249,6 +268,7 @@
 
                 <div class="preview-content-area" id="preview-content-area" style="position: relative;">
                     <div id="ocr-highlights-container" class="ocr-highlights-container" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:5;"></div>
+                    <textarea id="inline-text-editor" class="inline-text-editor hidden" style="width:100%; height:100%; background: #000; color: #fff; border:none; font-family:monospace; font-size:0.85rem; outline:none; resize:none;"></textarea>
                     <pre><code id="preview-code">Select a file to preview its content</code></pre>
                 </div>
             </div>

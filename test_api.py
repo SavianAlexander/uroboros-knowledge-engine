@@ -87,7 +87,28 @@ def test_crud_and_annotations():
     response = client.delete(f"/api/sync/peers?id={peer_id}")
     assert response.status_code == 200
 
-    # 8. Delete renamed file
+    # 8. Edit File API test
+    response = client.post("/api/file/edit", json={"filepath": renamed_path, "content": "updated mock content from api test [[another-mock.txt]]"})
+    assert response.status_code == 200
+    
+    # 9. Snapshots API checks
+    response = client.post("/api/snapshots")
+    assert response.status_code == 200
+    ts = response.json()["timestamp"]
+    
+    response = client.get("/api/snapshots")
+    assert response.status_code == 200
+    assert ts in response.json()["snapshots"]
+    
+    response = client.delete(f"/api/snapshots?timestamp={ts}")
+    assert response.status_code == 200
+    
+    # 10. Graph Network endpoint test
+    response = client.get("/api/graph")
+    assert response.status_code == 200
+    assert "nodes" in response.json()
+
+    # 11. Delete renamed file
     response = client.delete(f"/api/file/delete?path={renamed_path}")
     assert response.status_code == 200
     

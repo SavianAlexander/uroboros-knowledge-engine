@@ -4,12 +4,15 @@ let selectedTag = null;
 let currentPreviewPath = null;
 let searchMode = "keyword"; // "keyword" or "semantic"
 
+let isEditingFile = false;
+
 document.addEventListener("DOMContentLoaded", () => {
     fetchStats();
     fetchGlobalTags();
     fetchDirectoryTree();
     fetchAutoRules();
     fetchPeers();
+    fetchSnapshots();
     setupDropZone();
 });
 
@@ -341,7 +344,19 @@ function selectCategory(button) {
     document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
     button.classList.add("active");
     selectedCategory = button.getAttribute("data-category");
-    triggerSearch();
+    
+    const resultsListWrapper = document.getElementById("results-list-wrapper");
+    const graphWrapper = document.getElementById("graph-wrapper");
+    
+    if (selectedCategory === "graph") {
+        resultsListWrapper.classList.add("hidden");
+        graphWrapper.classList.remove("hidden");
+        loadConceptGraph();
+    } else {
+        resultsListWrapper.classList.remove("hidden");
+        graphWrapper.classList.add("hidden");
+        triggerSearch();
+    }
 }
 
 function filterByTag(tag) {
@@ -582,6 +597,12 @@ async function showPreview(path) {
         
         document.getElementById("file-notes-input").value = data.notes || "";
         document.getElementById("notes-status").innerText = "Auto-saves on blur";
+        
+        // Reset inline editor UI
+        isEditingFile = false;
+        document.getElementById("inline-text-editor").classList.add("hidden");
+        document.getElementById("preview-code").parentElement.classList.remove("hidden");
+        document.getElementById("edit-toggle-btn").innerText = "📝 Edit File";
 
         // Render metrics and summary
         const analyticsCard = document.getElementById("preview-analytics-card");
@@ -945,3 +966,244 @@ async function triggerIndexing() {
         console.error("Index post failed", e);
     }
 }
+
+/* Snapshots Vault Actions */
+async function fetchSnapshots() {
+    try {
+        const response = await fetch("/api/snapshots");
+        const data = await response.json();
+        renderSnapshots(data.snapshots);
+    } catch (e) {
+        console.error("Failed to load snapshots", e);
+    }
+}
+
+function renderSnapshots(snapshots) {
+    const container = document.getElementById("sidebar-snapshots");
+    container.innerHTML = "";
+    if (!snapshots || snapshots.length === 0) {
+        container.innerHTML = '<span class="rules-empty">No snapshots captured.</span>';
+        return;
+    }
+    snapshots.forEach(ts => {
+        const dateStr = new Date(ts * 1000).toLocaleString();
+        const div = document.createElement("div");
+        div.className = "rule-item";
+        div.innerHTML = `
+            <span><strong>Snapshot</strong><br/><small style="font-size:0.7rem; color:var(--text-secondary)">${dateStr}</small></span>
+            <div>
+                <button class="peer-sync-btn" onclick="restoreSnapshot(${ts})" style="background: rgba(99, 102, 241, 0.15); border-color: var(--accent); color: var(--accent);">Rollback</button>
+                <button class="rule-del-btn" onclick="deleteSnapshot(${ts})">✕</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+async function createSnapshot() {
+    try {
+        const response = await fetch("/api/snapshots", { method: "POST" });
+        if (response.ok) {
+            alert("Snapshot successfully captured!");
+            fetchSnapshots();
+        }
+    } catch (e) {
+        console.error("Snapshot capture failed", e);
+    }
+}
+
+async function restoreSnapshot(timestamp) {
+    const confirmed = confirm("Are you sure you want to restore this snapshot? All current databases data will rollback to this point.");
+    if (!confirmed) return;
+    try {
+        const response = await fetch(`/api/snapshots/restore?timestamp=${timestamp}`, { method: "POST" });
+        if (response.ok) {
+            alert("Database rollback successful!");
+            fetchStats();
+            fetchGlobalTags();
+            fetchDirectoryTree();
+            triggerSearch();
+        }
+    } catch (e) {
+        console.error("Restore failed", e);
+    }
+}
+
+async function deleteSnapshot(timestamp) {
+    try {
+        const response = await fetch(`/api/snapshots?timestamp=${timestamp}`, { method: "DELETE" });
+        if (response.ok) {
+            fetchSnapshots();
+        }
+    } catch (e) {
+        console.error("Delete snapshot failed", e);
+    }
+}
+
+/* Inline File Edit Actions */
+function toggleInlineEdit() {
+    if (!currentPreviewPath) return;
+    const btn = document.getElementById("edit-toggle-btn");
+    const editor = document.getElementById("inline-text-editor");
+    const codePre = document.getElementById("preview-code").parentElement;
+    
+    if (!isEditingFile) {
+        // Fetch raw file text to populate
+        const codeElement = document.getElementById("preview-code");
+        editor.value = codeElement.innerText;
+        
+        codePre.classList.add("hidden");
+        editor.classList.remove("hidden");
+        btn.innerText = "💾 Save Changes";
+        isEditingFile = true;
+    } else {
+        saveInlineEdit(editor.value);
+    }
+}
+
+async function saveInlineEdit(content) {
+    const btn = document.getElementById("edit-toggle-btn");
+    const editor = document.getElementById("inline-text-editor");
+    const codePre = document.getElementById("preview-code").parentElement;
+    
+    btn.innerText = "Saving...";
+    try {
+        const response = await fetch("/api/file/edit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filepath: currentPreviewPath, content })
+        });
+        if (response.ok) {
+            alert("File changes saved successfully!");
+            isEditingFile = false;
+            editor.classList.add("hidden");
+            codePre.classList.remove("hidden");
+            btn.innerText = "📝 Edit File";
+            showPreview(currentPreviewPath);
+            fetchStats();
+            triggerSearch();
+        } else {
+            alert("Failed to save changes.");
+            btn.innerText = "💾 Save Changes";
+        }
+    } catch (e) {
+        console.error("Edit request failed", e);
+        btn.innerText = "💾 Save Changes";
+    }
+}
+
+/* Physics-based 2D force-directed concept graph rendering */
+let graphAnimFrame;
+async function loadConceptGraph() {
+    try {
+        const response = await fetch("/api/graph");
+        const data = await response.json();
+        drawGraph(data.nodes, data.links);
+    } catch (e) {
+        console.error("Failed to load graph", e);
+    }
+}
+
+function drawGraph(nodes, links) {
+    const canvas = document.getElementById("concept-graph-canvas");
+    const ctx = canvas.getContext("2d");
+    
+    cancelAnimationFrame(graphAnimFrame);
+    
+    // Assign random initial positions
+    nodes.forEach(n => {
+        n.x = Math.random() * canvas.width;
+        n.y = Math.random() * canvas.height;
+        n.vx = 0;
+        n.vy = 0;
+    });
+    
+    function updatePhysics() {
+        // Repulsion between nodes
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const dx = nodes[j].x - nodes[i].x;
+                const dy = nodes[j].y - nodes[i].y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                if (dist < 150) {
+                    const force = (150 - dist) * 0.05;
+                    const fx = (dx / dist) * force;
+                    const fy = (dy / dist) * force;
+                    nodes[i].vx -= fx;
+                    nodes[i].vy -= fy;
+                    nodes[j].vx += fx;
+                    nodes[j].vy += fy;
+                }
+            }
+        }
+        
+        // Attraction along links
+        links.forEach(l => {
+            const sourceNode = nodes.find(n => n.id === l.source);
+            const targetNode = nodes.find(n => n.id === l.target);
+            if (sourceNode && targetNode) {
+                const dx = targetNode.x - sourceNode.x;
+                const dy = targetNode.y - sourceNode.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                const force = (dist - 100) * 0.03 * (l.weight || 1);
+                const fx = (dx / dist) * force;
+                const fy = (dy / dist) * force;
+                sourceNode.vx += fx;
+                sourceNode.vy += fy;
+                targetNode.vx -= fx;
+                targetNode.vy -= fy;
+            }
+        });
+        
+        // Apply friction and bounds boundary
+        nodes.forEach(n => {
+            n.x += n.vx;
+            n.y += n.vy;
+            n.vx *= 0.85;
+            n.vy *= 0.85;
+            
+            // Constrain inside boundaries
+            if (n.x < 20) n.x = 20;
+            if (n.x > canvas.width - 20) n.x = canvas.width - 20;
+            if (n.y < 20) n.y = 20;
+            if (n.y > canvas.height - 20) n.y = canvas.height - 20;
+        });
+    }
+    
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw Links
+        ctx.strokeStyle = "rgba(99, 102, 241, 0.25)";
+        ctx.lineWidth = 1.5;
+        links.forEach(l => {
+            const s = nodes.find(n => n.id === l.source);
+            const t = nodes.find(n => n.id === l.target);
+            if (s && t) {
+                ctx.beginPath();
+                ctx.moveTo(s.x, s.y);
+                ctx.lineTo(t.x, t.y);
+                ctx.stroke();
+            }
+        });
+        
+        // Draw Nodes
+        nodes.forEach(n => {
+            ctx.fillStyle = "var(--accent)";
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Label
+            ctx.fillStyle = "var(--text-primary)";
+            ctx.font = "10px Inter";
+            ctx.fillText(n.label, n.x + 12, n.y + 4);
+        });
+        
+        updatePhysics();
+        graphAnimFrame = requestAnimationFrame(draw);
+    }
+    
+    draw();
+}
+
