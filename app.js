@@ -1172,6 +1172,9 @@ function drawGraph(nodes, links) {
     
     cancelAnimationFrame(graphAnimFrame);
     
+    // Track selected node inside graph visualization context
+    let selectedNodeId = null;
+    
     // Assign random initial positions
     nodes.forEach(n => {
         n.x = Math.random() * canvas.width;
@@ -1180,7 +1183,51 @@ function drawGraph(nodes, links) {
         n.vy = 0;
     });
     
+    // ponytail: interactive click selector for graph nodes centering views and drawing previews
+    canvas.onclick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        
+        let nearestNode = null;
+        let minDist = 25; // selection radius
+        
+        nodes.forEach(n => {
+            const dist = Math.sqrt((n.x - mx) * (n.x - mx) + (n.y - my) * (n.y - my));
+            if (dist < minDist) {
+                minDist = dist;
+                nearestNode = n;
+            }
+        });
+        
+        if (nearestNode) {
+            selectedNodeId = nearestNode.id;
+            // Fetch and open preview panel automatically
+            // Need filepath which is queried from the API node file links
+            // Lets fetch the document info to load previews
+            fetch(`/api/tree`).then(r => r.json()).then(data => {
+                const found = data.files.find(f => f.filename === nearestNode.label);
+                if (found) {
+                    showPreview(found.filepath);
+                }
+            });
+        } else {
+            selectedNodeId = null;
+        }
+    };
+    
     function updatePhysics() {
+        // Centering forces focus selected node
+        if (selectedNodeId) {
+            const centerNode = nodes.find(n => n.id === selectedNodeId);
+            if (centerNode) {
+                const dx = canvas.width / 2 - centerNode.x;
+                const dy = canvas.height / 2 - centerNode.y;
+                centerNode.x += dx * 0.1;
+                centerNode.y += dy * 0.1;
+            }
+        }
+
         // Repulsion between nodes
         for (let i = 0; i < nodes.length; i++) {
             for (let j = i + 1; j < nodes.length; j++) {
@@ -1236,12 +1283,17 @@ function drawGraph(nodes, links) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         // Draw Links
-        ctx.strokeStyle = "rgba(99, 102, 241, 0.25)";
-        ctx.lineWidth = 1.5;
         links.forEach(l => {
             const s = nodes.find(n => n.id === l.source);
             const t = nodes.find(n => n.id === l.target);
             if (s && t) {
+                // Dim links that aren't connected to the selected node
+                if (selectedNodeId && l.source !== selectedNodeId && l.target !== selectedNodeId) {
+                    ctx.strokeStyle = "rgba(63, 63, 70, 0.08)";
+                } else {
+                    ctx.strokeStyle = "rgba(99, 102, 241, 0.4)";
+                }
+                ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.moveTo(s.x, s.y);
                 ctx.lineTo(t.x, t.y);
@@ -1265,16 +1317,30 @@ function drawGraph(nodes, links) {
                 }
             }
             
+            // Dim nodes that aren't direct neighbors of selected node
+            let isConnected = (n.id === selectedNodeId);
+            if (selectedNodeId && !isConnected) {
+                isConnected = links.some(l => 
+                    (l.source === selectedNodeId && l.target === n.id) || 
+                    (l.target === selectedNodeId && l.source === n.id)
+                );
+            }
+            
             ctx.fillStyle = color;
+            ctx.globalAlpha = (selectedNodeId && !isConnected) ? 0.2 : 1.0;
+            
             ctx.beginPath();
-            ctx.arc(n.x, n.y, 8, 0, 2 * Math.PI);
+            // Highlight selected node with a larger radius
+            const radius = (n.id === selectedNodeId) ? 12 : 8;
+            ctx.arc(n.x, n.y, radius, 0, 2 * Math.PI);
             ctx.fill();
             
             // Label
             ctx.fillStyle = "var(--text-primary)";
-            ctx.font = "10px Inter";
-            ctx.fillText(n.label, n.x + 12, n.y + 4);
+            ctx.font = (n.id === selectedNodeId) ? "bold 11px Inter" : "10px Inter";
+            ctx.fillText(n.label, n.x + (radius + 4), n.y + 4);
         });
+        ctx.globalAlpha = 1.0;
         
         updatePhysics();
         graphAnimFrame = requestAnimationFrame(draw);

@@ -354,7 +354,11 @@ def search(q: str = None, tag: str = None, category: str = None, sort_by: str = 
     if cleaned_q:
         sql = """
             SELECT f.filepath, f.filename, f.file_size, f.mime_type, f.modified_at, f.id,
-                   snippet(fts_files, 2, '<mark>', '</mark>', '...', 15) as snippet
+                   CASE 
+                     WHEN snippet(fts_files, 2, '<mark>', '</mark>', '...', 15) LIKE '%<mark>%' THEN snippet(fts_files, 2, '<mark>', '</mark>', '...', 15)
+                     WHEN snippet(fts_files, 3, '<mark>', '</mark>', '...', 15) LIKE '%<mark>%' THEN '[Note Match]: ' || snippet(fts_files, 3, '<mark>', '</mark>', '...', 15)
+                     ELSE snippet(fts_files, 2, '<mark>', '</mark>', '...', 15)
+                   END as snippet
             FROM fts_files
             JOIN files f ON f.filepath = fts_files.filepath
         """
@@ -971,6 +975,28 @@ def export_pdf_report(tag: str = None, category: str = None, style_template: str
             ('FONTSIZE', (0,1), (-1,-1), 9),
         ]))
         story.append(t)
+    elif style_template == "descriptive":
+        # Renders descriptive cards template
+        for idx, f in enumerate(files):
+            notes_str = f['notes'] or "[No annotations recorded]"
+            snippet_str = (f['content'] or "")[:200] + "..." if len(f['content'] or "") > 200 else (f['content'] or "[Empty]")
+            
+            card_data = [
+                [Paragraph(f"<b>Document #{idx+1}: {f['filename']}</b>", h2_style)],
+                [Paragraph(f"<i>Annotations:</i> {notes_str}", body_style)],
+                [Paragraph(f"<i>Content Snippet:</i> {snippet_str}", body_style)]
+            ]
+            t = Table(card_data, colWidths=[504])
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f8fafc")),
+                ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#cbd5e1")),
+                ('TOPPADDING', (0,0), (-1,-1), 8),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+                ('LEFTPADDING', (0,0), (-1,-1), 12),
+                ('RIGHTPADDING', (0,0), (-1,-1), 12),
+            ]))
+            story.append(t)
+            story.append(Spacer(1, 12))
     else:
         # Default report list paragraphs
         for idx, f in enumerate(files):

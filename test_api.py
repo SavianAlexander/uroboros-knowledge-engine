@@ -151,6 +151,11 @@ def test_crud_and_annotations():
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
 
+    # PDF descriptive style template test
+    response = client.get("/api/report/export?style_template=descriptive")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+
     # 14. Stats CSV Export test
     response = client.get("/api/stats/export")
     assert response.status_code == 200
