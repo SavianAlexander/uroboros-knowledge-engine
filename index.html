@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uroboros: Personal Knowledge Database</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <header class="app-header">
+            <div class="logo-area">
+                <span class="logo-icon">🎴</span>
+                <h1>Uroboros</h1>
+                <span class="badge">V8 Pro</span>
+            </div>
+            
+            <div class="index-control-card">
+                <h3>Active Folder Dumper</h3>
+                <div class="input-group">
+                    <input type="text" id="dir-input" placeholder="e.g. C:\Users\Administrator\Documents" />
+                    <button id="index-btn" onclick="triggerIndexing()">Index Files</button>
+                </div>
+                <div id="indexing-status" class="status-msg">Dumps target: <span id="active-dir-label">dumps</span></div>
+            </div>
+
+            <!-- Directory Explorer Section -->
+            <div class="explorer-sidebar">
+                <div class="explorer-header">
+                    <h3>Directory Tree</h3>
+                    <button class="refresh-tree-btn" onclick="fetchDirectoryTree()" title="Refresh Tree">↻</button>
+                </div>
+                <div id="dir-tree" class="dir-tree-container">
+                    <span class="tree-empty">No directory indexed yet.</span>
+                </div>
+            </div>
+
+            <div class="stats-panel">
+                <h3>Database Status</h3>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <span class="stat-label">Total Files</span>
+                        <span class="stat-value" id="stat-files">-</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Total Size</span>
+                        <span class="stat-value" id="stat-size">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Distribution Chart -->
+            <div class="chart-sidebar">
+                <h3>File Type Distribution</h3>
+                <div id="svg-chart-container" class="svg-chart-container"></div>
+            </div>
+
+            <!-- Recent Activity Timeline -->
+            <div class="timeline-sidebar">
+                <h3>Indexing History Timeline</h3>
+                <div id="timeline-container" class="timeline-container">
+                    <span class="timeline-empty">No indexing activity recorded.</span>
+                </div>
+            </div>
+
+            <!-- Global Tags Cloud -->
+            <div class="tags-sidebar">
+                <h3>Knowledge Tags</h3>
+                <div id="sidebar-tags" class="tag-cloud">
+                    <span class="tag-cloud-empty">No tags set yet.</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <div class="search-section">
+                <!-- Dropzone Area -->
+                <div id="drop-zone" class="drop-zone">
+                    <span class="drop-icon">📥</span>
+                    <p>Drag & Drop any files here to automatically dump and index them into the active directory.</p>
+                </div>
+
+                <div class="search-bar-container">
+                    <input type="text" id="search-input" placeholder="Search (e.g. tag:work type:pdf size>1mb query)..." oninput="triggerSearch()">
+                </div>
+
+                <!-- Query Sorting and Filtering Toolbar -->
+                <div class="search-toolbar">
+                    <div class="toolbar-group">
+                        <label for="sort-by-select">Sort By:</label>
+                        <select id="sort-by-select" onchange="triggerSearch()">
+                            <option value="rank">Relevance (Rank)</option>
+                            <option value="filename">Filename</option>
+                            <option value="file_size">File Size</option>
+                            <option value="modified_at">Date Modified</option>
+                        </select>
+                    </div>
+
+                    <div class="toolbar-group">
+                        <label for="sort-order-select">Order:</label>
+                        <select id="sort-order-select" onchange="triggerSearch()">
+                            <option value="asc">Ascending</option>
+                            <option value="desc" selected>Descending</option>
+                        </select>
+                    </div>
+
+                    <div class="toolbar-group">
+                        <label for="date-filter-select">Modified Within:</label>
+                        <select id="date-filter-select" onchange="triggerSearch()">
+                            <option value="all">All Time</option>
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="week">Last Week</option>
+                            <option value="month">Last Month</option>
+                            <option value="year">Last Year</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Category Filtering Tabs -->
+                <div class="tabs-container">
+                    <button class="tab-btn active" data-category="all" onclick="selectCategory(this)">All Files</button>
+                    <button class="tab-btn" data-category="documents" onclick="selectCategory(this)">Documents</button>
+                    <button class="tab-btn" data-category="spreadsheets" onclick="selectCategory(this)">Spreadsheets</button>
+                    <button class="tab-btn" data-category="code" onclick="selectCategory(this)">Code</button>
+                    <button class="tab-btn" data-category="images" onclick="selectCategory(this)">Images</button>
+                    <button class="tab-btn" data-category="duplicates" onclick="selectCategory(this)">Duplicates</button>
+                </div>
+
+                <!-- Active filters banner -->
+                <div id="active-filters" class="active-filters hidden">
+                    <span id="active-tag-badge" class="tag-filter-badge"></span>
+                    <button class="clear-filter-btn" onclick="clearTagFilter()">✕ Clear Tag Filter</button>
+                </div>
+
+                <div class="results-container">
+                    <div class="results-header">
+                        <h2 id="results-title-header">Matching Records</h2>
+                        <span id="results-count" class="count-badge">0 found</span>
+                    </div>
+                    <div id="results-list" class="results-list">
+                        <div class="empty-state">Enter a query above to explore indexed knowledge.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Drawer -->
+            <div id="preview-panel" class="preview-panel hidden">
+                <div class="preview-header">
+                    <h3 id="preview-title">File Preview</h3>
+                    <button class="close-btn" onclick="closePreview()">✕</button>
+                </div>
+                <div class="preview-meta">
+                    <div class="meta-item"><strong>Path:</strong> <span id="preview-path">-</span></div>
+                    <div class="meta-item"><strong>Mime Type:</strong> <span id="preview-mime">-</span></div>
+                    <div class="meta-item"><strong>Size:</strong> <span id="preview-size">-</span></div>
+                    <div class="meta-item"><strong>SHA256:</strong> <span id="preview-sha">-</span></div>
+                </div>
+
+                <!-- CRUD Actions Section -->
+                <div class="preview-crud-actions">
+                    <button class="action-btn rename-btn" onclick="renameFileAction()">✏️ Rename</button>
+                    <button class="action-btn delete-btn" onclick="deleteFileAction()">🗑️ Delete File</button>
+                </div>
+
+                <!-- Text Metrics Analytics Section -->
+                <div id="preview-analytics-card" class="preview-analytics-card hidden">
+                    <h4>Text Analytics</h4>
+                    <div class="analytics-grid">
+                        <div class="analytic-item"><strong>Words:</strong> <span id="analytic-words">-</span></div>
+                        <div class="analytic-item"><strong>Paragraphs:</strong> <span id="analytic-paragraphs">-</span></div>
+                    </div>
+                    <!-- Extractive Summary -->
+                    <div id="summary-section" class="summary-section hidden">
+                        <h5>Extractive Summary:</h5>
+                        <p id="summary-content"></p>
+                    </div>
+                </div>
+
+                <!-- Custom Annotations Notes Area -->
+                <div class="preview-notes-section">
+                    <h4>Personal Annotation Notes</h4>
+                    <textarea id="file-notes-input" placeholder="Type custom annotations here to index them..." onblur="saveFileNotes()"></textarea>
+                    <div id="notes-status" class="notes-status-lbl">Auto-saves on blur</div>
+                </div>
+
+                <!-- Tag Management Section -->
+                <div class="preview-tags-section">
+                    <h4>Tags</h4>
+                    <div id="file-tags-list" class="file-tags-list"></div>
+                    <div class="add-tag-group">
+                        <input type="text" id="new-tag-input" placeholder="New tag..." onkeydown="if(event.key === 'Enter') addFileTag()"/>
+                        <button onclick="addFileTag()">+</button>
+                    </div>
+                    
+                    <!-- Suggested Tags -->
+                    <div id="suggested-tags-container" class="suggested-tags-container hidden">
+                        <h5>Suggested Tags:</h5>
+                        <div id="suggested-tags-list" class="suggested-tags-list"></div>
+                    </div>
+                </div>
+
+                <div class="preview-content-area" id="preview-content-area">
+                    <pre><code id="preview-code">Select a file to preview its content</code></pre>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
