@@ -13,9 +13,13 @@ from striprtf.striprtf import rtf_to_text
 import openpyxl
 
 # Windows Native OCR
-from winrt.windows.storage import StorageFile
-from winrt.windows.media.ocr import OcrEngine
-from winrt.windows.graphics.imaging import BitmapDecoder
+try:
+    from winrt.windows.storage import StorageFile
+    from winrt.windows.media.ocr import OcrEngine
+    from winrt.windows.graphics.imaging import BitmapDecoder
+    HAS_WINRT = True
+except ImportError:
+    HAS_WINRT = False
 
 DB_FILE = "knowledge.db"
 
@@ -338,6 +342,8 @@ def calculate_sha256(filepath):
         return None
 
 async def _async_ocr_structured(filepath):
+    if not HAS_WINRT:
+        return "[OCR not supported on this platform]", []
     try:
         file = await StorageFile.get_file_from_path_async(filepath)
         stream = await file.open_async(0)
