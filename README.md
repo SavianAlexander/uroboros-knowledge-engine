@@ -47,6 +47,27 @@ Ingested paths are matched against prioritized regular expression rules, executi
 
 ---
 
+## System Views Walkthrough
+
+Here is a visual guide to the views and management interface of Uroboros Knowledge Engine:
+
+### 1. Main Dashboard View
+The primary command center showing the database status, active directory tree, file type distribution chart, indexing timeline, and word frequency tag cloud.
+
+![Main Dashboard](docs/screenshots/dashboard_view.png)
+
+### 2. Search & Interactive Tag Network Graph
+Search files with lexical-semantic search, filter by similarity thresholds, preview text files in real-time, and view the document tag network connection graph.
+
+![Search and Graph View](docs/screenshots/search_results_view.png)
+
+### 3. Automated Configuration & Rules
+Configure regex auto-tagging rules, word synonyms mappings, search bookmarks, backup schedulers, and monitor LAN sync peers.
+
+![Configuration Rules](docs/screenshots/config_rules_view.png)
+
+---
+
 ## Installation & Setup
 
 1. **Install Dependencies**:

@@ -47,6 +47,27 @@ Las rutas ingresadas se evalúan contra expresiones regulares ordenadas por nive
 
 ---
 
+## Guía Visual del Sistema
+
+Aquí tienes una guía visual de las vistas y la interfaz de administración de Uroboros:
+
+### 1. Vista del Panel Principal (Dashboard)
+El centro de control principal que muestra el estado de la base de datos, el árbol de directorios activos, el gráfico de distribución de tipos de archivo, la línea de tiempo de indexación y la nube de etiquetas de frecuencia de palabras.
+
+![Panel Principal](docs/screenshots/dashboard_view.png)
+
+### 2. Búsqueda y Gráfico de Conexión de Etiquetas
+Busca archivos con filtros de similitud, previsualiza documentos en tiempo real y visualiza el gráfico interactivo de conexiones de etiquetas de red.
+
+![Búsqueda y Gráfico](docs/screenshots/search_results_view.png)
+
+### 3. Configuración y Reglas Automatizadas
+Configura reglas de etiquetado automático mediante expresiones regulares, sinónimos, favoritos de búsqueda, respaldos automáticos y nodos de sincronización LAN.
+
+![Configuración de Reglas](docs/screenshots/config_rules_view.png)
+
+---
+
 ## Instalación y Configuración
 
 1. **Instalar Dependencias**:
