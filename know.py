@@ -463,63 +463,66 @@ def index_directory(dir_path, progress_callback=None):
             
         cursor.execute("SELECT id, modified_at, file_size FROM files WHERE filepath = ?", (filepath,))
         row = cursor.fetchone()
+        is_modified = True
         if row and row['modified_at'] == modified_at and row['file_size'] == file_size:
-            continue
+            is_modified = False
             
-        sha256 = calculate_sha256(filepath)
-        mime_type, _ = mimetypes.guess_type(filepath)
-        mime_type = mime_type or 'application/octet-stream'
-        
-        content = ""
-        coords = []
-        suffix = Path(filepath).suffix.lower()
-        if mime_type.startswith('text/') or suffix in text_extensions:
-            content, coords = extract_content(filepath, suffix)
-        elif suffix in {'.wav', '.mp3'}:
-            # ponytail: index audio parameter details inside FTS database text elements
-            meta = parse_audio_metadata(filepath)
-            content = f"[Audio Metadata] samplerate:{meta.get('samplerate', 0)} channels:{meta.get('channels', 0)} bitrate:{meta.get('bitrate', 'Unknown')} duration:{meta.get('duration', 0)}s"
+        if is_modified:
+            sha256 = calculate_sha256(filepath)
+            mime_type, _ = mimetypes.guess_type(filepath)
+            mime_type = mime_type or 'application/octet-stream'
             
-        if row:
-            file_id = row['id']
-            cursor.execute("""
-                UPDATE files 
-                SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?
-                WHERE filepath = ?
-            """, (filename, file_size, mime_type, sha256, modified_at, content, filepath))
-            cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (filepath,))
-            cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))",
-                           (filepath, filename, content, filepath))
-            cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
-            for coord in coords:
-                cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?)",
-                               (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
-            updated_count += 1
-        else:
-            cursor.execute("""
-                INSERT INTO files (filepath, filename, file_size, mime_type, sha256, modified_at, content, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
-            """, (filepath, filename, file_size, mime_type, sha256, modified_at, content))
-            file_id = cursor.lastrowid
-            cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, NULL)",
-                           (filepath, filename, content))
-            for coord in coords:
-                cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?)",
-                               (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
-            indexed_count += 1
+            content = ""
+            coords = []
+            suffix = Path(filepath).suffix.lower()
+            if mime_type.startswith('text/') or suffix in text_extensions:
+                content, coords = extract_content(filepath, suffix)
+            elif suffix in {'.wav', '.mp3'}:
+                # ponytail: index audio parameter details inside FTS database text elements
+                meta = parse_audio_metadata(filepath)
+                content = f"[Audio Metadata] samplerate:{meta.get('samplerate', 0)} channels:{meta.get('channels', 0)} bitrate:{meta.get('bitrate', 'Unknown')} duration:{meta.get('duration', 0)}s"
+                
+            if row:
+                file_id = row['id']
+                cursor.execute("""
+                    UPDATE files 
+                    SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?
+                    WHERE filepath = ?
+                """, (filename, file_size, mime_type, sha256, modified_at, content, filepath))
+                cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (filepath,))
+                cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))",
+                               (filepath, filename, content, filepath))
+                cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
+                for coord in coords:
+                    cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?)",
+                                   (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
+                updated_count += 1
+            else:
+                cursor.execute("""
+                    INSERT INTO files (filepath, filename, file_size, mime_type, sha256, modified_at, content, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
+                """, (filepath, filename, file_size, mime_type, sha256, modified_at, content))
+                file_id = cursor.lastrowid
+                cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, NULL)",
+                               (filepath, filename, content))
+                for coord in coords:
+                    cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?)",
+                                   (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
+                indexed_count += 1
             
         # Auto-tag rule application logic
-        cursor.execute("SELECT id FROM files WHERE filepath = ?", (filepath,))
+        cursor.execute("SELECT id, content FROM files WHERE filepath = ?", (filepath,))
         file_id_row = cursor.fetchone()
         if file_id_row:
             fid = file_id_row['id']
+            file_content = file_id_row['content'] or ""
             cursor.execute("SELECT pattern, tag FROM auto_rules ORDER BY priority DESC")
             rules = cursor.fetchall()
             for rule in rules:
                 pat = rule['pattern']
                 tag = rule['tag']
                 # Check regex in file path, file name, or content
-                if re.search(pat, filepath, re.IGNORECASE) or re.search(pat, content, re.IGNORECASE):
+                if re.search(pat, filepath, re.IGNORECASE) or re.search(pat, file_content, re.IGNORECASE):
                     try:
                         cursor.execute("INSERT INTO tags (file_id, tag) VALUES (?, ?)", (fid, tag))
                     except sqlite3.IntegrityError:
