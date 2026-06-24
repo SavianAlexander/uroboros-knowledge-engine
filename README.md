@@ -1,20 +1,49 @@
 # Uroboros Knowledge Database Engine
 
-Uroboros is a lightweight, high-performance, single-folder knowledge indexing and retrieval database system. It features hybrid full-text search (SQLite FTS5), a custom zero-dependency TF-IDF Vector Space Model (MiniVectorEngine) for semantic concept searches, real-time filesystem watchers, dynamic auto-tagging rules, bookmarks, query macros, and custom ReportLab PDF catalog export formatting.
+<p align="center">
+  <img src="https://img.shields.io/github/actions/workflow/status/SavianAlexander/uroboros-knowledge-engine/tests.yml?branch=master&style=flat-square" alt="Build Status" />
+  <img src="https://img.shields.io/github/license/SavianAlexander/uroboros-knowledge-engine?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/python-3.12-blue.svg?style=flat-square" alt="Python Version" />
+  <img src="https://img.shields.io/badge/FastAPI-0.111.0-teal.svg?style=flat-square" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/SQLite-FTS5-orange.svg?style=flat-square" alt="SQLite" />
+  <img src="https://img.shields.io/badge/code%20style-ponytail-indigo?style=flat-square" alt="Code Style" />
+</p>
+
+---
+
+## About Uroboros
+
+Uroboros is a lightweight, self-contained knowledge management, indexing, and semantic exploration engine. Built with zero-dependency minimalist core components, it serves as a central brain for search and text extraction on local workspaces. It is designed to automatically ingest, watch, tag, synonym-expand, and query documents without requiring bulky external vector database dependencies or heavy runtime models.
+
+### Target Audience
+- **Developers & Researchers**: Searching local codebases, documentation, research papers, and spreadsheets.
+- **Privacy-First Teams**: Local processing of annotations, OCR text, and indexing logs without transmitting data outside local subnets.
+- **Minimalist Engineers**: Leveraging standard SQLite tools and local indexing pipelines for extreme speed and low CPU footprints.
+
+---
+
+## Architectural Summary & Core Engines
+
+### 1. Hybrid Search Architecture
+Uroboros integrates a two-tier hybrid search system:
+- **Lexical/FTS5 Engine**: Native SQLite FTS5 indexes files, annotations, and titles, query-expanding synonym substitutions dynamically.
+- **MiniVectorEngine**: A pure-Python Vector Space Model (VSM) using TF-IDF scoring and cosine similarity comparisons to rank concept matches.
+
+### 2. Active Directory Watcher Loop
+A background OS file monitor checks directory stats in real-time, executing concurrent `ThreadPoolExecutor` workers to extract contents when files change, uploading snapshots lazily.
+
+### 3. Automated Priority Tagging Rules
+Ingested paths are matched against prioritized regular expression rules, executing tagging logic to classify items under custom badges.
 
 ---
 
 ## Key Features
 
-- **Hybrid Search Pipelines**: Search via keyword matching (FTS5) or semantic cosine similarity matching (TF-IDF Concept Space) using a lightweight, pure-Python vector search engine.
-- **Interactive Similarity Thresholds**: Real-time results filtering via visual matching range sliders on semantic vector scores (0-100%).
-- **Multi-tag Intersection/Union Selector**: Stack tag query filters dynamically in active scopes using `AND` (all selected) or `OR` (any selected) logic operators.
-- **Query Auto-Completion & Suggestion**: Real-time keyword autosuggestions fetching matching macros, tags, metadata categories, and query filters.
-- **Auto-Tagging Rules Priorities Engine**: Configure regex rule patterns mapped to custom tag tags and prioritized to resolve execution precedence on file ingestion.
-- **Word Synonym Expander**: Register token equivalence maps to expand FTS query tokens using logic OR operators.
-- **Search History & Bookmarks Vault**: Persistently log query history and bookmark custom-configured searches for instant re-execution.
-- **Customizable PDF Exporter**: Generate ReportLab PDF summary directories with customized headers, tag exclusion filters, template styles, and color themes (*Indigo*, *Crimson*, *Emerald*, *Charcoal*).
-- **Periodic Database Backups**: Keep database snapshots safe with background thread interval snapshots.
+- **Similarity Range Slider**: Filter semantic matching scores dynamically from the UI slider (0-100%).
+- **Stackable Multi-tag Queries**: Stack selection filters using `AND` (intersection) or `OR` (union) tags selectors.
+- **Bookmarks & Macros Vault**: Save macros and search parameters to SQLite caches.
+- **PDF Report Customizer**: Generate customized ReportLab PDF directories with custom titles and brand accent palettes (*Indigo*, *Crimson*, *Emerald*, *Charcoal*).
+- **Periodic DB Backups**: Back up the engine automatically to disk at custom intervals.
 
 ---
 
@@ -22,38 +51,27 @@ Uroboros is a lightweight, high-performance, single-folder knowledge indexing an
 
 1. **Install Dependencies**:
    ```bash
-   pip install fastapi uvicorn reportlab python-docx openpyxl pytest httpx
+   pip install -r requirements.txt
    ```
 
 2. **Initialize Database & Scan**:
-   Initialize and scan the watch directory (`dumps/` is active by default):
+   Create SQLite tables and scan the local `dumps/` directory:
    ```bash
    python know.py init
    python know.py index dumps
    ```
 
-3. **Start the Web Server**:
+3. **Start Server**:
    ```bash
    python main.py
    ```
-   Access the web interface at `http://127.0.0.1:8000`.
+   Open `http://127.0.0.1:8000` inside your browser.
 
 ---
 
 ## Running Automated Tests
 
-Run the full api and database test suites using pytest:
+Execute the API routing and database validation test suites:
 ```bash
 pytest test_api.py test_db.py
 ```
-
----
-
-## Project Structure
-
-- `main.py`: FastAPI server routes, LRU query caching mechanisms, and PDF/CSV exporter scripts.
-- `know.py`: SQL tables manager, background filesystem folder watcher, text extractors (WAV wav metadata, Docx, Xlsx, PDF, plain text), and semantic vector searches logic.
-- `index.html`: Clean, responsive glassmorphic single-page web user interface.
-- `style.css`: Transparent custom scrollbars, animations, and themed UI layout definitions.
-- `app.js`: Autocomplete events, tag loaders, concept canvas physics renderers, and server fetch hooks.
-- `Progress Reports/`: Quantitative metrics lists tracking LOC parameters and feature updates across evolution versions.
