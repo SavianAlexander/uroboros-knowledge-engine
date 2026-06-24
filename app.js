@@ -590,7 +590,14 @@ function renderResults(results) {
                 `</div>`;
         }
 
-        const scoreBadge = file.score !== undefined ? `<span class="badge" style="background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: var(--success); font-size:0.7rem">${file.score}% Match</span>` : '';
+        const scoreBadge = file.score !== undefined ? `
+        <div style="display: inline-flex; align-items: center; gap: 0.35rem; vertical-align: middle; margin-left: 0.5rem;">
+            <svg width="18" height="18" viewBox="0 0 36 36" style="transform: rotate(-90deg); filter: drop-shadow(0 0 2px rgba(16,185,129,0.3));">
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="4.5" />
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" stroke-dasharray="${file.score}, 100" stroke-width="4.5" stroke-linecap="round" />
+            </svg>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.4); color: var(--success); font-size:0.65rem; padding: 0 0.35rem;">${file.score}% Match</span>
+        </div>` : '';
         const snippetHtml = file.snippet ? `<div class="result-snippet">${file.snippet}</div>` : '';
 
         div.innerHTML = `
@@ -1076,7 +1083,8 @@ async function restoreSnapshot(timestamp) {
 
 function exportPdfReport() {
     const template = document.getElementById("pdf-template-select").value;
-    const params = [`style_template=${template}`];
+    const includeNotes = document.getElementById("pdf-include-notes-checkbox").checked;
+    const params = [`style_template=${template}`, `include_notes=${includeNotes}`];
     if (selectedTag) params.push(`tag=${encodeURIComponent(selectedTag)}`);
     if (selectedCategory && selectedCategory !== "all") params.push(`category=${encodeURIComponent(selectedCategory)}`);
     
@@ -1183,14 +1191,16 @@ function drawGraph(nodes, links) {
         n.vy = 0;
     });
     
-    // ponytail: interactive click selector for graph nodes centering views and drawing previews
-    canvas.onclick = (e) => {
+    let draggedNode = null;
+    
+    // ponytail: interactive mouse gesture handlers to support drag and drop nodes manual layouts
+    canvas.onmousedown = (e) => {
         const rect = canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
         
         let nearestNode = null;
-        let minDist = 25; // selection radius
+        let minDist = 25;
         
         nodes.forEach(n => {
             const dist = Math.sqrt((n.x - mx) * (n.x - mx) + (n.y - my) * (n.y - my));
@@ -1201,10 +1211,9 @@ function drawGraph(nodes, links) {
         });
         
         if (nearestNode) {
+            draggedNode = nearestNode;
             selectedNodeId = nearestNode.id;
-            // Fetch and open preview panel automatically
-            // Need filepath which is queried from the API node file links
-            // Lets fetch the document info to load previews
+            
             fetch(`/api/tree`).then(r => r.json()).then(data => {
                 const found = data.files.find(f => f.filename === nearestNode.label);
                 if (found) {
@@ -1214,6 +1223,24 @@ function drawGraph(nodes, links) {
         } else {
             selectedNodeId = null;
         }
+    };
+
+    canvas.onmousemove = (e) => {
+        if (draggedNode) {
+            const rect = canvas.getBoundingClientRect();
+            draggedNode.x = e.clientX - rect.left;
+            draggedNode.y = e.clientY - rect.top;
+            draggedNode.vx = 0;
+            draggedNode.vy = 0;
+        }
+    };
+
+    canvas.onmouseup = () => {
+        draggedNode = null;
+    };
+
+    canvas.onmouseleave = () => {
+        draggedNode = null;
     };
     
     function updatePhysics() {

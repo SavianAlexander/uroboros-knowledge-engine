@@ -155,6 +155,11 @@ def test_crud_and_annotations():
     response = client.get("/api/report/export?style_template=descriptive")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
+    
+    # PDF export with include_notes disabled test
+    response = client.get("/api/report/export?include_notes=false")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
 
     # 14. Stats CSV Export test
     response = client.get("/api/stats/export")

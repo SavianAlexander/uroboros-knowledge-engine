@@ -208,6 +208,9 @@
                                 <option value="compact">Compact Template</option>
                                 <option value="descriptive">Descriptive Cards</option>
                             </select>
+                            <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; color: var(--text-secondary); cursor: pointer;">
+                                <input type="checkbox" id="pdf-include-notes-checkbox" checked style="cursor: pointer; accent-color: var(--accent);" /> Include Notes
+                            </label>
                             <button id="export-pdf-btn" class="action-btn" onclick="exportPdfReport()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: rgba(99, 102, 241, 0.15); border: 1px solid var(--accent); color: var(--text-primary); border-radius: 6px; cursor: pointer; transition: all 0.2s;">📄 Export PDF</button>
                             <span id="results-count" class="count-badge">0 found</span>
                         </div>

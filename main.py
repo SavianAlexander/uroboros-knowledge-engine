@@ -896,7 +896,7 @@ def get_graph():
     return {"nodes": nodes, "links": links}
 
 @app.get("/api/report/export")
-def export_pdf_report(tag: str = None, category: str = None, style_template: str = "default"):
+def export_pdf_report(tag: str = None, category: str = None, style_template: str = "default", include_notes: bool = True):
     # ponytail: build a formatted PDF compilation of knowledge records using reportlab with category/tag queries
     from reportlab.lib.pagesizes import letter
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -958,7 +958,7 @@ def export_pdf_report(tag: str = None, category: str = None, style_template: str
         # Renders compact style template as a ReportLab Table
         data = [["#", "Filename", "Annotations Note"]]
         for idx, f in enumerate(files):
-            notes_str = f['notes'] or "[No custom annotations]"
+            notes_str = (f['notes'] or "[No custom annotations]") if include_notes else "[Notes Excluded]"
             data.append([str(idx + 1), f['filename'], notes_str])
             
         t = Table(data, colWidths=[30, 200, 274])
@@ -978,7 +978,7 @@ def export_pdf_report(tag: str = None, category: str = None, style_template: str
     elif style_template == "descriptive":
         # Renders descriptive cards template
         for idx, f in enumerate(files):
-            notes_str = f['notes'] or "[No annotations recorded]"
+            notes_str = (f['notes'] or "[No annotations recorded]") if include_notes else "[Notes Excluded]"
             snippet_str = (f['content'] or "")[:200] + "..." if len(f['content'] or "") > 200 else (f['content'] or "[Empty]")
             
             card_data = [
@@ -1007,9 +1007,10 @@ def export_pdf_report(tag: str = None, category: str = None, style_template: str
             story.append(Paragraph(f"Content Summary: {content_snippet}", body_style))
             story.append(Spacer(1, 10))
             
-            notes_str = f"Personal Annotations: {f['notes']}" if f['notes'] else "Personal Annotations: None"
-            story.append(Paragraph(notes_str, body_style))
-            story.append(Spacer(1, 15))
+            if include_notes:
+                notes_str = f"Personal Annotations: {f['notes']}" if f['notes'] else "Personal Annotations: None"
+                story.append(Paragraph(notes_str, body_style))
+                story.append(Spacer(1, 15))
             
     doc.build(story)
     pdf_buffer.seek(0)
