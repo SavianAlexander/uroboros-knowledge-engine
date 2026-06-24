@@ -2,11 +2,13 @@ let searchTimeout;
 let selectedCategory = "all";
 let selectedTag = null;
 let currentPreviewPath = null;
+let searchMode = "keyword"; // "keyword" or "semantic"
 
 document.addEventListener("DOMContentLoaded", () => {
     fetchStats();
     fetchGlobalTags();
     fetchDirectoryTree();
+    fetchAutoRules();
     setupDropZone();
 });
 
@@ -43,6 +45,14 @@ function renderDistributionChart(mimeBreakdown, totalFiles) {
         const pct = totalFiles > 0 ? Math.round((item.count / totalFiles) * 100) : 0;
         const row = document.createElement("div");
         row.className = "chart-bar-row";
+        row.onclick = () => {
+            let extension = item.mime_type.split('/').pop();
+            // Simplify application octet stream / common extensions mapping
+            if (extension === 'octet-stream') extension = 'bin';
+            const searchInput = document.getElementById("search-input");
+            searchInput.value = `type:${extension} ` + searchInput.value.replace(/type:\S+/g, "").trim();
+            triggerSearch();
+        };
         row.innerHTML = `
             <div class="chart-bar-info">
                 <span class="chart-bar-label" title="${item.mime_type}">${item.mime_type}</span>
@@ -257,6 +267,82 @@ function clearTagFilter() {
     triggerSearch();
 }
 
+function setSearchMode(mode) {
+    searchMode = mode;
+    document.querySelectorAll(".mode-btn").forEach(btn => btn.classList.remove("active"));
+    document.getElementById(`mode-keyword`).classList.toggle("active", mode === "keyword");
+    document.getElementById(`mode-semantic`).classList.toggle("active", mode === "semantic");
+    triggerSearch();
+}
+
+async function fetchAutoRules() {
+    try {
+        const response = await fetch("/api/rules");
+        const data = await response.json();
+        renderAutoRules(data.rules);
+    } catch (error) {
+        console.error("Failed to load rules:", error);
+    }
+}
+
+function renderAutoRules(rules) {
+    const container = document.getElementById("sidebar-rules");
+    container.innerHTML = "";
+    if (!rules || rules.length === 0) {
+        container.innerHTML = '<span class="rules-empty">No automated tagging rules.</span>';
+        return;
+    }
+    rules.forEach(rule => {
+        const div = document.createElement("div");
+        div.className = "rule-item";
+        div.innerHTML = `
+            <span><strong>${rule.pattern}</strong> ➔ <span class="badge" style="font-size: 0.65rem; padding:0 0.3rem">${rule.tag}</span></span>
+            <button class="rule-del-btn" onclick="deleteAutoRule(${rule.id})">✕</button>
+        `;
+        container.appendChild(div);
+    });
+}
+
+async function addAutoRule() {
+    const patInput = document.getElementById("rule-pattern");
+    const tagInput = document.getElementById("rule-tag");
+    const pattern = patInput.value.trim();
+    const tag = tagInput.value.trim();
+    if (!pattern || !tag) return;
+
+    try {
+        const response = await fetch("/api/rules", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pattern, tag })
+        });
+        if (response.ok) {
+            patInput.value = "";
+            tagInput.value = "";
+            fetchAutoRules();
+            fetchStats();
+        } else {
+            const err = await response.json();
+            alert(`Failed: ${err.detail}`);
+        }
+    } catch (e) {
+        console.error("Rule creation failed:", e);
+    }
+}
+
+async function deleteAutoRule(id) {
+    try {
+        const response = await fetch(`/api/rules?id=${id}`, {
+            method: "DELETE"
+        });
+        if (response.ok) {
+            fetchAutoRules();
+        }
+    } catch (e) {
+        console.error("Rule deletion failed:", e);
+    }
+}
+
 function triggerSearch() {
     clearTimeout(searchTimeout);
     const query = document.getElementById("search-input").value.trim();
@@ -283,6 +369,7 @@ function triggerSearch() {
         params.push(`sort_by=${sortBy}`);
         params.push(`sort_order=${sortOrder}`);
         params.push(`date_filter=${dateFilter}`);
+        params.push(`mode=${searchMode}`);
         
         url += params.join("&");
 
@@ -366,12 +453,13 @@ function renderResults(results) {
                 `</div>`;
         }
 
+        const scoreBadge = file.score !== undefined ? `<span class="badge" style="background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: var(--success); font-size:0.7rem">${file.score}% Match</span>` : '';
         const snippetHtml = file.snippet ? `<div class="result-snippet">${file.snippet}</div>` : '';
 
         div.innerHTML = `
             <div class="result-info-header">
                 <div class="result-info">
-                    <span class="result-title">${file.filename}</span>
+                    <span class="result-title">${file.filename} ${scoreBadge}</span>
                     <span class="result-path">${file.filepath}</span>
                     <div class="result-meta">
                         <span>${formatBytes(file.file_size)}</span>

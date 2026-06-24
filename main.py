@@ -227,8 +227,63 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class RuleRequest(BaseModel):
+    pattern: str
+    tag: str
+
 @app.get("/api/search")
-def search(q: str = None, tag: str = None, category: str = None, sort_by: str = None, sort_order: str = "asc", date_filter: str = "all"):
+def search(q: str = None, tag: str = None, category: str = None, sort_by: str = None, sort_order: str = "asc", date_filter: str = "all", mode: str = "keyword"):
+    if mode == "semantic" and q:
+        # Run semantic concept retrieval
+        results = know.MiniVectorEngine.search_semantic(q)
+        
+        # Apply filters in Python to keep it fast/lazy without complex SQL
+        filtered = []
+        import time
+        now = time.time()
+        
+        for r in results:
+            # tag filter
+            if tag and tag not in r['tags']:
+                continue
+            # category filter
+            if category:
+                ext = os.path.splitext(r['filepath'])[1].lower()
+                mime = r['mime_type']
+                if category == 'documents' and not (mime.startswith('text/') or ext in ['.pdf', '.docx', '.rtf']):
+                    continue
+                elif category == 'spreadsheets' and not ('spreadsheet' in mime or ext in ['.xlsx', '.csv']):
+                    continue
+                elif category == 'code' and not (ext in ['.py', '.js', '.html', '.css', '.json', '.xml']):
+                    continue
+                elif category == 'images' and not (mime.startswith('image/') or ext in ['.png', '.jpg', '.jpeg', '.bmp']):
+                    continue
+            # date filter
+            if date_filter and date_filter != "all":
+                mtime = r['modified_at']
+                if date_filter == "24h" and mtime < now - 86400:
+                    continue
+                elif date_filter == "week" and mtime < now - 604800:
+                    continue
+                elif date_filter == "month" and mtime < now - 2592000:
+                    continue
+                elif date_filter == "year" and mtime < now - 31536000:
+                    continue
+            filtered.append(r)
+            
+        # apply sorting
+        rev = sort_order.lower() == "desc"
+        if sort_by == "filename":
+            filtered.sort(key=lambda x: x['filename'].lower(), reverse=rev)
+        elif sort_by == "file_size":
+            filtered.sort(key=lambda x: x['file_size'], reverse=rev)
+        elif sort_by == "modified_at":
+            filtered.sort(key=lambda x: x['modified_at'], reverse=rev)
+        else: # sort by score/rank
+            filtered.sort(key=lambda x: x.get('score', 0), reverse=rev)
+            
+        return {"results": filtered}
+
     conn = know.get_db()
     cursor = conn.cursor()
     
@@ -504,6 +559,37 @@ def get_tree():
     rows = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return {"files": rows}
+
+@app.get("/api/rules")
+def get_rules():
+    conn = know.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, pattern, tag FROM auto_rules ORDER BY id DESC")
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return {"rules": rows}
+
+@app.post("/api/rules")
+def create_rule(req: RuleRequest):
+    conn = know.get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO auto_rules (pattern, tag) VALUES (?, ?)", (req.pattern, req.tag))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Pattern rule already exists")
+    finally:
+        conn.close()
+    return {"status": "success"}
+
+@app.delete("/api/rules")
+def delete_rule(id: int):
+    conn = know.get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM auto_rules WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

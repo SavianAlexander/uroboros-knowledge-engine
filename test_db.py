@@ -70,7 +70,7 @@ def main():
         stdout, stderr, code = run_cmd(["index", str(TEST_DIR)])
         assert code == 0, f"Index failed: {stderr}"
         
-        # 3. Direct verification of FTS5 search
+        # 3. Direct verification of FTS5 search and rules
         # ponytail: use with statement to auto-close connection safely
         with sqlite3.connect(TEST_DB) as conn:
             cursor = conn.cursor()
@@ -80,7 +80,26 @@ def main():
             cursor.execute("SELECT COUNT(*) FROM files WHERE file_size > 100")
             assert cursor.fetchone()[0] > 0
             
-        print("All database query operators, duplicates, and indexing checks passed successfully!")
+            # Setup auto rule
+            cursor.execute("INSERT INTO auto_rules (pattern, tag) VALUES (?, ?)", (r"astrophysics", "science"))
+            conn.commit()
+            
+        # Re-index to apply rules
+        stdout, stderr, code = run_cmd(["index", str(TEST_DIR)])
+        assert code == 0, f"Re-index failed: {stderr}"
+        
+        with sqlite3.connect(TEST_DB) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM tags WHERE tag = 'science'")
+            assert cursor.fetchone()[0] > 0, "Science tag rules did not execute on index"
+
+        # 4. Semantic Engine check
+        import know
+        results = know.MiniVectorEngine.search_semantic("survey mechanics")
+        assert len(results) > 0
+        assert results[0]["score"] > 0
+            
+        print("All database query operators, duplicates, indexing, auto-tag rules, and semantic checks passed successfully!")
     finally:
         print("Cleaning up sandbox...")
         teardown_sandbox()

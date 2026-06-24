@@ -79,9 +79,118 @@ def init_db():
             FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
         )
     """)
+    
+    # Auto tag rules table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS auto_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pattern TEXT UNIQUE,
+            tag TEXT
+        )
+    """)
     conn.commit()
     conn.close()
     print("Database initialized successfully.")
+
+# ponytail: simple TF-IDF Vector Space Model class in pure Python.
+import math
+import re
+
+class MiniVectorEngine:
+    @staticmethod
+    def tokenize(text):
+        if not text:
+            return []
+        return re.findall(r'\b[a-z]{3,15}\b', text.lower())
+
+    @classmethod
+    def search_semantic(cls, query, limit=50):
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, filepath, filename, file_size, mime_type, modified_at, content FROM files")
+        docs = [dict(row) for row in cursor.fetchall() if row['content']]
+        
+        q_tokens = cls.tokenize(query)
+        if not q_tokens or not docs:
+            conn.close()
+            return []
+
+        # Document frequencies
+        df = {}
+        for doc in docs:
+            tokens = set(cls.tokenize(doc['content']))
+            for t in tokens:
+                df[t] = df.get(t, 0) + 1
+
+        num_docs = len(docs)
+        
+        # Calculate TF-IDF vectors
+        doc_vectors = []
+        for doc in docs:
+            tokens = cls.tokenize(doc['content'])
+            tf = Counter(tokens)
+            tfidf = {}
+            length = 0.0
+            for term, count in tf.items():
+                # tf-idf = count * log(N/df)
+                term_df = df.get(term, 1)
+                val = count * math.log((num_docs + 1) / term_df)
+                tfidf[term] = val
+                length += val * val
+            doc_vectors.append((doc, tfidf, math.sqrt(length)))
+
+        # Query vector
+        q_tf = Counter(q_tokens)
+        q_tfidf = {}
+        q_length = 0.0
+        for term, count in q_tf.items():
+            term_df = df.get(term, 1)
+            val = count * math.log((num_docs + 1) / term_df)
+            q_tfidf[term] = val
+            q_length += val * val
+        q_length = math.sqrt(q_length)
+
+        results = []
+        for doc, doc_vec, doc_len in doc_vectors:
+            if doc_len == 0 or q_length == 0:
+                similarity = 0.0
+            else:
+                dot_product = 0.0
+                for term, val in q_tfidf.items():
+                    if term in doc_vec:
+                        dot_product += val * doc_vec[term]
+                similarity = dot_product / (doc_len * q_length)
+
+            if similarity > 0.0:
+                results.append((similarity, doc))
+
+        results.sort(key=lambda x: x[0], reverse=True)
+        conn.close()
+
+        final_rows = []
+        for score, doc in results[:limit]:
+            # Fetch tags
+            conn = get_db()
+            c2 = conn.cursor()
+            c2.execute("SELECT tag FROM tags WHERE file_id = ?", (doc['id'],))
+            tags = [t['tag'] for t2, t in enumerate(c2.fetchall())]
+            conn.close()
+
+            final_rows.append({
+                "id": doc["id"],
+                "filepath": doc["filepath"],
+                "filename": doc["filename"],
+                "file_size": doc["file_size"],
+                "mime_type": doc["mime_type"],
+                "modified_at": doc["modified_at"],
+                "snippet": doc["content"][:150] + "...",
+                "tags": tags,
+                "score": round(score * 100, 1) # percentage matching score
+            })
+        return final_rows
+
+from collections import Counter
+
 
 def calculate_sha256(filepath):
     sha256 = hashlib.sha256()
@@ -221,6 +330,23 @@ def index_directory(dir_path):
                            (filepath, filename, content))
             indexed_count += 1
             
+        # Auto-tag rule application logic
+        cursor.execute("SELECT id FROM files WHERE filepath = ?", (filepath,))
+        file_id_row = cursor.fetchone()
+        if file_id_row:
+            fid = file_id_row['id']
+            cursor.execute("SELECT pattern, tag FROM auto_rules")
+            rules = cursor.fetchall()
+            for rule in rules:
+                pat = rule['pattern']
+                tag = rule['tag']
+                # Check regex in file path, file name, or content
+                if re.search(pat, filepath, re.IGNORECASE) or re.search(pat, content, re.IGNORECASE):
+                    try:
+                        cursor.execute("INSERT INTO tags (file_id, tag) VALUES (?, ?)", (fid, tag))
+                    except sqlite3.IntegrityError:
+                        pass
+
     conn.commit()
     conn.close()
     print(f"Indexing completed. Indexed: {indexed_count}, Updated: {updated_count}")

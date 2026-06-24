@@ -57,7 +57,24 @@ def test_crud_and_annotations():
     renamed_path = response.json()["new_filepath"]
     assert "renamed_crud.txt" in renamed_path
     
-    # 5. Delete renamed file
+    # 5. Rules API tests
+    response = client.post("/api/rules", json={"pattern": "mock_pattern", "tag": "test_tag"})
+    assert response.status_code == 200
+    
+    response = client.get("/api/rules")
+    assert response.status_code == 200
+    rules = response.json()["rules"]
+    assert len(rules) > 0
+    rule_id = rules[0]["id"]
+    
+    # 6. Semantic Search API Routing check
+    response = client.get("/api/search?q=crud&mode=semantic")
+    assert response.status_code == 200
+    
+    response = client.delete(f"/api/rules?id={rule_id}")
+    assert response.status_code == 200
+
+    # 7. Delete renamed file
     response = client.delete(f"/api/file/delete?path={renamed_path}")
     assert response.status_code == 200
     
@@ -69,4 +86,4 @@ if __name__ == "__main__":
     test_static_routes()
     test_api_endpoints()
     test_crud_and_annotations()
-    print("All API, Static route, CRUD, and Annotation checks passed successfully!")
+    print("All API, Static route, CRUD, Rules, and Semantic routing checks passed successfully!")

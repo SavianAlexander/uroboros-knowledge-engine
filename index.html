@@ -75,6 +75,19 @@
                     <span class="tag-cloud-empty">No tags set yet.</span>
                 </div>
             </div>
+
+            <!-- Auto-Tag Rules Sidebar Component -->
+            <div class="rules-sidebar">
+                <h3>Auto-Tagging Rules</h3>
+                <div class="rules-form">
+                    <input type="text" id="rule-pattern" placeholder="Regex pattern (e.g. \bformula\b)"/>
+                    <input type="text" id="rule-tag" placeholder="Tag name"/>
+                    <button onclick="addAutoRule()">Add Rule</button>
+                </div>
+                <div id="sidebar-rules" class="rules-list-container">
+                    <span class="rules-empty">No automated tagging rules.</span>
+                </div>
+            </div>
         </header>
 
         <!-- Main Workspace -->
@@ -90,7 +103,12 @@
                     <input type="text" id="search-input" placeholder="Search (e.g. tag:work type:pdf size>1mb query)..." oninput="triggerSearch()">
                 </div>
 
-                <!-- Query Sorting and Filtering Toolbar -->
+                <!-- Query Search Mode Switcher & Sorting/Filtering Toolbar -->
+                <div class="search-mode-container">
+                    <button class="mode-btn active" id="mode-keyword" onclick="setSearchMode('keyword')">Keyword Matching (FTS5)</button>
+                    <button class="mode-btn" id="mode-semantic" onclick="setSearchMode('semantic')">Semantic Concepts (TF-IDF)</button>
+                </div>
+
                 <div class="search-toolbar">
                     <div class="toolbar-group">
                         <label for="sort-by-select">Sort By:</label>
