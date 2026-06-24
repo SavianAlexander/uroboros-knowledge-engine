@@ -8,3 +8,4 @@
 ## Ponytail coding principles
 - Question complex features and implement the shortest functional diff possible (YAGNI).
 - Run unit test checks on any database schema or route changes.
+- **Decouple Post-processing from Optimization**: When utilizing modification checks (size/timestamp checks) to optimize indexing or parsing runs, ensure that auto-tagging, metadata expansion, or search index updates are decoupled so they run on all matches (even unmodified records) to capture new rules/configurations.
