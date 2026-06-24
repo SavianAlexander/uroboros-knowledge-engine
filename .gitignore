@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Databases and backup files
+knowledge.db
+knowledge.db.backup-*
+*.db
+
+# Temporary logs or watch dirs
+dumps/*
+!dumps/.gitkeep
+test_sandbox/
+
+# OS files
+.DS_Store
+Thumbs.db

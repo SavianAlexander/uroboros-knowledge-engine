@@ -31,6 +31,15 @@ def test_api_endpoints():
     data = response.json()
     assert "results" in data
 
+    # Multi-tag search logic tests
+    response = client.get("/api/search?tag=science,physics&tag_mode=AND")
+    assert response.status_code == 200
+    assert "results" in response.json()
+
+    response = client.get("/api/search?tag=science,physics&tag_mode=OR")
+    assert response.status_code == 200
+    assert "results" in response.json()
+
     response = client.post("/api/index", json={"directory": "/nonexistent/path/for/test"})
     assert response.status_code == 400
 
@@ -117,6 +126,17 @@ def test_crud_and_annotations():
     response = client.get("/api/report/export?category=documents&tag=science")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
+    
+    # PDF Custom title and theme palette Report Export test
+    response = client.get("/api/report/export?report_title=Custom+Title+Test&theme_palette=crimson")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+
+    
+    # PDF Filtered Report Export test with comma-separated tag list
+    response = client.get("/api/report/export?tag=science,physics,quantum")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
 
     # Rules preview test
     response = client.post("/api/rules/test-preview", json={"pattern": "mock", "tag": "science"})
@@ -172,12 +192,83 @@ def test_crud_and_annotations():
     assert "text/csv" in response.headers["content-type"]
     assert "Total Size" in response.text
 
-    # 15. Delete renamed file
-    response = client.delete(f"/api/file/delete?path={renamed_path}")
+    # PDF gallery style template test
+    response = client.get("/api/report/export?style_template=gallery")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+
+    # Search exclusions tests
+    # Exclude files tagged "tag_not_existent" (should return the file)
+    response = client.get("/api/search?q=-tag:tag_not_existent")
     assert response.status_code == 200
     
-    # Check that disk file is gone
+    # Exclude files matching type "png" (should exclude images if any, or not fail)
+    response = client.get("/api/search?q=-type:png")
+    assert response.status_code == 200
+
+    # Tag Custom Colors API tests
+    response = client.post("/api/tags/color", json={"tag": "science", "color": "#00ff00"})
+    assert response.status_code == 200
+    
+    # Retrieve tags with color info checks
+    response = client.get("/api/tags")
+    assert response.status_code == 200
+    
+    # Custom configuration snippet parameters test
+    response = client.get("/api/search?q=reference&snippet_limit=5&highlight_start=[START]&highlight_end=[END]")
+    assert response.status_code == 200
+
+    # Query macros endpoint tests
+    response = client.post("/api/macros", json={"name": "macro_test", "expansion": "tag:science type:txt"})
+    assert response.status_code == 200
+    response = client.get("/api/macros")
+    assert response.status_code == 200
+    
+    # Tag aliases endpoint tests
+    response = client.post("/api/aliases", json={"alias": "physics_alias", "target": "science"})
+    assert response.status_code == 200
+    response = client.get("/api/aliases")
+    assert response.status_code == 200
+
+    # Macro expansion and directory path scoping search test
+    response = client.get("/api/search?q=%macro_test%&folder_path=test_sandbox")
+    assert response.status_code == 200
+
+    # Macro deletion endpoint check
+    response = client.delete("/api/macros?name=macro_test")
+    assert response.status_code == 200
+
+    # FTS Proximity NEAR check search test
+    response = client.get("/api/search?q=NEAR(\"gravity\" \"physics\", 5)")
+    assert response.status_code == 200
+    
+    # Synonyms mapping endpoints test
+    response = client.post("/api/synonyms", json={"word": "physics", "substitutes": "quantum, relativity"})
+    assert response.status_code == 200
+    response = client.get("/api/synonyms")
+    assert response.status_code == 200
+    
+    # Similarity threshold search test
+    response = client.get("/api/search?q=formula&mode=semantic&similarity_threshold=50.0")
+    assert response.status_code == 200
+    
+    # Backups scheduling endpoint test
+    response = client.post("/api/backups/schedule", json={"interval_seconds": 60})
+    assert response.status_code == 200
+
+    # 15. Delete renamed file
+    # We will upload a secondary mockup file to test bulk deletion API too
+    payload_bulk = {"file": ("mock_bulk_delete.txt", b"temporary mock bulk delete", "text/plain")}
+    response = client.post("/api/upload", files=payload_bulk)
+    assert response.status_code == 200
+    bulk_path = response.json()["filepath"]
+    
+    response = client.post("/api/file/bulk-delete", json={"filepaths": [renamed_path, bulk_path]})
+    assert response.status_code in [200, 207]
+    
+    # Check that disk files are gone
     assert not os.path.exists(renamed_path)
+    assert not os.path.exists(bulk_path)
 
 if __name__ == "__main__":
     print("Running API CRUD self-checks...")

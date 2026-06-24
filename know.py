@@ -85,9 +85,15 @@ def init_db():
         CREATE TABLE IF NOT EXISTS auto_rules (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             pattern TEXT UNIQUE,
-            tag TEXT
+            tag TEXT,
+            priority INTEGER DEFAULT 0
         )
     """)
+    
+    cursor.execute("PRAGMA table_info(auto_rules)")
+    rule_cols = [row[1] for row in cursor.fetchall()]
+    if 'priority' not in rule_cols:
+        cursor.execute("ALTER TABLE auto_rules ADD COLUMN priority INTEGER DEFAULT 0")
     
     # LAN Sync Peers Table
     cursor.execute("""
@@ -108,6 +114,60 @@ def init_db():
             w REAL,
             h REAL,
             FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
+        )
+    """)
+    
+    # Tag custom metadata table (colors etc.)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tag_metadata (
+            tag TEXT PRIMARY KEY,
+            color TEXT
+        )
+    """)
+    
+    # Query macros table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS query_macros (
+            name TEXT PRIMARY KEY,
+            expansion TEXT
+        )
+    """)
+    
+    # Tag aliases table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tag_aliases (
+            alias TEXT PRIMARY KEY,
+            target TEXT
+        )
+    """)
+    
+    # Synonyms table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS synonyms (
+            word TEXT PRIMARY KEY,
+            substitutes TEXT
+        )
+    """)
+    
+    # ponytail: search query history tracker table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS search_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            query_string TEXT,
+            search_mode TEXT,
+            executed_at REAL,
+            result_count INTEGER
+        )
+    """)
+    
+    # ponytail: query bookmarks table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS query_bookmarks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE,
+            query_string TEXT,
+            search_mode TEXT,
+            created_at REAL
         )
     """)
     
@@ -375,7 +435,8 @@ def index_directory(dir_path, progress_callback=None):
     all_files = [p for p in path.rglob('*') if p.is_file() and p.name != DB_FILE]
     total_files = len(all_files)
     
-    for index, p in enumerate(all_files):
+    # ponytail: concurrent tasks loop index processing for files lists
+    def process_single_file(p, index):
         filepath = str(p)
         filename = p.name
         stat = p.stat()
@@ -384,6 +445,15 @@ def index_directory(dir_path, progress_callback=None):
         
         if progress_callback:
             progress_callback(filename, index + 1, total_files)
+            
+        return filepath, filename, file_size, modified_at
+
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {executor.submit(process_single_file, p, index): p for index, p in enumerate(all_files)}
+        results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+    for filepath, filename, file_size, modified_at in results:
             
         cursor.execute("SELECT id, modified_at, file_size FROM files WHERE filepath = ?", (filepath,))
         row = cursor.fetchone()
@@ -437,7 +507,7 @@ def index_directory(dir_path, progress_callback=None):
         file_id_row = cursor.fetchone()
         if file_id_row:
             fid = file_id_row['id']
-            cursor.execute("SELECT pattern, tag FROM auto_rules")
+            cursor.execute("SELECT pattern, tag FROM auto_rules ORDER BY priority DESC")
             rules = cursor.fetchall()
             for rule in rules:
                 pat = rule['pattern']
@@ -525,6 +595,16 @@ def start_active_folder_watcher(directory, callback=None):
             if not os.path.exists(directory):
                 time.sleep(2)
                 continue
+                
+            # system health checker capacity validation
+            import shutil
+            try:
+                _, _, free = shutil.disk_usage(directory)
+                if free < 10 * 1024 * 1024:
+                    time.sleep(5)
+                    continue
+            except Exception:
+                pass
             
             current_files = {}
             has_changes = False

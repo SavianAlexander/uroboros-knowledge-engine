@@ -6,7 +6,13 @@ let searchMode = "keyword"; // "keyword" or "semantic"
 
 let isEditingFile = false;
 
+let folderScopePath = null;
+
 document.addEventListener("DOMContentLoaded", () => {
+    // Restore theme preference
+    if (localStorage.getItem("app-theme") === "light") {
+        document.body.classList.add("light-theme");
+    }
     fetchStats();
     fetchGlobalTags();
     fetchDirectoryTree();
@@ -14,7 +20,199 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchPeers();
     fetchSnapshots();
     setupDropZone();
+    fetchMacrosList();
+    fetchSearchHistory();
+    fetchSearchBookmarks();
+    
+    // ponytail: register search autosuggest events
+    const searchInput = document.getElementById("search-input");
+    const dropdown = document.getElementById("search-autocomplete-dropdown");
+    let activeSuggestionIdx = -1;
+    
+    if (searchInput && dropdown) {
+        searchInput.addEventListener("input", async (e) => {
+            const val = e.target.value;
+            const words = val.split(/\s+/);
+            const currentToken = words[words.length - 1];
+            
+            if (currentToken.length > 0) {
+                try {
+                    const res = await fetch(`/api/search/suggest?token=${encodeURIComponent(currentToken)}`);
+                    const data = await res.json();
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        dropdown.classList.remove("hidden");
+                        dropdown.innerHTML = "";
+                        activeSuggestionIdx = -1;
+                        
+                        data.suggestions.forEach((item, idx) => {
+                            const itemEl = document.createElement("div");
+                            itemEl.className = "autocomplete-item";
+                            itemEl.dataset.index = idx;
+                            itemEl.innerHTML = `
+                                <span>${item.text}</span>
+                                <span class="autocomplete-type">${item.type}</span>
+                            `;
+                            
+                            itemEl.onclick = () => {
+                                words[words.length - 1] = item.text;
+                                searchInput.value = words.join(" ") + " ";
+                                dropdown.classList.add("hidden");
+                                triggerSearch();
+                            };
+                            dropdown.appendChild(itemEl);
+                        });
+                    } else {
+                        dropdown.classList.add("hidden");
+                    }
+                } catch (err) {
+                    console.error("Suggestion fetch failed", err);
+                }
+            } else {
+                dropdown.classList.add("hidden");
+            }
+        });
+        
+        searchInput.addEventListener("keydown", (e) => {
+            const items = dropdown.querySelectorAll(".autocomplete-item");
+            if (dropdown.classList.contains("hidden") || items.length === 0) return;
+            
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                activeSuggestionIdx = (activeSuggestionIdx + 1) % items.length;
+                updateActiveSuggestion(items);
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                activeSuggestionIdx = (activeSuggestionIdx - 1 + items.length) % items.length;
+                updateActiveSuggestion(items);
+            } else if (e.key === "Enter") {
+                if (activeSuggestionIdx >= 0) {
+                    e.preventDefault();
+                    items[activeSuggestionIdx].click();
+                }
+            } else if (e.key === "Escape") {
+                dropdown.classList.add("hidden");
+            }
+        });
+        
+        document.addEventListener("click", (e) => {
+            if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add("hidden");
+            }
+        });
+    }
+    
+    function updateActiveSuggestion(items) {
+        items.forEach(el => el.classList.remove("active"));
+        if (activeSuggestionIdx >= 0 && activeSuggestionIdx < items.length) {
+            items[activeSuggestionIdx].classList.add("active");
+            items[activeSuggestionIdx].scrollIntoView({ block: "nearest" });
+        }
+    }
 });
+
+function toggleAppTheme() {
+    document.body.classList.toggle("light-theme");
+    const mode = document.body.classList.contains("light-theme") ? "light" : "dark";
+    localStorage.setItem("app-theme", mode);
+}
+
+async function fetchMacrosList() {
+    try {
+        const response = await fetch("/api/macros");
+        const data = await response.json();
+        const select = document.getElementById("macro-select");
+        select.innerHTML = '<option value="">-- Apply Macro --</option>';
+        
+        const sidebarContainer = document.getElementById("sidebar-macros");
+        if (sidebarContainer) {
+            sidebarContainer.innerHTML = "";
+        }
+        
+        if (data.macros && data.macros.length > 0) {
+            data.macros.forEach(m => {
+                const opt = document.createElement("option");
+                opt.value = m.expansion;
+                opt.innerText = `%${m.name}% (${m.expansion})`;
+                select.appendChild(opt);
+                
+                if (sidebarContainer) {
+                    const row = document.createElement("div");
+                    row.className = "rule-item";
+                    row.innerHTML = `
+                        <span title="${m.expansion}"><strong>%${m.name}%</strong>: ${m.expansion}</span>
+                        <button class="rule-del-btn" onclick="deleteQueryMacro('${m.name}')">✕</button>
+                    `;
+                    sidebarContainer.appendChild(row);
+                }
+            });
+        } else {
+            if (sidebarContainer) {
+                sidebarContainer.innerHTML = '<span class="rules-empty">No macros configured.</span>';
+            }
+        }
+    } catch (e) {
+        console.error("Failed to fetch macros", e);
+    }
+}
+
+async function addQueryMacroAction() {
+    const nameInput = document.getElementById("macro-name-input");
+    const expInput = document.getElementById("macro-expansion-input");
+    const name = nameInput.value.trim();
+    const expansion = expInput.value.trim();
+    if (!name || !expansion) return;
+    
+    try {
+        const res = await fetch("/api/macros", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, expansion })
+        });
+        if (res.ok) {
+            nameInput.value = "";
+            expInput.value = "";
+            fetchMacrosList();
+        }
+    } catch (e) {
+        console.error("Failed to add macro", e);
+    }
+}
+
+async function deleteQueryMacro(name) {
+    try {
+        const res = await fetch(`/api/macros?name=${encodeURIComponent(name)}`, {
+            method: "DELETE"
+        });
+        if (res.ok) {
+            fetchMacrosList();
+        }
+    } catch (e) {
+        console.error("Failed to delete macro", e);
+    }
+}
+
+
+function applyQueryMacro() {
+    const val = document.getElementById("macro-select").value;
+    if (val) {
+        const searchInput = document.getElementById("search-input");
+        searchInput.value = val;
+        triggerSearch();
+    }
+}
+
+function setFolderScopeFilter(path) {
+    folderScopePath = path;
+    document.getElementById("active-scoped-path-lbl").innerText = path;
+    document.getElementById("active-path-filter-card").classList.remove("hidden");
+    triggerSearch();
+}
+
+function clearFolderScopeFilter() {
+    folderScopePath = null;
+    document.getElementById("active-path-filter-card").classList.add("hidden");
+    triggerSearch();
+}
 
 async function fetchStats() {
     try {
@@ -24,9 +222,26 @@ async function fetchStats() {
         document.getElementById("stat-files").innerText = data.total_files;
         document.getElementById("stat-size").innerText = formatBytes(data.total_size);
         
+        if (data.disk_storage) {
+            const freeStr = formatBytes(data.disk_storage.free_bytes);
+            document.getElementById("stat-disk-free").innerText = `${freeStr} (${data.disk_storage.free_percent}% free)`;
+        }
+        
         if (data.active_directory) {
             document.getElementById("active-dir-label").innerText = getBasename(data.active_directory);
             document.getElementById("active-dir-label").title = data.active_directory;
+        }
+
+        // ponytail: fetch query cache statistics
+        try {
+            const cacheRes = await fetch("/api/search/cache/stats");
+            const cacheStats = await cacheRes.json();
+            const cacheRatioEl = document.getElementById("stat-cache-ratio");
+            if (cacheRatioEl && cacheStats) {
+                cacheRatioEl.innerText = `${cacheStats.hit_ratio}% (${cacheStats.hits} hits / ${cacheStats.misses} misses)`;
+            }
+        } catch (cacheErr) {
+            console.error("Failed to load cache stats", cacheErr);
         }
 
         renderDistributionChart(data.mime_breakdown, data.total_files);
@@ -158,29 +373,7 @@ async function handleFilesUpload(files) {
     triggerSearch();
 }
 
-async function fetchGlobalTags() {
-    try {
-        const response = await fetch("/api/tags");
-        const data = await response.json();
-        const container = document.getElementById("sidebar-tags");
-        container.innerHTML = "";
-        
-        if (data.tags.length === 0) {
-            container.innerHTML = '<span class="tag-cloud-empty">No tags set yet.</span>';
-            return;
-        }
 
-        data.tags.forEach(item => {
-            const span = document.createElement("span");
-            span.className = "tag-pill-sidebar";
-            span.innerText = `${item.tag} (${item.count})`;
-            span.onclick = () => filterByTag(item.tag);
-            container.appendChild(span);
-        });
-    } catch (error) {
-        console.error("Failed to fetch tags:", error);
-    }
-}
 
 async function fetchDirectoryTree() {
     try {
@@ -201,13 +394,14 @@ function buildTreeUI(files) {
         return;
     }
 
+    let pathAccumulator = "";
     const root = {};
     files.forEach(f => {
         const parts = f.filepath.split(/[\\/]/);
         let current = root;
         parts.forEach((part, i) => {
             if (!current[part]) {
-                current[part] = (i === parts.length - 1) ? { _file: f } : {};
+                current[part] = (i === parts.length - 1) ? { _file: f } : { _path: f.filepath.split(part)[0] + part };
             }
             current = current[part];
         });
@@ -217,6 +411,8 @@ function buildTreeUI(files) {
         if (node._file) {
             const div = document.createElement("div");
             div.className = "tree-file-title";
+            const ext = name.split('.').pop().toLowerCase();
+            div.setAttribute("data-ext", ext);
             div.innerHTML = `📄 ${name}`;
             div.onclick = () => showPreview(node._file.filepath);
             parentEl.appendChild(div);
@@ -230,8 +426,24 @@ function buildTreeUI(files) {
             
             const content = document.createElement("div");
             content.style.display = "none";
-            title.onclick = () => {
-                content.style.display = content.style.display === "none" ? "block" : "none";
+            
+            // Single-click expands, double-click sets folder filter scope
+            title.onclick = (e) => {
+                if (e.detail === 1) {
+                    setTimeout(() => {
+                        if (title.getAttribute("data-double-clicked") !== "true") {
+                            const isCollapsed = content.style.display === "none";
+                            content.style.display = isCollapsed ? "block" : "none";
+                            title.innerHTML = isCollapsed ? `📂 ${name}` : `📁 ${name}`;
+                        }
+                        title.removeAttribute("data-double-clicked");
+                    }, 200);
+                }
+            };
+            
+            title.ondblclick = () => {
+                title.setAttribute("data-double-clicked", "true");
+                setFolderScopeFilter(node._path || name);
             };
             
             folderDiv.appendChild(title);
@@ -239,7 +451,9 @@ function buildTreeUI(files) {
             parentEl.appendChild(folderDiv);
             
             for (const key in node) {
-                renderNode(node[key], key, content);
+                if (key !== "_path") {
+                    renderNode(node[key], key, content);
+                }
             }
         }
     }
@@ -360,11 +574,27 @@ function selectCategory(button) {
 }
 
 function filterByTag(tag) {
-    selectedTag = tag;
+    if (!selectedTag) {
+        selectedTag = tag;
+    } else {
+        const tags = selectedTag.split(",").map(t => t.trim()).filter(Boolean);
+        if (tags.includes(tag)) {
+            const filtered = tags.filter(t => t !== tag);
+            selectedTag = filtered.length > 0 ? filtered.join(",") : null;
+        } else {
+            tags.push(tag);
+            selectedTag = tags.join(",");
+        }
+    }
+    
     const banner = document.getElementById("active-filters");
     const badge = document.getElementById("active-tag-badge");
-    badge.innerText = `Tag: ${tag}`;
-    banner.classList.remove("hidden");
+    if (selectedTag) {
+        badge.innerText = `Tags: ${selectedTag}`;
+        banner.classList.remove("hidden");
+    } else {
+        banner.classList.add("hidden");
+    }
     triggerSearch();
 }
 
@@ -379,8 +609,23 @@ function setSearchMode(mode) {
     document.querySelectorAll(".mode-btn").forEach(btn => btn.classList.remove("active"));
     document.getElementById(`mode-keyword`).classList.toggle("active", mode === "keyword");
     document.getElementById(`mode-semantic`).classList.toggle("active", mode === "semantic");
+    
+    const sliderContainer = document.getElementById("similarity-threshold-container");
+    if (sliderContainer) {
+        sliderContainer.classList.toggle("hidden", mode !== "semantic");
+    }
+    
     triggerSearch();
 }
+
+function updateSimilarityThresholdDisplay(val) {
+    const valDisplay = document.getElementById("similarity-threshold-val");
+    if (valDisplay) {
+        valDisplay.innerText = `${val}%`;
+    }
+    triggerSearch();
+}
+
 
 async function fetchAutoRules() {
     try {
@@ -403,7 +648,7 @@ function renderAutoRules(rules) {
         const div = document.createElement("div");
         div.className = "rule-item";
         div.innerHTML = `
-            <span><strong>${rule.pattern}</strong> ➔ <span class="badge" style="font-size: 0.65rem; padding:0 0.3rem">${rule.tag}</span></span>
+            <span><strong>${rule.pattern}</strong> ➔ <span class="badge" style="font-size: 0.65rem; padding:0 0.3rem">${rule.tag}</span> <small style="color: var(--text-secondary);">(${rule.priority || 0})</small></span>
             <button class="rule-del-btn" onclick="deleteAutoRule(${rule.id})">✕</button>
         `;
         container.appendChild(div);
@@ -413,19 +658,22 @@ function renderAutoRules(rules) {
 async function addAutoRule() {
     const patInput = document.getElementById("rule-pattern");
     const tagInput = document.getElementById("rule-tag");
+    const priorityInput = document.getElementById("rule-priority");
     const pattern = patInput.value.trim();
     const tag = tagInput.value.trim();
+    const priority = parseInt(priorityInput.value || 0);
     if (!pattern || !tag) return;
 
     try {
         const response = await fetch("/api/rules", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pattern, tag })
+            body: JSON.stringify({ pattern, tag, priority })
         });
         if (response.ok) {
             patInput.value = "";
             tagInput.value = "";
+            priorityInput.value = "0";
             fetchAutoRules();
             fetchStats();
         } else {
@@ -480,6 +728,266 @@ async function testAutoRule() {
     }
 }
 
+let globalTagColors = {};
+
+async function fetchGlobalTags() {
+    try {
+        const response = await fetch("/api/tags");
+        const data = await response.json();
+        const container = document.getElementById("sidebar-tags");
+        container.innerHTML = "";
+        
+        globalTagColors = {};
+        if (data.tags.length === 0) {
+            container.innerHTML = '<span class="tag-cloud-empty">No tags set yet.</span>';
+            return;
+        }
+
+        data.tags.forEach(item => {
+            if (item.color) {
+                globalTagColors[item.tag] = item.color;
+            }
+            
+            const span = document.createElement("span");
+            span.className = "tag-pill-sidebar";
+            span.innerText = `${item.tag} (${item.count})`;
+            if (item.color) {
+                span.style.background = item.color;
+                span.style.borderColor = item.color;
+            }
+            
+            // Inline double-click color picker configurator UI
+            span.ondblclick = () => {
+                const picker = document.getElementById("global-tag-color-picker");
+                if (picker) {
+                    picker.value = item.color || "#6366f1";
+                    picker.onchange = () => {
+                        setTagColor(item.tag, picker.value);
+                    };
+                    picker.click();
+                }
+            };
+            
+            span.onclick = (e) => {
+                if (e.target === span) filterByTag(item.tag);
+            };
+            container.appendChild(span);
+        });
+        
+        // Populate word frequency tag cloud widget
+        const freqContainer = document.getElementById("word-freq-tag-cloud");
+        if (freqContainer) {
+            freqContainer.innerHTML = "";
+            if (data.tags.length === 0) {
+                freqContainer.innerHTML = '<span class="tag-cloud-empty" style="font-size: 0.8rem; color: var(--text-secondary);">No tag frequencies found.</span>';
+            } else {
+                const counts = data.tags.map(t => t.count);
+                const minCount = Math.min(...counts);
+                const maxCount = Math.max(...counts);
+                const countRange = maxCount - minCount || 1;
+                
+                data.tags.forEach(item => {
+                    const span = document.createElement("span");
+                    span.className = "tag-pill-sidebar";
+                    span.innerText = item.tag;
+                    
+                    // Linear scaling mapping counts range between 0.7rem and 1.8rem
+                    const size = 0.7 + ((item.count - minCount) / countRange) * 1.1;
+                    span.style.fontSize = `${size}rem`;
+                    span.style.padding = `${size * 0.3}rem ${size * 0.6}rem`;
+                    
+                    if (item.color) {
+                        span.style.background = item.color;
+                        span.style.borderColor = item.color;
+                    }
+                    span.onclick = () => filterByTag(item.tag);
+                    freqContainer.appendChild(span);
+                });
+            }
+        }
+    } catch (error) {
+        console.error("Failed to fetch tags:", error);
+    }
+}
+
+async function fetchSearchHistory() {
+    try {
+        const response = await fetch("/api/search/history");
+        const data = await response.json();
+        const container = document.getElementById("sidebar-search-history");
+        if (!container) return;
+        container.innerHTML = "";
+        if (!data.history || data.history.length === 0) {
+            container.innerHTML = '<span class="rules-empty">No search query history logged.</span>';
+            return;
+        }
+        data.history.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "rule-item";
+            div.style.cursor = "pointer";
+            div.style.padding = "0.25rem";
+            div.style.borderRadius = "4px";
+            div.style.transition = "background-color 0.2s";
+            
+            const cleanQuery = item.query_string ? item.query_string.replace(/"/g, '&quot;') : '';
+            div.onclick = () => {
+                const input = document.getElementById("search-input");
+                input.value = item.query_string || "";
+                setSearchMode(item.search_mode === "semantic" ? "semantic" : "keyword");
+            };
+            
+            div.onmouseover = () => div.style.backgroundColor = "rgba(99, 102, 241, 0.15)";
+            div.onmouseout = () => div.style.backgroundColor = "transparent";
+            
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                    <span style="font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;" title="${cleanQuery}">${item.query_string || 'All Files'}</span>
+                    <span class="badge" style="font-size: 0.6rem; padding: 0 0.2rem; border-color: rgba(99, 102, 241, 0.4);">${item.search_mode} (${item.result_count})</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    } catch (e) {
+        console.error("Failed to load search history", e);
+    }
+}
+
+async function fetchSearchBookmarks() {
+    try {
+        const response = await fetch("/api/bookmarks");
+        const data = await response.json();
+        const container = document.getElementById("sidebar-search-bookmarks");
+        if (!container) return;
+        container.innerHTML = "";
+        if (!data.bookmarks || data.bookmarks.length === 0) {
+            container.innerHTML = '<span class="rules-empty">No bookmarks saved yet.</span>';
+            return;
+        }
+        data.bookmarks.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "rule-item";
+            div.style.display = "flex";
+            div.style.justifyContent = "space-between";
+            div.style.alignItems = "center";
+            div.style.padding = "0.25rem";
+            div.style.borderRadius = "4px";
+            div.style.transition = "background-color 0.2s";
+            
+            const cleanQuery = item.query_string ? item.query_string.replace(/"/g, '&quot;') : '';
+            const nameSpan = document.createElement("span");
+            nameSpan.style.cursor = "pointer";
+            nameSpan.style.fontWeight = "500";
+            nameSpan.style.textOverflow = "ellipsis";
+            nameSpan.style.overflow = "hidden";
+            nameSpan.style.whiteSpace = "nowrap";
+            nameSpan.style.maxWidth = "160px";
+            nameSpan.innerText = item.name;
+            nameSpan.title = `Query: ${cleanQuery} (${item.search_mode})`;
+            nameSpan.onclick = () => {
+                const input = document.getElementById("search-input");
+                input.value = item.query_string || "";
+                setSearchMode(item.search_mode === "semantic" ? "semantic" : "keyword");
+            };
+            
+            const rightContainer = document.createElement("div");
+            rightContainer.style.display = "flex";
+            rightContainer.style.alignItems = "center";
+            rightContainer.style.gap = "0.25rem";
+            
+            const modeBadge = document.createElement("span");
+            modeBadge.className = "badge";
+            modeBadge.style.fontSize = "0.6rem";
+            modeBadge.style.padding = "0 0.2rem";
+            modeBadge.style.borderColor = "rgba(99, 102, 241, 0.4)";
+            modeBadge.innerText = item.search_mode;
+            
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "rule-del-btn";
+            deleteBtn.style.margin = "0";
+            deleteBtn.style.padding = "0 2px";
+            deleteBtn.style.fontSize = "0.75rem";
+            deleteBtn.style.background = "transparent";
+            deleteBtn.style.border = "none";
+            deleteBtn.style.color = "var(--danger)";
+            deleteBtn.style.cursor = "pointer";
+            deleteBtn.innerText = "✕";
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteSearchBookmark(item.id);
+            };
+            
+            rightContainer.appendChild(modeBadge);
+            rightContainer.appendChild(deleteBtn);
+            
+            div.appendChild(nameSpan);
+            div.appendChild(rightContainer);
+            
+            div.onmouseover = () => div.style.backgroundColor = "rgba(99, 102, 241, 0.15)";
+            div.onmouseout = () => div.style.backgroundColor = "transparent";
+            
+            container.appendChild(div);
+        });
+    } catch (e) {
+        console.error("Failed to load search bookmarks", e);
+    }
+}
+
+async function addSearchBookmark() {
+    const input = document.getElementById("search-input");
+    const queryVal = input ? input.value.trim() : "";
+    const bookmarkName = prompt("Enter a name for this bookmark:", queryVal || "My Bookmark");
+    if (!bookmarkName) return;
+    
+    try {
+        const response = await fetch("/api/bookmarks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                name: bookmarkName,
+                query_string: queryVal,
+                search_mode: searchMode
+            })
+        });
+        if (response.ok) {
+            fetchSearchBookmarks();
+        } else {
+            const err = await response.json();
+            alert(`Failed to save bookmark: ${err.detail}`);
+        }
+    } catch (e) {
+        console.error("Failed to save bookmark", e);
+    }
+}
+
+async function deleteSearchBookmark(id) {
+    try {
+        const response = await fetch(`/api/bookmarks?id=${id}`, {
+            method: "DELETE"
+        });
+        if (response.ok) {
+            fetchSearchBookmarks();
+        }
+    } catch (e) {
+        console.error("Failed to delete bookmark", e);
+    }
+}
+
+async function setTagColor(tag, color) {
+    try {
+        const response = await fetch("/api/tags/color", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tag, color })
+        });
+        if (response.ok) {
+            fetchGlobalTags();
+            triggerSearch();
+        }
+    } catch (e) {
+        console.error("Failed to save tag color", e);
+    }
+}
+
 function triggerSearch() {
     clearTimeout(searchTimeout);
     const query = document.getElementById("search-input").value.trim();
@@ -492,10 +1000,50 @@ function triggerSearch() {
 
         document.getElementById("results-title-header").innerText = "Matching Records";
         
+        // ponytail: validate search query parameters in real-time
+        try {
+            const valRes = await fetch("/api/search/validate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: query })
+            });
+            const valData = await valRes.json();
+            const syntaxEl = document.getElementById("search-syntax-feedback");
+            if (syntaxEl && valData) {
+                if (query.length > 0) {
+                    syntaxEl.classList.remove("hidden");
+                    const statusEl = document.getElementById("syntax-status-lbl");
+                    const descEl = document.getElementById("syntax-desc-lbl");
+                    if (valData.valid) {
+                        syntaxEl.style.backgroundColor = "rgba(16, 185, 129, 0.08)";
+                        syntaxEl.style.borderColor = "var(--success)";
+                        statusEl.style.color = "var(--success)";
+                        statusEl.innerText = "Query Syntax Valid";
+                        descEl.innerText = "Correct query syntax matches and filters configured.";
+                    } else {
+                        syntaxEl.style.backgroundColor = "rgba(239, 68, 68, 0.08)";
+                        syntaxEl.style.borderColor = "var(--danger)";
+                        statusEl.style.color = "var(--danger)";
+                        statusEl.innerText = `Syntax Alert: ${valData.error}`;
+                        descEl.innerText = valData.suggestion;
+                    }
+                } else {
+                    syntaxEl.classList.add("hidden");
+                }
+            }
+        } catch (valErr) {
+            console.error("Syntax validation failed", valErr);
+        }
+        
         // Read sorting parameters
         const sortBy = document.getElementById("sort-by-select").value;
         const sortOrder = document.getElementById("sort-order-select").value;
         const dateFilter = document.getElementById("date-filter-select").value;
+
+        // Custom Snippet Configurations
+        const snippetLimit = document.getElementById("snippet-limit-input").value || 15;
+        const snippetStart = document.getElementById("snippet-start-input").value || "<mark>";
+        const snippetEnd = document.getElementById("snippet-end-input").value || "</mark>";
 
         let url = `/api/search?`;
         const params = [];
@@ -507,13 +1055,89 @@ function triggerSearch() {
         params.push(`sort_order=${sortOrder}`);
         params.push(`date_filter=${dateFilter}`);
         params.push(`mode=${searchMode}`);
+        params.push(`snippet_limit=${snippetLimit}`);
+        params.push(`highlight_start=${encodeURIComponent(snippetStart)}`);
+        params.push(`highlight_end=${encodeURIComponent(snippetEnd)}`);
+        
+        const thresholdSlider = document.getElementById("similarity-threshold-slider");
+        const similarityThreshold = thresholdSlider ? thresholdSlider.value : 0;
+        params.push(`similarity_threshold=${similarityThreshold}`);
+        
+        const tagModeSelect = document.getElementById("search-tag-mode-select");
+        const tagMode = tagModeSelect ? tagModeSelect.value : "AND";
+        params.push(`tag_mode=${tagMode}`);
+        
+        if (folderScopePath) params.push(`folder_path=${encodeURIComponent(folderScopePath)}`);
         
         url += params.join("&");
 
         try {
             const response = await fetch(url);
             const data = await response.json();
+            
+            // ponytail: update search metrics dashboard card
+            const metricsPanel = document.getElementById("search-metrics-panel");
+            if (metricsPanel) {
+                if (data.search_time_ms !== undefined) {
+                    metricsPanel.classList.remove("hidden");
+                    document.getElementById("metric-mode").innerText = (data.mode || "Keyword").toUpperCase();
+                    document.getElementById("metric-time").innerText = `${data.search_time_ms} ms`;
+                    document.getElementById("metric-count").innerText = `${data.results ? data.results.length : 0} match(es)`;
+                    
+                    const synElement = document.getElementById("metric-synonyms");
+                    if (data.synonyms_expanded && data.synonyms_expanded.length > 0) {
+                        const synsText = data.synonyms_expanded.join("; ");
+                        synElement.innerText = synsText;
+                        synElement.title = synsText;
+                        synElement.style.color = "var(--success)";
+                    } else {
+                        synElement.innerText = "None";
+                        synElement.title = "";
+                        synElement.style.color = "var(--text-secondary)";
+                    }
+
+                    // ponytail: render visual execution plan flow segments
+                    const planFlowContainer = document.getElementById("metric-execution-plan-flow");
+                    if (planFlowContainer) {
+                        planFlowContainer.innerHTML = "";
+                        if (data.execution_plan && data.execution_plan.length > 0) {
+                            data.execution_plan.forEach((step, idx) => {
+                                if (idx > 0) {
+                                    const arrow = document.createElement("span");
+                                    arrow.style.color = "var(--text-secondary)";
+                                    arrow.innerText = "➔";
+                                    planFlowContainer.appendChild(arrow);
+                                }
+                                const stepSpan = document.createElement("span");
+                                stepSpan.style.background = "rgba(99, 102, 241, 0.12)";
+                                stepSpan.style.border = "1px solid rgba(99, 102, 241, 0.3)";
+                                stepSpan.style.borderRadius = "4px";
+                                stepSpan.style.padding = "2px 6px";
+                                stepSpan.style.color = "var(--text-primary)";
+                                stepSpan.innerText = step;
+                                planFlowContainer.appendChild(stepSpan);
+                            });
+                        } else {
+                            planFlowContainer.innerText = "None";
+                        }
+                    }
+                } else {
+                    metricsPanel.classList.add("hidden");
+                }
+            }
+
             renderResults(data.results);
+            fetchSearchHistory();
+            
+            // ponytail: refresh cache stats values
+            try {
+                const cacheRes = await fetch("/api/search/cache/stats");
+                const cacheStats = await cacheRes.json();
+                const cacheRatioEl = document.getElementById("stat-cache-ratio");
+                if (cacheRatioEl && cacheStats) {
+                    cacheRatioEl.innerText = `${cacheStats.hit_ratio}% (${cacheStats.hits} hits / ${cacheStats.misses} misses)`;
+                }
+            } catch (cacheErr) {}
         } catch (error) {
             console.error("Search failed:", error);
         }
@@ -572,21 +1196,42 @@ function renderResults(results) {
     
     list.innerHTML = "";
     countBadge.innerText = `${results.length} found`;
+    
+    // ponytail: add neon shadow animation triggers to the search results count badge
+    if (results.length > 0) {
+        countBadge.classList.add("neon-count-glow");
+    } else {
+        countBadge.classList.remove("neon-count-glow");
+    }
 
     if (results.length === 0) {
         list.innerHTML = '<div class="empty-state">No matches found. Try another query/filter.</div>';
         return;
     }
 
+    const bulkBtn = document.getElementById("bulk-delete-btn");
+    bulkBtn.classList.add("hidden");
+
     results.forEach(file => {
         const div = document.createElement("div");
         div.className = "result-item";
-        div.onclick = () => showPreview(file.filepath);
+        
+        // Prevent preview selection when clicking checkbox
+        div.onclick = (e) => {
+            if (e.target.closest('input[type="checkbox"]') || e.target.closest('.result-tag-pill')) {
+                return;
+            }
+            showPreview(file.filepath);
+        };
         
         let tagsHtml = "";
         if (file.tags && file.tags.length > 0) {
             tagsHtml = `<div class="result-tags">` + 
-                file.tags.map(t => `<span class="result-tag-pill">${t}</span>`).join("") + 
+                file.tags.map(t => {
+                    const col = globalTagColors[t];
+                    const styleAttr = col ? `style="background: ${col}; border-color: ${col};"` : "";
+                    return `<span class="result-tag-pill" ${styleAttr}>${t}</span>`;
+                }).join("") + 
                 `</div>`;
         }
 
@@ -601,8 +1246,9 @@ function renderResults(results) {
         const snippetHtml = file.snippet ? `<div class="result-snippet">${file.snippet}</div>` : '';
 
         div.innerHTML = `
-            <div class="result-info-header">
-                <div class="result-info">
+            <div class="result-info-header" style="align-items: center;">
+                <input type="checkbox" class="bulk-select-chk" data-path="${encodeURIComponent(file.filepath)}" style="margin-right: 0.75rem; width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;" />
+                <div class="result-info" style="flex: 1;">
                     <span class="result-title">${file.filename} ${scoreBadge}</span>
                     <span class="result-path">${file.filepath}</span>
                     <div class="result-meta">
@@ -616,8 +1262,48 @@ function renderResults(results) {
             </div>
             ${snippetHtml}
         `;
+        
+        // Listen to checkbox state changes to toggle bulk delete button
+        const chk = div.querySelector(".bulk-select-chk");
+        chk.addEventListener("change", () => {
+            const anyChecked = [...document.querySelectorAll(".bulk-select-chk")].some(c => c.checked);
+            if (anyChecked) {
+                bulkBtn.classList.remove("hidden");
+            } else {
+                bulkBtn.classList.add("hidden");
+            }
+        });
+
         list.appendChild(div);
     });
+}
+
+async function triggerBulkDelete() {
+    const checkedBoxes = [...document.querySelectorAll(".bulk-select-chk")].filter(c => c.checked);
+    const paths = checkedBoxes.map(c => decodeURIComponent(c.getAttribute("data-path")));
+    if (paths.length === 0) return;
+    
+    if (!confirm(`Are you sure you want to permanently delete these ${paths.length} selected files?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch("/api/file/bulk-delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filepaths: paths })
+        });
+        if (response.ok) {
+            triggerSearch();
+            fetchStats();
+            fetchDirectoryTree();
+        } else {
+            const err = await response.json();
+            alert(`Bulk deletion encountered errors: ${JSON.stringify(err.detail)}`);
+        }
+    } catch (e) {
+        console.error("Bulk deletion failed", e);
+    }
 }
 
 async function showPreview(path) {
@@ -711,13 +1397,6 @@ async function showPreview(path) {
             overlay = document.createElement("div");
             overlay.id = "ocr-highlights-container";
             overlay.className = "ocr-highlights-container";
-            overlay.style.position = "absolute";
-            overlay.style.top = "0";
-            overlay.style.left = "0";
-            overlay.style.width = "100%";
-            overlay.style.height = "100%";
-            overlay.style.pointerEvents = "none";
-            overlay.style.zIndex = "5";
             previewArea.appendChild(overlay);
         }
         overlay.innerHTML = "";
@@ -765,19 +1444,39 @@ async function showPreview(path) {
             previewArea.appendChild(overlay);
             previewArea.appendChild(img);
             
-            // Render bounding boxes
-            if (data.coords && data.coords.length > 0) {
-                data.coords.forEach(box => {
-                    const highlight = document.createElement("div");
-                    highlight.className = "ocr-bounding-highlight";
-                    highlight.style.left = `${box.x}px`;
-                    highlight.style.top = `${box.y}px`;
-                    highlight.style.width = `${box.w}px`;
-                    highlight.style.height = `${box.h}px`;
-                    highlight.title = box.word;
-                    overlay.appendChild(highlight);
-                });
+            // Render bounding boxes on load (scaled dynamically)
+            img.onload = () => {
+                overlay.innerHTML = "";
+                const scaleX = img.clientWidth / img.naturalWidth;
+                const scaleY = img.clientHeight / img.naturalHeight;
+                
+                if (data.coords && data.coords.length > 0) {
+                    data.coords.forEach(box => {
+                        const highlight = document.createElement("div");
+                        highlight.className = "ocr-bounding-highlight";
+                        highlight.style.left = `${box.x * scaleX}px`;
+                        highlight.style.top = `${box.y * scaleY}px`;
+                        highlight.style.width = `${box.w * scaleX}px`;
+                        highlight.style.height = `${box.h * scaleY}px`;
+                        highlight.title = box.word;
+                        overlay.appendChild(highlight);
+                    });
+                }
+            };
+            
+            // Fallback render in case onload cached or fast
+            if (img.complete) {
+                img.onload();
             }
+        } else if (suffix === 'html' && data.content) {
+            previewArea.appendChild(overlay);
+            const iframe = document.createElement("iframe");
+            iframe.src = `/api/file/raw?path=${encodeURIComponent(data.filepath)}`;
+            iframe.style.width = "100%";
+            iframe.style.height = "500px";
+            iframe.style.border = "none";
+            iframe.style.background = "white";
+            previewArea.appendChild(iframe);
         } else if (data.content) {
             previewArea.appendChild(overlay);
             const pre = document.createElement("pre");
@@ -896,6 +1595,11 @@ function renderFileTags(tags) {
         tags.forEach(t => {
             const span = document.createElement("span");
             span.className = "tag-badge-pill";
+            const col = globalTagColors[t];
+            if (col) {
+                span.style.background = col;
+                span.style.borderColor = col;
+            }
             span.innerHTML = `
                 ${t}
                 <button class="tag-delete-btn" onclick="removeFileTag('${t}')">✕</button>
@@ -1084,9 +1788,31 @@ async function restoreSnapshot(timestamp) {
 function exportPdfReport() {
     const template = document.getElementById("pdf-template-select").value;
     const includeNotes = document.getElementById("pdf-include-notes-checkbox").checked;
-    const params = [`style_template=${template}`, `include_notes=${includeNotes}`];
-    if (selectedTag) params.push(`tag=${encodeURIComponent(selectedTag)}`);
+    
+    const titleInput = document.getElementById("pdf-title-input");
+    const customTitle = titleInput ? titleInput.value.trim() : "";
+    const themeSelect = document.getElementById("pdf-theme-select");
+    const themePalette = themeSelect ? themeSelect.value : "indigo";
+    
+    const params = [
+        `style_template=${template}`, 
+        `include_notes=${includeNotes}`,
+        `report_title=${encodeURIComponent(customTitle)}`,
+        `theme_palette=${themePalette}`
+    ];
+    
+    // Check if user entered multiple tags inside pdf-tags-input
+    const tagsInput = document.getElementById("pdf-tags-input");
+    const multiTags = tagsInput ? tagsInput.value.trim() : "";
+    
+    if (multiTags) {
+        params.push(`tag=${encodeURIComponent(multiTags)}`);
+    } else if (selectedTag) {
+        params.push(`tag=${encodeURIComponent(selectedTag)}`);
+    }
+    
     if (selectedCategory && selectedCategory !== "all") params.push(`category=${encodeURIComponent(selectedCategory)}`);
+    if (folderScopePath) params.push(`folder_path=${encodeURIComponent(folderScopePath)}`);
     
     let url = "/api/report/export";
     if (params.length > 0) {
@@ -1254,12 +1980,62 @@ async function loadConceptGraph() {
 
 function drawGraph(nodes, links) {
     const canvas = document.getElementById("concept-graph-canvas");
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     
-    cancelAnimationFrame(graphAnimFrame);
+    let graphLayoutPreset = document.getElementById("graph-layout-preset").value || "force";
     
-    // Track selected node inside graph visualization context
-    let selectedNodeId = null;
+    window.changeGraphLayoutPreset = () => {
+        graphLayoutPreset = document.getElementById("graph-layout-preset").value;
+        applyLayoutPreset();
+    };
+
+    function applyLayoutPreset() {
+        if (graphLayoutPreset === "circular") {
+            const radius = Math.min(canvas.width, canvas.height) * 0.35;
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            nodes.forEach((n, idx) => {
+                const angle = (idx / nodes.length) * 2 * Math.PI;
+                n.x = cx + radius * Math.cos(angle);
+                n.y = cy + radius * Math.sin(angle);
+                n.vx = 0; n.vy = 0;
+            });
+        } else if (graphLayoutPreset === "grid") {
+            const cols = Math.ceil(Math.sqrt(nodes.length));
+            const spacingX = canvas.width / (cols + 1);
+            const spacingY = canvas.height / (Math.ceil(nodes.length / cols) + 1);
+            nodes.forEach((n, idx) => {
+                const r = Math.floor(idx / cols);
+                const c = idx % cols;
+                n.x = spacingX * (c + 1);
+                n.y = spacingY * (r + 1);
+                n.vx = 0; n.vy = 0;
+            });
+        } else if (graphLayoutPreset === "tree") {
+            // Simple top-down tree levels based on node idx
+            const levels = 4;
+            const levelHeight = canvas.height / (levels + 1);
+            nodes.forEach((n, idx) => {
+                const lvl = idx % levels;
+                const siblingsCount = Math.ceil(nodes.length / levels);
+                const posInLvl = Math.floor(idx / levels);
+                const spacingX = canvas.width / (siblingsCount + 1);
+                n.x = spacingX * (posInLvl + 1);
+                n.y = levelHeight * (lvl + 1);
+                n.vx = 0; n.vy = 0;
+            });
+        } else {
+            // Assign random initial positions for force layout
+            nodes.forEach(n => {
+                if (!n.x) {
+                    n.x = Math.random() * canvas.width;
+                    n.y = Math.random() * canvas.height;
+                }
+                n.vx = 0; n.vy = 0;
+            });
+        }
+    }
     
     // Assign random initial positions
     nodes.forEach(n => {
@@ -1268,6 +2044,7 @@ function drawGraph(nodes, links) {
         n.vx = 0;
         n.vy = 0;
     });
+    applyLayoutPreset();
     
     let draggedNode = null;
     let zoomScale = 1.0;
@@ -1276,6 +2053,16 @@ function drawGraph(nodes, links) {
     let isPanning = false;
     let panStartX = 0;
     let panStartY = 0;
+
+    window.zoomConceptGraph = (factor) => {
+        zoomScale *= factor;
+        zoomScale = Math.max(0.1, Math.min(zoomScale, 5.0));
+    };
+    window.resetConceptGraphView = () => {
+        zoomScale = 1.0;
+        offsetX = 0;
+        offsetY = 0;
+    };
     
     // ponytail: interactive mouse gesture handlers to support drag and drop nodes and background viewport pan/zoom
     canvas.onmousedown = (e) => {
@@ -1365,6 +2152,8 @@ function drawGraph(nodes, links) {
     };
     
     function updatePhysics() {
+        if (graphLayoutPreset !== "force") return;
+        
         // Centering forces focus selected node
         if (selectedNodeId) {
             const centerNode = nodes.find(n => n.id === selectedNodeId);
@@ -1536,6 +2325,15 @@ function drawGraph(nodes, links) {
             ctx.arc(n.x, n.y, radius, 0, 2 * Math.PI);
             ctx.fill();
             
+            // Check if node matches the search input query for bright yellow border highlighting
+            const qInput = document.getElementById("search-input");
+            const qVal = qInput ? qInput.value.trim().toLowerCase() : "";
+            if (qVal && n.label.toLowerCase().includes(qVal)) {
+                ctx.strokeStyle = "#f59e0b"; // Amber/yellow highlight border
+                ctx.lineWidth = 3.0;
+                ctx.stroke();
+            }
+            
             // Label
             ctx.fillStyle = "var(--text-primary)";
             ctx.font = (n.id === selectedNodeId) ? "bold 11px Inter" : "10px Inter";
@@ -1551,4 +2349,71 @@ function drawGraph(nodes, links) {
     
     draw();
 }
+
+async function fetchSynonymsList() {
+    try {
+        const response = await fetch("/api/synonyms");
+        const data = await response.json();
+        const container = document.getElementById("sidebar-synonyms");
+        container.innerHTML = "";
+        if (!data.synonyms || data.synonyms.length === 0) {
+            container.innerHTML = '<span class="rules-empty">No synonyms configured.</span>';
+            return;
+        }
+        data.synonyms.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "rule-item";
+            div.style.fontSize = "0.75rem";
+            div.style.padding = "2px 0";
+            div.innerHTML = `<span><strong>${item.word}</strong>: ${item.substitutes}</span>`;
+            container.appendChild(div);
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function addWordSynonym() {
+    const wInput = document.getElementById("synonym-word");
+    const sInput = document.getElementById("synonym-substitutes");
+    const word = wInput.value.trim();
+    const substitutes = sInput.value.trim();
+    if (!word || !substitutes) return;
+
+    try {
+        const response = await fetch("/api/synonyms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ word, substitutes })
+        });
+        if (response.ok) {
+            wInput.value = "";
+            sInput.value = "";
+            fetchSynonymsList();
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function scheduleBackupAction() {
+    const secs = parseInt(document.getElementById("backup-seconds-input").value || 3600);
+    try {
+        const response = await fetch("/api/backups/schedule", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ interval_seconds: secs })
+        });
+        if (response.ok) {
+            document.getElementById("backup-schedule-status").innerText = `Active schedule: ${secs}s`;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// Hook list loading into DOMContentLoaded checks
+document.addEventListener("DOMContentLoaded", () => {
+    fetchSynonymsList();
+});
 

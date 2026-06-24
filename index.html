@@ -17,8 +17,9 @@
             <div class="logo-area">
                 <span class="logo-icon">🎴</span>
                 <h1>Uroboros</h1>
-                <span class="badge">V12 Pro</span>
+                <span class="badge">V38 Pro</span>
                 <span id="watcher-badge" class="badge" style="background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: var(--success); display: inline-flex; align-items: center; gap: 4px;">● Live</span>
+                <button onclick="toggleAppTheme()" title="Toggle Theme" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; border-radius: 6px; padding: 0.1rem 0.4rem; font-size: 0.75rem;">🌓</button>
             </div>
             
             <div class="index-control-card">
@@ -55,6 +56,24 @@
                         <span class="stat-label">Total Size</span>
                         <span class="stat-value" id="stat-size">-</span>
                     </div>
+                    <div class="stat-card" style="grid-column: span 2;">
+                        <span class="stat-label">Free Storage Capacity</span>
+                        <span class="stat-value" id="stat-disk-free">-</span>
+                    </div>
+                    <div class="stat-card" style="grid-column: span 2;">
+                        <span class="stat-label">Query Cache Hit Ratio</span>
+                        <span class="stat-value" id="stat-cache-ratio">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Word Frequency Tag Cloud Dashboard Widget -->
+            <div class="explorer-sidebar" id="word-freq-tag-cloud-widget">
+                <div class="explorer-header">
+                    <h3>Word Frequency Tag Cloud</h3>
+                </div>
+                <div id="word-freq-tag-cloud" class="tag-cloud" style="padding: 0.75rem; min-height: 100px; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: center; background: rgba(24, 24, 27, 0.4); border-radius: 8px;">
+                    <span class="tag-cloud-empty" style="font-size: 0.8rem; color: var(--text-secondary);">No tag frequencies found.</span>
                 </div>
             </div>
 
@@ -86,6 +105,7 @@
                 <div class="rules-form">
                     <input type="text" id="rule-pattern" placeholder="Regex pattern (e.g. \bformula\b)"/>
                     <input type="text" id="rule-tag" placeholder="Tag name"/>
+                    <input type="number" id="rule-priority" placeholder="Priority (e.g. 10)" value="0" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.45rem; font-size: 0.8rem; width: 100%; outline: none; margin-bottom: 0.5rem;box-sizing: border-box;" />
                     <div style="display: flex; gap: 0.5rem; width: 100%;">
                         <button onclick="addAutoRule()" style="flex: 1;">Add Rule</button>
                         <button onclick="testAutoRule()" style="flex: 1; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b;">Test Matches</button>
@@ -94,6 +114,58 @@
                 <div id="sidebar-rules" class="rules-list-container">
                     <span class="rules-empty">No automated tagging rules.</span>
                 </div>
+            </div>
+
+            <!-- Synonyms Configuration Sidebar Component -->
+            <div class="rules-sidebar" style="margin-top: 1rem;">
+                <h3>Word Synonyms Map</h3>
+                <div class="rules-form">
+                    <input type="text" id="synonym-word" placeholder="Word (e.g. gravity)"/>
+                    <input type="text" id="synonym-substitutes" placeholder="Synonyms (comma separated)"/>
+                    <button onclick="addWordSynonym()">Save Synonym</button>
+                </div>
+                <div id="sidebar-synonyms" class="rules-list-container" style="max-height: 100px; overflow-y: auto; font-size: 0.75rem;">
+                    <span class="rules-empty">No synonyms configured.</span>
+                </div>
+            </div>
+
+            <!-- Search History Vault Sidebar Component -->
+            <div class="rules-sidebar" style="margin-top: 1rem;">
+                <h3>Search History Vault</h3>
+                <div id="sidebar-search-history" class="rules-list-container" style="max-height: 120px; overflow-y: auto; font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                    <span class="rules-empty">No search query history logged.</span>
+                </div>
+            </div>
+
+            <!-- Search Bookmarks Vault Sidebar Component -->
+            <div class="rules-sidebar" style="margin-top: 1rem;">
+                <h3>Search Bookmarks Vault</h3>
+                <div id="sidebar-search-bookmarks" class="rules-list-container" style="max-height: 120px; overflow-y: auto; font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                    <span class="rules-empty">No bookmarks saved yet.</span>
+                </div>
+            </div>
+
+            <!-- Query Macros Manager Sidebar Component -->
+            <div class="rules-sidebar" style="margin-top: 1rem;">
+                <h3>Query Macros Manager</h3>
+                <div id="sidebar-macros" class="rules-list-container" style="max-height: 120px; overflow-y: auto; font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem;">
+                    <span class="rules-empty">No macros configured.</span>
+                </div>
+                <div class="rules-form" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <input type="text" id="macro-name-input" placeholder="Macro name (e.g. sci)" style="padding: 0.4rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 0.75rem;" />
+                    <input type="text" id="macro-expansion-input" placeholder="Query expansion (e.g. tag:science)" style="padding: 0.4rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 0.75rem;" />
+                    <button onclick="addQueryMacroAction()" style="width: 100%; padding: 0.4rem 0.8rem; font-size: 0.75rem;">+ Add Macro</button>
+                </div>
+            </div>
+
+            <!-- Periodic DB Backup Scheduler Sidebar Component -->
+            <div class="sync-sidebar" style="margin-top: 1rem;">
+                <h3>Periodic Backup Scheduler</h3>
+                <div class="rules-form" style="display: flex; gap: 0.25rem;">
+                    <input type="number" id="backup-seconds-input" value="3600" style="flex: 1; padding: 0.4rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px;" />
+                    <button onclick="scheduleBackupAction()" style="width: auto; padding: 0.4rem 0.8rem;">Schedule (s)</button>
+                </div>
+                <span id="backup-schedule-status" style="font-size: 0.7rem; color: var(--text-secondary);">No backup schedule active.</span>
             </div>
 
             <!-- Peer-to-Peer Sync Sidebar Component -->
@@ -150,14 +222,74 @@
                     </div>
                 </div>
 
-                <div class="search-bar-container">
-                    <input type="text" id="search-input" placeholder="Search (e.g. tag:work type:pdf size>1mb query)..." oninput="triggerSearch()">
+                <div class="search-bar-container" style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem; position: relative;">
+                    <input type="text" id="search-input" placeholder="Search (e.g. tag:work type:pdf size>1mb query)..." oninput="triggerSearch()" style="flex: 1;">
+                    <button onclick="addSearchBookmark()" title="Bookmark Current Search" style="background: rgba(99, 102, 241, 0.15); border: 1px solid var(--accent); color: var(--text-primary); cursor: pointer; border-radius: 6px; padding: 0.5rem; font-size: 0.9rem; font-weight: bold; width: auto; height: 38px; display: flex; align-items: center; justify-content: center;">⭐</button>
+                    <!-- ponytail: absolute search autocomplete dropdown -->
+                    <div id="search-autocomplete-dropdown" class="autocomplete-dropdown hidden" style="position: absolute; top: 100%; left: 0; right: 45px; background: rgba(9, 9, 11, 0.95); border: 1px solid var(--border-color); border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); backdrop-filter: blur(12px); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; padding: 0.25rem 0;"></div>
+                </div>
+                <!-- ponytail: search query syntax feedback indicator widget -->
+                <div id="search-syntax-feedback" class="hidden" style="margin-bottom: 0.75rem; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 2px;">
+                    <span id="syntax-status-lbl" style="font-weight: bold;">Query Syntax Valid</span>
+                    <span id="syntax-desc-lbl" style="color: var(--text-secondary);">Correct filters configured.</span>
                 </div>
 
                 <!-- Query Search Mode Switcher & Sorting/Filtering Toolbar -->
-                <div class="search-mode-container">
-                    <button class="mode-btn active" id="mode-keyword" onclick="setSearchMode('keyword')">Keyword Matching (FTS5)</button>
-                    <button class="mode-btn" id="mode-semantic" onclick="setSearchMode('semantic')">Semantic Concepts (TF-IDF)</button>
+                <div class="search-mode-container" style="display: flex; gap: 0.5rem; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="mode-btn active" id="mode-keyword" onclick="setSearchMode('keyword')">Keyword Matching (FTS5)</button>
+                        <button class="mode-btn" id="mode-semantic" onclick="setSearchMode('semantic')">Semantic Concepts (TF-IDF)</button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                        <label for="macro-select" style="font-size: 0.75rem; color: var(--text-secondary);">Macro:</label>
+                        <select id="macro-select" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;" onchange="applyQueryMacro()">
+                            <option value="">-- Apply Macro --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Similarity Threshold Slider (Semantic mode only) -->
+                <div id="similarity-threshold-container" class="hidden" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; padding: 0.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1;">
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap;">Similarity Threshold:</span>
+                        <input type="range" id="similarity-threshold-slider" min="0" max="100" value="0" style="flex-grow: 1; cursor: pointer; height: 4px; border-radius: 2px; accent-color: var(--accent);" oninput="updateSimilarityThresholdDisplay(this.value)">
+                    </div>
+                    <span id="similarity-threshold-val" style="font-size: 0.75rem; font-weight: bold; color: var(--accent); margin-left: 0.75rem; min-width: 2.5rem; text-align: right;">0%</span>
+                </div>
+                
+                <!-- Subdirectory Active Scoped Path display -->
+                <div id="active-path-filter-card" class="hidden" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.8rem; background: rgba(99,102,241,0.08); border: 1px dashed var(--accent); border-radius: 6px; font-size: 0.75rem; margin-bottom: 0.75rem;">
+                    <span>Scope: <strong id="active-scoped-path-lbl">None</strong></span>
+                    <button class="clear-filter-btn" onclick="clearFolderScopeFilter()" style="margin: 0; padding: 1px 6px;">✕ Clear Scope</button>
+                </div>
+
+                <!-- Search Metrics Breakdown Panel -->
+                <div id="search-metrics-panel" class="search-metrics-panel hidden" style="margin-bottom: 0.75rem;">
+                    <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+                        <div class="metric-item">
+                            <span class="m-label">Match Mode</span>
+                            <span class="m-val" id="metric-mode">-</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="m-label">Execution Time</span>
+                            <span class="m-val" id="metric-time">-</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="m-label">Match Count</span>
+                            <span class="m-val" id="metric-count">-</span>
+                        </div>
+                        <div class="metric-item" style="grid-column: span 1;">
+                            <span class="m-label">Synonyms Expanded</span>
+                            <span class="m-val" id="metric-synonyms" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="">None</span>
+                        </div>
+                    </div>
+                    <!-- ponytail: visual execution plan sequence list -->
+                    <div id="metric-execution-plan-container" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; display: flex; flex-direction: column; gap: 4px;">
+                        <span style="color: var(--text-secondary); text-transform: uppercase; font-size: 0.6rem; letter-spacing: 0.05em; font-weight: bold;">Query Execution Plan Flow</span>
+                        <div id="metric-execution-plan-flow" style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; color: var(--text-primary); font-family: monospace;">
+                            <!-- Dynamic plan segments inject here -->
+                        </div>
+                    </div>
                 </div>
 
                 <div class="search-toolbar">
@@ -203,8 +335,15 @@
                 </div>
 
                 <!-- Active filters banner -->
-                <div id="active-filters" class="active-filters hidden">
+                <div id="active-filters" class="active-filters hidden" style="display: flex; gap: 0.5rem; align-items: center;">
                     <span id="active-tag-badge" class="tag-filter-badge"></span>
+                    <div id="tag-match-mode-container" style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem;">
+                        <span style="color: var(--text-secondary);">Match Mode:</span>
+                        <select id="search-tag-mode-select" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.1rem 0.3rem; outline:none;" onchange="triggerSearch()">
+                            <option value="AND">AND (All selected)</option>
+                            <option value="OR">OR (Any selected)</option>
+                        </select>
+                    </div>
                     <button class="clear-filter-btn" onclick="clearTagFilter()">✕ Clear Tag Filter</button>
                 </div>
 
@@ -217,13 +356,30 @@
                                 <option value="compact">Compact Template</option>
                                 <option value="descriptive">Descriptive Cards</option>
                                 <option value="toc">Hierarchical TOC</option>
+                                <option value="gallery">Catalog Grid Gallery</option>
                             </select>
+                            <input type="text" id="pdf-title-input" placeholder="Custom Report Title" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; width: 130px; outline:none;" />
+                            <select id="pdf-theme-select" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;">
+                                <option value="indigo">Indigo Theme</option>
+                                <option value="crimson">Crimson Theme</option>
+                                <option value="emerald">Emerald Theme</option>
+                                <option value="charcoal">Charcoal Theme</option>
+                            </select>
+                            <input type="text" id="pdf-tags-input" placeholder="Tags (comma-separated)" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; width: 120px; outline:none;" />
                             <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; color: var(--text-secondary); cursor: pointer;">
                                 <input type="checkbox" id="pdf-include-notes-checkbox" checked style="cursor: pointer; accent-color: var(--accent);" /> Include Notes
                             </label>
                             <button id="export-pdf-btn" class="action-btn" onclick="exportPdfReport()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: rgba(99, 102, 241, 0.15); border: 1px solid var(--accent); color: var(--text-primary); border-radius: 6px; cursor: pointer; transition: all 0.2s;">📄 Export PDF</button>
+                            <button id="bulk-delete-btn" class="action-btn hidden" onclick="triggerBulkDelete()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: var(--text-primary); border-radius: 6px; cursor: pointer; transition: all 0.2s;">🗑️ Bulk Delete</button>
                             <span id="results-count" class="count-badge">0 found</span>
                         </div>
+                    </div>
+                    <!-- FTS Custom Configuration Bar -->
+                    <div class="fts-config-bar" style="display: flex; gap: 0.5rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); font-size: 0.75rem; align-items: center;">
+                        <span style="color: var(--text-secondary);">Snippet Config:</span>
+                        <label>Words: <input type="number" id="snippet-limit-input" value="15" style="width: 40px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
+                        <label>Start: <input type="text" id="snippet-start-input" value="&lt;mark&gt;" style="width: 60px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
+                        <label>End: <input type="text" id="snippet-end-input" value="&lt;/mark&gt;" style="width: 60px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
                     </div>
                     <div id="results-list" class="results-list">
                         <div class="empty-state">Enter a query above to explore indexed knowledge.</div>
@@ -232,8 +388,26 @@
 
                 <!-- Dynamic 2D Physics-based Concept Graph view -->
                 <div class="graph-container-card hidden" id="graph-wrapper">
-                    <h3>Document Tag Network Connections</h3>
-                    <canvas id="concept-graph-canvas" width="600" height="400"></canvas>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <h3 style="margin: 0;">Document Tag Network Connections</h3>
+                        <div style="display: flex; align-items: center; gap: 0.35rem;">
+                            <label for="graph-layout-preset" style="font-size: 0.75rem; color: var(--text-secondary);">Layout:</label>
+                            <select id="graph-layout-preset" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;" onchange="changeGraphLayoutPreset()">
+                                <option value="force">Force-Directed</option>
+                                <option value="circular">Circular Circle</option>
+                                <option value="grid">Orthogonal Grid</option>
+                                <option value="tree">Hierarchical Tree</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="position: relative;">
+                        <canvas id="concept-graph-canvas" width="600" height="400" style="border-radius: 8px; border: 1px solid var(--border-color); width: 100%; display: block;"></canvas>
+                        <div class="canvas-controls" style="position: absolute; bottom: 10px; right: 10px; display: flex; gap: 0.25rem; background: rgba(0,0,0,0.5); padding: 0.25rem; border-radius: 6px; border: 1px solid var(--border-color); backdrop-filter: blur(4px);">
+                            <button onclick="zoomConceptGraph(1.2)" title="Zoom In" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">＋</button>
+                            <button onclick="zoomConceptGraph(0.8)" title="Zoom Out" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">－</button>
+                            <button onclick="resetConceptGraphView()" title="Reset View" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">⟲</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -314,6 +488,7 @@
             </div>
         </main>
     </div>
+    <input type="color" id="global-tag-color-picker" style="display:none;" />
     <script src="app.js"></script>
 </body>
 </html>
