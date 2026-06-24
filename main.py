@@ -1012,7 +1012,34 @@ def export_pdf_report(tag: str = None, category: str = None, style_template: str
                 story.append(Paragraph(notes_str, body_style))
                 story.append(Spacer(1, 15))
             
-    doc.build(story)
+    # Two-pass canvas page number compiler
+    from reportlab.pdfgen import canvas
+    class NumberedCanvas(canvas.Canvas):
+        def __init__(self, *args, **kwargs):
+            canvas.Canvas.__init__(self, *args, **kwargs)
+            self._saved_page_states = []
+
+        def showPage(self):
+            self._saved_page_states.append(dict(self.__dict__))
+            self._startPage()
+
+        def save(self):
+            num_pages = len(self._saved_page_states)
+            for state in self._saved_page_states:
+                self.__dict__.update(state)
+                self.draw_page_number(num_pages)
+                canvas.Canvas.showPage(self)
+            canvas.Canvas.save(self)
+
+        def draw_page_number(self, page_count):
+            self.saveState()
+            self.setFont("Helvetica", 9)
+            self.setFillColor(colors.HexColor("#71717a"))
+            text = f"Page {self._pageNumber} of {page_count}"
+            self.drawRightString(letter[0] - 54, 36, text)
+            self.restoreState()
+
+    doc.build(story, canvasmaker=NumberedCanvas)
     pdf_buffer.seek(0)
     
     from fastapi.responses import StreamingResponse

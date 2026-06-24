@@ -1099,6 +1099,84 @@ function exportStatsCsv() {
     window.open("/api/stats/export", "_blank");
 }
 
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordSecs = 0;
+let recordInterval = null;
+
+async function toggleAudioRecording() {
+    // ponytail: capture microphone audio recording and upload to ACTIVE_DIR via MediaRecorder API
+    const btn = document.getElementById("record-memo-btn");
+    const lbl = document.getElementById("recorder-time-lbl");
+    
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        btn.innerText = "● Record Voice Memo";
+        btn.style.background = "var(--danger)";
+        clearInterval(recordInterval);
+        return;
+    }
+    
+    recordedChunks = [];
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+                recordedChunks.push(e.data);
+            }
+        };
+        
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(recordedChunks, { type: 'audio/wav' });
+            const formData = new FormData();
+            const timestamp = Date.now();
+            formData.append("file", audioBlob, `voice-memo-${timestamp}.wav`);
+            
+            lbl.innerText = "Processing & Indexing...";
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    lbl.innerText = "Saved successfully!";
+                    fetchStats();
+                    fetchDirectoryTree();
+                    triggerSearch();
+                } else {
+                    lbl.innerText = "Failed to upload.";
+                }
+            } catch (err) {
+                lbl.innerText = "Error uploading memo.";
+            }
+            setTimeout(() => {
+                lbl.innerText = "00:00 (Ready)";
+            }, 3000);
+            
+            // Stop tracks
+            stream.getTracks().forEach(t => t.stop());
+        };
+        
+        mediaRecorder.start();
+        btn.innerText = "■ Stop Recording";
+        btn.style.background = "#3b82f6";
+        
+        recordSecs = 0;
+        lbl.innerText = "00:00 (Recording...)";
+        recordInterval = setInterval(() => {
+            recordSecs++;
+            const mins = String(Math.floor(recordSecs / 60)).padStart(2, '0');
+            const secs = String(recordSecs % 60).padStart(2, '0');
+            lbl.innerText = `${mins}:${secs} (Recording...)`;
+        }, 1000);
+        
+    } catch (e) {
+        alert("Failed to access microphone. Please check permissions.");
+    }
+}
+
 async function deleteSnapshot(timestamp) {
     try {
         const response = await fetch(`/api/snapshots?timestamp=${timestamp}`, { method: "DELETE" });
@@ -1192,18 +1270,28 @@ function drawGraph(nodes, links) {
     });
     
     let draggedNode = null;
+    let zoomScale = 1.0;
+    let offsetX = 0;
+    let offsetY = 0;
+    let isPanning = false;
+    let panStartX = 0;
+    let panStartY = 0;
     
-    // ponytail: interactive mouse gesture handlers to support drag and drop nodes manual layouts
+    // ponytail: interactive mouse gesture handlers to support drag and drop nodes and background viewport pan/zoom
     canvas.onmousedown = (e) => {
         const rect = canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
         
+        // Transform screen coords to canvas coords depending on zoom/pan offsets
+        const gx = (mx - offsetX) / zoomScale;
+        const gy = (my - offsetY) / zoomScale;
+        
         let nearestNode = null;
         let minDist = 25;
         
         nodes.forEach(n => {
-            const dist = Math.sqrt((n.x - mx) * (n.x - mx) + (n.y - my) * (n.y - my));
+            const dist = Math.sqrt((n.x - gx) * (n.x - gx) + (n.y - gy) * (n.y - gy));
             if (dist < minDist) {
                 minDist = dist;
                 nearestNode = n;
@@ -1222,25 +1310,58 @@ function drawGraph(nodes, links) {
             });
         } else {
             selectedNodeId = null;
+            isPanning = true;
+            panStartX = mx - offsetX;
+            panStartY = my - offsetY;
         }
     };
 
     canvas.onmousemove = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
         if (draggedNode) {
-            const rect = canvas.getBoundingClientRect();
-            draggedNode.x = e.clientX - rect.left;
-            draggedNode.y = e.clientY - rect.top;
+            draggedNode.x = (mx - offsetX) / zoomScale;
+            draggedNode.y = (my - offsetY) / zoomScale;
             draggedNode.vx = 0;
             draggedNode.vy = 0;
+        } else if (isPanning) {
+            offsetX = mx - panStartX;
+            offsetY = my - panStartY;
         }
     };
 
     canvas.onmouseup = () => {
         draggedNode = null;
+        isPanning = false;
     };
 
     canvas.onmouseleave = () => {
         draggedNode = null;
+        isPanning = false;
+    };
+
+    canvas.onwheel = (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        
+        const gx = (mx - offsetX) / zoomScale;
+        const gy = (my - offsetY) / zoomScale;
+        
+        const zoomFactor = 1.1;
+        if (e.deltaY < 0) {
+            zoomScale *= zoomFactor;
+        } else {
+            zoomScale /= zoomFactor;
+        }
+        zoomScale = Math.max(0.2, Math.min(zoomScale, 5.0));
+        
+        // Recalculate panning offsets to zoom centered on cursor
+        offsetX = mx - gx * zoomScale;
+        offsetY = my - gy * zoomScale;
     };
     
     function updatePhysics() {
@@ -1248,8 +1369,11 @@ function drawGraph(nodes, links) {
         if (selectedNodeId) {
             const centerNode = nodes.find(n => n.id === selectedNodeId);
             if (centerNode) {
-                const dx = canvas.width / 2 - centerNode.x;
-                const dy = canvas.height / 2 - centerNode.y;
+                // Focus in centered coordinates space
+                const centerTargetX = (canvas.width / 2 - offsetX) / zoomScale;
+                const centerTargetY = (canvas.height / 2 - offsetY) / zoomScale;
+                const dx = centerTargetX - centerNode.x;
+                const dy = centerTargetY - centerNode.y;
                 centerNode.x += dx * 0.1;
                 centerNode.y += dy * 0.1;
             }
@@ -1308,6 +1432,9 @@ function drawGraph(nodes, links) {
     
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(offsetX, offsetY);
+        ctx.scale(zoomScale, zoomScale);
         
         // Draw Links
         links.forEach(l => {
@@ -1368,6 +1495,8 @@ function drawGraph(nodes, links) {
             ctx.fillText(n.label, n.x + (radius + 4), n.y + 4);
         });
         ctx.globalAlpha = 1.0;
+        
+        ctx.restore();
         
         updatePhysics();
         graphAnimFrame = requestAnimationFrame(draw);

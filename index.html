@@ -125,9 +125,18 @@
         <main class="main-content">
             <div class="search-section">
                 <!-- Dropzone Area -->
-                <div id="drop-zone" class="drop-zone">
+                <div id="drop-zone" class="drop-zone" style="margin-bottom: 1rem;">
                     <span class="drop-icon">📥</span>
                     <p>Drag & Drop any files here to automatically dump and index them into the active directory.</p>
+                </div>
+
+                <!-- Voice Memo Recorder Card Component -->
+                <div id="voice-recorder-card" class="index-control-card" style="margin-bottom: 1rem; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem; background: rgba(39, 39, 42, 0.4);">
+                    <div>
+                        <h4 style="margin: 0; font-family: var(--font-outfit); font-size: 0.95rem;">Record Audio Memo</h4>
+                        <span id="recorder-time-lbl" style="font-size: 0.75rem; color: var(--text-secondary);">00:00 (Ready)</span>
+                    </div>
+                    <button id="record-memo-btn" onclick="toggleAudioRecording()" style="background: var(--danger); color: white; border: none; padding: 0.45rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: background 0.2s;">● Record Voice Memo</button>
                 </div>
 
                 <!-- Async Indexing Progress Bar -->
