@@ -450,6 +450,36 @@ async function deleteAutoRule(id) {
     }
 }
 
+async function testAutoRule() {
+    const pattern = document.getElementById("rule-pattern").value.trim();
+    const tag = document.getElementById("rule-tag").value.trim();
+    if (!pattern) {
+        alert("Please specify a regex pattern first.");
+        return;
+    }
+    
+    try {
+        const response = await fetch("/api/rules/test-preview", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pattern, tag: tag || "preview" })
+        });
+        const result = await response.json();
+        if (response.ok) {
+            if (result.matches.length === 0) {
+                alert("0 documents match this pattern rule.");
+            } else {
+                const list = result.matches.map(m => `• ${m.filename}`).join("\n");
+                alert(`The following ${result.matches.length} document(s) will match and receive the tag:\n\n${list}`);
+            }
+        } else {
+            alert(`Simulation Error: ${result.detail}`);
+        }
+    } catch (e) {
+        alert("Network connection failed.");
+    }
+}
+
 function triggerSearch() {
     clearTimeout(searchTimeout);
     const query = document.getElementById("search-input").value.trim();
@@ -1045,7 +1075,15 @@ async function restoreSnapshot(timestamp) {
 }
 
 function exportPdfReport() {
-    window.open("/api/report/export", "_blank");
+    const params = [];
+    if (selectedTag) params.push(`tag=${encodeURIComponent(selectedTag)}`);
+    if (selectedCategory && selectedCategory !== "all") params.push(`category=${encodeURIComponent(selectedCategory)}`);
+    
+    let url = "/api/report/export";
+    if (params.length > 0) {
+        url += "?" + params.join("&");
+    }
+    window.open(url, "_blank");
 }
 
 async function deleteSnapshot(timestamp) {

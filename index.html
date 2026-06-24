@@ -83,7 +83,10 @@
                 <div class="rules-form">
                     <input type="text" id="rule-pattern" placeholder="Regex pattern (e.g. \bformula\b)"/>
                     <input type="text" id="rule-tag" placeholder="Tag name"/>
-                    <button onclick="addAutoRule()">Add Rule</button>
+                    <div style="display: flex; gap: 0.5rem; width: 100%;">
+                        <button onclick="addAutoRule()" style="flex: 1;">Add Rule</button>
+                        <button onclick="testAutoRule()" style="flex: 1; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b;">Test Matches</button>
+                    </div>
                 </div>
                 <div id="sidebar-rules" class="rules-list-container">
                     <span class="rules-empty">No automated tagging rules.</span>

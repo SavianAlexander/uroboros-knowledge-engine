@@ -199,6 +199,28 @@ class MiniVectorEngine:
             tags = [t['tag'] for t2, t in enumerate(c2.fetchall())]
             conn.close()
 
+            # ponytail: extract dynamic match snippet for semantic search
+            content = doc["content"] or ""
+            snippet = ""
+            best_score = -1
+            # Split into sentences
+            sentences = re.split(r'(?<=[.!?])\s+', content)
+            for sentence in sentences:
+                s_tokens = set(cls.tokenize(sentence))
+                match_count = sum(1 for qt in q_tokens if qt in s_tokens)
+                if match_count > best_score:
+                    best_score = match_count
+                    snippet = sentence
+            
+            if snippet:
+                # Add highlighting tags to matched query words
+                highlighted = snippet
+                for qt in q_tokens:
+                    highlighted = re.sub(rf'\b({re.escape(qt)})\b', r'<mark>\1</mark>', highlighted, flags=re.IGNORECASE)
+                snippet_text = highlighted[:180] + "..." if len(highlighted) > 180 else highlighted
+            else:
+                snippet_text = content[:150] + "..."
+                
             final_rows.append({
                 "id": doc["id"],
                 "filepath": doc["filepath"],
@@ -206,7 +228,7 @@ class MiniVectorEngine:
                 "file_size": doc["file_size"],
                 "mime_type": doc["mime_type"],
                 "modified_at": doc["modified_at"],
-                "snippet": doc["content"][:150] + "...",
+                "snippet": snippet_text,
                 "tags": tags,
                 "score": round(score * 100, 1) # percentage matching score
             })

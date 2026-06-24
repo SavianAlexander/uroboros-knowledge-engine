@@ -663,6 +663,30 @@ def delete_rule(id: int):
     conn.close()
     return {"status": "success"}
 
+@app.post("/api/rules/test-preview")
+def test_rule_preview(req: RuleRequest):
+    # ponytail: pre-run pattern match to list affected documents before applying the rule
+    conn = know.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT filepath, filename, content FROM files")
+    files = cursor.fetchall()
+    conn.close()
+    
+    matches = []
+    try:
+        rx = re.compile(req.pattern, re.IGNORECASE)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid regex pattern: {str(e)}")
+        
+    for f in files:
+        filepath = f['filepath']
+        filename = f['filename']
+        content = f['content'] or ""
+        if rx.search(filepath) or rx.search(content):
+            matches.append({"filepath": filepath, "filename": filename})
+            
+    return {"matches": matches}
+
 class PeerRequest(BaseModel):
     address: str
     name: str
@@ -868,8 +892,8 @@ def get_graph():
     return {"nodes": nodes, "links": links}
 
 @app.get("/api/report/export")
-def export_pdf_report():
-    # ponytail: build a formatted PDF compilation of knowledge records using reportlab
+def export_pdf_report(tag: str = None, category: str = None):
+    # ponytail: build a formatted PDF compilation of knowledge records using reportlab with category/tag queries
     from reportlab.lib.pagesizes import letter
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from reportlab.lib.styles import getSampleStyleSheet
@@ -877,7 +901,30 @@ def export_pdf_report():
     
     conn = know.get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT filename, content, notes FROM files ORDER BY id DESC LIMIT 10")
+    
+    sql = "SELECT id, filename, filepath, content, notes, mime_type FROM files"
+    wheres = []
+    params = []
+    
+    if tag:
+        wheres.append("id IN (SELECT file_id FROM tags WHERE tag = ?)")
+        params.append(tag)
+        
+    if category:
+        if category == 'documents':
+            wheres.append("(mime_type LIKE 'text/%' OR filepath LIKE '%.pdf' OR filepath LIKE '%.docx' OR filepath LIKE '%.rtf')")
+        elif category == 'spreadsheets':
+            wheres.append("(mime_type LIKE '%spreadsheet%' OR filepath LIKE '%.xlsx' OR filepath LIKE '%.csv')")
+        elif category == 'code':
+            wheres.append("(filepath LIKE '%.py' OR filepath LIKE '%.js' OR filepath LIKE '%.html' OR filepath LIKE '%.css' OR filepath LIKE '%.json' OR filepath LIKE '%.xml')")
+        elif category == 'images':
+            wheres.append("(mime_type LIKE 'image/%' OR filepath LIKE '%.png' OR filepath LIKE '%.jpg' OR filepath LIKE '%.jpeg' OR filepath LIKE '%.bmp')")
+
+    if wheres:
+        sql += " WHERE " + " AND ".join(wheres)
+    sql += " ORDER BY id DESC LIMIT 50"
+    
+    cursor.execute(sql, params)
     files = cursor.fetchall()
     conn.close()
     
@@ -890,11 +937,18 @@ def export_pdf_report():
     h2_style = styles['Heading2']
     body_style = styles['BodyText']
     
-    story.append(Paragraph("Uroboros Knowledge Database Summary Report", title_style))
+    title_text = "Uroboros Knowledge Database Summary Report"
+    if tag or category:
+        subparts = []
+        if category: subparts.append(f"Category: {category}")
+        if tag: subparts.append(f"Tag: {tag}")
+        title_text += f" ({', '.join(subparts)})"
+        
+    story.append(Paragraph(title_text, title_style))
     story.append(Spacer(1, 20))
     
     if not files:
-        story.append(Paragraph("No files indexed in database currently.", body_style))
+        story.append(Paragraph("No files indexed matching selected criteria.", body_style))
     else:
         for idx, f in enumerate(files):
             story.append(Paragraph(f"{idx+1}. Document: {f['filename']}", h2_style))

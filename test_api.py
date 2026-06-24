@@ -112,6 +112,16 @@ def test_crud_and_annotations():
     response = client.get("/api/report/export")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
+    
+    # PDF Filtered Report Export test
+    response = client.get("/api/report/export?category=documents&tag=science")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+
+    # Rules preview test
+    response = client.post("/api/rules/test-preview", json={"pattern": "mock", "tag": "science"})
+    assert response.status_code == 200
+    assert "matches" in response.json()
 
     # 12. Audio metadata parsing check
     # Let's write a simple WAV header mockup to check the native parser
