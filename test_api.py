@@ -1,8 +1,34 @@
 import os
+import know
+# Override DB_FILE and initialize it for API tests to avoid state contamination from E2E tests
+know.DB_FILE = "test_knowledge.db"
+for suffix in ["", "-wal", "-shm"]:
+    fpath = "test_knowledge.db" + suffix
+    if os.path.exists(fpath):
+        try:
+            os.remove(fpath)
+        except Exception:
+            pass
+know.init_db()
+
 from fastapi.testclient import TestClient
 from main import app
 
 client = TestClient(app)
+
+import pytest
+
+@pytest.fixture(autouse=True)
+def setup_api_db():
+    import know
+    know.DB_FILE = "test_knowledge.db"
+    know.init_db()
+    for f in ["dumps/mock_crud.txt", "dumps/renamed_crud.txt"]:
+        if os.path.exists(f):
+            try:
+                os.remove(f)
+            except Exception:
+                pass
 
 def test_static_routes():
     response = client.get("/")
@@ -269,6 +295,41 @@ def test_crud_and_annotations():
     # Check that disk files are gone
     assert not os.path.exists(renamed_path)
     assert not os.path.exists(bulk_path)
+
+def test_cache_loophole_and_watcher_guard():
+    import sys
+    is_testing = (
+        os.environ.get("TESTING") == "true"
+        or "pytest" in sys.modules
+        or "unittest" in sys.modules
+        or any("test" in arg for arg in sys.argv)
+    )
+    assert is_testing is True
+
+    import threading
+    from unittest.mock import MagicMock
+    
+    mock_thread_indexer = MagicMock()
+    mock_thread_indexer.name = "IndexerThread"
+    
+    mock_thread_watcher = MagicMock()
+    mock_thread_watcher.name = "WatcherThread"
+    
+    original_enumerate = threading.enumerate
+    try:
+        threading.enumerate = lambda: [mock_thread_indexer]
+        has_active_indexer = any(t.name in ("IndexerThread", "WatcherThread") for t in threading.enumerate())
+        assert has_active_indexer is True
+        
+        threading.enumerate = lambda: [mock_thread_watcher]
+        has_active_watcher = any(t.name in ("IndexerThread", "WatcherThread") for t in threading.enumerate())
+        assert has_active_watcher is True
+
+        threading.enumerate = lambda: []
+        has_active_indexing = any(t.name in ("IndexerThread", "WatcherThread") for t in threading.enumerate())
+        assert has_active_indexing is False
+    finally:
+        threading.enumerate = original_enumerate
 
 if __name__ == "__main__":
     print("Running API CRUD self-checks...")

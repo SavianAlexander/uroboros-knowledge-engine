@@ -17,3 +17,8 @@ test_sandbox/
 # OS files
 .DS_Store
 Thumbs.db
+
+# E2E temporary files
+e2e_knowledge*
+test_sandbox_e2e_*
+

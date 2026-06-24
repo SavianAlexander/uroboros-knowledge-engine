@@ -130,7 +130,7 @@
                                 <div class="explorer-header">
                                     <h3>Word Frequency Tag Cloud</h3>
                                 </div>
-                                <div id="word-freq-tag-cloud" class="tag-cloud" style="padding: 0.75rem; min-height: 100px; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 8px;">
+                                <div id="word-freq-tag-cloud" class="tag-cloud" style="padding: 0.75rem; min-height: 100px; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 2px;">
                                     <span class="tag-cloud-empty" style="font-size: 0.8rem; color: var(--text-secondary);">No tag frequencies found.</span>
                                 </div>
                             </div>
@@ -149,7 +149,7 @@
                                     <h4 style="margin: 0; font-family: var(--font-outfit); font-size: 0.95rem;">Record Audio Memo</h4>
                                     <span id="recorder-time-lbl" style="font-size: 0.75rem; color: var(--text-secondary);">00:00 (Ready)</span>
                                 </div>
-                                <button id="record-memo-btn" onclick="toggleAudioRecording()" style="background: var(--danger); color: white; border: none; padding: 0.45rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: background 0.2s; display: flex; align-items: center; gap: 0.4rem;">
+                                <button id="record-memo-btn" onclick="toggleAudioRecording()" style="background: var(--danger); color: white; border: none; padding: 0.45rem 1rem; border-radius: 2px; font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: background 0.2s; display: flex; align-items: center; gap: 0.4rem;">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="rec-icon"><circle cx="12" cy="12" r="10"></circle></svg>
                                     Record Voice Memo
                                 </button>
@@ -168,12 +168,12 @@
 
                             <div class="search-bar-container" style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem; position: relative;">
                                 <input type="text" id="search-input" placeholder="Search (e.g. tag:work type:pdf size>1mb query)..." oninput="triggerSearch()" style="flex: 1;">
-                                <button onclick="addSearchBookmark()" title="Bookmark Current Search" style="background: var(--accent-trans-15); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; border-radius: 6px; padding: 0.5rem; font-size: 0.9rem; font-weight: bold; width: auto; height: 38px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                                <button onclick="addSearchBookmark()" title="Bookmark Current Search" style="background: var(--accent-trans-15); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; border-radius: 2px; padding: 0.5rem; font-size: 0.9rem; font-weight: bold; width: auto; height: 38px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                                 </button>
-                                <div id="search-autocomplete-dropdown" class="autocomplete-dropdown hidden" style="position: absolute; top: 100%; left: 0; right: 45px; background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; padding: 0.25rem 0;"></div>
+                                <div id="search-autocomplete-dropdown" class="autocomplete-dropdown hidden" style="position: absolute; top: 100%; left: 0; right: 45px; background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 2px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; padding: 0.25rem 0;"></div>
                             </div>
-                            <div id="search-syntax-feedback" class="hidden" style="margin-bottom: 0.75rem; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 2px;">
+                            <div id="search-syntax-feedback" class="hidden" style="margin-bottom: 0.75rem; padding: 0.4rem 0.8rem; border-radius: 2px; font-size: 0.75rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 2px;">
                                 <span id="syntax-status-lbl" style="font-weight: bold;">Query Syntax Valid</span>
                                 <span id="syntax-desc-lbl" style="color: var(--text-secondary);">Correct filters configured.</span>
                             </div>
@@ -186,14 +186,14 @@
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 0.25rem;">
                                     <label for="macro-select" style="font-size: 0.75rem; color: var(--text-secondary);">Macro:</label>
-                                    <select id="macro-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;" onchange="applyQueryMacro()">
+                                    <select id="macro-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;" onchange="applyQueryMacro()">
                                         <option value="">-- Apply Macro --</option>
                                     </select>
                                 </div>
                             </div>
 
                             <!-- Similarity Threshold Slider (Semantic mode only) -->
-                             <div id="similarity-threshold-container" class="hidden" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; padding: 0.5rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 0.75rem;">
+                             <div id="similarity-threshold-container" class="hidden" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; padding: 0.5rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 2px; margin-bottom: 0.75rem;">
                                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1;">
                                     <span style="font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap;">Similarity Threshold:</span>
                                     <input type="range" id="similarity-threshold-slider" min="0" max="100" value="0" style="flex-grow: 1; cursor: pointer; height: 4px; border-radius: 2px; accent-color: var(--accent);" oninput="updateSimilarityThresholdDisplay(this.value)">
@@ -202,7 +202,7 @@
                             </div>
                             
                             <!-- Subdirectory Active Scoped Path display -->
-                             <div id="active-path-filter-card" class="hidden" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.8rem; background: var(--accent-trans-08); border: 1px dashed var(--accent); border-radius: 6px; font-size: 0.75rem; margin-bottom: 0.75rem;">
+                             <div id="active-path-filter-card" class="hidden" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.8rem; background: var(--accent-trans-08); border: 1px dashed var(--accent); border-radius: 2px; font-size: 0.75rem; margin-bottom: 0.75rem;">
                                 <span>Scope: <strong id="active-scoped-path-lbl">None</strong></span>
                                 <button class="clear-filter-btn" onclick="clearFolderScopeFilter()" style="margin: 0; padding: 1px 6px;">✕ Clear Scope</button>
                             </div>
@@ -283,7 +283,7 @@
                                 <span id="active-tag-badge" class="tag-filter-badge"></span>
                                 <div id="tag-match-mode-container" style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem;">
                                     <span style="color: var(--text-secondary);">Match Mode:</span>
-                                    <select id="search-tag-mode-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.1rem 0.3rem; outline:none;" onchange="triggerSearch()">
+                                    <select id="search-tag-mode-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.1rem 0.3rem; outline:none;" onchange="triggerSearch()">
                                         <option value="AND">AND (All selected)</option>
                                         <option value="OR">OR (Any selected)</option>
                                     </select>
@@ -295,35 +295,35 @@
                                 <div class="results-header">
                                     <h2 id="results-title-header">Matching Records</h2>
                                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                        <select id="pdf-template-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;">
+                                        <select id="pdf-template-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;">
                                             <option value="default">Default Template</option>
                                             <option value="compact">Compact Template</option>
                                             <option value="descriptive">Descriptive Cards</option>
                                             <option value="toc">Hierarchical TOC</option>
                                             <option value="gallery">Catalog Grid Gallery</option>
                                         </select>
-                                        <input type="text" id="pdf-title-input" placeholder="Custom Report Title" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; width: 130px; outline:none;" />
-                                        <select id="pdf-theme-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;">
+                                        <input type="text" id="pdf-title-input" placeholder="Custom Report Title" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.2rem 0.5rem; font-size: 0.75rem; width: 130px; outline:none;" />
+                                        <select id="pdf-theme-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;">
                                             <option value="indigo">Indigo Theme</option>
                                             <option value="crimson">Crimson Theme</option>
                                             <option value="emerald">Emerald Theme</option>
                                             <option value="charcoal">Charcoal Theme</option>
                                         </select>
-                                        <input type="text" id="pdf-tags-input" placeholder="Tags (comma-separated)" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; width: 120px; outline:none;" />
+                                        <input type="text" id="pdf-tags-input" placeholder="Tags (comma-separated)" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.2rem 0.5rem; font-size: 0.75rem; width: 120px; outline:none;" />
                                         <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; color: var(--text-secondary); cursor: pointer;">
                                             <input type="checkbox" id="pdf-include-notes-checkbox" checked style="cursor: pointer; accent-color: var(--accent);" /> Include Notes
                                         </label>
-                                        <button id="export-pdf-btn" class="action-btn" onclick="exportPdfReport()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: var(--accent-trans-15); border: 1px solid var(--accent); color: var(--text-primary); border-radius: 6px; cursor: pointer; transition: all 0.2s;">📄 Export PDF</button>
-                                        <button id="bulk-delete-btn" class="action-btn hidden" onclick="triggerBulkDelete()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: var(--text-primary); border-radius: 6px; cursor: pointer; transition: all 0.2s;">🗑️ Bulk Delete</button>
+                                        <button id="export-pdf-btn" class="action-btn" onclick="exportPdfReport()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: var(--accent-trans-15); border: 1px solid var(--accent); color: var(--text-primary); border-radius: 2px; cursor: pointer; transition: all 0.2s;">📄 Export PDF</button>
+                                        <button id="bulk-delete-btn" class="action-btn hidden" onclick="triggerBulkDelete()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: var(--text-primary); border-radius: 2px; cursor: pointer; transition: all 0.2s;">🗑️ Bulk Delete</button>
                                         <span id="results-count" class="count-badge">0 found</span>
                                     </div>
                                 </div>
                                 <!-- FTS Custom Configuration Bar -->
                                 <div class="fts-config-bar" style="display: flex; gap: 0.5rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); font-size: 0.75rem; align-items: center;">
                                     <span style="color: var(--text-secondary);">Snippet Config:</span>
-                                    <label>Words: <input type="number" id="snippet-limit-input" value="15" style="width: 40px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
-                                    <label>Start: <input type="text" id="snippet-start-input" value="&lt;mark&gt;" style="width: 60px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
-                                    <label>End: <input type="text" id="snippet-end-input" value="&lt;/mark&gt;" style="width: 60px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
+                                    <label>Words: <input type="number" id="snippet-limit-input" value="15" style="width: 40px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 1px 3px;" onchange="triggerSearch()"></label>
+                                    <label>Start: <input type="text" id="snippet-start-input" value="&lt;mark&gt;" style="width: 60px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 1px 3px;" onchange="triggerSearch()"></label>
+                                    <label>End: <input type="text" id="snippet-end-input" value="&lt;/mark&gt;" style="width: 60px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 1px 3px;" onchange="triggerSearch()"></label>
                                 </div>
                                 <div id="results-list" class="results-list">
                                     <div class="empty-state">Enter a query above to explore indexed knowledge.</div>
@@ -336,7 +336,7 @@
                                     <h3 style="margin: 0;">Document Tag Network Connections</h3>
                                     <div style="display: flex; align-items: center; gap: 0.35rem;">
                                         <label for="graph-layout-preset" style="font-size: 0.75rem; color: var(--text-secondary);">Layout:</label>
-                                        <select id="graph-layout-preset" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;" onchange="changeGraphLayoutPreset()">
+                                        <select id="graph-layout-preset" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;" onchange="changeGraphLayoutPreset()">
                                             <option value="force">Force-Directed</option>
                                             <option value="circular">Circular Circle</option>
                                             <option value="grid">Orthogonal Grid</option>
@@ -345,8 +345,8 @@
                                     </div>
                                 </div>
                                 <div style="position: relative;">
-                                    <canvas id="concept-graph-canvas" width="600" height="400" style="border-radius: 8px; border: 1px solid var(--border-color); width: 100%; display: block;"></canvas>
-                                    <div class="canvas-controls" style="position: absolute; bottom: 10px; right: 10px; display: flex; gap: 0.25rem; background: var(--input-bg); padding: 0.25rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                                    <canvas id="concept-graph-canvas" width="600" height="400" style="border-radius: 2px; border: 1px solid var(--border-color); width: 100%; display: block;"></canvas>
+                                    <div class="canvas-controls" style="position: absolute; bottom: 10px; right: 10px; display: flex; gap: 0.25rem; background: var(--input-bg); padding: 0.25rem; border-radius: 2px; border: 1px solid var(--border-color);">
                                         <button onclick="zoomConceptGraph(1.2)" title="Zoom In" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">＋</button>
                                         <button onclick="zoomConceptGraph(0.8)" title="Zoom Out" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">－</button>
                                         <button onclick="resetConceptGraphView()" title="Reset View" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">⟲</button>
@@ -377,7 +377,7 @@
                                     <div class="analytic-item"><strong>Channels:</strong> <span id="audio-channels">-</span></div>
                                     <div class="analytic-item"><strong>Bitrate:</strong> <span id="audio-bitrate">-</span></div>
                                 </div>
-                                <audio id="audio-preview-player" controls style="width: 100%; outline: none; border-radius: 8px; background: var(--bg-dark);"></audio>
+                                <audio id="audio-preview-player" controls style="width: 100%; outline: none; border-radius: 2px; background: var(--bg-dark);"></audio>
                             </div>
 
                             <!-- CRUD Actions Section -->
@@ -442,7 +442,7 @@
                             <div class="rules-form">
                                 <input type="text" id="rule-pattern" placeholder="Regex pattern (e.g. \bformula\b)"/>
                                 <input type="text" id="rule-tag" placeholder="Tag name"/>
-                                <input type="number" id="rule-priority" placeholder="Priority (e.g. 10)" value="0" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.45rem; font-size: 0.8rem; width: 100%; outline: none; margin-bottom: 0.5rem;box-sizing: border-box;" />
+                                <input type="number" id="rule-priority" placeholder="Priority (e.g. 10)" value="0" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.45rem; font-size: 0.8rem; width: 100%; outline: none; margin-bottom: 0.5rem;box-sizing: border-box;" />
                                 <div style="display: flex; gap: 0.5rem; width: 100%;">
                                     <button onclick="addAutoRule()" style="flex: 1;">Add Rule</button>
                                     <button onclick="testAutoRule()" style="flex: 1; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b;">Test Matches</button>
@@ -489,8 +489,8 @@
                                 <span class="rules-empty">No macros configured.</span>
                             </div>
                             <div class="rules-form" style="display: flex; flex-direction: column; gap: 0.25rem;">
-                                <input type="text" id="macro-name-input" placeholder="Macro name (e.g. sci)" style="padding: 0.4rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 0.75rem;" />
-                                <input type="text" id="macro-expansion-input" placeholder="Query expansion (e.g. tag:science)" style="padding: 0.4rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 0.75rem;" />
+                                <input type="text" id="macro-name-input" placeholder="Macro name (e.g. sci)" style="padding: 0.4rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; font-size: 0.75rem;" />
+                                <input type="text" id="macro-expansion-input" placeholder="Query expansion (e.g. tag:science)" style="padding: 0.4rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; font-size: 0.75rem;" />
                                 <button onclick="addQueryMacroAction()" style="width: 100%; padding: 0.4rem 0.8rem; font-size: 0.75rem;">+ Add Macro</button>
                             </div>
                         </div>
@@ -499,7 +499,7 @@
                         <div class="sync-sidebar">
                             <h3>Periodic Backup Scheduler</h3>
                             <div class="rules-form" style="display: flex; gap: 0.25rem;">
-                                <input type="number" id="backup-seconds-input" value="3600" style="flex: 1; padding: 0.4rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px;" />
+                                <input type="number" id="backup-seconds-input" value="3600" style="flex: 1; padding: 0.4rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px;" />
                                 <button onclick="scheduleBackupAction()" style="width: auto; padding: 0.4rem 0.8rem;">Schedule (s)</button>
                             </div>
                             <span id="backup-schedule-status" style="font-size: 0.7rem; color: var(--text-secondary);">No backup schedule active.</span>
