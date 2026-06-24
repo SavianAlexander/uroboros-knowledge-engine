@@ -7,514 +7,509 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/assets/favicon.png">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="glow-bg"></div>
-    <div class="glow-bg-2"></div>
     <div class="app-container">
         <!-- Sidebar -->
         <header class="app-header">
             <div class="logo-area">
-                <span class="logo-icon">🎴</span>
-                <h1>Uroboros</h1>
-                <span class="badge">V38 Pro</span>
-                <span id="watcher-badge" class="badge" style="background: rgba(16, 185, 129, 0.15); border-color: var(--success); color: var(--success); display: inline-flex; align-items: center; gap: 4px;">● Live</span>
-                <button onclick="toggleAppTheme()" title="Toggle Theme" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; border-radius: 6px; padding: 0.1rem 0.4rem; font-size: 0.75rem;">🌓</button>
-            </div>
-            
-            <!-- Accordion Group 1: Workspace & Ingestion -->
-            <div class="accordion-group">
-                <button class="accordion-trigger active" onclick="toggleAccordion('workspace-group')">
-                    <span>📁 Workspace & Ingestion</span>
-                    <span class="accordion-arrow">▾</span>
-                </button>
-                <div id="workspace-group" class="accordion-content open">
-                    <div class="index-control-card">
-                        <h3>Active Folder Dumper</h3>
-                        <div class="input-group">
-                            <input type="text" id="dir-input" placeholder="e.g. C:\Users\Administrator\Documents" />
-                            <button id="index-btn" onclick="triggerIndexing()">Index Files</button>
-                        </div>
-                        <div id="indexing-status" class="status-msg">Dumps target: <span id="active-dir-label">dumps</span></div>
-                    </div>
-
-                    <!-- Directory Explorer Section -->
-                    <div class="explorer-sidebar">
-                        <div class="explorer-header">
-                            <h3>Directory Tree</h3>
-                            <button class="refresh-tree-btn" onclick="fetchDirectoryTree()" title="Refresh Tree">↻</button>
-                        </div>
-                        <div id="dir-tree" class="dir-tree-container">
-                            <span class="tree-empty">No directory indexed yet.</span>
-                        </div>
-                    </div>
-
-                    <div class="stats-panel">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <h3>Database Status</h3>
-                            <button onclick="exportStatsCsv()" style="background: transparent; border: none; color: var(--accent); cursor: pointer; font-size: 0.75rem; text-decoration: underline;">Export CSV</button>
-                        </div>
-                        <div class="stat-grid">
-                            <div class="stat-card">
-                                <span class="stat-label">Total Files</span>
-                                <span class="stat-value" id="stat-files">-</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-label">Total Size</span>
-                                <span class="stat-value" id="stat-size">-</span>
-                            </div>
-                            <div class="stat-card" style="grid-column: span 2;">
-                                <span class="stat-label">Free Storage Capacity</span>
-                                <span class="stat-value" id="stat-disk-free">-</span>
-                            </div>
-                            <div class="stat-card" style="grid-column: span 2;">
-                                <span class="stat-label">Query Cache Hit Ratio</span>
-                                <span class="stat-value" id="stat-cache-ratio">-</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Visual Distribution Chart -->
-                    <div class="chart-sidebar">
-                        <h3>File Type Distribution</h3>
-                        <div id="svg-chart-container" class="svg-chart-container"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Accordion Group 2: Knowledge Tools & Rules -->
-            <div class="accordion-group">
-                <button class="accordion-trigger" onclick="toggleAccordion('knowledge-group')">
-                    <span>🧠 Knowledge Tools & Rules</span>
-                    <span class="accordion-arrow">▸</span>
-                </button>
-                <div id="knowledge-group" class="accordion-content">
-                    <!-- Word Frequency Tag Cloud Dashboard Widget -->
-                    <div class="explorer-sidebar" id="word-freq-tag-cloud-widget">
-                        <div class="explorer-header">
-                            <h3>Word Frequency Tag Cloud</h3>
-                        </div>
-                        <div id="word-freq-tag-cloud" class="tag-cloud" style="padding: 0.75rem; min-height: 100px; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: center; background: rgba(24, 24, 27, 0.4); border-radius: 8px;">
-                            <span class="tag-cloud-empty" style="font-size: 0.8rem; color: var(--text-secondary);">No tag frequencies found.</span>
-                        </div>
-                    </div>
-
-                    <!-- Recent Activity Timeline -->
-                    <div class="timeline-sidebar">
-                        <h3>Indexing History Timeline</h3>
-                        <div id="timeline-container" class="timeline-container">
-                            <span class="timeline-empty">No indexing activity recorded.</span>
-                        </div>
-                    </div>
-
-                    <!-- Global Tags Cloud -->
-                    <div class="tags-sidebar">
-                        <h3>Knowledge Tags</h3>
-                        <div id="sidebar-tags" class="tag-cloud">
-                            <span class="tag-cloud-empty">No tags set yet.</span>
-                        </div>
-                    </div>
-
-                    <!-- Auto-Tag Rules Sidebar Component -->
-                    <div class="rules-sidebar">
-                        <h3>Auto-Tagging Rules</h3>
-                        <div class="rules-form">
-                            <input type="text" id="rule-pattern" placeholder="Regex pattern (e.g. \bformula\b)"/>
-                            <input type="text" id="rule-tag" placeholder="Tag name"/>
-                            <input type="number" id="rule-priority" placeholder="Priority (e.g. 10)" value="0" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.45rem; font-size: 0.8rem; width: 100%; outline: none; margin-bottom: 0.5rem;box-sizing: border-box;" />
-                            <div style="display: flex; gap: 0.5rem; width: 100%;">
-                                <button onclick="addAutoRule()" style="flex: 1;">Add Rule</button>
-                                <button onclick="testAutoRule()" style="flex: 1; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b;">Test Matches</button>
-                            </div>
-                        </div>
-                        <div id="sidebar-rules" class="rules-list-container">
-                            <span class="rules-empty">No automated tagging rules.</span>
-                        </div>
-                    </div>
-
-                    <!-- Synonyms Configuration Sidebar Component -->
-                    <div class="rules-sidebar" style="margin-top: 1rem;">
-                        <h3>Word Synonyms Map</h3>
-                        <div class="rules-form">
-                            <input type="text" id="synonym-word" placeholder="Word (e.g. gravity)"/>
-                            <input type="text" id="synonym-substitutes" placeholder="Synonyms (comma separated)"/>
-                            <button onclick="addWordSynonym()">Save Synonym</button>
-                        </div>
-                        <div id="sidebar-synonyms" class="rules-list-container" style="max-height: 100px; overflow-y: auto; font-size: 0.75rem;">
-                            <span class="rules-empty">No synonyms configured.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Accordion Group 3: History, Backup & Peers -->
-            <div class="accordion-group">
-                <button class="accordion-trigger" onclick="toggleAccordion('history-group')">
-                    <span>⚡ History, Backup & Peers</span>
-                    <span class="accordion-arrow">▸</span>
-                </button>
-                <div id="history-group" class="accordion-content">
-                    <!-- Search History Vault Sidebar Component -->
-                    <div class="rules-sidebar">
-                        <h3>Search History Vault</h3>
-                        <div id="sidebar-search-history" class="rules-list-container" style="max-height: 120px; overflow-y: auto; font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                            <span class="rules-empty">No search query history logged.</span>
-                        </div>
-                    </div>
-
-                    <!-- Search Bookmarks Vault Sidebar Component -->
-                    <div class="rules-sidebar" style="margin-top: 1rem;">
-                        <h3>Search Bookmarks Vault</h3>
-                        <div id="sidebar-search-bookmarks" class="rules-list-container" style="max-height: 120px; overflow-y: auto; font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
-                            <span class="rules-empty">No bookmarks saved yet.</span>
-                        </div>
-                    </div>
-
-                    <!-- Query Macros Manager Sidebar Component -->
-                    <div class="rules-sidebar" style="margin-top: 1rem;">
-                        <h3>Query Macros Manager</h3>
-                        <div id="sidebar-macros" class="rules-list-container" style="max-height: 120px; overflow-y: auto; font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem;">
-                            <span class="rules-empty">No macros configured.</span>
-                        </div>
-                        <div class="rules-form" style="display: flex; flex-direction: column; gap: 0.25rem;">
-                            <input type="text" id="macro-name-input" placeholder="Macro name (e.g. sci)" style="padding: 0.4rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 0.75rem;" />
-                            <input type="text" id="macro-expansion-input" placeholder="Query expansion (e.g. tag:science)" style="padding: 0.4rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 0.75rem;" />
-                            <button onclick="addQueryMacroAction()" style="width: 100%; padding: 0.4rem 0.8rem; font-size: 0.75rem;">+ Add Macro</button>
-                        </div>
-                    </div>
-
-                    <!-- Periodic DB Backup Scheduler Sidebar Component -->
-                    <div class="sync-sidebar" style="margin-top: 1rem;">
-                        <h3>Periodic Backup Scheduler</h3>
-                        <div class="rules-form" style="display: flex; gap: 0.25rem;">
-                            <input type="number" id="backup-seconds-input" value="3600" style="flex: 1; padding: 0.4rem; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px;" />
-                            <button onclick="scheduleBackupAction()" style="width: auto; padding: 0.4rem 0.8rem;">Schedule (s)</button>
-                        </div>
-                        <span id="backup-schedule-status" style="font-size: 0.7rem; color: var(--text-secondary);">No backup schedule active.</span>
-                    </div>
-
-                    <!-- Peer-to-Peer Sync Sidebar Component -->
-                    <div class="sync-sidebar" style="margin-top: 1rem;">
-                        <h3>P2P LAN Sync Nodes</h3>
-                        <div class="rules-form">
-                            <input type="text" id="peer-address" placeholder="LAN Node Address (http://127.0.0.1:8000)"/>
-                            <input type="text" id="peer-name" placeholder="Peer Name"/>
-                            <button onclick="addPeer()">Add Node</button>
-                        </div>
-                        <div id="sidebar-peers" class="rules-list-container">
-                            <span class="rules-empty">No syncing nodes registered.</span>
-                        </div>
-                    </div>
-
-                    <!-- Database Snapshot Vault Sidebar Component -->
-                    <div class="snapshots-sidebar" style="margin-top: 1rem;">
-                        <div class="explorer-header">
-                            <h3>DB Snapshot Vault</h3>
-                            <button onclick="createSnapshot()" title="Create Snapshot">📸</button>
-                        </div>
-                        <div id="sidebar-snapshots" class="rules-list-container">
-                            <span class="rules-empty">No snapshots captured.</span>
-                        </div>
-                    </div>
-                </div>
+                <img src="/assets/logo.png" alt="Uroboros Logo" class="logo-img-asset" title="Uroboros Knowledge Engine">
+                <button onclick="toggleAppTheme()" title="Toggle Theme" class="theme-toggle-btn">🌓</button>
+                <span id="watcher-badge" class="badge" title="Live Connection">●</span>
             </div>
         </header>
 
-        <!-- Main Workspace -->
-        <main class="main-content">
-            <div class="search-section">
-                <!-- Dropzone Area -->
-                <div id="drop-zone" class="drop-zone" style="margin-bottom: 1rem;">
-                    <span class="drop-icon">📥</span>
-                    <p>Drag & Drop any files here to automatically dump and index them into the active directory.</p>
-                </div>
+        <!-- Main Area Wrapper -->
+        <div class="main-wrapper">
+            <!-- Top Horizontal Navigation Tabs -->
+            <nav class="horizontal-tabs">
+                <button class="tab-link active" data-tab="workspace" onclick="switchTab('workspace')">📁 Workspace</button>
+                <button class="tab-link" data-tab="search" onclick="switchTab('search')">🔍 Search & Graph</button>
+                <button class="tab-link" data-tab="config" onclick="switchTab('config')">⚙️ Configuration</button>
+            </nav>
 
-                <!-- Voice Memo Recorder Card Component -->
-                <div id="voice-recorder-card" class="index-control-card" style="margin-bottom: 1rem; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem; background: rgba(39, 39, 42, 0.4);">
-                    <div>
-                        <h4 style="margin: 0; font-family: var(--font-outfit); font-size: 0.95rem;">Record Audio Memo</h4>
-                        <span id="recorder-time-lbl" style="font-size: 0.75rem; color: var(--text-secondary);">00:00 (Ready)</span>
-                    </div>
-                    <button id="record-memo-btn" onclick="toggleAudioRecording()" style="background: var(--danger); color: white; border: none; padding: 0.45rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: background 0.2s;">● Record Voice Memo</button>
-                </div>
+            <!-- Main Content Container -->
+            <main class="main-content">
+                <!-- Workspace Tab View -->
+                <div id="workspace-tab-view" class="tab-view-content">
+                    <div class="workspace-layout">
+                        <!-- Directory Tree on Left -->
+                        <aside class="workspace-sidebar">
+                            <div class="explorer-sidebar">
+                                <div class="explorer-header">
+                                    <h3>Directory Tree</h3>
+                                    <button class="refresh-tree-btn" onclick="fetchDirectoryTree()" title="Refresh Tree">↻</button>
+                                </div>
+                                <div id="dir-tree" class="dir-tree-container">
+                                    <span class="tree-empty">No directory indexed yet.</span>
+                                </div>
+                            </div>
+                        </aside>
+                        <!-- Other workspace cards in a scrollable grid on Right -->
+                        <div class="workspace-main-grid">
+                            <div class="index-control-card">
+                                <h3>Active Folder Dumper</h3>
+                                <div class="input-group">
+                                    <input type="text" id="dir-input" placeholder="e.g. C:\Users\Administrator\Documents" />
+                                    <button id="index-btn" onclick="triggerIndexing()">Index Files</button>
+                                </div>
+                                <div id="indexing-status" class="status-msg">Dumps target: <span id="active-dir-label">dumps</span></div>
+                            </div>
 
-                <!-- Async Indexing Progress Bar -->
-                <div id="progress-bar-card" class="progress-bar-card hidden">
-                    <div class="progress-bar-header">
-                        <span id="progress-bar-file">Scanning files...</span>
-                        <span id="progress-bar-pct">0%</span>
-                    </div>
-                    <div class="progress-outer">
-                        <div id="progress-inner" class="progress-inner"></div>
-                    </div>
-                </div>
+                            <div class="stats-panel">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <h3>Database Status</h3>
+                                    <button onclick="exportStatsCsv()" style="background: transparent; border: none; color: var(--accent); cursor: pointer; font-size: 0.75rem; text-decoration: underline;">Export CSV</button>
+                                </div>
+                                <div class="stat-grid">
+                                    <div class="stat-card">
+                                        <span class="stat-label">Total Files</span>
+                                        <span class="stat-value" id="stat-files">-</span>
+                                    </div>
+                                    <div class="stat-card">
+                                        <span class="stat-label">Total Size</span>
+                                        <span class="stat-value" id="stat-size">-</span>
+                                    </div>
+                                    <div class="stat-card" style="grid-column: span 2;">
+                                        <span class="stat-label">Free Storage Capacity</span>
+                                        <span class="stat-value" id="stat-disk-free">-</span>
+                                    </div>
+                                    <div class="stat-card" style="grid-column: span 2;">
+                                        <span class="stat-label">Query Cache Hit Ratio</span>
+                                        <span class="stat-value" id="stat-cache-ratio">-</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                <div class="search-bar-container" style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem; position: relative;">
-                    <input type="text" id="search-input" placeholder="Search (e.g. tag:work type:pdf size>1mb query)..." oninput="triggerSearch()" style="flex: 1;">
-                    <button onclick="addSearchBookmark()" title="Bookmark Current Search" style="background: rgba(99, 102, 241, 0.15); border: 1px solid var(--accent); color: var(--text-primary); cursor: pointer; border-radius: 6px; padding: 0.5rem; font-size: 0.9rem; font-weight: bold; width: auto; height: 38px; display: flex; align-items: center; justify-content: center;">⭐</button>
-                    <!-- ponytail: absolute search autocomplete dropdown -->
-                    <div id="search-autocomplete-dropdown" class="autocomplete-dropdown hidden" style="position: absolute; top: 100%; left: 0; right: 45px; background: rgba(9, 9, 11, 0.95); border: 1px solid var(--border-color); border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); backdrop-filter: blur(12px); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; padding: 0.25rem 0;"></div>
-                </div>
-                <!-- ponytail: search query syntax feedback indicator widget -->
-                <div id="search-syntax-feedback" class="hidden" style="margin-bottom: 0.75rem; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 2px;">
-                    <span id="syntax-status-lbl" style="font-weight: bold;">Query Syntax Valid</span>
-                    <span id="syntax-desc-lbl" style="color: var(--text-secondary);">Correct filters configured.</span>
-                </div>
+                            <div class="chart-sidebar">
+                                <h3>File Type Distribution</h3>
+                                <div id="svg-chart-container" class="svg-chart-container"></div>
+                            </div>
 
-                <!-- Query Search Mode Switcher & Sorting/Filtering Toolbar -->
-                <div class="search-mode-container" style="display: flex; gap: 0.5rem; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="mode-btn active" id="mode-keyword" onclick="setSearchMode('keyword')">Keyword Matching (FTS5)</button>
-                        <button class="mode-btn" id="mode-semantic" onclick="setSearchMode('semantic')">Semantic Concepts (TF-IDF)</button>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.25rem;">
-                        <label for="macro-select" style="font-size: 0.75rem; color: var(--text-secondary);">Macro:</label>
-                        <select id="macro-select" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;" onchange="applyQueryMacro()">
-                            <option value="">-- Apply Macro --</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Similarity Threshold Slider (Semantic mode only) -->
-                <div id="similarity-threshold-container" class="hidden" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; padding: 0.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 0.75rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1;">
-                        <span style="font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap;">Similarity Threshold:</span>
-                        <input type="range" id="similarity-threshold-slider" min="0" max="100" value="0" style="flex-grow: 1; cursor: pointer; height: 4px; border-radius: 2px; accent-color: var(--accent);" oninput="updateSimilarityThresholdDisplay(this.value)">
-                    </div>
-                    <span id="similarity-threshold-val" style="font-size: 0.75rem; font-weight: bold; color: var(--accent); margin-left: 0.75rem; min-width: 2.5rem; text-align: right;">0%</span>
-                </div>
-                
-                <!-- Subdirectory Active Scoped Path display -->
-                <div id="active-path-filter-card" class="hidden" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.8rem; background: rgba(99,102,241,0.08); border: 1px dashed var(--accent); border-radius: 6px; font-size: 0.75rem; margin-bottom: 0.75rem;">
-                    <span>Scope: <strong id="active-scoped-path-lbl">None</strong></span>
-                    <button class="clear-filter-btn" onclick="clearFolderScopeFilter()" style="margin: 0; padding: 1px 6px;">✕ Clear Scope</button>
-                </div>
-
-                <!-- Search Metrics Breakdown Panel -->
-                <div id="search-metrics-panel" class="search-metrics-panel hidden" style="margin-bottom: 0.75rem;">
-                    <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
-                        <div class="metric-item">
-                            <span class="m-label">Match Mode</span>
-                            <span class="m-val" id="metric-mode">-</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="m-label">Execution Time</span>
-                            <span class="m-val" id="metric-time">-</span>
-                        </div>
-                        <div class="metric-item">
-                            <span class="m-label">Match Count</span>
-                            <span class="m-val" id="metric-count">-</span>
-                        </div>
-                        <div class="metric-item" style="grid-column: span 1;">
-                            <span class="m-label">Synonyms Expanded</span>
-                            <span class="m-val" id="metric-synonyms" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="">None</span>
-                        </div>
-                    </div>
-                    <!-- ponytail: visual execution plan sequence list -->
-                    <div id="metric-execution-plan-container" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; display: flex; flex-direction: column; gap: 4px;">
-                        <span style="color: var(--text-secondary); text-transform: uppercase; font-size: 0.6rem; letter-spacing: 0.05em; font-weight: bold;">Query Execution Plan Flow</span>
-                        <div id="metric-execution-plan-flow" style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; color: var(--text-primary); font-family: monospace;">
-                            <!-- Dynamic plan segments inject here -->
+                            <div class="timeline-sidebar">
+                                <h3>Indexing History Timeline</h3>
+                                <div id="timeline-container" class="timeline-container">
+                                    <span class="timeline-empty">No indexing activity recorded.</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="search-toolbar">
-                    <div class="toolbar-group">
-                        <label for="sort-by-select">Sort By:</label>
-                        <select id="sort-by-select" onchange="triggerSearch()">
-                            <option value="rank">Relevance (Rank)</option>
-                            <option value="filename">Filename</option>
-                            <option value="file_size">File Size</option>
-                            <option value="modified_at">Date Modified</option>
-                        </select>
-                    </div>
+                <!-- Search & Graph Tab View -->
+                <div id="search-tab-view" class="tab-view-content hidden">
+                    <div class="search-layout">
+                        <!-- Tags Cloud & Word Freq on Left -->
+                        <aside class="search-sidebar">
+                            <div class="tags-sidebar">
+                                <h3>Knowledge Tags</h3>
+                                <div id="sidebar-tags" class="tag-cloud">
+                                    <span class="tag-cloud-empty">No tags set yet.</span>
+                                </div>
+                            </div>
+                            <div class="explorer-sidebar" id="word-freq-tag-cloud-widget">
+                                <div class="explorer-header">
+                                    <h3>Word Frequency Tag Cloud</h3>
+                                </div>
+                                <div id="word-freq-tag-cloud" class="tag-cloud" style="padding: 0.75rem; min-height: 100px; display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: center; background: var(--card-bg); border-radius: 8px;">
+                                    <span class="tag-cloud-empty" style="font-size: 0.8rem; color: var(--text-secondary);">No tag frequencies found.</span>
+                                </div>
+                            </div>
+                        </aside>
+                        <!-- Search Controls, Records List & Graph in Middle -->
+                        <div class="search-section">
+                            <!-- Dropzone Area -->
+                            <div id="drop-zone" class="drop-zone" style="margin-bottom: 1rem;">
+                                <span class="drop-icon">📥</span>
+                                <p>Drag & Drop any files here to automatically dump and index them into the active directory.</p>
+                            </div>
 
-                    <div class="toolbar-group">
-                        <label for="sort-order-select">Order:</label>
-                        <select id="sort-order-select" onchange="triggerSearch()">
-                            <option value="asc">Ascending</option>
-                            <option value="desc" selected>Descending</option>
-                        </select>
-                    </div>
+                            <!-- Voice Memo Recorder Card Component -->
+                            <div id="voice-recorder-card" class="index-control-card" style="margin-bottom: 1rem; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem; background: var(--card-bg);">
+                                <div>
+                                    <h4 style="margin: 0; font-family: var(--font-outfit); font-size: 0.95rem;">Record Audio Memo</h4>
+                                    <span id="recorder-time-lbl" style="font-size: 0.75rem; color: var(--text-secondary);">00:00 (Ready)</span>
+                                </div>
+                                <button id="record-memo-btn" onclick="toggleAudioRecording()" style="background: var(--danger); color: white; border: none; padding: 0.45rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: background 0.2s;">● Record Voice Memo</button>
+                            </div>
 
-                    <div class="toolbar-group">
-                        <label for="date-filter-select">Modified Within:</label>
-                        <select id="date-filter-select" onchange="triggerSearch()">
-                            <option value="all">All Time</option>
-                            <option value="24h">Last 24 Hours</option>
-                            <option value="week">Last Week</option>
-                            <option value="month">Last Month</option>
-                            <option value="year">Last Year</option>
-                        </select>
-                    </div>
-                </div>
+                            <!-- Async Indexing Progress Bar -->
+                            <div id="progress-bar-card" class="progress-bar-card hidden">
+                                <div class="progress-bar-header">
+                                    <span id="progress-bar-file">Scanning files...</span>
+                                    <span id="progress-bar-pct">0%</span>
+                                </div>
+                                <div class="progress-outer">
+                                    <div id="progress-inner" class="progress-inner"></div>
+                                </div>
+                            </div>
 
-                <!-- Category Filtering Tabs -->
-                <div class="tabs-container">
-                    <button class="tab-btn active" data-category="all" onclick="selectCategory(this)">All Files</button>
-                    <button class="tab-btn" data-category="documents" onclick="selectCategory(this)">Documents</button>
-                    <button class="tab-btn" data-category="spreadsheets" onclick="selectCategory(this)">Spreadsheets</button>
-                    <button class="tab-btn" data-category="code" onclick="selectCategory(this)">Code</button>
-                    <button class="tab-btn" data-category="images" onclick="selectCategory(this)">Images</button>
-                    <button class="tab-btn" data-category="duplicates" onclick="selectCategory(this)">Duplicates</button>
-                    <button class="tab-btn" data-category="graph" onclick="selectCategory(this)">Concept Graph</button>
-                </div>
+                            <div class="search-bar-container" style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem; position: relative;">
+                                <input type="text" id="search-input" placeholder="Search (e.g. tag:work type:pdf size>1mb query)..." oninput="triggerSearch()" style="flex: 1;">
+                                <button onclick="addSearchBookmark()" title="Bookmark Current Search" style="background: var(--accent-trans-15); border: 1px solid var(--accent); color: var(--text-primary); cursor: pointer; border-radius: 6px; padding: 0.5rem; font-size: 0.9rem; font-weight: bold; width: auto; height: 38px; display: flex; align-items: center; justify-content: center;">⭐</button>
+                                <div id="search-autocomplete-dropdown" class="autocomplete-dropdown hidden" style="position: absolute; top: 100%; left: 0; right: 45px; background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; padding: 0.25rem 0;"></div>
+                            </div>
+                            <div id="search-syntax-feedback" class="hidden" style="margin-bottom: 0.75rem; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 2px;">
+                                <span id="syntax-status-lbl" style="font-weight: bold;">Query Syntax Valid</span>
+                                <span id="syntax-desc-lbl" style="color: var(--text-secondary);">Correct filters configured.</span>
+                            </div>
 
-                <!-- Active filters banner -->
-                <div id="active-filters" class="active-filters hidden" style="display: flex; gap: 0.5rem; align-items: center;">
-                    <span id="active-tag-badge" class="tag-filter-badge"></span>
-                    <div id="tag-match-mode-container" style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem;">
-                        <span style="color: var(--text-secondary);">Match Mode:</span>
-                        <select id="search-tag-mode-select" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.1rem 0.3rem; outline:none;" onchange="triggerSearch()">
-                            <option value="AND">AND (All selected)</option>
-                            <option value="OR">OR (Any selected)</option>
-                        </select>
-                    </div>
-                    <button class="clear-filter-btn" onclick="clearTagFilter()">✕ Clear Tag Filter</button>
-                </div>
+                            <!-- Query Search Mode Switcher & Sorting/Filtering Toolbar -->
+                            <div class="search-mode-container" style="display: flex; gap: 0.5rem; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="mode-btn active" id="mode-keyword" onclick="setSearchMode('keyword')">Keyword Matching (FTS5)</button>
+                                    <button class="mode-btn" id="mode-semantic" onclick="setSearchMode('semantic')">Semantic Concepts (TF-IDF)</button>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <label for="macro-select" style="font-size: 0.75rem; color: var(--text-secondary);">Macro:</label>
+                                    <select id="macro-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;" onchange="applyQueryMacro()">
+                                        <option value="">-- Apply Macro --</option>
+                                    </select>
+                                </div>
+                            </div>
 
-                <div class="results-container" id="results-list-wrapper">
-                    <div class="results-header">
-                        <h2 id="results-title-header">Matching Records</h2>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <select id="pdf-template-select" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;">
-                                <option value="default">Default Template</option>
-                                <option value="compact">Compact Template</option>
-                                <option value="descriptive">Descriptive Cards</option>
-                                <option value="toc">Hierarchical TOC</option>
-                                <option value="gallery">Catalog Grid Gallery</option>
-                            </select>
-                            <input type="text" id="pdf-title-input" placeholder="Custom Report Title" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; width: 130px; outline:none;" />
-                            <select id="pdf-theme-select" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;">
-                                <option value="indigo">Indigo Theme</option>
-                                <option value="crimson">Crimson Theme</option>
-                                <option value="emerald">Emerald Theme</option>
-                                <option value="charcoal">Charcoal Theme</option>
-                            </select>
-                            <input type="text" id="pdf-tags-input" placeholder="Tags (comma-separated)" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; width: 120px; outline:none;" />
-                            <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; color: var(--text-secondary); cursor: pointer;">
-                                <input type="checkbox" id="pdf-include-notes-checkbox" checked style="cursor: pointer; accent-color: var(--accent);" /> Include Notes
-                            </label>
-                            <button id="export-pdf-btn" class="action-btn" onclick="exportPdfReport()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: rgba(99, 102, 241, 0.15); border: 1px solid var(--accent); color: var(--text-primary); border-radius: 6px; cursor: pointer; transition: all 0.2s;">📄 Export PDF</button>
-                            <button id="bulk-delete-btn" class="action-btn hidden" onclick="triggerBulkDelete()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: var(--text-primary); border-radius: 6px; cursor: pointer; transition: all 0.2s;">🗑️ Bulk Delete</button>
-                            <span id="results-count" class="count-badge">0 found</span>
+                            <!-- Similarity Threshold Slider (Semantic mode only) -->
+                             <div id="similarity-threshold-container" class="hidden" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; padding: 0.5rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 0.75rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1;">
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap;">Similarity Threshold:</span>
+                                    <input type="range" id="similarity-threshold-slider" min="0" max="100" value="0" style="flex-grow: 1; cursor: pointer; height: 4px; border-radius: 2px; accent-color: var(--accent);" oninput="updateSimilarityThresholdDisplay(this.value)">
+                                </div>
+                                <span id="similarity-threshold-val" style="font-size: 0.75rem; font-weight: bold; color: var(--accent); margin-left: 0.75rem; min-width: 2.5rem; text-align: right;">0%</span>
+                            </div>
+                            
+                            <!-- Subdirectory Active Scoped Path display -->
+                             <div id="active-path-filter-card" class="hidden" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.8rem; background: var(--accent-trans-08); border: 1px dashed var(--accent); border-radius: 6px; font-size: 0.75rem; margin-bottom: 0.75rem;">
+                                <span>Scope: <strong id="active-scoped-path-lbl">None</strong></span>
+                                <button class="clear-filter-btn" onclick="clearFolderScopeFilter()" style="margin: 0; padding: 1px 6px;">✕ Clear Scope</button>
+                            </div>
+
+                            <!-- Search Metrics Breakdown Panel -->
+                            <div id="search-metrics-panel" class="search-metrics-panel hidden" style="margin-bottom: 0.75rem;">
+                                <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+                                    <div class="metric-item">
+                                        <span class="m-label">Match Mode</span>
+                                        <span class="m-val" id="metric-mode">-</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="m-label">Execution Time</span>
+                                        <span class="m-val" id="metric-time">-</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="m-label">Match Count</span>
+                                        <span class="m-val" id="metric-count">-</span>
+                                    </div>
+                                    <div class="metric-item" style="grid-column: span 1;">
+                                        <span class="m-label">Synonyms Expanded</span>
+                                        <span class="m-val" id="metric-synonyms" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="">None</span>
+                                    </div>
+                                </div>
+                                <!-- ponytail: visual execution plan sequence list -->
+                                <div id="metric-execution-plan-container" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; display: flex; flex-direction: column; gap: 4px;">
+                                    <span style="color: var(--text-secondary); text-transform: uppercase; font-size: 0.6rem; letter-spacing: 0.05em; font-weight: bold;">Query Execution Plan Flow</span>
+                                    <div id="metric-execution-plan-flow" style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; color: var(--text-primary); font-family: monospace;">
+                                        <!-- Dynamic plan segments inject here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="search-toolbar">
+                                <div class="toolbar-group">
+                                    <label for="sort-by-select">Sort By:</label>
+                                    <select id="sort-by-select" onchange="triggerSearch()">
+                                        <option value="rank">Relevance (Rank)</option>
+                                        <option value="filename">Filename</option>
+                                        <option value="file_size">File Size</option>
+                                        <option value="modified_at">Date Modified</option>
+                                    </select>
+                                </div>
+
+                                <div class="toolbar-group">
+                                    <label for="sort-order-select">Order:</label>
+                                    <select id="sort-order-select" onchange="triggerSearch()">
+                                        <option value="asc">Ascending</option>
+                                        <option value="desc" selected>Descending</option>
+                                    </select>
+                                </div>
+
+                                <div class="toolbar-group">
+                                    <label for="date-filter-select">Modified Within:</label>
+                                    <select id="date-filter-select" onchange="triggerSearch()">
+                                        <option value="all">All Time</option>
+                                        <option value="24h">Last 24 Hours</option>
+                                        <option value="week">Last Week</option>
+                                        <option value="month">Last Month</option>
+                                        <option value="year">Last Year</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Category Filtering Tabs -->
+                            <div class="tabs-container">
+                                <button class="tab-btn active" data-category="all" onclick="selectCategory(this)">All Files</button>
+                                <button class="tab-btn" data-category="documents" onclick="selectCategory(this)">Documents</button>
+                                <button class="tab-btn" data-category="spreadsheets" onclick="selectCategory(this)">Spreadsheets</button>
+                                <button class="tab-btn" data-category="code" onclick="selectCategory(this)">Code</button>
+                                <button class="tab-btn" data-category="images" onclick="selectCategory(this)">Images</button>
+                                <button class="tab-btn" data-category="duplicates" onclick="selectCategory(this)">Duplicates</button>
+                                <button class="tab-btn" data-category="graph" onclick="selectCategory(this)">Concept Graph</button>
+                            </div>
+
+                            <!-- Active filters banner -->
+                            <div id="active-filters" class="active-filters hidden" style="display: flex; gap: 0.5rem; align-items: center;">
+                                <span id="active-tag-badge" class="tag-filter-badge"></span>
+                                <div id="tag-match-mode-container" style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem;">
+                                    <span style="color: var(--text-secondary);">Match Mode:</span>
+                                    <select id="search-tag-mode-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.1rem 0.3rem; outline:none;" onchange="triggerSearch()">
+                                        <option value="AND">AND (All selected)</option>
+                                        <option value="OR">OR (Any selected)</option>
+                                    </select>
+                                </div>
+                                <button class="clear-filter-btn" onclick="clearTagFilter()">✕ Clear Tag Filter</button>
+                            </div>
+
+                            <div class="results-container" id="results-list-wrapper">
+                                <div class="results-header">
+                                    <h2 id="results-title-header">Matching Records</h2>
+                                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                        <select id="pdf-template-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;">
+                                            <option value="default">Default Template</option>
+                                            <option value="compact">Compact Template</option>
+                                            <option value="descriptive">Descriptive Cards</option>
+                                            <option value="toc">Hierarchical TOC</option>
+                                            <option value="gallery">Catalog Grid Gallery</option>
+                                        </select>
+                                        <input type="text" id="pdf-title-input" placeholder="Custom Report Title" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; width: 130px; outline:none;" />
+                                        <select id="pdf-theme-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;">
+                                            <option value="indigo">Indigo Theme</option>
+                                            <option value="crimson">Crimson Theme</option>
+                                            <option value="emerald">Emerald Theme</option>
+                                            <option value="charcoal">Charcoal Theme</option>
+                                        </select>
+                                        <input type="text" id="pdf-tags-input" placeholder="Tags (comma-separated)" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; width: 120px; outline:none;" />
+                                        <label style="font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; color: var(--text-secondary); cursor: pointer;">
+                                            <input type="checkbox" id="pdf-include-notes-checkbox" checked style="cursor: pointer; accent-color: var(--accent);" /> Include Notes
+                                        </label>
+                                        <button id="export-pdf-btn" class="action-btn" onclick="exportPdfReport()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: var(--accent-trans-15); border: 1px solid var(--accent); color: var(--text-primary); border-radius: 6px; cursor: pointer; transition: all 0.2s;">📄 Export PDF</button>
+                                        <button id="bulk-delete-btn" class="action-btn hidden" onclick="triggerBulkDelete()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: var(--text-primary); border-radius: 6px; cursor: pointer; transition: all 0.2s;">🗑️ Bulk Delete</button>
+                                        <span id="results-count" class="count-badge">0 found</span>
+                                    </div>
+                                </div>
+                                <!-- FTS Custom Configuration Bar -->
+                                <div class="fts-config-bar" style="display: flex; gap: 0.5rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); font-size: 0.75rem; align-items: center;">
+                                    <span style="color: var(--text-secondary);">Snippet Config:</span>
+                                    <label>Words: <input type="number" id="snippet-limit-input" value="15" style="width: 40px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
+                                    <label>Start: <input type="text" id="snippet-start-input" value="&lt;mark&gt;" style="width: 60px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
+                                    <label>End: <input type="text" id="snippet-end-input" value="&lt;/mark&gt;" style="width: 60px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
+                                </div>
+                                <div id="results-list" class="results-list">
+                                    <div class="empty-state">Enter a query above to explore indexed knowledge.</div>
+                                </div>
+                            </div>
+
+                            <!-- Dynamic 2D Physics-based Concept Graph view -->
+                            <div class="graph-container-card hidden" id="graph-wrapper">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                    <h3 style="margin: 0;">Document Tag Network Connections</h3>
+                                    <div style="display: flex; align-items: center; gap: 0.35rem;">
+                                        <label for="graph-layout-preset" style="font-size: 0.75rem; color: var(--text-secondary);">Layout:</label>
+                                        <select id="graph-layout-preset" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;" onchange="changeGraphLayoutPreset()">
+                                            <option value="force">Force-Directed</option>
+                                            <option value="circular">Circular Circle</option>
+                                            <option value="grid">Orthogonal Grid</option>
+                                            <option value="tree">Hierarchical Tree</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="position: relative;">
+                                    <canvas id="concept-graph-canvas" width="600" height="400" style="border-radius: 8px; border: 1px solid var(--border-color); width: 100%; display: block;"></canvas>
+                                    <div class="canvas-controls" style="position: absolute; bottom: 10px; right: 10px; display: flex; gap: 0.25rem; background: var(--input-bg); padding: 0.25rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                                        <button onclick="zoomConceptGraph(1.2)" title="Zoom In" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">＋</button>
+                                        <button onclick="zoomConceptGraph(0.8)" title="Zoom Out" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">－</button>
+                                        <button onclick="resetConceptGraphView()" title="Reset View" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">⟲</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview Drawer -->
+                        <div id="preview-panel" class="preview-panel hidden">
+                            <div class="preview-header">
+                                <h3 id="preview-title">File Preview</h3>
+                                <button class="close-btn" onclick="closePreview()">✕</button>
+                            </div>
+                            <div class="preview-meta">
+                                <div class="meta-item"><strong>Path:</strong> <span id="preview-path">-</span></div>
+                                <div class="meta-item"><strong>Mime Type:</strong> <span id="preview-mime">-</span></div>
+                                <div class="meta-item"><strong>Size:</strong> <span id="preview-size">-</span></div>
+                                <div class="meta-item"><strong>SHA256:</strong> <span id="preview-sha">-</span></div>
+                            </div>
+
+                            <!-- Multimedia Audio Section -->
+                            <div id="preview-audio-card" class="preview-analytics-card hidden" style="margin-bottom: 1rem;">
+                                <h4>Audio Track Info</h4>
+                                <div class="analytics-grid" style="margin-bottom: 0.75rem;">
+                                    <div class="analytic-item"><strong>Duration:</strong> <span id="audio-duration">-</span></div>
+                                    <div class="analytic-item"><strong>Sample Rate:</strong> <span id="audio-samplerate">-</span></div>
+                                    <div class="analytic-item"><strong>Channels:</strong> <span id="audio-channels">-</span></div>
+                                    <div class="analytic-item"><strong>Bitrate:</strong> <span id="audio-bitrate">-</span></div>
+                                </div>
+                                <audio id="audio-preview-player" controls style="width: 100%; outline: none; border-radius: 8px; background: var(--bg-dark);"></audio>
+                            </div>
+
+                            <!-- CRUD Actions Section -->
+                            <div class="preview-crud-actions">
+                                <button class="action-btn rename-btn" onclick="renameFileAction()">✏️ Rename</button>
+                                <button class="action-btn edit-toggle-btn" id="edit-toggle-btn" onclick="toggleInlineEdit()">📝 Edit File</button>
+                                <button class="action-btn delete-btn" onclick="deleteFileAction()">🗑️ Delete File</button>
+                            </div>
+
+                            <!-- Text Metrics Analytics Section -->
+                            <div id="preview-analytics-card" class="preview-analytics-card hidden">
+                                <h4>Text Analytics</h4>
+                                <div class="analytics-grid">
+                                    <div class="analytic-item"><strong>Words:</strong> <span id="analytic-words">-</span></div>
+                                    <div class="analytic-item"><strong>Paragraphs:</strong> <span id="analytic-paragraphs">-</span></div>
+                                </div>
+                                <!-- Extractive Summary -->
+                                <div id="summary-section" class="summary-section hidden">
+                                    <h5>Extractive Summary:</h5>
+                                    <p id="summary-content"></p>
+                                </div>
+                            </div>
+
+                            <!-- Custom Annotations Notes Area -->
+                            <div class="preview-notes-section">
+                                <h4>Personal Annotation Notes</h4>
+                                <textarea id="file-notes-input" placeholder="Type custom annotations here to index them..." onblur="saveFileNotes()"></textarea>
+                                <div id="notes-status" class="notes-status-lbl">Auto-saves on blur</div>
+                            </div>
+
+                            <!-- Tag Management Section -->
+                            <div class="preview-tags-section">
+                                <h4>Tags</h4>
+                                <div id="file-tags-list" class="file-tags-list"></div>
+                                <div class="add-tag-group">
+                                    <input type="text" id="new-tag-input" placeholder="New tag..." onkeydown="if(event.key === 'Enter') addFileTag()"/>
+                                    <button onclick="addFileTag()">+</button>
+                                </div>
+                                
+                                <!-- Suggested Tags -->
+                                <div id="suggested-tags-container" class="suggested-tags-container hidden">
+                                    <h5>Suggested Tags:</h5>
+                                    <div id="suggested-tags-list" class="suggested-tags-list"></div>
+                                </div>
+                            </div>
+
+                            <div class="preview-content-area" id="preview-content-area" style="position: relative;">
+                                <div id="ocr-highlights-container" class="ocr-highlights-container" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:5;"></div>
+                                <textarea id="inline-text-editor" class="inline-text-editor hidden" style="width:100%; height:100%; background: var(--bg-dark); color: var(--text-primary); border:none; font-family:monospace; font-size:0.85rem; outline:none; resize:none;"></textarea>
+                                <pre><code id="preview-code">Select a file to preview its content</code></pre>
+                            </div>
                         </div>
                     </div>
-                    <!-- FTS Custom Configuration Bar -->
-                    <div class="fts-config-bar" style="display: flex; gap: 0.5rem; padding: 0.5rem 1rem; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color); font-size: 0.75rem; align-items: center;">
-                        <span style="color: var(--text-secondary);">Snippet Config:</span>
-                        <label>Words: <input type="number" id="snippet-limit-input" value="15" style="width: 40px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
-                        <label>Start: <input type="text" id="snippet-start-input" value="&lt;mark&gt;" style="width: 60px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
-                        <label>End: <input type="text" id="snippet-end-input" value="&lt;/mark&gt;" style="width: 60px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 1px 3px;" onchange="triggerSearch()"></label>
-                    </div>
-                    <div id="results-list" class="results-list">
-                        <div class="empty-state">Enter a query above to explore indexed knowledge.</div>
-                    </div>
                 </div>
 
-                <!-- Dynamic 2D Physics-based Concept Graph view -->
-                <div class="graph-container-card hidden" id="graph-wrapper">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                        <h3 style="margin: 0;">Document Tag Network Connections</h3>
-                        <div style="display: flex; align-items: center; gap: 0.35rem;">
-                            <label for="graph-layout-preset" style="font-size: 0.75rem; color: var(--text-secondary);">Layout:</label>
-                            <select id="graph-layout-preset" style="background: rgba(39, 39, 42, 0.6); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none;" onchange="changeGraphLayoutPreset()">
-                                <option value="force">Force-Directed</option>
-                                <option value="circular">Circular Circle</option>
-                                <option value="grid">Orthogonal Grid</option>
-                                <option value="tree">Hierarchical Tree</option>
-                            </select>
+                <!-- Configuration Tab View -->
+                <div id="config-tab-view" class="tab-view-content hidden">
+                    <div class="config-grid">
+                        <!-- Auto-Tagging Rules -->
+                        <div class="rules-sidebar">
+                            <h3>Auto-Tagging Rules</h3>
+                            <div class="rules-form">
+                                <input type="text" id="rule-pattern" placeholder="Regex pattern (e.g. \bformula\b)"/>
+                                <input type="text" id="rule-tag" placeholder="Tag name"/>
+                                <input type="number" id="rule-priority" placeholder="Priority (e.g. 10)" value="0" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; padding: 0.45rem; font-size: 0.8rem; width: 100%; outline: none; margin-bottom: 0.5rem;box-sizing: border-box;" />
+                                <div style="display: flex; gap: 0.5rem; width: 100%;">
+                                    <button onclick="addAutoRule()" style="flex: 1;">Add Rule</button>
+                                    <button onclick="testAutoRule()" style="flex: 1; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b;">Test Matches</button>
+                                </div>
+                            </div>
+                            <div id="sidebar-rules" class="rules-list-container">
+                                <span class="rules-empty">No automated tagging rules.</span>
+                            </div>
+                        </div>
+
+                        <!-- Word Synonyms Map -->
+                        <div class="rules-sidebar">
+                            <h3>Word Synonyms Map</h3>
+                            <div class="rules-form">
+                                <input type="text" id="synonym-word" placeholder="Word (e.g. gravity)"/>
+                                <input type="text" id="synonym-substitutes" placeholder="Synonyms (comma separated)"/>
+                                <button onclick="addWordSynonym()">Save Synonym</button>
+                            </div>
+                            <div id="sidebar-synonyms" class="rules-list-container" style="max-height: 100px; overflow-y: auto; font-size: 0.75rem;">
+                                <span class="rules-empty">No synonyms configured.</span>
+                            </div>
+                        </div>
+
+                        <!-- Search History Vault -->
+                        <div class="rules-sidebar">
+                            <h3>Search History Vault</h3>
+                            <div id="sidebar-search-history" class="rules-list-container" style="max-height: 120px; overflow-y: auto; font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                                <span class="rules-empty">No search query history logged.</span>
+                            </div>
+                        </div>
+
+                        <!-- Search Bookmarks Vault -->
+                        <div class="rules-sidebar">
+                            <h3>Search Bookmarks Vault</h3>
+                            <div id="sidebar-search-bookmarks" class="rules-list-container" style="max-height: 120px; overflow-y: auto; font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;">
+                                <span class="rules-empty">No bookmarks saved yet.</span>
+                            </div>
+                        </div>
+
+                        <!-- Query Macros Manager -->
+                        <div class="rules-sidebar">
+                            <h3>Query Macros Manager</h3>
+                            <div id="sidebar-macros" class="rules-list-container" style="max-height: 120px; overflow-y: auto; font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem;">
+                                <span class="rules-empty">No macros configured.</span>
+                            </div>
+                            <div class="rules-form" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                <input type="text" id="macro-name-input" placeholder="Macro name (e.g. sci)" style="padding: 0.4rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 0.75rem;" />
+                                <input type="text" id="macro-expansion-input" placeholder="Query expansion (e.g. tag:science)" style="padding: 0.4rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px; font-size: 0.75rem;" />
+                                <button onclick="addQueryMacroAction()" style="width: 100%; padding: 0.4rem 0.8rem; font-size: 0.75rem;">+ Add Macro</button>
+                            </div>
+                        </div>
+
+                        <!-- Periodic Backup Scheduler -->
+                        <div class="sync-sidebar">
+                            <h3>Periodic Backup Scheduler</h3>
+                            <div class="rules-form" style="display: flex; gap: 0.25rem;">
+                                <input type="number" id="backup-seconds-input" value="3600" style="flex: 1; padding: 0.4rem; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 6px;" />
+                                <button onclick="scheduleBackupAction()" style="width: auto; padding: 0.4rem 0.8rem;">Schedule (s)</button>
+                            </div>
+                            <span id="backup-schedule-status" style="font-size: 0.7rem; color: var(--text-secondary);">No backup schedule active.</span>
+                        </div>
+
+                        <!-- P2P LAN Sync Nodes -->
+                        <div class="sync-sidebar">
+                            <h3>P2P LAN Sync Nodes</h3>
+                            <div class="rules-form">
+                                <input type="text" id="peer-address" placeholder="LAN Node Address (http://127.0.0.1:8000)"/>
+                                <input type="text" id="peer-name" placeholder="Peer Name"/>
+                                <button onclick="addPeer()">Add Node</button>
+                            </div>
+                            <div id="sidebar-peers" class="rules-list-container">
+                                <span class="rules-empty">No syncing nodes registered.</span>
+                            </div>
+                        </div>
+
+                        <!-- DB Snapshot Vault -->
+                        <div class="snapshots-sidebar">
+                            <div class="explorer-header">
+                                <h3>DB Snapshot Vault</h3>
+                                <button onclick="createSnapshot()" title="Create Snapshot">📸</button>
+                            </div>
+                            <div id="sidebar-snapshots" class="rules-list-container">
+                                <span class="rules-empty">No snapshots captured.</span>
+                            </div>
                         </div>
                     </div>
-                    <div style="position: relative;">
-                        <canvas id="concept-graph-canvas" width="600" height="400" style="border-radius: 8px; border: 1px solid var(--border-color); width: 100%; display: block;"></canvas>
-                        <div class="canvas-controls" style="position: absolute; bottom: 10px; right: 10px; display: flex; gap: 0.25rem; background: rgba(0,0,0,0.5); padding: 0.25rem; border-radius: 6px; border: 1px solid var(--border-color); backdrop-filter: blur(4px);">
-                            <button onclick="zoomConceptGraph(1.2)" title="Zoom In" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">＋</button>
-                            <button onclick="zoomConceptGraph(0.8)" title="Zoom Out" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">－</button>
-                            <button onclick="resetConceptGraphView()" title="Reset View" style="background: transparent; border: none; color: white; cursor: pointer; padding: 0.2rem 0.4rem; font-size: 0.75rem; font-weight: bold;">⟲</button>
-                        </div>
-                    </div>
                 </div>
-            </div>
-
-            <!-- Preview Drawer -->
-            <div id="preview-panel" class="preview-panel hidden">
-                <div class="preview-header">
-                    <h3 id="preview-title">File Preview</h3>
-                    <button class="close-btn" onclick="closePreview()">✕</button>
-                </div>
-                <div class="preview-meta">
-                    <div class="meta-item"><strong>Path:</strong> <span id="preview-path">-</span></div>
-                    <div class="meta-item"><strong>Mime Type:</strong> <span id="preview-mime">-</span></div>
-                    <div class="meta-item"><strong>Size:</strong> <span id="preview-size">-</span></div>
-                    <div class="meta-item"><strong>SHA256:</strong> <span id="preview-sha">-</span></div>
-                </div>
-
-                <!-- Multimedia Audio Section -->
-                <div id="preview-audio-card" class="preview-analytics-card hidden" style="margin-bottom: 1rem;">
-                    <h4>Audio Track Info</h4>
-                    <div class="analytics-grid" style="margin-bottom: 0.75rem;">
-                        <div class="analytic-item"><strong>Duration:</strong> <span id="audio-duration">-</span></div>
-                        <div class="analytic-item"><strong>Sample Rate:</strong> <span id="audio-samplerate">-</span></div>
-                        <div class="analytic-item"><strong>Channels:</strong> <span id="audio-channels">-</span></div>
-                        <div class="analytic-item"><strong>Bitrate:</strong> <span id="audio-bitrate">-</span></div>
-                    </div>
-                    <audio id="audio-preview-player" controls style="width: 100%; outline: none; border-radius: 8px; background: #18181b;"></audio>
-                </div>
-
-                <!-- CRUD Actions Section -->
-                <div class="preview-crud-actions">
-                    <button class="action-btn rename-btn" onclick="renameFileAction()">✏️ Rename</button>
-                    <button class="action-btn edit-toggle-btn" id="edit-toggle-btn" onclick="toggleInlineEdit()">📝 Edit File</button>
-                    <button class="action-btn delete-btn" onclick="deleteFileAction()">🗑️ Delete File</button>
-                </div>
-
-                <!-- Text Metrics Analytics Section -->
-                <div id="preview-analytics-card" class="preview-analytics-card hidden">
-                    <h4>Text Analytics</h4>
-                    <div class="analytics-grid">
-                        <div class="analytic-item"><strong>Words:</strong> <span id="analytic-words">-</span></div>
-                        <div class="analytic-item"><strong>Paragraphs:</strong> <span id="analytic-paragraphs">-</span></div>
-                    </div>
-                    <!-- Extractive Summary -->
-                    <div id="summary-section" class="summary-section hidden">
-                        <h5>Extractive Summary:</h5>
-                        <p id="summary-content"></p>
-                    </div>
-                </div>
-
-                <!-- Custom Annotations Notes Area -->
-                <div class="preview-notes-section">
-                    <h4>Personal Annotation Notes</h4>
-                    <textarea id="file-notes-input" placeholder="Type custom annotations here to index them..." onblur="saveFileNotes()"></textarea>
-                    <div id="notes-status" class="notes-status-lbl">Auto-saves on blur</div>
-                </div>
-
-                <!-- Tag Management Section -->
-                <div class="preview-tags-section">
-                    <h4>Tags</h4>
-                    <div id="file-tags-list" class="file-tags-list"></div>
-                    <div class="add-tag-group">
-                        <input type="text" id="new-tag-input" placeholder="New tag..." onkeydown="if(event.key === 'Enter') addFileTag()"/>
-                        <button onclick="addFileTag()">+</button>
-                    </div>
-                    
-                    <!-- Suggested Tags -->
-                    <div id="suggested-tags-container" class="suggested-tags-container hidden">
-                        <h5>Suggested Tags:</h5>
-                        <div id="suggested-tags-list" class="suggested-tags-list"></div>
-                    </div>
-                </div>
-
-                <div class="preview-content-area" id="preview-content-area" style="position: relative;">
-                    <div id="ocr-highlights-container" class="ocr-highlights-container" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:5;"></div>
-                    <textarea id="inline-text-editor" class="inline-text-editor hidden" style="width:100%; height:100%; background: #000; color: #fff; border:none; font-family:monospace; font-size:0.85rem; outline:none; resize:none;"></textarea>
-                    <pre><code id="preview-code">Select a file to preview its content</code></pre>
-                </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
     <input type="color" id="global-tag-color-picker" style="display:none;" />
     <script src="app.js"></script>
