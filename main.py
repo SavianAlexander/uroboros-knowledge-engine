@@ -997,6 +997,23 @@ def export_pdf_report(tag: str = None, category: str = None, style_template: str
             ]))
             story.append(t)
             story.append(Spacer(1, 12))
+    elif style_template == "toc":
+        # ponytail: build Table of Contents directory pointing to detailing document paragraphs
+        story.append(Paragraph("<b>Table of Contents Directory</b>", h2_style))
+        story.append(Spacer(1, 10))
+        for idx, f in enumerate(files):
+            # Compact TOC layout entry using inline spacing dots
+            toc_text = f"• Document #{idx+1}: {f['filename']} ................................................................ Details Section"
+            story.append(Paragraph(toc_text, body_style))
+        story.append(Spacer(1, 25))
+        
+        # Details listings section
+        for idx, f in enumerate(files):
+            story.append(Paragraph(f"Details: #{idx+1} {f['filename']}", h2_style))
+            story.append(Spacer(1, 5))
+            content_snippet = (f['content'] or "")[:300] + "..." if len(f['content'] or "") > 300 else (f['content'] or "[Empty]")
+            story.append(Paragraph(f"Content Summary: {content_snippet}", body_style))
+            story.append(Spacer(1, 10))
     else:
         # Default report list paragraphs
         for idx, f in enumerate(files):

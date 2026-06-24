@@ -399,6 +399,10 @@ def index_directory(dir_path, progress_callback=None):
         suffix = p.suffix.lower()
         if mime_type.startswith('text/') or suffix in text_extensions:
             content, coords = extract_content(filepath, suffix)
+        elif suffix in {'.wav', '.mp3'}:
+            # ponytail: index audio parameter details inside FTS database text elements
+            meta = parse_audio_metadata(filepath)
+            content = f"[Audio Metadata] samplerate:{meta.get('samplerate', 0)} channels:{meta.get('channels', 0)} bitrate:{meta.get('bitrate', 'Unknown')} duration:{meta.get('duration', 0)}s"
             
         if row:
             file_id = row['id']

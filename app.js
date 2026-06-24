@@ -1436,6 +1436,53 @@ function drawGraph(nodes, links) {
         ctx.translate(offsetX, offsetY);
         ctx.scale(zoomScale, zoomScale);
         
+        // ponytail: automatic category clustering hull backgrounds calculations
+        const groups = {
+            code: { nodes: [], color: "rgba(99, 102, 241, 0.06)", border: "rgba(99, 102, 241, 0.15)" },
+            spreadsheets: { nodes: [], color: "rgba(16, 185, 129, 0.06)", border: "rgba(16, 185, 129, 0.15)" },
+            images: { nodes: [], color: "rgba(239, 68, 68, 0.06)", border: "rgba(239, 68, 68, 0.15)" },
+            documents: { nodes: [], color: "rgba(245, 158, 11, 0.06)", border: "rgba(245, 158, 11, 0.15)" }
+        };
+        
+        nodes.forEach(n => {
+            if (n.filename) {
+                const ext = n.filename.split('.').pop().toLowerCase();
+                if (['py', 'js', 'html', 'css', 'json', 'xml'].includes(ext)) {
+                    groups.code.nodes.push(n);
+                } else if (['xlsx', 'csv'].includes(ext)) {
+                    groups.spreadsheets.nodes.push(n);
+                } else if (['png', 'jpg', 'jpeg', 'bmp'].includes(ext)) {
+                    groups.images.nodes.push(n);
+                } else {
+                    groups.documents.nodes.push(n);
+                }
+            }
+        });
+        
+        for (const key in groups) {
+            const grp = groups[key];
+            if (grp.nodes.length >= 2) {
+                let sumX = 0, sumY = 0;
+                grp.nodes.forEach(n => { sumX += n.x; sumY += n.y; });
+                const cx = sumX / grp.nodes.length;
+                const cy = sumY / grp.nodes.length;
+                
+                let maxD = 0;
+                grp.nodes.forEach(n => {
+                    const d = Math.sqrt((n.x - cx) * (n.x - cx) + (n.y - cy) * (n.y - cy));
+                    if (d > maxD) maxD = d;
+                });
+                
+                ctx.fillStyle = grp.color;
+                ctx.strokeStyle = grp.border;
+                ctx.lineWidth = 1.0;
+                ctx.beginPath();
+                ctx.arc(cx, cy, maxD + 25, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+        
         // Draw Links
         links.forEach(l => {
             const s = nodes.find(n => n.id === l.source);
