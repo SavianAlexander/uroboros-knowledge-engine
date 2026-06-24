@@ -31,6 +31,8 @@ function switchTab(tabId) {
         fetchSearchBookmarks();
         fetchPeers();
         fetchSnapshots();
+    } else if (tabId === "chat") {
+        // No specific data load required for chat, or handle welcome message
     }
 }
 
@@ -2515,4 +2517,97 @@ async function scheduleBackupAction() {
 document.addEventListener("DOMContentLoaded", () => {
     fetchSynonymsList();
 });
+
+// client-side mock chat engine
+function handleChatKeyDown(e) {
+    if (e.key === "Enter") {
+        sendChatMessage();
+    }
+}
+
+function sendChatMessage() {
+    const inputEl = document.getElementById("chat-input");
+    if (!inputEl) return;
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    // Clear input
+    inputEl.value = "";
+
+    // Append User message
+    appendChatMessage("User", text, "user");
+
+    // Trigger Assistant reply after 550ms
+    setTimeout(() => {
+        const reply = generateMockReply(text);
+        appendChatMessage("Assistant", reply, "assistant");
+    }, 550);
+}
+
+function appendChatMessage(sender, content, className) {
+    const messagesContainer = document.getElementById("chat-messages");
+    if (!messagesContainer) return;
+
+    const msgEl = document.createElement("div");
+    msgEl.className = `chat-message ${className}`;
+
+    const senderEl = document.createElement("span");
+    senderEl.className = "message-sender";
+    senderEl.innerText = sender;
+
+    const contentEl = document.createElement("span");
+    contentEl.className = "message-content";
+    contentEl.innerText = content;
+
+    const timeEl = document.createElement("span");
+    timeEl.className = "message-time";
+    const now = new Date();
+    const pad = (n) => n.toString().padStart(2, '0');
+    timeEl.innerText = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    msgEl.appendChild(senderEl);
+    msgEl.appendChild(contentEl);
+    msgEl.appendChild(timeEl);
+
+    messagesContainer.appendChild(msgEl);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function generateMockReply(userMsg) {
+    const msg = userMsg.toLowerCase();
+    
+    // Querying active stats from DOM
+    const totalFiles = document.getElementById("stat-files")?.innerText || "-";
+    const totalSize = document.getElementById("stat-size")?.innerText || "-";
+    const diskFree = document.getElementById("stat-disk-free")?.innerText || "-";
+    const cacheRatio = document.getElementById("stat-cache-ratio")?.innerText || "-";
+
+    if (msg.includes("stat") || msg.includes("file") || msg.includes("size") || msg.includes("database") || msg.includes("capacity") || msg.includes("cache") || msg.includes("hit")) {
+        return `Active Database Stats:\n- Total Files: ${totalFiles}\n- Total Size: ${totalSize}\n- Free Storage: ${diskFree}\n- Cache Hit Ratio: ${cacheRatio}`;
+    }
+    
+    if (msg.includes("syntax") || msg.includes("search") || msg.includes("near") || msg.includes("filter")) {
+        return "Search Syntax Guide:\n- Proximity: NEAR(wordA wordB, max_distance)\n- Tags: tag:work,tag:science (supports AND/OR via UI)\n- Type/Size: type:pdf size>1mb\n- Exclusions: -type:code -word:secret";
+    }
+
+    if (msg.includes("tag")) {
+        const tagsList = [];
+        document.querySelectorAll(".tag-pill-sidebar").forEach(el => {
+            tagsList.push(el.innerText.trim());
+        });
+        if (tagsList.length > 0) {
+            return `Here are the active tags in your database: ${tagsList.join(", ")}`;
+        }
+        return "There are no tags active in your database yet. You can add them in the search tab preview panel.";
+    }
+
+    if (msg.includes("hello") || msg.includes("hi") || msg.includes("hey")) {
+        return "Hello! I am your Uroboros Knowledge Assistant. Ask me about your database stats, search syntax, active tags, or type a query!";
+    }
+
+    return `I understand you are asking about '${userMsg}'. Ask me about your database stats, search syntax, or tags!`;
+}
+
+window.handleChatKeyDown = handleChatKeyDown;
+window.sendChatMessage = sendChatMessage;
 
