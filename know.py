@@ -472,7 +472,7 @@ def index_directory(dir_path, progress_callback=None):
         
         content = ""
         coords = []
-        suffix = p.suffix.lower()
+        suffix = Path(filepath).suffix.lower()
         if mime_type.startswith('text/') or suffix in text_extensions:
             content, coords = extract_content(filepath, suffix)
         elif suffix in {'.wav', '.mp3'}:
