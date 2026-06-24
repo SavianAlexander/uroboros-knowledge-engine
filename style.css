@@ -1181,3 +1181,77 @@ body {
     transform: translateX(4px);
 }
 
+/* P2P Sync Panel */
+.sync-sidebar {
+    background: rgba(39, 39, 42, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sync-sidebar h3 {
+    font-family: var(--font-outfit);
+    font-size: 0.95rem;
+}
+
+.peer-sync-btn {
+    font-size: 0.7rem;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid var(--success);
+    color: var(--success);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.peer-sync-btn:hover {
+    background: var(--success);
+    color: white;
+}
+
+/* Index Progress Bar Loading card */
+.progress-bar-card {
+    background: rgba(24, 24, 27, 0.9);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+}
+
+.progress-bar-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.progress-outer {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* OCR Coordinate Bounding Boxes Highlights styles */
+.ocr-bounding-highlight {
+    position: absolute;
+    border: 1px solid rgba(239, 68, 68, 0.7);
+    background: rgba(239, 68, 68, 0.15);
+    border-radius: 2px;
+    pointer-events: none;
+    transition: all 0.2s;
+}
+
+

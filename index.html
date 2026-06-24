@@ -88,6 +88,19 @@
                     <span class="rules-empty">No automated tagging rules.</span>
                 </div>
             </div>
+
+            <!-- Peer-to-Peer Sync Sidebar Component -->
+            <div class="sync-sidebar">
+                <h3>P2P LAN Sync Nodes</h3>
+                <div class="rules-form">
+                    <input type="text" id="peer-address" placeholder="LAN Node Address (http://127.0.0.1:8000)"/>
+                    <input type="text" id="peer-name" placeholder="Peer Name"/>
+                    <button onclick="addPeer()">Add Node</button>
+                </div>
+                <div id="sidebar-peers" class="rules-list-container">
+                    <span class="rules-empty">No syncing nodes registered.</span>
+                </div>
+            </div>
         </header>
 
         <!-- Main Workspace -->
@@ -97,6 +110,17 @@
                 <div id="drop-zone" class="drop-zone">
                     <span class="drop-icon">📥</span>
                     <p>Drag & Drop any files here to automatically dump and index them into the active directory.</p>
+                </div>
+
+                <!-- Async Indexing Progress Bar -->
+                <div id="progress-bar-card" class="progress-bar-card hidden">
+                    <div class="progress-bar-header">
+                        <span id="progress-bar-file">Scanning files...</span>
+                        <span id="progress-bar-pct">0%</span>
+                    </div>
+                    <div class="progress-outer">
+                        <div id="progress-inner" class="progress-inner"></div>
+                    </div>
                 </div>
 
                 <div class="search-bar-container">
@@ -223,7 +247,8 @@
                     </div>
                 </div>
 
-                <div class="preview-content-area" id="preview-content-area">
+                <div class="preview-content-area" id="preview-content-area" style="position: relative;">
+                    <div id="ocr-highlights-container" class="ocr-highlights-container" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:5;"></div>
                     <pre><code id="preview-code">Select a file to preview its content</code></pre>
                 </div>
             </div>

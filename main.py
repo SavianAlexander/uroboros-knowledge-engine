@@ -119,6 +119,12 @@ def get_index():
 def get_css():
     return FileResponse("style.css")
 
+@app.get("/api/file/raw")
+def get_raw_file(path: str):
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(path)
+
 @app.get("/app.js")
 def get_js():
     return FileResponse("app.js")
@@ -159,17 +165,59 @@ def get_stats():
         "active_directory": os.path.abspath(ACTIVE_DIR)
     }
 
+# Progress channel storage
+import queue
+progress_queues = []
+
 @app.post("/api/index")
 def trigger_index(req: IndexRequest):
     global ACTIVE_DIR
     if not os.path.isdir(req.directory):
         raise HTTPException(status_code=400, detail="Invalid directory path")
-    try:
-        ACTIVE_DIR = req.directory
-        know.index_directory(req.directory)
-        return {"status": "success", "message": f"Successfully indexed {req.directory}"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    
+    ACTIVE_DIR = req.directory
+    
+    # Run index in a background thread to prevent blocking FastAPI async thread
+    import threading
+    def run_indexer():
+        def progress_cb(filename, current, total):
+            pct = int((current / total) * 100)
+            data = f"data: {{\"filename\": \"{filename}\", \"pct\": {pct}, \"current\": {current}, \"total\": {total}}}\n\n"
+            for q in list(progress_queues):
+                q.put(data)
+        
+        try:
+            know.index_directory(req.directory, progress_callback=progress_cb)
+            # Send completion signal
+            for q in list(progress_queues):
+                q.put("data: {\"done\": true}\n\n")
+        except Exception as e:
+            for q in list(progress_queues):
+                q.put(f"data: {{\"error\": \"{str(e)}\"}}\n\n")
+
+    threading.Thread(target=run_indexer, daemon=True).start()
+    return {"status": "success", "message": f"Successfully started indexing {req.directory}"}
+
+from fastapi.responses import StreamingResponse
+
+@app.get("/api/index/events")
+def index_events():
+    q = queue.Queue()
+    progress_queues.append(q)
+    
+    def event_generator():
+        try:
+            while True:
+                # yield indexing updates
+                item = q.get()
+                yield item
+                if "done" in item or "error" in item:
+                    break
+        finally:
+            if q in progress_queues:
+                progress_queues.remove(q)
+                
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):
@@ -190,6 +238,7 @@ async def upload_file(file: UploadFile = File(...)):
         mime_type = mime_type or 'application/octet-stream'
         
         content = ""
+        coords = []
         suffix = os.path.splitext(file.filename)[1].lower()
         text_extensions = {
             '.md', '.py', '.txt', '.json', '.yaml', '.yml', '.ini', '.csv', '.xml', 
@@ -197,7 +246,7 @@ async def upload_file(file: UploadFile = File(...)):
             '.png', '.jpg', '.jpeg', '.bmp'
         }
         if mime_type.startswith('text/') or suffix in text_extensions:
-            content = know.extract_content(filepath, suffix)
+            content, coords = know.extract_content(filepath, suffix)
             
         conn = know.get_db()
         cursor = conn.cursor()
@@ -205,6 +254,7 @@ async def upload_file(file: UploadFile = File(...)):
         row = cursor.fetchone()
         
         if row:
+            file_id = row['id']
             cursor.execute("""
                 UPDATE files 
                 SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?
@@ -213,13 +263,21 @@ async def upload_file(file: UploadFile = File(...)):
             cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (filepath,))
             cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))",
                            (filepath, file.filename, content, filepath))
+            cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
+            for coord in coords:
+                cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?)",
+                               (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
         else:
             cursor.execute("""
                 INSERT INTO files (filepath, filename, file_size, mime_type, sha256, modified_at, content, notes)
                 VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
             """, (filepath, file.filename, file_size, mime_type, sha256, modified_at, content))
+            file_id = cursor.lastrowid
             cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, NULL)",
                            (filepath, file.filename, content))
+            for coord in coords:
+                cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?)",
+                               (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
             
         conn.commit()
         conn.close()
@@ -401,10 +459,15 @@ def get_file(path: str):
     cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (file_id,))
     tags = [t['tag'] for t in cursor.fetchall()]
     
+    # Query bounding coordinates for dynamic preview drawing
+    cursor.execute("SELECT word, x, y, w, h FROM ocr_coords WHERE file_id = ?", (file_id,))
+    coords = [dict(r) for r in cursor.fetchall()]
+    
     conn.close()
     res = dict(row)
     res['tags'] = tags
     res['suggested_tags'] = suggest_tags_from_text(row['content'])
+    res['coords'] = coords
     
     # Calculate text metrics and generate summary
     content = row['content'] or ""
@@ -590,6 +653,102 @@ def delete_rule(id: int):
     conn.commit()
     conn.close()
     return {"status": "success"}
+
+class PeerRequest(BaseModel):
+    address: str
+    name: str
+
+class SyncExchangeRequest(BaseModel):
+    target_peer: str
+
+@app.get("/api/sync/peers")
+def get_peers():
+    conn = know.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, address, name FROM sync_peers ORDER BY id DESC")
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return {"peers": rows}
+
+@app.post("/api/sync/peers")
+def add_peer(req: PeerRequest):
+    conn = know.get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO sync_peers (address, name) VALUES (?, ?)", (req.address, req.name))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Peer address already registered")
+    finally:
+        conn.close()
+    return {"status": "success"}
+
+@app.delete("/api/sync/peers")
+def delete_peer(id: int):
+    conn = know.get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM sync_peers WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
+
+# exchange list files
+@app.get("/api/sync/manifest")
+def sync_manifest():
+    conn = know.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT filepath, filename, file_size, sha256, modified_at, content FROM files")
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return {"manifest": rows}
+
+@app.post("/api/sync/exchange")
+def exchange_payload(req: SyncExchangeRequest):
+    # ponytail: lightweight LAN syncing pulling manifest, performing sha256 diff, and uploading missing records.
+    import urllib.request
+    import json
+    
+    url = f"{req.target_peer}/api/sync/manifest"
+    try:
+        req_net = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req_net, timeout=3) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            peer_manifest = data.get("manifest", [])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reach peer: {str(e)}")
+        
+    conn = know.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT sha256 FROM files WHERE sha256 IS NOT NULL")
+    local_hashes = {row['sha256'] for row in cursor.fetchall()}
+    
+    synced_files = []
+    for item in peer_manifest:
+        if item['sha256'] and item['sha256'] not in local_hashes:
+            # Recreate file locally under ACTIVE_DIR to sync physical disk files
+            local_path = os.path.join(ACTIVE_DIR, item['filename'])
+            # Note: We index text/raw contents over network in this simple LAN protocol
+            try:
+                with open(local_path, "w", encoding="utf-8", errors="ignore") as f:
+                    f.write(item['content'] or "")
+            except Exception:
+                pass
+            
+            # Insert into database
+            try:
+                cursor.execute("""
+                    INSERT INTO files (filepath, filename, file_size, mime_type, sha256, modified_at, content)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (local_path, item['filename'], item['file_size'], 'application/octet-stream', item['sha256'], item['modified_at'], item['content']))
+                cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, NULL)",
+                               (local_path, item['filename'], item['content']))
+                synced_files.append(item['filename'])
+            except sqlite3.IntegrityError:
+                pass
+                
+    conn.commit()
+    conn.close()
+    return {"status": "success", "synced": synced_files}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchGlobalTags();
     fetchDirectoryTree();
     fetchAutoRules();
+    fetchPeers();
     setupDropZone();
 });
 
@@ -245,6 +246,97 @@ function buildTreeUI(files) {
     }
 }
 
+async function fetchPeers() {
+    try {
+        const response = await fetch("/api/sync/peers");
+        const data = await response.json();
+        renderPeers(data.peers);
+    } catch (error) {
+        console.error("Failed to load peers", error);
+    }
+}
+
+function renderPeers(peers) {
+    const container = document.getElementById("sidebar-peers");
+    container.innerHTML = "";
+    if (!peers || peers.length === 0) {
+        container.innerHTML = '<span class="rules-empty">No syncing nodes registered.</span>';
+        return;
+    }
+    peers.forEach(peer => {
+        const div = document.createElement("div");
+        div.className = "rule-item";
+        div.innerHTML = `
+            <span><strong>${peer.name}</strong> (${peer.address})</span>
+            <div>
+                <button class="peer-sync-btn" onclick="syncWithPeer('${peer.address}')">Sync</button>
+                <button class="rule-del-btn" onclick="deletePeer(${peer.id})">✕</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+async function addPeer() {
+    const addressInput = document.getElementById("peer-address");
+    const nameInput = document.getElementById("peer-name");
+    const address = addressInput.value.trim();
+    const name = nameInput.value.trim();
+    if (!address || !name) return;
+
+    try {
+        const response = await fetch("/api/sync/peers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address, name })
+        });
+        if (response.ok) {
+            addressInput.value = "";
+            nameInput.value = "";
+            fetchPeers();
+        } else {
+            const err = await response.json();
+            alert(`Failed: ${err.detail}`);
+        }
+    } catch (e) {
+        console.error("Peer registration failed", e);
+    }
+}
+
+async function deletePeer(id) {
+    try {
+        const response = await fetch(`/api/sync/peers?id=${id}`, {
+            method: "DELETE"
+        });
+        if (response.ok) {
+            fetchPeers();
+        }
+    } catch (e) {
+        console.error("Peer deletion failed", e);
+    }
+}
+
+async function syncWithPeer(peerAddress) {
+    alert(`Starting sync exchange with peer node: ${peerAddress}`);
+    try {
+        const response = await fetch("/api/sync/exchange", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target_peer: peerAddress })
+        });
+        const result = await response.json();
+        if (response.ok) {
+            alert(`Sync completed! Synced ${result.synced.length} new files: ${result.synced.join(", ")}`);
+            fetchStats();
+            fetchDirectoryTree();
+            triggerSearch();
+        } else {
+            alert(`Sync failed: ${result.detail}`);
+        }
+    } catch (e) {
+        alert(`Sync failed to connect to peer node: ${e}`);
+    }
+}
 function selectCategory(button) {
     document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
     button.classList.add("active");
@@ -539,10 +631,28 @@ async function showPreview(path) {
 
         const previewArea = document.getElementById("preview-content-area");
         previewArea.innerHTML = "";
+        
+        // Ensure overlay element exists or recreate it
+        let overlay = document.getElementById("ocr-highlights-container");
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.id = "ocr-highlights-container";
+            overlay.className = "ocr-highlights-container";
+            overlay.style.position = "absolute";
+            overlay.style.top = "0";
+            overlay.style.left = "0";
+            overlay.style.width = "100%";
+            overlay.style.height = "100%";
+            overlay.style.pointerEvents = "none";
+            overlay.style.zIndex = "5";
+            previewArea.appendChild(overlay);
+        }
+        overlay.innerHTML = "";
 
         const suffix = data.filename.split('.').pop().toLowerCase();
         
         if (suffix === 'csv' && data.content) {
+            previewArea.appendChild(overlay); // keep overlay active but empty
             const table = document.createElement("table");
             table.className = "csv-table";
             const lines = data.content.split('\n');
@@ -559,6 +669,7 @@ async function showPreview(path) {
             });
             previewArea.appendChild(table);
         } else if (suffix === 'json' && data.content) {
+            previewArea.appendChild(overlay);
             try {
                 const jsonObj = JSON.parse(data.content);
                 const pre = document.createElement("pre");
@@ -569,15 +680,42 @@ async function showPreview(path) {
                 pre.innerHTML = `<code id="preview-code">${data.content}</code>`;
                 previewArea.appendChild(pre);
             }
+        } else if (['png', 'jpg', 'jpeg', 'bmp'].includes(suffix)) {
+            // Render local image directly
+            const img = document.createElement("img");
+            // API path fallback
+            img.src = `/api/file/raw?path=${encodeURIComponent(data.filepath)}`;
+            img.style.maxWidth = "100%";
+            img.style.display = "block";
+            img.style.position = "relative";
+            
+            previewArea.appendChild(overlay);
+            previewArea.appendChild(img);
+            
+            // Render bounding boxes
+            if (data.coords && data.coords.length > 0) {
+                data.coords.forEach(box => {
+                    const highlight = document.createElement("div");
+                    highlight.className = "ocr-bounding-highlight";
+                    highlight.style.left = `${box.x}px`;
+                    highlight.style.top = `${box.y}px`;
+                    highlight.style.width = `${box.w}px`;
+                    highlight.style.height = `${box.h}px`;
+                    highlight.title = box.word;
+                    overlay.appendChild(highlight);
+                });
+            }
         } else if (data.content) {
+            previewArea.appendChild(overlay);
             const pre = document.createElement("pre");
             pre.innerHTML = `<code id="preview-code">${data.content}</code>`;
             previewArea.appendChild(pre);
         } else {
+            previewArea.appendChild(overlay);
             const div = document.createElement("div");
             div.style.padding = "1rem";
             div.style.color = "var(--text-secondary)";
-            div.innerText = "[Binary/Image File - Preview Not Available]";
+            div.innerText = "[Binary File - Preview Not Available]";
             previewArea.appendChild(div);
         }
         
@@ -743,4 +881,67 @@ function formatBytes(bytes, decimals = 2) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+async function triggerIndexing() {
+    const dirInput = document.getElementById("dir-input");
+    const directory = dirInput.value.trim();
+    if (!directory) {
+        alert("Please enter a valid directory path");
+        return;
+    }
+    
+    const progressCard = document.getElementById("progress-bar-card");
+    const progressFile = document.getElementById("progress-bar-file");
+    const progressPct = document.getElementById("progress-bar-pct");
+    const progressInner = document.getElementById("progress-inner");
+    
+    progressCard.classList.remove("hidden");
+    progressFile.innerText = "Connecting to indexer pipeline...";
+    progressPct.innerText = "0%";
+    progressInner.style.width = "0%";
+    
+    // Connect to Server Sent Events
+    const eventSource = new EventSource("/api/index/events");
+    
+    eventSource.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.done) {
+                progressFile.innerText = "Indexing completed!";
+                progressPct.innerText = "100%";
+                progressInner.style.width = "100%";
+                setTimeout(() => progressCard.classList.add("hidden"), 3000);
+                eventSource.close();
+                fetchStats();
+                fetchGlobalTags();
+                fetchDirectoryTree();
+                triggerSearch();
+            } else if (data.error) {
+                progressFile.innerText = `Error: ${data.error}`;
+                eventSource.close();
+            } else {
+                progressFile.innerText = `Indexing: ${data.filename} (${data.current}/${data.total})`;
+                progressPct.innerText = `${data.pct}%`;
+                progressInner.style.width = `${data.pct}%`;
+            }
+        } catch (e) {
+            console.error("Failed to parse SSE", e);
+        }
+    };
+    
+    eventSource.onerror = () => {
+        progressFile.innerText = "Connection lost. Checking status...";
+        eventSource.close();
+    };
+    
+    try {
+        await fetch("/api/index", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ directory })
+        });
+    } catch (e) {
+        console.error("Index post failed", e);
+    }
 }

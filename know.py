@@ -88,6 +88,29 @@ def init_db():
             tag TEXT
         )
     """)
+    
+    # LAN Sync Peers Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sync_peers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            address TEXT UNIQUE,
+            name TEXT
+        )
+    """)
+    
+    # OCR Bounding Coordinates Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ocr_coords (
+            file_id INTEGER,
+            word TEXT,
+            x REAL,
+            y REAL,
+            w REAL,
+            h REAL,
+            FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
+        )
+    """)
+    
     conn.commit()
     conn.close()
     print("Database initialized successfully.")
@@ -202,7 +225,7 @@ def calculate_sha256(filepath):
     except Exception:
         return None
 
-async def _async_ocr(filepath):
+async def _async_ocr_structured(filepath):
     try:
         file = await StorageFile.get_file_from_path_async(filepath)
         stream = await file.open_async(0)
@@ -210,13 +233,25 @@ async def _async_ocr(filepath):
         bitmap = await decoder.get_software_bitmap_async()
         engine = OcrEngine.try_create_from_user_profile_languages()
         if not engine:
-            return "[OCR Error: Failed to create WinRT OcrEngine]"
+            return "[OCR Error: Failed to create WinRT OcrEngine]", []
         result = await engine.recognize_async(bitmap)
-        return result.text
+        
+        coords = []
+        for line in result.lines:
+            for word in line.words:
+                rect = word.bounding_rect
+                coords.append({
+                    "word": word.text,
+                    "x": rect.x,
+                    "y": rect.y,
+                    "w": rect.width,
+                    "h": rect.height
+                })
+        return result.text, coords
     except Exception as e:
-        return f"[OCR Error: {str(e)}]"
+        return f"[OCR Error: {str(e)}]", []
 
-def extract_ocr_text(filepath):
+def extract_ocr_text_structured(filepath):
     try:
         try:
             loop = asyncio.get_event_loop()
@@ -230,26 +265,26 @@ def extract_ocr_text(filepath):
                 def _run_in_thread():
                     new_loop = asyncio.new_event_loop()
                     try:
-                        return new_loop.run_until_complete(_async_ocr(filepath))
+                        return new_loop.run_until_complete(_async_ocr_structured(filepath))
                     finally:
                         new_loop.close()
                 return pool.submit(_run_in_thread).result()
         else:
-            return loop.run_until_complete(_async_ocr(filepath))
+            return loop.run_until_complete(_async_ocr_structured(filepath))
     except Exception as e:
-        return f"[OCR Setup Error: {str(e)}]"
+        return f"[OCR Setup Error: {str(e)}]", []
 
 def extract_content(filepath, suffix):
     try:
         if suffix == '.pdf':
             reader = pypdf.PdfReader(filepath)
-            return "\n".join([page.extract_text() or "" for page in reader.pages])
+            return "\n".join([page.extract_text() or "" for page in reader.pages]), []
         elif suffix == '.docx':
             doc = docx.Document(filepath)
-            return "\n".join([para.text for para in doc.paragraphs])
+            return "\n".join([para.text for para in doc.paragraphs]), []
         elif suffix == '.rtf':
             with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                return rtf_to_text(f.read())
+                return rtf_to_text(f.read()), []
         elif suffix == '.xlsx':
             wb = openpyxl.load_workbook(filepath, read_only=True, data_only=True)
             text_lines = []
@@ -258,16 +293,16 @@ def extract_content(filepath, suffix):
                     row_str = " ".join([str(v) for v in row if v is not None])
                     if row_str.strip():
                         text_lines.append(row_str)
-            return "\n".join(text_lines)
+            return "\n".join(text_lines), []
         elif suffix in ['.png', '.jpg', '.jpeg', '.bmp']:
-            return extract_ocr_text(filepath)
+            return extract_ocr_text_structured(filepath)
         else:
             with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                return f.read(1024 * 1024)
+                return f.read(1024 * 1024), []
     except Exception as e:
-        return f"[Parsing Error: {str(e)}]"
+        return f"[Parsing Error: {str(e)}]", []
 
-def index_directory(dir_path):
+def index_directory(dir_path, progress_callback=None):
     conn = get_db()
     cursor = conn.cursor()
     
@@ -285,19 +320,20 @@ def index_directory(dir_path):
         '.png', '.jpg', '.jpeg', '.bmp'
     }
     
-    for p in path.rglob('*'):
-        if not p.is_file():
-            continue
-        if p.name == DB_FILE:
-            continue
-            
+    all_files = [p for p in path.rglob('*') if p.is_file() and p.name != DB_FILE]
+    total_files = len(all_files)
+    
+    for index, p in enumerate(all_files):
         filepath = str(p)
         filename = p.name
         stat = p.stat()
         file_size = stat.st_size
         modified_at = stat.st_mtime
         
-        cursor.execute("SELECT modified_at, file_size FROM files WHERE filepath = ?", (filepath,))
+        if progress_callback:
+            progress_callback(filename, index + 1, total_files)
+            
+        cursor.execute("SELECT id, modified_at, file_size FROM files WHERE filepath = ?", (filepath,))
         row = cursor.fetchone()
         if row and row['modified_at'] == modified_at and row['file_size'] == file_size:
             continue
@@ -307,11 +343,13 @@ def index_directory(dir_path):
         mime_type = mime_type or 'application/octet-stream'
         
         content = ""
+        coords = []
         suffix = p.suffix.lower()
         if mime_type.startswith('text/') or suffix in text_extensions:
-            content = extract_content(filepath, suffix)
+            content, coords = extract_content(filepath, suffix)
             
         if row:
+            file_id = row['id']
             cursor.execute("""
                 UPDATE files 
                 SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?
@@ -320,14 +358,22 @@ def index_directory(dir_path):
             cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (filepath,))
             cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))",
                            (filepath, filename, content, filepath))
+            cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
+            for coord in coords:
+                cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?)",
+                               (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
             updated_count += 1
         else:
             cursor.execute("""
                 INSERT INTO files (filepath, filename, file_size, mime_type, sha256, modified_at, content, notes)
                 VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
             """, (filepath, filename, file_size, mime_type, sha256, modified_at, content))
+            file_id = cursor.lastrowid
             cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, NULL)",
                            (filepath, filename, content))
+            for coord in coords:
+                cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?)",
+                               (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
             indexed_count += 1
             
         # Auto-tag rule application logic

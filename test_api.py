@@ -74,7 +74,20 @@ def test_crud_and_annotations():
     response = client.delete(f"/api/rules?id={rule_id}")
     assert response.status_code == 200
 
-    # 7. Delete renamed file
+    # 7. Sync Peers API tests
+    response = client.post("/api/sync/peers", json={"address": "http://localhost:8080", "name": "Neighbor Node"})
+    assert response.status_code == 200
+    
+    response = client.get("/api/sync/peers")
+    assert response.status_code == 200
+    peers = response.json()["peers"]
+    assert len(peers) > 0
+    peer_id = peers[0]["id"]
+    
+    response = client.delete(f"/api/sync/peers?id={peer_id}")
+    assert response.status_code == 200
+
+    # 8. Delete renamed file
     response = client.delete(f"/api/file/delete?path={renamed_path}")
     assert response.status_code == 200
     
@@ -86,4 +99,4 @@ if __name__ == "__main__":
     test_static_routes()
     test_api_endpoints()
     test_crud_and_annotations()
-    print("All API, Static route, CRUD, Rules, and Semantic routing checks passed successfully!")
+    print("All API, Static route, CRUD, Rules, Semantic routing, and LAN Sync checks passed successfully!")
