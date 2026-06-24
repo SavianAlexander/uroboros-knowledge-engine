@@ -213,6 +213,36 @@ class MiniVectorEngine:
         return final_rows
 
 from collections import Counter
+import wave
+import struct
+
+def parse_audio_metadata(filepath):
+    # ponytail: parse WAV audio format natively using stdlib wave
+    try:
+        with wave.open(filepath, 'rb') as w:
+            params = w.getparams()
+            duration = params.nframes / params.framerate
+            return {
+                "duration": round(duration, 2),
+                "channels": params.nchannels,
+                "samplerate": params.framerate,
+                "bitrate": f"{params.framerate * params.sampwidth * 8 * params.nchannels // 1000} kbps"
+            }
+    except Exception:
+        # Fallback dummy parse for simple mp3 files
+        try:
+            size = os.path.getsize(filepath)
+            # Estimate roughly 128kbps constant bitrate
+            duration_est = size / (128000 / 8)
+            return {
+                "duration": round(duration_est, 2),
+                "channels": 2,
+                "samplerate": 44100,
+                "bitrate": "128 kbps (est)"
+            }
+        except Exception:
+            return {"duration": 0, "channels": 0, "samplerate": 0, "bitrate": "Unknown"}
+
 
 
 def calculate_sha256(filepath):
@@ -456,6 +486,67 @@ def db_status():
     print(f"Total indexed files: {count or 0}")
     print(f"Total index file size: {total_size or 0} bytes")
     conn.close()
+
+import threading
+import time
+
+def start_active_folder_watcher(directory, callback=None):
+    # ponytail: directory watchdog loop executing every 2 seconds
+    def watch_loop():
+        # Track initial file stamps
+        last_checked = {}
+        while True:
+            if not os.path.exists(directory):
+                time.sleep(2)
+                continue
+            
+            current_files = {}
+            has_changes = False
+            
+            for root, dirs, files in os.walk(directory):
+                for f in files:
+                    if f == DB_FILE:
+                        continue
+                    fp = os.path.join(root, f)
+                    try:
+                        mtime = os.path.getmtime(fp)
+                        size = os.path.getsize(fp)
+                        current_files[fp] = (mtime, size)
+                    except Exception:
+                        pass
+                        
+            # Detect added or updated files
+            for fp, stamp in current_files.items():
+                if fp not in last_checked or last_checked[fp] != stamp:
+                    has_changes = True
+                    break
+                    
+            # Detect deleted files
+            for fp in last_checked:
+                if fp not in current_files:
+                    has_changes = True
+                    # Clean delete from DB
+                    try:
+                        conn = get_db()
+                        cursor = conn.cursor()
+                        cursor.execute("DELETE FROM files WHERE filepath = ?", (fp,))
+                        cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (fp,))
+                        conn.commit()
+                        conn.close()
+                    except Exception:
+                        pass
+                        
+            if has_changes:
+                index_directory(directory)
+                if callback:
+                    callback()
+                    
+            last_checked = current_files
+            time.sleep(2)
+
+    t = threading.Thread(target=watch_loop, daemon=True)
+    t.start()
+
 
 def main():
     if not os.path.exists(DB_FILE):

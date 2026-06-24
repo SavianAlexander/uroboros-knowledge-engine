@@ -101,8 +101,22 @@ def main():
             cursor.execute("SELECT COUNT(*) FROM sync_peers")
             assert cursor.fetchone()[0] == 1
             
-        # 6. Snapshot checks
+        # 6. Audio metadata parsing verification
+        import struct
+        wav_path = TEST_DIR / "audio_test.wav"
+        wav_payload = (
+            b"RIFF" + struct.pack("<I", 36 + 44) + b"WAVE" +
+            b"fmt " + struct.pack("<IHHIIHH", 16, 1, 2, 44100, 176400, 4, 16) +
+            b"data" + struct.pack("<I", 44) + (b"\x00" * 44)
+        )
+        wav_path.write_bytes(wav_payload)
         import know
+        meta = know.parse_audio_metadata(str(wav_path))
+        assert meta["channels"] == 2
+        assert meta["samplerate"] == 44100
+        assert meta["duration"] == 0.0
+
+        # 7. Snapshot checks
         ts = know.create_db_snapshot()
         snaps = know.list_db_snapshots()
         assert ts in snaps

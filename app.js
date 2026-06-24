@@ -604,6 +604,21 @@ async function showPreview(path) {
         document.getElementById("preview-code").parentElement.classList.remove("hidden");
         document.getElementById("edit-toggle-btn").innerText = "📝 Edit File";
 
+        // Show/hide audio card and player
+        const audioCard = document.getElementById("preview-audio-card");
+        const audioPlayer = document.getElementById("audio-preview-player");
+        if (data.audio_metadata) {
+            audioCard.classList.remove("hidden");
+            document.getElementById("audio-duration").innerText = data.audio_metadata.duration + "s";
+            document.getElementById("audio-samplerate").innerText = data.audio_metadata.samplerate + " Hz";
+            document.getElementById("audio-channels").innerText = data.audio_metadata.channels;
+            document.getElementById("audio-bitrate").innerText = data.audio_metadata.bitrate;
+            audioPlayer.src = `/api/file/raw?path=${encodeURIComponent(data.filepath)}`;
+        } else {
+            audioCard.classList.add("hidden");
+            audioPlayer.src = "";
+        }
+
         // Render metrics and summary
         const analyticsCard = document.getElementById("preview-analytics-card");
         const wordsSpan = document.getElementById("analytic-words");
@@ -1027,6 +1042,10 @@ async function restoreSnapshot(timestamp) {
     } catch (e) {
         console.error("Restore failed", e);
     }
+}
+
+function exportPdfReport() {
+    window.open("/api/report/export", "_blank");
 }
 
 async function deleteSnapshot(timestamp) {

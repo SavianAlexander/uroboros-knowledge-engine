@@ -20,6 +20,9 @@ ACTIVE_DIR = "dumps"
 if not os.path.exists(ACTIVE_DIR):
     os.makedirs(ACTIVE_DIR, exist_ok=True)
 
+# Start real-time folder watcher
+know.start_active_folder_watcher(ACTIVE_DIR)
+
 class IndexRequest(BaseModel):
     directory: str
 
@@ -176,6 +179,7 @@ def trigger_index(req: IndexRequest):
         raise HTTPException(status_code=400, detail="Invalid directory path")
     
     ACTIVE_DIR = req.directory
+    know.start_active_folder_watcher(ACTIVE_DIR)
     
     # Run index in a background thread to prevent blocking FastAPI async thread
     import threading
@@ -469,6 +473,11 @@ def get_file(path: str):
     res['suggested_tags'] = suggest_tags_from_text(row['content'])
     res['coords'] = coords
     
+    # Check if audio format
+    suffix = os.path.splitext(row['filename'])[1].lower()
+    if suffix in ['.mp3', '.wav']:
+        res['audio_metadata'] = know.parse_audio_metadata(row['filepath'])
+        
     # Calculate text metrics and generate summary
     content = row['content'] or ""
     res['word_count'] = len(content.split())
@@ -857,6 +866,53 @@ def get_graph():
                 
     conn.close()
     return {"nodes": nodes, "links": links}
+
+@app.get("/api/report/export")
+def export_pdf_report():
+    # ponytail: build a formatted PDF compilation of knowledge records using reportlab
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+    import io
+    
+    conn = know.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT filename, content, notes FROM files ORDER BY id DESC LIMIT 10")
+    files = cursor.fetchall()
+    conn.close()
+    
+    pdf_buffer = io.BytesIO()
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
+    story = []
+    
+    styles = getSampleStyleSheet()
+    title_style = styles['Heading1']
+    h2_style = styles['Heading2']
+    body_style = styles['BodyText']
+    
+    story.append(Paragraph("Uroboros Knowledge Database Summary Report", title_style))
+    story.append(Spacer(1, 20))
+    
+    if not files:
+        story.append(Paragraph("No files indexed in database currently.", body_style))
+    else:
+        for idx, f in enumerate(files):
+            story.append(Paragraph(f"{idx+1}. Document: {f['filename']}", h2_style))
+            story.append(Spacer(1, 10))
+            
+            content_snippet = (f['content'] or "")[:300] + "..." if len(f['content'] or "") > 300 else (f['content'] or "[Empty]")
+            story.append(Paragraph(f"Content Summary: {content_snippet}", body_style))
+            story.append(Spacer(1, 10))
+            
+            notes_str = f"Personal Annotations: {f['notes']}" if f['notes'] else "Personal Annotations: None"
+            story.append(Paragraph(notes_str, body_style))
+            story.append(Spacer(1, 15))
+            
+    doc.build(story)
+    pdf_buffer.seek(0)
+    
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(pdf_buffer, media_type="application/pdf", headers={"Content-Disposition": "attachment; filename=uroboros-summary-report.pdf"})
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

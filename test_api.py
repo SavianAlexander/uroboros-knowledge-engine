@@ -108,7 +108,35 @@ def test_crud_and_annotations():
     assert response.status_code == 200
     assert "nodes" in response.json()
 
-    # 11. Delete renamed file
+    # 11. PDF Report Export test
+    response = client.get("/api/report/export")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+
+    # 12. Audio metadata parsing check
+    # Let's write a simple WAV header mockup to check the native parser
+    import struct
+    wav_payload = (
+        b"RIFF" + struct.pack("<I", 36 + 44) + b"WAVE" +
+        b"fmt " + struct.pack("<IHHIIHH", 16, 1, 2, 44100, 176400, 4, 16) +
+        b"data" + struct.pack("<I", 44) + (b"\x00" * 44)
+    )
+    response = client.post("/api/upload", files={"file": ("mock_audio.wav", wav_payload, "audio/wav")})
+    assert response.status_code == 200
+    audio_path = response.json()["filepath"]
+
+    response = client.get(f"/api/file?path={audio_path}")
+    assert response.status_code == 200
+    audio_data = response.json()
+    assert "audio_metadata" in audio_data
+    assert audio_data["audio_metadata"]["channels"] == 2
+    assert audio_data["audio_metadata"]["samplerate"] == 44100
+
+    # Clean up audio test file
+    response = client.delete(f"/api/file/delete?path={audio_path}")
+    assert response.status_code == 200
+
+    # 13. Delete renamed file
     response = client.delete(f"/api/file/delete?path={renamed_path}")
     assert response.status_code == 200
     

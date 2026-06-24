@@ -1319,5 +1319,26 @@ body {
     color: var(--text-primary);
 }
 
+/* Audio Player and watch status indicators styling */
+#audio-preview-player::-webkit-media-controls-enclosure {
+    background-color: rgba(24, 24, 27, 0.9);
+}
+
+#watcher-badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
 
 
