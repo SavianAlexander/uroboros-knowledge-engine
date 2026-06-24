@@ -862,7 +862,7 @@ def get_graph():
     
     file_map = {}
     for f in files:
-        nodes.append({"id": f["id"], "label": f["filename"], "type": "document"})
+        nodes.append({"id": f["id"], "label": f["filename"], "filename": f["filename"]})
         file_map[f["filename"].lower()] = f["id"]
         
     for f in files:
@@ -892,11 +892,12 @@ def get_graph():
     return {"nodes": nodes, "links": links}
 
 @app.get("/api/report/export")
-def export_pdf_report(tag: str = None, category: str = None):
+def export_pdf_report(tag: str = None, category: str = None, style_template: str = "default"):
     # ponytail: build a formatted PDF compilation of knowledge records using reportlab with category/tag queries
     from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
     from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib import colors
     import io
     
     conn = know.get_db()
@@ -949,7 +950,29 @@ def export_pdf_report(tag: str = None, category: str = None):
     
     if not files:
         story.append(Paragraph("No files indexed matching selected criteria.", body_style))
+    elif style_template == "compact":
+        # Renders compact style template as a ReportLab Table
+        data = [["#", "Filename", "Annotations Note"]]
+        for idx, f in enumerate(files):
+            notes_str = f['notes'] or "[No custom annotations]"
+            data.append([str(idx + 1), f['filename'], notes_str])
+            
+        t = Table(data, colWidths=[30, 200, 274])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#6366f1")),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,0), (-1,0), 10),
+            ('BOTTOMPADDING', (0,0), (-1,0), 6),
+            ('BACKGROUND', (0,1), (-1,-1), colors.HexColor("#f4f4f5")),
+            ('GRID', (0,0), (-1,-1), 1, colors.HexColor("#e4e4e7")),
+            ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
+            ('FONTSIZE', (0,1), (-1,-1), 9),
+        ]))
+        story.append(t)
     else:
+        # Default report list paragraphs
         for idx, f in enumerate(files):
             story.append(Paragraph(f"{idx+1}. Document: {f['filename']}", h2_style))
             story.append(Spacer(1, 10))
@@ -967,6 +990,29 @@ def export_pdf_report(tag: str = None, category: str = None):
     
     from fastapi.responses import StreamingResponse
     return StreamingResponse(pdf_buffer, media_type="application/pdf", headers={"Content-Disposition": "attachment; filename=uroboros-summary-report.pdf"})
+
+@app.get("/api/stats/export")
+def export_stats_csv():
+    # ponytail: compile mime count stats into a clean exportable CSV download
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+    
+    conn = know.get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT mime_type, COUNT(*) as count, SUM(file_size) as size FROM files GROUP BY mime_type ORDER BY count DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Mime Type", "File Count", "Total Size (bytes)"])
+    
+    for r in rows:
+        writer.writerow([r["mime_type"], r["count"], r["size"] or 0])
+        
+    output.seek(0)
+    return StreamingResponse(io.BytesIO(output.getvalue().encode('utf-8')), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=uroboros-db-stats.csv"})
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

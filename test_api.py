@@ -146,7 +146,18 @@ def test_crud_and_annotations():
     response = client.delete(f"/api/file/delete?path={audio_path}")
     assert response.status_code == 200
 
-    # 13. Delete renamed file
+    # 13. PDF compact style template test
+    response = client.get("/api/report/export?style_template=compact")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+
+    # 14. Stats CSV Export test
+    response = client.get("/api/stats/export")
+    assert response.status_code == 200
+    assert "text/csv" in response.headers["content-type"]
+    assert "Total Size" in response.text
+
+    # 15. Delete renamed file
     response = client.delete(f"/api/file/delete?path={renamed_path}")
     assert response.status_code == 200
     

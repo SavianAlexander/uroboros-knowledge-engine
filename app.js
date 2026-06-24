@@ -1075,7 +1075,8 @@ async function restoreSnapshot(timestamp) {
 }
 
 function exportPdfReport() {
-    const params = [];
+    const template = document.getElementById("pdf-template-select").value;
+    const params = [`style_template=${template}`];
     if (selectedTag) params.push(`tag=${encodeURIComponent(selectedTag)}`);
     if (selectedCategory && selectedCategory !== "all") params.push(`category=${encodeURIComponent(selectedCategory)}`);
     
@@ -1084,6 +1085,10 @@ function exportPdfReport() {
         url += "?" + params.join("&");
     }
     window.open(url, "_blank");
+}
+
+function exportStatsCsv() {
+    window.open("/api/stats/export", "_blank");
 }
 
 async function deleteSnapshot(timestamp) {
@@ -1246,7 +1251,21 @@ function drawGraph(nodes, links) {
         
         // Draw Nodes
         nodes.forEach(n => {
-            ctx.fillStyle = "var(--accent)";
+            let color = "var(--accent)"; // Default
+            if (n.filename) {
+                const ext = n.filename.split('.').pop().toLowerCase();
+                if (['py', 'js', 'html', 'css', 'json', 'xml'].includes(ext)) {
+                    color = "#6366f1"; // Code: Purple/Indigo Accent
+                } else if (['xlsx', 'csv'].includes(ext)) {
+                    color = "#10b981"; // Spreadsheets: Green Success
+                } else if (['png', 'jpg', 'jpeg', 'bmp'].includes(ext)) {
+                    color = "#ef4444"; // Images: Red Danger
+                } else if (['pdf', 'docx', 'rtf', 'txt', 'md'].includes(ext)) {
+                    color = "#f59e0b"; // Documents: Amber Yellow
+                }
+            }
+            
+            ctx.fillStyle = color;
             ctx.beginPath();
             ctx.arc(n.x, n.y, 8, 0, 2 * Math.PI);
             ctx.fill();
