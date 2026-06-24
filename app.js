@@ -1,3 +1,17 @@
+function toggleAccordion(groupId) {
+    const groupEl = document.getElementById(groupId);
+    if (!groupEl) return;
+    const trigger = groupEl.previousElementSibling;
+    const arrow = trigger.querySelector(".accordion-arrow");
+    
+    const isOpen = groupEl.classList.toggle("open");
+    trigger.classList.toggle("active", isOpen);
+    
+    if (arrow) {
+        arrow.innerText = isOpen ? "▾" : "▸";
+    }
+}
+
 let searchTimeout;
 let selectedCategory = "all";
 let selectedTag = null;
