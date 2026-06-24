@@ -25,9 +25,18 @@
         <div class="main-wrapper">
             <!-- Top Horizontal Navigation Tabs -->
             <nav class="horizontal-tabs">
-                <button class="tab-link active" data-tab="workspace" onclick="switchTab('workspace')">📁 Workspace</button>
-                <button class="tab-link" data-tab="search" onclick="switchTab('search')">🔍 Search & Graph</button>
-                <button class="tab-link" data-tab="config" onclick="switchTab('config')">⚙️ Configuration</button>
+                <button class="tab-link active" data-tab="workspace" onclick="switchTab('workspace')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tab-svg"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    Workspace
+                </button>
+                <button class="tab-link" data-tab="search" onclick="switchTab('search')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tab-svg"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    Search & Graph
+                </button>
+                <button class="tab-link" data-tab="config" onclick="switchTab('config')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tab-svg"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    Configuration
+                </button>
             </nav>
 
             <!-- Main Content Container -->
@@ -40,7 +49,9 @@
                             <div class="explorer-sidebar">
                                 <div class="explorer-header">
                                     <h3>Directory Tree</h3>
-                                    <button class="refresh-tree-btn" onclick="fetchDirectoryTree()" title="Refresh Tree">↻</button>
+                                    <button class="refresh-tree-btn" onclick="fetchDirectoryTree()" title="Refresh Tree" style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                    </button>
                                 </div>
                                 <div id="dir-tree" class="dir-tree-container">
                                     <span class="tree-empty">No directory indexed yet.</span>
@@ -122,7 +133,7 @@
                         <div class="search-section">
                             <!-- Dropzone Area -->
                             <div id="drop-zone" class="drop-zone" style="margin-bottom: 1rem;">
-                                <span class="drop-icon">📥</span>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="drop-icon-svg" style="margin-bottom: 0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                                 <p>Drag & Drop any files here to automatically dump and index them into the active directory.</p>
                             </div>
 
@@ -132,7 +143,10 @@
                                     <h4 style="margin: 0; font-family: var(--font-outfit); font-size: 0.95rem;">Record Audio Memo</h4>
                                     <span id="recorder-time-lbl" style="font-size: 0.75rem; color: var(--text-secondary);">00:00 (Ready)</span>
                                 </div>
-                                <button id="record-memo-btn" onclick="toggleAudioRecording()" style="background: var(--danger); color: white; border: none; padding: 0.45rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: background 0.2s;">● Record Voice Memo</button>
+                                <button id="record-memo-btn" onclick="toggleAudioRecording()" style="background: var(--danger); color: white; border: none; padding: 0.45rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: background 0.2s; display: flex; align-items: center; gap: 0.4rem;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="rec-icon"><circle cx="12" cy="12" r="10"></circle></svg>
+                                    Record Voice Memo
+                                </button>
                             </div>
 
                             <!-- Async Indexing Progress Bar -->
@@ -148,7 +162,9 @@
 
                             <div class="search-bar-container" style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem; position: relative;">
                                 <input type="text" id="search-input" placeholder="Search (e.g. tag:work type:pdf size>1mb query)..." oninput="triggerSearch()" style="flex: 1;">
-                                <button onclick="addSearchBookmark()" title="Bookmark Current Search" style="background: var(--accent-trans-15); border: 1px solid var(--accent); color: var(--text-primary); cursor: pointer; border-radius: 6px; padding: 0.5rem; font-size: 0.9rem; font-weight: bold; width: auto; height: 38px; display: flex; align-items: center; justify-content: center;">⭐</button>
+                                <button onclick="addSearchBookmark()" title="Bookmark Current Search" style="background: var(--accent-trans-15); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; border-radius: 6px; padding: 0.5rem; font-size: 0.9rem; font-weight: bold; width: auto; height: 38px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                </button>
                                 <div id="search-autocomplete-dropdown" class="autocomplete-dropdown hidden" style="position: absolute; top: 100%; left: 0; right: 45px; background: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; padding: 0.25rem 0;"></div>
                             </div>
                             <div id="search-syntax-feedback" class="hidden" style="margin-bottom: 0.75rem; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 2px;">

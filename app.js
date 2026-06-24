@@ -1,3 +1,39 @@
+let activeTab = "workspace";
+
+function switchTab(tabId) {
+    activeTab = tabId;
+    localStorage.setItem("active-tab", tabId);
+    
+    // Update active visual styles of horizontal tabs
+    document.querySelectorAll(".tab-link").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-tab") === tabId);
+    });
+    
+    // Update tab visibility
+    document.querySelectorAll(".tab-view-content").forEach(view => {
+        view.classList.toggle("hidden", view.id !== `${tabId}-tab-view`);
+    });
+    
+    // Lazy-update/Fetch stats for the active view to avoid heavy multi-network loads
+    if (tabId === "workspace") {
+        fetchStats();
+        fetchDirectoryTree();
+    } else if (tabId === "search") {
+        fetchGlobalTags();
+        triggerSearch();
+        if (typeof selectedCategory !== "undefined" && selectedCategory === "graph") {
+            loadConceptGraph();
+        }
+    } else if (tabId === "config") {
+        fetchAutoRules();
+        fetchMacrosList();
+        fetchSearchHistory();
+        fetchSearchBookmarks();
+        fetchPeers();
+        fetchSnapshots();
+    }
+}
+
 function toggleAccordion(groupId) {
     const groupEl = document.getElementById(groupId);
     if (!groupEl) return;
@@ -122,6 +158,10 @@ document.addEventListener("DOMContentLoaded", () => {
             items[activeSuggestionIdx].scrollIntoView({ block: "nearest" });
         }
     }
+    
+    // Initialize or restore active tab state
+    const savedTab = localStorage.getItem("active-tab") || "workspace";
+    switchTab(savedTab);
 });
 
 function toggleAppTheme() {
@@ -284,6 +324,9 @@ function renderDistributionChart(mimeBreakdown, totalFiles) {
             if (extension === 'octet-stream') extension = 'bin';
             const searchInput = document.getElementById("search-input");
             searchInput.value = `type:${extension} ` + searchInput.value.replace(/type:\S+/g, "").trim();
+            if (activeTab !== "search") {
+                switchTab("search");
+            }
             triggerSearch();
         };
         row.innerHTML = `
@@ -427,7 +470,10 @@ function buildTreeUI(files) {
             div.className = "tree-file-title";
             const ext = name.split('.').pop().toLowerCase();
             div.setAttribute("data-ext", ext);
-            div.innerHTML = `📄 ${name}`;
+            div.innerHTML = `
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle; color: var(--accent);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span>${name}</span>
+            `;
             div.onclick = () => showPreview(node._file.filepath);
             parentEl.appendChild(div);
         } else {
@@ -436,7 +482,11 @@ function buildTreeUI(files) {
             
             const title = document.createElement("div");
             title.className = "tree-folder-title";
-            title.innerHTML = `📁 ${name}`;
+            
+            const folderClosedSVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle; color: var(--accent);"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+            const folderOpenSVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle; color: var(--accent);"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>`;
+            
+            title.innerHTML = `${folderClosedSVG} <span>${name}</span>`;
             
             const content = document.createElement("div");
             content.style.display = "none";
@@ -448,7 +498,7 @@ function buildTreeUI(files) {
                         if (title.getAttribute("data-double-clicked") !== "true") {
                             const isCollapsed = content.style.display === "none";
                             content.style.display = isCollapsed ? "block" : "none";
-                            title.innerHTML = isCollapsed ? `📂 ${name}` : `📁 ${name}`;
+                            title.innerHTML = isCollapsed ? `${folderOpenSVG} <span>${name}</span>` : `${folderClosedSVG} <span>${name}</span>`;
                         }
                         title.removeAttribute("data-double-clicked");
                     }, 200);
@@ -588,6 +638,9 @@ function selectCategory(button) {
 }
 
 function filterByTag(tag) {
+    if (activeTab !== "search") {
+        switchTab("search");
+    }
     if (!selectedTag) {
         selectedTag = tag;
     } else {
@@ -1006,6 +1059,11 @@ function triggerSearch() {
     clearTimeout(searchTimeout);
     const query = document.getElementById("search-input").value.trim();
 
+    if (activeTab !== "search") {
+        switchTab("search");
+        return;
+    }
+
     searchTimeout = setTimeout(async () => {
         if (selectedCategory === "duplicates") {
             fetchDuplicates();
@@ -1321,6 +1379,9 @@ async function triggerBulkDelete() {
 }
 
 async function showPreview(path) {
+    if (activeTab !== "search") {
+        switchTab("search");
+    }
     try {
         currentPreviewPath = path;
         const response = await fetch(`/api/file?path=${encodeURIComponent(path)}`);
@@ -1337,8 +1398,14 @@ async function showPreview(path) {
         
         // Reset inline editor UI
         isEditingFile = false;
-        document.getElementById("inline-text-editor").classList.add("hidden");
-        document.getElementById("preview-code").parentElement.classList.remove("hidden");
+        const inlineEditor = document.getElementById("inline-text-editor");
+        if (inlineEditor) {
+            inlineEditor.classList.add("hidden");
+        }
+        const previewCode = document.getElementById("preview-code");
+        if (previewCode && previewCode.parentElement) {
+            previewCode.parentElement.classList.remove("hidden");
+        }
         document.getElementById("edit-toggle-btn").innerText = "📝 Edit File";
 
         // Show/hide audio card and player
@@ -1506,7 +1573,10 @@ async function showPreview(path) {
         }
         
         document.getElementById("preview-panel").classList.remove("hidden");
-        document.querySelector(".main-content").classList.add("with-preview");
+        const searchLayout = document.querySelector(".search-layout");
+        if (searchLayout) {
+            searchLayout.classList.add("with-preview");
+        }
     } catch (error) {
         console.error("Failed to load file preview:", error);
     }
@@ -1661,7 +1731,10 @@ async function removeFileTag(tag) {
 
 function closePreview() {
     document.getElementById("preview-panel").classList.add("hidden");
-    document.querySelector(".main-content").classList.remove("with-preview");
+    const searchLayout = document.querySelector(".search-layout");
+    if (searchLayout) {
+        searchLayout.classList.remove("with-preview");
+    }
     currentPreviewPath = null;
 }
 
@@ -1982,6 +2055,11 @@ async function saveInlineEdit(content) {
 
 /* Physics-based 2D force-directed concept graph rendering */
 let graphAnimFrame;
+let selectedNodeId = null;
+Object.defineProperty(window, "selectedNodeId", {
+    get: () => selectedNodeId,
+    set: (v) => { selectedNodeId = v; }
+});
 async function loadConceptGraph() {
     try {
         const response = await fetch("/api/graph");
@@ -1993,6 +2071,9 @@ async function loadConceptGraph() {
 }
 
 function drawGraph(nodes, links) {
+    if (graphAnimFrame) {
+        cancelAnimationFrame(graphAnimFrame);
+    }
     const canvas = document.getElementById("concept-graph-canvas");
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -2069,8 +2150,14 @@ function drawGraph(nodes, links) {
     let panStartY = 0;
 
     window.zoomConceptGraph = (factor) => {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const gcx = (cx - offsetX) / zoomScale;
+        const gcy = (cy - offsetY) / zoomScale;
         zoomScale *= factor;
-        zoomScale = Math.max(0.1, Math.min(zoomScale, 5.0));
+        zoomScale = Math.max(0.2, Math.min(zoomScale, 5.0));
+        offsetX = cx - gcx * zoomScale;
+        offsetY = cy - gcy * zoomScale;
     };
     window.resetConceptGraphView = () => {
         zoomScale = 1.0;
@@ -2081,18 +2168,16 @@ function drawGraph(nodes, links) {
     // ponytail: interactive mouse gesture handlers to support drag and drop nodes and background viewport pan/zoom
     canvas.onmousedown = (e) => {
         const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-        
-        // Transform screen coords to canvas coords depending on zoom/pan offsets
-        const gx = (mx - offsetX) / zoomScale;
-        const gy = (my - offsetY) / zoomScale;
+        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
         
         let nearestNode = null;
         let minDist = 25;
         
         nodes.forEach(n => {
-            const dist = Math.sqrt((n.x - gx) * (n.x - gx) + (n.y - gy) * (n.y - gy));
+            const sx = n.x * zoomScale + offsetX;
+            const sy = n.y * zoomScale + offsetY;
+            const dist = Math.sqrt((sx - mx) * (sx - mx) + (sy - my) * (sy - my));
             if (dist < minDist) {
                 minDist = dist;
                 nearestNode = n;
@@ -2119,8 +2204,8 @@ function drawGraph(nodes, links) {
 
     canvas.onmousemove = (e) => {
         const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
+        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
 
         if (draggedNode) {
             draggedNode.x = (mx - offsetX) / zoomScale;
@@ -2146,8 +2231,8 @@ function drawGraph(nodes, links) {
     canvas.onwheel = (e) => {
         e.preventDefault();
         const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
+        const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const my = (e.clientY - rect.top) * (canvas.height / rect.height);
         
         const gx = (mx - offsetX) / zoomScale;
         const gy = (my - offsetY) / zoomScale;
