@@ -141,6 +141,12 @@ def start_udp_broadcast_service():
 @app.on_event("startup")
 def startup_event():
     if not is_testing:
+        # Pre-warm local LLM engine to compile Vulkan shaders/load weights
+        print("Pre-warming local LLM engine on GPU...")
+        try:
+            get_llm()
+        except Exception as e:
+            print(f"Failed to pre-warm LLM: {e}")
         start_udp_broadcast_service()
 
 
