@@ -47,7 +47,8 @@ def init_db():
             sha256 TEXT,
             modified_at REAL,
             content TEXT,
-            notes TEXT
+            notes TEXT,
+            insights TEXT
         )
     """)
     
@@ -56,6 +57,8 @@ def init_db():
     columns = [row[1] for row in cursor.fetchall()]
     if 'notes' not in columns:
         cursor.execute("ALTER TABLE files ADD COLUMN notes TEXT")
+    if 'insights' not in columns:
+        cursor.execute("ALTER TABLE files ADD COLUMN insights TEXT")
         
     cursor.execute("PRAGMA table_info(fts_files)")
     fts_columns = [row[1] for row in cursor.fetchall()]
@@ -715,7 +718,7 @@ def index_directory(dir_path, progress_callback=None):
                 if file_id is not None:
                     cursor.execute("""
                         UPDATE files 
-                        SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?
+                        SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?, insights = NULL
                         WHERE filepath = ?
                     """, (filename, file_size, mime_type, sha256, modified_at, content, filepath))
                     

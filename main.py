@@ -454,7 +454,7 @@ def save_file(req: FileSaveRequest):
             cursor.execute(
                 """
                 UPDATE files
-                SET file_size = ?, sha256 = ?, modified_at = ?, content = ?
+                SET file_size = ?, sha256 = ?, modified_at = ?, content = ?, insights = NULL
                 WHERE filepath = ?
             """,
                 (file_size, sha256, modified_at, content_txt, req.path),
@@ -3007,14 +3007,17 @@ async def chat_endpoint(req: ChatRequest):
 async def file_insights_endpoint(req: FileInsightsRequest):
     verify_path_containment(req.filepath)
     content = ""
-    # 1. Fetch file content from SQLite database
+    # 1. Fetch file content and cached insights from SQLite database
     try:
         with db_conn() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT content FROM files WHERE filepath = ?", (req.filepath,))
+            cursor.execute("SELECT content, insights FROM files WHERE filepath = ?", (req.filepath,))
             row = cursor.fetchone()
             if row:
                 content = row[0] or ""
+                cached_insights = row[1]
+                if cached_insights:
+                    return FileInsightsResponse(insights=cached_insights)
     except Exception as e:
         print(f"Failed to query database for file insights: {e}")
 
@@ -3071,6 +3074,17 @@ async def file_insights_endpoint(req: FileInsightsRequest):
             )
         )
         insights_text = completion["choices"][0]["message"]["content"]
+        # Save to database cache
+        try:
+            with db_conn() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE files SET insights = ? WHERE filepath = ?",
+                    (insights_text, req.filepath)
+                )
+                conn.commit()
+        except Exception as e:
+            print(f"Failed to cache file insights: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM inference error: {str(e)}")
 
