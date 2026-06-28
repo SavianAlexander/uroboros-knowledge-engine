@@ -413,6 +413,10 @@ def save_file(req: FileSaveRequest):
 
         with db_conn() as conn:
             cursor = conn.cursor()
+            cursor.execute("SELECT id FROM files WHERE filepath = ?", (req.path,))
+            row = cursor.fetchone()
+            file_id = row[0] if row else None
+
             cursor.execute(
                 """
                 UPDATE files
@@ -438,29 +442,46 @@ def save_file(req: FileSaveRequest):
                 ),
             )
 
-            cursor.execute(
-                """
-                DELETE FROM ocr_coords
-                WHERE file_id = (SELECT id FROM files WHERE filepath = ?)
-            """,
-                (req.path,),
-            )
-            for coord in coords:
+            if file_id is not None:
                 cursor.execute(
                     """
-                    INSERT INTO ocr_coords (file_id, word, x, y, w, h)
-                    VALUES ((SELECT id FROM files WHERE filepath = ?),
-                            ?, ?, ?, ?, ?)
+                    DELETE FROM ocr_coords
+                    WHERE file_id = ?
                 """,
-                    (
-                        req.path,
-                        coord["word"],
-                        coord["x"],
-                        coord["y"],
-                        coord["w"],
-                        coord["h"],
-                    ),
+                    (file_id,),
                 )
+                for coord in coords:
+                    cursor.execute(
+                        """
+                        INSERT INTO ocr_coords (file_id, word, x, y, w, h)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                        (
+                            file_id,
+                            coord["word"],
+                            coord["x"],
+                            coord["y"],
+                            coord["w"],
+                            coord["h"],
+                        ),
+                    )
+                
+                # Delete old chunks on manual save
+                cursor.execute("DELETE FROM file_chunks WHERE file_id = ?", (file_id,))
+                cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
+                
+                # Re-generate and insert updated chunks
+                chunks = know.chunk_text(content_txt)
+                for chunk_idx, chunk_content in enumerate(chunks):
+                    cursor.execute(
+                        "INSERT INTO file_chunks (file_id, chunk_index, content) VALUES (?, ?, ?)",
+                        (file_id, chunk_idx, chunk_content)
+                    )
+                    chunk_id = cursor.lastrowid
+                    cursor.execute(
+                        "INSERT INTO fts_file_chunks (chunk_id, file_id, content) VALUES (?, ?, ?)",
+                        (chunk_id, file_id, chunk_content)
+                    )
             conn.commit()
         # ponytail: invalidate query cache on file save
         GLOBAL_QUERY_CACHE.invalidate()
