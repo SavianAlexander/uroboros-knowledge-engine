@@ -2764,8 +2764,8 @@ def get_llm():
 def sanitise_fts_query(q_str: str) -> str:
     if not q_str:
         return ""
-    # ponytail: keep only safe alphanumeric and whitespace characters to prevent FTS match syntax errors
-    cleaned = re.sub(r'[^\w\s-]', ' ', q_str)
+    # ponytail: keep only safe alphanumeric characters and spaces to prevent FTS match syntax errors
+    cleaned = re.sub(r'[^a-zA-Z0-9\s]', ' ', q_str)
     # Remove FTS5 boolean/operator keywords if they are isolated words
     tokens = []
     for token in cleaned.split():
