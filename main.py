@@ -2878,7 +2878,7 @@ def get_llm():
                     print(f"Attempting GPU acceleration (n_gpu_layers=-1) on Vulkan/DirectML/CUDA/ROCm...")
                     _llm_instance = Llama(
                         model_path=MODEL_PATH,
-                        n_ctx=2048,
+                        n_ctx=16384,
                         n_threads=n_threads,
                         n_gpu_layers=-1,
                         verbose=False
@@ -2888,7 +2888,7 @@ def get_llm():
                     print(f"GPU initialization failed ({e}). Falling back to CPU.")
                     _llm_instance = Llama(
                         model_path=MODEL_PATH,
-                        n_ctx=2048,
+                        n_ctx=16384,
                         n_threads=n_threads,
                         n_gpu_layers=0,
                         verbose=False
