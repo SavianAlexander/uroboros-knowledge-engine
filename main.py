@@ -2980,8 +2980,21 @@ async def chat_endpoint(req: ChatRequest):
     )
 
     messages = [{"role": "system", "content": system_content}]
-    for msg in req.history:
-        messages.append({"role": msg.role, "content": msg.content})
+    
+    # ponytail: token-based sliding window history guard to fit context limits (max 600 tokens ~2400 chars of history)
+    history_messages = []
+    token_sum = 0
+    for msg in reversed(req.history):
+        msg_len = len(msg.content or "")
+        approx_tokens = msg_len // 4
+        if token_sum + approx_tokens > 600:
+            break
+        history_messages.append({"role": msg.role, "content": msg.content})
+        token_sum += approx_tokens
+        
+    for msg in reversed(history_messages):
+        messages.append(msg)
+        
     messages.append({"role": "user", "content": req.message})
 
     # 4. Execution: Call create_chat_completion inside asyncio.get_event_loop().run_in_executor
