@@ -3052,14 +3052,12 @@ async def chat_endpoint(req: ChatRequest):
         llm = get_llm()
         loop = asyncio.get_event_loop()
         # Run CPU-bound Llama inference in a separate thread pool
-        temp = req.temperature if req.temperature is not None else 0.3
-        t_p = req.top_p if req.top_p is not None else 0.9
         completion = await loop.run_in_executor(
             None,
             lambda: llm.create_chat_completion(
                 messages=messages,
-                temperature=temp,
-                top_p=t_p
+                temperature=0.0,
+                top_p=0.9
             )
         )
         response_text = completion["choices"][0]["message"]["content"]
@@ -3132,15 +3130,13 @@ async def file_insights_endpoint(req: FileInsightsRequest):
     try:
         llm = get_llm()
         loop = asyncio.get_event_loop()
-        temp = req.temperature if req.temperature is not None else 0.3
-        t_p = req.top_p if req.top_p is not None else 0.9
         completion = await loop.run_in_executor(
             None,
             lambda: llm.create_chat_completion(
                 messages=messages,
                 max_tokens=500,
-                temperature=temp,
-                top_p=t_p
+                temperature=0.2,
+                top_p=0.9
             )
         )
         insights_text = completion["choices"][0]["message"]["content"]
