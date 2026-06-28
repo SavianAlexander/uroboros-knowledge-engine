@@ -2832,21 +2832,35 @@ DEFAULT_FALLBACK_MODEL_PATH = os.path.join(os.path.expanduser("~"), ".cache", "u
 
 def download_model_if_missing():
     global MODEL_PATH
-    if os.path.exists(MODEL_PATH):
-        return
     os.makedirs(os.path.dirname(DEFAULT_FALLBACK_MODEL_PATH), exist_ok=True)
-    if os.path.exists(DEFAULT_FALLBACK_MODEL_PATH):
+    
+    # 1. Download fallback if missing
+    if not os.path.exists(DEFAULT_FALLBACK_MODEL_PATH):
+        import urllib.request
+        print(f"Fallback model not found. Downloading to {DEFAULT_FALLBACK_MODEL_PATH}...")
+        url = "https://huggingface.co/unsloth/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q4_K_M.gguf"
+        try:
+            urllib.request.urlretrieve(url, DEFAULT_FALLBACK_MODEL_PATH)
+            print("Fallback model download complete.")
+        except Exception as e:
+            print(f"Failed to download fallback model: {e}")
+            
+    # 2. Download primary if missing
+    if not os.path.exists(MODEL_PATH):
+        import urllib.request
+        print(f"Primary model not found. Downloading to {MODEL_PATH}...")
+        url = "https://huggingface.co/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF/resolve/main/DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf"
+        try:
+            urllib.request.urlretrieve(url, MODEL_PATH)
+            print("Primary model download complete.")
+        except Exception as e:
+            print(f"Failed to download primary model: {e}")
+            
+    # Resolve which model path to use
+    if os.path.exists(MODEL_PATH):
+        pass
+    elif os.path.exists(DEFAULT_FALLBACK_MODEL_PATH):
         MODEL_PATH = DEFAULT_FALLBACK_MODEL_PATH
-        return
-    import urllib.request
-    print(f"Model not found. Downloading fallback model to {DEFAULT_FALLBACK_MODEL_PATH}...")
-    url = "https://huggingface.co/microsoft/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q4_K_M.gguf"
-    try:
-        urllib.request.urlretrieve(url, DEFAULT_FALLBACK_MODEL_PATH)
-        MODEL_PATH = DEFAULT_FALLBACK_MODEL_PATH
-        print("Download complete.")
-    except Exception as e:
-        print(f"Failed to download model: {e}")
 
 def get_llm():
     global _llm_instance
