@@ -16,7 +16,13 @@
         <header class="app-header">
             <div class="logo-area">
                 <img src="/assets/logo.png" alt="Uroboros Logo" class="logo-img-asset" title="Uroboros Knowledge Engine">
-                <button onclick="toggleAppTheme()" title="Toggle Theme" class="theme-toggle-btn">🌓</button>
+                <button onclick="toggleAppTheme()" title="Toggle Theme" class="theme-toggle-btn">
+                    <svg class="theme-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" class="moon-path"></path>
+                        <circle cx="12" cy="12" r="4" class="sun-circle"></circle>
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" class="sun-rays"></path>
+                    </svg>
+                </button>
                 <span id="watcher-badge" class="badge" title="Live Connection">●</span>
             </div>
         </header>
@@ -52,6 +58,14 @@
                     <div class="workspace-layout">
                         <!-- Directory Tree on Left -->
                         <aside class="workspace-sidebar">
+                            <div class="index-control-card" style="margin-bottom: 1.5rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 2px; padding: 0.75rem;">
+                                <h3 style="margin-top: 0; font-size: 0.9rem; font-weight: 600; color: var(--accent); text-transform: uppercase;">Active Folder Ingestion</h3>
+                                <div class="input-group" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <input type="text" id="dir-input" placeholder="e.g. C:\Users\Administrator\Documents" style="flex: 1; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.45rem; font-size: 0.8rem; outline: none; width: 100%; box-sizing: border-box;" />
+                                    <button id="index-btn" onclick="triggerIndexing()" style="background: var(--accent); color: var(--bg-dark); font-weight: bold; border: none; border-radius: 2px; padding: 0.45rem 0.75rem; font-size: 0.8rem; cursor: pointer;">Index Files</button>
+                                </div>
+                                <div id="indexing-status" class="status-msg" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">Dumps target: <span id="active-dir-label">dumps</span></div>
+                            </div>
                             <div class="explorer-sidebar">
                                 <div class="explorer-header">
                                     <h3>Directory Tree</h3>
@@ -64,51 +78,83 @@
                                 </div>
                             </div>
                         </aside>
-                        <!-- Other workspace cards in a scrollable grid on Right -->
-                        <div class="workspace-main-grid">
-                            <div class="index-control-card">
-                                <h3>Active Folder Dumper</h3>
-                                <div class="input-group">
-                                    <input type="text" id="dir-input" placeholder="e.g. C:\Users\Administrator\Documents" />
-                                    <button id="index-btn" onclick="triggerIndexing()">Index Files</button>
-                                </div>
-                                <div id="indexing-status" class="status-msg">Dumps target: <span id="active-dir-label">dumps</span></div>
-                            </div>
-
-                            <div class="stats-panel">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                    <h3>Database Status</h3>
-                                    <button onclick="exportStatsCsv()" style="background: transparent; border: none; color: var(--accent); cursor: pointer; font-size: 0.75rem; text-decoration: underline;">Export CSV</button>
-                                </div>
-                                <div class="stat-grid">
-                                    <div class="stat-card">
-                                        <span class="stat-label">Total Files</span>
-                                        <span class="stat-value" id="stat-files">-</span>
+                        
+                        <!-- Right side container -->
+                        <div class="workspace-right-container">
+                            <!-- Workspace dashboard (hidden when file selected) -->
+                            <div id="workspace-dashboard" class="workspace-main-grid">
+                                <div class="stats-panel">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <h3>Database Status</h3>
+                                        <button onclick="exportStatsCsv()" style="background: transparent; border: none; color: var(--accent); cursor: pointer; font-size: 0.75rem; text-decoration: underline;">Export CSV</button>
                                     </div>
-                                    <div class="stat-card">
-                                        <span class="stat-label">Total Size</span>
-                                        <span class="stat-value" id="stat-size">-</span>
-                                    </div>
-                                    <div class="stat-card" style="grid-column: span 2;">
-                                        <span class="stat-label">Free Storage Capacity</span>
-                                        <span class="stat-value" id="stat-disk-free">-</span>
-                                    </div>
-                                    <div class="stat-card" style="grid-column: span 2;">
-                                        <span class="stat-label">Query Cache Hit Ratio</span>
-                                        <span class="stat-value" id="stat-cache-ratio">-</span>
+                                    <div class="stat-grid">
+                                        <div class="stat-card">
+                                            <span class="stat-label">Total Files</span>
+                                            <span class="stat-value" id="stat-files">-</span>
+                                        </div>
+                                        <div class="stat-card">
+                                            <span class="stat-label">Total Size</span>
+                                            <span class="stat-value" id="stat-size">-</span>
+                                        </div>
+                                        <div class="stat-card" style="grid-column: span 2;">
+                                            <span class="stat-label">Free Storage Capacity</span>
+                                            <span class="stat-value" id="stat-disk-free">-</span>
+                                        </div>
+                                        <div class="stat-card" style="grid-column: span 2;">
+                                            <span class="stat-label">Query Cache Hit Ratio</span>
+                                            <span class="stat-value" id="stat-cache-ratio">-</span>
+                                        </div>
                                     </div>
                                 </div>
+
+                                <div class="chart-sidebar">
+                                    <h3>File Type Distribution</h3>
+                                    <div id="svg-chart-container" class="svg-chart-container"></div>
+                                </div>
+
+                                <div class="timeline-sidebar">
+                                    <h3>Indexing History Timeline</h3>
+                                    <div id="timeline-container" class="timeline-container">
+                                        <span class="timeline-empty">No indexing activity recorded.</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="chart-sidebar">
-                                <h3>File Type Distribution</h3>
-                                <div id="svg-chart-container" class="svg-chart-container"></div>
-                            </div>
-
-                            <div class="timeline-sidebar">
-                                <h3>Indexing History Timeline</h3>
-                                <div id="timeline-container" class="timeline-container">
-                                    <span class="timeline-empty">No indexing activity recorded.</span>
+                            <!-- Split-Screen Editor (hidden by default, shown when file is selected) -->
+                            <div id="workspace-split-screen" class="workspace-split-screen hidden">
+                                <!-- Left side of split-screen: Visual Preview -->
+                                <div class="workspace-preview-pane">
+                                    <div class="pane-header">
+                                        <h4>Visual Preview</h4>
+                                    </div>
+                                    <div id="workspace-preview-content" class="pane-content">
+                                        <div class="preview-placeholder">Select a document to preview</div>
+                                    </div>
+                                </div>
+                                <!-- Right side of split-screen: Text Editor -->
+                                <div class="workspace-editor-pane">
+                                    <div class="pane-header">
+                                        <h4>Plain Text Editor</h4>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <button id="workspace-save-btn" onclick="saveWorkspaceFile()" class="action-btn" style="padding: 0.2rem 0.6rem; font-size: 0.75rem; background: var(--accent); color: var(--bg-dark); font-weight: bold; border: none; border-radius: 2px; cursor: pointer;" disabled>Save</button>
+                                            <button onclick="closeWorkspaceEditor()" class="action-btn" style="padding: 0.2rem 0.6rem; font-size: 0.75rem; background: rgba(234, 224, 200, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 2px; cursor: pointer;">✕ Close</button>
+                                        </div>
+                                    </div>
+                                    <div class="pane-content">
+                                        <div class="editor-sub-pane">
+                                            <textarea id="workspace-editor-textarea" placeholder="Select a document to edit..." disabled></textarea>
+                                        </div>
+                                        <div class="insights-sub-pane">
+                                            <div class="insights-pane-header">
+                                                <span>Document Insights</span>
+                                                <button id="workspace-regenerate-insights-btn" onclick="fetchWorkspaceInsights()" class="action-btn" style="padding: 0.15rem 0.5rem; font-size: 0.7rem; background: var(--accent); color: var(--bg-dark); font-weight: bold; border: none; border-radius: 2px; cursor: pointer;" disabled>Regenerate</button>
+                                            </div>
+                                            <div id="workspace-insights-content">
+                                                <span class="insights-placeholder">Select a document to load insights.</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

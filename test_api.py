@@ -331,9 +331,143 @@ def test_cache_loophole_and_watcher_guard():
     finally:
         threading.enumerate = original_enumerate
 
+def test_raw_and_save_api():
+    # 1. Create a mock file
+    payload = {"file": ("mock_raw_save.txt", b"original content for raw save test", "text/plain")}
+    response = client.post("/api/upload", files=payload)
+    assert response.status_code == 200
+    filepath = response.json()["filepath"]
+
+    # 2. Get file raw content
+    response = client.get(f"/api/file/raw?path={filepath}")
+    assert response.status_code == 200
+    assert response.content == b"original content for raw save test"
+
+    # 3. Save new content using save API
+    new_content = "modified content via api/file/save endpoint!"
+    response = client.post("/api/file/save", json={"path": filepath, "content": new_content})
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+
+    # 4. Fetch the file details via /api/file and check content
+    response = client.get(f"/api/file?path={filepath}")
+    assert response.status_code == 200
+    assert response.json()["content"] == new_content
+
+    # 5. Fetch raw content and verify it matches the saved content
+    response = client.get(f"/api/file/raw?path={filepath}")
+    assert response.status_code == 200
+    assert response.content == new_content.encode("utf-8")
+
+    # Clean up
+    response = client.delete(f"/api/file/delete?path={filepath}")
+    assert response.status_code == 200
+
+def test_chat_endpoint():
+    from unittest.mock import patch, MagicMock
+    
+    mock_llm = MagicMock()
+    mock_llm.create_chat_completion.return_value = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "This is a mocked response from local Qwen model."
+                }
+            }
+        ]
+    }
+    
+    with patch("main.get_llm", return_value=mock_llm):
+        payload = {
+            "message": "Hello, how many files are there?",
+            "history": [
+                {"role": "user", "content": "Hi"},
+                {"role": "assistant", "content": "Hello!"}
+            ]
+        }
+        response = client.post("/api/chat", json=payload)
+        assert response.status_code == 200
+        data = response.json()
+        assert "response" in data
+        assert data["response"] == "This is a mocked response from local Qwen model."
+        mock_llm.create_chat_completion.assert_called_once()
+def test_insights_endpoint():
+    from unittest.mock import patch, MagicMock
+    
+    mock_llm = MagicMock()
+    mock_llm.create_chat_completion.return_value = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "### Summary\nThis is a mocked document summary.\n\n### Key Insights\n* Insight 1\n* Insight 2\n* Insight 3"
+                }
+            }
+        ]
+    }
+    
+    # 1. Create a temporary document
+    test_filepath = os.path.abspath(os.path.join("dumps", "test_insights_doc.txt"))
+    with open(test_filepath, "w", encoding="utf-8") as f:
+        f.write("This is a sample document for testing insights generation.")
+        
+    try:
+        with patch("main.get_llm", return_value=mock_llm):
+            payload = {"filepath": test_filepath}
+            response = client.post("/api/file/insights", json=payload)
+            assert response.status_code == 200
+            data = response.json()
+            assert "insights" in data
+            assert "mocked document summary" in data["insights"]
+            assert "Insight 3" in data["insights"]
+            mock_llm.create_chat_completion.assert_called_once()
+    finally:
+        if os.path.exists(test_filepath):
+            os.remove(test_filepath)
+
+
+def test_insights_error_filtering():
+    from unittest.mock import patch, MagicMock
+    
+    mock_llm = MagicMock()
+    
+    # Prefix list to test
+    error_prefixes = [
+        "[Parsing Error: Failed to open]",
+        "[OCR Setup Error: WinRT missing]",
+        "[OCR Error: Failed to create engine]",
+        "[OCR not supported on this platform]",
+        "[ThreadPool Error: Task failed]"
+    ]
+    
+    for prefix in error_prefixes:
+        test_filepath = os.path.abspath(os.path.join("dumps", "test_insights_error.txt"))
+        with open(test_filepath, "w", encoding="utf-8") as f:
+            f.write(prefix)
+            
+        try:
+            with patch("main.get_llm", return_value=mock_llm):
+                payload = {"filepath": test_filepath}
+                response = client.post("/api/file/insights", json=payload)
+                assert response.status_code == 200
+                data = response.json()
+                assert "insights" in data
+                assert "no readable text content" in data["insights"]
+                mock_llm.create_chat_completion.assert_not_called()
+        finally:
+            if os.path.exists(test_filepath):
+                os.remove(test_filepath)
+
+
 if __name__ == "__main__":
     print("Running API CRUD self-checks...")
     test_static_routes()
     test_api_endpoints()
     test_crud_and_annotations()
-    print("All API, Static route, CRUD, Rules, Semantic routing, and LAN Sync checks passed successfully!")
+    test_raw_and_save_api()
+    test_chat_endpoint()
+    test_insights_endpoint()
+    test_insights_error_filtering()
+    print("All API, Static route, CRUD, Rules, Semantic routing, Chat, and LAN Sync checks passed successfully!")
+

@@ -12,6 +12,7 @@ from collections import Counter
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
+from pathlib import Path
 import know
 from contextlib import contextmanager
 
@@ -40,6 +41,14 @@ ACTIVE_DIR = "dumps"
 if not os.path.exists(ACTIVE_DIR):
     os.makedirs(ACTIVE_DIR, exist_ok=True)
 
+
+def verify_path_containment(path_str: str):
+    try:
+        Path(path_str).resolve().relative_to(Path(ACTIVE_DIR).resolve())
+    except Exception:
+        raise HTTPException(status_code=400, detail="Path traversal detected")
+
+
 is_testing = (
     os.environ.get("TESTING") == "true"
     or "pytest" in sys.modules
@@ -59,28 +68,47 @@ class QueryCache:
         self.order = []
         self.hits = 0
         self.misses = 0
+        self.lock = threading.Lock()
 
     def get(self, key):
-        if key in self.cache:
-            self.order.remove(key)
-            self.order.append(key)
-            self.hits += 1
-            return self.cache[key]
-        self.misses += 1
-        return None
+        with self.lock:
+            if key in self.cache:
+                self.order.remove(key)
+                self.order.append(key)
+                self.hits += 1
+                return self.cache[key]
+            self.misses += 1
+            return None
 
     def set(self, key, value):
-        if key in self.cache:
-            self.order.remove(key)
-        elif len(self.cache) >= self.capacity:
-            oldest = self.order.pop(0)
-            del self.cache[oldest]
-        self.cache[key] = value
-        self.order.append(key)
+        with self.lock:
+            if key in self.cache:
+                self.order.remove(key)
+            elif len(self.cache) >= self.capacity:
+                oldest = self.order.pop(0)
+                del self.cache[oldest]
+            self.cache[key] = value
+            self.order.append(key)
 
     def invalidate(self):
-        self.cache.clear()
-        self.order.clear()
+        with self.lock:
+            self.cache.clear()
+            self.order.clear()
+
+    def get_stats(self):
+        with self.lock:
+            total_requests = self.hits + self.misses
+            hit_ratio = (
+                round((self.hits / total_requests) * 100, 2)
+                if total_requests > 0
+                else 0.0
+            )
+            return {
+                "hits": self.hits,
+                "misses": self.misses,
+                "hit_ratio": hit_ratio,
+                "cache_size": len(self.cache),
+            }
 
 
 GLOBAL_QUERY_CACHE = QueryCache()
@@ -263,9 +291,93 @@ def get_css():
 
 @app.get("/api/file/raw")
 def get_raw_file(path: str):
+    verify_path_containment(path)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(path)
+
+
+class FileSaveRequest(BaseModel):
+    path: str
+    content: str
+
+
+@app.post("/api/file/save")
+def save_file(req: FileSaveRequest):
+    verify_path_containment(req.path)
+
+    if not os.path.exists(req.path):
+        raise HTTPException(status_code=404, detail="File does not exist")
+    try:
+        with open(req.path, "w", encoding="utf-8", errors="ignore") as f:
+            f.write(req.content)
+
+        stat = os.stat(req.path)
+        file_size = stat.st_size
+        modified_at = stat.st_mtime
+        sha256 = know.calculate_sha256(req.path)
+
+        # Extract content & coords tuple
+        ext = os.path.splitext(req.path)[1].lower()
+        content_txt, coords = know.extract_content(req.path, ext)
+
+        with db_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE files
+                SET file_size = ?, sha256 = ?, modified_at = ?, content = ?
+                WHERE filepath = ?
+            """,
+                (file_size, sha256, modified_at, content_txt, req.path),
+            )
+
+            cursor.execute(
+                "DELETE FROM fts_files WHERE filepath = ?", (req.path,)
+            )
+            cursor.execute(
+                """
+                INSERT INTO fts_files (filepath, filename, content, notes)
+                VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))
+            """,
+                (
+                    req.path,
+                    os.path.basename(req.path),
+                    content_txt,
+                    req.path,
+                ),
+            )
+
+            cursor.execute(
+                """
+                DELETE FROM ocr_coords
+                WHERE file_id = (SELECT id FROM files WHERE filepath = ?)
+            """,
+                (req.path,),
+            )
+            for coord in coords:
+                cursor.execute(
+                    """
+                    INSERT INTO ocr_coords (file_id, word, x, y, w, h)
+                    VALUES ((SELECT id FROM files WHERE filepath = ?),
+                            ?, ?, ?, ?, ?)
+                """,
+                    (
+                        req.path,
+                        coord["word"],
+                        coord["x"],
+                        coord["y"],
+                        coord["w"],
+                        coord["h"],
+                    ),
+                )
+            conn.commit()
+        # ponytail: invalidate query cache on file save
+        GLOBAL_QUERY_CACHE.invalidate()
+        return {"status": "success", "filepath": req.path}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get("/app.js")
@@ -411,9 +523,12 @@ async def upload_file(file: UploadFile = File(...)):
     if not os.path.exists(ACTIVE_DIR):
         os.makedirs(ACTIVE_DIR, exist_ok=True)
 
-    filepath = os.path.join(ACTIVE_DIR, file.filename)
+    filename = os.path.basename(file.filename)
+    filepath = os.path.join(ACTIVE_DIR, filename)
+    verify_path_containment(filepath)
     try:
         contents = await file.read()
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, "wb") as f:
             f.write(contents)
 
@@ -426,7 +541,7 @@ async def upload_file(file: UploadFile = File(...)):
 
         content = ""
         coords = []
-        suffix = os.path.splitext(file.filename)[1].lower()
+        suffix = os.path.splitext(filename)[1].lower()
         text_extensions = {
             ".md",
             ".py",
@@ -469,7 +584,7 @@ async def upload_file(file: UploadFile = File(...)):
                     WHERE filepath = ?
                 """,
                     (
-                        file.filename,
+                        filename,
                         file_size,
                         mime_type,
                         sha256,
@@ -488,7 +603,7 @@ async def upload_file(file: UploadFile = File(...)):
                     VALUES (?, ?, ?,
                             (SELECT notes FROM files WHERE filepath = ?))
                 """,
-                    (filepath, file.filename, content, filepath),
+                    (filepath, filename, content, filepath),
                 )
                 cursor.execute(
                     "DELETE FROM ocr_coords WHERE file_id = ?", (file_id,)
@@ -518,7 +633,7 @@ async def upload_file(file: UploadFile = File(...)):
                 """,
                     (
                         filepath,
-                        file.filename,
+                        filename,
                         file_size,
                         mime_type,
                         sha256,
@@ -533,7 +648,7 @@ async def upload_file(file: UploadFile = File(...)):
                     (filepath, filename, content, notes)
                     VALUES (?, ?, ?, NULL)
                 """,
-                    (filepath, file.filename, content),
+                    (filepath, filename, content),
                 )
                 for coord in coords:
                     cursor.execute(
@@ -556,7 +671,7 @@ async def upload_file(file: UploadFile = File(...)):
         GLOBAL_QUERY_CACHE.invalidate()
         return {
             "status": "success",
-            "filename": file.filename,
+            "filename": filename,
             "filepath": filepath,
         }
     except Exception as e:
@@ -1102,22 +1217,12 @@ def delete_bookmark(id: int):
 # ponytail: query cache statistics API
 @app.get("/api/search/cache/stats")
 def get_cache_stats():
-    total_requests = GLOBAL_QUERY_CACHE.hits + GLOBAL_QUERY_CACHE.misses
-    hit_ratio = (
-        round((GLOBAL_QUERY_CACHE.hits / total_requests) * 100, 2)
-        if total_requests > 0
-        else 0.0
-    )
-    return {
-        "hits": GLOBAL_QUERY_CACHE.hits,
-        "misses": GLOBAL_QUERY_CACHE.misses,
-        "hit_ratio": hit_ratio,
-        "cache_size": len(GLOBAL_QUERY_CACHE.cache),
-    }
+    return GLOBAL_QUERY_CACHE.get_stats()
 
 
 @app.get("/api/file")
 def get_file(path: str):
+    verify_path_containment(path)
     with db_conn() as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -1491,6 +1596,8 @@ def set_alias(req: AliasRequest):
 
 @app.post("/api/file/bulk-delete")
 def bulk_delete_files(req: BulkDeleteRequest):
+    for path in req.filepaths:
+        verify_path_containment(path)
     with db_conn() as conn:
         cursor = conn.cursor()
         deleted = []
@@ -1529,6 +1636,7 @@ def bulk_delete_files(req: BulkDeleteRequest):
 
 @app.delete("/api/file/delete")
 def delete_file(path: str):
+    verify_path_containment(path)
     if not os.path.exists(path):
         raise HTTPException(
             status_code=404, detail="Physical file does not exist"
@@ -1552,6 +1660,7 @@ def delete_file(path: str):
 
 @app.post("/api/file/rename")
 def rename_file(req: RenameRequest):
+    verify_path_containment(req.filepath)
     if not os.path.exists(req.filepath):
         raise HTTPException(
             status_code=404, detail="Physical file does not exist"
@@ -1809,8 +1918,13 @@ def exchange_payload(req: SyncExchangeRequest):
         synced_files = []
         for item in peer_manifest:
             if item["sha256"] and item["sha256"] not in local_hashes:
+                filename = os.path.basename(item["filename"])
+                local_path = os.path.join(ACTIVE_DIR, filename)
+                try:
+                    verify_path_containment(local_path)
+                except Exception:
+                    continue
                 # Recreate file locally under ACTIVE_DIR to sync physical files
-                local_path = os.path.join(ACTIVE_DIR, item["filename"])
                 # Note: We index text/raw contents over network in this
                 # simple LAN protocol
                 try:
@@ -1832,7 +1946,7 @@ def exchange_payload(req: SyncExchangeRequest):
                     """,
                         (
                             local_path,
-                            item["filename"],
+                            filename,
                             item["file_size"],
                             "application/octet-stream",
                             item["sha256"],
@@ -1846,9 +1960,9 @@ def exchange_payload(req: SyncExchangeRequest):
                         (filepath, filename, content, notes)
                         VALUES (?, ?, ?, NULL)
                     """,
-                        (local_path, item["filename"], item["content"]),
+                        (local_path, filename, item["content"]),
                     )
-                    synced_files.append(item["filename"])
+                    synced_files.append(filename)
                 except sqlite3.IntegrityError:
                     pass
 
@@ -1863,6 +1977,7 @@ class FileEditRequest(BaseModel):
 
 @app.post("/api/file/edit")
 def edit_file(req: FileEditRequest):
+    verify_path_containment(req.filepath)
     if not os.path.exists(req.filepath):
         raise HTTPException(status_code=404, detail="File does not exist")
     try:
@@ -2445,6 +2560,239 @@ def export_stats_csv():
             )
         },
     )
+
+
+# --- LOCAL LLM RUNNER & CHAT (Milestone 3) ---
+import threading
+import asyncio
+from typing import List
+from llama_cpp import Llama
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    message: str
+    history: List[ChatMessage]
+
+class ChatResponse(BaseModel):
+    response: str
+
+class FileInsightsRequest(BaseModel):
+    filepath: str
+
+class FileInsightsResponse(BaseModel):
+    insights: str
+
+_llm_instance = None
+_llm_lock = threading.Lock()
+MODEL_PATH = r"C:\Users\Administrator\.cache\huggingface\hub\models--mradermacher--gte-Qwen2-7B-instruct-GGUF\snapshots\aecd71b063e7590d5d6702085ec7a25867e68cbb\gte-Qwen2-7B-instruct.Q4_K_M.gguf"
+
+def get_llm():
+    global _llm_instance
+    if _llm_instance is None:
+        with _llm_lock:
+            if _llm_instance is None:
+                # ponytail: lazy-loading singleton to prevent test-suite import blockers
+                _llm_instance = Llama(
+                    model_path=MODEL_PATH,
+                    n_ctx=2048,
+                    n_threads=4,
+                    n_gpu_layers=0,
+                    verbose=False
+                )
+    return _llm_instance
+
+def sanitise_fts_query(q_str: str) -> str:
+    if not q_str:
+        return ""
+    # ponytail: keep only safe alphanumeric and whitespace characters to prevent FTS match syntax errors
+    cleaned = re.sub(r'[^\w\s-]', ' ', q_str)
+    # Remove FTS5 boolean/operator keywords if they are isolated words
+    tokens = []
+    for token in cleaned.split():
+        token_upper = token.upper()
+        if token_upper in ("AND", "OR", "NOT", "NEAR"):
+            continue
+        tokens.append(token)
+    return " ".join(tokens).strip()
+
+@app.post("/api/chat", response_model=ChatResponse)
+async def chat_endpoint(req: ChatRequest):
+    # 1. Context Retrieval: Sanitise query and search fts_files for up to 3 matches.
+    # If empty or FTS fails, fall back to know.MiniVectorEngine.search_semantic for up to 3 matches.
+    results = []
+    sanitised = sanitise_fts_query(req.message)
+    if sanitised:
+        try:
+            with db_conn() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT filepath, filename, content
+                    FROM fts_files
+                    WHERE fts_files MATCH ?
+                    LIMIT 3
+                """, (sanitised,))
+                rows = cursor.fetchall()
+                for r in rows:
+                    results.append({
+                        "filepath": r[0],
+                        "filename": r[1],
+                        "content": r[2] or ""
+                    })
+        except Exception as e:
+            print(f"FTS search failed: {e}")
+
+    # Fallback to semantic search if no FTS results or FTS search failed
+    if not results:
+        try:
+            semantic_results = know.MiniVectorEngine.search_semantic(req.message, limit=3)
+            for r in semantic_results:
+                filepath = r.get("filepath")
+                filename = r.get("filename")
+                content = ""
+                with db_conn() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT content FROM files WHERE filepath = ?", (filepath,))
+                    row = cursor.fetchone()
+                    if row:
+                        content = row[0] or ""
+                results.append({
+                    "filepath": filepath,
+                    "filename": filename,
+                    "content": content
+                })
+        except Exception as e:
+            print(f"Semantic search failed: {e}")
+
+    # 2. Fetch DB stats (total files, total size in bytes, active folder path)
+    total_files = 0
+    total_size_bytes = 0
+    try:
+        with db_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*), SUM(file_size) FROM files")
+            count, total_size = cursor.fetchone()
+            total_files = count or 0
+            total_size_bytes = total_size or 0
+    except Exception as e:
+        print(f"Failed to fetch DB stats: {e}")
+
+    active_folder_path = os.path.abspath(ACTIVE_DIR)
+
+    # 3. Construct the prompt: System prompt grounding instructions + retrieved file text segments
+    # (truncated to 800 characters per file) + DB stats + history
+    db_stats_str = f"Total Files: {total_files}\nTotal Size: {total_size_bytes} bytes\nActive Folder: {active_folder_path}"
+
+    file_segments_str = ""
+    if results:
+        file_segments_str = "\nRetrieved file segments:\n"
+        for r in results:
+            content_truncated = r["content"][:800]
+            file_segments_str += f"File: {r['filename']} ({r['filepath']}):\n{content_truncated}\n\n"
+    else:
+        file_segments_str = "\nNo relevant file segments retrieved.\n"
+
+    system_content = (
+        "System Grounding Instructions:\n"
+        "You are the Uroboros Knowledge Assistant, an offline local assistant. Use the database stats and retrieved file segments below to ground your responses.\n\n"
+        f"Database Statistics:\n{db_stats_str}\n"
+        f"{file_segments_str}"
+    )
+
+    messages = [{"role": "system", "content": system_content}]
+    for msg in req.history:
+        messages.append({"role": msg.role, "content": msg.content})
+    messages.append({"role": "user", "content": req.message})
+
+    # 4. Execution: Call create_chat_completion inside asyncio.get_event_loop().run_in_executor
+    try:
+        llm = get_llm()
+        loop = asyncio.get_event_loop()
+        # Run CPU-bound Llama inference in a separate thread pool
+        completion = await loop.run_in_executor(
+            None,
+            lambda: llm.create_chat_completion(
+                messages=messages
+            )
+        )
+        response_text = completion["choices"][0]["message"]["content"]
+    except Exception as e:
+        response_text = f"Error during local chat inference: {str(e)}"
+
+    return ChatResponse(response=response_text)
+
+
+@app.post("/api/file/insights", response_model=FileInsightsResponse)
+async def file_insights_endpoint(req: FileInsightsRequest):
+    verify_path_containment(req.filepath)
+    content = ""
+    # 1. Fetch file content from SQLite database
+    try:
+        with db_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT content FROM files WHERE filepath = ?", (req.filepath,))
+            row = cursor.fetchone()
+            if row:
+                content = row[0] or ""
+    except Exception as e:
+        print(f"Failed to query database for file insights: {e}")
+
+    # 2. Fall back to reading file from disk if DB content is empty
+    if not content:
+        if os.path.exists(req.filepath):
+            try:
+                ext = os.path.splitext(req.filepath)[1].lower()
+                if ext in [".txt", ".md", ".json", ".csv"]:
+                    with open(req.filepath, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.read()
+                else:
+                    content_txt, _ = know.extract_content(req.filepath, ext)
+                    content = content_txt or ""
+            except Exception as e:
+                print(f"Failed to read file from disk for insights: {e}")
+
+    content = content.strip()
+    if not content or any(content.startswith(prefix) for prefix in [
+        "[Parsing Error:",
+        "[OCR Setup Error:",
+        "[OCR Error:",
+        "[OCR not supported",
+        "[ThreadPool Error:"
+    ]):
+        return FileInsightsResponse(insights="*This document contains no readable text content to extract insights.*")
+
+    # ponytail: simple truncation to 4000 characters is a naive heuristic to fit local LLM context (n_ctx = 2048). Upgrade path is token-based sliding window.
+    truncated_text = content[:4000]
+
+    system_content = (
+        "You are an expert document analyzer. Summarize the text provided and extract exactly 3 key insights.\n"
+        "Structure your response in markdown format with a brief summary paragraph followed by exactly 3 bulleted key insights."
+    )
+    user_content = f"Document Content:\n{truncated_text}\n\nProvide the summary and 3 key insights."
+
+    messages = [
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": user_content}
+    ]
+
+    try:
+        llm = get_llm()
+        loop = asyncio.get_event_loop()
+        completion = await loop.run_in_executor(
+            None,
+            lambda: llm.create_chat_completion(
+                messages=messages,
+                max_tokens=500,
+                temperature=0.3
+            )
+        )
+        insights_text = completion["choices"][0]["message"]["content"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM inference error: {str(e)}")
+
+    return FileInsightsResponse(insights=insights_text)
 
 
 if __name__ == "__main__":

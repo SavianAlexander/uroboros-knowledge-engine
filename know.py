@@ -25,6 +25,11 @@ DB_FILE = "knowledge.db"
 
 def get_db():
     conn = sqlite3.connect(DB_FILE)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.execute("PRAGMA cache_size=-64000")
+    conn.execute("PRAGMA temp_store=MEMORY")
+    conn.execute("PRAGMA mmap_size=268435456")
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -421,13 +426,39 @@ def extract_content(filepath, suffix):
         return f"[Parsing Error: {str(e)}]", []
 
 def index_directory(dir_path, progress_callback=None):
+    # ponytail: cache existing files and auto_rules upfront to minimize db connections
     conn = get_db()
     cursor = conn.cursor()
     
     path = Path(dir_path).resolve()
     if not path.is_dir():
+        conn.close()
         print(f"Error: {dir_path} is not a directory.")
         return
+
+    # Build an index lookup of existing files (id, modified_at, file_size, content)
+    try:
+        cursor.execute("SELECT id, filepath, modified_at, file_size, content FROM files")
+        existing_files = {
+            row['filepath']: {
+                'id': row['id'],
+                'modified_at': row['modified_at'],
+                'file_size': row['file_size'],
+                'content': row['content'] or ""
+            }
+            for row in cursor.fetchall()
+        }
+
+        # Cache auto_rules in memory once before entering the loop
+        cursor.execute("SELECT pattern, tag FROM auto_rules ORDER BY priority DESC")
+        cached_rules = [(row['pattern'], row['tag']) for row in cursor.fetchall()]
+    except sqlite3.OperationalError as e:
+        conn.close()
+        print(f"Skipping index_directory due to uninitialized database table: {str(e)}")
+        return
+    
+    # Close the connection during parsing
+    conn.close()
 
     indexed_count = 0
     updated_count = 0
@@ -440,96 +471,183 @@ def index_directory(dir_path, progress_callback=None):
     
     all_files = [p for p in path.rglob('*') if p.is_file() and p.name != DB_FILE]
     total_files = len(all_files)
+
+    if total_files == 0:
+        print("Indexing completed. Indexed: 0, Updated: 0")
+        return
+
+    # Prep tasks and check modification status in-memory
+    modified_tasks = []
+    unmodified_tasks = []
     
-    # ponytail: concurrent tasks loop index processing for files lists
-    def process_single_file(p, index):
+    for index, p in enumerate(all_files):
         filepath = str(p)
         filename = p.name
-        stat = p.stat()
-        file_size = stat.st_size
-        modified_at = stat.st_mtime
-        
-        if progress_callback:
-            progress_callback(filename, index + 1, total_files)
+        suffix = p.suffix.lower()
+        try:
+            stat = p.stat()
+            file_size = stat.st_size
+            modified_at = stat.st_mtime
+        except Exception:
+            continue
             
-        return filepath, filename, file_size, modified_at
+        mime_type, _ = mimetypes.guess_type(filepath)
+        mime_type = mime_type or 'application/octet-stream'
+        
+        cached = existing_files.get(filepath)
+        task = {
+            'filepath': filepath,
+            'filename': filename,
+            'suffix': suffix,
+            'file_size': file_size,
+            'modified_at': modified_at,
+            'mime_type': mime_type,
+            'is_modified': False,
+            'id': None,
+            'content': "",
+            'coords': []
+        }
+        
+        if cached and cached['modified_at'] == modified_at and cached['file_size'] == file_size:
+            task['id'] = cached['id']
+            task['content'] = cached['content']
+            unmodified_tasks.append(task)
+        else:
+            task['is_modified'] = True
+            task['id'] = cached['id'] if cached else None
+            modified_tasks.append(task)
 
     import concurrent.futures
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = {executor.submit(process_single_file, p, index): p for index, p in enumerate(all_files)}
-        results = [f.result() for f in concurrent.futures.as_completed(futures)]
+    import threading
+    
+    completed_count = 0
+    progress_lock = threading.Lock()
+    
+    def update_progress(filename):
+        nonlocal completed_count
+        if progress_callback:
+            with progress_lock:
+                completed_count += 1
+                progress_callback(filename, completed_count, total_files)
 
-    for filepath, filename, file_size, modified_at in results:
+    # Worker for parallel computation of SHA-256 and running extract_content
+    def parse_single_file(task):
+        filepath = task['filepath']
+        suffix = task['suffix']
+        mime_type = task['mime_type']
+        
+        sha256 = calculate_sha256(filepath)
+        content = ""
+        coords = []
+        if mime_type.startswith('text/') or suffix in text_extensions:
+            content, coords = extract_content(filepath, suffix)
+        elif suffix in {'.wav', '.mp3'}:
+            meta = parse_audio_metadata(filepath)
+            content = f"[Audio Metadata] samplerate:{meta.get('samplerate', 0)} channels:{meta.get('channels', 0)} bitrate:{meta.get('bitrate', 'Unknown')} duration:{meta.get('duration', 0)}s"
             
-        cursor.execute("SELECT id, modified_at, file_size FROM files WHERE filepath = ?", (filepath,))
-        row = cursor.fetchone()
-        is_modified = True
-        if row and row['modified_at'] == modified_at and row['file_size'] == file_size:
-            is_modified = False
-            
-        if is_modified:
-            sha256 = calculate_sha256(filepath)
-            mime_type, _ = mimetypes.guess_type(filepath)
-            mime_type = mime_type or 'application/octet-stream'
-            
-            content = ""
-            coords = []
-            suffix = Path(filepath).suffix.lower()
-            if mime_type.startswith('text/') or suffix in text_extensions:
-                content, coords = extract_content(filepath, suffix)
-            elif suffix in {'.wav', '.mp3'}:
-                # ponytail: index audio parameter details inside FTS database text elements
-                meta = parse_audio_metadata(filepath)
-                content = f"[Audio Metadata] samplerate:{meta.get('samplerate', 0)} channels:{meta.get('channels', 0)} bitrate:{meta.get('bitrate', 'Unknown')} duration:{meta.get('duration', 0)}s"
+        task['sha256'] = sha256
+        task['content'] = content
+        task['coords'] = coords
+        return task
+
+    # Run ThreadPoolExecutor for modified files
+    if modified_tasks:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {executor.submit(parse_single_file, t): t for t in modified_tasks}
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    res_task = future.result()
+                except Exception as e:
+                    t = futures[future]
+                    t['content'] = f"[ThreadPool Error: {str(e)}]"
+                    res_task = t
+                update_progress(res_task['filename'])
                 
-            if row:
-                file_id = row['id']
-                cursor.execute("""
-                    UPDATE files 
-                    SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?
-                    WHERE filepath = ?
-                """, (filename, file_size, mime_type, sha256, modified_at, content, filepath))
-                cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (filepath,))
-                cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))",
-                               (filepath, filename, content, filepath))
-                cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
-                for coord in coords:
-                    cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?)",
-                                   (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
-                updated_count += 1
-            else:
-                cursor.execute("""
-                    INSERT INTO files (filepath, filename, file_size, mime_type, sha256, modified_at, content, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
-                """, (filepath, filename, file_size, mime_type, sha256, modified_at, content))
-                file_id = cursor.lastrowid
-                cursor.execute("INSERT INTO fts_files (filepath, filename, content, notes) VALUES (?, ?, ?, NULL)",
-                               (filepath, filename, content))
-                for coord in coords:
-                    cursor.execute("INSERT INTO ocr_coords (file_id, word, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?)",
-                                   (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
-                indexed_count += 1
-            
-        # Auto-tag rule application logic
-        cursor.execute("SELECT id, content FROM files WHERE filepath = ?", (filepath,))
-        file_id_row = cursor.fetchone()
-        if file_id_row:
-            fid = file_id_row['id']
-            file_content = file_id_row['content'] or ""
-            cursor.execute("SELECT pattern, tag FROM auto_rules ORDER BY priority DESC")
-            rules = cursor.fetchall()
-            for rule in rules:
-                pat = rule['pattern']
-                tag = rule['tag']
-                # Check regex in file path, file name, or content
-                if re.search(pat, filepath, re.IGNORECASE) or re.search(pat, file_content, re.IGNORECASE):
-                    try:
-                        cursor.execute("INSERT INTO tags (file_id, tag) VALUES (?, ?)", (fid, tag))
-                    except sqlite3.IntegrityError:
-                        pass
+    # Update progress for unmodified files immediately
+    for task in unmodified_tasks:
+        update_progress(task['filename'])
 
-    conn.commit()
-    conn.close()
+    # Decouple auto-tagging: match rules against both modified and unmodified files in-memory
+    all_results = modified_tasks + unmodified_tasks
+    for task in all_results:
+        matched_tags = []
+        filepath = task['filepath']
+        content = task['content'] or ""
+        for pattern, tag in cached_rules:
+            if re.search(pattern, filepath, re.IGNORECASE) or re.search(pattern, content, re.IGNORECASE):
+                matched_tags.append(tag)
+        task['matched_tags'] = matched_tags
+
+    # Re-open a database connection and write all updates/insertions within a single SQL transaction block
+    conn = get_db()
+    try:
+        with conn:
+            cursor = conn.cursor()
+            for task in all_results:
+                filepath = task['filepath']
+                filename = task['filename']
+                file_size = task['file_size']
+                modified_at = task['modified_at']
+                content = task['content']
+                matched_tags = task['matched_tags']
+                
+                if task['is_modified']:
+                    sha256 = task.get('sha256')
+                    mime_type = task['mime_type']
+                    coords = task['coords']
+                    file_id = task['id']
+                    
+                    if file_id is not None:
+                        cursor.execute("""
+                            UPDATE files 
+                            SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?
+                            WHERE filepath = ?
+                        """, (filename, file_size, mime_type, sha256, modified_at, content, filepath))
+                        
+                        cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (filepath,))
+                        cursor.execute("""
+                            INSERT INTO fts_files (filepath, filename, content, notes)
+                            VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))
+                        """, (filepath, filename, content, filepath))
+                        
+                        cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
+                        for coord in coords:
+                            cursor.execute("""
+                                INSERT INTO ocr_coords (file_id, word, x, y, w, h)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            """, (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
+                        updated_count += 1
+                    else:
+                        cursor.execute("""
+                            INSERT INTO files (filepath, filename, file_size, mime_type, sha256, modified_at, content, notes)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
+                        """, (filepath, filename, file_size, mime_type, sha256, modified_at, content))
+                        file_id = cursor.lastrowid
+                        task['id'] = file_id
+                        
+                        cursor.execute("""
+                            INSERT INTO fts_files (filepath, filename, content, notes)
+                            VALUES (?, ?, ?, NULL)
+                        """, (filepath, filename, content))
+                        
+                        for coord in coords:
+                            cursor.execute("""
+                                INSERT INTO ocr_coords (file_id, word, x, y, w, h)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            """, (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
+                        indexed_count += 1
+                else:
+                    file_id = task['id']
+                
+                if file_id is not None:
+                    for tag in matched_tags:
+                        try:
+                            cursor.execute("INSERT INTO tags (file_id, tag) VALUES (?, ?)", (file_id, tag))
+                        except sqlite3.IntegrityError:
+                            pass
+    finally:
+        conn.close()
+
     print(f"Indexing completed. Indexed: {indexed_count}, Updated: {updated_count}")
 
 def search_files(query):
@@ -596,11 +714,12 @@ import threading
 import time
 
 def start_active_folder_watcher(directory, callback=None):
+    start_active_folder_watcher.active = True
     # ponytail: directory watchdog loop executing every 2 seconds
     def watch_loop():
         # Track initial file stamps
         last_checked = {}
-        while True:
+        while getattr(start_active_folder_watcher, "active", True):
             if not os.path.exists(directory):
                 time.sleep(2)
                 continue
@@ -659,8 +778,11 @@ def start_active_folder_watcher(directory, callback=None):
             last_checked = current_files
             time.sleep(2)
 
-    t = threading.Thread(target=watch_loop, daemon=True)
+    t = threading.Thread(target=watch_loop, name="WatcherThread", daemon=True)
     t.start()
+
+
+real_start_active_folder_watcher = start_active_folder_watcher
 
 
 def main():

@@ -368,6 +368,42 @@ function getBasename(path) {
     return path.split(/[\\/]/).pop() || path;
 }
 
+async function getFilesFromDroppedItems(items) {
+    const fileList = [];
+    const traverse = async (entry) => {
+        if (entry.isFile) {
+            const file = await new Promise((resolve) => entry.file(resolve));
+            const relPath = entry.fullPath.startsWith('/') ? entry.fullPath.substring(1) : entry.fullPath;
+            fileList.push({ file, relativePath: relPath });
+        } else if (entry.isDirectory) {
+            const reader = entry.createReader();
+            // Read all entries in directory
+            const readAllEntries = async () => {
+                let allEntries = [];
+                while (true) {
+                    const entries = await new Promise((resolve) => reader.readEntries(resolve));
+                    if (entries.length === 0) break;
+                    allEntries = allEntries.concat(entries);
+                }
+                return allEntries;
+            };
+            const entries = await readAllEntries();
+            for (const child of entries) {
+                await traverse(child);
+            }
+        }
+    };
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].kind === 'file') {
+            const entry = items[i].webkitGetAsEntry();
+            if (entry) {
+                await traverse(entry);
+            }
+        }
+    }
+    return fileList;
+}
+
 function setupDropZone() {
     const dropZone = document.getElementById("drop-zone");
     
@@ -386,9 +422,17 @@ function setupDropZone() {
         dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
     });
     
-    dropZone.addEventListener('drop', e => {
-        const files = e.dataTransfer.files;
-        handleFilesUpload(files);
+    dropZone.addEventListener('drop', async e => {
+        let fileList = [];
+        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+            fileList = await getFilesFromDroppedItems(e.dataTransfer.items);
+        } else {
+            const files = e.dataTransfer.files;
+            for (let i = 0; i < files.length; i++) {
+                fileList.push({ file: files[i], relativePath: files[i].name });
+            }
+        }
+        handleFilesUpload(fileList);
     }, false);
 
     dropZone.addEventListener('click', () => {
@@ -396,21 +440,27 @@ function setupDropZone() {
         input.type = 'file';
         input.multiple = true;
         input.onchange = e => {
-            handleFilesUpload(e.target.files);
+            const fileList = [];
+            const files = e.target.files;
+            for (let i = 0; i < files.length; i++) {
+                fileList.push({ file: files[i], relativePath: files[i].name });
+            }
+            handleFilesUpload(fileList);
         };
         input.click();
     });
 }
 
-async function handleFilesUpload(files) {
+async function handleFilesUpload(fileList) {
     const statusMsg = document.getElementById("indexing-status");
-    if (!files || files.length === 0) return;
+    if (!fileList || fileList.length === 0) return;
 
-    statusMsg.innerText = `Uploading ${files.length} file(s)...`;
+    statusMsg.innerText = `Uploading ${fileList.length} file(s)...`;
     
-    for (let i = 0; i < files.length; i++) {
+    let uploadedCount = 0;
+    const uploadSingle = async ({ file, relativePath }) => {
         const formData = new FormData();
-        formData.append('file', files[i]);
+        formData.append('file', file, relativePath);
         
         try {
             const response = await fetch('/api/upload', {
@@ -418,12 +468,30 @@ async function handleFilesUpload(files) {
                 body: formData
             });
             if (response.ok) {
-                console.log(`Uploaded & Indexed: ${files[i].name}`);
+                uploadedCount++;
+                statusMsg.innerText = `Uploading... ${uploadedCount}/${fileList.length} completed.`;
+                console.log(`Uploaded & Indexed: ${relativePath}`);
             }
         } catch (error) {
-            console.error(`Failed to upload ${files[i].name}`, error);
+            console.error(`Failed to upload ${relativePath}`, error);
         }
+    };
+
+    // Concurrency pool with limit = 5
+    const concurrency = 5;
+    let nextIndex = 0;
+    const worker = async () => {
+        while (nextIndex < fileList.length) {
+            const index = nextIndex++;
+            await uploadSingle(fileList[index]);
+        }
+    };
+    
+    const workers = [];
+    for (let i = 0; i < Math.min(concurrency, fileList.length); i++) {
+        workers.push(worker());
     }
+    await Promise.all(workers);
     
     statusMsg.innerText = "Indexing completed successfully.";
     fetchStats();
@@ -476,7 +544,7 @@ function buildTreeUI(files) {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle; color: var(--accent);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 <span>${name}</span>
             `;
-            div.onclick = () => showPreview(node._file.filepath);
+            div.onclick = () => selectWorkspaceFile(node._file.filepath);
             parentEl.appendChild(div);
         } else {
             const folderDiv = document.createElement("div");
@@ -2518,7 +2586,9 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchSynonymsList();
 });
 
-// client-side mock chat engine
+// client-side LLM runner chat engine (Milestone 3)
+let chatHistory = [];
+
 function handleChatKeyDown(e) {
     if (e.key === "Enter") {
         sendChatMessage();
@@ -2527,6 +2597,7 @@ function handleChatKeyDown(e) {
 
 function sendChatMessage() {
     const inputEl = document.getElementById("chat-input");
+    const sendBtnEl = document.getElementById("chat-send-btn");
     if (!inputEl) return;
     const text = inputEl.value.trim();
     if (!text) return;
@@ -2537,11 +2608,75 @@ function sendChatMessage() {
     // Append User message
     appendChatMessage("User", text, "user");
 
-    // Trigger Assistant reply after 550ms
-    setTimeout(() => {
-        const reply = generateMockReply(text);
+    // Disable inputs during generation
+    inputEl.disabled = true;
+    if (sendBtnEl) sendBtnEl.disabled = true;
+
+    // Append a temporary loading element
+    const messagesContainer = document.getElementById("chat-messages");
+    let loadingEl = null;
+    if (messagesContainer) {
+        loadingEl = document.createElement("div");
+        loadingEl.className = "chat-message assistant loading";
+
+        const senderEl = document.createElement("span");
+        senderEl.className = "message-sender";
+        senderEl.innerText = "Assistant";
+
+        const contentEl = document.createElement("span");
+        contentEl.className = "message-content";
+        contentEl.innerText = "Thinking...";
+
+        loadingEl.appendChild(senderEl);
+        loadingEl.appendChild(contentEl);
+        messagesContainer.appendChild(loadingEl);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Call /api/chat via fetch, keeping track of history
+    fetch("/api/chat", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: text,
+            history: chatHistory
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Remove loading element
+        if (loadingEl && loadingEl.parentNode) {
+            loadingEl.parentNode.removeChild(loadingEl);
+        }
+
+        const reply = data.response;
         appendChatMessage("Assistant", reply, "assistant");
-    }, 550);
+
+        // Keep track of history
+        chatHistory.push({ role: "user", content: text });
+        chatHistory.push({ role: "assistant", content: reply });
+    })
+    .catch(error => {
+        console.error("Error in chat:", error);
+        // Remove loading element
+        if (loadingEl && loadingEl.parentNode) {
+            loadingEl.parentNode.removeChild(loadingEl);
+        }
+        appendChatMessage("System", `Error: ${error.message}`, "system");
+    })
+    .finally(() => {
+        // Enable inputs
+        inputEl.disabled = false;
+        if (sendBtnEl) sendBtnEl.disabled = false;
+        inputEl.focus();
+    });
 }
 
 function appendChatMessage(sender, content, className) {
@@ -2573,41 +2708,287 @@ function appendChatMessage(sender, content, className) {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-function generateMockReply(userMsg) {
-    const msg = userMsg.toLowerCase();
-    
-    // Querying active stats from DOM
-    const totalFiles = document.getElementById("stat-files")?.innerText || "-";
-    const totalSize = document.getElementById("stat-size")?.innerText || "-";
-    const diskFree = document.getElementById("stat-disk-free")?.innerText || "-";
-    const cacheRatio = document.getElementById("stat-cache-ratio")?.innerText || "-";
-
-    if (msg.includes("stat") || msg.includes("file") || msg.includes("size") || msg.includes("database") || msg.includes("capacity") || msg.includes("cache") || msg.includes("hit")) {
-        return `Active Database Stats:\n- Total Files: ${totalFiles}\n- Total Size: ${totalSize}\n- Free Storage: ${diskFree}\n- Cache Hit Ratio: ${cacheRatio}`;
-    }
-    
-    if (msg.includes("syntax") || msg.includes("search") || msg.includes("near") || msg.includes("filter")) {
-        return "Search Syntax Guide:\n- Proximity: NEAR(wordA wordB, max_distance)\n- Tags: tag:work,tag:science (supports AND/OR via UI)\n- Type/Size: type:pdf size>1mb\n- Exclusions: -type:code -word:secret";
-    }
-
-    if (msg.includes("tag")) {
-        const tagsList = [];
-        document.querySelectorAll(".tag-pill-sidebar").forEach(el => {
-            tagsList.push(el.innerText.trim());
-        });
-        if (tagsList.length > 0) {
-            return `Here are the active tags in your database: ${tagsList.join(", ")}`;
-        }
-        return "There are no tags active in your database yet. You can add them in the search tab preview panel.";
-    }
-
-    if (msg.includes("hello") || msg.includes("hi") || msg.includes("hey")) {
-        return "Hello! I am your Uroboros Knowledge Assistant. Ask me about your database stats, search syntax, active tags, or type a query!";
-    }
-
-    return `I understand you are asking about '${userMsg}'. Ask me about your database stats, search syntax, or tags!`;
-}
-
 window.handleChatKeyDown = handleChatKeyDown;
 window.sendChatMessage = sendChatMessage;
+
+
+/* Workspace Tree-Explorer & Split-screen functions */
+let currentWorkspaceFilePath = null;
+
+async function selectWorkspaceFile(path) {
+    currentWorkspaceFilePath = path;
+    try {
+        const response = await fetch(`/api/file?path=${encodeURIComponent(path)}`);
+        if (!response.ok) {
+            console.error("Failed to load file details");
+            return;
+        }
+        const data = await response.json();
+
+        const dashboard = document.getElementById("workspace-dashboard");
+        const splitScreen = document.getElementById("workspace-split-screen");
+        if (dashboard) dashboard.classList.add("hidden");
+        if (splitScreen) splitScreen.classList.remove("hidden");
+
+        const textarea = document.getElementById("workspace-editor-textarea");
+        const saveBtn = document.getElementById("workspace-save-btn");
+        
+        textarea.value = data.content || "";
+        textarea.removeAttribute("disabled");
+        saveBtn.removeAttribute("disabled");
+
+        renderWorkspacePreview(data);
+        fetchWorkspaceInsights(path);
+    } catch (error) {
+        console.error("Error selecting workspace file:", error);
+    }
+}
+
+function renderWorkspacePreview(data) {
+    const previewContent = document.getElementById("workspace-preview-content");
+    if (!previewContent) return;
+    previewContent.innerHTML = "";
+
+    const suffix = data.filename.split('.').pop().toLowerCase();
+
+    if (suffix === 'pdf') {
+        const iframe = document.createElement("iframe");
+        iframe.src = `/api/file/raw?path=${encodeURIComponent(data.filepath)}`;
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+        iframe.style.background = "white";
+        previewContent.appendChild(iframe);
+    } else if (['png', 'jpg', 'jpeg', 'bmp', 'gif'].includes(suffix)) {
+        const img = document.createElement("img");
+        img.src = `/api/file/raw?path=${encodeURIComponent(data.filepath)}`;
+        img.style.maxWidth = "100%";
+        img.style.maxHeight = "100%";
+        img.style.objectFit = "contain";
+        img.style.display = "block";
+        img.style.margin = "auto";
+        previewContent.appendChild(img);
+    } else if (suffix === 'html') {
+        const iframe = document.createElement("iframe");
+        iframe.src = `/api/file/raw?path=${encodeURIComponent(data.filepath)}`;
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+        iframe.style.background = "white";
+        previewContent.appendChild(iframe);
+    } else if (data.content !== undefined && data.content !== null) {
+        const pre = document.createElement("pre");
+        pre.style.margin = "0";
+        pre.style.padding = "1rem";
+        pre.style.fontFamily = "monospace";
+        pre.style.fontSize = "0.85rem";
+        pre.style.color = "var(--text-primary)";
+        pre.style.whiteSpace = "pre-wrap";
+        pre.style.wordBreak = "break-all";
+        
+        const code = document.createElement("code");
+        code.innerText = data.content;
+        pre.appendChild(code);
+        previewContent.appendChild(pre);
+    } else {
+        const div = document.createElement("div");
+        div.className = "preview-placeholder";
+        div.innerText = "[Binary File - Visual Preview Not Available]";
+        previewContent.appendChild(div);
+    }
+}
+
+async function saveWorkspaceFile() {
+    if (!currentWorkspaceFilePath) return;
+    const saveBtn = document.getElementById("workspace-save-btn");
+    const textarea = document.getElementById("workspace-editor-textarea");
+    const originalText = saveBtn.innerText;
+    
+    saveBtn.innerText = "Saving...";
+    saveBtn.setAttribute("disabled", "true");
+
+    try {
+        const response = await fetch("/api/file/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                path: currentWorkspaceFilePath,
+                content: textarea.value
+            })
+        });
+
+        if (response.ok) {
+            saveBtn.innerText = "Saved!";
+            setTimeout(() => {
+                saveBtn.innerText = originalText;
+                saveBtn.removeAttribute("disabled");
+            }, 1500);
+
+            // Refresh preview
+            selectWorkspaceFile(currentWorkspaceFilePath);
+
+            // Refresh stats, tree and search lists
+            fetchStats();
+            fetchDirectoryTree();
+            if (typeof triggerSearch === "function") {
+                triggerSearch();
+            }
+        } else {
+            alert("Failed to save file changes.");
+            saveBtn.innerText = originalText;
+            saveBtn.removeAttribute("disabled");
+        }
+    } catch (error) {
+        console.error("Error saving workspace file:", error);
+        alert("Error saving file: " + error.message);
+        saveBtn.innerText = originalText;
+        saveBtn.removeAttribute("disabled");
+    }
+}
+
+function closeWorkspaceEditor() {
+    currentWorkspaceFilePath = null;
+    const dashboard = document.getElementById("workspace-dashboard");
+    const splitScreen = document.getElementById("workspace-split-screen");
+    if (dashboard) dashboard.classList.remove("hidden");
+    if (splitScreen) splitScreen.classList.add("hidden");
+    
+    // Clear insights pane
+    const insightsContent = document.getElementById("workspace-insights-content");
+    if (insightsContent) {
+        insightsContent.innerHTML = '<span class="insights-placeholder">Select a document to load insights.</span>';
+    }
+    const regenerateBtn = document.getElementById("workspace-regenerate-insights-btn");
+    if (regenerateBtn) {
+        regenerateBtn.setAttribute("disabled", "true");
+    }
+}
+
+window.selectWorkspaceFile = selectWorkspaceFile;
+window.saveWorkspaceFile = saveWorkspaceFile;
+window.closeWorkspaceEditor = closeWorkspaceEditor;
+window.fetchWorkspaceInsights = fetchWorkspaceInsights;
+
+
+// --- Split-Screen Document Insights (Milestone 4) ---
+
+// ponytail: lightweight regex-based markdown parser to avoid external dependencies
+function renderMarkdown(md) {
+    if (!md) return "";
+    let html = md;
+    
+    // Escape HTML tags to establish a secure execution boundary
+    html = html
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+        
+    // Headers
+    html = html.replace(/^### (.*?)$/gm, "<h3>$1</h3>");
+    html = html.replace(/^## (.*?)$/gm, "<h2>$1</h2>");
+    html = html.replace(/^# (.*?)$/gm, "<h1>$1</h1>");
+    
+    // Unordered lists
+    html = html.replace(/^[ \t]*[\*\-\+][ \t](.*?)\r?$/gm, "<ul><li>$1</li></ul>");
+    // Ordered lists (capturing the number to maintain value)
+    html = html.replace(/^[ \t]*(\d+)\.[ \t](.*?)\r?$/gm, '<ol><li value="$1">$2</li></ol>');
+    // Merge adjacent list containers
+    html = html.replace(/<\/ul>\s*<ul>/g, "");
+    html = html.replace(/<\/ol>\s*<ol>/g, "");
+    
+    // Bold and Italic formatting
+    html = html.replace(/\*\*([^<>]+?)\*\*/g, "<strong>$1</strong>");
+    html = html.replace(/__([^<>]+?)__/g, "<strong>$1</strong>");
+    html = html.replace(/\*([^<>]+?)\*/g, "<em>$1</em>");
+    html = html.replace(/_([^<>]+?)_/g, "<em>$1</em>");
+    
+    // Paragraph tags
+    let result = [];
+    let currentPara = [];
+    let lines = html.split(/\r?\n/);
+    for (let line of lines) {
+        let trimmed = line.trim();
+        if (!trimmed) {
+            if (currentPara.length > 0) {
+                result.push(`<p>${currentPara.join("<br>")}</p>`);
+                currentPara = [];
+            }
+            continue;
+        }
+        let lower = trimmed.toLowerCase();
+        if (lower.startsWith("<h") || lower.startsWith("<ul") || lower.startsWith("<ol") || lower.startsWith("<li") || lower.startsWith("</ul") || lower.startsWith("</ol")) {
+            if (currentPara.length > 0) {
+                result.push(`<p>${currentPara.join("<br>")}</p>`);
+                currentPara = [];
+            }
+            result.push(trimmed);
+        } else {
+            currentPara.push(trimmed);
+        }
+    }
+    if (currentPara.length > 0) {
+        result.push(`<p>${currentPara.join("<br>")}</p>`);
+    }
+    html = result.join("");
+
+    return html;
+}
+
+async function fetchWorkspaceInsights(path) {
+    const filePath = path || currentWorkspaceFilePath;
+    if (!filePath) return;
+
+    const insightsContent = document.getElementById("workspace-insights-content");
+    const regenerateBtn = document.getElementById("workspace-regenerate-insights-btn");
+
+    if (insightsContent) {
+        insightsContent.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-secondary); padding: 2rem 0;">
+                <div class="insights-loading-spinner"></div>
+                <span>Generating insights using local LLM...</span>
+            </div>
+        `;
+    }
+
+    if (regenerateBtn) {
+        regenerateBtn.setAttribute("disabled", "true");
+        regenerateBtn.innerText = "Generating...";
+    }
+
+    try {
+        const response = await fetch("/api/file/insights", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ filepath: filePath })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || `HTTP error ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (insightsContent) {
+            insightsContent.innerHTML = renderMarkdown(data.insights);
+        }
+    } catch (error) {
+        console.error("Error fetching workspace insights:", error);
+        if (insightsContent) {
+            insightsContent.innerHTML = `
+                <div style="color: #ff5555; padding: 0.5rem; border: 1px dashed #ff5555; border-radius: 2px; font-size: 0.8rem; background: rgba(255, 85, 85, 0.05);">
+                    <strong>Error generating insights:</strong> ${error.message}
+                </div>
+            `;
+        }
+    } finally {
+        if (regenerateBtn) {
+            regenerateBtn.removeAttribute("disabled");
+            regenerateBtn.innerText = "Regenerate";
+        }
+    }
+}
+
 

@@ -83,7 +83,7 @@ h1, h2, h3, h4, h5, button, .tab-btn, .tab-link, .mode-btn, .action-btn {
 
 .app-container {
     display: grid;
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: 96px 1fr;
     min-height: 100vh;
     position: relative;
 }
@@ -111,8 +111,8 @@ h1, h2, h3, h4, h5, button, .tab-btn, .tab-link, .mode-btn, .action-btn {
 }
 
 .logo-img-asset {
-    width: 44px;
-    height: 44px;
+    width: 64px;
+    height: 64px;
     object-fit: contain;
     border-radius: 50%;
     border: 1px solid var(--border-color);
@@ -1868,6 +1868,43 @@ input[type="range"]::-moz-range-thumb:hover {
     background: rgba(255, 255, 255, 0.05);
 }
 
+.theme-toggle-btn .sun-circle,
+.theme-toggle-btn .sun-rays {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+
+.theme-toggle-btn .moon-path {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+
+/* Default (Dark Theme): show moon, hide sun */
+body:not(.light-theme) .theme-toggle-btn .sun-circle {
+    opacity: 0;
+    transform: scale(0);
+}
+body:not(.light-theme) .theme-toggle-btn .sun-rays {
+    opacity: 0;
+    transform: rotate(45deg) scale(0);
+}
+body:not(.light-theme) .theme-toggle-btn .moon-path {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+/* Light Theme: show sun, hide moon */
+body.light-theme .theme-toggle-btn .sun-circle {
+    opacity: 1;
+    transform: scale(1);
+}
+body.light-theme .theme-toggle-btn .sun-rays {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+body.light-theme .theme-toggle-btn .moon-path {
+    opacity: 0;
+    transform: scale(0) rotate(-45deg);
+}
+
 /* Adjust Watcher badge to just display the live green dot */
 .app-header #watcher-badge {
     background: #10b981;
@@ -1965,6 +2002,211 @@ input[type="range"]::-moz-range-thumb:hover {
     font-size: 0.85rem;
     cursor: pointer;
 }
+
+/* Workspace Split-Screen & Editor Styles */
+.workspace-right-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+}
+
+.workspace-split-screen {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    overflow: hidden;
+    gap: 0.75rem;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.workspace-preview-pane, .workspace-editor-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    border-radius: 2px;
+}
+
+.pane-header {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pane-header h4 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pane-content {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    background: var(--bg-dark);
+}
+
+#workspace-editor-textarea {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: monospace;
+    font-size: 0.85rem;
+    padding: 0.75rem;
+    outline: none;
+    resize: none;
+    box-sizing: border-box;
+}
+
+.preview-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+
+/* Document Insights Split Layout (Milestone 4) */
+.workspace-editor-pane .pane-content {
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    height: 100%;
+}
+
+.editor-sub-pane {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border-color);
+}
+
+.editor-sub-pane #workspace-editor-textarea {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: monospace;
+    font-size: 0.85rem;
+    padding: 0.75rem;
+    outline: none;
+    resize: none;
+    box-sizing: border-box;
+}
+
+.insights-sub-pane {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.insights-pane-header {
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.insights-pane-header span {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--accent);
+    text-transform: uppercase;
+}
+
+#workspace-insights-content {
+    flex: 1;
+    padding: 0.75rem;
+    overflow-y: auto;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.insights-placeholder {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+#workspace-insights-content h1,
+#workspace-insights-content h2,
+#workspace-insights-content h3,
+#workspace-insights-content h4,
+#workspace-insights-content h5,
+#workspace-insights-content h6 {
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+    font-family: var(--font-outfit);
+}
+
+#workspace-insights-content h1, #workspace-insights-content h4 { font-size: 1.1rem; }
+#workspace-insights-content h2, #workspace-insights-content h5 { font-size: 1.0rem; }
+#workspace-insights-content h3, #workspace-insights-content h6 { font-size: 0.9rem; }
+
+#workspace-insights-content p {
+    margin-bottom: 0.75rem;
+}
+
+#workspace-insights-content ul,
+#workspace-insights-content ol {
+    margin-bottom: 0.75rem;
+    padding-left: 1.25rem;
+}
+
+#workspace-insights-content ul {
+    list-style-type: disc;
+}
+
+#workspace-insights-content ol {
+    list-style-type: decimal;
+}
+
+#workspace-insights-content li {
+    margin-bottom: 0.25rem;
+}
+
+#workspace-insights-content strong {
+    color: var(--accent-light, #e0bb65);
+}
+
+/* Spinner for Loading State */
+.insights-loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 
 
 
