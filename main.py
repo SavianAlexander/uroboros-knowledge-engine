@@ -150,40 +150,56 @@ def startup_event():
         start_udp_broadcast_service()
 
 
-# ponytail: simple Least Recently Used Query Cache helper
+# ponytail: persistent search Query Cache helper backed by SQLite
 class QueryCache:
     def __init__(self, capacity=50):
         self.capacity = capacity
-        self.cache = {}  # key -> value
-        self.order = []
         self.hits = 0
         self.misses = 0
         self.lock = threading.Lock()
 
     def get(self, key):
         with self.lock:
-            if key in self.cache:
-                self.order.remove(key)
-                self.order.append(key)
-                self.hits += 1
-                return self.cache[key]
+            try:
+                with db_conn() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT response_json FROM query_cache WHERE query_key = ?", (key,))
+                    row = cursor.fetchone()
+                    if row:
+                        self.hits += 1
+                        return json.loads(row[0])
+            except Exception:
+                pass
             self.misses += 1
             return None
 
     def set(self, key, value):
         with self.lock:
-            if key in self.cache:
-                self.order.remove(key)
-            elif len(self.cache) >= self.capacity:
-                oldest = self.order.pop(0)
-                del self.cache[oldest]
-            self.cache[key] = value
-            self.order.append(key)
+            try:
+                with db_conn() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT COUNT(*) FROM query_cache")
+                    count = cursor.fetchone()[0]
+                    if count >= self.capacity:
+                        cursor.execute("DELETE FROM query_cache WHERE cached_at = (SELECT MIN(cached_at) FROM query_cache)")
+                    
+                    cursor.execute(
+                        "INSERT OR REPLACE INTO query_cache (query_key, response_json, cached_at) VALUES (?, ?, ?)",
+                        (key, json.dumps(value), time.time())
+                    )
+                    conn.commit()
+            except Exception as e:
+                print(f"Failed to set query cache in DB: {e}")
 
     def invalidate(self):
         with self.lock:
-            self.cache.clear()
-            self.order.clear()
+            try:
+                with db_conn() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("DELETE FROM query_cache")
+                    conn.commit()
+            except Exception:
+                pass
 
     def get_stats(self):
         with self.lock:
@@ -193,11 +209,19 @@ class QueryCache:
                 if total_requests > 0
                 else 0.0
             )
+            size = 0
+            try:
+                with db_conn() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT COUNT(*) FROM query_cache")
+                    size = cursor.fetchone()[0]
+            except Exception:
+                pass
             return {
                 "hits": self.hits,
                 "misses": self.misses,
                 "hit_ratio": hit_ratio,
-                "cache_size": len(self.cache),
+                "cache_size": size,
             }
 
 

@@ -200,6 +200,15 @@ def init_db():
         )
     """)
     
+    # Search Query Cache Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS query_cache (
+            query_key TEXT PRIMARY KEY,
+            response_json TEXT,
+            cached_at REAL
+        )
+    """)
+    
     conn.commit()
     conn.close()
     print("Database initialized successfully.")
