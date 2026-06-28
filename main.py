@@ -2827,8 +2827,8 @@ class FileInsightsResponse(BaseModel):
 
 _llm_instance = None
 _llm_lock = threading.Lock()
-MODEL_PATH = r"C:\Users\Administrator\.cache\huggingface\hub\models--mradermacher--gte-Qwen2-7B-instruct-GGUF\snapshots\aecd71b063e7590d5d6702085ec7a25867e68cbb\gte-Qwen2-7B-instruct.Q4_K_M.gguf"
-DEFAULT_FALLBACK_MODEL_PATH = os.path.join(os.path.expanduser("~"), ".cache", "uroboros", "qwen2.5-0.5b-instruct-q4_k_m.gguf")
+MODEL_PATH = os.path.join(os.path.expanduser("~"), ".cache", "uroboros", "DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf")
+DEFAULT_FALLBACK_MODEL_PATH = os.path.join(os.path.expanduser("~"), ".cache", "uroboros", "Phi-4-mini-instruct-Q4_K_M.gguf")
 
 def download_model_if_missing():
     global MODEL_PATH
@@ -2840,7 +2840,7 @@ def download_model_if_missing():
         return
     import urllib.request
     print(f"Model not found. Downloading fallback model to {DEFAULT_FALLBACK_MODEL_PATH}...")
-    url = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
+    url = "https://huggingface.co/microsoft/Phi-4-mini-instruct-GGUF/resolve/main/Phi-4-mini-instruct-Q4_K_M.gguf"
     try:
         urllib.request.urlretrieve(url, DEFAULT_FALLBACK_MODEL_PATH)
         MODEL_PATH = DEFAULT_FALLBACK_MODEL_PATH
