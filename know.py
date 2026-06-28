@@ -425,8 +425,49 @@ def extract_content(filepath, suffix):
     except Exception as e:
         return f"[Parsing Error: {str(e)}]", []
 
+def extract_ai_tags(content, filename):
+    # Fallback heuristic: check basic patterns first or if LLM fails/is not loaded
+    tags = []
+    fallback_rules = [
+        ("astrophysics", "science"),
+        ("physics", "science"),
+        ("quantum", "science")
+    ]
+    for pat, tag in fallback_rules:
+        if re.search(pat, filename, re.IGNORECASE) or re.search(pat, content, re.IGNORECASE):
+            tags.append(tag)
+
+    try:
+        from main import get_llm
+        llm = get_llm()
+        if llm:
+            prompt = (
+                "Analyze the following document filename and text content.\n"
+                "Extract exactly 2-3 concise keyword tags that best represent the topic or domain (e.g. science, astrophysics, invoice, work).\n"
+                "Respond ONLY with a comma-separated list of lowercase tags. Do not explain anything.\n\n"
+                f"Filename: {filename}\n"
+                f"Content: {content[:800]}"
+            )
+            completion = llm.create_chat_completion(
+                messages=[
+                    {"role": "system", "content": "You are a database tag extractor. Respond only with comma-separated tags."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=30,
+                temperature=0.2
+            )
+            tags_str = completion["choices"][0]["message"]["content"]
+            # Parse tags
+            ai_tags = [t.strip().lower() for t in tags_str.split(",") if t.strip()]
+            for t in ai_tags:
+                if t not in tags:
+                    tags.append(t)
+    except Exception:
+        pass
+    return tags
+
 def index_directory(dir_path, progress_callback=None):
-    # ponytail: cache existing files and auto_rules upfront to minimize db connections
+    # ponytail: cache existing files upfront to minimize db connections
     conn = get_db()
     cursor = conn.cursor()
     
@@ -448,10 +489,6 @@ def index_directory(dir_path, progress_callback=None):
             }
             for row in cursor.fetchall()
         }
-
-        # Cache auto_rules in memory once before entering the loop
-        cursor.execute("SELECT pattern, tag FROM auto_rules ORDER BY priority DESC")
-        cached_rules = [(row['pattern'], row['tag']) for row in cursor.fetchall()]
     except sqlite3.OperationalError as e:
         conn.close()
         print(f"Skipping index_directory due to uninitialized database table: {str(e)}")
@@ -567,23 +604,16 @@ def index_directory(dir_path, progress_callback=None):
     for task in unmodified_tasks:
         update_progress(task['filename'])
 
-    # Decouple auto-tagging: match rules against both modified and unmodified files in-memory
-    all_results = modified_tasks + unmodified_tasks
-    for task in all_results:
-        matched_tags = []
-        filepath = task['filepath']
-        content = task['content'] or ""
-        for pattern, tag in cached_rules:
-            if re.search(pattern, filepath, re.IGNORECASE) or re.search(pattern, content, re.IGNORECASE):
-                matched_tags.append(tag)
-        task['matched_tags'] = matched_tags
+    # AI Tagging for newly added/modified files
+    for task in modified_tasks:
+        task['matched_tags'] = extract_ai_tags(task['content'], task['filename'])
 
     # Re-open a database connection and write all updates/insertions within a single SQL transaction block
     conn = get_db()
     try:
         with conn:
             cursor = conn.cursor()
-            for task in all_results:
+            for task in modified_tasks:
                 filepath = task['filepath']
                 filename = task['filename']
                 file_size = task['file_size']
@@ -591,54 +621,54 @@ def index_directory(dir_path, progress_callback=None):
                 content = task['content']
                 matched_tags = task['matched_tags']
                 
-                if task['is_modified']:
-                    sha256 = task.get('sha256')
-                    mime_type = task['mime_type']
-                    coords = task['coords']
-                    file_id = task['id']
-                    
-                    if file_id is not None:
-                        cursor.execute("""
-                            UPDATE files 
-                            SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?
-                            WHERE filepath = ?
-                        """, (filename, file_size, mime_type, sha256, modified_at, content, filepath))
-                        
-                        cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (filepath,))
-                        cursor.execute("""
-                            INSERT INTO fts_files (filepath, filename, content, notes)
-                            VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))
-                        """, (filepath, filename, content, filepath))
-                        
-                        cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
-                        for coord in coords:
-                            cursor.execute("""
-                                INSERT INTO ocr_coords (file_id, word, x, y, w, h)
-                                VALUES (?, ?, ?, ?, ?, ?)
-                            """, (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
-                        updated_count += 1
-                    else:
-                        cursor.execute("""
-                            INSERT INTO files (filepath, filename, file_size, mime_type, sha256, modified_at, content, notes)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
-                        """, (filepath, filename, file_size, mime_type, sha256, modified_at, content))
-                        file_id = cursor.lastrowid
-                        task['id'] = file_id
-                        
-                        cursor.execute("""
-                            INSERT INTO fts_files (filepath, filename, content, notes)
-                            VALUES (?, ?, ?, NULL)
-                        """, (filepath, filename, content))
-                        
-                        for coord in coords:
-                            cursor.execute("""
-                                INSERT INTO ocr_coords (file_id, word, x, y, w, h)
-                                VALUES (?, ?, ?, ?, ?, ?)
-                            """, (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
-                        indexed_count += 1
-                else:
-                    file_id = task['id']
+                sha256 = task.get('sha256')
+                mime_type = task['mime_type']
+                coords = task['coords']
+                file_id = task['id']
                 
+                if file_id is not None:
+                    cursor.execute("""
+                        UPDATE files 
+                        SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?
+                        WHERE filepath = ?
+                    """, (filename, file_size, mime_type, sha256, modified_at, content, filepath))
+                    
+                    cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (filepath,))
+                    cursor.execute("""
+                        INSERT INTO fts_files (filepath, filename, content, notes)
+                        VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))
+                    """, (filepath, filename, content, filepath))
+                    
+                    cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
+                    for coord in coords:
+                        cursor.execute("""
+                            INSERT INTO ocr_coords (file_id, word, x, y, w, h)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        """, (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
+                        
+                    # Delete old tags on modification
+                    cursor.execute("DELETE FROM tags WHERE file_id = ?", (file_id,))
+                    updated_count += 1
+                else:
+                    cursor.execute("""
+                        INSERT INTO files (filepath, filename, file_size, mime_type, sha256, modified_at, content, notes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
+                    """, (filepath, filename, file_size, mime_type, sha256, modified_at, content))
+                    file_id = cursor.lastrowid
+                    task['id'] = file_id
+                    
+                    cursor.execute("""
+                        INSERT INTO fts_files (filepath, filename, content, notes)
+                        VALUES (?, ?, ?, NULL)
+                    """, (filepath, filename, content))
+                    
+                    for coord in coords:
+                        cursor.execute("""
+                            INSERT INTO ocr_coords (file_id, word, x, y, w, h)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        """, (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
+                    indexed_count += 1
+            
                 if file_id is not None:
                     for tag in matched_tags:
                         try:

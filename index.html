@@ -479,38 +479,8 @@
                     </div>
                 </div>
 
-                <!-- Configuration Tab View -->
                 <div id="config-tab-view" class="tab-view-content hidden">
                     <div class="config-grid">
-                        <!-- Auto-Tagging Rules -->
-                        <div class="rules-sidebar">
-                            <h3>Auto-Tagging Rules</h3>
-                            <div class="rules-form">
-                                <input type="text" id="rule-pattern" placeholder="Regex pattern (e.g. \bformula\b)"/>
-                                <input type="text" id="rule-tag" placeholder="Tag name"/>
-                                <input type="number" id="rule-priority" placeholder="Priority (e.g. 10)" value="0" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.45rem; font-size: 0.8rem; width: 100%; outline: none; margin-bottom: 0.5rem;box-sizing: border-box;" />
-                                <div style="display: flex; gap: 0.5rem; width: 100%;">
-                                    <button onclick="addAutoRule()" style="flex: 1;">Add Rule</button>
-                                    <button onclick="testAutoRule()" style="flex: 1; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b;">Test Matches</button>
-                                </div>
-                            </div>
-                            <div id="sidebar-rules" class="rules-list-container">
-                                <span class="rules-empty">No automated tagging rules.</span>
-                            </div>
-                        </div>
-
-                        <!-- Word Synonyms Map -->
-                        <div class="rules-sidebar">
-                            <h3>Word Synonyms Map</h3>
-                            <div class="rules-form">
-                                <input type="text" id="synonym-word" placeholder="Word (e.g. gravity)"/>
-                                <input type="text" id="synonym-substitutes" placeholder="Synonyms (comma separated)"/>
-                                <button onclick="addWordSynonym()">Save Synonym</button>
-                            </div>
-                            <div id="sidebar-synonyms" class="rules-list-container" style="max-height: 100px; overflow-y: auto; font-size: 0.75rem;">
-                                <span class="rules-empty">No synonyms configured.</span>
-                            </div>
-                        </div>
 
                         <!-- Search History Vault -->
                         <div class="rules-sidebar">

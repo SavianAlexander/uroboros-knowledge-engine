@@ -23,7 +23,7 @@ def setup_api_db():
     import know
     know.DB_FILE = "test_knowledge.db"
     know.init_db()
-    for f in ["dumps/mock_crud.txt", "dumps/renamed_crud.txt"]:
+    for f in ["vault/mock_crud.txt", "vault/renamed_crud.txt"]:
         if os.path.exists(f):
             try:
                 os.remove(f)
@@ -408,7 +408,7 @@ def test_insights_endpoint():
     }
     
     # 1. Create a temporary document
-    test_filepath = os.path.abspath(os.path.join("dumps", "test_insights_doc.txt"))
+    test_filepath = os.path.abspath(os.path.join("vault", "test_insights_doc.txt"))
     with open(test_filepath, "w", encoding="utf-8") as f:
         f.write("This is a sample document for testing insights generation.")
         
@@ -442,7 +442,7 @@ def test_insights_error_filtering():
     ]
     
     for prefix in error_prefixes:
-        test_filepath = os.path.abspath(os.path.join("dumps", "test_insights_error.txt"))
+        test_filepath = os.path.abspath(os.path.join("vault", "test_insights_error.txt"))
         with open(test_filepath, "w", encoding="utf-8") as f:
             f.write(prefix)
             

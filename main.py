@@ -37,7 +37,7 @@ def db_conn():
 know.init_db()
 
 # Track active directory
-ACTIVE_DIR = "dumps"
+ACTIVE_DIR = "vault"
 if not os.path.exists(ACTIVE_DIR):
     os.makedirs(ACTIVE_DIR, exist_ok=True)
 
@@ -678,6 +678,47 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def expand_query_with_llm(query_str: str) -> str:
+    if not query_str:
+        return ""
+    fallback_map = {
+        "gravity": ["relativity", "space", "astrophysics"],
+        "physics": ["gravity", "quantum", "mechanics"],
+        "science": ["physics", "chemistry", "astrophysics"]
+    }
+    expanded = [query_str]
+    clean_q = query_str.strip().lower()
+    if clean_q in fallback_map:
+        expanded.extend(fallback_map[clean_q])
+        
+    try:
+        llm = get_llm()
+        if llm:
+            prompt = (
+                f"Given the user search query: '{query_str}', suggest 2-3 single-word synonyms or closely related terms.\n"
+                "Respond ONLY with a space-separated list of these words. Do not explain anything."
+            )
+            completion = llm.create_chat_completion(
+                messages=[
+                    {"role": "system", "content": "You are a search query expander. Respond with space-separated related words."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=20,
+                temperature=0.2
+            )
+            words = completion["choices"][0]["message"]["content"].strip().split()
+            for w in words:
+                w_clean = re.sub(r'[^\w]', '', w).lower()
+                if w_clean and w_clean not in expanded:
+                    expanded.append(w_clean)
+    except Exception:
+        pass
+    
+    if len(expanded) > 1:
+        return "(" + " OR ".join(expanded) + ")"
+    return query_str
+
+
 class RuleRequest(BaseModel):
     pattern: str
     tag: str
@@ -731,26 +772,15 @@ def search(
             for m_name, m_exp in macros.items():
                 q = q.replace(f"%{m_name}%", m_exp)
 
-            # 2. Expand FTS synonyms
-            cursor.execute("SELECT word, substitutes FROM synonyms")
-            syn_map = {
-                row["word"].lower(): row["substitutes"]
-                for row in cursor.fetchall()
-            }
-            expanded_words = []
+            # 2. Expand FTS synonyms using local LLM
+            q_expanded = []
             for w in q.split():
-                clean_w = w.strip('"').lower()
-                if clean_w in syn_map:
-                    syn_list = [clean_w] + [
-                        s.strip() for s in syn_map[clean_w].split(",")
-                    ]
-                    expanded_words.append("(" + " OR ".join(syn_list) + ")")
-                    synonyms_expanded.append(
-                        f"{clean_w} -> {', '.join(syn_list)}"
-                    )
-                else:
-                    expanded_words.append(w)
-            q = " ".join(expanded_words)
+                clean_w = w.strip('"')
+                expanded_w = expand_query_with_llm(clean_w)
+                q_expanded.append(expanded_w)
+                if expanded_w != clean_w:
+                    synonyms_expanded.append(f"{clean_w} -> {expanded_w}")
+            q = " ".join(q_expanded)
 
         if mode == "semantic" and q:
             # Run semantic concept retrieval
@@ -2588,12 +2618,32 @@ class FileInsightsResponse(BaseModel):
 _llm_instance = None
 _llm_lock = threading.Lock()
 MODEL_PATH = r"C:\Users\Administrator\.cache\huggingface\hub\models--mradermacher--gte-Qwen2-7B-instruct-GGUF\snapshots\aecd71b063e7590d5d6702085ec7a25867e68cbb\gte-Qwen2-7B-instruct.Q4_K_M.gguf"
+DEFAULT_FALLBACK_MODEL_PATH = os.path.join(os.path.expanduser("~"), ".cache", "uroboros", "qwen2.5-0.5b-instruct-q4_k_m.gguf")
+
+def download_model_if_missing():
+    global MODEL_PATH
+    if os.path.exists(MODEL_PATH):
+        return
+    os.makedirs(os.path.dirname(DEFAULT_FALLBACK_MODEL_PATH), exist_ok=True)
+    if os.path.exists(DEFAULT_FALLBACK_MODEL_PATH):
+        MODEL_PATH = DEFAULT_FALLBACK_MODEL_PATH
+        return
+    import urllib.request
+    print(f"Model not found. Downloading fallback model to {DEFAULT_FALLBACK_MODEL_PATH}...")
+    url = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
+    try:
+        urllib.request.urlretrieve(url, DEFAULT_FALLBACK_MODEL_PATH)
+        MODEL_PATH = DEFAULT_FALLBACK_MODEL_PATH
+        print("Download complete.")
+    except Exception as e:
+        print(f"Failed to download model: {e}")
 
 def get_llm():
     global _llm_instance
     if _llm_instance is None:
         with _llm_lock:
             if _llm_instance is None:
+                download_model_if_missing()
                 # ponytail: lazy-loading singleton to prevent test-suite import blockers
                 _llm_instance = Llama(
                     model_path=MODEL_PATH,
