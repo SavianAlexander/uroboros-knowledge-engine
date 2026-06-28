@@ -2089,9 +2089,18 @@ def exchange_payload(req: SyncExchangeRequest):
                     verify_path_containment(local_path)
                 except Exception:
                     continue
+
+                # Last-Write-Wins conflict resolution
+                if os.path.exists(local_path):
+                    try:
+                        local_mtime = os.path.getmtime(local_path)
+                        if local_mtime >= item["modified_at"]:
+                            # Skip if local file is newer or same age
+                            continue
+                    except Exception:
+                        pass
+
                 # Recreate file locally under ACTIVE_DIR to sync physical files
-                # Note: We index text/raw contents over network in this
-                # simple LAN protocol
                 try:
                     with open(
                         local_path, "w", encoding="utf-8", errors="ignore"
@@ -2100,35 +2109,90 @@ def exchange_payload(req: SyncExchangeRequest):
                 except Exception:
                     pass
 
-                # Insert into database
+                # Insert or update in database
                 try:
-                    cursor.execute(
-                        """
-                        INSERT INTO files (filepath, filename, file_size,
-                                           mime_type, sha256, modified_at,
-                                           content)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                        (
-                            local_path,
-                            filename,
-                            item["file_size"],
-                            "application/octet-stream",
-                            item["sha256"],
-                            item["modified_at"],
-                            item["content"],
-                        ),
-                    )
-                    cursor.execute(
-                        """
-                        INSERT INTO fts_files
-                        (filepath, filename, content, notes)
-                        VALUES (?, ?, ?, NULL)
-                    """,
-                        (local_path, filename, item["content"]),
-                    )
+                    cursor.execute("SELECT id FROM files WHERE filepath = ?", (local_path,))
+                    row = cursor.fetchone()
+                    if row:
+                        file_id = row[0]
+                        cursor.execute(
+                            """
+                            UPDATE files
+                            SET file_size = ?, sha256 = ?, modified_at = ?, content = ?
+                            WHERE id = ?
+                        """,
+                            (
+                                item["file_size"],
+                                item["sha256"],
+                                item["modified_at"],
+                                item["content"],
+                                file_id,
+                            ),
+                        )
+                        cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (local_path,))
+                        cursor.execute(
+                            """
+                            INSERT INTO fts_files (filepath, filename, content, notes)
+                            VALUES (?, ?, ?, (SELECT notes FROM files WHERE id = ?))
+                        """,
+                            (local_path, filename, item["content"], file_id),
+                        )
+                        
+                        # Sync chunking too
+                        cursor.execute("DELETE FROM file_chunks WHERE file_id = ?", (file_id,))
+                        cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
+                        chunks = know.chunk_text(item["content"] or "")
+                        for chunk_idx, chunk_content in enumerate(chunks):
+                            cursor.execute(
+                                "INSERT INTO file_chunks (file_id, chunk_index, content) VALUES (?, ?, ?)",
+                                (file_id, chunk_idx, chunk_content)
+                            )
+                            chunk_id = cursor.lastrowid
+                            cursor.execute(
+                                "INSERT INTO fts_file_chunks (chunk_id, file_id, content) VALUES (?, ?, ?)",
+                                (chunk_id, file_id, chunk_content)
+                            )
+                    else:
+                        cursor.execute(
+                            """
+                            INSERT INTO files (filepath, filename, file_size,
+                                               mime_type, sha256, modified_at,
+                                               content)
+                            VALUES (?, ?, ?, 'application/octet-stream', ?, ?, ?)
+                        """,
+                            (
+                                local_path,
+                                filename,
+                                item["file_size"],
+                                item["sha256"],
+                                item["modified_at"],
+                                item["content"],
+                            ),
+                        )
+                        file_id = cursor.lastrowid
+                        cursor.execute(
+                            """
+                            INSERT INTO fts_files
+                            (filepath, filename, content, notes)
+                            VALUES (?, ?, ?, NULL)
+                        """,
+                            (local_path, filename, item["content"]),
+                        )
+                        
+                        # Index chunks
+                        chunks = know.chunk_text(item["content"] or "")
+                        for chunk_idx, chunk_content in enumerate(chunks):
+                            cursor.execute(
+                                "INSERT INTO file_chunks (file_id, chunk_index, content) VALUES (?, ?, ?)",
+                                (file_id, chunk_idx, chunk_content)
+                            )
+                            chunk_id = cursor.lastrowid
+                            cursor.execute(
+                                "INSERT INTO fts_file_chunks (chunk_id, file_id, content) VALUES (?, ?, ?)",
+                                (chunk_id, file_id, chunk_content)
+                            )
                     synced_files.append(filename)
-                except sqlite3.IntegrityError:
+                except Exception:
                     pass
 
         conn.commit()
