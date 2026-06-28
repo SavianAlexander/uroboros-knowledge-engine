@@ -2698,6 +2698,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
+    sources: List[dict] = []
 
 class FileInsightsRequest(BaseModel):
     filepath: str
@@ -2877,7 +2878,8 @@ async def chat_endpoint(req: ChatRequest):
     except Exception as e:
         response_text = f"Error during local chat inference: {str(e)}"
 
-    return ChatResponse(response=response_text)
+    sources = [{"filename": r["filename"], "filepath": r["filepath"]} for r in results]
+    return ChatResponse(response=response_text, sources=sources)
 
 
 @app.post("/api/file/insights", response_model=FileInsightsResponse)

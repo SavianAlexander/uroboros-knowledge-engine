@@ -2657,7 +2657,8 @@ function sendChatMessage() {
         }
 
         const reply = data.response;
-        appendChatMessage("Assistant", reply, "assistant");
+        const sources = data.sources || [];
+        appendChatMessage("Assistant", reply, "assistant", sources);
 
         // Keep track of history
         chatHistory.push({ role: "user", content: text });
@@ -2679,7 +2680,7 @@ function sendChatMessage() {
     });
 }
 
-function appendChatMessage(sender, content, className) {
+function appendChatMessage(sender, content, className, sources = null) {
     const messagesContainer = document.getElementById("chat-messages");
     if (!messagesContainer) return;
 
@@ -2703,6 +2704,40 @@ function appendChatMessage(sender, content, className) {
     msgEl.appendChild(senderEl);
     msgEl.appendChild(contentEl);
     msgEl.appendChild(timeEl);
+
+    if (sources && sources.length > 0) {
+        const sourcesContainer = document.createElement("div");
+        sourcesContainer.className = "message-sources";
+        sourcesContainer.style.fontSize = "0.75rem";
+        sourcesContainer.style.marginTop = "0.4rem";
+        sourcesContainer.style.color = "var(--text-secondary)";
+        sourcesContainer.style.borderTop = "1px solid var(--border-color)";
+        sourcesContainer.style.paddingTop = "0.3rem";
+        
+        const label = document.createElement("span");
+        label.innerText = "Sources: ";
+        label.style.fontWeight = "600";
+        sourcesContainer.appendChild(label);
+        
+        sources.forEach((src, idx) => {
+            const link = document.createElement("a");
+            link.href = "#";
+            link.innerText = src.filename;
+            link.style.color = "var(--accent)";
+            link.style.textDecoration = "underline";
+            link.style.marginRight = "0.5rem";
+            link.onclick = (e) => {
+                e.preventDefault();
+                switchTab('workspace');
+                showPreview(src.filepath);
+            };
+            sourcesContainer.appendChild(link);
+            if (idx < sources.length - 1) {
+                sourcesContainer.appendChild(document.createTextNode(", "));
+            }
+        });
+        msgEl.appendChild(sourcesContainer);
+    }
 
     messagesContainer.appendChild(msgEl);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
