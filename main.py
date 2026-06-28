@@ -837,7 +837,7 @@ def expand_query_with_llm(query_str: str) -> str:
         expanded.extend(fallback_map[clean_q])
         
     try:
-        llm = get_llm()
+        llm = get_fallback_llm()
         if llm:
             prompt = (
                 f"Given the user search query: '{query_str}', suggest 2-3 single-word synonyms or closely related terms.\n"
@@ -2826,6 +2826,7 @@ class FileInsightsResponse(BaseModel):
     insights: str
 
 _llm_instance = None
+_fallback_llm_instance = None
 _llm_lock = threading.Lock()
 MODEL_PATH = os.path.join(os.path.expanduser("~"), ".cache", "uroboros", "DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf")
 DEFAULT_FALLBACK_MODEL_PATH = os.path.join(os.path.expanduser("~"), ".cache", "uroboros", "Phi-4-mini-instruct-Q4_K_M.gguf")
@@ -2893,6 +2894,37 @@ def get_llm():
                         verbose=False
                     )
     return _llm_instance
+
+def get_fallback_llm():
+    global _fallback_llm_instance
+    if MODEL_PATH == DEFAULT_FALLBACK_MODEL_PATH:
+        return get_llm()
+        
+    if _fallback_llm_instance is None:
+        with _llm_lock:
+            if _fallback_llm_instance is None:
+                download_model_if_missing()
+                cpu_cores = os.cpu_count()
+                n_threads = max(2, cpu_cores - 2) if cpu_cores else 4
+                try:
+                    print("Loading Phi-4-mini on GPU for metadata/extraction tasks...")
+                    _fallback_llm_instance = Llama(
+                        model_path=DEFAULT_FALLBACK_MODEL_PATH,
+                        n_ctx=1024,
+                        n_threads=n_threads,
+                        n_gpu_layers=-1,
+                        verbose=False
+                    )
+                except Exception as e:
+                    print(f"Fallback GPU initialization failed ({e}). Loading on CPU.")
+                    _fallback_llm_instance = Llama(
+                        model_path=DEFAULT_FALLBACK_MODEL_PATH,
+                        n_ctx=1024,
+                        n_threads=n_threads,
+                        n_gpu_layers=0,
+                        verbose=False
+                    )
+    return _fallback_llm_instance
 
 def sanitise_fts_query(q_str: str) -> str:
     if not q_str:

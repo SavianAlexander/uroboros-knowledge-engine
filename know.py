@@ -507,10 +507,10 @@ def extract_ai_tags(content, filename):
             tags.append(tag)
 
     try:
-        from main import is_testing, get_llm
+        from main import is_testing, get_fallback_llm
         if is_testing:
             return tags
-        llm = get_llm()
+        llm = get_fallback_llm()
         if llm:
             prompt = (
                 "Analyze the following document filename and text content.\n"
