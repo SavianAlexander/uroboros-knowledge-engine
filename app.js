@@ -545,6 +545,70 @@ function buildTreeUI(files) {
                 <span>${name}</span>
             `;
             div.onclick = () => selectWorkspaceFile(node._file.filepath);
+            div.ondblclick = (e) => {
+                e.stopPropagation();
+                const span = div.querySelector("span");
+                if (!span) return;
+                const currentName = span.innerText;
+                const input = document.createElement("input");
+                input.type = "text";
+                input.value = currentName;
+                input.style.background = "var(--input-bg)";
+                input.style.color = "var(--text-primary)";
+                input.style.border = "1px solid var(--accent)";
+                input.style.fontSize = "0.75rem";
+                input.style.padding = "1px 4px";
+                input.style.borderRadius = "2px";
+                input.style.width = "80%";
+                input.style.outline = "none";
+                
+                span.replaceWith(input);
+                input.focus();
+                input.select();
+                
+                let isRenaming = false;
+                const confirmRename = async () => {
+                    if (isRenaming) return;
+                    isRenaming = true;
+                    const newName = input.value.trim();
+                    if (newName && newName !== currentName) {
+                        try {
+                            const response = await fetch("/api/file/rename", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ filepath: node._file.filepath, new_name: newName })
+                            });
+                            if (!response.ok) {
+                                const err = await response.json();
+                                alert(`Rename failed: ${err.detail}`);
+                                input.replaceWith(span);
+                            } else {
+                                const res = await response.json();
+                                loadWorkspaceData();
+                                if (currentPreviewPath === node._file.filepath) {
+                                    showPreview(res.new_filepath);
+                                }
+                            }
+                        } catch (err) {
+                            alert(`Error: ${err.message}`);
+                            input.replaceWith(span);
+                        }
+                    } else {
+                        input.replaceWith(span);
+                    }
+                };
+                
+                input.onkeydown = (evt) => {
+                    if (evt.key === "Enter") {
+                        confirmRename();
+                    } else if (evt.key === "Escape") {
+                        input.replaceWith(span);
+                    }
+                };
+                input.onblur = () => {
+                    confirmRename();
+                };
+            };
             parentEl.appendChild(div);
         } else {
             const folderDiv = document.createElement("div");
@@ -1628,6 +1692,15 @@ async function showPreview(path) {
             iframe.style.border = "none";
             iframe.style.background = "white";
             previewArea.appendChild(iframe);
+        } else if (suffix === 'md' && data.content) {
+            previewArea.appendChild(overlay);
+            const mdDiv = document.createElement("div");
+            mdDiv.className = "markdown-preview";
+            mdDiv.style.padding = "1rem";
+            mdDiv.style.overflowY = "auto";
+            mdDiv.style.maxHeight = "500px";
+            mdDiv.innerHTML = renderMarkdown(data.content);
+            previewArea.appendChild(mdDiv);
         } else if (data.content) {
             previewArea.appendChild(overlay);
             const pre = document.createElement("pre");
