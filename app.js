@@ -2881,6 +2881,7 @@ async function selectWorkspaceFile(path) {
         textarea.value = data.content || "";
         textarea.removeAttribute("disabled");
         saveBtn.removeAttribute("disabled");
+        updateEditorCounters(textarea.value);
 
         if (!textarea.dataset.shortcutsBound) {
             textarea.dataset.shortcutsBound = "true";
@@ -2896,7 +2897,11 @@ async function selectWorkspaceFile(path) {
                     const val = textarea.value;
                     textarea.value = val.substring(0, start) + "    " + val.substring(end);
                     textarea.selectionStart = textarea.selectionEnd = start + 4;
+                    updateEditorCounters(textarea.value);
                 }
+            });
+            textarea.addEventListener("input", () => {
+                updateEditorCounters(textarea.value);
             });
         }
 
@@ -3104,6 +3109,8 @@ async function fetchWorkspaceInsights(path) {
     const insightsContent = document.getElementById("workspace-insights-content");
     const regenerateBtn = document.getElementById("workspace-regenerate-insights-btn");
 
+    const copyBtn = document.getElementById("workspace-copy-insights-btn");
+
     if (insightsContent) {
         insightsContent.innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-secondary); padding: 2rem 0;">
@@ -3116,6 +3123,9 @@ async function fetchWorkspaceInsights(path) {
     if (regenerateBtn) {
         regenerateBtn.setAttribute("disabled", "true");
         regenerateBtn.innerText = "Generating...";
+    }
+    if (copyBtn) {
+        copyBtn.setAttribute("disabled", "true");
     }
 
     try {
@@ -3136,6 +3146,9 @@ async function fetchWorkspaceInsights(path) {
 
         if (insightsContent) {
             insightsContent.innerHTML = renderMarkdown(data.insights);
+        }
+        if (copyBtn) {
+            copyBtn.removeAttribute("disabled");
         }
     } catch (error) {
         console.error("Error fetching workspace insights:", error);
@@ -3208,6 +3221,37 @@ function initSplitDivider() {
             document.body.style.userSelect = "";
         }
     });
+}
+
+function copyWorkspaceInsights() {
+    const insightsContent = document.getElementById("workspace-insights-content");
+    if (!insightsContent) return;
+    
+    const text = insightsContent.innerText;
+    if (!text || text.includes("Select a document to load insights") || text.includes("Generating insights using local LLM")) return;
+    
+    navigator.clipboard.writeText(text).then(() => {
+        const copyBtn = document.getElementById("workspace-copy-insights-btn");
+        if (copyBtn) {
+            const originalText = copyBtn.innerText;
+            copyBtn.innerText = "Copied!";
+            setTimeout(() => {
+                copyBtn.innerText = originalText;
+            }, 1500);
+        }
+    }).catch(err => {
+        console.error("Failed to copy insights:", err);
+    });
+}
+
+function updateEditorCounters(text) {
+    const statusBar = document.getElementById("editor-status-bar");
+    if (!statusBar) return;
+    
+    const chars = text.length;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    
+    statusBar.innerText = `Words: ${words} | Characters: ${chars}`;
 }
 
 

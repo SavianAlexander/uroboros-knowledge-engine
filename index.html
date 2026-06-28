@@ -155,11 +155,17 @@
                                                 <button onclick="insertMarkdownFormat('# ', '')" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 2px 6px; font-size: 0.75rem; border-radius: 2px;">Header</button>
                                             </div>
                                             <textarea id="workspace-editor-textarea" placeholder="Select a document to edit..." disabled></textarea>
+                                            <div id="editor-status-bar" style="display: flex; justify-content: flex-end; padding: 0.25rem 0.5rem; font-size: 0.7rem; color: var(--text-secondary); background: rgba(0,0,0,0.1); border-top: 1px solid var(--border-color);">
+                                                Words: 0 | Characters: 0
+                                            </div>
                                         </div>
                                         <div class="insights-sub-pane">
                                             <div class="insights-pane-header">
                                                 <span>Document Insights</span>
-                                                <button id="workspace-regenerate-insights-btn" onclick="fetchWorkspaceInsights()" class="action-btn" style="padding: 0.15rem 0.5rem; font-size: 0.7rem; background: var(--accent); color: var(--bg-dark); font-weight: bold; border: none; border-radius: 2px; cursor: pointer;" disabled>Regenerate</button>
+                                                <div style="display: flex; gap: 0.25rem;">
+                                                    <button id="workspace-copy-insights-btn" onclick="copyWorkspaceInsights()" class="action-btn" style="padding: 0.15rem 0.5rem; font-size: 0.7rem; background: rgba(234, 224, 200, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 2px; cursor: pointer;" disabled>Copy</button>
+                                                    <button id="workspace-regenerate-insights-btn" onclick="fetchWorkspaceInsights()" class="action-btn" style="padding: 0.15rem 0.5rem; font-size: 0.7rem; background: var(--accent); color: var(--bg-dark); font-weight: bold; border: none; border-radius: 2px; cursor: pointer;" disabled>Regenerate</button>
+                                                </div>
                                             </div>
                                             <div id="workspace-insights-content">
                                                 <span class="insights-placeholder">Select a document to load insights.</span>
