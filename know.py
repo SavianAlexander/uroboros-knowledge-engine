@@ -851,6 +851,8 @@ def start_active_folder_watcher(directory, callback=None):
     def watch_loop():
         # Track initial file stamps
         last_checked = {}
+        pending_stable = {} # filepath -> last_seen_stamp (mtime, size)
+        
         while getattr(start_active_folder_watcher, "active", True):
             if not os.path.exists(directory):
                 time.sleep(2)
@@ -867,8 +869,6 @@ def start_active_folder_watcher(directory, callback=None):
                 pass
             
             current_files = {}
-            has_changes = False
-            
             ignored_dirs = {".git", "node_modules", "__pycache__", ".venv", "dist", "build"}
             for root, dirs, files in os.walk(directory):
                 dirs[:] = [d for d in dirs if d not in ignored_dirs]
@@ -883,38 +883,62 @@ def start_active_folder_watcher(directory, callback=None):
                     except Exception:
                         pass
                         
-            # Detect added or updated files
+            # Detect stable changed files and deletions
+            stable_files = {}
             for fp, stamp in current_files.items():
                 if fp not in last_checked or last_checked[fp] != stamp:
-                    has_changes = True
-                    break
-                    
-            # Detect deleted files
+                    # Change detected. Is it stable?
+                    if fp in pending_stable and pending_stable[fp] == stamp:
+                        stable_files[fp] = stamp
+                    else:
+                        pending_stable[fp] = stamp
+                else:
+                    pass
+
+            for fp in list(pending_stable.keys()):
+                if fp not in current_files or fp in stable_files:
+                    del pending_stable[fp]
+
+            has_changes = len(stable_files) > 0
+            deleted_files = []
             for fp in last_checked:
                 if fp not in current_files:
+                    deleted_files.append(fp)
                     has_changes = True
-                    # Clean delete from DB
-                    try:
-                        conn = get_db()
-                        cursor = conn.cursor()
-                        cursor.execute("SELECT id FROM files WHERE filepath = ?", (fp,))
-                        row = cursor.fetchone()
-                        if row:
-                            file_id = row[0]
-                            cursor.execute("DELETE FROM files WHERE id = ?", (file_id,))
-                            cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (fp,))
-                            cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
-                        conn.commit()
-                        conn.close()
-                    except Exception:
-                        pass
-                        
+
+            # Clean delete from DB
+            for fp in deleted_files:
+                try:
+                    conn = get_db()
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT id FROM files WHERE filepath = ?", (fp,))
+                    row = cursor.fetchone()
+                    if row:
+                        file_id = row[0]
+                        cursor.execute("DELETE FROM files WHERE id = ?", (file_id,))
+                        cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (fp,))
+                        cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
+                    conn.commit()
+                    conn.close()
+                except Exception:
+                    pass
+
             if has_changes:
                 index_directory(directory)
                 if callback:
                     callback()
-                    
-            last_checked = current_files
+                
+                # Apply changes to local cache tracker
+                for fp, stamp in stable_files.items():
+                    last_checked[fp] = stamp
+                for fp in deleted_files:
+                    if fp in last_checked:
+                        del last_checked[fp]
+            
+            # Initial baseline population
+            if not last_checked and current_files:
+                last_checked = dict(current_files)
+                
             time.sleep(2)
 
     t = threading.Thread(target=watch_loop, name="WatcherThread", daemon=True)
