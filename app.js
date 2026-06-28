@@ -59,6 +59,7 @@ let searchMode = "keyword"; // "keyword" or "semantic"
 let isEditingFile = false;
 
 let folderScopePath = null;
+let currentSearchResults = [];
 
 document.addEventListener("DOMContentLoaded", () => {
     // Restore theme preference
@@ -76,6 +77,13 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchSearchHistory();
     fetchSearchBookmarks();
     initSplitDivider();
+
+    const resultsSortSelect = document.getElementById("results-sort-select");
+    if (resultsSortSelect) {
+        resultsSortSelect.addEventListener("change", () => {
+            applyResultsSorting();
+        });
+    }
     
     // ponytail: register search autosuggest events
     const searchInput = document.getElementById("search-input");
@@ -1369,7 +1377,8 @@ function triggerSearch() {
                 }
             }
 
-            renderResults(data.results);
+            currentSearchResults = data.results || [];
+            applyResultsSorting();
             fetchSearchHistory();
             
             // ponytail: refresh cache stats values
@@ -3252,6 +3261,28 @@ function updateEditorCounters(text) {
     const words = text.trim() ? text.trim().split(/\s+/).length : 0;
     
     statusBar.innerText = `Words: ${words} | Characters: ${chars}`;
+}
+
+function applyResultsSorting() {
+    const sortVal = document.getElementById("results-sort-select") ? document.getElementById("results-sort-select").value : "relevance";
+    
+    let sorted = [...currentSearchResults];
+    
+    if (sortVal === "name_asc") {
+        sorted.sort((a, b) => a.filename.localeCompare(b.filename));
+    } else if (sortVal === "name_desc") {
+        sorted.sort((a, b) => b.filename.localeCompare(a.filename));
+    } else if (sortVal === "size_desc") {
+        sorted.sort((a, b) => (b.file_size || 0) - (a.file_size || 0));
+    } else if (sortVal === "size_asc") {
+        sorted.sort((a, b) => (a.file_size || 0) - (b.file_size || 0));
+    } else if (sortVal === "date_desc") {
+        sorted.sort((a, b) => (b.modified_at || 0) - (a.modified_at || 0));
+    } else if (sortVal === "date_asc") {
+        sorted.sort((a, b) => (a.modified_at || 0) - (b.modified_at || 0));
+    }
+    
+    renderResults(sorted);
 }
 
 

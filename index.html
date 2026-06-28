@@ -378,6 +378,15 @@
                                         </label>
                                         <button id="export-pdf-btn" class="action-btn" onclick="exportPdfReport()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: var(--accent-trans-15); border: 1px solid var(--accent); color: var(--text-primary); border-radius: 2px; cursor: pointer; transition: all 0.2s;">📄 Export PDF</button>
                                         <button id="bulk-delete-btn" class="action-btn hidden" onclick="triggerBulkDelete()" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: var(--text-primary); border-radius: 2px; cursor: pointer; transition: all 0.2s;">🗑️ Bulk Delete</button>
+                                        <select id="results-sort-select" style="background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 2px; padding: 0.2rem 0.5rem; font-size: 0.75rem; outline:none; cursor: pointer;">
+                                            <option value="relevance">Sort: Relevance</option>
+                                            <option value="name_asc">Sort: Name (A-Z)</option>
+                                            <option value="name_desc">Sort: Name (Z-A)</option>
+                                            <option value="size_desc">Sort: Size (Max-Min)</option>
+                                            <option value="size_asc">Sort: Size (Min-Max)</option>
+                                            <option value="date_desc">Sort: Date (Newest)</option>
+                                            <option value="date_asc">Sort: Date (Oldest)</option>
+                                        </select>
                                         <span id="results-count" class="count-badge">0 found</span>
                                     </div>
                                 </div>
