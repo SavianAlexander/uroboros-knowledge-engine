@@ -2804,7 +2804,7 @@ def export_stats_csv():
 # --- LOCAL LLM RUNNER & CHAT (Milestone 3) ---
 import threading
 import asyncio
-from typing import List
+from typing import List, Optional
 from llama_cpp import Llama
 
 class ChatMessage(BaseModel):
@@ -2814,6 +2814,8 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     history: List[ChatMessage]
+    temperature: Optional[float] = 0.3
+    top_p: Optional[float] = 0.9
 
 class ChatResponse(BaseModel):
     response: str
@@ -2821,6 +2823,8 @@ class ChatResponse(BaseModel):
 
 class FileInsightsRequest(BaseModel):
     filepath: str
+    temperature: Optional[float] = 0.3
+    top_p: Optional[float] = 0.9
 
 class FileInsightsResponse(BaseModel):
     insights: str
@@ -3048,10 +3052,14 @@ async def chat_endpoint(req: ChatRequest):
         llm = get_llm()
         loop = asyncio.get_event_loop()
         # Run CPU-bound Llama inference in a separate thread pool
+        temp = req.temperature if req.temperature is not None else 0.3
+        t_p = req.top_p if req.top_p is not None else 0.9
         completion = await loop.run_in_executor(
             None,
             lambda: llm.create_chat_completion(
-                messages=messages
+                messages=messages,
+                temperature=temp,
+                top_p=t_p
             )
         )
         response_text = completion["choices"][0]["message"]["content"]
@@ -3124,12 +3132,15 @@ async def file_insights_endpoint(req: FileInsightsRequest):
     try:
         llm = get_llm()
         loop = asyncio.get_event_loop()
+        temp = req.temperature if req.temperature is not None else 0.3
+        t_p = req.top_p if req.top_p is not None else 0.9
         completion = await loop.run_in_executor(
             None,
             lambda: llm.create_chat_completion(
                 messages=messages,
                 max_tokens=500,
-                temperature=0.3
+                temperature=temp,
+                top_p=t_p
             )
         )
         insights_text = completion["choices"][0]["message"]["content"]

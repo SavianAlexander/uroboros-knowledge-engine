@@ -2633,6 +2633,9 @@ function sendChatMessage() {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
+    const tempVal = document.getElementById("llm-temp-slider") ? parseFloat(document.getElementById("llm-temp-slider").value) : 0.3;
+    const toppVal = document.getElementById("llm-topp-slider") ? parseFloat(document.getElementById("llm-topp-slider").value) : 0.9;
+
     // Call /api/chat via fetch, keeping track of history
     fetch("/api/chat", {
         method: "POST",
@@ -2641,7 +2644,9 @@ function sendChatMessage() {
         },
         body: JSON.stringify({
             message: text,
-            history: chatHistory
+            history: chatHistory,
+            temperature: tempVal,
+            top_p: toppVal
         })
     })
     .then(response => {
@@ -2991,12 +2996,19 @@ async function fetchWorkspaceInsights(path) {
     }
 
     try {
+        const tempVal = document.getElementById("llm-temp-slider") ? parseFloat(document.getElementById("llm-temp-slider").value) : 0.3;
+        const toppVal = document.getElementById("llm-topp-slider") ? parseFloat(document.getElementById("llm-topp-slider").value) : 0.9;
+        
         const response = await fetch("/api/file/insights", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ filepath: filePath })
+            body: JSON.stringify({ 
+                filepath: filePath,
+                temperature: tempVal,
+                top_p: toppVal
+            })
         });
 
         if (!response.ok) {

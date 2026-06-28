@@ -466,11 +466,50 @@ def extract_ocr_text_structured(filepath):
     except Exception as e:
         return f"[Image Parsing Error: {str(e)}]", []
 
+def extract_pdf_ocr(filepath):
+    import fitz
+    import io
+    from PIL import Image
+    try:
+        doc = fitz.open(filepath)
+        text_parts = []
+        all_coords = []
+        # Limit OCR to first 10 pages for performance safety on large scanned docs
+        for page in list(doc)[:10]:
+            try:
+                pix = page.get_pixmap(dpi=150)
+                img_bytes = pix.tobytes("png")
+                
+                import tempfile
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+                    temp_path = f.name
+                    f.write(img_bytes)
+                    
+                try:
+                    page_text, page_coords = extract_ocr_text_structured(temp_path)
+                    if page_text and not page_text.startswith("[OCR Error") and not page_text.startswith("[OCR Setup"):
+                        text_parts.append(page_text)
+                        all_coords.extend(page_coords)
+                finally:
+                    try:
+                        os.unlink(temp_path)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        return "\n\n".join(text_parts), all_coords
+    except Exception as e:
+        return f"[Scanned PDF OCR Error: {str(e)}]", []
+
 def extract_content(filepath, suffix):
     try:
         if suffix == '.pdf':
             reader = pypdf.PdfReader(filepath)
-            return "\n".join([page.extract_text() or "" for page in reader.pages]), []
+            extracted = "\n".join([page.extract_text() or "" for page in reader.pages])
+            if len(extracted.strip()) < 50:
+                # Fallback to image rendering + OCR for scanned PDFs
+                return extract_pdf_ocr(filepath)
+            return extracted, []
         elif suffix == '.docx':
             doc = docx.Document(filepath)
             return "\n".join([para.text for para in doc.paragraphs]), []
@@ -661,7 +700,15 @@ def index_directory(dir_path, progress_callback=None):
         filepath = task['filepath']
         suffix = task['suffix']
         mime_type = task['mime_type']
+        file_size = task.get('file_size', 0)
         
+        if file_size > 100 * 1024 * 1024:
+            sha256 = calculate_sha256(filepath)
+            task['sha256'] = sha256
+            task['content'] = f"[File size ({file_size / (1024*1024):.1f}MB) exceeds 100MB safety limit. Text extraction skipped.]"
+            task['coords'] = []
+            return task
+            
         sha256 = calculate_sha256(filepath)
         content = ""
         coords = []
