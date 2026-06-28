@@ -2845,6 +2845,24 @@ async function selectWorkspaceFile(path) {
         textarea.removeAttribute("disabled");
         saveBtn.removeAttribute("disabled");
 
+        if (!textarea.dataset.shortcutsBound) {
+            textarea.dataset.shortcutsBound = "true";
+            textarea.addEventListener("keydown", (e) => {
+                if (e.ctrlKey && e.key.toLowerCase() === 's') {
+                    e.preventDefault();
+                    saveWorkspaceFile();
+                }
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const val = textarea.value;
+                    textarea.value = val.substring(0, start) + "    " + val.substring(end);
+                    textarea.selectionStart = textarea.selectionEnd = start + 4;
+                }
+            });
+        }
+
         renderWorkspacePreview(data);
         fetchWorkspaceInsights(path);
     } catch (error) {
