@@ -60,6 +60,90 @@ if not is_testing:
     know.start_active_folder_watcher(ACTIVE_DIR)
 
 
+def get_local_ip():
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+def start_udp_broadcast_service():
+    import socket
+    import json
+    import time
+    import threading
+    import sys
+    
+    my_ip = get_local_ip()
+    my_port = 8000
+    for i, arg in enumerate(sys.argv):
+        if arg in ("-p", "--port") and i + 1 < len(sys.argv):
+            try:
+                my_port = int(sys.argv[i + 1])
+            except ValueError:
+                pass
+                
+    my_uuid = os.environ.get("UROBOROS_UUID", socket.gethostname())
+    my_name = socket.gethostname()
+
+    def broadcaster():
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        while True:
+            try:
+                msg = json.dumps({
+                    "uuid": my_uuid,
+                    "name": my_name,
+                    "address": f"http://{my_ip}:{my_port}"
+                })
+                sock.sendto(msg.encode('utf-8'), ('255.255.255.255', 8089))
+            except Exception:
+                pass
+            time.sleep(10)
+
+    def receiver():
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            sock.bind(('', 8089))
+        except Exception:
+            return
+        while True:
+            try:
+                data, addr = sock.recvfrom(1024)
+                info = json.loads(data.decode('utf-8'))
+                peer_uuid = info.get("uuid")
+                peer_name = info.get("name")
+                peer_address = info.get("address")
+                
+                if peer_uuid != my_uuid and peer_address:
+                    with db_conn() as conn:
+                        cursor = conn.cursor()
+                        cursor.execute("SELECT id FROM sync_peers WHERE address = ?", (peer_address,))
+                        if not cursor.fetchone():
+                            cursor.execute(
+                                "INSERT INTO sync_peers (address, name) VALUES (?, ?)",
+                                (peer_address, peer_name)
+                            )
+                            conn.commit()
+            except Exception:
+                pass
+
+    t1 = threading.Thread(target=broadcaster, daemon=True, name="UDP_Broadcaster")
+    t2 = threading.Thread(target=receiver, daemon=True, name="UDP_Receiver")
+    t1.start()
+    t2.start()
+
+@app.on_event("startup")
+def startup_event():
+    if not is_testing:
+        start_udp_broadcast_service()
+
+
 # ponytail: simple Least Recently Used Query Cache helper
 class QueryCache:
     def __init__(self, capacity=50):
@@ -2644,12 +2728,29 @@ def get_llm():
         with _llm_lock:
             if _llm_instance is None:
                 download_model_if_missing()
+                
+                # Dynamic CPU thread tuning: leave 2 cores for OS/indexing tasks
+                cpu_cores = os.cpu_count()
+                n_threads = max(2, cpu_cores - 2) if cpu_cores else 4
+                
+                # Dynamic GPU backends detection (NVIDIA CUDA, AMD ROCm/HIP, Vulkan, DirectML, Apple Metal)
+                n_gpu_layers = 0
+                try:
+                    import llama_cpp
+                    sys_info = llama_cpp.llama_print_system_info().decode('utf-8', errors='ignore')
+                    gpu_backends = ("CUDA", "ROCM", "HIP", "VULKAN", "CLBLAST", "METAL", "SYCL", "DIRECTML")
+                    if any(backend in sys_info.upper() for backend in gpu_backends):
+                        n_gpu_layers = -1  # Offload all layers to GPU
+                        print(f"GPU acceleration backend detected in llama.cpp system info. Offloading to GPU.")
+                except Exception as e:
+                    print(f"Error checking GPU capabilities, defaulting to CPU: {e}")
+                
                 # ponytail: lazy-loading singleton to prevent test-suite import blockers
                 _llm_instance = Llama(
                     model_path=MODEL_PATH,
                     n_ctx=2048,
-                    n_threads=4,
-                    n_gpu_layers=0,
+                    n_threads=n_threads,
+                    n_gpu_layers=n_gpu_layers,
                     verbose=False
                 )
     return _llm_instance
@@ -2846,4 +2947,4 @@ async def file_insights_endpoint(req: FileInsightsRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

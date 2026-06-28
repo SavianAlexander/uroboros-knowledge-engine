@@ -438,7 +438,9 @@ def extract_ai_tags(content, filename):
             tags.append(tag)
 
     try:
-        from main import get_llm
+        from main import is_testing, get_llm
+        if is_testing:
+            return tags
         llm = get_llm()
         if llm:
             prompt = (
@@ -506,7 +508,12 @@ def index_directory(dir_path, progress_callback=None):
         '.png', '.jpg', '.jpeg', '.bmp'
     }
     
-    all_files = [p for p in path.rglob('*') if p.is_file() and p.name != DB_FILE]
+    ignored_dirs = {".git", "node_modules", "__pycache__", ".venv", "dist", "build"}
+    all_files = []
+    for p in path.rglob('*'):
+        if p.is_file() and p.name != DB_FILE:
+            if not any(part in ignored_dirs for part in p.parts):
+                all_files.append(p)
     total_files = len(all_files)
 
     if total_files == 0:
@@ -767,7 +774,9 @@ def start_active_folder_watcher(directory, callback=None):
             current_files = {}
             has_changes = False
             
+            ignored_dirs = {".git", "node_modules", "__pycache__", ".venv", "dist", "build"}
             for root, dirs, files in os.walk(directory):
+                dirs[:] = [d for d in dirs if d not in ignored_dirs]
                 for f in files:
                     if f == DB_FILE:
                         continue
