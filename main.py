@@ -3032,8 +3032,11 @@ async def file_insights_endpoint(req: FileInsightsRequest):
     ]):
         return FileInsightsResponse(insights="*This document contains no readable text content to extract insights.*")
 
-    # ponytail: simple truncation to 4000 characters is a naive heuristic to fit local LLM context (n_ctx = 2048). Upgrade path is token-based sliding window.
-    truncated_text = content[:4000]
+    # ponytail: head-and-tail smart truncation to protect local LLM context window (n_ctx = 2048) on large files
+    if len(content) > 6000:
+        truncated_text = content[:3000] + "\n\n[... Content Truncated for Context Limits ...]\n\n" + content[-3000:]
+    else:
+        truncated_text = content
 
     system_content = (
         "You are an expert document analyzer. Summarize the text provided and extract exactly 3 key insights.\n"
