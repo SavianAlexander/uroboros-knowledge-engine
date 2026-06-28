@@ -124,7 +124,7 @@
                             <!-- Split-Screen Editor (hidden by default, shown when file is selected) -->
                             <div id="workspace-split-screen" class="workspace-split-screen hidden">
                                 <!-- Left side of split-screen: Visual Preview -->
-                                <div class="workspace-preview-pane">
+                                <div class="workspace-preview-pane" id="workspace-preview-pane">
                                     <div class="pane-header">
                                         <h4>Visual Preview</h4>
                                     </div>
@@ -132,8 +132,10 @@
                                         <div class="preview-placeholder">Select a document to preview</div>
                                     </div>
                                 </div>
+                                <!-- Draggable Divider -->
+                                <div id="workspace-split-divider" class="workspace-split-divider"></div>
                                 <!-- Right side of split-screen: Text Editor -->
-                                <div class="workspace-editor-pane">
+                                <div class="workspace-editor-pane" id="workspace-editor-pane">
                                     <div class="pane-header">
                                         <h4>Plain Text Editor</h4>
                                         <div style="display: flex; gap: 0.5rem;">
@@ -143,6 +145,15 @@
                                     </div>
                                     <div class="pane-content">
                                         <div class="editor-sub-pane">
+                                            <!-- Editor Toolbar -->
+                                            <div id="editor-toolbar" style="display: flex; gap: 0.25rem; padding: 0.25rem; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.15); margin-bottom: 0.25rem;">
+                                                <button onclick="insertMarkdownFormat('**', '**')" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 2px 6px; font-size: 0.75rem; border-radius: 2px;"><strong>B</strong></button>
+                                                <button onclick="insertMarkdownFormat('*', '*')" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 2px 6px; font-size: 0.75rem; border-radius: 2px;"><em>I</em></button>
+                                                <button onclick="insertMarkdownFormat('`', '`')" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 2px 6px; font-size: 0.75rem; border-radius: 2px;">Code</button>
+                                                <button onclick="insertMarkdownFormat('[', '](url)')" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 2px 6px; font-size: 0.75rem; border-radius: 2px;">Link</button>
+                                                <button onclick="insertMarkdownFormat('- ', '')" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 2px 6px; font-size: 0.75rem; border-radius: 2px;">List</button>
+                                                <button onclick="insertMarkdownFormat('# ', '')" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 2px 6px; font-size: 0.75rem; border-radius: 2px;">Header</button>
+                                            </div>
                                             <textarea id="workspace-editor-textarea" placeholder="Select a document to edit..." disabled></textarea>
                                         </div>
                                         <div class="insights-sub-pane">

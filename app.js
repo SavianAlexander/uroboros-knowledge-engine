@@ -75,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchMacrosList();
     fetchSearchHistory();
     fetchSearchBookmarks();
+    initSplitDivider();
     
     // ponytail: register search autosuggest events
     const searchInput = document.getElementById("search-input");
@@ -121,6 +122,42 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } else {
                 dropdown.classList.add("hidden");
+            }
+        });
+
+        searchInput.addEventListener("focus", async () => {
+            if (!searchInput.value.trim()) {
+                try {
+                    const res = await fetch("/api/search/history");
+                    const data = await res.json();
+                    if (data.history && data.history.length > 0) {
+                        dropdown.classList.remove("hidden");
+                        dropdown.innerHTML = "";
+                        activeSuggestionIdx = -1;
+                        
+                        const uniqueQueries = Array.from(new Set(data.history.map(item => item.query_string))).slice(0, 5);
+                        
+                        if (uniqueQueries.length > 0) {
+                            uniqueQueries.forEach((item, idx) => {
+                                const itemEl = document.createElement("div");
+                                itemEl.className = "autocomplete-item";
+                                itemEl.dataset.index = idx;
+                                itemEl.innerHTML = `
+                                    <span style="font-weight: 500;">${item}</span>
+                                    <span class="autocomplete-type" style="color: var(--accent);">history</span>
+                                `;
+                                itemEl.onclick = () => {
+                                    searchInput.value = item;
+                                    dropdown.classList.add("hidden");
+                                    triggerSearch();
+                                };
+                                dropdown.appendChild(itemEl);
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error("Failed to load search history for autocomplete:", err);
+                }
             }
         });
         
@@ -3115,6 +3152,62 @@ async function fetchWorkspaceInsights(path) {
             regenerateBtn.innerText = "Regenerate";
         }
     }
+}
+
+function insertMarkdownFormat(prefix, suffix) {
+    const textarea = document.getElementById("workspace-editor-textarea");
+    if (!textarea || textarea.disabled) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end);
+    
+    const replacement = prefix + selected + suffix;
+    textarea.value = text.substring(0, start) + replacement + text.substring(end);
+    
+    textarea.selectionStart = start + prefix.length;
+    textarea.selectionEnd = start + prefix.length + selected.length;
+    textarea.focus();
+}
+
+function initSplitDivider() {
+    const divider = document.getElementById("workspace-split-divider");
+    const previewPane = document.getElementById("workspace-preview-pane");
+    const container = document.getElementById("workspace-split-screen");
+    
+    if (!divider || !previewPane || !container) return;
+    
+    let isDragging = false;
+    
+    divider.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        divider.classList.add("dragging");
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+    });
+    
+    document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        
+        const containerRect = container.getBoundingClientRect();
+        let newWidthPx = e.clientX - containerRect.left;
+        let percentage = (newWidthPx / containerRect.width) * 100;
+        
+        if (percentage < 15) percentage = 15;
+        if (percentage > 85) percentage = 85;
+        
+        previewPane.style.width = `${percentage}%`;
+    });
+    
+    document.addEventListener("mouseup", () => {
+        if (isDragging) {
+            isDragging = false;
+            divider.classList.remove("dragging");
+            document.body.style.cursor = "";
+            document.body.style.userSelect = "";
+        }
+    });
 }
 
 
