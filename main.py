@@ -2733,26 +2733,25 @@ def get_llm():
                 cpu_cores = os.cpu_count()
                 n_threads = max(2, cpu_cores - 2) if cpu_cores else 4
                 
-                # Dynamic GPU backends detection (NVIDIA CUDA, AMD ROCm/HIP, Vulkan, DirectML, Apple Metal)
-                n_gpu_layers = 0
                 try:
-                    import llama_cpp
-                    sys_info = llama_cpp.llama_print_system_info().decode('utf-8', errors='ignore')
-                    gpu_backends = ("CUDA", "ROCM", "HIP", "VULKAN", "CLBLAST", "METAL", "SYCL", "DIRECTML")
-                    if any(backend in sys_info.upper() for backend in gpu_backends):
-                        n_gpu_layers = -1  # Offload all layers to GPU
-                        print(f"GPU acceleration backend detected in llama.cpp system info. Offloading to GPU.")
+                    print(f"Attempting GPU acceleration (n_gpu_layers=-1) on Vulkan/DirectML/CUDA/ROCm...")
+                    _llm_instance = Llama(
+                        model_path=MODEL_PATH,
+                        n_ctx=2048,
+                        n_threads=n_threads,
+                        n_gpu_layers=-1,
+                        verbose=False
+                    )
+                    print("GPU initialization successful. Offloading all layers to GPU.")
                 except Exception as e:
-                    print(f"Error checking GPU capabilities, defaulting to CPU: {e}")
-                
-                # ponytail: lazy-loading singleton to prevent test-suite import blockers
-                _llm_instance = Llama(
-                    model_path=MODEL_PATH,
-                    n_ctx=2048,
-                    n_threads=n_threads,
-                    n_gpu_layers=n_gpu_layers,
-                    verbose=False
-                )
+                    print(f"GPU initialization failed ({e}). Falling back to CPU.")
+                    _llm_instance = Llama(
+                        model_path=MODEL_PATH,
+                        n_ctx=2048,
+                        n_threads=n_threads,
+                        n_gpu_layers=0,
+                        verbose=False
+                    )
     return _llm_instance
 
 def sanitise_fts_query(q_str: str) -> str:
