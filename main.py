@@ -68,6 +68,16 @@ def get_local_ip():
         IP = s.getsockname()[0]
     except Exception:
         IP = '127.0.0.1'
+        # ponytail: offline fallback scanner to get active local network interface IP
+        try:
+            hostname = socket.gethostname()
+            local_ips = socket.gethostbyname_ex(hostname)[2]
+            for ip in local_ips:
+                if not ip.startswith("127.") and not ip.startswith("169.254."):
+                    IP = ip
+                    break
+        except Exception:
+            pass
     finally:
         s.close()
     return IP
