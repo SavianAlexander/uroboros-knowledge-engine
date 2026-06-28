@@ -2786,9 +2786,11 @@ async def chat_endpoint(req: ChatRequest):
             with db_conn() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT filepath, filename, content
-                    FROM fts_files
-                    WHERE fts_files MATCH ?
+                    SELECT f.filepath, f.filename, c.content
+                    FROM fts_file_chunks fc
+                    JOIN file_chunks c ON fc.chunk_id = c.id
+                    JOIN files f ON c.file_id = f.id
+                    WHERE fts_file_chunks MATCH ?
                     LIMIT 3
                 """, (sanitised,))
                 rows = cursor.fetchall()
@@ -2799,7 +2801,7 @@ async def chat_endpoint(req: ChatRequest):
                         "content": r[2] or ""
                     })
         except Exception as e:
-            print(f"FTS search failed: {e}")
+            print(f"FTS chunk search failed: {e}")
 
     # Fallback to semantic search if no FTS results or FTS search failed
     if not results:

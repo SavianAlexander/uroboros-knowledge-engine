@@ -180,6 +180,26 @@ def init_db():
         )
     """)
     
+    # RAG File Chunks Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS file_chunks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            file_id INTEGER,
+            chunk_index INTEGER,
+            content TEXT,
+            FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
+        )
+    """)
+    
+    cursor.execute("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS fts_file_chunks USING fts5(
+            chunk_id UNINDEXED,
+            file_id UNINDEXED,
+            content,
+            tokenize="porter unicode61"
+        )
+    """)
+    
     conn.commit()
     conn.close()
     print("Database initialized successfully.")
@@ -468,6 +488,19 @@ def extract_ai_tags(content, filename):
         pass
     return tags
 
+def chunk_text(text, chunk_size=800, overlap=150):
+    if not text:
+        return []
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + chunk_size
+        chunks.append(text[start:end])
+        if end >= len(text):
+            break
+        start += (chunk_size - overlap)
+    return chunks
+
 def index_directory(dir_path, progress_callback=None):
     # ponytail: cache existing files upfront to minimize db connections
     conn = get_db()
@@ -655,6 +688,9 @@ def index_directory(dir_path, progress_callback=None):
                         
                     # Delete old tags on modification
                     cursor.execute("DELETE FROM tags WHERE file_id = ?", (file_id,))
+                    # Delete old chunks on modification
+                    cursor.execute("DELETE FROM file_chunks WHERE file_id = ?", (file_id,))
+                    cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
                     updated_count += 1
                 else:
                     cursor.execute("""
@@ -682,6 +718,19 @@ def index_directory(dir_path, progress_callback=None):
                             cursor.execute("INSERT INTO tags (file_id, tag) VALUES (?, ?)", (file_id, tag))
                         except sqlite3.IntegrityError:
                             pass
+                            
+                    # Generate and insert new chunks
+                    chunks = chunk_text(content)
+                    for chunk_idx, chunk_content in enumerate(chunks):
+                        cursor.execute(
+                            "INSERT INTO file_chunks (file_id, chunk_index, content) VALUES (?, ?, ?)",
+                            (file_id, chunk_idx, chunk_content)
+                        )
+                        chunk_id = cursor.lastrowid
+                        cursor.execute(
+                            "INSERT INTO fts_file_chunks (chunk_id, file_id, content) VALUES (?, ?, ?)",
+                            (chunk_id, file_id, chunk_content)
+                        )
     finally:
         conn.close()
 
@@ -802,8 +851,13 @@ def start_active_folder_watcher(directory, callback=None):
                     try:
                         conn = get_db()
                         cursor = conn.cursor()
-                        cursor.execute("DELETE FROM files WHERE filepath = ?", (fp,))
-                        cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (fp,))
+                        cursor.execute("SELECT id FROM files WHERE filepath = ?", (fp,))
+                        row = cursor.fetchone()
+                        if row:
+                            file_id = row[0]
+                            cursor.execute("DELETE FROM files WHERE id = ?", (file_id,))
+                            cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (fp,))
+                            cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
                         conn.commit()
                         conn.close()
                     except Exception:
