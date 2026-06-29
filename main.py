@@ -2806,7 +2806,10 @@ def export_stats_csv():
 import threading
 import asyncio
 from typing import List, Optional
-from llama_cpp import Llama
+try:
+    from llama_cpp import Llama
+except ImportError:
+    Llama = None
 
 class ChatMessage(BaseModel):
     role: str
@@ -2870,6 +2873,11 @@ def download_model_if_missing():
 
 def get_llm():
     global _llm_instance
+    if Llama is None:
+        raise HTTPException(
+            status_code=501,
+            detail="llama-cpp-python is not installed. LLM runner disabled."
+        )
     if _llm_instance is None:
         with _llm_lock:
             if _llm_instance is None:
@@ -2902,6 +2910,11 @@ def get_llm():
 
 def get_fallback_llm():
     global _fallback_llm_instance
+    if Llama is None:
+        raise HTTPException(
+            status_code=501,
+            detail="llama-cpp-python is not installed. LLM runner disabled."
+        )
     if MODEL_PATH == DEFAULT_FALLBACK_MODEL_PATH:
         return get_llm()
 
