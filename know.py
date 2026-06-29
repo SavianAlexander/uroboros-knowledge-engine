@@ -51,7 +51,7 @@ def init_db():
             insights TEXT
         )
     """)
-    
+
     # Run migration checks
     cursor.execute("PRAGMA table_info(files)")
     columns = [row[1] for row in cursor.fetchall()]
@@ -59,7 +59,7 @@ def init_db():
         cursor.execute("ALTER TABLE files ADD COLUMN notes TEXT")
     if 'insights' not in columns:
         cursor.execute("ALTER TABLE files ADD COLUMN insights TEXT")
-        
+
     cursor.execute("PRAGMA table_info(fts_files)")
     fts_columns = [row[1] for row in cursor.fetchall()]
     if not fts_columns or 'notes' not in fts_columns:
@@ -81,7 +81,7 @@ def init_db():
                 notes
             )
         """)
-        
+
     # Tag association table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tags (
@@ -91,7 +91,7 @@ def init_db():
             FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
         )
     """)
-    
+
     # Auto tag rules table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS auto_rules (
@@ -101,12 +101,12 @@ def init_db():
             priority INTEGER DEFAULT 0
         )
     """)
-    
+
     cursor.execute("PRAGMA table_info(auto_rules)")
     rule_cols = [row[1] for row in cursor.fetchall()]
     if 'priority' not in rule_cols:
         cursor.execute("ALTER TABLE auto_rules ADD COLUMN priority INTEGER DEFAULT 0")
-    
+
     # LAN Sync Peers Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sync_peers (
@@ -115,7 +115,7 @@ def init_db():
             name TEXT
         )
     """)
-    
+
     # OCR Bounding Coordinates Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS ocr_coords (
@@ -128,7 +128,7 @@ def init_db():
             FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
         )
     """)
-    
+
     # Tag custom metadata table (colors etc.)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tag_metadata (
@@ -136,7 +136,7 @@ def init_db():
             color TEXT
         )
     """)
-    
+
     # Query macros table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS query_macros (
@@ -144,7 +144,7 @@ def init_db():
             expansion TEXT
         )
     """)
-    
+
     # Tag aliases table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tag_aliases (
@@ -152,7 +152,7 @@ def init_db():
             target TEXT
         )
     """)
-    
+
     # Synonyms table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS synonyms (
@@ -160,7 +160,7 @@ def init_db():
             substitutes TEXT
         )
     """)
-    
+
     # ponytail: search query history tracker table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS search_history (
@@ -171,7 +171,7 @@ def init_db():
             result_count INTEGER
         )
     """)
-    
+
     # ponytail: query bookmarks table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS query_bookmarks (
@@ -182,7 +182,7 @@ def init_db():
             created_at REAL
         )
     """)
-    
+
     # RAG File Chunks Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS file_chunks (
@@ -193,7 +193,7 @@ def init_db():
             FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
         )
     """)
-    
+
     cursor.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS fts_file_chunks USING fts5(
             chunk_id UNINDEXED,
@@ -202,7 +202,7 @@ def init_db():
             tokenize="porter unicode61"
         )
     """)
-    
+
     # Search Query Cache Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS query_cache (
@@ -211,7 +211,7 @@ def init_db():
             cached_at REAL
         )
     """)
-    
+
     conn.commit()
     conn.close()
     print("Database initialized successfully.")
@@ -233,7 +233,7 @@ class MiniVectorEngine:
         cursor = conn.cursor()
         cursor.execute("SELECT id, filepath, filename, file_size, mime_type, modified_at, content FROM files")
         docs = [dict(row) for row in cursor.fetchall() if row['content']]
-        
+
         q_tokens = cls.tokenize(query)
         if not q_tokens or not docs:
             conn.close()
@@ -247,7 +247,7 @@ class MiniVectorEngine:
                 df[t] = df.get(t, 0) + 1
 
         num_docs = len(docs)
-        
+
         # Calculate TF-IDF vectors
         doc_vectors = []
         for doc in docs:
@@ -312,7 +312,7 @@ class MiniVectorEngine:
                 if match_count > best_score:
                     best_score = match_count
                     snippet = sentence
-            
+
             if snippet:
                 # Add highlighting tags to matched query words
                 highlighted = snippet
@@ -321,7 +321,7 @@ class MiniVectorEngine:
                 snippet_text = highlighted[:180] + "..." if len(highlighted) > 180 else highlighted
             else:
                 snippet_text = content[:150] + "..."
-                
+
             final_rows.append({
                 "id": doc["id"],
                 "filepath": doc["filepath"],
@@ -390,7 +390,7 @@ async def _async_ocr_structured(filepath):
         if not engine:
             return "[OCR Error: Failed to create WinRT OcrEngine]", []
         result = await engine.recognize_async(bitmap)
-        
+
         coords = []
         for line in result.lines:
             for word in line.words:
@@ -415,7 +415,7 @@ def extract_ocr_text_structured(filepath):
             except RuntimeError:
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-                
+
             if loop.is_running():
                 import concurrent.futures
                 with concurrent.futures.ThreadPoolExecutor() as pool:
@@ -428,7 +428,7 @@ def extract_ocr_text_structured(filepath):
                     res_text, res_coords = pool.submit(_run_in_thread).result()
             else:
                 res_text, res_coords = loop.run_until_complete(_async_ocr_structured(filepath))
-            
+
             if res_text and not res_text.startswith("[OCR Error"):
                 return res_text, res_coords
         except Exception:
@@ -457,11 +457,11 @@ def extract_ocr_text_structured(filepath):
                 tag_name = TAGS.get(tag, tag)
                 if isinstance(value, (str, int, float)):
                     metadata.append(f"{tag_name}: {value}")
-        
+
         metadata.append(f"Format: {img.format}")
         metadata.append(f"Size: {img.size[0]}x{img.size[1]} px")
         metadata.append(f"Mode: {img.mode}")
-        
+
         return f"[OCR Fallback - Image Metadata Extraction]\n" + "\n".join(metadata), []
     except Exception as e:
         return f"[Image Parsing Error: {str(e)}]", []
@@ -479,12 +479,12 @@ def extract_pdf_ocr(filepath):
             try:
                 pix = page.get_pixmap(dpi=150)
                 img_bytes = pix.tobytes("png")
-                
+
                 import tempfile
                 with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
                     temp_path = f.name
                     f.write(img_bytes)
-                    
+
                 try:
                     page_text, page_coords = extract_ocr_text_structured(temp_path)
                     if page_text and not page_text.startswith("[OCR Error") and not page_text.startswith("[OCR Setup"):
@@ -593,7 +593,7 @@ def index_directory(dir_path, progress_callback=None):
     # ponytail: cache existing files upfront to minimize db connections
     conn = get_db()
     cursor = conn.cursor()
-    
+
     path = Path(dir_path).resolve()
     if not path.is_dir():
         conn.close()
@@ -616,19 +616,19 @@ def index_directory(dir_path, progress_callback=None):
         conn.close()
         print(f"Skipping index_directory due to uninitialized database table: {str(e)}")
         return
-    
+
     # Close the connection during parsing
     conn.close()
 
     indexed_count = 0
     updated_count = 0
-    
+
     text_extensions = {
-        '.md', '.py', '.txt', '.json', '.yaml', '.yml', '.ini', '.csv', '.xml', 
+        '.md', '.py', '.txt', '.json', '.yaml', '.yml', '.ini', '.csv', '.xml',
         '.html', '.css', '.js', '.pdf', '.docx', '.rtf', '.xlsx',
         '.png', '.jpg', '.jpeg', '.bmp'
     }
-    
+
     ignored_dirs = {".git", "node_modules", "__pycache__", ".venv", "dist", "build"}
     all_files = []
     for p in path.rglob('*'):
@@ -644,7 +644,7 @@ def index_directory(dir_path, progress_callback=None):
     # Prep tasks and check modification status in-memory
     modified_tasks = []
     unmodified_tasks = []
-    
+
     for index, p in enumerate(all_files):
         filepath = str(p)
         filename = p.name
@@ -655,10 +655,10 @@ def index_directory(dir_path, progress_callback=None):
             modified_at = stat.st_mtime
         except Exception:
             continue
-            
+
         mime_type, _ = mimetypes.guess_type(filepath)
         mime_type = mime_type or 'application/octet-stream'
-        
+
         cached = existing_files.get(filepath)
         task = {
             'filepath': filepath,
@@ -672,7 +672,7 @@ def index_directory(dir_path, progress_callback=None):
             'content': "",
             'coords': []
         }
-        
+
         if cached and cached['modified_at'] == modified_at and cached['file_size'] == file_size:
             task['id'] = cached['id']
             task['content'] = cached['content']
@@ -684,10 +684,10 @@ def index_directory(dir_path, progress_callback=None):
 
     import concurrent.futures
     import threading
-    
+
     completed_count = 0
     progress_lock = threading.Lock()
-    
+
     def update_progress(filename):
         nonlocal completed_count
         if progress_callback:
@@ -701,14 +701,14 @@ def index_directory(dir_path, progress_callback=None):
         suffix = task['suffix']
         mime_type = task['mime_type']
         file_size = task.get('file_size', 0)
-        
+
         if file_size > 100 * 1024 * 1024:
             sha256 = calculate_sha256(filepath)
             task['sha256'] = sha256
             task['content'] = f"[File size ({file_size / (1024*1024):.1f}MB) exceeds 100MB safety limit. Text extraction skipped.]"
             task['coords'] = []
             return task
-            
+
         sha256 = calculate_sha256(filepath)
         content = ""
         coords = []
@@ -717,7 +717,7 @@ def index_directory(dir_path, progress_callback=None):
         elif suffix in {'.wav', '.mp3'}:
             meta = parse_audio_metadata(filepath)
             content = f"[Audio Metadata] samplerate:{meta.get('samplerate', 0)} channels:{meta.get('channels', 0)} bitrate:{meta.get('bitrate', 'Unknown')} duration:{meta.get('duration', 0)}s"
-            
+
         task['sha256'] = sha256
         task['content'] = content
         task['coords'] = coords
@@ -735,7 +735,7 @@ def index_directory(dir_path, progress_callback=None):
                     t['content'] = f"[ThreadPool Error: {str(e)}]"
                     res_task = t
                 update_progress(res_task['filename'])
-                
+
     # Update progress for unmodified files immediately
     for task in unmodified_tasks:
         update_progress(task['filename'])
@@ -756,32 +756,32 @@ def index_directory(dir_path, progress_callback=None):
                 modified_at = task['modified_at']
                 content = task['content']
                 matched_tags = task['matched_tags']
-                
+
                 sha256 = task.get('sha256')
                 mime_type = task['mime_type']
                 coords = task['coords']
                 file_id = task['id']
-                
+
                 if file_id is not None:
                     cursor.execute("""
-                        UPDATE files 
+                        UPDATE files
                         SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?, insights = NULL
                         WHERE filepath = ?
                     """, (filename, file_size, mime_type, sha256, modified_at, content, filepath))
-                    
+
                     cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (filepath,))
                     cursor.execute("""
                         INSERT INTO fts_files (filepath, filename, content, notes)
                         VALUES (?, ?, ?, (SELECT notes FROM files WHERE filepath = ?))
                     """, (filepath, filename, content, filepath))
-                    
+
                     cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
                     for coord in coords:
                         cursor.execute("""
                             INSERT INTO ocr_coords (file_id, word, x, y, w, h)
                             VALUES (?, ?, ?, ?, ?, ?)
                         """, (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
-                        
+
                     # Delete old tags on modification
                     cursor.execute("DELETE FROM tags WHERE file_id = ?", (file_id,))
                     # Delete old chunks on modification
@@ -795,26 +795,26 @@ def index_directory(dir_path, progress_callback=None):
                     """, (filepath, filename, file_size, mime_type, sha256, modified_at, content))
                     file_id = cursor.lastrowid
                     task['id'] = file_id
-                    
+
                     cursor.execute("""
                         INSERT INTO fts_files (filepath, filename, content, notes)
                         VALUES (?, ?, ?, NULL)
                     """, (filepath, filename, content))
-                    
+
                     for coord in coords:
                         cursor.execute("""
                             INSERT INTO ocr_coords (file_id, word, x, y, w, h)
                             VALUES (?, ?, ?, ?, ?, ?)
                         """, (file_id, coord['word'], coord['x'], coord['y'], coord['w'], coord['h']))
                     indexed_count += 1
-            
+
                 if file_id is not None:
                     for tag in matched_tags:
                         try:
                             cursor.execute("INSERT INTO tags (file_id, tag) VALUES (?, ?)", (file_id, tag))
                         except sqlite3.IntegrityError:
                             pass
-                            
+
                     # Generate and insert new chunks
                     chunks = chunk_text(content)
                     for chunk_idx, chunk_content in enumerate(chunks):
@@ -836,14 +836,14 @@ def search_files(query):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT filepath, filename, rank 
-        FROM fts_files 
-        WHERE fts_files MATCH ? 
-        ORDER BY rank 
+        SELECT filepath, filename, rank
+        FROM fts_files
+        WHERE fts_files MATCH ?
+        ORDER BY rank
         LIMIT 10
     """, (query,))
     rows = cursor.fetchall()
-    
+
     if not rows:
         print("No matches found.")
     else:
@@ -902,12 +902,12 @@ def start_active_folder_watcher(directory, callback=None):
         # Track initial file stamps
         last_checked = {}
         pending_stable = {} # filepath -> last_seen_stamp (mtime, size)
-        
+
         while getattr(start_active_folder_watcher, "active", True):
             if not os.path.exists(directory):
                 time.sleep(2)
                 continue
-                
+
             # system health checker capacity validation
             import shutil
             try:
@@ -917,7 +917,7 @@ def start_active_folder_watcher(directory, callback=None):
                     continue
             except Exception:
                 pass
-            
+
             current_files = {}
             ignored_dirs = {".git", "node_modules", "__pycache__", ".venv", "dist", "build"}
             for root, dirs, files in os.walk(directory):
@@ -932,7 +932,7 @@ def start_active_folder_watcher(directory, callback=None):
                         current_files[fp] = (mtime, size)
                     except Exception:
                         pass
-                        
+
             # Detect stable changed files and deletions
             stable_files = {}
             for fp, stamp in current_files.items():
@@ -977,18 +977,18 @@ def start_active_folder_watcher(directory, callback=None):
                 index_directory(directory)
                 if callback:
                     callback()
-                
+
                 # Apply changes to local cache tracker
                 for fp, stamp in stable_files.items():
                     last_checked[fp] = stamp
                 for fp in deleted_files:
                     if fp in last_checked:
                         del last_checked[fp]
-            
+
             # Initial baseline population
             if not last_checked and current_files:
                 last_checked = dict(current_files)
-                
+
             time.sleep(2)
 
     t = threading.Thread(target=watch_loop, name="WatcherThread", daemon=True)
@@ -1005,7 +1005,7 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python know.py [init|index <dir>|search <query>|status]")
         sys.exit(1)
-        
+
     cmd = sys.argv[1]
     if cmd == "init":
         init_db()

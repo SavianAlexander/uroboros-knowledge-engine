@@ -89,7 +89,7 @@ def start_udp_broadcast_service():
     import time
     import threading
     import sys
-    
+
     my_ip = get_local_ip()
     my_port = 8000
     for i, arg in enumerate(sys.argv):
@@ -98,7 +98,7 @@ def start_udp_broadcast_service():
                 my_port = int(sys.argv[i + 1])
             except ValueError:
                 pass
-                
+
     my_uuid = os.environ.get("UROBOROS_UUID", socket.gethostname())
     my_name = socket.gethostname()
 
@@ -130,7 +130,7 @@ def start_udp_broadcast_service():
                 peer_uuid = info.get("uuid")
                 peer_name = info.get("name")
                 peer_address = info.get("address")
-                
+
                 if peer_uuid != my_uuid and peer_address:
                     with db_conn() as conn:
                         cursor = conn.cursor()
@@ -193,7 +193,7 @@ class QueryCache:
                     count = cursor.fetchone()[0]
                     if count >= self.capacity:
                         cursor.execute("DELETE FROM query_cache WHERE cached_at = (SELECT MIN(cached_at) FROM query_cache)")
-                    
+
                     cursor.execute(
                         "INSERT OR REPLACE INTO query_cache (query_key, response_json, cached_at) VALUES (?, ?, ?)",
                         (key, json.dumps(value), time.time())
@@ -500,11 +500,11 @@ def save_file(req: FileSaveRequest):
                             coord["h"],
                         ),
                     )
-                
+
                 # Delete old chunks on manual save
                 cursor.execute("DELETE FROM file_chunks WHERE file_id = ?", (file_id,))
                 cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
-                
+
                 # Re-generate and insert updated chunks
                 chunks = know.chunk_text(content_txt)
                 for chunk_idx, chunk_content in enumerate(chunks):
@@ -836,7 +836,7 @@ def expand_query_with_llm(query_str: str) -> str:
     clean_q = query_str.strip().lower()
     if clean_q in fallback_map:
         expanded.extend(fallback_map[clean_q])
-        
+
     try:
         llm = get_fallback_llm()
         if llm:
@@ -859,7 +859,7 @@ def expand_query_with_llm(query_str: str) -> str:
                     expanded.append(w_clean)
     except Exception:
         pass
-    
+
     if len(expanded) > 1:
         return "(" + " OR ".join(expanded) + ")"
     return query_str
@@ -2148,7 +2148,7 @@ def exchange_payload(req: SyncExchangeRequest):
                         """,
                             (local_path, filename, item["content"], file_id),
                         )
-                        
+
                         # Sync chunking too
                         cursor.execute("DELETE FROM file_chunks WHERE file_id = ?", (file_id,))
                         cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
@@ -2189,7 +2189,7 @@ def exchange_payload(req: SyncExchangeRequest):
                         """,
                             (local_path, filename, item["content"]),
                         )
-                        
+
                         # Index chunks
                         chunks = know.chunk_text(item["content"] or "")
                         for chunk_idx, chunk_content in enumerate(chunks):
@@ -2839,7 +2839,7 @@ DEFAULT_FALLBACK_MODEL_PATH = os.path.join(os.path.expanduser("~"), ".cache", "u
 def download_model_if_missing():
     global MODEL_PATH
     os.makedirs(os.path.dirname(DEFAULT_FALLBACK_MODEL_PATH), exist_ok=True)
-    
+
     # 1. Download fallback if missing
     if not os.path.exists(DEFAULT_FALLBACK_MODEL_PATH):
         import urllib.request
@@ -2850,7 +2850,7 @@ def download_model_if_missing():
             print("Fallback model download complete.")
         except Exception as e:
             print(f"Failed to download fallback model: {e}")
-            
+
     # 2. Download primary if missing
     if not os.path.exists(MODEL_PATH):
         import urllib.request
@@ -2861,7 +2861,7 @@ def download_model_if_missing():
             print("Primary model download complete.")
         except Exception as e:
             print(f"Failed to download primary model: {e}")
-            
+
     # Resolve which model path to use
     if os.path.exists(MODEL_PATH):
         pass
@@ -2874,11 +2874,11 @@ def get_llm():
         with _llm_lock:
             if _llm_instance is None:
                 download_model_if_missing()
-                
+
                 # Dynamic CPU thread tuning: leave 2 cores for OS/indexing tasks
                 cpu_cores = os.cpu_count()
                 n_threads = max(2, cpu_cores - 2) if cpu_cores else 4
-                
+
                 try:
                     print(f"Attempting GPU acceleration (n_gpu_layers=-1) on Vulkan/DirectML/CUDA/ROCm...")
                     _llm_instance = Llama(
@@ -2904,7 +2904,7 @@ def get_fallback_llm():
     global _fallback_llm_instance
     if MODEL_PATH == DEFAULT_FALLBACK_MODEL_PATH:
         return get_llm()
-        
+
     if _fallback_llm_instance is None:
         with _llm_lock:
             if _fallback_llm_instance is None:
@@ -3031,7 +3031,7 @@ async def chat_endpoint(req: ChatRequest):
     )
 
     messages = [{"role": "system", "content": system_content}]
-    
+
     # ponytail: token-based sliding window history guard to fit context limits (max 600 tokens ~2400 chars of history)
     history_messages = []
     token_sum = 0
@@ -3042,10 +3042,10 @@ async def chat_endpoint(req: ChatRequest):
             break
         history_messages.append({"role": msg.role, "content": msg.content})
         token_sum += approx_tokens
-        
+
     for msg in reversed(history_messages):
         messages.append(msg)
-        
+
     messages.append({"role": "user", "content": req.message})
 
     # 4. Execution: Call create_chat_completion inside asyncio.get_event_loop().run_in_executor
