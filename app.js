@@ -77,6 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchSearchHistory();
     fetchSearchBookmarks();
     initSplitDivider();
+    initMinimapListeners();
 
     const resultsSortSelect = document.getElementById("results-sort-select");
     if (resultsSortSelect) {
@@ -2891,6 +2892,7 @@ async function selectWorkspaceFile(path) {
         textarea.removeAttribute("disabled");
         saveBtn.removeAttribute("disabled");
         updateEditorCounters(textarea.value);
+        setTimeout(updateMinimap, 50); // slight delay to allow textarea rendering and sizing
 
         if (!textarea.dataset.shortcutsBound) {
             textarea.dataset.shortcutsBound = "true";
@@ -2907,10 +2909,12 @@ async function selectWorkspaceFile(path) {
                     textarea.value = val.substring(0, start) + "    " + val.substring(end);
                     textarea.selectionStart = textarea.selectionEnd = start + 4;
                     updateEditorCounters(textarea.value);
+                    updateMinimap();
                 }
             });
             textarea.addEventListener("input", () => {
                 updateEditorCounters(textarea.value);
+                updateMinimap();
             });
         }
 
@@ -3191,6 +3195,8 @@ function insertMarkdownFormat(prefix, suffix) {
     textarea.selectionStart = start + prefix.length;
     textarea.selectionEnd = start + prefix.length + selected.length;
     textarea.focus();
+    updateEditorCounters(textarea.value);
+    updateMinimap();
 }
 
 function initSplitDivider() {
@@ -3283,6 +3289,110 @@ function applyResultsSorting() {
     }
     
     renderResults(sorted);
+}
+
+function updateMinimap() {
+    const textarea = document.getElementById("workspace-editor-textarea");
+    const minimap = document.getElementById("workspace-editor-minimap");
+    const slider = document.getElementById("minimap-slider");
+    
+    if (!textarea || !minimap || !slider) return;
+    
+    const textNodes = Array.from(minimap.childNodes).filter(node => node.id !== "minimap-slider");
+    textNodes.forEach(node => node.remove());
+    
+    const textSpan = document.createElement("span");
+    textSpan.innerText = textarea.value;
+    minimap.appendChild(textSpan);
+    
+    const scrollHeight = textarea.scrollHeight;
+    const clientHeight = textarea.clientHeight;
+    
+    if (scrollHeight <= clientHeight) {
+        slider.style.height = "100%";
+        slider.style.top = "0px";
+    } else {
+        const ratio = clientHeight / scrollHeight;
+        const sliderHeight = Math.max(15, ratio * minimap.clientHeight);
+        slider.style.height = `${sliderHeight}px`;
+        
+        const scrollRatio = textarea.scrollTop / (scrollHeight - clientHeight);
+        const maxSliderTop = minimap.clientHeight - sliderHeight;
+        slider.style.top = `${scrollRatio * maxSliderTop}px`;
+    }
+}
+
+function initMinimapListeners() {
+    const textarea = document.getElementById("workspace-editor-textarea");
+    const minimap = document.getElementById("workspace-editor-minimap");
+    const slider = document.getElementById("minimap-slider");
+    
+    if (!textarea || !minimap || !slider) return;
+    
+    textarea.addEventListener("scroll", () => {
+        const scrollHeight = textarea.scrollHeight;
+        const clientHeight = textarea.clientHeight;
+        const sliderHeight = parseFloat(slider.style.height) || 0;
+        
+        if (scrollHeight > clientHeight) {
+            const scrollRatio = textarea.scrollTop / (scrollHeight - clientHeight);
+            const maxSliderTop = minimap.clientHeight - sliderHeight;
+            slider.style.top = `${scrollRatio * maxSliderTop}px`;
+        }
+    });
+    
+    let isDragging = false;
+    let startY = 0;
+    let startSliderTop = 0;
+    
+    const onDrag = (e) => {
+        if (!isDragging) return;
+        const deltaY = e.clientY - startY;
+        const sliderHeight = parseFloat(slider.style.height) || 0;
+        const maxSliderTop = minimap.clientHeight - sliderHeight;
+        let newTop = Math.max(0, Math.min(maxSliderTop, startSliderTop + deltaY));
+        
+        slider.style.top = `${newTop}px`;
+        
+        const scrollRatio = maxSliderTop > 0 ? newTop / maxSliderTop : 0;
+        const scrollHeight = textarea.scrollHeight;
+        const clientHeight = textarea.clientHeight;
+        textarea.scrollTop = scrollRatio * (scrollHeight - clientHeight);
+    };
+    
+    slider.addEventListener("mousedown", (e) => {
+        e.stopPropagation();
+        isDragging = true;
+        startY = e.clientY;
+        startSliderTop = parseFloat(slider.style.top) || 0;
+        document.body.style.userSelect = "none";
+        document.addEventListener("mousemove", onDrag);
+    });
+    
+    document.addEventListener("mouseup", () => {
+        if (isDragging) {
+            isDragging = false;
+            document.body.style.userSelect = "";
+            document.removeEventListener("mousemove", onDrag);
+        }
+    });
+    
+    minimap.addEventListener("click", (e) => {
+        if (e.target === slider) return;
+        const rect = minimap.getBoundingClientRect();
+        const clickY = e.clientY - rect.top;
+        const sliderHeight = parseFloat(slider.style.height) || 0;
+        const maxSliderTop = minimap.clientHeight - sliderHeight;
+        
+        let newTop = clickY - (sliderHeight / 2);
+        newTop = Math.max(0, Math.min(maxSliderTop, newTop));
+        slider.style.top = `${newTop}px`;
+        
+        const scrollRatio = maxSliderTop > 0 ? newTop / maxSliderTop : 0;
+        const scrollHeight = textarea.scrollHeight;
+        const clientHeight = textarea.clientHeight;
+        textarea.scrollTop = scrollRatio * (scrollHeight - clientHeight);
+    });
 }
 
 

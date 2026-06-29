@@ -154,7 +154,12 @@
                                                 <button onclick="insertMarkdownFormat('- ', '')" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 2px 6px; font-size: 0.75rem; border-radius: 2px;">List</button>
                                                 <button onclick="insertMarkdownFormat('# ', '')" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer; padding: 2px 6px; font-size: 0.75rem; border-radius: 2px;">Header</button>
                                             </div>
-                                            <textarea id="workspace-editor-textarea" placeholder="Select a document to edit..." disabled></textarea>
+                                            <div class="editor-textarea-container" style="display: flex; flex: 1; flex-direction: row; overflow: hidden; position: relative;">
+                                                <textarea id="workspace-editor-textarea" placeholder="Select a document to edit..." disabled></textarea>
+                                                <div id="workspace-editor-minimap" class="editor-minimap">
+                                                    <div id="minimap-slider" class="minimap-slider"></div>
+                                                </div>
+                                            </div>
                                             <div id="editor-status-bar" style="display: flex; justify-content: flex-end; padding: 0.25rem 0.5rem; font-size: 0.7rem; color: var(--text-secondary); background: rgba(0,0,0,0.1); border-top: 1px solid var(--border-color);">
                                                 Words: 0 | Characters: 0
                                             </div>

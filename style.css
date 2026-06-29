@@ -2233,6 +2233,49 @@ body.light-theme .theme-toggle-btn .moon-path {
     to { transform: rotate(360deg); }
 }
 
+/* Editor Minimap Styling */
+.editor-minimap {
+    width: 60px;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.25);
+    border-left: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    user-select: none;
+    font-family: monospace;
+    font-size: 2px;
+    line-height: 2.2px;
+    letter-spacing: -0.5px;
+    color: var(--text-secondary);
+    opacity: 0.55;
+    transition: opacity 0.2s;
+    white-space: pre-wrap;
+    word-break: break-all;
+    padding: 2px;
+    box-sizing: border-box;
+}
+
+.editor-minimap:hover {
+    opacity: 0.95;
+}
+
+.minimap-slider {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    background: rgba(234, 224, 200, 0.08);
+    border-top: 1.5px solid var(--accent);
+    border-bottom: 1.5px solid var(--accent);
+    box-sizing: border-box;
+    cursor: grab;
+    z-index: 5;
+}
+
+.minimap-slider:active {
+    cursor: grabbing;
+}
+
 
 
 
