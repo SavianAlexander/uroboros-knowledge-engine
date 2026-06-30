@@ -66,6 +66,11 @@ Configure regex auto-tagging rules, word synonyms mappings, search bookmarks, ba
 
 ![Configuration Rules](docs/screenshots/config_rules_view.png)
 
+### 4. Conversational LLM Assistant
+Ask the local neural assistant questions about stored knowledge, query statistics, and document summaries with automatic source-citation links.
+
+![Conversational Assistant](docs/screenshots/chat_view.png)
+
 ---
 
 ## Installation & Setup

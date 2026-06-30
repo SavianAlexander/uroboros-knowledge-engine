@@ -66,6 +66,11 @@ Configura reglas de etiquetado automático mediante expresiones regulares, sinó
 
 ![Configuración de Reglas](docs/screenshots/config_rules_view.png)
 
+### 4. Asistente Conversacional de LLM
+Haz preguntas al asistente neuronal local sobre el conocimiento almacenado, estadísticas de consultas y resúmenes de documentos con enlaces de cita de fuentes automáticos.
+
+![Asistente Conversacional](docs/screenshots/chat_view.png)
+
 ---
 
 ## Instalación y Configuración
