@@ -107,6 +107,11 @@ def main_capture():
             page.press("input[placeholder*='Search']", "Enter")
             time.sleep(2.0) # wait for search response and d3 update
             
+            # Click on the search result row to open in editor and render minimap
+            print("Selecting file in search results to render editor, insights, and minimap...")
+            page.click("#results-list .result-item")
+            time.sleep(2.5) # wait for content loading and insights processing
+            
             print("Capturing search_results_view.png...")
             page.screenshot(path=str(screenshots_dir / "search_results_view.png"))
 
