@@ -1,4 +1,15 @@
+function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 let activeTab = "workspace";
+
 
 function switchTab(tabId) {
     activeTab = tabId;
@@ -324,9 +335,13 @@ async function fetchStats() {
         document.getElementById("stat-files").innerText = data.total_files;
         document.getElementById("stat-size").innerText = formatBytes(data.total_size);
         
-        if (data.disk_storage) {
-            const freeStr = formatBytes(data.disk_storage.free_bytes);
-            document.getElementById("stat-disk-free").innerText = `${freeStr} (${data.disk_storage.free_percent}% free)`;
+        const tagsEl = document.getElementById("stat-tags");
+        if (tagsEl) {
+            tagsEl.innerText = data.total_tags !== undefined ? data.total_tags : "-";
+        }
+        const rulesEl = document.getElementById("stat-rules");
+        if (rulesEl) {
+            rulesEl.innerText = data.total_rules !== undefined ? data.total_rules : "-";
         }
         
         if (data.active_directory) {
@@ -334,16 +349,24 @@ async function fetchStats() {
             document.getElementById("active-dir-label").title = data.active_directory;
         }
 
-        // ponytail: fetch query cache statistics
-        try {
-            const cacheRes = await fetch("/api/search/cache/stats");
-            const cacheStats = await cacheRes.json();
-            const cacheRatioEl = document.getElementById("stat-cache-ratio");
-            if (cacheRatioEl && cacheStats) {
-                cacheRatioEl.innerText = `${cacheStats.hit_ratio}% (${cacheStats.hits} hits / ${cacheStats.misses} misses)`;
+        const syncListEl = document.getElementById("sync-peers-list");
+        if (syncListEl) {
+            syncListEl.innerHTML = "";
+            if (!data.sync_peers || data.sync_peers.length === 0) {
+                syncListEl.innerHTML = '<span class="timeline-empty">No registered sync peers.</span>';
+            } else {
+                data.sync_peers.forEach(peer => {
+                    const row = document.createElement("div");
+                    row.className = "timeline-row";
+                    const escapedName = escapeHtml(peer.name || 'Unknown');
+                    const escapedAddress = escapeHtml(peer.address || '');
+                    row.innerHTML = `
+                        <span>${escapedName}</span>
+                        <strong>${escapedAddress}</strong>
+                    `;
+                    syncListEl.appendChild(row);
+                });
             }
-        } catch (cacheErr) {
-            console.error("Failed to load cache stats", cacheErr);
         }
 
         renderDistributionChart(data.mime_breakdown, data.total_files);
@@ -377,9 +400,10 @@ function renderDistributionChart(mimeBreakdown, totalFiles) {
             }
             triggerSearch();
         };
+        const escapedMime = escapeHtml(item.mime_type || '');
         row.innerHTML = `
             <div class="chart-bar-info">
-                <span class="chart-bar-label" title="${item.mime_type}">${item.mime_type}</span>
+                <span class="chart-bar-label" title="${escapedMime}">${escapedMime}</span>
                 <span>${item.count} (${pct}%)</span>
             </div>
             <div class="chart-bar-outer">
@@ -865,6 +889,21 @@ function setSearchMode(mode) {
     triggerSearch();
 }
 
+function setSearchModeSilent(mode) {
+    searchMode = mode;
+    document.querySelectorAll(".mode-btn").forEach(btn => btn.classList.remove("active"));
+    const kwBtn = document.getElementById("mode-keyword");
+    const semBtn = document.getElementById("mode-semantic");
+    if (kwBtn) kwBtn.classList.toggle("active", mode === "keyword");
+    if (semBtn) semBtn.classList.toggle("active", mode === "semantic");
+    
+    const sliderContainer = document.getElementById("similarity-threshold-container");
+    if (sliderContainer) {
+        sliderContainer.classList.toggle("hidden", mode !== "semantic");
+    }
+}
+
+
 function updateSimilarityThresholdDisplay(val) {
     const valDisplay = document.getElementById("similarity-threshold-val");
     if (valDisplay) {
@@ -1061,39 +1100,76 @@ async function fetchSearchHistory() {
     try {
         const response = await fetch("/api/search/history");
         const data = await response.json();
+        
         const container = document.getElementById("sidebar-search-history");
-        if (!container) return;
-        container.innerHTML = "";
-        if (!data.history || data.history.length === 0) {
-            container.innerHTML = '<span class="rules-empty">No search query history logged.</span>';
-            return;
+        if (container) {
+            container.innerHTML = "";
+            if (!data.history || data.history.length === 0) {
+                container.innerHTML = '<span class="rules-empty">No search query history logged.</span>';
+            } else {
+                data.history.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "rule-item";
+                    div.style.cursor = "pointer";
+                    div.style.padding = "0.25rem";
+                    div.style.borderRadius = "4px";
+                    div.style.transition = "background-color 0.2s";
+                    
+                    const escapedQuery = escapeHtml(item.query_string || "");
+                    const displayQuery = item.query_string ? escapeHtml(item.query_string) : 'All Files';
+                    div.onclick = () => {
+                        const input = document.getElementById("search-input");
+                        if (input) input.value = item.query_string || "";
+                        setSearchModeSilent(item.search_mode === "semantic" ? "semantic" : "keyword");
+                        switchTab("search");
+                    };
+                    
+                    div.onmouseover = () => div.style.backgroundColor = "rgba(99, 102, 241, 0.15)";
+                    div.onmouseout = () => div.style.backgroundColor = "transparent";
+                    
+                    div.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                            <span style="font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;" title="${escapedQuery}">${displayQuery}</span>
+                            <span class="badge" style="font-size: 0.6rem; padding: 0 0.2rem; border-color: rgba(99, 102, 241, 0.4);">${item.search_mode} (${item.result_count})</span>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
         }
-        data.history.forEach(item => {
-            const div = document.createElement("div");
-            div.className = "rule-item";
-            div.style.cursor = "pointer";
-            div.style.padding = "0.25rem";
-            div.style.borderRadius = "4px";
-            div.style.transition = "background-color 0.2s";
-            
-            const cleanQuery = item.query_string ? item.query_string.replace(/"/g, '&quot;') : '';
-            div.onclick = () => {
-                const input = document.getElementById("search-input");
-                input.value = item.query_string || "";
-                setSearchMode(item.search_mode === "semantic" ? "semantic" : "keyword");
-            };
-            
-            div.onmouseover = () => div.style.backgroundColor = "rgba(99, 102, 241, 0.15)";
-            div.onmouseout = () => div.style.backgroundColor = "transparent";
-            
-            div.innerHTML = `
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <span style="font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;" title="${cleanQuery}">${item.query_string || 'All Files'}</span>
-                    <span class="badge" style="font-size: 0.6rem; padding: 0 0.2rem; border-color: rgba(99, 102, 241, 0.4);">${item.search_mode} (${item.result_count})</span>
-                </div>
-            `;
-            container.appendChild(div);
-        });
+
+        const recentSearchesList = document.getElementById("recent-searches-list");
+        if (recentSearchesList) {
+            recentSearchesList.innerHTML = "";
+            if (!data.history || data.history.length === 0) {
+                recentSearchesList.innerHTML = '<span class="timeline-empty">No recent searches.</span>';
+            } else {
+                const top5 = data.history.slice(0, 5);
+                top5.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "timeline-row";
+                    div.style.cursor = "pointer";
+                    div.style.display = "flex";
+                    div.style.justify = "space-between";
+                    div.style.alignItems = "center";
+                    
+                    const escapedQuery = escapeHtml(item.query_string || "");
+                    const displayQuery = item.query_string ? escapeHtml(item.query_string) : 'All Files';
+                    div.onclick = () => {
+                        const input = document.getElementById("search-input");
+                        if (input) input.value = item.query_string || "";
+                        setSearchModeSilent(item.search_mode === "semantic" ? "semantic" : "keyword");
+                        switchTab("search");
+                    };
+                    
+                    div.innerHTML = `
+                        <span style="font-weight: 500; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 180px;" title="${escapedQuery}">${displayQuery}</span>
+                        <strong class="badge" style="font-size: 0.6rem; padding: 0 0.2rem; border-color: rgba(99, 102, 241, 0.4);">${item.search_mode} (${item.result_count})</strong>
+                    `;
+                    recentSearchesList.appendChild(div);
+                });
+            }
+        }
     } catch (e) {
         console.error("Failed to load search history", e);
     }
@@ -1381,16 +1457,6 @@ function triggerSearch() {
             currentSearchResults = data.results || [];
             applyResultsSorting();
             fetchSearchHistory();
-            
-            // ponytail: refresh cache stats values
-            try {
-                const cacheRes = await fetch("/api/search/cache/stats");
-                const cacheStats = await cacheRes.json();
-                const cacheRatioEl = document.getElementById("stat-cache-ratio");
-                if (cacheRatioEl && cacheStats) {
-                    cacheRatioEl.innerText = `${cacheStats.hit_ratio}% (${cacheStats.hits} hits / ${cacheStats.misses} misses)`;
-                }
-            } catch (cacheErr) {}
         } catch (error) {
             console.error("Search failed:", error);
         }

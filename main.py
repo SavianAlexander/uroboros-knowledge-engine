@@ -572,6 +572,15 @@ def get_stats():
         )
         timeline = [dict(row) for row in cursor.fetchall()]
 
+        cursor.execute("SELECT COUNT(DISTINCT tag) FROM tags")
+        total_tags = cursor.fetchone()[0] or 0
+
+        cursor.execute("SELECT COUNT(*) FROM auto_rules")
+        total_rules = cursor.fetchone()[0] or 0
+
+        cursor.execute("SELECT name, address FROM sync_peers")
+        sync_peers = [dict(row) for row in cursor.fetchall()]
+
     import shutil
 
     try:
@@ -590,6 +599,9 @@ def get_stats():
             "total_bytes": total,
             "free_percent": int((free / total) * 100) if total else 0,
         },
+        "total_tags": total_tags,
+        "total_rules": total_rules,
+        "sync_peers": sync_peers,
     }
 
 
