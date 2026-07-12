@@ -2866,6 +2866,50 @@ function sendChatMessage() {
     });
 }
 
+function parseChatMarkdown(text) {
+    if (!text) return "";
+    
+    // First, escape HTML to avoid XSS
+    let html = escapeHtml(text);
+    
+    // Parse multi-line code blocks
+    html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+        return `<pre><code>${code.trim()}</code></pre>`;
+    });
+    
+    // Parse inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    
+    // Parse bold text
+    html = html.replace(/\*\*([\s\S]*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Parse lists
+    const lines = html.split('\n');
+    let inList = false;
+    const processedLines = lines.map(line => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+            const itemContent = trimmed.substring(2);
+            if (!inList) {
+                inList = true;
+                return `<ul><li>${itemContent}</li>`;
+            }
+            return `<li>${itemContent}</li>`;
+        } else {
+            if (inList) {
+                inList = false;
+                return `</ul>${line}`;
+            }
+            return line;
+        }
+    });
+    if (inList) {
+        processedLines.push('</ul>');
+    }
+    
+    return processedLines.join('\n').replace(/\n/g, '<br>');
+}
+
 function appendChatMessage(sender, content, className, sources = null) {
     const messagesContainer = document.getElementById("chat-messages");
     if (!messagesContainer) return;
@@ -2879,7 +2923,7 @@ function appendChatMessage(sender, content, className, sources = null) {
 
     const contentEl = document.createElement("span");
     contentEl.className = "message-content";
-    contentEl.innerText = content;
+    contentEl.innerHTML = parseChatMarkdown(content);
 
     const timeEl = document.createElement("span");
     timeEl.className = "message-time";
@@ -2891,36 +2935,42 @@ function appendChatMessage(sender, content, className, sources = null) {
     msgEl.appendChild(contentEl);
     msgEl.appendChild(timeEl);
 
+    // If assistant message, append a copy button
+    if (className === "assistant") {
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "chat-copy-btn";
+        copyBtn.innerText = "Copy";
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(content).then(() => {
+                copyBtn.innerText = "Copied!";
+                setTimeout(() => {
+                    copyBtn.innerText = "Copy";
+                }, 2000);
+            });
+        };
+        msgEl.appendChild(copyBtn);
+    }
+
     if (sources && sources.length > 0) {
         const sourcesContainer = document.createElement("div");
         sourcesContainer.className = "message-sources";
-        sourcesContainer.style.fontSize = "0.75rem";
-        sourcesContainer.style.marginTop = "0.4rem";
-        sourcesContainer.style.color = "var(--text-secondary)";
-        sourcesContainer.style.borderTop = "1px solid var(--border-color)";
-        sourcesContainer.style.paddingTop = "0.3rem";
         
         const label = document.createElement("span");
         label.innerText = "Sources: ";
         label.style.fontWeight = "600";
         sourcesContainer.appendChild(label);
         
-        sources.forEach((src, idx) => {
-            const link = document.createElement("a");
-            link.href = "#";
-            link.innerText = src.filename;
-            link.style.color = "var(--accent)";
-            link.style.textDecoration = "underline";
-            link.style.marginRight = "0.5rem";
-            link.onclick = (e) => {
+        sources.forEach((src) => {
+            const chip = document.createElement("a");
+            chip.href = "#";
+            chip.className = "source-chip";
+            chip.innerHTML = `📄 ${escapeHtml(src.filename)}`;
+            chip.onclick = (e) => {
                 e.preventDefault();
                 switchTab('workspace');
                 showPreview(src.filepath);
             };
-            sourcesContainer.appendChild(link);
-            if (idx < sources.length - 1) {
-                sourcesContainer.appendChild(document.createTextNode(", "));
-            }
+            sourcesContainer.appendChild(chip);
         });
         msgEl.appendChild(sourcesContainer);
     }
