@@ -1733,12 +1733,27 @@ backup_cancel = threading.Event()
 
 
 def backup_loop():
+    backup_dir = "backups"
     while not backup_cancel.is_set():
         if backup_interval > 0:
             try:
-                shutil.copy2(
-                    "knowledge.db", f"knowledge.db.backup-{int(time.time())}"
-                )
+                os.makedirs(backup_dir, exist_ok=True)
+                dest = os.path.join(backup_dir, f"knowledge.db.backup-{int(time.time())}")
+                shutil.copy2("knowledge.db", dest)
+
+                # ponytail: prune database backups keeping only the 5 most recent
+                backups = [
+                    os.path.join(backup_dir, f)
+                    for f in os.listdir(backup_dir)
+                    if f.startswith("knowledge.db.backup-")
+                ]
+                backups.sort(key=lambda x: os.path.getmtime(x))
+                while len(backups) > 5:
+                    oldest = backups.pop(0)
+                    try:
+                        os.remove(oldest)
+                    except Exception:
+                        pass
             except Exception as e:
                 print(f"Periodic backup failed: {e}")
             # Sleep in small slices to remain responsive to cancel

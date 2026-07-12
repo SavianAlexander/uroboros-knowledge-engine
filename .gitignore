@@ -7,6 +7,7 @@ __pycache__/
 # Databases and backup files
 knowledge.db
 knowledge.db.backup-*
+backups/
 *.db
 
 # Temporary logs or watch dirs
