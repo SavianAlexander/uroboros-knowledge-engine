@@ -1490,12 +1490,12 @@ function renderDuplicates(duplicates) {
         div.className = "duplicate-group-card";
         
         let filesHtml = set.files.map(file => `
-            <div class="duplicate-file-entry" onclick="showPreview('${file.filepath.replace(/\\/g, '\\\\')}')">
-                <div>
+            <div class="duplicate-file-entry" onclick="showPreview('${file.filepath.replace(/\\/g, '\\\\')}')" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="flex: 1; min-width: 0; padding-right: 1rem;">
                     <strong>${file.filename}</strong><br/>
-                    <small style="color: var(--text-secondary); font-size: 0.75rem;">${file.filepath}</small>
+                    <small style="color: var(--text-secondary); font-size: 0.75rem; word-break: break-all;">${file.filepath}</small>
                 </div>
-                <span>➔</span>
+                <button class="action-btn" onclick="event.stopPropagation(); deleteDuplicateCopy('${file.filepath.replace(/\\/g, '\\\\')}')" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: var(--text-primary); padding: 0.2rem 0.5rem; font-size: 0.7rem; border-radius: 2px; cursor: pointer; transition: all 0.2s;">Delete Copy</button>
             </div>
         `).join("");
 
@@ -1507,6 +1507,26 @@ function renderDuplicates(duplicates) {
         `;
         list.appendChild(div);
     });
+}
+
+async function deleteDuplicateCopy(path) {
+    if (!confirm(`Are you sure you want to permanently delete this duplicate copy?\n\nPath: ${path}`)) {
+        return;
+    }
+    try {
+        const response = await fetch(`/api/file/delete?path=${encodeURIComponent(path)}`, {
+            method: "DELETE"
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || `HTTP ${response.status}`);
+        }
+        alert("Duplicate copy successfully deleted.");
+        fetchDuplicates();
+        fetchStats(); // Update dashboard counts
+    } catch (error) {
+        alert(`Failed to delete copy: ${error.message}`);
+    }
 }
 
 function renderResults(results) {
