@@ -3461,4 +3461,35 @@ function initMinimapListeners() {
     });
 }
 
+function exportSearchResultsCsv() {
+    if (!currentSearchResults || currentSearchResults.length === 0) {
+        alert("No search results to export.");
+        return;
+    }
+    
+    // Construct CSV Header
+    let csvContent = "Filepath,Filename,Size (Bytes),Modified At,Tags\n";
+    
+    // Populate rows
+    currentSearchResults.forEach(item => {
+        const filepath = `"${(item.filepath || '').replace(/"/g, '""')}"`;
+        const filename = `"${(item.filename || '').replace(/"/g, '""')}"`;
+        const size = item.file_size || 0;
+        const modified = item.modified_at || '';
+        const tags = `"${(item.tags || []).join(', ').replace(/"/g, '""')}"`;
+        
+        csvContent += `${filepath},${filename},${size},${modified},${tags}\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "search_results.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 
