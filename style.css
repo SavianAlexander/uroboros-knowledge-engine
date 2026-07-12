@@ -543,7 +543,14 @@ h1, h2, h3, h4, h5, button, .tab-btn, .tab-link, .mode-btn, .action-btn {
     font-size: 0.75rem;
     color: var(--text-secondary);
     position: relative;
-    padding-left: 0.75rem;
+    padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+    border-radius: 2px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.timeline-row:hover {
+    background: var(--accent-trans-08);
+    transform: translateX(2px);
 }
 
 .timeline-row::before {
