@@ -5908,7 +5908,8 @@ async function fetchBookmarksVault() {
         if (!response.ok) return;
         const data = await response.json();
         const bookmarks = data.bookmarks || [];
-        const targets = ["sidebar-search-bookmarks", "search-bookmarks-list"];
+        // ponytail: only target the inner wrapper, not the parent (search-bookmarks-list) which would destroy it
+        const targets = ["sidebar-search-bookmarks"];
         targets.forEach(id => {
             const container = document.getElementById(id);
             if (!container) return;
