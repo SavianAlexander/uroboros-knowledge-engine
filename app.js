@@ -3300,6 +3300,14 @@ function drawGraph(nodes, links) {
     let panStartX = 0;
     let panStartY = 0;
 
+    // ponytail: expose graph state for Playwright E2E introspection
+    Object.defineProperties(window, {
+        lastOffsetX: { get: () => offsetX, configurable: true },
+        lastOffsetY: { get: () => offsetY, configurable: true },
+        lastZoomScale: { get: () => zoomScale, configurable: true },
+        capturedNodes: { get: () => nodes, configurable: true }
+    });
+
     window.zoomConceptGraph = (factor) => {
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
@@ -5899,37 +5907,8 @@ function runMacroAction(expansion) {
     showToast(`Executed Macro: ${expansion}`, "info");
 }
 
-// 5. Search History & Bookmarks Vaults
-async function fetchSearchHistory() {
-    try {
-        const response = await fetch("/api/search/history");
-        if (!response.ok) return;
-        const data = await response.json();
-        const queries = data.queries || data.history || [];
-        const targets = ["sidebar-search-history", "search-history-list"];
-        targets.forEach(id => {
-            const container = document.getElementById(id);
-            if (!container) return;
-            if (queries.length === 0) {
-                container.innerHTML = '<span class="rules-empty">No search query history logged.</span>';
-                return;
-            }
-            let html = `<table class="high-density-table"><thead><tr><th>Query</th><th style="text-align:right;">Time</th></tr></thead><tbody>`;
-            queries.slice(0, 10).forEach(q => {
-                const qStr = typeof q === 'string' ? q : (q.query || q.query_string || '');
-                const dStr = typeof q === 'object' && q.timestamp ? new Date(q.timestamp * 1000).toLocaleTimeString() : 'Recent';
-                html += `<tr onclick="runMacroAction('${escapeHtml(qStr)}')" style="cursor:pointer;" title="Click to run query">
-                    <td><code>${escapeHtml(qStr)}</code></td>
-                    <td style="color:var(--text-secondary); font-size:0.7rem; text-align:right;">${dStr}</td>
-                </tr>`;
-            });
-            html += `</tbody></table>`;
-            container.innerHTML = html;
-        });
-    } catch (e) {
-        console.warn("Failed to load search history", e);
-    }
-}
+// ponytail: fetchSearchHistory defined at line 1727 (handles both sidebar-search-history and recent-searches-list)
+
 
 async function fetchBookmarksVault() {
     try {
