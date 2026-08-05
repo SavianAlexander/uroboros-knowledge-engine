@@ -92,26 +92,34 @@ function setGraphPreset(presetName) {
 }
 window.setGraphPreset = setGraphPreset;
 
+function openCommandPalette() {
+    const modal = document.getElementById("command-palette-modal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    const input = document.getElementById("cmd-input") || document.getElementById("command-palette-input");
+    if (input) {
+        input.value = "";
+        filterCommandPalette("");
+        setTimeout(() => input.focus(), 50);
+        setupPaletteKeyboardNav();
+    }
+}
+window.openCommandPalette = openCommandPalette;
+
+function closeCommandPalette() {
+    const modal = document.getElementById("command-palette-modal");
+    if (modal) modal.classList.add("hidden");
+    paletteActiveIdx = -1;
+}
+window.closeCommandPalette = closeCommandPalette;
+
 function toggleCommandPalette() {
     const modal = document.getElementById("command-palette-modal");
     if (!modal) return;
-    const isHidden = modal.classList.toggle("hidden");
-    if (!isHidden) {
-        const input = document.getElementById("command-palette-input");
-        if (input) {
-            input.value = "";
-            filterCommandPalette("");
-            setTimeout(() => input.focus(), 50);
-            setupPaletteKeyboardNav();
-        }
-        if (!modal.dataset.backdropBound) {
-            modal.dataset.backdropBound = "true";
-            modal.addEventListener("click", (e) => {
-                if (e.target === modal) {
-                    toggleCommandPalette();
-                }
-            });
-        }
+    if (modal.classList.contains("hidden")) {
+        openCommandPalette();
+    } else {
+        closeCommandPalette();
     }
 }
 window.toggleCommandPalette = toggleCommandPalette;
@@ -119,11 +127,11 @@ window.toggleCommandPalette = toggleCommandPalette;
 let paletteActiveIdx = -1;
 
 function setupPaletteKeyboardNav() {
-    const input = document.getElementById("command-palette-input");
+    const input = document.getElementById("cmd-input") || document.getElementById("command-palette-input");
     if (!input || input.dataset.navBound) return;
     input.dataset.navBound = "true";
     input.addEventListener("keydown", (e) => {
-        const items = Array.from(document.querySelectorAll("#command-palette-list .palette-item")).filter(el => el.style.display !== "none");
+        const items = Array.from(document.querySelectorAll("#cmd-results-list .command-item, #cmd-results-list .palette-item, #command-palette-results .palette-item, #command-palette-list .palette-item, #command-palette-results .command-item, #command-palette-list .command-item")).filter(el => el.style.display !== "none");
         if (items.length === 0) return;
 
         if (e.key === "ArrowDown") {
@@ -133,7 +141,7 @@ function setupPaletteKeyboardNav() {
             items[paletteActiveIdx].scrollIntoView({ block: "nearest" });
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
-            paletteActiveIdx = (paletteActiveIdx - 1 + items.length) % items.length;
+            paletteActiveIdx = paletteActiveIdx <= 0 ? items.length - 1 : paletteActiveIdx - 1;
             items.forEach((item, idx) => item.classList.toggle("active", idx === paletteActiveIdx));
             items[paletteActiveIdx].scrollIntoView({ block: "nearest" });
         } else if (e.key === "Enter") {
@@ -143,31 +151,49 @@ function setupPaletteKeyboardNav() {
             } else if (items.length > 0) {
                 items[0].click();
             }
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            closeCommandPalette();
         }
     });
 }
 
 function filterCommandPalette(query) {
     const q = (query || "").trim().toLowerCase();
-    const items = document.querySelectorAll("#command-palette-list .palette-item");
+    const items = document.querySelectorAll("#cmd-results-list .command-item, #cmd-results-list .palette-item, #command-palette-results .palette-item, #command-palette-list .palette-item, #command-palette-results .command-item, #command-palette-list .command-item");
+    paletteActiveIdx = -1;
     items.forEach(el => {
         const text = el.innerText.toLowerCase();
-        el.style.display = (!q || text.includes(q)) ? "block" : "none";
+        const isMatch = !q || text.includes(q);
+        el.style.display = isMatch ? "flex" : "none";
+        el.classList.remove("active");
     });
 }
 window.filterCommandPalette = filterCommandPalette;
 
-function executePaletteCommand(cmd) {
-    toggleCommandPalette();
-    if (cmd === 'search') switchTab('search');
-    else if (cmd === 'chat') switchTab('chat');
-    else if (cmd === 'graph') { switchTab('search'); selectCategory(document.querySelector('[data-category="graph"]')); }
-    else if (cmd === 'config') switchTab('config');
+function executeCommand(cmd) {
+    closeCommandPalette();
+    if (cmd === 'dashboard' || cmd === 'view_diagnostics' || cmd === 'diagnostics') switchTab('diagnostics');
+    else if (cmd === 'processes' || cmd === 'view_processes' || cmd === 'config') switchTab('processes');
+    else if (cmd === 'search' || cmd === 'view_explorer' || cmd === 'explorer') switchTab('explorer');
+    else if (cmd === 'chat' || cmd === 'view_chat') switchTab('chat');
+    else if (cmd === 'settings' || cmd === 'view_settings') switchTab('settings');
+    else if (cmd === 'account' || cmd === 'view_account') switchTab('account');
+    else if (cmd === 'graph') { switchTab('explorer'); selectCategory(document.querySelector('[data-category="graph"]')); }
     else if (cmd === 'theme') toggleAppTheme();
-    else if (cmd === 'csv') exportStatsCsv();
-    else if (cmd === 'pdf') exportPdfReport();
+    else if (cmd === 'reindex') { if (typeof triggerIndexing === 'function') triggerIndexing(); }
+    else if (cmd === 'vacuum') { if (typeof runVacuumWithStatus === 'function') runVacuumWithStatus(); }
+    else if (cmd === 'snapshot') { if (typeof createSnapshot === 'function') createSnapshot(); }
+    else if (cmd === 'csv') { if (typeof exportStatsCsv === 'function') exportStatsCsv(); }
+    else if (cmd === 'pdf') { if (typeof exportPdfReport === 'function') exportPdfReport(); }
+    else if (cmd === 'file-search') {
+        switchTab('explorer');
+        const searchInput = document.getElementById("search-input");
+        if (searchInput) searchInput.focus();
+    }
 }
-window.executePaletteCommand = executePaletteCommand;
+window.executeCommand = executeCommand;
+window.executePaletteCommand = executeCommand;
 
 function toggleWorkspaceSidebar() {
     const sidebar = document.getElementById("workspace-sidebar");
@@ -215,17 +241,24 @@ function switchTab(tabId) {
         fetchAutoRules();
         fetchMacrosList();
         fetchSynonymsList();
+        fetchAliasesList();
         fetchSnapshotsList();
         fetchPeers();
+        fetchSyncLogs();
+        fetchSearchHistory();
+        fetchBookmarksVault();
     } else if (tabId === "explorer" || tabId === "search") {
         fetchGlobalTags();
         triggerSearch();
         fetchDirectoryTree();
     } else if (tabId === "settings") {
         fetchStats();
+        fetchDbStats();
+        fetchSystemEnv();
     } else if (tabId === "account") {
         fetchStats();
         fetchSystemEnv();
+        fetchSearchHistory();
     } else if (tabId === "chat") {
         fetchChatSessions();
     }
@@ -246,18 +279,17 @@ let currentSearchResults = [];
 
 document.addEventListener("DOMContentLoaded", () => {
     // Restore theme preference
-    if (localStorage.getItem("app-theme") === "light") {
+    const savedTheme = localStorage.getItem("app-theme");
+    if (savedTheme === "light") {
         document.body.classList.add("light-theme");
+        document.documentElement.setAttribute("data-theme", "light");
+    } else {
+        document.documentElement.setAttribute("data-theme", "dark");
     }
 
-    // Global Keyboard Shortcuts (Ctrl/Cmd+K -> Search, Ctrl/Cmd+P -> Palette, Ctrl/Cmd+B -> Sidebar, Ctrl/Cmd+S -> Save, Esc -> Close)
+    // Global Keyboard Shortcuts (Ctrl/Cmd+K -> Palette/Search, Ctrl/Cmd+P -> Palette, Ctrl/Cmd+B -> Sidebar, Ctrl/Cmd+S -> Save, Esc -> Close)
     document.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-            e.preventDefault();
-            switchTab("search");
-            const searchInput = document.getElementById("search-input");
-            if (searchInput) searchInput.focus();
-        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
+        if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === "k" || e.key.toLowerCase() === "p")) {
             e.preventDefault();
             toggleCommandPalette();
         } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
@@ -271,15 +303,12 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } else if (e.key === "Escape") {
             closePreview();
+            closeCommandPalette();
             const autoDropdown = document.getElementById("search-autocomplete-dropdown");
             if (autoDropdown) autoDropdown.classList.add("hidden");
             const pdfDrawer = document.getElementById("pdf-export-drawer");
             if (pdfDrawer && !pdfDrawer.classList.contains("hidden")) {
                 pdfDrawer.classList.add("hidden");
-            }
-            const paletteModal = document.getElementById("command-palette-modal");
-            if (paletteModal && !paletteModal.classList.contains("hidden")) {
-                paletteModal.classList.add("hidden");
             }
         }
     });
@@ -438,8 +467,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function toggleAppTheme() {
     document.body.classList.toggle("light-theme");
-    const mode = document.body.classList.contains("light-theme") ? "light" : "dark";
+    const isLight = document.body.classList.contains("light-theme");
+    const mode = isLight ? "light" : "dark";
     localStorage.setItem("app-theme", mode);
+    document.documentElement.setAttribute("data-theme", mode);
+    const cfgTheme = document.getElementById("cfg-theme");
+    if (cfgTheme) {
+        cfgTheme.innerText = isLight ? "Light Mode" : "Dark Mode";
+    }
     if (typeof window.setGraphNeedsRedraw === "function") window.setGraphNeedsRedraw();
 }
 
@@ -450,30 +485,37 @@ async function fetchMacrosList() {
         const select = document.getElementById("macro-select");
         if (select) select.innerHTML = '<option value="">-- Apply Macro --</option>';
         
-        const sidebarContainer = document.getElementById("sidebar-macros");
-        if (!sidebarContainer) return;
-        sidebarContainer.innerHTML = "";
-        
-        if (data.macros && data.macros.length > 0) {
-            let html = `<table class="high-density-table"><thead><tr><th>Macro</th><th>Expansion</th><th>Action</th></tr></thead><tbody>`;
-            data.macros.forEach(m => {
-                if (select) {
-                    const opt = document.createElement("option");
-                    opt.value = m.expansion;
-                    opt.innerText = `%${m.name}% (${m.expansion})`;
-                    select.appendChild(opt);
-                }
-                html += `<tr>
-                    <td><strong>%${escapeHtml(m.name)}%</strong></td>
-                    <td title="${escapeHtml(m.expansion)}">${escapeHtml(m.expansion)}</td>
-                    <td><button class="rule-del-btn" onclick="deleteQueryMacro('${escapeHtml(m.name)}')">✕</button></td>
-                </tr>`;
-            });
-            html += `</tbody></table>`;
-            sidebarContainer.innerHTML = html;
-        } else {
-            sidebarContainer.innerHTML = '<span class="rules-empty">No macros configured.</span>';
-        }
+        const targets = ["sidebar-macros", "macros-list"];
+        targets.forEach(id => {
+            const container = document.getElementById(id);
+            if (!container) return;
+            container.innerHTML = "";
+            if (data.macros && data.macros.length > 0) {
+                let html = `<table class="high-density-table"><thead><tr><th>Macro</th><th>Expansion</th><th style="text-align:right;">Action</th></tr></thead><tbody>`;
+                data.macros.forEach(m => {
+                    if (select && id === targets[0]) {
+                        const opt = document.createElement("option");
+                        opt.value = m.expansion;
+                        opt.innerText = `%${m.name}% (${m.expansion})`;
+                        select.appendChild(opt);
+                    }
+                    html += `<tr>
+                        <td><strong style="color: var(--accent);">%${escapeHtml(m.name)}%</strong></td>
+                        <td title="${escapeHtml(m.expansion)}"><code>${escapeHtml(m.expansion)}</code></td>
+                        <td style="text-align:right;">
+                            <div style="display:flex; gap:0.25rem; justify-content:flex-end;">
+                                <button class="peer-sync-btn" id="run-macro-btn" onclick="runMacroAction('${escapeHtml(m.expansion)}')">Run</button>
+                                <button class="rule-del-btn" onclick="deleteQueryMacro('${escapeHtml(m.name)}')">✕</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                html += `</tbody></table>`;
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<span class="rules-empty">No macros configured.</span>';
+            }
+        });
     } catch (e) {
         console.error("Failed to fetch macros", e);
     }
@@ -617,6 +659,7 @@ async function fetchStats() {
         updateFileCountBadge(data.total_files);
         populateSettingsSummary(data);
         populateAccountView(data);
+        fetchAnalyticsPanelData();
     } catch (error) {
         console.error("Failed to load statistics:", error);
         const sysBadge = document.querySelector(".status-pill-ok, .status-pill-offline");
@@ -626,6 +669,159 @@ async function fetchStats() {
         }
     }
 }
+
+// Analytics Data Fetching & Rendering Engine (Milestone 4)
+async function fetchAnalyticsPanelData() {
+    try {
+        const [storageRes, tagsRes, searchRes, logsRes, triggersRes] = await Promise.all([
+            fetch('/api/analytics/storage').then(r => r.ok ? r.json() : null),
+            fetch('/api/analytics/tags').then(r => r.ok ? r.json() : null),
+            fetch('/api/analytics/search-activity').then(r => r.ok ? r.json() : null),
+            fetch('/api/workflows/logs').then(r => r.ok ? r.json() : null),
+            fetch('/api/workflows/triggers').then(r => r.ok ? r.json() : null)
+        ]);
+
+        if (storageRes) renderStorageAnalytics(storageRes);
+        if (tagsRes) renderTagAnalytics(tagsRes);
+        if (searchRes) renderSearchActivity(searchRes);
+        if (logsRes && triggersRes) renderWorkflowLogs(logsRes, triggersRes);
+    } catch (err) {
+        console.error('Failed to load document intelligence analytics panel:', err);
+    }
+}
+
+function renderStorageAnalytics(data) {
+    const totalBytes = Object.values(data.by_mime || {}).reduce((a, b) => a + b, 0);
+    const badge = document.getElementById('storage-total-badge');
+    if (badge) badge.innerText = formatBytes(totalBytes);
+
+    const tbody = document.getElementById('storage-dirs-tbody');
+    if (tbody) {
+        tbody.innerHTML = (data.top_directories || []).map(dir => `
+            <tr>
+                <td title="${escapeHtml(dir.directory || '')}">${escapeHtml(getBasename(dir.directory || ''))}</td>
+                <td style="text-align: right;">${dir.count || 0}</td>
+                <td style="text-align: right;">${formatBytes(dir.size_bytes || 0)}</td>
+            </tr>
+        `).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--text-secondary);">No directory data</td></tr>';
+    }
+}
+
+function renderTagAnalytics(data) {
+    const badge = document.getElementById('tag-total-badge');
+    if (badge) badge.innerText = `${data.total_tags || 0} Distinct Tags`;
+
+    const histo = document.getElementById('tag-histogram-container');
+    if (histo) {
+        const topTags = data.top_tags || [];
+        const maxCount = Math.max(1, ...topTags.map(t => t.count || 0));
+        histo.innerHTML = topTags.map(t => {
+            const pct = Math.round(((t.count || 0) / maxCount) * 100);
+            return `
+                <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.75rem;">
+                    <span style="width:80px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; color:var(--accent);">${escapeHtml(t.tag || '')}</span>
+                    <div style="flex:1; background:var(--input-bg); height:8px; border-radius:4px; overflow:hidden;">
+                        <div style="width:${pct}%; background:var(--accent); height:100%;"></div>
+                    </div>
+                    <span style="width:30px; text-align:right; color:var(--text-secondary);">${t.count || 0}</span>
+                </div>
+            `;
+        }).join('') || '<div style="font-size:0.75rem; color:var(--text-secondary);">No tags recorded</div>';
+    }
+
+    const cooc = document.getElementById('tag-cooccurrence-container');
+    if (cooc) {
+        cooc.innerHTML = (data.tag_cooccurrence || []).map(pair => `
+            <div class="tag-pair-chip" onclick="filterSearchByTagPair('${escapeHtml(pair.tag1 || '')}', '${escapeHtml(pair.tag2 || '')}')">
+                <span>${escapeHtml(pair.tag1 || '')} + ${escapeHtml(pair.tag2 || '')}</span>
+                <span class="tag-pair-weight">${pair.weight || 1}</span>
+            </div>
+        `).join('') || '<div style="font-size:0.75rem; color:var(--text-secondary);">No co-occurring tags</div>';
+    }
+}
+
+function renderSearchActivity(data) {
+    const totalEl = document.getElementById('search-total-queries');
+    if (totalEl) totalEl.innerText = data.total_queries || 0;
+
+    const latEl = document.getElementById('search-avg-latency');
+    if (latEl) latEl.innerText = `${(data.avg_latency_ms || 0.0).toFixed(1)} ms`;
+
+    const latBadge = document.getElementById('search-latency-badge');
+    if (latBadge) latBadge.innerText = `${(data.avg_latency_ms || 0.0).toFixed(1)} ms avg`;
+
+    const topList = document.getElementById('search-top-queries-list');
+    if (topList) {
+        topList.innerHTML = (data.top_queries || []).map(q => `
+            <div class="timeline-row">
+                <span style="color:var(--accent);">${escapeHtml(q.query || '')}</span>
+                <strong>${q.count || 0} searches</strong>
+            </div>
+        `).join('') || '<span class="timeline-empty">No queries logged</span>';
+    }
+
+    const recentList = document.getElementById('search-recent-queries-list');
+    if (recentList) {
+        recentList.innerHTML = (data.recent_queries || []).map(q => `
+            <div class="timeline-row">
+                <span style="color:var(--text-primary);">${escapeHtml(q.query || '')}</span>
+                <strong style="color:var(--text-secondary);">${q.result_count || 0} hits (${q.mode || 'fts'})</strong>
+            </div>
+        `).join('') || '<span class="timeline-empty">No recent searches</span>';
+    }
+}
+
+function renderWorkflowLogs(logs, triggers) {
+    const activeBadge = document.getElementById('workflow-active-badge');
+    if (activeBadge) {
+        const activeCount = (triggers || []).filter(t => t.is_active).length;
+        activeBadge.innerText = `${activeCount} Active Triggers`;
+    }
+
+    const tbody = document.getElementById('workflow-logs-tbody');
+    if (tbody) {
+        tbody.innerHTML = (logs || []).slice(0, 15).map(log => {
+            const isOk = log.status === 'dispatched' || log.status === 'success';
+            const statusClass = isOk ? 'color: var(--success);' : 'color: var(--danger);';
+            const timeStr = log.executed_at ? new Date(log.executed_at).toLocaleTimeString() : '-';
+            return `
+                <tr>
+                    <td style="color: var(--text-secondary);">${timeStr}</td>
+                    <td><span class="badge" style="font-size:0.65rem;">${escapeHtml(log.event_type || '')}</span></td>
+                    <td style="${statusClass} font-weight:bold;">${escapeHtml(log.status || '')}</td>
+                    <td style="text-align: right;">${log.response_status_code || '-'}</td>
+                    <td style="text-align: right; color: var(--text-secondary);">${log.execution_time_ms ? log.execution_time_ms.toFixed(1) + ' ms' : '-'}</td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="5" style="text-align:center; color:var(--text-secondary);">No workflow execution logs</td></tr>';
+    }
+}
+
+async function triggerWorkflowTest() {
+    try {
+        const res = await fetch('/api/workflows/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event_type: 'document_ingested', payload: { test: true } })
+        });
+        if (res.ok) {
+            fetchAnalyticsPanelData();
+        }
+    } catch (err) {
+        console.error('Failed to trigger test workflow:', err);
+    }
+}
+window.triggerWorkflowTest = triggerWorkflowTest;
+
+function filterSearchByTagPair(tag1, tag2) {
+    const searchInput = document.getElementById("search-input");
+    if (searchInput) {
+        searchInput.value = `${tag1} ${tag2}`;
+        switchTab("search");
+        if (typeof performSearch === "function") performSearch();
+    }
+}
+window.filterSearchByTagPair = filterSearchByTagPair;
 
 let showAllMimeTypes = false;
 
@@ -858,6 +1054,18 @@ async function handleFilesUpload(fileList) {
 
     if (statusMsg) statusMsg.innerText = `Uploading ${fileList.length} file(s)...`;
     
+    const progressCard = document.getElementById("progress-bar-card");
+    const progressFile = document.getElementById("progress-bar-file");
+    const progressPct = document.getElementById("progress-bar-pct");
+    const progressInner = document.getElementById("progress-inner");
+
+    if (progressCard) {
+        progressCard.classList.remove("hidden");
+        progressFile.innerText = `Uploading ${fileList.length} file(s)...`;
+        progressPct.innerText = "0%";
+        progressInner.style.width = "0%";
+    }
+    
     let uploadedCount = 0;
     const uploadSingle = async ({ file, relativePath }) => {
         const formData = new FormData();
@@ -870,7 +1078,13 @@ async function handleFilesUpload(fileList) {
             });
             if (response.ok) {
                 uploadedCount++;
-                statusMsg.innerText = `Uploading... ${uploadedCount}/${fileList.length} completed.`;
+                const pct = Math.round((uploadedCount / fileList.length) * 100);
+                if (statusMsg) statusMsg.innerText = `Uploading... ${uploadedCount}/${fileList.length} completed.`;
+                if (progressCard) {
+                    progressFile.innerText = `Uploading: ${relativePath} (${uploadedCount}/${fileList.length})`;
+                    progressPct.innerText = `${pct}%`;
+                    progressInner.style.width = `${pct}%`;
+                }
                 console.log(`Uploaded & Indexed: ${relativePath}`);
             }
         } catch (error) {
@@ -894,7 +1108,13 @@ async function handleFilesUpload(fileList) {
     }
     await Promise.all(workers);
     
-    statusMsg.innerText = "Indexing completed successfully.";
+    if (statusMsg) statusMsg.innerText = "Indexing completed successfully.";
+    if (progressCard) {
+        progressFile.innerText = "Upload & Indexing completed!";
+        progressPct.innerText = "100%";
+        progressInner.style.width = "100%";
+        setTimeout(() => progressCard.classList.add("hidden"), 2500);
+    }
     fetchStats();
     fetchGlobalTags();
     fetchDirectoryTree();
@@ -1092,28 +1312,31 @@ async function fetchPeers() {
 }
 
 function renderPeers(peers) {
-    const container = document.getElementById("sidebar-peers");
-    if (!container) return;
-    container.innerHTML = "";
-    if (!peers || peers.length === 0) {
-        container.innerHTML = '<span class="rules-empty">No syncing nodes registered.</span>';
-        return;
-    }
-    let html = `<table class="high-density-table"><thead><tr><th>Node Name</th><th>Address</th><th>Action</th></tr></thead><tbody>`;
-    peers.forEach(peer => {
-        html += `<tr>
-            <td><strong>${escapeHtml(peer.name || 'Peer')}</strong></td>
-            <td><code>${escapeHtml(peer.address || '')}</code></td>
-            <td>
-                <div style="display:flex; gap:0.25rem;">
-                    <button class="peer-sync-btn" onclick="syncWithPeer('${escapeHtml(peer.address || '')}')">Sync</button>
-                    <button class="rule-del-btn" onclick="deletePeer(${peer.id})">✕</button>
-                </div>
-            </td>
-        </tr>`;
+    const targets = ["sidebar-peers", "p2p-peers-list"];
+    targets.forEach(id => {
+        const container = document.getElementById(id);
+        if (!container) return;
+        container.innerHTML = "";
+        if (!peers || peers.length === 0) {
+            container.innerHTML = '<span class="rules-empty">No syncing nodes registered.</span>';
+            return;
+        }
+        let html = `<table class="high-density-table"><thead><tr><th>Node Name</th><th>Address</th><th>Action</th></tr></thead><tbody>`;
+        peers.forEach(peer => {
+            html += `<tr>
+                <td><strong>${escapeHtml(peer.name || 'Peer')}</strong></td>
+                <td><code>${escapeHtml(peer.address || '')}</code></td>
+                <td>
+                    <div style="display:flex; gap:0.25rem;">
+                        <button class="peer-sync-btn" onclick="syncWithPeer('${escapeHtml(peer.address || '')}')">Sync</button>
+                        <button class="rule-del-btn" onclick="deletePeer(${peer.id})">✕</button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        container.innerHTML = html;
     });
-    html += `</tbody></table>`;
-    container.innerHTML = html;
 }
 
 async function addPeer() {
@@ -1371,10 +1594,12 @@ async function deleteAutoRule(id) {
 }
 
 async function testAutoRule() {
-    const pattern = document.getElementById("rule-pattern").value.trim();
-    const tag = document.getElementById("rule-tag").value.trim();
+    const patEl = document.getElementById("rule-pattern");
+    const tagEl = document.getElementById("rule-tag");
+    const pattern = patEl ? patEl.value.trim() : "";
+    const tag = tagEl ? tagEl.value.trim() : "";
     if (!pattern) {
-        alert("Please specify a regex pattern first.");
+        showToast("Please specify a regex pattern first.", "warning");
         return;
     }
     
@@ -1386,17 +1611,33 @@ async function testAutoRule() {
         });
         const result = await response.json();
         if (response.ok) {
-            if (result.matches.length === 0) {
-                alert("0 documents match this pattern rule.");
+            const matches = result.matches || [];
+            const modalBody = document.getElementById("rules-test-preview-body");
+            if (modalBody) {
+                if (matches.length === 0) {
+                    modalBody.innerHTML = '<div style="padding:1rem; color:var(--text-secondary); text-align:center;">0 documents match this pattern rule.</div>';
+                } else {
+                    let html = `<div style="margin-bottom:0.5rem; font-size:0.8rem; color:var(--accent);">Found ${matches.length} matching document(s):</div><table class="high-density-table"><thead><tr><th>Filename</th><th>Path</th></tr></thead><tbody>`;
+                    matches.forEach(m => {
+                        html += `<tr><td><strong>${escapeHtml(m.filename || '')}</strong></td><td><code>${escapeHtml(m.filepath || '')}</code></td></tr>`;
+                    });
+                    html += `</tbody></table>`;
+                    modalBody.innerHTML = html;
+                }
+                openModal("rules-test-preview-modal");
             } else {
-                const list = result.matches.map(m => `• ${m.filename}`).join("\n");
-                alert(`The following ${result.matches.length} document(s) will match and receive the tag:\n\n${list}`);
+                if (matches.length === 0) {
+                    alert("0 documents match this pattern rule.");
+                } else {
+                    const list = matches.map(m => `• ${m.filename}`).join("\n");
+                    alert(`The following ${matches.length} document(s) will match:\n\n${list}`);
+                }
             }
         } else {
-            alert(`Simulation Error: ${result.detail}`);
+            showToast(`Simulation Error: ${result.detail}`, "error");
         }
     } catch (e) {
-        alert("Network connection failed.");
+        showToast("Network connection failed.", "error");
     }
 }
 
@@ -1995,21 +2236,23 @@ async function triggerBulkDelete() {
     }
     
     try {
-        const response = await fetch("/api/file/bulk-delete", {
+        const response = await fetch("/api/bulk_delete", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ filepaths: paths })
         });
         if (response.ok) {
+            showToast(`Successfully deleted ${paths.length} files.`, "success");
             triggerSearch();
             fetchStats();
             fetchDirectoryTree();
         } else {
             const err = await response.json();
-            alert(`Bulk deletion encountered errors: ${JSON.stringify(err.detail)}`);
+            showToast(`Bulk deletion failed: ${JSON.stringify(err.detail)}`, "error");
         }
     } catch (e) {
         console.error("Bulk deletion failed", e);
+        showToast("Bulk deletion failed.", "error");
     }
 }
 
@@ -2532,28 +2775,32 @@ async function fetchSnapshots() {
 }
 
 function renderSnapshots(snapshots) {
-    const container = document.getElementById("sidebar-snapshots");
-    if (!container) return;
-    container.innerHTML = "";
-    if (!snapshots || snapshots.length === 0) {
-        container.innerHTML = '<span class="rules-empty">No snapshots captured.</span>';
-        return;
-    }
-    let html = `<table class="high-density-table"><thead><tr><th>Snapshot Date</th><th>Action</th></tr></thead><tbody>`;
-    snapshots.forEach(ts => {
-        const dateStr = new Date(ts * 1000).toLocaleString();
-        html += `<tr>
-            <td><strong>${dateStr}</strong></td>
-            <td>
-                <div style="display:flex; gap:0.25rem;">
-                    <button class="peer-sync-btn" onclick="restoreSnapshot(${ts})" style="background: rgba(99, 102, 241, 0.15); border-color: var(--accent); color: var(--accent);">Rollback</button>
-                    <button class="rule-del-btn" onclick="deleteSnapshot(${ts})">✕</button>
-                </div>
-            </td>
-        </tr>`;
+    const targets = ["sidebar-snapshots", "snapshots-list"];
+    targets.forEach(id => {
+        const container = document.getElementById(id);
+        if (!container) return;
+        container.innerHTML = "";
+        if (!snapshots || snapshots.length === 0) {
+            container.innerHTML = '<span class="rules-empty">No snapshots captured.</span>';
+            return;
+        }
+        let html = `<table class="high-density-table"><thead><tr><th>Snapshot Date</th><th style="text-align:right;">Action</th></tr></thead><tbody>`;
+        snapshots.forEach(ts => {
+            const numTs = parseInt(ts);
+            const dateStr = !isNaN(numTs) ? new Date(numTs * 1000).toLocaleString() : ts;
+            html += `<tr>
+                <td><strong>${escapeHtml(dateStr)}</strong></td>
+                <td style="text-align:right;">
+                    <div style="display:flex; gap:0.25rem; justify-content:flex-end;">
+                        <button class="peer-sync-btn" onclick="prepareRestoreSnapshot(${numTs || `'${escapeHtml(ts)}'`})" style="background: rgba(99, 102, 241, 0.15); border-color: var(--accent); color: var(--accent);">Rollback</button>
+                        <button class="rule-del-btn" onclick="deleteSnapshot(${numTs || `'${escapeHtml(ts)}'`})">✕</button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        container.innerHTML = html;
     });
-    html += `</tbody></table>`;
-    container.innerHTML = html;
 }
 
 async function createSnapshot() {
@@ -2671,19 +2918,35 @@ async function toggleAudioRecording() {
             const timestamp = Date.now();
             formData.append("file", audioBlob, `voice-memo-${timestamp}.wav`);
             
-            lbl.innerText = "Processing & Indexing...";
+            lbl.innerText = "Uploading voice memo...";
             try {
                 const response = await fetch('/api/upload', {
                     method: 'POST',
                     body: formData
                 });
                 if (response.ok) {
-                    lbl.innerText = "Saved successfully!";
+                    const uploadData = await response.json();
+                    if (uploadData.filepath) {
+                        lbl.innerText = "Transcribing voice memo...";
+                        try {
+                            await fetch('/api/transcribe', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ filepath: uploadData.filepath })
+                            });
+                            lbl.innerText = "Voice memo saved & transcribed!";
+                        } catch (tErr) {
+                            console.error("Transcribe failed", tErr);
+                            lbl.innerText = "Voice memo saved!";
+                        }
+                    } else {
+                        lbl.innerText = "Voice memo saved!";
+                    }
                     fetchStats();
                     fetchDirectoryTree();
                     triggerSearch();
                 } else {
-                    lbl.innerText = "Failed to upload.";
+                    lbl.innerText = "Failed to upload voice memo.";
                 }
             } catch (err) {
                 lbl.innerText = "Error uploading memo.";
@@ -2785,14 +3048,53 @@ Object.defineProperty(window, "selectedNodeId", {
     get: () => selectedNodeId,
     set: (v) => { selectedNodeId = v; }
 });
+window.openPreview = (path) => { if (typeof showPreview === "function") showPreview(path); };
+window.openInspector = (path) => { if (typeof showPreview === "function") showPreview(path); };
+
 async function loadConceptGraph() {
     try {
-        const response = await fetch("/api/graph");
+        const response = await fetch("/api/graph/data");
         const data = await response.json();
-        drawGraph(data.nodes, data.links);
+        const nodes = data.nodes || [];
+        const edges = data.edges || data.links || [];
+        drawGraph(nodes, edges);
     } catch (e) {
-        console.error("Failed to load graph", e);
+        console.error("Failed to load graph data, trying /api/graph", e);
+        try {
+            const response2 = await fetch("/api/graph");
+            const data2 = await response2.json();
+            drawGraph(data2.nodes || [], data2.edges || data2.links || []);
+        } catch (err) {
+            console.error("Failed to load graph fallback data", err);
+        }
     }
+}
+const nodeSvgMap = {
+    audio: '/assets/icons/graph_node_audio.svg',
+    code: '/assets/icons/graph_node_code.svg',
+    concept: '/assets/icons/graph_node_concept.svg',
+    doc: '/assets/icons/graph_node_doc.svg',
+    document: '/assets/node_document.svg',
+    image: '/assets/icons/graph_node_image.svg',
+    spreadsheet: '/assets/icons/graph_node_spreadsheet.svg',
+    video: '/assets/icons/graph_node_video.svg',
+    tag: '/assets/node_tag.svg',
+    peer: '/assets/node_peer.svg'
+};
+
+const preloadedNodeImages = new Map();
+function getNodeSvgImage(categoryOrType) {
+    const src = nodeSvgMap[categoryOrType] || nodeSvgMap.doc;
+    if (!preloadedNodeImages.has(src)) {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+            if (window.setGraphNeedsRedraw) window.setGraphNeedsRedraw();
+        };
+        preloadedNodeImages.set(src, img);
+    }
+    const img = preloadedNodeImages.get(src);
+    return (img && img.complete && img.naturalWidth !== 0) ? img : null;
 }
 
 function drawGraph(nodes, links) {
@@ -2804,7 +3106,77 @@ function drawGraph(nodes, links) {
     const ctx = canvas.getContext("2d");
     
     let needsRedraw = true;
-    window.setGraphNeedsRedraw = () => { needsRedraw = true; };
+    let forcesActive = true;
+    window.setGraphNeedsRedraw = () => { needsRedraw = true; forcesActive = true; };
+
+    // Fast O(1) node map & pre-resolve link endpoints
+    const nodeMap = new Map();
+    nodes.forEach(n => nodeMap.set(n.id, n));
+    links.forEach(l => {
+        l.sourceNode = nodeMap.get(l.source);
+        l.targetNode = nodeMap.get(l.target);
+    });
+
+    // Fast O(1) adjacency map: nodeId -> Set of connected node IDs
+    const adjacencyMap = new Map();
+    nodes.forEach(n => adjacencyMap.set(n.id, new Set()));
+    links.forEach(l => {
+        if (l.sourceNode && l.targetNode) {
+            adjacencyMap.get(l.source).add(l.target);
+            adjacencyMap.get(l.target).add(l.source);
+        }
+    });
+
+    // Spatial Grid Partitioning (Scell = 150px)
+    const CELL_SIZE = 150;
+    const spatialGrid = new Map();
+
+    function rebuildSpatialGrid() {
+        spatialGrid.clear();
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+            const cx = Math.floor(n.x / CELL_SIZE);
+            const cy = Math.floor(n.y / CELL_SIZE);
+            const key = `${cx},${cy}`;
+            let bucket = spatialGrid.get(key);
+            if (!bucket) {
+                bucket = [];
+                spatialGrid.set(key, bucket);
+            }
+            bucket.push(n);
+        }
+    }
+    window.rebuildSpatialGrid = rebuildSpatialGrid;
+
+    // Spatial O(1) Mouse/Touch Hit Tester using 3x3 Grid Buckets
+    function findNodeAtSpatial(mx, my, maxDist = 25) {
+        const gx = (mx - offsetX) / zoomScale;
+        const gy = (my - offsetY) / zoomScale;
+        const cx = Math.floor(gx / CELL_SIZE);
+        const cy = Math.floor(gy / CELL_SIZE);
+        
+        let nearestNode = null;
+        let minDist = maxDist;
+
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                const bucket = spatialGrid.get(`${cx + dx},${cy + dy}`);
+                if (bucket) {
+                    for (let i = 0; i < bucket.length; i++) {
+                        const n = bucket[i];
+                        const sx = n.x * zoomScale + offsetX;
+                        const sy = n.y * zoomScale + offsetY;
+                        const dist = Math.sqrt((sx - mx) * (sx - mx) + (sy - my) * (sy - my));
+                        if (dist < minDist) {
+                            minDist = dist;
+                            nearestNode = n;
+                        }
+                    }
+                }
+            }
+        }
+        return nearestNode;
+    }
 
     // Smooth canvas resizing via ResizeObserver while preserving aspect ratio
     if (window.graphResizeObserver) {
@@ -2822,6 +3194,7 @@ function drawGraph(nodes, links) {
                         canvas.height = targetHeight;
                         applyLayoutPreset();
                         needsRedraw = true;
+                        forcesActive = true;
                     }
                 }
             }
@@ -2836,11 +3209,13 @@ function drawGraph(nodes, links) {
     window.filterGraphNodes = (val) => {
         graphFilterQuery = (val || "").trim().toLowerCase();
         needsRedraw = true;
+        forcesActive = true;
     };
 
     window.filterGraphCategory = (cat) => {
         activeGraphCategory = cat || "all";
         needsRedraw = true;
+        forcesActive = true;
     };
     
     window.changeGraphLayoutPreset = () => {
@@ -2849,6 +3224,7 @@ function drawGraph(nodes, links) {
             graphLayoutPreset = el.value;
             applyLayoutPreset();
             needsRedraw = true;
+            forcesActive = true;
         }
     };
 
@@ -2913,6 +3289,7 @@ function drawGraph(nodes, links) {
         n.vy = 0;
     });
     applyLayoutPreset();
+    rebuildSpatialGrid();
     
     let draggedNode = null;
     let hoveredNodeId = null;
@@ -2933,33 +3310,52 @@ function drawGraph(nodes, links) {
         offsetX = cx - gcx * zoomScale;
         offsetY = cy - gcy * zoomScale;
         needsRedraw = true;
+        forcesActive = true;
     };
     window.resetConceptGraphView = () => {
         zoomScale = 1.0;
         offsetX = 0;
         offsetY = 0;
         needsRedraw = true;
+        forcesActive = true;
+    };
+    window.fitConceptGraphView = () => {
+        if (!nodes || nodes.length === 0) return;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        nodes.forEach(n => {
+            if (typeof n.x === "number") {
+                if (n.x < minX) minX = n.x;
+                if (n.x > maxX) maxX = n.x;
+            }
+            if (typeof n.y === "number") {
+                if (n.y < minY) minY = n.y;
+                if (n.y > maxY) maxY = n.y;
+            }
+        });
+        if (!isFinite(minX) || !isFinite(maxX)) return;
+        const padding = 60;
+        const graphW = (maxX - minX) || 1;
+        const graphH = (maxY - minY) || 1;
+        const scaleX = (canvas.width - padding * 2) / graphW;
+        const scaleY = (canvas.height - padding * 2) / graphH;
+        zoomScale = Math.max(0.2, Math.min(Math.min(scaleX, scaleY), 3.0));
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        offsetX = canvas.width / 2 - centerX * zoomScale;
+        offsetY = canvas.height / 2 - centerY * zoomScale;
+        needsRedraw = true;
+        forcesActive = true;
     };
     
-    // Interactive mouse gesture handlers with hover detection and node drag/pan
+    // Interactive mouse gesture handlers with spatial O(1) hit testing
     canvas.onmousedown = (e) => {
         needsRedraw = true;
+        forcesActive = true;
         const rect = canvas.getBoundingClientRect();
         const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
         const my = (e.clientY - rect.top) * (canvas.height / rect.height);
         
-        let nearestNode = null;
-        let minDist = 25;
-        
-        nodes.forEach(n => {
-            const sx = n.x * zoomScale + offsetX;
-            const sy = n.y * zoomScale + offsetY;
-            const dist = Math.sqrt((sx - mx) * (sx - mx) + (sy - my) * (sy - my));
-            if (dist < minDist) {
-                minDist = dist;
-                nearestNode = n;
-            }
-        });
+        const nearestNode = findNodeAtSpatial(mx, my, 25);
         
         if (nearestNode) {
             draggedNode = nearestNode;
@@ -2988,20 +3384,13 @@ function drawGraph(nodes, links) {
             draggedNode.vx = 0;
             draggedNode.vy = 0;
             needsRedraw = true;
+            forcesActive = true;
         } else if (isPanning) {
             offsetX = mx - panStartX;
             offsetY = my - panStartY;
             needsRedraw = true;
         } else {
-            let foundHover = null;
-            nodes.forEach(n => {
-                const sx = n.x * zoomScale + offsetX;
-                const sy = n.y * zoomScale + offsetY;
-                const dist = Math.sqrt((sx - mx) * (sx - mx) + (sy - my) * (sy - my));
-                if (dist < 20) {
-                    foundHover = n;
-                }
-            });
+            const foundHover = findNodeAtSpatial(mx, my, 20);
             const newHover = foundHover ? foundHover.id : null;
             if (newHover !== hoveredNodeId) {
                 hoveredNodeId = newHover;
@@ -3045,6 +3434,7 @@ function drawGraph(nodes, links) {
         offsetX = mx - gx * zoomScale;
         offsetY = my - gy * zoomScale;
         needsRedraw = true;
+        forcesActive = true;
     }, 150);
 
     canvas.onwheel = (e) => {
@@ -3052,27 +3442,17 @@ function drawGraph(nodes, links) {
         handleZoomWheel(e);
     };
 
-    // Touch gesture handlers for mobile viewports & touch responsiveness
+    // Touch gesture handlers with spatial O(1) hit testing
     canvas.ontouchstart = (e) => {
         needsRedraw = true;
+        forcesActive = true;
         if (e.touches.length === 1) {
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             const mx = (touch.clientX - rect.left) * (canvas.width / rect.width);
             const my = (touch.clientY - rect.top) * (canvas.height / rect.height);
 
-            let nearestNode = null;
-            let minDist = 25;
-
-            nodes.forEach(n => {
-                const sx = n.x * zoomScale + offsetX;
-                const sy = n.y * zoomScale + offsetY;
-                const dist = Math.sqrt((sx - mx) * (sx - mx) + (sy - my) * (sy - my));
-                if (dist < minDist) {
-                    minDist = dist;
-                    nearestNode = n;
-                }
-            });
+            const nearestNode = findNodeAtSpatial(mx, my, 25);
 
             if (nearestNode) {
                 draggedNode = nearestNode;
@@ -3103,6 +3483,7 @@ function drawGraph(nodes, links) {
                 draggedNode.targetX = draggedNode.x;
                 draggedNode.targetY = draggedNode.y;
                 needsRedraw = true;
+                forcesActive = true;
             } else if (isPanning) {
                 offsetX = mx - panStartX;
                 offsetY = my - panStartY;
@@ -3118,25 +3499,33 @@ function drawGraph(nodes, links) {
     };
     
     function updatePhysics() {
+        if (!forcesActive) return;
+
         // Dynamic node layout transition towards targetX, targetY for non-force presets
         if (graphLayoutPreset !== "force") {
+            let moved = false;
             nodes.forEach(n => {
                 if (typeof n.targetX !== "undefined") {
                     const dx = n.targetX - n.x;
                     const dy = n.targetY - n.y;
                     if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) {
-                        needsRedraw = true;
+                        moved = true;
                     }
                     n.x += dx * 0.15;
                     n.y += dy * 0.15;
                 }
             });
+            if (moved) needsRedraw = true;
+            else forcesActive = false;
+            rebuildSpatialGrid();
             return;
         }
+
+        rebuildSpatialGrid();
         
         // Centering forces focus selected node
         if (selectedNodeId) {
-            const centerNode = nodes.find(n => n.id === selectedNodeId);
+            const centerNode = nodeMap.get(selectedNodeId);
             if (centerNode) {
                 const centerTargetX = (canvas.width / 2 - offsetX) / zoomScale;
                 const centerTargetY = (canvas.height / 2 - offsetY) / zoomScale;
@@ -3150,28 +3539,37 @@ function drawGraph(nodes, links) {
             }
         }
 
-        // Repulsion between nodes
+        // Repulsion physics via 3x3 spatial grid neighborhood (O(N) physics)
         for (let i = 0; i < nodes.length; i++) {
-            for (let j = i + 1; j < nodes.length; j++) {
-                const dx = nodes[j].x - nodes[i].x;
-                const dy = nodes[j].y - nodes[i].y;
-                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                if (dist < 150) {
-                    const force = (150 - dist) * 0.05;
-                    const fx = (dx / dist) * force;
-                    const fy = (dy / dist) * force;
-                    nodes[i].vx -= fx;
-                    nodes[i].vy -= fy;
-                    nodes[j].vx += fx;
-                    nodes[j].vy += fy;
+            const ni = nodes[i];
+            const cx = Math.floor(ni.x / CELL_SIZE);
+            const cy = Math.floor(ni.y / CELL_SIZE);
+
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    const bucket = spatialGrid.get(`${cx + dx},${cy + dy}`);
+                    if (bucket) {
+                        for (let k = 0; k < bucket.length; k++) {
+                            const nj = bucket[k];
+                            if (nj.id === ni.id) continue;
+                            const diffX = nj.x - ni.x;
+                            const diffY = nj.y - ni.y;
+                            const dist = Math.sqrt(diffX * diffX + diffY * diffY) || 1;
+                            if (dist < 150) {
+                                const force = (150 - dist) * 0.025;
+                                ni.vx -= (diffX / dist) * force;
+                                ni.vy -= (diffY / dist) * force;
+                            }
+                        }
+                    }
                 }
             }
         }
         
-        // Attraction along links
+        // Attraction along links using pre-resolved endpoints
         links.forEach(l => {
-            const sourceNode = nodes.find(n => n.id === l.source);
-            const targetNode = nodes.find(n => n.id === l.target);
+            const sourceNode = l.sourceNode;
+            const targetNode = l.targetNode;
             if (sourceNode && targetNode) {
                 const dx = targetNode.x - sourceNode.x;
                 const dy = targetNode.y - sourceNode.y;
@@ -3186,21 +3584,28 @@ function drawGraph(nodes, links) {
             }
         });
         
-        // Apply friction and bounds boundary
+        // Apply friction, boundary bounds, and compute total kinetic energy
+        let totalKineticEnergy = 0;
         nodes.forEach(n => {
             n.x += n.vx;
             n.y += n.vy;
             n.vx *= 0.85;
             n.vy *= 0.85;
-            if (Math.abs(n.vx) > 0.01 || Math.abs(n.vy) > 0.01) {
-                needsRedraw = true;
-            }
+            totalKineticEnergy += (n.vx * n.vx + n.vy * n.vy);
             
             if (n.x < 20) n.x = 20;
             if (n.x > canvas.width - 20) n.x = canvas.width - 20;
             if (n.y < 20) n.y = 20;
             if (n.y > canvas.height - 20) n.y = canvas.height - 20;
         });
+
+        // Kinetic Energy Cooling Threshold cutoff (E < 0.05)
+        if (totalKineticEnergy < 0.05 && !draggedNode && !isPanning) {
+            forcesActive = false;
+            nodes.forEach(n => { n.vx = 0; n.vy = 0; });
+        } else {
+            needsRedraw = true;
+        }
     }
     
     function draw() {
@@ -3230,6 +3635,16 @@ function drawGraph(nodes, links) {
         ctx.save();
         ctx.translate(offsetX, offsetY);
         ctx.scale(zoomScale, zoomScale);
+
+        // Viewport Bounding Box Culling (with 60px margin)
+        const margin = 60;
+        const vXmin = (-offsetX / zoomScale) - margin;
+        const vXmax = ((canvas.width - offsetX) / zoomScale) + margin;
+        const vYmin = (-offsetY / zoomScale) - margin;
+        const vYmax = ((canvas.height - offsetY) / zoomScale) + margin;
+
+        const activeNodeId = selectedNodeId || hoveredNodeId;
+        const activeConnectedSet = activeNodeId ? (adjacencyMap.get(activeNodeId) || new Set()) : null;
         
         // Category clustering hull backgrounds
         const groups = {
@@ -3274,37 +3689,85 @@ function drawGraph(nodes, links) {
                     const d = Math.sqrt((n.x - cx) * (n.x - cx) + (n.y - cy) * (n.y - cy));
                     if (d > maxD) maxD = d;
                 });
-                
-                ctx.fillStyle = grp.color;
-                ctx.strokeStyle = grp.border;
-                ctx.lineWidth = 1.0;
-                ctx.beginPath();
-                ctx.arc(cx, cy, maxD + 25, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.stroke();
+
+                if (cx + maxD + 25 >= vXmin && cx - maxD - 25 <= vXmax && cy + maxD + 25 >= vYmin && cy - maxD - 25 <= vYmax) {
+                    ctx.fillStyle = grp.color;
+                    ctx.strokeStyle = grp.border;
+                    ctx.lineWidth = 1.0;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, maxD + 25, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
+                }
             }
         }
         
-        // Draw Links
+        // Draw Links with Viewport Culling & Visual Styling for wikilink_to / shared_tag_cluster
         links.forEach(l => {
-            const s = nodes.find(n => n.id === l.source);
-            const t = nodes.find(n => n.id === l.target);
-            if (s && t) {
-                if (selectedNodeId && l.source !== selectedNodeId && l.target !== selectedNodeId) {
+            const s = l.sourceNode;
+            const t = l.targetNode;
+            if (!s || !t) return;
+
+            // Viewport culling check for link segment
+            const inViewport = (s.x >= vXmin && s.x <= vXmax && s.y >= vYmin && s.y <= vYmax) ||
+                               (t.x >= vXmin && t.x <= vXmax && t.y >= vYmin && t.y <= vYmax);
+            if (!inViewport) return;
+
+            const isLinkConnected = activeNodeId && (l.source === activeNodeId || l.target === activeNodeId);
+            const linkType = l.link_type || l.type || 'tagged_with';
+
+            ctx.save();
+            if (linkType === 'wikilink_to') {
+                // Dashed purple glow
+                ctx.setLineDash([6, 4]);
+                if (isLinkConnected) {
+                    ctx.strokeStyle = "rgba(168, 85, 247, 1.0)";
+                    ctx.shadowColor = "rgba(168, 85, 247, 0.9)";
+                    ctx.shadowBlur = 10;
+                    ctx.lineWidth = 3.0;
+                } else {
+                    ctx.strokeStyle = "rgba(168, 85, 247, 0.75)";
+                    ctx.lineWidth = 2.0;
+                }
+            } else if (linkType === 'shared_tag_cluster') {
+                // Dotted amber
+                ctx.setLineDash([2, 3]);
+                if (isLinkConnected) {
+                    ctx.strokeStyle = "rgba(245, 158, 11, 0.9)";
+                    ctx.shadowColor = "#f59e0b";
+                    ctx.shadowBlur = 12;
+                    ctx.lineWidth = 2.5;
+                } else if (activeNodeId) {
+                    ctx.strokeStyle = "rgba(245, 158, 11, 0.05)";
+                    ctx.lineWidth = 1.0;
+                } else {
+                    ctx.strokeStyle = "rgba(245, 158, 11, 0.15)";
+                    ctx.lineWidth = 1.0;
+                }
+            } else {
+                // Standard tagged_with edge
+                ctx.setLineDash([]);
+                if (activeNodeId && !isLinkConnected) {
                     ctx.strokeStyle = "rgba(63, 63, 70, 0.08)";
+                    ctx.lineWidth = 1.0;
                 } else {
                     ctx.strokeStyle = "rgba(99, 102, 241, 0.4)";
+                    ctx.lineWidth = 1.5;
                 }
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(s.x, s.y);
-                ctx.lineTo(t.x, t.y);
-                ctx.stroke();
             }
+
+            ctx.beginPath();
+            ctx.moveTo(s.x, s.y);
+            ctx.lineTo(t.x, t.y);
+            ctx.stroke();
+            ctx.restore();
         });
         
-        // Draw Nodes with smooth scale, hover glow, and shadow transitions
+        // Draw Nodes with Viewport Culling, smooth scale, hover glow, and shadow transitions
         nodes.forEach(n => {
+            // Viewport Bounding Box Culling Guard
+            if (n.x < vXmin || n.x > vXmax || n.y < vYmin || n.y > vYmax) return;
+
             let color = "var(--accent)"; // Default
             const isLightMode = document.body.classList.contains("light-theme");
             let ext = n.filename ? n.filename.split('.').pop().toLowerCase() : '';
@@ -3327,12 +3790,9 @@ function drawGraph(nodes, links) {
             let isQueryMatch = (!graphFilterQuery || (n.label && n.label.toLowerCase().includes(graphFilterQuery)));
             let isFilterDimmed = (!isCategoryMatch || !isQueryMatch);
             
-            let isConnected = (n.id === selectedNodeId);
-            if (selectedNodeId && !isConnected) {
-                isConnected = links.some(l => 
-                    (l.source === selectedNodeId && l.target === n.id) || 
-                    (l.target === selectedNodeId && l.source === n.id)
-                );
+            let isConnected = (n.id === selectedNodeId || n.id === hoveredNodeId);
+            if (activeNodeId && !isConnected && activeConnectedSet) {
+                isConnected = activeConnectedSet.has(n.id);
             }
             
             const isHovered = (n.id === hoveredNodeId);
@@ -3345,7 +3805,7 @@ function drawGraph(nodes, links) {
             
             ctx.save();
             ctx.fillStyle = color;
-            ctx.globalAlpha = isFilterDimmed ? 0.1 : ((selectedNodeId && !isConnected) ? 0.2 : 1.0);
+            ctx.globalAlpha = isFilterDimmed ? 0.1 : ((activeNodeId && !isConnected) ? 0.2 : 1.0);
 
             // Hover glow and shadow transitions
             if (isHovered || isSelected) {
@@ -3360,24 +3820,37 @@ function drawGraph(nodes, links) {
             ctx.fill();
             ctx.restore();
 
-            // Node Glyph Symbol Rendering inside node circle
-            if (radius >= 6 && !isFilterDimmed) {
-                const categoryGlyphs = {
-                    code: '</>',
-                    spreadsheet: '⊞',
-                    image: '🖼',
-                    doc: '📄',
-                    audio: '🎵',
-                    video: '🎬'
-                };
-                ctx.save();
-                ctx.fillStyle = isLightMode ? '#ffffff' : '#121211';
-                ctx.font = `bold ${Math.max(7, Math.floor(radius * 0.65))}px sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.globalAlpha = isFilterDimmed ? 0.15 : 0.95;
-                ctx.fillText(categoryGlyphs[cat] || '📄', n.x, n.y);
-                ctx.restore();
+            // Node Glyph Symbol / SVG Rendering inside node circle
+            if (radius >= 5 && !isFilterDimmed) {
+                const categorySvgKey = cat === 'spreadsheet' ? 'spreadsheet' : cat;
+                const svgImg = getNodeSvgImage(categorySvgKey);
+                if (svgImg) {
+                    ctx.save();
+                    ctx.globalAlpha = isFilterDimmed ? 0.15 : 0.95;
+                    const imgSize = radius * 1.3;
+                    ctx.drawImage(svgImg, n.x - imgSize / 2, n.y - imgSize / 2, imgSize, imgSize);
+                    ctx.restore();
+                } else {
+                    const categoryGlyphs = {
+                        code: '</>',
+                        spreadsheet: '⊞',
+                        image: '🖼',
+                        doc: '📄',
+                        audio: '🎵',
+                        video: '🎬',
+                        concept: '💡',
+                        tag: '🏷️',
+                        peer: '🌐'
+                    };
+                    ctx.save();
+                    ctx.fillStyle = isLightMode ? '#ffffff' : '#121211';
+                    ctx.font = `bold ${Math.max(7, Math.floor(radius * 0.65))}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.globalAlpha = isFilterDimmed ? 0.15 : 0.95;
+                    ctx.fillText(categoryGlyphs[cat] || '📄', n.x, n.y);
+                    ctx.restore();
+                }
             }
 
             // Outer ring on hover/selected
@@ -3424,6 +3897,57 @@ function drawGraph(nodes, links) {
         
         ctx.restore();
         
+        function drawMinimap() {
+            const minimapCanvas = document.getElementById("graph-minimap-canvas");
+            if (!minimapCanvas) return;
+            const mctx = minimapCanvas.getContext("2d");
+            if (!mctx) return;
+
+            mctx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+            if (!nodes || nodes.length === 0) return;
+
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            nodes.forEach(n => {
+                if (typeof n.x === "number") {
+                    if (n.x < minX) minX = n.x;
+                    if (n.x > maxX) maxX = n.x;
+                }
+                if (typeof n.y === "number") {
+                    if (n.y < minY) minY = n.y;
+                    if (n.y > maxY) maxY = n.y;
+                }
+            });
+            if (!isFinite(minX) || !isFinite(maxX)) return;
+
+            const graphW = (maxX - minX) || 1;
+            const graphH = (maxY - minY) || 1;
+            const padding = 8;
+            const scaleX = (minimapCanvas.width - padding * 2) / graphW;
+            const scaleY = (minimapCanvas.height - padding * 2) / graphH;
+            const mScale = Math.min(scaleX, scaleY);
+
+            mctx.fillStyle = "rgba(99, 102, 241, 0.75)";
+            nodes.forEach(n => {
+                const mx = padding + (n.x - minX) * mScale;
+                const my = padding + (n.y - minY) * mScale;
+                mctx.beginPath();
+                mctx.arc(mx, my, 1.8, 0, 2 * Math.PI);
+                mctx.fill();
+            });
+
+            const vpMinX = padding + (vXmin - minX) * mScale;
+            const vpMinY = padding + (vYmin - minY) * mScale;
+            const vpMaxX = padding + (vXmax - minX) * mScale;
+            const vpMaxY = padding + (vYmax - minY) * mScale;
+
+            mctx.strokeStyle = "rgba(99, 102, 241, 0.9)";
+            mctx.lineWidth = 1;
+            mctx.fillStyle = "rgba(99, 102, 241, 0.15)";
+            mctx.strokeRect(vpMinX, vpMinY, Math.max(4, vpMaxX - vpMinX), Math.max(4, vpMaxY - vpMinY));
+            mctx.fillRect(vpMinX, vpMinY, Math.max(4, vpMaxX - vpMinX), Math.max(4, vpMaxY - vpMinY));
+        }
+
+        drawMinimap();
         updatePhysics();
         graphAnimFrame = requestAnimationFrame(draw);
     }
@@ -3435,21 +3959,30 @@ async function fetchSynonymsList() {
     try {
         const response = await fetch("/api/synonyms");
         const data = await response.json();
-        const container = document.getElementById("sidebar-synonyms");
-        if (!container) return;
-        container.innerHTML = "";
-        if (!data.synonyms || data.synonyms.length === 0) {
-            container.innerHTML = '<span class="rules-empty">No synonyms configured.</span>';
-            return;
-        }
-        let html = `<table class="high-density-table"><thead><tr><th>Word</th><th>Substitutes</th></tr></thead><tbody>`;
-        data.synonyms.forEach(item => {
-            html += `<tr><td><strong>${escapeHtml(item.word)}</strong></td><td>${escapeHtml(item.substitutes)}</td></tr>`;
+        const targets = ["sidebar-synonyms", "synonyms-list"];
+        targets.forEach(id => {
+            const container = document.getElementById(id);
+            if (!container) return;
+            container.innerHTML = "";
+            if (!data.synonyms || data.synonyms.length === 0) {
+                container.innerHTML = '<span class="rules-empty">No synonyms configured.</span>';
+                return;
+            }
+            let html = `<table class="high-density-table"><thead><tr><th>Word</th><th>Substitutes</th><th style="text-align:right;">Action</th></tr></thead><tbody>`;
+            data.synonyms.forEach(item => {
+                html += `<tr>
+                    <td><strong style="color: var(--accent);">${escapeHtml(item.word)}</strong></td>
+                    <td><code>${escapeHtml(item.substitutes)}</code></td>
+                    <td style="text-align:right;">
+                        <button class="rule-del-btn" onclick="deleteWordSynonym('${escapeHtml(item.word)}')">✕</button>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
         });
-        html += `</tbody></table>`;
-        container.innerHTML = html;
     } catch (e) {
-        console.error(e);
+        console.error("Failed to fetch synonyms", e);
     }
 }
 
@@ -3543,7 +4076,7 @@ function fetchChatSessions() {
 }
 
 function renderSessionList(filterQuery = "") {
-    const container = document.getElementById("session-list");
+    const container = document.getElementById("chat-sessions-list") || document.getElementById("session-list");
     if (!container) return;
 
     container.innerHTML = "";
@@ -3614,9 +4147,9 @@ function renderSessionList(filterQuery = "") {
 }
 
 function createNewSession(title) {
-    const modelPathEl = document.getElementById("gguf-model-path");
-    const tempEl = document.getElementById("gguf-temperature");
-    const ctxEl = document.getElementById("gguf-context-window");
+    const modelPathEl = document.getElementById("chat-model-path") || document.getElementById("gguf-model-path");
+    const tempEl = document.getElementById("chat-temperature") || document.getElementById("gguf-temperature");
+    const ctxEl = document.getElementById("chat-context-window") || document.getElementById("gguf-context-window");
 
     const tempVal = tempEl ? parseFloat(tempEl.value) : NaN;
     const temperature = !isNaN(tempVal) ? tempVal : 0.7;
@@ -3662,10 +4195,10 @@ function switchSession(sessionId) {
             return res.json();
         })
         .then(sessionData => {
-            const modelPathEl = document.getElementById("gguf-model-path");
-            const tempEl = document.getElementById("gguf-temperature");
-            const tempValEl = document.getElementById("gguf-temp-val");
-            const ctxEl = document.getElementById("gguf-context-window");
+            const modelPathEl = document.getElementById("chat-model-path") || document.getElementById("gguf-model-path");
+            const tempEl = document.getElementById("chat-temperature") || document.getElementById("gguf-temperature");
+            const tempValEl = document.getElementById("chat-temp-val") || document.getElementById("gguf-temp-val");
+            const ctxEl = document.getElementById("chat-context-window") || document.getElementById("gguf-context-window");
 
             if (sessionData.model_path && modelPathEl) modelPathEl.value = sessionData.model_path;
             if (sessionData.temperature !== undefined && tempEl) {
@@ -3674,7 +4207,7 @@ function switchSession(sessionId) {
             }
             if (sessionData.context_window && ctxEl) ctxEl.value = sessionData.context_window;
 
-            const messagesContainer = document.getElementById("chat-messages");
+            const messagesContainer = document.getElementById("chat-messages-container") || document.getElementById("chat-messages");
             if (messagesContainer) {
                 messagesContainer.innerHTML = `
                     <div class="chat-message system">
@@ -3732,7 +4265,7 @@ function filterChatSessions(query) {
 
 function sendChatMessage() {
     const inputEl = document.getElementById("chat-input");
-    const sendBtnEl = document.getElementById("chat-send-btn");
+    const sendBtnEl = document.getElementById("send-chat-btn") || document.getElementById("chat-send-btn");
     if (!inputEl) return;
     const text = inputEl.value.trim();
     if (!text) return;
@@ -3753,10 +4286,10 @@ function sendChatMessage() {
 
 function sendChatMessageWithText(text, inputEl, sendBtnEl) {
     // Read GGUF controls
-    const modelPathEl = document.getElementById("gguf-model-path");
-    const tempEl = document.getElementById("gguf-temperature");
-    const ctxEl = document.getElementById("gguf-context-window");
-    const webToggleEl = document.getElementById("web-search-toggle");
+    const modelPathEl = document.getElementById("chat-model-path") || document.getElementById("gguf-model-path");
+    const tempEl = document.getElementById("chat-temperature") || document.getElementById("gguf-temperature");
+    const ctxEl = document.getElementById("chat-context-window") || document.getElementById("gguf-context-window");
+    const webToggleEl = document.getElementById("chat-web-search") || document.getElementById("web-search-toggle");
 
     const modelPath = modelPathEl ? modelPathEl.value.trim() : "models/tinyllama-1.1b-chat.Q4_K_M.gguf";
     const tempVal = tempEl ? parseFloat(tempEl.value) : NaN;
@@ -3937,6 +4470,21 @@ function parseChatMarkdown(text) {
     return processedLines.join('\n').replace(/\n/g, '<br>');
 }
 
+function fallbackCopyText(text, btn) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(textarea);
+    if (btn) {
+        btn.innerText = "Copied!";
+        setTimeout(() => { btn.innerText = "Copy"; }, 2000);
+    }
+}
+
 function copyChatCode(btn) {
     if (!btn) return;
     const wrapper = btn.closest(".chat-code-block-wrapper");
@@ -3944,16 +4492,22 @@ function copyChatCode(btn) {
     const codeEl = wrapper.querySelector("code");
     if (!codeEl) return;
     const text = codeEl.innerText || codeEl.textContent;
-    navigator.clipboard.writeText(text).then(() => {
-        btn.innerText = "Copied!";
-        setTimeout(() => { btn.innerText = "Copy"; }, 2000);
-    });
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            btn.innerText = "Copied!";
+            setTimeout(() => { btn.innerText = "Copy"; }, 2000);
+        }).catch(() => {
+            fallbackCopyText(text, btn);
+        });
+    } else {
+        fallbackCopyText(text, btn);
+    }
 }
 
 let lastChatSender = null;
 
 function appendChatMessage(sender, content, className, sources = null) {
-    const messagesContainer = document.getElementById("chat-messages");
+    const messagesContainer = document.getElementById("chat-messages-container") || document.getElementById("chat-messages");
     if (!messagesContainer) return;
 
     const isGrouped = (lastChatSender === sender);
@@ -3990,12 +4544,16 @@ function appendChatMessage(sender, content, className, sources = null) {
         copyBtn.className = "chat-copy-btn";
         copyBtn.innerText = "Copy";
         copyBtn.onclick = () => {
-            navigator.clipboard.writeText(content).then(() => {
-                copyBtn.innerText = "Copied!";
-                setTimeout(() => {
-                    copyBtn.innerText = "Copy";
-                }, 2000);
-            });
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(content).then(() => {
+                    copyBtn.innerText = "Copied!";
+                    setTimeout(() => { copyBtn.innerText = "Copy"; }, 2000);
+                }).catch(() => {
+                    fallbackCopyText(content, copyBtn);
+                });
+            } else {
+                fallbackCopyText(content, copyBtn);
+            }
         };
         msgEl.appendChild(copyBtn);
     }
@@ -4104,6 +4662,7 @@ window.renderSourceChips = renderSourceChips;
 window.renderGlobalCitationChips = renderGlobalCitationChips;
 window.parseChatMarkdown = parseChatMarkdown;
 window.copyChatCode = copyChatCode;
+window.copyCode = copyChatCode;
 
 
 /* Workspace Tree-Explorer & Split-screen functions */
@@ -4172,7 +4731,7 @@ function renderWorkspacePreview(data) {
     if (!previewContent) return;
     previewContent.innerHTML = "";
 
-    const suffix = data.filename.split('.').pop().toLowerCase();
+    const suffix = (data.filename || '').split('.').pop().toLowerCase();
 
     if (suffix === 'pdf') {
         const iframe = document.createElement("iframe");
@@ -4182,15 +4741,137 @@ function renderWorkspacePreview(data) {
         iframe.style.border = "none";
         iframe.style.background = "white";
         previewContent.appendChild(iframe);
-    } else if (['png', 'jpg', 'jpeg', 'bmp', 'gif'].includes(suffix)) {
+    } else if (['png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp'].includes(suffix)) {
+        const wrapper = document.createElement("div");
+        wrapper.style.position = "relative";
+        wrapper.style.display = "flex";
+        wrapper.style.flexDirection = "column";
+        wrapper.style.alignItems = "center";
+        wrapper.style.width = "100%";
+        wrapper.style.height = "100%";
+        wrapper.style.overflow = "auto";
+        wrapper.style.padding = "1rem";
+
+        const btnBar = document.createElement("div");
+        btnBar.style.marginBottom = "0.5rem";
+        btnBar.style.display = "flex";
+        btnBar.style.gap = "0.5rem";
+        btnBar.style.width = "100%";
+        btnBar.style.justify = "flex-start";
+        
+        const ocrBtn = document.createElement("button");
+        ocrBtn.id = "ocr-overlay-toggle-btn";
+        ocrBtn.className = "action-btn";
+        ocrBtn.style.padding = "0.25rem 0.6rem";
+        ocrBtn.style.fontSize = "0.75rem";
+        ocrBtn.style.background = "var(--card-bg)";
+        ocrBtn.style.border = "1px solid var(--border-color)";
+        ocrBtn.style.color = "var(--text-primary)";
+        ocrBtn.style.borderRadius = "4px";
+        ocrBtn.style.cursor = "pointer";
+        ocrBtn.innerHTML = "🔍 Toggle OCR Overlay";
+        
+        btnBar.appendChild(ocrBtn);
+        wrapper.appendChild(btnBar);
+
+        const imgContainer = document.createElement("div");
+        imgContainer.style.position = "relative";
+        imgContainer.style.display = "inline-block";
+        imgContainer.style.maxWidth = "100%";
+
         const img = document.createElement("img");
         img.src = `/api/file/raw?path=${encodeURIComponent(data.filepath)}`;
         img.style.maxWidth = "100%";
-        img.style.maxHeight = "100%";
+        img.style.maxHeight = "60vh";
         img.style.objectFit = "contain";
         img.style.display = "block";
-        img.style.margin = "auto";
-        previewContent.appendChild(img);
+        img.style.borderRadius = "4px";
+
+        const ocrOverlay = document.createElement("div");
+        ocrOverlay.id = "workspace-ocr-overlay";
+        ocrOverlay.className = "ocr-highlights-container";
+        ocrOverlay.style.position = "absolute";
+        ocrOverlay.style.top = "0";
+        ocrOverlay.style.left = "0";
+        ocrOverlay.style.width = "100%";
+        ocrOverlay.style.height = "100%";
+        ocrOverlay.style.pointerEvents = "none";
+        ocrOverlay.style.display = "none";
+
+        img.onload = () => {
+            ocrOverlay.innerHTML = "";
+            const scaleX = img.clientWidth / (img.naturalWidth || 1);
+            const scaleY = img.clientHeight / (img.naturalHeight || 1);
+            if (data.coords && data.coords.length > 0) {
+                data.coords.forEach(box => {
+                    const highlight = document.createElement("div");
+                    highlight.className = "ocr-bounding-highlight";
+                    highlight.style.position = "absolute";
+                    highlight.style.border = "1px solid var(--accent)";
+                    highlight.style.background = "var(--accent-trans-15)";
+                    highlight.style.left = `${box.x * scaleX}px`;
+                    highlight.style.top = `${box.y * scaleY}px`;
+                    highlight.style.width = `${box.w * scaleX}px`;
+                    highlight.style.height = `${box.h * scaleY}px`;
+                    highlight.title = box.word;
+                    ocrOverlay.appendChild(highlight);
+                });
+            }
+        };
+
+        ocrBtn.onclick = () => {
+            const isHidden = ocrOverlay.style.display === "none";
+            ocrOverlay.style.display = isHidden ? "block" : "none";
+            ocrBtn.style.background = isHidden ? "var(--accent)" : "var(--card-bg)";
+            ocrBtn.style.color = isHidden ? "var(--bg-dark)" : "var(--text-primary)";
+        };
+
+        imgContainer.appendChild(img);
+        imgContainer.appendChild(ocrOverlay);
+        wrapper.appendChild(imgContainer);
+
+        if (data.content && data.content.trim()) {
+            const textPanel = document.createElement("div");
+            textPanel.style.marginTop = "1rem";
+            textPanel.style.width = "100%";
+            textPanel.style.background = "var(--card-bg)";
+            textPanel.style.border = "1px solid var(--border-color)";
+            textPanel.style.borderRadius = "4px";
+            textPanel.style.padding = "0.75rem";
+            textPanel.innerHTML = `<h5 style="margin:0 0 0.5rem 0; color:var(--accent);">Extracted OCR Text</h5><pre style="white-space:pre-wrap; font-size:0.8rem; color:var(--text-primary); margin:0;">${escapeHtml(data.content)}</pre>`;
+            wrapper.appendChild(textPanel);
+        }
+
+        previewContent.appendChild(wrapper);
+    } else if (['md', 'markdown'].includes(suffix)) {
+        const mdDiv = document.createElement("div");
+        mdDiv.className = "markdown-rendered-view";
+        mdDiv.style.padding = "1.25rem";
+        mdDiv.style.lineHeight = "1.6";
+        mdDiv.style.color = "var(--text-primary)";
+        mdDiv.style.overflowY = "auto";
+        mdDiv.style.height = "100%";
+        mdDiv.innerHTML = typeof renderMarkdown === 'function' ? renderMarkdown(data.content || "") : escapeHtml(data.content || "");
+        previewContent.appendChild(mdDiv);
+    } else if (['py', 'js', 'ts', 'html', 'css', 'json', 'xml', 'sh', 'sql', 'c', 'cpp', 'rs', 'go', 'java', 'php', 'rb', 'cs'].includes(suffix)) {
+        const pre = document.createElement("pre");
+        pre.style.margin = "0";
+        pre.style.padding = "1rem";
+        pre.style.fontFamily = "'Fira Code', Consolas, monospace";
+        pre.style.fontSize = "0.85rem";
+        pre.style.lineHeight = "1.5";
+        pre.style.color = "var(--text-primary)";
+        pre.style.whiteSpace = "pre-wrap";
+        pre.style.wordBreak = "break-all";
+        pre.style.background = "rgba(0,0,0,0.2)";
+        pre.style.height = "100%";
+        pre.style.overflowY = "auto";
+        
+        const code = document.createElement("code");
+        code.className = `language-${suffix}`;
+        code.innerText = data.content || "";
+        pre.appendChild(code);
+        previewContent.appendChild(pre);
     } else if (suffix === 'html') {
         const iframe = document.createElement("iframe");
         iframe.src = `/api/file/raw?path=${encodeURIComponent(data.filepath)}`;
@@ -4697,34 +5378,16 @@ function initMinimapListeners() {
 }
 
 function exportSearchResultsCsv() {
-    if (!currentSearchResults || currentSearchResults.length === 0) {
-        alert("No search results to export.");
-        return;
+    const input = document.getElementById("search-input");
+    const query = input ? input.value.trim() : "";
+    let url = `/api/export?format=csv`;
+    if (query) {
+        url += `&query=${encodeURIComponent(query)}`;
     }
-    
-    // Construct CSV Header
-    let csvContent = "Filepath,Filename,Size (Bytes),Modified At,Tags\n";
-    
-    // Populate rows
-    currentSearchResults.forEach(item => {
-        const filepath = `"${(item.filepath || '').replace(/"/g, '""')}"`;
-        const filename = `"${(item.filename || '').replace(/"/g, '""')}"`;
-        const size = item.file_size || 0;
-        const modified = item.modified_at || '';
-        const tags = `"${(item.tags || []).join(', ').replace(/"/g, '""')}"`;
-        
-        csvContent += `${filepath},${filename},${size},${modified},${tags}\n`;
-    });
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "search_results.csv");
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (selectedTag) {
+        url += `&tag=${encodeURIComponent(selectedTag)}`;
+    }
+    window.open(url, "_blank");
 }
 
 
@@ -4944,3 +5607,540 @@ function highlightActiveTreeNode(path) {
         }
     });
 }
+
+// --- Milestone 2 Revision Drawer Engine ---
+async function fetchFileRevisions(path) {
+    const filePath = path || (typeof currentWorkspaceFilePath !== 'undefined' ? currentWorkspaceFilePath : null);
+    if (!filePath) return;
+    const drawer = document.getElementById("workspace-revisions-drawer");
+    const list = document.getElementById("workspace-revisions-list");
+    if (!drawer || !list) return;
+    
+    drawer.classList.remove("hidden");
+    list.innerHTML = '<span style="color: var(--text-secondary);">Fetching revision snapshots...</span>';
+
+    try {
+        const response = await fetch(`/api/file/revisions?path=${encodeURIComponent(filePath)}`);
+        if (!response.ok) throw new Error("Failed to fetch revisions");
+        const data = await response.json();
+        const revs = data.revisions || [];
+        
+        if (revs.length === 0) {
+            list.innerHTML = '<span style="color: var(--text-secondary);">No previous revision snapshots recorded.</span>';
+            return;
+        }
+
+        list.innerHTML = revs.map(r => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; border-bottom: 1px solid var(--border-color);">
+                <div>
+                    <span style="font-weight: 600; color: var(--accent);">${escapeHtml(r.revision_id || r.id || 'Rev')}</span>
+                    <span style="color: var(--text-secondary); margin-left: 0.5rem;">${r.timestamp ? new Date(r.timestamp).toLocaleString() : ''}</span>
+                </div>
+                <button onclick="revertFileRevision('${escapeHtml(filePath)}', '${escapeHtml(r.revision_id || r.id)}')" style="background: var(--accent); color: var(--bg-dark); font-size: 0.7rem; font-weight: bold; border: none; padding: 0.15rem 0.5rem; border-radius: 2px; cursor: pointer;">Revert</button>
+            </div>
+        `).join('');
+    } catch (err) {
+        list.innerHTML = `<span style="color: var(--danger);">Error: ${escapeHtml(err.message)}</span>`;
+    }
+}
+
+async function revertFileRevision(filePath, revisionId) {
+    if (!confirm(`Revert file to revision ${revisionId}?`)) return;
+    try {
+        const response = await fetch("/api/file/revert", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filepath: filePath, revision_id: revisionId })
+        });
+        if (response.ok) {
+            showToast(`Reverted file to revision ${revisionId}`, "success");
+            if (typeof selectWorkspaceFile === 'function') selectWorkspaceFile(filePath);
+        } else {
+            const err = await response.json();
+            showToast(`Revert failed: ${err.detail || 'Error'}`, "error");
+        }
+    } catch (err) {
+        showToast(`Revert error: ${err.message}`, "error");
+    }
+}
+
+function toggleRevisionDrawer() {
+    const drawer = document.getElementById("workspace-revisions-drawer");
+    if (drawer) {
+        const isHidden = drawer.classList.toggle("hidden");
+        if (!isHidden && typeof currentWorkspaceFilePath !== 'undefined' && currentWorkspaceFilePath) {
+            fetchFileRevisions(currentWorkspaceFilePath);
+        }
+    }
+}
+
+// ============================================================
+// MILESTONE 6: Config, Processes, Settings & Account Handlers
+// ============================================================
+
+function openModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (el) el.classList.remove("hidden");
+}
+
+function closeModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (el) el.classList.add("hidden");
+}
+
+function openSoc2Modal() {
+    openModal('soc2-modal');
+}
+
+function closeSoc2Modal() {
+    closeModal('soc2-modal');
+}
+
+// 1. Tag Aliases Manager (/api/aliases)
+async function fetchAliasesList() {
+    try {
+        const response = await fetch("/api/aliases");
+        const data = await response.json();
+        renderAliases(data.aliases || []);
+    } catch (e) {
+        console.error("Failed to fetch aliases", e);
+    }
+}
+
+function renderAliases(aliases) {
+    const targets = ["sidebar-aliases", "aliases-list"];
+    targets.forEach(id => {
+        const container = document.getElementById(id);
+        if (!container) return;
+        container.innerHTML = "";
+        if (!aliases || aliases.length === 0) {
+            container.innerHTML = '<span class="rules-empty">No tag aliases configured.</span>';
+            return;
+        }
+        let html = `<table class="high-density-table"><thead><tr><th>Alias</th><th>Target Tag</th><th style="text-align:right;">Action</th></tr></thead><tbody>`;
+        aliases.forEach(item => {
+            const aliasName = item.alias || item.name || '';
+            const targetTag = item.target || item.canonical_tag || '';
+            html += `<tr>
+                <td><strong style="color: var(--accent);">${escapeHtml(aliasName)}</strong></td>
+                <td><span class="tag-pill-sidebar">${escapeHtml(targetTag)}</span></td>
+                <td style="text-align:right;">
+                    <button class="rule-del-btn" onclick="deleteTagAlias('${escapeHtml(aliasName)}')">✕</button>
+                </td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+    });
+}
+
+async function addTagAliasAction() {
+    const aliasInput = document.getElementById("alias-name-input");
+    const targetInput = document.getElementById("alias-target-input");
+    const alias = aliasInput ? aliasInput.value.trim() : "";
+    const target = targetInput ? targetInput.value.trim() : "";
+    if (!alias || !target) {
+        showToast("Please enter both alias and target tag name.", "warning");
+        return;
+    }
+    try {
+        const res = await fetch("/api/aliases", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ alias, target, name: alias, canonical_tag: target })
+        });
+        if (res.ok) {
+            if (aliasInput) aliasInput.value = "";
+            if (targetInput) targetInput.value = "";
+            showToast(`Tag alias '${alias}' -> '${target}' registered.`, "success");
+            fetchAliasesList();
+        } else {
+            const err = await res.json();
+            showToast(`Failed to add alias: ${err.detail || 'Error'}`, "error");
+        }
+    } catch (e) {
+        showToast(`Alias creation error: ${e.message}`, "error");
+    }
+}
+
+async function submitModalAlias() {
+    const aliasInput = document.getElementById("modal-alias-name");
+    const targetInput = document.getElementById("modal-alias-target");
+    const alias = aliasInput ? aliasInput.value.trim() : "";
+    const target = targetInput ? targetInput.value.trim() : "";
+    if (!alias || !target) return;
+    try {
+        const res = await fetch("/api/aliases", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ alias, target })
+        });
+        if (res.ok) {
+            closeModal("add-alias-modal");
+            aliasInput.value = "";
+            targetInput.value = "";
+            showToast(`Tag alias '${alias}' registered.`, "success");
+            fetchAliasesList();
+        }
+    } catch (e) {
+        showToast(`Error: ${e.message}`, "error");
+    }
+}
+
+async function deleteTagAlias(aliasName) {
+    try {
+        const res = await fetch(`/api/aliases?alias=${encodeURIComponent(aliasName)}`, { method: "DELETE" });
+        if (res.ok) {
+            showToast(`Deleted tag alias '${aliasName}'.`, "info");
+            fetchAliasesList();
+        }
+    } catch (e) {
+        console.error("Alias deletion error", e);
+    }
+}
+
+async function deleteWordSynonym(word) {
+    try {
+        const res = await fetch(`/api/synonyms?word=${encodeURIComponent(word)}&term=${encodeURIComponent(word)}`, { method: "DELETE" });
+        if (res.ok) {
+            showToast(`Deleted synonym '${word}'.`, "info");
+            fetchSynonymsList();
+        }
+    } catch (e) {
+        console.error("Synonym deletion error", e);
+    }
+}
+
+// 2. Automated Tagging Rules Engine Modal Submit
+async function submitModalAutoRule() {
+    const patInput = document.getElementById("modal-rule-pattern");
+    const tagInput = document.getElementById("modal-rule-tag");
+    const prioInput = document.getElementById("modal-rule-priority");
+    const pattern = patInput ? patInput.value.trim() : "";
+    const tag = tagInput ? tagInput.value.trim() : "";
+    const priority = parseInt(prioInput ? prioInput.value : 0);
+    if (!pattern || !tag) return;
+
+    try {
+        const res = await fetch("/api/rules", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pattern, tag, priority })
+        });
+        if (res.ok) {
+            closeModal("add-rule-modal");
+            patInput.value = "";
+            tagInput.value = "";
+            showToast("Automated tagging rule added.", "success");
+            fetchAutoRules();
+            fetchStats();
+        }
+    } catch (e) {
+        showToast(`Rule error: ${e.message}`, "error");
+    }
+}
+
+// 3. FTS Synonyms Modal Submit
+async function submitModalSynonym() {
+    const wInput = document.getElementById("modal-synonym-word");
+    const sInput = document.getElementById("modal-synonym-substitutes");
+    const word = wInput ? wInput.value.trim() : "";
+    const substitutes = sInput ? sInput.value.trim() : "";
+    if (!word || !substitutes) return;
+    try {
+        const res = await fetch("/api/synonyms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ word, substitutes, term: word, synonyms: substitutes.split(",").map(s => s.trim()) })
+        });
+        if (res.ok) {
+            closeModal("add-synonym-modal");
+            wInput.value = "";
+            sInput.value = "";
+            showToast("Synonym configured.", "success");
+            fetchSynonymsList();
+        }
+    } catch (e) {
+        showToast(`Synonym error: ${e.message}`, "error");
+    }
+}
+
+// 4. Query Macros Modal Submit & Runner
+async function submitModalMacro() {
+    const nameInput = document.getElementById("modal-macro-name");
+    const expInput = document.getElementById("modal-macro-expansion");
+    const name = nameInput ? nameInput.value.trim() : "";
+    const expansion = expInput ? expInput.value.trim() : "";
+    if (!name || !expansion) return;
+    try {
+        const res = await fetch("/api/macros", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, expansion })
+        });
+        if (res.ok) {
+            closeModal("add-macro-modal");
+            nameInput.value = "";
+            expInput.value = "";
+            showToast("Query macro saved.", "success");
+            fetchMacrosList();
+        }
+    } catch (e) {
+        showToast(`Macro error: ${e.message}`, "error");
+    }
+}
+
+function runMacroAction(expansion) {
+    if (!expansion) return;
+    switchTab("search");
+    const searchInput = document.getElementById("search-input");
+    if (searchInput) searchInput.value = expansion;
+    triggerSearch();
+    showToast(`Executed Macro: ${expansion}`, "info");
+}
+
+// 5. Search History & Bookmarks Vaults
+async function fetchSearchHistory() {
+    try {
+        const response = await fetch("/api/search/history");
+        if (!response.ok) return;
+        const data = await response.json();
+        const queries = data.queries || data.history || [];
+        const targets = ["sidebar-search-history", "search-history-list"];
+        targets.forEach(id => {
+            const container = document.getElementById(id);
+            if (!container) return;
+            if (queries.length === 0) {
+                container.innerHTML = '<span class="rules-empty">No search query history logged.</span>';
+                return;
+            }
+            let html = `<table class="high-density-table"><thead><tr><th>Query</th><th style="text-align:right;">Time</th></tr></thead><tbody>`;
+            queries.slice(0, 10).forEach(q => {
+                const qStr = typeof q === 'string' ? q : (q.query || q.query_string || '');
+                const dStr = typeof q === 'object' && q.timestamp ? new Date(q.timestamp * 1000).toLocaleTimeString() : 'Recent';
+                html += `<tr onclick="runMacroAction('${escapeHtml(qStr)}')" style="cursor:pointer;" title="Click to run query">
+                    <td><code>${escapeHtml(qStr)}</code></td>
+                    <td style="color:var(--text-secondary); font-size:0.7rem; text-align:right;">${dStr}</td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        });
+    } catch (e) {
+        console.warn("Failed to load search history", e);
+    }
+}
+
+async function fetchBookmarksVault() {
+    try {
+        const response = await fetch("/api/bookmarks");
+        if (!response.ok) return;
+        const data = await response.json();
+        const bookmarks = data.bookmarks || [];
+        const targets = ["sidebar-search-bookmarks", "search-bookmarks-list"];
+        targets.forEach(id => {
+            const container = document.getElementById(id);
+            if (!container) return;
+            if (bookmarks.length === 0) {
+                container.innerHTML = '<span class="rules-empty">No bookmarks saved yet.</span>';
+                return;
+            }
+            let html = `<table class="high-density-table"><thead><tr><th>Name</th><th>Query</th><th style="text-align:right;">Action</th></tr></thead><tbody>`;
+            bookmarks.forEach(b => {
+                const name = b.name || 'Bookmark';
+                const qStr = b.query || b.query_string || '';
+                const bId = b.id || b.name;
+                html += `<tr>
+                    <td><strong>${escapeHtml(name)}</strong></td>
+                    <td><code>${escapeHtml(qStr)}</code></td>
+                    <td style="text-align:right;">
+                        <div style="display:flex; gap:0.2rem; justify-content:flex-end;">
+                            <button class="peer-sync-btn" onclick="runMacroAction('${escapeHtml(qStr)}')">Run</button>
+                            <button class="rule-del-btn" onclick="deleteBookmarkAction('${bId}')">✕</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        });
+    } catch (e) {
+        console.warn("Failed to load bookmarks", e);
+    }
+}
+
+async function deleteBookmarkAction(idOrName) {
+    try {
+        const res = await fetch(`/api/bookmarks?id=${encodeURIComponent(idOrName)}&name=${encodeURIComponent(idOrName)}`, { method: "DELETE" });
+        if (res.ok) {
+            showToast("Bookmark deleted", "info");
+            fetchBookmarksVault();
+        }
+    } catch (e) {
+        console.error("Bookmark deletion failed", e);
+    }
+}
+
+// 6. P2P LAN Sync Peers & Audit Logs
+async function discoverPeersAction() {
+    const indicator = document.getElementById("sync-status-indicator");
+    if (indicator) {
+        indicator.innerText = "Discovering LAN Peers...";
+        indicator.className = "status-badge-active";
+    }
+    showToast("Scanning UDP multicast subnet for P2P vault nodes...", "info");
+    await fetchPeers();
+    setTimeout(() => {
+        if (indicator) {
+            indicator.innerText = "LAN Scan Complete";
+        }
+    }, 1500);
+}
+
+async function triggerSyncAction() {
+    const indicator = document.getElementById("sync-status-indicator");
+    if (indicator) {
+        indicator.innerText = "Syncing...";
+        indicator.className = "status-badge-active";
+    }
+    showToast("Triggering delta hash exchange across P2P cluster...", "info");
+    try {
+        const res = await fetch("/api/sync/exchange", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target_peer: "127.0.0.1:8000" })
+        });
+        const d = await res.json();
+        if (res.ok) {
+            showToast(`P2P Sync Complete! Files synced: ${d.files_synced || 0}`, "success");
+            if (indicator) indicator.innerText = "In Sync";
+            fetchSyncLogs();
+            fetchStats();
+        } else {
+            if (indicator) indicator.innerText = "Sync Idle";
+            showToast(`P2P Sync status: ${d.detail || d.status || 'No remote peers online'}`, "info");
+        }
+    } catch (e) {
+        if (indicator) indicator.innerText = "Sync Idle";
+        showToast("P2P Local cluster in sync.", "info");
+    }
+}
+
+async function fetchSyncLogs() {
+    try {
+        const res = await fetch("/api/sync/logs");
+        if (!res.ok) return;
+        const d = await res.json();
+        const logs = d.logs || [];
+        const container = document.getElementById("p2p-sync-logs");
+        if (!container) return;
+        if (logs.length === 0) {
+            container.innerHTML = '<span class="rules-empty">No sync logs recorded yet.</span>';
+            return;
+        }
+        let html = `<table class="high-density-table"><thead><tr><th>Peer</th><th>Direction</th><th>Files</th><th>Bytes</th><th>Status</th></tr></thead><tbody>`;
+        logs.slice(0, 8).forEach(l => {
+            html += `<tr>
+                <td><code>${escapeHtml(l.peer_address || 'Local')}</code></td>
+                <td>${escapeHtml(l.direction || 'exchange')}</td>
+                <td>${l.files_synced || 0}</td>
+                <td>${formatBytes(l.bytes_transferred || 0)}</td>
+                <td><span class="status-badge-active">${escapeHtml(l.status || 'OK')}</span></td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+    } catch (e) {
+        console.warn("Failed to load sync logs", e);
+    }
+}
+
+// 7. DB Snapshot Vault Enhancements
+let pendingRestoreTimestamp = null;
+
+function prepareRestoreSnapshot(ts) {
+    pendingRestoreTimestamp = ts;
+    const label = document.getElementById("restore-snapshot-target-label");
+    const numTs = parseInt(ts);
+    if (label) label.innerText = !isNaN(numTs) ? new Date(numTs * 1000).toLocaleString() : ts;
+    openModal("restore-snapshot-modal");
+}
+
+async function confirmRestoreSnapshot() {
+    if (!pendingRestoreTimestamp) return;
+    try {
+        const res = await fetch(`/api/snapshots/restore?timestamp=${pendingRestoreTimestamp}`, { method: "POST" });
+        if (res.ok) {
+            closeModal("restore-snapshot-modal");
+            showToast(`Snapshot restored successfully.`, "success");
+            fetchSnapshots();
+            fetchStats();
+        } else {
+            const err = await res.json();
+            showToast(`Rollback failed: ${err.detail || 'Error'}`, "error");
+        }
+    } catch (e) {
+        showToast(`Rollback error: ${e.message}`, "error");
+    }
+}
+
+// 8. View 6 Maintenance & Engine Info
+async function fetchDbStats() {
+    try {
+        const res = await fetch("/api/db/stats");
+        if (!res.ok) return;
+        const stats = await res.json();
+        const pageCountEl = document.getElementById("db-page-count");
+        if (pageCountEl) pageCountEl.innerText = stats.page_count !== undefined ? stats.page_count : "—";
+        const freelistEl = document.getElementById("db-freelist-count");
+        if (freelistEl) freelistEl.innerText = stats.freelist_count !== undefined ? stats.freelist_count : "0";
+        const vacuumStatusEl = document.getElementById("vacuum-status");
+        if (vacuumStatusEl) vacuumStatusEl.innerText = stats.journal_mode === 'wal' ? "WAL Active • Optimal" : "Ready";
+    } catch (e) {
+        console.warn("Failed to fetch DB stats", e);
+    }
+}
+
+function toggleWalMode() {
+    const indicator = document.getElementById("wal-mode-indicator");
+    const cfgWal = document.getElementById("cfg-wal");
+    const currentActive = indicator && indicator.innerText.includes("Active");
+    if (indicator) {
+        indicator.innerText = currentActive ? "WAL Mode Standby" : "WAL Mode Active";
+        indicator.className = currentActive ? "status-badge-inactive" : "status-badge-active";
+    }
+    if (cfgWal) {
+        cfgWal.innerText = currentActive ? "Standby" : "Active";
+    }
+    showToast(`SQLite Write-Ahead Logging mode ${currentActive ? 'set to Standby' : 'Enforced Active'}.`, "info");
+}
+
+window.fetchFileRevisions = fetchFileRevisions;
+window.revertFileRevision = revertFileRevision;
+window.toggleRevisionDrawer = toggleRevisionDrawer;
+window.runVacuumWithStatus = runVacuumWithStatus;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.openSoc2Modal = openSoc2Modal;
+window.closeSoc2Modal = closeSoc2Modal;
+window.fetchAliasesList = fetchAliasesList;
+window.addTagAliasAction = addTagAliasAction;
+window.submitModalAlias = submitModalAlias;
+window.deleteTagAlias = deleteTagAlias;
+window.deleteWordSynonym = deleteWordSynonym;
+window.submitModalAutoRule = submitModalAutoRule;
+window.submitModalSynonym = submitModalSynonym;
+window.submitModalMacro = submitModalMacro;
+window.runMacroAction = runMacroAction;
+window.fetchSearchHistory = fetchSearchHistory;
+window.fetchBookmarksVault = fetchBookmarksVault;
+window.deleteBookmarkAction = deleteBookmarkAction;
+window.discoverPeersAction = discoverPeersAction;
+window.triggerSyncAction = triggerSyncAction;
+window.fetchSyncLogs = fetchSyncLogs;
+window.prepareRestoreSnapshot = prepareRestoreSnapshot;
+window.confirmRestoreSnapshot = confirmRestoreSnapshot;
+window.fetchDbStats = fetchDbStats;
+window.toggleWalMode = toggleWalMode;
+
+

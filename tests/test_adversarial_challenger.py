@@ -94,7 +94,7 @@ class TestLeakageWarningGuard(unittest.TestCase):
 
 class TestJSMarkdownParser(unittest.TestCase):
     def test_js_markdown_parser_via_node(self):
-        js_file = Path(__file__).resolve().parent.parent / "tests" / "test_markdown.js"
+        js_file = Path(__file__).resolve().parent / "js" / "test_markdown.js"
         result = subprocess.run(["node", str(js_file)], capture_output=True, text=True)
         print("STDOUT from Node.js tests:")
         print(result.stdout)

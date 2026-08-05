@@ -1,70 +1,74 @@
 :root {
-    --bg-dark: #121211;
-    --card-bg: rgba(18, 18, 17, 0.85);
-    --glass-backdrop: blur(12px) saturate(160%);
-    --glass-border: 1px solid rgba(234, 224, 200, 0.15);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    --border-color: rgba(234, 224, 200, 0.12);
-    --accent: #eae0c8;
-    --accent-secondary: #fcf8f2;
-    --accent-gradient: #eae0c8;
-    --accent-glow: none;
-    --accent-hover: #fcf8f2;
-    --text-primary: #f4f0e6;
-    --text-secondary: #B8B09D;
+    --bg-dark: #0b0f19;
+    --card-bg: rgba(15, 23, 42, 0.75);
+    --glass-backdrop: blur(16px) saturate(180%);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.1);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --accent: #6366f1;
+    --accent-secondary: #06b6d4;
+    --accent-gradient: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+    --accent-glow: 0 0 20px rgba(99, 102, 241, 0.35);
+    --accent-hover: #4f46e5;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
     --success: #10b981;
     --danger: #ef4444;
+    --warning: #f59e0b;
     --font-outfit: 'Outfit', sans-serif;
-    --font-inter: 'Inter', sans-serif;
-    --neon-glow: none;
-    --input-bg: #1e1e1d;
-    --text-on-accent: #121211;
+    --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+    --neon-glow: 0 0 12px rgba(99, 102, 241, 0.4);
+    --input-bg: rgba(15, 23, 42, 0.85);
+    --text-on-accent: #ffffff;
     
-    --accent-trans-05: rgba(234, 224, 200, 0.05);
-    --accent-trans-08: rgba(234, 224, 200, 0.08);
-    --accent-trans-10: rgba(234, 224, 200, 0.10);
-    --accent-trans-15: rgba(234, 224, 200, 0.15);
-    --accent-trans-20: rgba(234, 224, 200, 0.20);
-    --accent-trans-25: rgba(234, 224, 200, 0.25);
-    --accent-trans-30: rgba(234, 224, 200, 0.30);
+    --accent-trans-05: rgba(99, 102, 241, 0.05);
+    --accent-trans-08: rgba(99, 102, 241, 0.08);
+    --accent-trans-10: rgba(99, 102, 241, 0.10);
+    --accent-trans-15: rgba(99, 102, 241, 0.15);
+    --accent-trans-20: rgba(99, 102, 241, 0.20);
+    --accent-trans-25: rgba(99, 102, 241, 0.25);
+    --accent-trans-30: rgba(99, 102, 241, 0.30);
 
-    --ext-code: #a5b4fc;
-    --ext-spreadsheet: #6ee7b7;
-    --ext-image: #fca5a5;
-    --ext-doc: #fcd34d;
+    --ext-code: #818cf8;
+    --ext-spreadsheet: #34d399;
+    --ext-image: #f87171;
+    --ext-doc: #fbbf24;
     --ext-audio: #c084fc;
     --ext-video: #38bdf8;
 }
 
 body.light-theme {
-    --bg-dark: #fcfbf7;
-    --card-bg: #f6f3ea;
-    --border-color: rgba(24, 26, 30, 0.12);
-    --accent: #7a6e5a;
-    --accent-secondary: #181a1e;
-    --accent-gradient: #7a6e5a;
-    --accent-glow: none;
-    --accent-hover: #181a1e;
-    --text-primary: #181a1e;
-    --text-secondary: #5e6064;
-    --neon-glow: none;
+    --bg-dark: #f8fafc;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --glass-backdrop: blur(16px) saturate(180%);
+    --glass-border: 1px solid rgba(226, 232, 240, 0.8);
+    --glass-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 0 15px rgba(79, 70, 229, 0.08);
+    --border-color: rgba(226, 232, 240, 0.8);
+    --accent: #4f46e5;
+    --accent-secondary: #0891b2;
+    --accent-gradient: linear-gradient(135deg, #4f46e5 0%, #0891b2 100%);
+    --accent-glow: 0 0 15px rgba(79, 70, 229, 0.2);
+    --accent-hover: #4338ca;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --neon-glow: 0 0 10px rgba(79, 70, 229, 0.2);
     --input-bg: #ffffff;
-    --text-on-accent: #fcfbf7;
+    --text-on-accent: #ffffff;
 
-    --accent-trans-05: rgba(122, 110, 90, 0.05);
-    --accent-trans-08: rgba(122, 110, 90, 0.08);
-    --accent-trans-10: rgba(122, 110, 90, 0.10);
-    --accent-trans-15: rgba(122, 110, 90, 0.15);
-    --accent-trans-20: rgba(122, 110, 90, 0.20);
-    --accent-trans-25: rgba(122, 110, 90, 0.25);
-    --accent-trans-30: rgba(122, 110, 90, 0.30);
+    --accent-trans-05: rgba(79, 70, 229, 0.05);
+    --accent-trans-08: rgba(79, 70, 229, 0.08);
+    --accent-trans-10: rgba(79, 70, 229, 0.10);
+    --accent-trans-15: rgba(79, 70, 229, 0.15);
+    --accent-trans-20: rgba(79, 70, 229, 0.20);
+    --accent-trans-25: rgba(79, 70, 229, 0.25);
+    --accent-trans-30: rgba(79, 70, 229, 0.30);
 
-    --ext-code: #312e81;
-    --ext-spreadsheet: #064e3b;
-    --ext-image: #7f1d1d;
-    --ext-doc: #78350f;
-    --ext-audio: #581c87;
-    --ext-video: #0c4a6e;
+    --ext-code: #4338ca;
+    --ext-spreadsheet: #047857;
+    --ext-image: #b91c1c;
+    --ext-doc: #b45309;
+    --ext-audio: #6b21a8;
+    --ext-video: #0369a1;
 }
 
 * {
@@ -2196,7 +2200,7 @@ body.light-theme .theme-toggle-btn .moon-path {
     color: var(--text-secondary);
     white-space: nowrap;
 }
-#gguf-model-path {
+#gguf-model-path, #chat-model-path {
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
@@ -2208,10 +2212,10 @@ body.light-theme .theme-toggle-btn .moon-path {
     width: 220px;
     transition: border-color 0.2s;
 }
-#gguf-model-path:focus {
+#gguf-model-path:focus, #chat-model-path:focus {
     border-color: var(--accent);
 }
-#gguf-context-window {
+#gguf-context-window, #chat-context-window {
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
@@ -2223,16 +2227,16 @@ body.light-theme .theme-toggle-btn .moon-path {
     width: 75px;
     transition: border-color 0.2s;
 }
-#gguf-context-window:focus {
+#gguf-context-window:focus, #chat-context-window:focus {
     border-color: var(--accent);
 }
-#gguf-temperature {
+#gguf-temperature, #chat-temperature {
     width: 85px;
     accent-color: var(--accent);
     cursor: pointer;
     vertical-align: middle;
 }
-#gguf-temp-val {
+#gguf-temp-val, #chat-temp-val {
     font-family: 'Consolas', 'Fira Code', monospace;
     font-weight: 600;
     color: var(--accent);
@@ -3812,13 +3816,21 @@ body.light-theme .source-chip[data-category="video"] {
     padding-top: 15vh;
 }
 
+.command-palette-backdrop {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+}
+
 .command-palette-box {
+    position: relative;
+    z-index: 100000;
     background: var(--card-bg);
     border: 1px solid var(--accent);
     border-radius: 8px;
-    width: 550px;
+    width: 580px;
     max-width: 90vw;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 20px var(--accent-trans-15);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -3836,9 +3848,11 @@ body.light-theme .source-chip[data-category="video"] {
     color: var(--accent);
 }
 
-#command-palette-input {
+#cmd-input,
+#command-palette-input,
+.command-palette-input {
     width: 100%;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.2);
     border: none;
     border-bottom: 1px solid var(--border-color);
     padding: 0.85rem 1rem;
@@ -3846,24 +3860,69 @@ body.light-theme .source-chip[data-category="video"] {
     font-size: 0.95rem;
     outline: none;
     font-family: var(--font-inter);
+    box-sizing: border-box;
 }
 
-.command-palette-list {
-    max-height: 300px;
+#cmd-results-list,
+#command-palette-list,
+#command-palette-results {
+    max-height: 340px;
     overflow-y: auto;
     padding: 0.5rem 0;
 }
 
-.palette-item {
+.palette-item,
+.command-item {
     padding: 0.65rem 1.25rem;
     font-size: 0.85rem;
     color: var(--text-primary);
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
 }
 
-.palette-item:hover {
+.command-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.command-category {
+    font-size: 0.68rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
     background: var(--accent-trans-15);
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.command-shortcut {
+    font-family: monospace;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.palette-item:hover,
+.command-item:hover,
+.palette-item.active,
+.command-item.active {
+    background: var(--accent-trans-15);
+    color: var(--accent);
+}
+
+.palette-item.active .command-shortcut,
+.command-item.active .command-shortcut {
+    border-color: var(--accent);
     color: var(--accent);
 }
 
