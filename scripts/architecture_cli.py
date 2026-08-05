@@ -67,7 +67,8 @@ def run_audit(target_dir, quiet=False):
         "e2e_knowledge.db", "e2e_knowledge.db-wal", "e2e_knowledge.db-shm",
         "test_adversarial_traversal.db", "test_adversarial_traversal.db-wal", "test_adversarial_traversal.db-shm",
         "test_challenger_leakage.db", "test_challenger_leakage.db-wal", "test_challenger_leakage.db-shm",
-        "playwright_debug.log", "peer_file.txt", "TEST_INFRA.md", "TEST_READY.md", "Progress Reports"
+        "playwright_debug.log", "peer_file.txt", "TEST_INFRA.md", "TEST_READY.md", "Progress Reports",
+        "ORIGINAL_REQUEST.md", "run_e2e_ui_tests.py"
     }
     excess_root = [
         f.name for f in all_files
