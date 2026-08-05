@@ -52,7 +52,9 @@ class TestDomainBackupAuthTheme(unittest.TestCase):
         self.assertTrue(os.path.exists(saved_path))
         self.assertGreater(os.path.getsize(saved_path), 0)
 
-        # Clear active table
+        # Clear active table (re-acquire connection since backup_database resets it via init_db)
+        conn = know.get_db()
+        cursor = conn.cursor()
         cursor.execute("DELETE FROM files")
         conn.commit()
 
@@ -60,7 +62,7 @@ class TestDomainBackupAuthTheme(unittest.TestCase):
         res = restore_database(backup_file)
         self.assertTrue(res)
 
-        # Verify restored record
+        # Verify restored record (re-acquire after restore resets connections)
         conn2 = know.get_db()
         c2 = conn2.cursor()
         c2.execute("SELECT COUNT(*) FROM files")
