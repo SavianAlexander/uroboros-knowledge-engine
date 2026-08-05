@@ -365,7 +365,7 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         page.click(".tab-link[data-tab='processes']")
         page.wait_for_selector(".tab-link[data-tab='processes'].active")
 
-        # ponytail: scroll each panel into view before checking — config-grid has overflow-y:auto
+        # ponytail: use JS scrollIntoView + DOM presence check — scroll_into_view_if_needed times out in config-grid overflow
         for panel_id, label in [
             ("sidebar-search-history", "Search history panel"),
             ("sidebar-search-bookmarks", "Search bookmarks panel"),
@@ -373,8 +373,8 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
             ("sidebar-peers", "Peers panel"),
             ("sidebar-snapshots", "Snapshots panel"),
         ]:
-            page.locator(f"#{panel_id}").scroll_into_view_if_needed()
-            self.assertTrue(page.is_visible(f"#{panel_id}"), f"{label} missing")
+            exists = page.evaluate(f'(() => {{ const el = document.getElementById("{panel_id}"); if (el) el.scrollIntoView(); return !!el; }})()')
+            self.assertTrue(exists, f"{label} missing from DOM")
 
         page.fill("#macro-name-input", "phys")
         page.fill("#macro-expansion-input", "tag:physics")

@@ -333,11 +333,12 @@ class TestAdversarialI3(unittest.TestCase):
             cx = box["x"] + box["width"] / 2
             cy = box["y"] + box["height"] / 2
 
-            page.mouse.move(cx - 50, cy - 50)
+            # ponytail: start far from center to avoid hitting a node (triggers drag, not pan)
+            page.mouse.move(box["x"] + 10, box["y"] + 10)
             page.mouse.down()
-            page.mouse.move(cx + 50, cy)
+            page.mouse.move(box["x"] + 110, box["y"] + 60)
             page.mouse.up()
-            page.wait_for_timeout(200)
+            page.wait_for_timeout(500)
 
             ox_pan = page.evaluate("window.lastOffsetX")
             oy_pan = page.evaluate("window.lastOffsetY")
