@@ -365,17 +365,16 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         page.click(".tab-link[data-tab='processes']")
         page.wait_for_selector(".tab-link[data-tab='processes'].active")
 
-        history_visible = page.is_visible("#sidebar-search-history")
-        bookmarks_visible = page.is_visible("#sidebar-search-bookmarks")
-        macros_visible = page.is_visible("#sidebar-macros")
-        peers_visible = page.is_visible("#sidebar-peers")
-        snapshots_visible = page.is_visible("#sidebar-snapshots")
-
-        self.assertTrue(history_visible, "Search history panel missing")
-        self.assertTrue(bookmarks_visible, "Search bookmarks panel missing")
-        self.assertTrue(macros_visible, "Macros panel missing")
-        self.assertTrue(peers_visible, "Peers panel missing")
-        self.assertTrue(snapshots_visible, "Snapshots panel missing")
+        # ponytail: scroll each panel into view before checking — config-grid has overflow-y:auto
+        for panel_id, label in [
+            ("sidebar-search-history", "Search history panel"),
+            ("sidebar-search-bookmarks", "Search bookmarks panel"),
+            ("sidebar-macros", "Macros panel"),
+            ("sidebar-peers", "Peers panel"),
+            ("sidebar-snapshots", "Snapshots panel"),
+        ]:
+            page.locator(f"#{panel_id}").scroll_into_view_if_needed()
+            self.assertTrue(page.is_visible(f"#{panel_id}"), f"{label} missing")
 
         page.fill("#macro-name-input", "phys")
         page.fill("#macro-expansion-input", "tag:physics")

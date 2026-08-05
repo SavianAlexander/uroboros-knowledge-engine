@@ -3300,14 +3300,6 @@ function drawGraph(nodes, links) {
     let panStartX = 0;
     let panStartY = 0;
 
-    // ponytail: expose graph state for Playwright E2E introspection
-    Object.defineProperties(window, {
-        lastOffsetX: { get: () => offsetX, configurable: true },
-        lastOffsetY: { get: () => offsetY, configurable: true },
-        lastZoomScale: { get: () => zoomScale, configurable: true },
-        capturedNodes: { get: () => nodes, configurable: true }
-    });
-
     window.zoomConceptGraph = (factor) => {
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
