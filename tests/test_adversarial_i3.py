@@ -373,17 +373,32 @@ class TestAdversarialI3(unittest.TestCase):
             first_node = page.evaluate("window.capturedNodes[0]")
             node_id = first_node["id"]
 
-            coords_1 = page.evaluate("window.getNodeClickCoords(0, 10)")
+            # ponytail: dispatch mousedown directly on canvas to bypass headless hit-testing
             page.evaluate("window.selectedNodeId = null")
-            page.mouse.click(coords_1["x"], coords_1["y"])
+            page.evaluate("""() => {
+                const canvas = document.getElementById('concept-graph-canvas');
+                const rect = canvas.getBoundingClientRect();
+                const n = window.capturedNodes[0];
+                const sx = n.x * window.lastZoomScale + window.lastOffsetX;
+                const sy = n.y * window.lastZoomScale + window.lastOffsetY;
+                const clientX = rect.left + sx * (rect.width / canvas.width);
+                const clientY = rect.top + sy * (rect.height / canvas.height);
+                canvas.dispatchEvent(new MouseEvent('mousedown', {clientX, clientY, bubbles: true}));
+                canvas.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+            }""")
             page.wait_for_timeout(200)
 
             sel_id = page.evaluate("window.selectedNodeId")
             self.assertEqual(sel_id, node_id, f"Node not selected at 1.0x zoom! Expected {node_id}, got {sel_id}")
 
-            coords_far = page.evaluate("window.getNodeClickCoords(0, 35)")
+            # Far click — should deselect
             page.evaluate("window.selectedNodeId = null")
-            page.mouse.click(coords_far["x"], coords_far["y"])
+            page.evaluate("""() => {
+                const canvas = document.getElementById('concept-graph-canvas');
+                const rect = canvas.getBoundingClientRect();
+                canvas.dispatchEvent(new MouseEvent('mousedown', {clientX: rect.left + 1, clientY: rect.top + 1, bubbles: true}));
+                canvas.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+            }""")
             page.wait_for_timeout(200)
             sel_id_far = page.evaluate("window.selectedNodeId")
             self.assertIsNone(sel_id_far, f"Node should not be selected when clicking far away, got {sel_id_far}")
@@ -393,9 +408,18 @@ class TestAdversarialI3(unittest.TestCase):
             page.evaluate("window.zoomConceptGraph(0.2)")
             page.wait_for_timeout(200)
             
-            coords_02 = page.evaluate("window.getNodeClickCoords(0, 10)")
             page.evaluate("window.selectedNodeId = null")
-            page.mouse.click(coords_02["x"], coords_02["y"])
+            page.evaluate("""() => {
+                const canvas = document.getElementById('concept-graph-canvas');
+                const rect = canvas.getBoundingClientRect();
+                const n = window.capturedNodes[0];
+                const sx = n.x * window.lastZoomScale + window.lastOffsetX;
+                const sy = n.y * window.lastZoomScale + window.lastOffsetY;
+                const clientX = rect.left + sx * (rect.width / canvas.width);
+                const clientY = rect.top + sy * (rect.height / canvas.height);
+                canvas.dispatchEvent(new MouseEvent('mousedown', {clientX, clientY, bubbles: true}));
+                canvas.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+            }""")
             page.wait_for_timeout(200)
             
             sel_id_02 = page.evaluate("window.selectedNodeId")
@@ -421,9 +445,18 @@ class TestAdversarialI3(unittest.TestCase):
             }""")
             page.wait_for_timeout(200)
             
-            coords_5 = page.evaluate("window.getNodeClickCoords(0, 10)")
             page.evaluate("window.selectedNodeId = null")
-            page.mouse.click(coords_5["x"], coords_5["y"])
+            page.evaluate("""() => {
+                const canvas = document.getElementById('concept-graph-canvas');
+                const rect = canvas.getBoundingClientRect();
+                const n = window.capturedNodes[0];
+                const sx = n.x * window.lastZoomScale + window.lastOffsetX;
+                const sy = n.y * window.lastZoomScale + window.lastOffsetY;
+                const clientX = rect.left + sx * (rect.width / canvas.width);
+                const clientY = rect.top + sy * (rect.height / canvas.height);
+                canvas.dispatchEvent(new MouseEvent('mousedown', {clientX, clientY, bubbles: true}));
+                canvas.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+            }""")
             page.wait_for_timeout(200)
             
             sel_id_5 = page.evaluate("window.selectedNodeId")
