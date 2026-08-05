@@ -1,0 +1,182 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650" width="1200" height="650">
+  <defs>
+    <style>
+      .bg { fill: #121211; }
+      .header-title { font-family: 'Outfit', 'Inter', sans-serif; font-size: 24px; font-weight: 800; fill: #eae0c8; letter-spacing: 0.08em; }
+      .header-sub { font-family: 'Inter', sans-serif; font-size: 13px; fill: #a49e8d; letter-spacing: 0.05em; }
+      .card-bg { fill: rgba(234, 224, 200, 0.04); stroke: rgba(234, 224, 200, 0.15); stroke-width: 1.5; rx: 12px; }
+      .card-title { font-family: 'Outfit', 'Inter', sans-serif; font-size: 16px; font-weight: 700; fill: #eae0c8; }
+      .card-body { font-family: 'Inter', sans-serif; font-size: 12px; fill: #c5c0b6; line-height: 1.6; }
+      .badge-text { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; fill: #10b981; }
+      .flow-line { stroke: rgba(234, 224, 200, 0.4); stroke-width: 2; stroke-dasharray: 6,4; fill: none; }
+      .glow-filter { filter: drop-shadow(0 0 8px rgba(234, 224, 200, 0.25)); }
+    </style>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#eae0c8" />
+      <stop offset="100%" stop-color="#a49e8d" />
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#eae0c8" />
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1200" height="650" class="bg" />
+  
+  <!-- Subtle Grid Lines -->
+  <g stroke="rgba(234, 224, 200, 0.03)" stroke-width="1">
+    <line x1="0" y1="100" x2="1200" y2="100" />
+    <line x1="0" y1="360" x2="1200" y2="360" />
+    <line x1="300" y1="0" x2="300" y2="650" />
+    <line x1="600" y1="0" x2="600" y2="650" />
+    <line x1="900" y1="0" x2="900" y2="650" />
+  </g>
+
+  <!-- Header Branding Area -->
+  <g transform="translate(40, 40)">
+    <!-- Logo Icon -->
+    <circle cx="24" cy="24" r="22" fill="rgba(234, 224, 200, 0.08)" stroke="#eae0c8" stroke-width="1.5" />
+    <path d="M 24 8 A 16 16 0 1 1 8 24 A 16 16 0 0 1 20 8.2" fill="none" stroke="#eae0c8" stroke-width="3" />
+    <polygon points="20,8.2 24,8 22,12" fill="#eae0c8" />
+    <circle cx="24" cy="24" r="4" fill="#eae0c8" />
+
+    <text x="60" y="24" class="header-title">UROBOROS KNOWLEDGE HUB</text>
+    <text x="60" y="42" class="header-sub">End-to-End User Experience &amp; Data Flow Architecture v8.0</text>
+  </g>
+
+  <!-- Status &amp; Contract Pill -->
+  <g transform="translate(900, 35)">
+    <rect width="260" height="34" rx="6" fill="rgba(16, 185, 129, 0.1)" stroke="rgba(16, 185, 129, 0.3)" stroke-width="1" />
+    <circle cx="20" cy="17" r="4" fill="#10b981" />
+    <text x="32" y="21" class="badge-text">SOC 2 COMPLIANT • 100% CLEAN ARCH</text>
+  </g>
+
+  <!-- TAB 1: Explorer &amp; Workspace -->
+  <g transform="translate(40, 120)">
+    <rect width="250" height="460" class="card-bg glow-filter" />
+    <rect width="250" height="40" rx="12" fill="rgba(6, 182, 212, 0.15)" stroke="rgba(6, 182, 212, 0.3)" stroke-width="1" />
+    <text x="20" y="25" class="card-title" fill="#06b6d4">1. Explorer &amp; Workspace</text>
+    
+    <g transform="translate(20, 60)" class="card-body">
+      <text x="0" y="15" font-weight="600" fill="#eae0c8">• File Directory Tree</text>
+      <text x="15" y="32">• Dynamic SVG extension icons</text>
+      <text x="15" y="48">• Inline file rename &amp; deletion</text>
+      
+      <text x="0" y="90" font-weight="600" fill="#eae0c8">• Drag &amp; Drop Ingestion</text>
+      <text x="15" y="107">• Multi-file upload batching</text>
+      <text x="15" y="123">• SQLite WAL ingestion pipe</text>
+      
+      <text x="0" y="165" font-weight="600" fill="#eae0c8">• Document Reader &amp; Editor</text>
+      <text x="15" y="182">• Instant preview pane</text>
+      <text x="15" y="198">• Metadata extraction (.pdf/.docx)</text>
+      
+      <text x="0" y="240" font-weight="600" fill="#eae0c8">• File Type Badging</text>
+      <text x="15" y="257">• Code, Sheet, Doc, Audio, Video</text>
+    </g>
+
+    <!-- Mini Visual Representation -->
+    <rect x="20" y="360" width="210" height="80" rx="6" fill="rgba(0,0,0,0.3)" stroke="rgba(234,224,200,0.1)" />
+    <text x="35" y="385" font-family="Inter" font-size="11" fill="#06b6d4">📂 /workspace/vault</text>
+    <text x="45" y="405" font-family="Inter" font-size="10" fill="#a49e8d">📄 main.py (icon_code.svg)</text>
+    <text x="45" y="423" font-family="Inter" font-size="10" fill="#a49e8d">📊 stats.csv (icon_spreadsheet.svg)</text>
+  </g>
+
+  <!-- Connect 1 -> 2 -->
+  <path d="M 290 350 L 330 350" class="flow-line" marker-end="url(#arrow)" />
+
+  <!-- TAB 2: RAG Assistant &amp; Chat -->
+  <g transform="translate(330, 120)">
+    <rect width="250" height="460" class="card-bg glow-filter" />
+    <rect width="250" height="40" rx="12" fill="rgba(168, 85, 247, 0.15)" stroke="rgba(168, 85, 247, 0.3)" stroke-width="1" />
+    <text x="20" y="25" class="card-title" fill="#c084fc">2. RAG AI Assistant</text>
+
+    <g transform="translate(20, 60)" class="card-body">
+      <text x="0" y="15" font-weight="600" fill="#eae0c8">• Query Engine &amp; Synthesis</text>
+      <text x="15" y="32">• Natural language questions</text>
+      <text x="15" y="48">• Strict context grounding</text>
+      
+      <text x="0" y="90" font-weight="600" fill="#eae0c8">• TF-IDF Vector Reranking</text>
+      <text x="15" y="107">• On-demand matrix computation</text>
+      <text x="15" y="123">• Hybrid BM25 / vector score</text>
+
+      <text x="0" y="165" font-weight="600" fill="#eae0c8">• Local LLM Integration</text>
+      <text x="15" y="182">• Graceful fallback handling</text>
+      <text x="15" y="198">• Safe import guards</text>
+
+      <text x="0" y="240" font-weight="600" fill="#eae0c8">• Source Citations</text>
+      <text x="15" y="257">• Exact line &amp; file attribution</text>
+    </g>
+
+    <rect x="20" y="360" width="210" height="80" rx="6" fill="rgba(0,0,0,0.3)" stroke="rgba(234,224,200,0.1)" />
+    <text x="35" y="385" font-family="Inter" font-size="11" fill="#c084fc">💬 RAG Response</text>
+    <text x="35" y="405" font-family="Inter" font-size="10" fill="#a49e8d">"Based on 3 source docs..."</text>
+    <text x="35" y="423" font-family="Inter" font-size="10" fill="#10b981">Match score: 94.2%</text>
+  </g>
+
+  <!-- Connect 2 -> 3 -->
+  <path d="M 580 350 L 620 350" class="flow-line" marker-end="url(#arrow)" />
+
+  <!-- TAB 3: Graph &amp; Search -->
+  <g transform="translate(620, 120)">
+    <rect width="250" height="460" class="card-bg glow-filter" />
+    <rect width="250" height="40" rx="12" fill="rgba(16, 185, 129, 0.15)" stroke="rgba(16, 185, 129, 0.3)" stroke-width="1" />
+    <text x="20" y="25" class="card-title" fill="#34d399">3. Graph &amp; Search</text>
+
+    <g transform="translate(20, 60)" class="card-body">
+      <text x="0" y="15" font-weight="600" fill="#eae0c8">• FTS5 Keyword Search</text>
+      <text x="15" y="32">• Proximity &amp; tag exclusion</text>
+      <text x="15" y="48">• Search macros &amp; bookmarks</text>
+
+      <text x="0" y="90" font-weight="600" fill="#eae0c8">• Interactive Canvas</text>
+      <text x="15" y="107">• Force, Circular, Grid layouts</text>
+      <text x="15" y="123">• Zoom, Reset, Pan gestures</text>
+
+      <text x="0" y="165" font-weight="600" fill="#eae0c8">• Node Category SVGs</text>
+      <text x="15" y="182">• node_concept.svg</text>
+      <text x="15" y="198">• node_tag.svg</text>
+      <text x="15" y="214">• node_document.svg</text>
+    </g>
+
+    <rect x="20" y="360" width="210" height="80" rx="6" fill="rgba(0,0,0,0.3)" stroke="rgba(234,224,200,0.1)" />
+    <circle cx="60" cy="400" r="12" fill="rgba(59,130,246,0.3)" stroke="#3b82f6" stroke-width="1.5" />
+    <circle cx="120" cy="390" r="10" fill="rgba(16,185,129,0.3)" stroke="#10b981" stroke-width="1.5" />
+    <circle cx="160" cy="415" r="14" fill="rgba(234,224,200,0.2)" stroke="#eae0c8" stroke-width="1.5" />
+    <line x1="60" y1="400" x2="120" y2="390" stroke="rgba(234,224,200,0.4)" stroke-width="1" />
+    <line x1="120" y1="390" x2="160" y2="415" stroke="rgba(234,224,200,0.4)" stroke-width="1" />
+  </g>
+
+  <!-- Connect 3 -> 4 -->
+  <path d="M 870 350 L 910 350" class="flow-line" marker-end="url(#arrow)" />
+
+  <!-- TAB 4: Admin &amp; Config -->
+  <g transform="translate(910, 120)">
+    <rect width="250" height="460" class="card-bg glow-filter" />
+    <rect width="250" height="40" rx="12" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.3)" stroke-width="1" />
+    <text x="20" y="25" class="card-title" fill="#fbbf24">4. Admin &amp; Config</text>
+
+    <g transform="translate(20, 60)" class="card-body">
+      <text x="0" y="15" font-weight="600" fill="#eae0c8">• Multi-Vault Management</text>
+      <text x="15" y="32">• Folder scope filter</text>
+      <text x="15" y="48">• Snapshot &amp; backup controls</text>
+
+      <text x="0" y="90" font-weight="600" fill="#eae0c8">• P2P LAN Peer Mesh</text>
+      <text x="15" y="107">• Manifest exchange</text>
+      <text x="15" y="123">• node_peer.svg visualization</text>
+
+      <text x="0" y="165" font-weight="600" fill="#eae0c8">• Automated Rules &amp; Tags</text>
+      <text x="15" y="182">• Pattern auto-tagging</text>
+      <text x="15" y="198">• Color palette configuration</text>
+    </g>
+
+    <rect x="20" y="360" width="210" height="80" rx="6" fill="rgba(0,0,0,0.3)" stroke="rgba(234,224,200,0.1)" />
+    <text x="35" y="385" font-family="Inter" font-size="11" fill="#fbbf24">⚡ Network Peer Node</text>
+    <text x="35" y="405" font-family="Inter" font-size="10" fill="#a49e8d">192.168.1.42:8000</text>
+    <text x="35" y="423" font-family="Inter" font-size="10" fill="#10b981">Status: Synced</text>
+  </g>
+
+  <!-- Footer Banner -->
+  <g transform="translate(40, 600)">
+    <rect width="1120" height="30" rx="6" fill="rgba(234, 224, 200, 0.03)" stroke="rgba(234, 224, 200, 0.1)" />
+    <text x="20" y="20" font-family="Inter" font-size="11" fill="#a49e8d">Uroboros Knowledge Hub • SQLite WAL Storage • Modular Polyglot Architecture • Zero External Dependencies</text>
+  </g>
+</svg>

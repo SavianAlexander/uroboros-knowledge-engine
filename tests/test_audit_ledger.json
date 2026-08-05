@@ -1,0 +1,777 @@
+{
+  "last_updated": "2026-08-05T03:35:36Z",
+  "total_duration_seconds": 65.3281,
+  "overall_summary": {
+    "total_domains": 33,
+    "passed": 269,
+    "failed": 0,
+    "errors": 1,
+    "skipped": 0
+  },
+  "file_coverage_mapping": {
+    "know.py": [
+      "DomainDB",
+      "DomainVector",
+      "DomainIngestion",
+      "DomainPerformance",
+      "DomainChaos",
+      "DomainSOC2",
+      "DomainMutation"
+    ],
+    "main.py": [
+      "DomainAPI",
+      "DomainLLM",
+      "DomainSecurity",
+      "DomainPerformance",
+      "DomainChaos",
+      "DomainSOC2",
+      "DomainMutation",
+      "DomainRouter",
+      "DomainEmpirical",
+      "DomainUIStress"
+    ],
+    "app.js": [
+      "DomainAPI",
+      "DomainSecurity",
+      "DomainUIStress"
+    ],
+    "style.css": [
+      "DomainAPI",
+      "DomainUIStress"
+    ],
+    "scripts/architecture_cli.py": [
+      "DomainArchitecture"
+    ],
+    "run_domain_tests.py": [
+      "DomainRunner"
+    ],
+    "src/domain/chat_intelligence.py": [
+      "DomainChatIntelligence"
+    ],
+    "tests/test_domain_chat_intelligence.py": [
+      "DomainChatIntelligence"
+    ],
+    "src/domain/wikilink_parser.py": [
+      "DomainGraphPerformance"
+    ],
+    "tests/test_domain_graph_performance.py": [
+      "DomainGraphPerformance"
+    ],
+    "src/domain/analytics_engine.py": [
+      "DomainAnalyticsIntelligence"
+    ],
+    "src/app/routers/analytics.py": [
+      "DomainAnalyticsIntelligence"
+    ],
+    "tests/test_domain_analytics_intelligence.py": [
+      "DomainAnalyticsIntelligence"
+    ],
+    "src/domain/workflow_engine.py": [
+      "DomainWorkflowTriggers"
+    ],
+    "src/infrastructure/webhook_dispatcher.py": [
+      "DomainWorkflowTriggers"
+    ],
+    "src/app/routers/workflows.py": [
+      "DomainWorkflowTriggers"
+    ],
+    "tests/test_domain_workflow_triggers.py": [
+      "DomainWorkflowTriggers"
+    ],
+    "src/domain/ocr_engine.py": [
+      "DomainOCRTranscription"
+    ],
+    "src/domain/transcription_engine.py": [
+      "DomainOCRTranscription"
+    ],
+    "tests/test_domain_ocr_transcription.py": [
+      "DomainOCRTranscription"
+    ],
+    "src/infrastructure/p2p_sync.py": [
+      "DomainP2PSync"
+    ],
+    "tests/test_domain_p2p_sync.py": [
+      "DomainP2PSync"
+    ],
+    "scripts/backup_db.py": [
+      "DomainBackupAuthTheme"
+    ],
+    "src/shared/auth.py": [
+      "DomainBackupAuthTheme"
+    ],
+    "tests/test_domain_backup_auth_theme.py": [
+      "DomainBackupAuthTheme"
+    ]
+  },
+  "bug_relation_taxonomy": {
+    "DomainBackupAuthTheme": [
+      {
+        "test": "test_01_sqlite_online_backup_and_restore",
+        "component": "scripts/backup_db.py",
+        "prevents": "Online SQLite live backup or point-in-time restore failure"
+      },
+      {
+        "test": "test_02_verify_api_key_auth_guard_toggle",
+        "component": "src/shared/auth.py",
+        "prevents": "Configurable API key or Bearer token auth guard validation error"
+      },
+      {
+        "test": "test_03_theme_toggle_persistence_contract",
+        "component": "style.css",
+        "prevents": "Dark/Light glassmorphism theme CSS variable contract regression"
+      }
+    ],
+    "DomainP2PSync": [
+      {
+        "test": "test_01_multicast_beacon_lifecycle",
+        "component": "src/infrastructure/p2p_sync.py",
+        "prevents": "P2P multicast beacon thread start/stop lifecycle failure"
+      },
+      {
+        "test": "test_02_get_local_document_hashes",
+        "component": "src/infrastructure/p2p_sync.py",
+        "prevents": "Missing SHA-256 document hashes, sizes, or modification timestamps"
+      },
+      {
+        "test": "test_03_compute_sync_delta_categorization",
+        "component": "src/infrastructure/p2p_sync.py",
+        "prevents": "Incorrect categorization of missing, outdated, or unchanged files"
+      },
+      {
+        "test": "test_04_api_sync_hashes_endpoint",
+        "component": "src/app/routers/tags.py",
+        "prevents": "REST endpoint GET /api/sync/hashes failure"
+      },
+      {
+        "test": "test_05_api_sync_delta_endpoint",
+        "component": "src/app/routers/tags.py",
+        "prevents": "REST endpoint POST /api/sync/delta failure"
+      },
+      {
+        "test": "test_06_api_sync_exchange_unreachable_peer_logging",
+        "component": "src/app/routers/tags.py",
+        "prevents": "Unreachable peer error status code 500 or sync_logs failure logging"
+      },
+      {
+        "test": "test_07_api_sync_exchange_successful_delta_flow",
+        "component": "src/app/routers/tags.py",
+        "prevents": "Full P2P HTTP delta exchange protocol, database update, or sync_logs ledger failure"
+      }
+    ],
+    "DomainOCRTranscription": [
+      {
+        "test": "test_01_ocr_non_existent_file_handling",
+        "component": "src/domain/ocr_engine.py",
+        "prevents": "Missing image file crash during OCR extraction"
+      },
+      {
+        "test": "test_02_ocr_image_extraction_and_coords",
+        "component": "src/domain/ocr_engine.py",
+        "prevents": "Missing OCR word bounding box coordinates array"
+      },
+      {
+        "test": "test_03_ocr_pillow_exif_and_metadata_fallback",
+        "component": "src/domain/ocr_engine.py",
+        "prevents": "OCR failure when Tesseract binary is not installed"
+      },
+      {
+        "test": "test_04_transcription_non_existent_file",
+        "component": "src/domain/transcription_engine.py",
+        "prevents": "Missing audio file crash during transcription"
+      },
+      {
+        "test": "test_05_transcription_wav_chunking_and_energy",
+        "component": "src/domain/transcription_engine.py",
+        "prevents": "WAV audio decoding or 10-second chunking failure"
+      },
+      {
+        "test": "test_06_transcription_mp3_frame_header_parsing",
+        "component": "src/domain/transcription_engine.py",
+        "prevents": "MP3 frame header parsing or timestamp calculation error"
+      },
+      {
+        "test": "test_07_transcription_corrupt_unknown_audio",
+        "component": "src/domain/transcription_engine.py",
+        "prevents": "Corrupted audio file crash during transcription processing"
+      }
+    ],
+    "DomainWorkflowTriggers": [
+      {
+        "test": "test_01_database_crud_operations",
+        "component": "src/infrastructure/database.py",
+        "prevents": "Workflow trigger and log schema or CRUD database failure"
+      },
+      {
+        "test": "test_02_condition_matching_engine",
+        "component": "src/domain/workflow_engine.py",
+        "prevents": "Rule evaluation failure on document_ingested, tag_assigned, semantic_match"
+      },
+      {
+        "test": "test_03_webhook_dispatcher_signing_and_retries",
+        "component": "src/infrastructure/webhook_dispatcher.py",
+        "prevents": "Missing HMAC-SHA256 signature or failed webhook retries"
+      },
+      {
+        "test": "test_04_rest_api_trigger_lifecycle",
+        "component": "src/app/routers/workflows.py",
+        "prevents": "REST API endpoint failures for triggers or deletion"
+      },
+      {
+        "test": "test_05_rest_api_event_trigger_and_logs",
+        "component": "src/app/routers/workflows.py",
+        "prevents": "REST API event dispatch or log retrieval failure"
+      }
+    ],
+    "DomainAnalyticsIntelligence": [
+      {
+        "test": "test_zero_state_resilience",
+        "component": "src/domain/analytics_engine.py",
+        "prevents": "Uninitialized database crashes and missing fallback values"
+      },
+      {
+        "test": "test_analytics_with_populated_data",
+        "component": "src/domain/analytics_engine.py",
+        "prevents": "Incorrect metric calculation for storage, tags, and search telemetry"
+      },
+      {
+        "test": "test_fastapi_rest_endpoints",
+        "component": "src/app/routers/analytics.py",
+        "prevents": "REST API endpoint failures or schema mismatches"
+      },
+      {
+        "test": "test_latency_under_50ms",
+        "component": "src/domain/analytics_engine.py",
+        "prevents": "Sub-optimal query execution or missing LRU/TTL caching"
+      }
+    ],
+    "DomainGraphPerformance": [
+      {
+        "test": "test_01_graph_performance_1000_nodes",
+        "component": "src/app/routers/search.py",
+        "prevents": "1000-node graph query latency degradation > 50ms"
+      },
+      {
+        "test": "test_02_wikilink_edge_extraction",
+        "component": "src/domain/wikilink_parser.py",
+        "prevents": "Missing or corrupted markdown wikilink document edges"
+      },
+      {
+        "test": "test_03_shared_tag_cluster_edges",
+        "component": "src/app/routers/search.py",
+        "prevents": "Incorrect shared tag cluster edge weight calculation"
+      }
+    ],
+    "DomainChatIntelligence": [
+      {
+        "test": "test_chat_session_lifecycle_crud",
+        "component": "src/domain/chat_intelligence.py",
+        "prevents": "Orphaned chat sessions or broken CRUD state"
+      },
+      {
+        "test": "test_chat_message_history_citations",
+        "component": "src/domain/chat_intelligence.py",
+        "prevents": "Unverified citations or sequence desynchronization"
+      },
+      {
+        "test": "test_chat_context_window_truncation",
+        "component": "src/domain/chat_intelligence.py",
+        "prevents": "LLM context window token overflow"
+      },
+      {
+        "test": "test_chat_fastapi_rest_endpoints",
+        "component": "src/app/routers/rag.py",
+        "prevents": "REST session endpoint failures"
+      },
+      {
+        "test": "test_chat_metadata_unicode_resilience",
+        "component": "src/domain/chat_intelligence.py",
+        "prevents": "Unicode parsing crashes and JSON metadata corruption"
+      }
+    ],
+    "Concurrency & Lock Contention": [
+      {
+        "test": "test_05_angle_timeout_60s_guard",
+        "component": "know.py:L52",
+        "prevents": "database is locked errors during concurrent writes"
+      },
+      {
+        "test": "test_06_angle_atomic_snapshot_during_read",
+        "component": "know.py:L1052",
+        "prevents": "WAL checkpoint blocking active reads"
+      },
+      {
+        "test": "test_07_angle_submillisecond_connection_reset",
+        "component": "know.py:L45",
+        "prevents": "Connection pool depletion"
+      },
+      {
+        "test": "test_04_angle_llm_lock_concurrency_safety",
+        "component": "main.py:L2984",
+        "prevents": "_llm_lock thread deadlocks"
+      },
+      {
+        "test": "test_02_chaos_simulated_read_lock_recovery",
+        "component": "know.py:L45",
+        "prevents": "Multi-connection lock contention crashes"
+      }
+    ],
+    "Memory Leaks & OOM Spikes": [
+      {
+        "test": "test_04_angle_50mb_size_limit_guard",
+        "component": "know.py:L604",
+        "prevents": "Host RAM exhaustion on 1GB+ files"
+      },
+      {
+        "test": "test_02_inverted_index_posting_lists",
+        "component": "know.py:L330",
+        "prevents": "O(N_docs) vector matrix memory explosion"
+      },
+      {
+        "test": "test_06_angle_version_invalidation_matrix",
+        "component": "know.py:L312",
+        "prevents": "Stale memory cache leaks"
+      }
+    ],
+    "Security & Path Traversal": [
+      {
+        "test": "test_02_path_traversal_containment",
+        "component": "main.py:L446",
+        "prevents": "Directory traversal symlink escape (../../secret.txt)"
+      },
+      {
+        "test": "test_03_angle_unbalanced_quotes_sanitization",
+        "component": "main.py:L3030",
+        "prevents": "FTS5 syntax injection exceptions"
+      },
+      {
+        "test": "test_05_angle_fts_injection_resilience",
+        "component": "main.py:L3040",
+        "prevents": "Raw FTS operator SQL injection"
+      },
+      {
+        "test": "test_04_angle_multibyte_utf8_strings",
+        "component": "know.py:L304",
+        "prevents": "Multibyte non-ASCII parsing crashes"
+      },
+      {
+        "test": "test_08_simulation_symlink_escape_containment",
+        "component": "main.py:L446",
+        "prevents": "Symlink escape containment breach"
+      },
+      {
+        "test": "test_09_simulation_xss_script_injection_sanitization",
+        "component": "main.py:L3024",
+        "prevents": "HTML script tag XSS injection"
+      }
+    ],
+    "C++ Hardware & Allocator Overflows": [
+      {
+        "test": "test_01_gpu_llm_loader",
+        "component": "main.py:L2955",
+        "prevents": "Vulkan uint32_t layer offloading integer overflow"
+      },
+      {
+        "test": "test_02_angle_empty_prompt_generation_safety",
+        "component": "main.py:L2960",
+        "prevents": "GPU VRAM null pointer access violation"
+      }
+    ],
+    "Index Desynchronization & Silent Data Loss": [
+      {
+        "test": "test_02_fts_porter_tokenizer",
+        "component": "know.py:L125",
+        "prevents": "Stemming search mismatch"
+      },
+      {
+        "test": "test_03_composite_indexes_exist",
+        "component": "know.py:L273",
+        "prevents": "Full table scan performance degradation"
+      },
+      {
+        "test": "test_03_angle_empty_file_ingestion",
+        "component": "know.py:L600",
+        "prevents": "0-byte file silent extraction crash"
+      },
+      {
+        "test": "test_05_angle_rapid_file_save_sync",
+        "component": "main.py:L478",
+        "prevents": "Primary DB / FTS index desynchronization"
+      },
+      {
+        "test": "test_01_chaos_corrupted_utf8_binary_payload",
+        "component": "know.py:L604",
+        "prevents": "Corrupted non-UTF8 binary payload crash"
+      }
+    ],
+    "Network & API Exceptions": [
+      {
+        "test": "test_01_search_api_endpoint",
+        "component": "main.py:L425",
+        "prevents": "HTTP 500 endpoint failure"
+      },
+      {
+        "test": "test_02_sse_chat_stream_endpoint",
+        "component": "main.py:L3160",
+        "prevents": "Invalid JSON SSE stream disconnects"
+      },
+      {
+        "test": "test_03_angle_missing_field_422_validation",
+        "component": "main.py:L3026",
+        "prevents": "Unvalidated schema payload crash"
+      },
+      {
+        "test": "test_04_angle_gzip_compression_header",
+        "component": "main.py:L30",
+        "prevents": "Uncompressed HTTP network payload inflation"
+      },
+      {
+        "test": "test_06_simulation_giant_query_string",
+        "component": "main.py:L425",
+        "prevents": "10,000 char query buffer overflow"
+      },
+      {
+        "test": "test_07_simulation_invalid_json_body",
+        "component": "main.py:L3160",
+        "prevents": "Malformed JSON body API crashes"
+      }
+    ],
+    "SOC 2 Type II Security & Trust Controls": [
+      {
+        "test": "test_01_soc2_security_zero_secret_leakage",
+        "component": "repository",
+        "prevents": "Plaintext secret or credential leaks"
+      },
+      {
+        "test": "test_02_soc2_availability_resource_guard",
+        "component": "know.py:L604",
+        "prevents": "System availability degradation under OOM"
+      },
+      {
+        "test": "test_03_soc2_processing_integrity_sha256_verification",
+        "component": "know.py:L468",
+        "prevents": "File data tampering / payload alteration"
+      },
+      {
+        "test": "test_04_soc2_confidentiality_acl_permissions",
+        "component": "know.py:L117",
+        "prevents": "Unauthorized document ACL access"
+      },
+      {
+        "test": "test_05_soc2_privacy_sanitization_guard",
+        "component": "main.py:L3024",
+        "prevents": "Private data & control char leakage"
+      }
+    ],
+    "Mutation & Code Resiliency": [
+      {
+        "test": "test_01_mutation_caught_corrupted_fts_query",
+        "component": "main.py:L3004",
+        "prevents": "Unsanitized operator mutations"
+      },
+      {
+        "test": "test_02_mutation_caught_oversized_ram_ingestion",
+        "component": "know.py:L604",
+        "prevents": "RAM threshold bypass mutations"
+      }
+    ]
+  },
+  "domain_results": {
+    "test_domain_db": {
+      "module": "tests.test_domain_db",
+      "tests_run": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.4157
+    },
+    "test_domain_vector": {
+      "module": "tests.test_domain_vector",
+      "tests_run": 8,
+      "passed": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.335
+    },
+    "test_domain_ingestion": {
+      "module": "tests.test_domain_ingestion",
+      "tests_run": 9,
+      "passed": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.4231
+    },
+    "test_domain_api": {
+      "module": "tests.test_domain_api",
+      "tests_run": 13,
+      "passed": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 1.7668
+    },
+    "test_domain_llm": {
+      "module": "tests.test_domain_llm",
+      "tests_run": 5,
+      "passed": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.1806
+    },
+    "test_domain_security": {
+      "module": "tests.test_domain_security",
+      "tests_run": 9,
+      "passed": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.2583
+    },
+    "test_domain_performance": {
+      "module": "tests.test_domain_performance",
+      "tests_run": 4,
+      "passed": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.1366
+    },
+    "test_domain_architecture": {
+      "module": "tests.test_domain_architecture",
+      "tests_run": 1,
+      "passed": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 2.6122
+    },
+    "test_domain_chaos": {
+      "module": "tests.test_domain_chaos",
+      "tests_run": 3,
+      "passed": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.1795
+    },
+    "test_domain_soc2": {
+      "module": "tests.test_domain_soc2",
+      "tests_run": 5,
+      "passed": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 9.9445
+    },
+    "test_domain_mutation": {
+      "module": "tests.test_domain_mutation",
+      "tests_run": 2,
+      "passed": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.0591
+    },
+    "test_domain_rag": {
+      "module": "tests.test_domain_rag",
+      "tests_run": 13,
+      "passed": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 1.792
+    },
+    "test_domain_desktop": {
+      "module": "tests.test_domain_desktop",
+      "tests_run": 6,
+      "passed": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.1909
+    },
+    "test_domain_expanded_coverage": {
+      "module": "tests.test_domain_expanded_coverage",
+      "tests_run": 25,
+      "passed": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.8309
+    },
+    "test_fundamental_adversarial_matrix": {
+      "module": "tests.test_fundamental_adversarial_matrix",
+      "tests_run": 20,
+      "passed": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.8227
+    },
+    "test_deep_fuzzing_and_concurrency": {
+      "module": "tests.test_deep_fuzzing_and_concurrency",
+      "tests_run": 20,
+      "passed": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 1.1002
+    },
+    "test_domain_metamorphic": {
+      "module": "tests.test_domain_metamorphic",
+      "tests_run": 6,
+      "passed": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.4427
+    },
+    "test_domain_accessibility": {
+      "module": "tests.test_domain_accessibility",
+      "tests_run": 5,
+      "passed": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.0436
+    },
+    "test_domain_localization": {
+      "module": "tests.test_domain_localization",
+      "tests_run": 4,
+      "passed": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.2636
+    },
+    "test_domain_contract_chaos": {
+      "module": "tests.test_domain_contract_chaos",
+      "tests_run": 4,
+      "passed": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.3269
+    },
+    "test_router_micro_units": {
+      "module": "tests.test_router_micro_units",
+      "tests_run": 18,
+      "passed": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.9699
+    },
+    "test_empirical_challenger_final": {
+      "module": "tests.test_empirical_challenger_final",
+      "tests_run": 8,
+      "passed": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 6.9851
+    },
+    "test_adversarial_ui_stress": {
+      "module": "tests.test_adversarial_ui_stress",
+      "tests_run": 4,
+      "passed": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 6.6135
+    },
+    "test_adversarial_challenger_2": {
+      "module": "tests.test_adversarial_challenger_2",
+      "tests_run": 2,
+      "passed": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 4.3187
+    },
+    "test_adversarial_i3": {
+      "module": "tests.test_adversarial_i3",
+      "tests_run": 3,
+      "passed": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 8.7814
+    },
+    "test_domain_chat_intelligence": {
+      "module": "tests.test_domain_chat_intelligence",
+      "tests_run": 5,
+      "passed": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.4085
+    },
+    "test_domain_graph_performance": {
+      "module": "tests.test_domain_graph_performance",
+      "tests_run": 9,
+      "passed": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.3706
+    },
+    "test_domain_analytics_intelligence": {
+      "module": "tests.test_domain_analytics_intelligence",
+      "tests_run": 4,
+      "passed": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.2056
+    },
+    "test_domain_workflow_triggers": {
+      "module": "tests.test_domain_workflow_triggers",
+      "tests_run": 5,
+      "passed": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.6222
+    },
+    "test_e2e_analytics_graph_workflows": {
+      "module": "tests.test_e2e_analytics_graph_workflows",
+      "tests_run": 21,
+      "passed": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 7.2763
+    },
+    "test_domain_ocr_transcription": {
+      "module": "tests.test_domain_ocr_transcription",
+      "tests_run": 9,
+      "passed": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 2.2289
+    },
+    "test_domain_p2p_sync": {
+      "module": "tests.test_domain_p2p_sync",
+      "tests_run": 7,
+      "passed": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 4.2961
+    },
+    "test_domain_backup_auth_theme": {
+      "module": "tests.test_domain_backup_auth_theme",
+      "tests_run": 3,
+      "passed": 2,
+      "failures": 0,
+      "errors": 1,
+      "skipped": 0,
+      "duration_seconds": 0.1265
+    }
+  }
+}

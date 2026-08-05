@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Uroboros Test Coverage Heatmap</title>
+    <style>
+        :root { --bg: #0d1117; --card-bg: #161b22; --border: #30363d; --text: #c9d1d9; --accent: #58a6ff; --font: -apple-system, sans-serif; }
+        body { background: var(--bg); color: var(--text); font-family: var(--font); padding: 30px; margin: 0; }
+        h1 { color: #fff; margin-bottom: 5px; }
+        .subtitle { color: #8b949e; margin-bottom: 25px; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+        .heatmap-bar { height: 6px; width: 100%; background: #21262d; border-radius: 3px; margin-top: 15px; overflow: hidden; }
+        .heatmap-fill { height: 100%; background: linear-gradient(90deg, #238636, #58a6ff); border-radius: 3px; }
+        .file-name { font-family: monospace; font-size: 18px; font-weight: bold; color: #fff; }
+        .score { float: right; font-size: 14px; color: var(--accent); font-weight: bold; }
+        .domain-tag { display: inline-block; background: #1f242c; border: 1px solid var(--border); color: #79c0ff; font-size: 11px; padding: 2px 8px; border-radius: 12px; margin-right: 4px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Uroboros Codebase Test Coverage Heatmap</h1>
+    <div class="subtitle">Visual Test Density & Bug Relation Resilience Score per File</div>
+    <div class="grid">
+
+        <div class="card">
+            <span class="score">100% Density</span>
+            <div class="file-name">know.py</div>
+            <div><span class="domain-tag">DomainDB</span><span class="domain-tag">DomainVector</span><span class="domain-tag">DomainIngestion</span><span class="domain-tag">DomainPerformance</span><span class="domain-tag">DomainChaos</span><span class="domain-tag">DomainSOC2</span><span class="domain-tag">DomainMutation</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 16</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 100%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">100% Density</span>
+            <div class="file-name">main.py</div>
+            <div><span class="domain-tag">DomainAPI</span><span class="domain-tag">DomainLLM</span><span class="domain-tag">DomainSecurity</span><span class="domain-tag">DomainPerformance</span><span class="domain-tag">DomainChaos</span><span class="domain-tag">DomainSOC2</span><span class="domain-tag">DomainMutation</span><span class="domain-tag">DomainRouter</span><span class="domain-tag">DomainEmpirical</span><span class="domain-tag">DomainUIStress</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 17</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 100%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">60% Density</span>
+            <div class="file-name">app.js</div>
+            <div><span class="domain-tag">DomainAPI</span><span class="domain-tag">DomainSecurity</span><span class="domain-tag">DomainUIStress</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 0</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 60%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">50% Density</span>
+            <div class="file-name">style.css</div>
+            <div><span class="domain-tag">DomainAPI</span><span class="domain-tag">DomainUIStress</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 1</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 50%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">20% Density</span>
+            <div class="file-name">scripts/architecture_cli.py</div>
+            <div><span class="domain-tag">DomainArchitecture</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 0</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 20%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">20% Density</span>
+            <div class="file-name">run_domain_tests.py</div>
+            <div><span class="domain-tag">DomainRunner</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 0</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 20%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">60% Density</span>
+            <div class="file-name">src/domain/chat_intelligence.py</div>
+            <div><span class="domain-tag">DomainChatIntelligence</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 4</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 60%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">20% Density</span>
+            <div class="file-name">tests/test_domain_chat_intelligence.py</div>
+            <div><span class="domain-tag">DomainChatIntelligence</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 0</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 20%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">30% Density</span>
+            <div class="file-name">src/domain/wikilink_parser.py</div>
+            <div><span class="domain-tag">DomainGraphPerformance</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 1</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 30%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">20% Density</span>
+            <div class="file-name">tests/test_domain_graph_performance.py</div>
+            <div><span class="domain-tag">DomainGraphPerformance</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 0</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 20%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">50% Density</span>
+            <div class="file-name">src/domain/analytics_engine.py</div>
+            <div><span class="domain-tag">DomainAnalyticsIntelligence</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 3</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 50%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">30% Density</span>
+            <div class="file-name">src/app/routers/analytics.py</div>
+            <div><span class="domain-tag">DomainAnalyticsIntelligence</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 1</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 30%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">20% Density</span>
+            <div class="file-name">tests/test_domain_analytics_intelligence.py</div>
+            <div><span class="domain-tag">DomainAnalyticsIntelligence</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 0</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 20%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">30% Density</span>
+            <div class="file-name">src/domain/workflow_engine.py</div>
+            <div><span class="domain-tag">DomainWorkflowTriggers</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 1</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 30%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">30% Density</span>
+            <div class="file-name">src/infrastructure/webhook_dispatcher.py</div>
+            <div><span class="domain-tag">DomainWorkflowTriggers</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 1</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 30%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">40% Density</span>
+            <div class="file-name">src/app/routers/workflows.py</div>
+            <div><span class="domain-tag">DomainWorkflowTriggers</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 2</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 40%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">20% Density</span>
+            <div class="file-name">tests/test_domain_workflow_triggers.py</div>
+            <div><span class="domain-tag">DomainWorkflowTriggers</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 0</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 20%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">50% Density</span>
+            <div class="file-name">src/domain/ocr_engine.py</div>
+            <div><span class="domain-tag">DomainOCRTranscription</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 3</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 50%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">60% Density</span>
+            <div class="file-name">src/domain/transcription_engine.py</div>
+            <div><span class="domain-tag">DomainOCRTranscription</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 4</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 60%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">20% Density</span>
+            <div class="file-name">tests/test_domain_ocr_transcription.py</div>
+            <div><span class="domain-tag">DomainOCRTranscription</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 0</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 20%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">50% Density</span>
+            <div class="file-name">src/infrastructure/p2p_sync.py</div>
+            <div><span class="domain-tag">DomainP2PSync</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 3</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 50%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">20% Density</span>
+            <div class="file-name">tests/test_domain_p2p_sync.py</div>
+            <div><span class="domain-tag">DomainP2PSync</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 0</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 20%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">30% Density</span>
+            <div class="file-name">scripts/backup_db.py</div>
+            <div><span class="domain-tag">DomainBackupAuthTheme</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 1</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 30%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">30% Density</span>
+            <div class="file-name">src/shared/auth.py</div>
+            <div><span class="domain-tag">DomainBackupAuthTheme</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 1</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 30%;"></div></div>
+        </div>
+
+        <div class="card">
+            <span class="score">20% Density</span>
+            <div class="file-name">tests/test_domain_backup_auth_theme.py</div>
+            <div><span class="domain-tag">DomainBackupAuthTheme</span></div>
+            <div style="margin-top: 10px; font-size: 12px; color: #8b949e;">Guarded Defect Tests: 0</div>
+            <div class="heatmap-bar"><div class="heatmap-fill" style="width: 20%;"></div></div>
+        </div>
+</div></body></html>

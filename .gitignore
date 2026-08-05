@@ -1,3 +1,7 @@
+# Subagent runtime directories
+.agents/
+.agents*/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.pyc
@@ -5,10 +9,10 @@ __pycache__/
 *.pyd
 
 # Databases and backup files
-knowledge.db
-knowledge.db.backup-*
-backups/
+knowledge.db*
 *.db
+*.db-wal
+*.db-shm
 
 # Temporary logs or watch dirs
 dumps/*
@@ -21,5 +25,13 @@ Thumbs.db
 
 # E2E temporary files
 e2e_knowledge*
-test_sandbox_e2e_*
+test_sandbox_*
+*.snapshot-*
+test_*.db*
 
+# PyInstaller build outputs and compiled binaries
+dist/
+build/UroborosKnowledgeHub/
+*.exe
+*.pkg
+*.pyz

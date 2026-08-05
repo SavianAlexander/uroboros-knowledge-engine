@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" width="900" height="450">
+  <defs>
+    <style>
+      .bg { fill: #121211; }
+      .card { fill: #181a1e; stroke: #2d3139; stroke-width: 1.5; rx: 8; }
+      .title { fill: #eae0c8; font-family: system-ui, sans-serif; font-weight: 700; font-size: 20px; }
+      .subtitle { fill: #a49e8d; font-family: system-ui, sans-serif; font-size: 14px; }
+      .section-title { fill: #eae0c8; font-family: system-ui, sans-serif; font-weight: 600; font-size: 15px; }
+      .color-label { font-family: monospace; font-size: 11px; fill: #ffffff; }
+      .label { fill: #a49e8d; font-family: system-ui, sans-serif; font-size: 12px; }
+    </style>
+  </defs>
+  <rect class="bg" width="900" height="450" />
+
+  <!-- Header -->
+  <text x="40" y="45" class="title">Uroboros Knowledge Hub — Visual Branding &amp; Style Guide</text>
+  <text x="40" y="68" class="subtitle">Warm Neutral Glassmorphism Palette, Category Tokens, and Typography Specifications</text>
+
+  <!-- Color Palette Section -->
+  <rect class="card" x="40" y="100" width="820" height="150" />
+  <text x="60" y="130" class="section-title">🎨 Categorical Extension Color Tokens</text>
+
+  <!-- Swatch 1: Code -->
+  <rect x="60" y="150" width="110" height="50" rx="6" fill="#a5b4fc" />
+  <text x="65" y="218" class="color-label" fill="#a5b4fc">Code (#a5b4fc)</text>
+
+  <!-- Swatch 2: Spreadsheet -->
+  <rect x="195" y="150" width="110" height="50" rx="6" fill="#6ee7b7" />
+  <text x="200" y="218" class="color-label" fill="#6ee7b7">Sheet (#6ee7b7)</text>
+
+  <!-- Swatch 3: Image -->
+  <rect x="330" y="150" width="110" height="50" rx="6" fill="#fca5a5" />
+  <text x="335" y="218" class="color-label" fill="#fca5a5">Image (#fca5a5)</text>
+
+  <!-- Swatch 4: Doc -->
+  <rect x="465" y="150" width="110" height="50" rx="6" fill="#fcd34d" />
+  <text x="470" y="218" class="color-label" fill="#fcd34d">Doc (#fcd34d)</text>
+
+  <!-- Swatch 5: Audio -->
+  <rect x="600" y="150" width="110" height="50" rx="6" fill="#f472b6" />
+  <text x="605" y="218" class="color-label" fill="#f472b6">Audio (#f472b6)</text>
+
+  <!-- Swatch 6: Video -->
+  <rect x="735" y="150" width="105" height="50" rx="6" fill="#c084fc" />
+  <text x="740" y="218" class="color-label" fill="#c084fc">Video (#c084fc)</text>
+
+  <!-- Core Palette Section -->
+  <rect class="card" x="40" y="270" width="400" height="150" />
+  <text x="60" y="300" class="section-title">🏛️ Base Glassmorphic Surface Theme</text>
+  
+  <rect x="60" y="320" width="70" height="40" rx="4" fill="#121211" stroke="#2d3139" />
+  <text x="60" y="378" class="label">Background (#121211)</text>
+
+  <rect x="180" y="320" width="70" height="40" rx="4" fill="#181a1e" stroke="#2d3139" />
+  <text x="180" y="378" class="label">Card Surface (#181a1e)</text>
+
+  <rect x="300" y="320" width="70" height="40" rx="4" fill="#eae0c8" />
+  <text x="300" y="378" class="label">Cream Accent (#eae0c8)</text>
+
+  <!-- Typography &amp; Glass Rules -->
+  <rect class="card" x="460" y="270" width="400" height="150" />
+  <text x="480" y="300" class="section-title">✨ Glassmorphic UI Specs</text>
+  <text x="480" y="330" class="label">• Backdrop Filter: blur(12px) opacity(0.85)</text>
+  <text x="480" y="352" class="label">• Border Radius: 8px / 12px card containers</text>
+  <text x="480" y="374" class="label">• Typography: Inter / System UI Font Stack</text>
+  <text x="480" y="396" class="label">• Icons: Scalable Vector Graphics (SVG)</text>
+</svg>

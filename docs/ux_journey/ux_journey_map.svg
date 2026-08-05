@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400">
+  <defs>
+    <style>
+      .bg { fill: #121211; }
+      .tab-card { fill: #181a1e; stroke: #2d3139; stroke-width: 1.5; rx: 8; }
+      .tab-active { fill: #202329; stroke: #eae0c8; stroke-width: 2; rx: 8; }
+      .title { fill: #eae0c8; font-family: system-ui, sans-serif; font-weight: 700; font-size: 20px; }
+      .subtitle { fill: #a49e8d; font-family: system-ui, sans-serif; font-size: 14px; }
+      .tab-title { fill: #eae0c8; font-family: system-ui, sans-serif; font-weight: 600; font-size: 15px; }
+      .step-desc { fill: #a49e8d; font-family: system-ui, sans-serif; font-size: 12px; }
+    </style>
+  </defs>
+  <rect class="bg" width="900" height="400" />
+
+  <!-- Header -->
+  <text x="40" y="45" class="title">Uroboros Knowledge Hub — UX Journey Map</text>
+  <text x="40" y="68" class="subtitle">Four Core Navigational Views: Workspace Explorer, Search &amp; Graph, RAG Chat, System Admin</text>
+
+  <!-- View 1: Workspace Explorer -->
+  <rect class="tab-active" x="40" y="110" width="190" height="240" />
+  <text x="55" y="145" class="tab-title">1. Workspace Explorer</text>
+  <text x="55" y="175" class="step-desc">• File Tree Navigation</text>
+  <text x="55" y="195" class="step-desc">• Extension SVG Badges</text>
+  <text x="55" y="215" class="step-desc">• Document Reader</text>
+  <text x="55" y="235" class="step-desc">• Audio Preview Player</text>
+  <text x="55" y="255" class="step-desc">• Video Preview Player</text>
+  <text x="55" y="275" class="step-desc">• Quick Filters</text>
+
+  <!-- View 2: Search &amp; Graph -->
+  <rect class="tab-card" x="250" y="110" width="190" height="240" />
+  <text x="265" y="145" class="tab-title">2. Search &amp; Graph</text>
+  <text x="265" y="175" class="step-desc">• Hybrid FTS5 Search</text>
+  <text x="265" y="195" class="step-desc">• Category Result Badges</text>
+  <text x="265" y="215" class="step-desc">• D3/Canvas Graph</text>
+  <text x="265" y="235" class="step-desc">• 6 Category Colors</text>
+  <text x="265" y="255" class="step-desc">• Node Focus &amp; Zoom</text>
+  <text x="265" y="275" class="step-desc">• Tag Pill Filtering</text>
+
+  <!-- View 3: RAG Assistant -->
+  <rect class="tab-card" x="460" y="110" width="190" height="240" />
+  <text x="475" y="145" class="tab-title">3. RAG AI Assistant</text>
+  <text x="475" y="175" class="step-desc">• Interactive Chat</text>
+  <text x="475" y="195" class="step-desc">• Context Retrieval</text>
+  <text x="475" y="215" class="step-desc">• Dynamic Source Chips</text>
+  <text x="475" y="235" class="step-desc">• Category Icon Chips</text>
+  <text x="475" y="255" class="step-desc">• Fallback Guardrails</text>
+  <text x="475" y="275" class="step-desc">• Prompt History</text>
+
+  <!-- View 4: System Admin -->
+  <rect class="tab-card" x="670" y="110" width="190" height="240" />
+  <text x="685" y="145" class="tab-title">4. Admin Console</text>
+  <text x="685" y="175" class="step-desc">• Vault Configuration</text>
+  <text x="685" y="195" class="step-desc">• Auto-Tagging Rules</text>
+  <text x="685" y="215" class="step-desc">• Peer Sync Nodes</text>
+  <text x="685" y="235" class="step-desc">• Snapshot Rollbacks</text>
+  <text x="685" y="255" class="step-desc">• Audit Log Ledger</text>
+  <text x="685" y="275" class="step-desc">• SOC 2 Attestation</text>
+</svg>
