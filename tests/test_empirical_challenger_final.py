@@ -387,7 +387,8 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         macro_added = ("phys" in macro_container_text) or (page.locator("#macros-list").locator("*").count() > 0)
         self.assertTrue(macro_added, "Macro addition failed to render in UI")
 
-        page.click("button[title='Create Snapshot']")
+        # ponytail: button title is "Capture DB Snapshot" in new UI
+        page.click("#capture-snapshot-btn")
 
     def test_08_visual_toasts_and_zero_silent_failures(self):
         """

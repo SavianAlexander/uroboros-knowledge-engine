@@ -363,8 +363,12 @@ class TestAdversarialI3(unittest.TestCase):
                 window.capturedNodes[0].y = cy;
                 window.capturedNodes[0].targetX = cx;
                 window.capturedNodes[0].targetY = cy;
+                window.capturedNodes[0].vx = 0;
+                window.capturedNodes[0].vy = 0;
+                if (typeof window.rebuildSpatialGrid === 'function') window.rebuildSpatialGrid();
+                if (typeof window.setGraphNeedsRedraw === 'function') window.setGraphNeedsRedraw();
             }""")
-            page.wait_for_timeout(200)
+            page.wait_for_timeout(300)
 
             first_node = page.evaluate("window.capturedNodes[0]")
             node_id = first_node["id"]
