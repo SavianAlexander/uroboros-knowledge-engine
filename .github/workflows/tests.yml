@@ -30,8 +30,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+        python -m playwright install --with-deps chromium
         
     - name: Run tests
       run: |
-        pytest test_api.py
-        python test_db.py
+        python scripts/architecture_cli.py doctor .
+        python run_domain_tests.py
