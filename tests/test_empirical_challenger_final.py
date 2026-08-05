@@ -382,8 +382,9 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         page.click("button:has-text('+ Add Macro')")
 
         page.wait_for_timeout(1200)
-        macro_container_text = page.locator("#sidebar-macros").inner_text()
-        macro_added = ("phys" in macro_container_text) or (page.locator("#sidebar-macros").locator("*").count() > 0)
+        # ponytail: sidebar-macros is destroyed by fetchMacrosList; use macros-list parent
+        macro_container_text = page.locator("#macros-list").inner_text()
+        macro_added = ("phys" in macro_container_text) or (page.locator("#macros-list").locator("*").count() > 0)
         self.assertTrue(macro_added, "Macro addition failed to render in UI")
 
         page.click("button[title='Create Snapshot']")

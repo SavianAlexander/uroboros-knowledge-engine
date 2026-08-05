@@ -333,11 +333,16 @@ class TestAdversarialI3(unittest.TestCase):
             cx = box["x"] + box["width"] / 2
             cy = box["y"] + box["height"] / 2
 
-            # ponytail: start far from center to avoid hitting a node (triggers drag, not pan)
-            page.mouse.move(box["x"] + 10, box["y"] + 10)
-            page.mouse.down()
-            page.mouse.move(box["x"] + 110, box["y"] + 60)
-            page.mouse.up()
+            # ponytail: dispatch mouse events directly on canvas to bypass headless hit-testing issues
+            page.evaluate("""() => {
+                const canvas = document.getElementById('concept-graph-canvas');
+                const rect = canvas.getBoundingClientRect();
+                const x1 = rect.left + 10, y1 = rect.top + 10;
+                const x2 = rect.left + 110, y2 = rect.top + 60;
+                canvas.dispatchEvent(new MouseEvent('mousedown', {clientX: x1, clientY: y1, bubbles: true}));
+                canvas.dispatchEvent(new MouseEvent('mousemove', {clientX: x2, clientY: y2, bubbles: true}));
+                canvas.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+            }""")
             page.wait_for_timeout(500)
 
             ox_pan = page.evaluate("window.lastOffsetX")
