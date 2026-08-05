@@ -365,13 +365,14 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         page.click(".tab-link[data-tab='processes']")
         page.wait_for_selector(".tab-link[data-tab='processes'].active")
 
-        # ponytail: use JS scrollIntoView + DOM presence check — scroll_into_view_if_needed times out in config-grid overflow
+        # ponytail: fetch*() functions replace innerHTML of list containers, destroying inner wrapper IDs.
+        # Check manager/list parent elements that survive JS hydration instead.
         for panel_id, label in [
             ("sidebar-search-history", "Search history panel"),
             ("sidebar-search-bookmarks", "Search bookmarks panel"),
-            ("sidebar-macros", "Macros panel"),
-            ("sidebar-peers", "Peers panel"),
-            ("sidebar-snapshots", "Snapshots panel"),
+            ("macros-list", "Macros panel"),
+            ("sync-peers-list", "Peers panel"),
+            ("snapshots-list", "Snapshots panel"),
         ]:
             exists = page.evaluate(f'(() => {{ const el = document.getElementById("{panel_id}"); if (el) el.scrollIntoView(); return !!el; }})()')
             self.assertTrue(exists, f"{label} missing from DOM")
