@@ -29,7 +29,7 @@ export default function CommandPalette() {
   return (
     <AnimatePresence>
       {isCommandPaletteOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -65,7 +65,7 @@ export default function CommandPalette() {
               <button onClick={() => navigateTo('chat')} className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-indigo-100 dark:hover:bg-indigo-500/20 rounded-lg transition-colors">New AI Chat Session</button>
             </div>
           </motion.div>
-        </div>
+          </motion.div>
       )}
     </AnimatePresence>
   );

@@ -10,7 +10,7 @@ $env:FORCE_CMAKE = "1"
 $env:CMAKE_ARGS = "-DGGML_VULKAN=on"
 
 python main.py
-$exitCode = $LASTEXITCODE
+$exitCode = if ($LASTEXITCODE -ne $null) { $LASTEXITCODE } else { 1 }
 if ($exitCode -ne 0) {
     Write-Host "`nEngine stopped with exit code $exitCode." -ForegroundColor Red
 }

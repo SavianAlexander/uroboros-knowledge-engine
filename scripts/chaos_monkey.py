@@ -26,8 +26,10 @@ def get_latest_files(limit=3):
             cursor.execute("SELECT filepath, content FROM fts_files ORDER BY rowid DESC LIMIT ?", (limit,))
             return cursor.fetchall()
         finally:
-            try: conn.close()
-            except Exception: pass
+            try:
+                conn.close()
+            except Exception:
+                pass
     except Exception as e:
         print(f"Chaos Monkey DB Error: {e}")
         return []

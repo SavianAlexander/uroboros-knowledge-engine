@@ -46,7 +46,7 @@ export const api = {
   deleteChatSession: (id: string) =>
     fetchAPI<any>(`/chat/sessions/${id}`, { method: 'DELETE' }),
   ragStream: (message: string, session_id?: string, options?: RequestInit) =>
-    fetch(`${BASE_URL}/chat/stream`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, session_id }), ...options }),
+    fetch(`${BASE_URL}/chat/stream`, { method: 'POST', ...options, headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) }, body: JSON.stringify({ message, session_id }) }),
 
   // Files
   fileRaw: (path: string) => fetchAPI<any>(`/file/raw?path=${encodeURIComponent(path)}`),
