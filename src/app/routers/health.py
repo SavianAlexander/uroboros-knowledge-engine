@@ -186,7 +186,8 @@ def delete_snapshot_endpoint(timestamp: int):
     """Delete snapshot by timestamp."""
     try:
         from src.infrastructure.database import delete_db_snapshot
-        delete_db_snapshot(timestamp)
+        if not delete_db_snapshot(timestamp):
+            raise HTTPException(status_code=404, detail="Snapshot not found or failed to delete")
         return {"status": "success", "deleted_timestamp": timestamp}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

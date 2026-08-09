@@ -124,8 +124,8 @@ export default function SearchView() {
                 </div>
                 <p className="text-sm text-slate-600 dark:text-slate-400 italic">"{res.snippet}"</p>
                 <div className="flex items-center gap-2 mt-1">
-                  {res.tags.map(tag => (
-                    <span key={tag} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-white/5">{tag}</span>
+                  {res.tags.map((tag, i) => (
+                    <span key={`${tag}-${i}`} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-white/5">{tag}</span>
                   ))}
                 </div>
               </div>
@@ -175,8 +175,8 @@ export default function SearchView() {
                   <button className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-300">Edit</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {selectedFile.tags.map(tag => (
-                    <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-lg text-xs font-medium group">
+                  {selectedFile.tags.map((tag, i) => (
+                    <span key={`${tag}-${i}`} className="flex items-center gap-1 px-2.5 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-lg text-xs font-medium group">
                       <Hash className="w-3 h-3"/> {tag}
                       <button onClick={() => handleRemoveTag(tag)} className="ml-1 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity"><X className="w-3 h-3"/></button>
                     </span>

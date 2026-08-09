@@ -477,6 +477,12 @@ def create_db_snapshot() -> int:
         c_dst = sqlite3.connect(dest)
         c_src.backup(c_dst)
     except Exception:
+        if c_dst:
+            c_dst.close()
+            c_dst = None
+        if c_src:
+            c_src.close()
+            c_src = None
         shutil.copy2(DB_FILE, dest)
     finally:
         if c_dst: c_dst.close()
@@ -496,6 +502,12 @@ def restore_db_snapshot(timestamp: int) -> bool:
             c_src.backup(c_dst)
             return True
         except Exception:
+            if c_dst:
+                c_dst.close()
+                c_dst = None
+            if c_src:
+                c_src.close()
+                c_src = None
             shutil.copy2(src, DB_FILE)
             return True
         finally:

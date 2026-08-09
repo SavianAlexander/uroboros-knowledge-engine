@@ -251,7 +251,7 @@ def rename_file_endpoint(req: RenameRequest):
             try:
                 cursor.execute("UPDATE file_revisions SET filepath = ? WHERE filepath = ? OR filepath = ?", (norm_new, real_old, old_fp))
             except Exception as e:
-                logger.warning(f'Failed to update revision history for rename: {e}')
+                logger.exception("Failed to update revision history for rename")
             conn.commit()
         index_directory(parent_dir)
         return {"status": "success", "old_filepath": real_old, "new_filepath": norm_new, "filepath": norm_new}

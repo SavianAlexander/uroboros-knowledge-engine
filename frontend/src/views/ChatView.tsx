@@ -125,13 +125,13 @@ export default function ChatView() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5"><Settings className="w-3 h-3" /> Model Config</span>
           </div>
-          <select className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 p-2 outline-none">
+          <select aria-label="Model Config" className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 p-2 outline-none">
             <option>Llama-3-8B-Instruct.gguf</option>
             <option>Mistral-7B-v0.2.gguf</option>
           </select>
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500">Temp:</span>
-            <input type="range" min="0" max="1" step="0.1" defaultValue="0.7" className="flex-1 accent-indigo-500" />
+            <input type="range" aria-label="Temperature" min="0" max="1" step="0.1" defaultValue="0.7" className="flex-1 accent-indigo-500" />
             <span className="text-xs text-slate-600 dark:text-slate-400">0.7</span>
           </div>
         </div>

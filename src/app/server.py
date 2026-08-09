@@ -24,12 +24,14 @@ async def lifespan(app: FastAPI):
         beacon.start()
     except Exception:
         pass
-    yield
-    if beacon:
-        try:
-            beacon.stop()
-        except Exception:
-            pass
+    try:
+        yield
+    finally:
+        if beacon:
+            try:
+                beacon.stop()
+            except Exception:
+                pass
 
 app = FastAPI(title="Uroboros Knowledge Database", default_response_class=UJSONResponse, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)

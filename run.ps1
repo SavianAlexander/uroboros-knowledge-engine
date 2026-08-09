@@ -9,12 +9,10 @@ $env:PYTHONPYCACHEPREFIX = "$env:LOCALAPPDATA\pycache"
 $env:FORCE_CMAKE = "1"
 $env:CMAKE_ARGS = "-DGGML_VULKAN=on"
 
-try {
-    python main.py
-} catch {
-    Write-Host "`nEngine stopped unexpectedly: $_" -ForegroundColor Red
-}
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "`nEngine stopped with exit code $LASTEXITCODE." -ForegroundColor Red
+python main.py
+$exitCode = $LASTEXITCODE
+if ($exitCode -ne 0) {
+    Write-Host "`nEngine stopped with exit code $exitCode." -ForegroundColor Red
 }
 Read-Host 'Press Enter to exit'
+exit $exitCode
