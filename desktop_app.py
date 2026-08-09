@@ -3,15 +3,24 @@ import sys
 import time
 import threading
 import webbrowser
-import uvicorn
+
+# Enable immediate console output flushing
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except Exception:
+        pass
 
 if getattr(sys, 'frozen', False):
-    os.chdir(sys._MEIPASS)
+    bundle_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+    if bundle_dir not in sys.path:
+        sys.path.insert(0, bundle_dir)
 
 root_dir = os.path.abspath(os.path.dirname(__file__))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
+import uvicorn
 import main
 
 DEFAULT_PORT = 8000
@@ -27,10 +36,11 @@ def open_ui(port=DEFAULT_PORT):
 
 def main_desktop(port=DEFAULT_PORT, auto_open=True):
     """Main desktop application entrypoint."""
-    print("===================================================")
-    print("   Launching Uroboros Knowledge Hub Desktop App... ")
-    print("===================================================")
-    print(f"Backend Server: http://127.0.0.1:{port}")
+    print("===================================================", flush=True)
+    print("   Launching Uroboros Knowledge Hub Desktop App... ", flush=True)
+    print("===================================================", flush=True)
+    print(f"Backend Server: http://127.0.0.1:{port}", flush=True)
+    print("Initializing Database & Web Engine...", flush=True)
     
     server_thread = threading.Thread(target=launch_server, args=(port,), daemon=True)
     server_thread.start()
@@ -39,6 +49,7 @@ def main_desktop(port=DEFAULT_PORT, auto_open=True):
         timer = threading.Timer(1.2, lambda: open_ui(port))
         timer.start()
     
+    print("Ready! Opening web application interface...", flush=True)
     return server_thread
 
 if __name__ == "__main__":
@@ -47,5 +58,5 @@ if __name__ == "__main__":
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\nShutting down Uroboros Knowledge Hub Desktop App...")
+        print("\nShutting down Uroboros Knowledge Hub Desktop App...", flush=True)
         sys.exit(0)

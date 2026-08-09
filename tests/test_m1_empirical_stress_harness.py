@@ -34,6 +34,10 @@ def setup_stress_env(tmp_path):
     test_dir = str(tmp_path / "dumps")
     os.makedirs(test_dir, exist_ok=True)
 
+    import main
+    old_active = getattr(main, "ACTIVE_DIR", "dumps")
+    main.ACTIVE_DIR = "dumps"
+
     old_db = db_infra.DB_FILE
     db_infra.DB_FILE = test_db
     reset_db_connections()
@@ -43,6 +47,7 @@ def setup_stress_env(tmp_path):
 
     reset_db_connections()
     db_infra.DB_FILE = old_db
+    main.ACTIVE_DIR = old_active
 
 
 # ----------------------------------------------------------------------------

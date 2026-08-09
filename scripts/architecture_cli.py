@@ -42,7 +42,7 @@ def run_audit(target_dir, quiet=False):
     all_files = []
     for root, dirs, files in os.walk(target_dir):
         # Exclude common noise dirs
-        dirs[:] = [d for d in dirs if d not in {".git", ".venv", "venv", "__pycache__", "node_modules", ".pytest_cache", ".agents"}]
+        dirs[:] = [d for d in dirs if d not in {".git", ".venv", "venv", "__pycache__", "node_modules", ".pytest_cache", ".agents", "dist", "build", ".gemini"}]
         stats["dirs"] += len(dirs)
         for f in files:
             p = Path(root) / f
@@ -150,7 +150,7 @@ def run_check_secrets(target_dir, quiet=False):
     findings = []
 
     for root, dirs, files in os.walk(target_dir):
-        dirs[:] = [d for d in dirs if d not in {".git", ".venv", "venv", "__pycache__", "node_modules", "backups", ".agents"}]
+        dirs[:] = [d for d in dirs if d not in {".git", ".venv", "venv", "__pycache__", "node_modules", "backups", ".agents", "dist", "build", ".gemini"}]
         for file in files:
             if file.endswith((".py", ".js", ".json", ".html", ".env", ".yaml", ".yml", ".md", ".sh")):
                 file_path = Path(root) / file

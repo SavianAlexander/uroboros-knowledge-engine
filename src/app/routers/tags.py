@@ -186,7 +186,10 @@ def get_bookmarks_endpoint():
         if not select_cols:
             return {"bookmarks": []}
         
-        cursor.execute(f"SELECT {', '.join(select_cols)} FROM bookmarks")
+        allowed = {"id", "name", "query", "search_mode"}
+        safe_cols = [c for c in select_cols if c in allowed]
+        # ponytail: whitelist validated, safe f-string
+        cursor.execute(f"SELECT {', '.join(safe_cols)} FROM bookmarks")
         rows = cursor.fetchall()
         bookmarks = []
         for idx, r in enumerate(rows, start=1):

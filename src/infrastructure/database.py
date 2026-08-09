@@ -27,6 +27,8 @@ from src.core.domain.services import (
 )
 from src.infrastructure.parsers import extract_content, parse_audio_metadata, calculate_sha256, calculate_sha256_cached
 
+DB_TIMEOUT = 30.0
+
 DB_FILE = "knowledge.db"
 _local = threading.local()
 _db_version = 0
@@ -102,7 +104,7 @@ def get_db():
         attempts = 0
         while attempts < 5:
             try:
-                conn = sqlite3.connect(DB_FILE, check_same_thread=False, timeout=30.0)
+                conn = sqlite3.connect(DB_FILE, check_same_thread=False, timeout=DB_TIMEOUT)
                 conn.row_factory = sqlite3.Row
                 conn.execute("PRAGMA journal_mode = WAL")
                 conn.execute("PRAGMA synchronous = NORMAL")
@@ -124,8 +126,8 @@ def backup_db_online(backup_target_path: str) -> bool:
     """Perform a non-blocking online SQLite database backup using connection backup API."""
     try:
         os.makedirs(os.path.dirname(os.path.abspath(backup_target_path)), exist_ok=True)
-        with sqlite3.connect(DB_FILE, timeout=30.0) as src_conn:
-            with sqlite3.connect(backup_target_path, timeout=30.0) as dst_conn:
+        with sqlite3.connect(DB_FILE, timeout=DB_TIMEOUT) as src_conn:
+            with sqlite3.connect(backup_target_path, timeout=DB_TIMEOUT) as dst_conn:
                 src_conn.backup(dst_conn, pages=100, sleep=0.01)
         return True
     except Exception:
@@ -134,7 +136,7 @@ def backup_db_online(backup_target_path: str) -> bool:
 def init_db():
     """Initialize database tables, pragmas, indices, and schema migrations."""
     reset_db_connections()
-    with sqlite3.connect(DB_FILE, timeout=30.0) as conn:
+    with sqlite3.connect(DB_FILE, timeout=DB_TIMEOUT) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("PRAGMA journal_mode = WAL")
@@ -396,7 +398,7 @@ def save_file_revision(filepath: str, content: str):
     """Save a snapshot of file content into file_revisions with safe connection management."""
     norm_path = os.path.abspath(filepath)
     content_hash = hashlib.sha256(content.encode("utf-8", errors="ignore")).hexdigest()
-    with sqlite3.connect(DB_FILE, timeout=30.0) as conn:
+    with sqlite3.connect(DB_FILE, timeout=DB_TIMEOUT) as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO file_revisions (filepath, content, sha256)
@@ -414,7 +416,7 @@ def save_file_revision(filepath: str, content: str):
 def get_file_revisions(filepath: str) -> List[Dict[str, Any]]:
     """Retrieve last 5 revision snapshots for a file with safe connection management."""
     norm_path = os.path.abspath(filepath)
-    with sqlite3.connect(DB_FILE, timeout=30.0) as conn:
+    with sqlite3.connect(DB_FILE, timeout=DB_TIMEOUT) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("""
@@ -428,7 +430,7 @@ def get_file_revisions(filepath: str) -> List[Dict[str, Any]]:
 def revert_file_revision(filepath: str, revision_id: int) -> bool:
     """Revert a file to a specific revision ID with correct column name (modified_at)."""
     norm_path = os.path.abspath(filepath)
-    with sqlite3.connect(DB_FILE, timeout=30.0) as conn:
+    with sqlite3.connect(DB_FILE, timeout=DB_TIMEOUT) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("SELECT content FROM file_revisions WHERE id = ? AND filepath = ?", (revision_id, norm_path))
@@ -449,7 +451,7 @@ def revert_file_revision(filepath: str, revision_id: int) -> bool:
 
 def run_maintenance():
     """Execute WAL checkpoint and incremental vacuum maintenance with safe connection management."""
-    with sqlite3.connect(DB_FILE, timeout=30.0) as conn:
+    with sqlite3.connect(DB_FILE, timeout=DB_TIMEOUT) as conn:
         cursor = conn.cursor()
         cursor.execute("PRAGMA wal_checkpoint(PASSIVE)")
         cursor.execute("PRAGMA incremental_vacuum(100)")
@@ -471,9 +473,11 @@ def create_db_snapshot() -> int:
     try:
         c_src = sqlite3.connect(DB_FILE)
         c_dst = sqlite3.connect(dest)
-        c_src.backup(c_dst)
-        c_src.close()
-        c_dst.close()
+        try:
+            c_src.backup(c_dst)
+        finally:
+            c_src.close()
+            c_dst.close()
     except Exception:
         shutil.copy2(DB_FILE, dest)
     return timestamp
@@ -486,9 +490,11 @@ def restore_db_snapshot(timestamp: int) -> bool:
         try:
             c_src = sqlite3.connect(src)
             c_dst = sqlite3.connect(DB_FILE)
-            c_src.backup(c_dst)
-            c_src.close()
-            c_dst.close()
+            try:
+                c_src.backup(c_dst)
+            finally:
+                c_src.close()
+                c_dst.close()
             return True
         except Exception:
             shutil.copy2(src, DB_FILE)
@@ -510,7 +516,7 @@ def list_db_snapshots() -> List[Dict[str, Any]]:
 
 def db_status() -> Dict[str, Any]:
     """Retrieve database metrics, page count, freelist, and table stats."""
-    with sqlite3.connect(DB_FILE, timeout=30.0) as conn:
+    with sqlite3.connect(DB_FILE, timeout=DB_TIMEOUT) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM files")
         file_count = cursor.fetchone()[0]
@@ -533,7 +539,7 @@ def search_files(query: str) -> List[Dict[str, Any]]:
         return []
     import unicodedata
     norm_query = unicodedata.normalize("NFC", str(query).strip())
-    with sqlite3.connect(DB_FILE, timeout=30.0) as conn:
+    with sqlite3.connect(DB_FILE, timeout=DB_TIMEOUT) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         try:
@@ -606,7 +612,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
         print(f"Error: {dir_path} is not a directory.")
         return
 
-    with sqlite3.connect(DB_FILE, timeout=30.0) as conn:
+    with sqlite3.connect(DB_FILE, timeout=DB_TIMEOUT) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         try:
@@ -873,7 +879,7 @@ def migrate_folder_path(old_dir: str, new_dir: str):
     """Migrate indexed file records when working directory moves."""
     old_prefix = os.path.abspath(old_dir)
     new_prefix = os.path.abspath(new_dir)
-    with sqlite3.connect(DB_FILE, timeout=30.0) as conn:
+    with sqlite3.connect(DB_FILE, timeout=DB_TIMEOUT) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id, filepath FROM files WHERE filepath LIKE ?", (f"{old_prefix}%",))
         rows = cursor.fetchall()

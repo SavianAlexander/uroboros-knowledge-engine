@@ -6,13 +6,26 @@ import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import UJSONResponse
+from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 
 from src.infrastructure.database import init_db
 from src.app.routers import health, search, rag, files, tags, export, analytics, workflows
 
-app = FastAPI(title="Uroboros Knowledge Database", default_response_class=UJSONResponse)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    try:
+        import uuid
+        from src.infrastructure.p2p_sync import P2PPeerBeacon
+        beacon = P2PPeerBeacon(node_id=str(uuid.uuid4())[:8], http_port=8092)
+        beacon.start()
+    except Exception:
+        pass
+    yield
+
+app = FastAPI(title="Uroboros Knowledge Database", default_response_class=UJSONResponse, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 if os.path.exists("assets"):
@@ -30,13 +43,3 @@ app.include_router(analytics.router)
 app.include_router(workflows.router)
 
 
-@app.on_event("startup")
-def startup_event():
-    init_db()
-    try:
-        import uuid
-        from src.infrastructure.p2p_sync import P2PPeerBeacon
-        beacon = P2PPeerBeacon(node_id=str(uuid.uuid4())[:8], http_port=8092)
-        beacon.start()
-    except Exception:
-        pass

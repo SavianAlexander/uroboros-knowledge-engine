@@ -31,7 +31,7 @@ def sanitize_fts_query(query: str) -> str:
         cleaned = cleaned.replace('"', ' ')
     cleaned = _RE_KEYWORD_OPERATORS.sub(' ', cleaned)
     words = [w for w in re.findall(r'\b[\w\*]+\b', cleaned) if w.lower() not in ('and', 'or', 'not', 'near')]
-    return " OR ".join(words) if words else ""
+    return " ".join(words) if words else ""
 
 def generate_hyde_expansion(query: str) -> str:
     """

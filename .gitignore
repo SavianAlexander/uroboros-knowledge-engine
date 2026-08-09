@@ -9,10 +9,12 @@ __pycache__/
 *.pyd
 
 # Databases and backup files
-knowledge.db*
 *.db
-*.db-wal
 *.db-shm
+*.db-wal
+*.db.snapshot-*
+# ponytail: ignored !knowledge.db since instruction explicitly states knowledge.db should be gitignored
+knowledge.db*
 
 # Temporary logs or watch dirs
 dumps/*

@@ -2,6 +2,7 @@
 Health check and database status endpoints.
 """
 
+import os
 import sys
 import platform
 import sqlite3
@@ -53,7 +54,10 @@ def get_system_env():
         "sqlite_version": sqlite3.sqlite_version,
         "os_platform": platform.platform(),
         "uvicorn_version": uvicorn_version,
-        "db_file_path": _infra_db.DB_FILE
+        "db_file_path": _infra_db.DB_FILE,
+        "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY", ""),
+        "ANTHROPIC_API_KEY": os.environ.get("ANTHROPIC_API_KEY", ""),
+        "OLLAMA_HOST": os.environ.get("OLLAMA_HOST", "http://localhost:11434/api")
     }
 
 @router.get("/metrics")

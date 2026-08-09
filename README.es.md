@@ -54,22 +54,22 @@ Aquí tienes una guía visual de las vistas y la interfaz de administración de 
 ### 1. Vista del Panel Principal (Dashboard)
 El centro de control principal que muestra el estado de la base de datos, el árbol de directorios activos, el gráfico de distribución de tipos de archivo, la línea de tiempo de indexación y la nube de etiquetas de frecuencia de palabras.
 
-![Panel Principal](docs/screenshots/dashboard_view.png)
+![Panel Principal](docs/ux_journey/01_dashboard_view.png)
 
 ### 2. Búsqueda y Gráfico de Conexión de Etiquetas
 Busca archivos con filtros de similitud, previsualiza documentos en tiempo real y visualiza el gráfico interactivo de conexiones de etiquetas de red.
 
-![Búsqueda y Gráfico](docs/screenshots/search_results_view.png)
+![Búsqueda y Gráfico](docs/ux_journey/02_workspace_view.png)
 
 ### 3. Configuración y Reglas Automatizadas
 Configura reglas de etiquetado automático mediante expresiones regulares, sinónimos, favoritos de búsqueda, respaldos automáticos y nodos de sincronización LAN.
 
-![Configuración de Reglas](docs/screenshots/config_rules_view.png)
+![Configuración de Reglas](docs/ux_journey/07_config_view.png)
 
 ### 4. Asistente Conversacional de LLM
 Haz preguntas al asistente neuronal local sobre el conocimiento almacenado, estadísticas de consultas y resúmenes de documentos con enlaces de cita de fuentes automáticos.
 
-![Asistente Conversacional](docs/screenshots/chat_view.png)
+![Asistente Conversacional](docs/ux_journey/06_chat_view.png)
 
 ---
 

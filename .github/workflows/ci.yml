@@ -27,3 +27,5 @@ jobs:
         run: |
           python scripts/architecture_cli.py doctor .
           python run_domain_tests.py
+      - name: Run E2E UI Tests
+        run: python run_e2e_ui_tests.py

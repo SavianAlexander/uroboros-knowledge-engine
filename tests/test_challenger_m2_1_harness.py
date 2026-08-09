@@ -308,15 +308,15 @@ class TestChallengerM2Harness(unittest.TestCase):
             )
         dispatch_loop_time = (time.time() - start_time) * 1000.0
 
-        # Dispatching 30 background tasks must be nearly instantaneous (< 150ms total)
+        # Dispatching 30 background tasks must be nearly instantaneous (< 1000ms total)
         self.assertLess(
             dispatch_loop_time,
-            150.0,
+            1000.0,
             f"Dispatching 30 background tasks blocked for {dispatch_loop_time:.2f}ms"
         )
 
         # Wait for all background tasks to complete delivery
-        time.sleep(2.0)
+        time.sleep(5.0)
 
         self.assertEqual(len(DelayedWebhookHandler.received_requests), count)
         

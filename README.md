@@ -60,30 +60,55 @@ Here is a visual guide to the system architecture and views of Uroboros Knowledg
 ### System Architecture Flow
 ![System Architecture Flow](docs/ux_journey/system_architecture_flow.svg)
 
-### 1. Main Dashboard & Document Intelligence Panel
-The primary command center showing database status, real-time indexing velocity, storage usage by MIME type, tag distributions, and search activity telemetry.
+### 1. Dashboard
+The primary command center showing database status, real-time indexing velocity, storage usage, tag distributions, and search telemetry.
 
-![Main Dashboard](docs/ux_journey/01_dashboard_main.png)
+![Main Dashboard](docs/ux_journey/01_dashboard_view.png)
 
-### 2. Search & Document Explorer
+### 2. Workspace
+Manage your local corpus, inspect the knowledge graph layout natively, and browse indexable files directly from your workspace directory.
+
+![Workspace](docs/ux_journey/02_workspace_view.png)
+
+### 3. Explorer
 Search files with hybrid lexical-semantic search, filter by similarity thresholds, preview text files in real-time, and stack multi-tag queries.
 
-![Search Explorer](docs/ux_journey/01_explorer_tab.png)
+![Explorer](docs/ux_journey/03_explorer_view.png)
 
-### 3. Conversational RAG Assistant
-Query stored knowledge, query statistics, and document summaries with automatic source-citation links and SSE token streaming.
+### 4. Ingestion Pipeline
+Control the document extraction and vectorization process. Add files, scrape URLs, and monitor the embedding jobs in real time.
 
-![Conversational Assistant](docs/ux_journey/02_rag_chat_tab.png)
+![Ingestion Pipeline](docs/ux_journey/04_ingestion_view.png)
 
-### 4. 1,000-Node Interactive Knowledge Graph
-Upgraded D3 canvas graph visualizer rendering up to 1,000 document nodes smoothly using Spatial Grid Partitioning, Energy Cooling ($E < \epsilon$), Viewport Culling, and Wikilink parsing (`[[wikilink]]`).
+### 5. Interactive 3D Knowledge Graph
+Explore a full 3D layout (`react-force-graph-3d`) of relationships across your documents and parsed entities with custom 3D Sprites.
 
-![Knowledge Graph](docs/ux_journey/03_knowledge_graph_tab.png)
+![Knowledge Graph](docs/ux_journey/05_graph_view.png)
 
-### 5. Automated Rules & Admin Console
-Configure regex auto-tagging rules, word synonym mappings, search bookmarks, backup schedulers, and monitor LAN sync peers.
+### 6. Conversational RAG Assistant (AI Chat)
+Query stored knowledge with automatic source-citation links and seamless context retrieval.
 
-![Admin Console](docs/ux_journey/04_admin_console_tab.png)
+![Conversational Assistant](docs/ux_journey/06_chat_view.png)
+
+### 7. Process Configuration (Config)
+Configure Auto-Tag Rules, DB Snapshots, P2P LAN Synching, FTS Synonyms, Query Macros, and Tag Aliases.
+
+![Process Config](docs/ux_journey/07_config_view.png)
+
+### 8. System Settings
+Update system parameters, API keys, run indexing sweeps, monitor environment configuration, and export DB stats.
+
+![System Settings](docs/ux_journey/08_settings_view.png)
+
+### 9. Command Palette (Ctrl+K)
+Instantly jump between views, open ingestion, or search across the app with the fast keyboard-activated spotlight modal.
+
+![Command Palette](docs/ux_journey/09_command_palette.png)
+
+### 10. Light Mode / High Contrast Themes
+1-click high-contrast UI theme switching with WCAG AA compliance (supports Light, Dark, and responsive themes).
+
+![Light Mode UI](docs/ux_journey/10_light_mode.png)
 
 ---
 

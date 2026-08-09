@@ -36,7 +36,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={{}},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['nltk'],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -48,17 +48,13 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='UroborosKnowledgeHub',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
     console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -66,6 +62,17 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon='assets/favicon.png',
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='UroborosKnowledgeHub',
 )
 """
     spec_path = os.path.join(root_dir, "UroborosKnowledgeHub.spec")
@@ -90,7 +97,7 @@ def build_executable(check_only=False):
     
     print("Executing PyInstaller compilation...")
     try:
-        res = subprocess.run([sys.executable, "-m", "PyInstaller", spec_path], check=True)
+        res = subprocess.run([sys.executable, "-m", "PyInstaller", "-y", spec_path], check=True)
         print("Desktop compilation completed successfully!")
         return res.returncode == 0
     except Exception as e:

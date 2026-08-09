@@ -20,12 +20,10 @@ def get_latest_files(limit=3):
         return []
     
     try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute("SELECT filepath, content FROM fts_files ORDER BY rowid DESC LIMIT ?", (limit,))
-        results = cursor.fetchall()
-        conn.close()
-        return results
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT filepath, content FROM fts_files ORDER BY rowid DESC LIMIT ?", (limit,))
+            return cursor.fetchall()
     except Exception as e:
         print(f"Chaos Monkey DB Error: {e}")
         return []
