@@ -470,16 +470,17 @@ def create_db_snapshot() -> int:
     if os.path.exists(dest):
         timestamp = int(time.time() * 1000)
         dest = f"{DB_FILE}.snapshot-{timestamp}"
+    c_src = None
+    c_dst = None
     try:
         c_src = sqlite3.connect(DB_FILE)
         c_dst = sqlite3.connect(dest)
-        try:
-            c_src.backup(c_dst)
-        finally:
-            c_src.close()
-            c_dst.close()
+        c_src.backup(c_dst)
     except Exception:
         shutil.copy2(DB_FILE, dest)
+    finally:
+        if c_dst: c_dst.close()
+        if c_src: c_src.close()
     return timestamp
 
 def restore_db_snapshot(timestamp: int) -> bool:
@@ -487,18 +488,30 @@ def restore_db_snapshot(timestamp: int) -> bool:
     src = f"{DB_FILE}.snapshot-{timestamp}"
     if os.path.exists(src):
         reset_db_connections()
+        c_src = None
+        c_dst = None
         try:
             c_src = sqlite3.connect(src)
             c_dst = sqlite3.connect(DB_FILE)
-            try:
-                c_src.backup(c_dst)
-            finally:
-                c_src.close()
-                c_dst.close()
+            c_src.backup(c_dst)
             return True
         except Exception:
             shutil.copy2(src, DB_FILE)
             return True
+        finally:
+            if c_dst: c_dst.close()
+            if c_src: c_src.close()
+    return False
+
+def delete_db_snapshot(timestamp: int) -> bool:
+    """Delete a database snapshot by timestamp."""
+    src = f"{DB_FILE}.snapshot-{timestamp}"
+    if os.path.exists(src):
+        try:
+            os.remove(src)
+            return True
+        except Exception:
+            pass
     return False
 
 def list_db_snapshots() -> List[Dict[str, Any]]:

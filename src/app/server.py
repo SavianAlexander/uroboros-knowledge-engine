@@ -16,6 +16,7 @@ from src.app.routers import health, search, rag, files, tags, export, analytics,
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    beacon = None
     try:
         import uuid
         from src.infrastructure.p2p_sync import P2PPeerBeacon
@@ -24,6 +25,11 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
     yield
+    if beacon:
+        try:
+            beacon.stop()
+        except Exception:
+            pass
 
 app = FastAPI(title="Uroboros Knowledge Database", default_response_class=UJSONResponse, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)

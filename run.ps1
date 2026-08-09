@@ -1,5 +1,4 @@
 # Uroboros Knowledge Engine - High-Performance PowerShell Launcher
-$ErrorActionPreference = 'Stop'
 $Host.UI.RawUI.WindowTitle = "Uroboros Knowledge Engine"
 Write-Host "===================================================" -ForegroundColor Cyan
 Write-Host "  Starting Uroboros Knowledge Engine (Vulkan AMD GPU)..." -ForegroundColor Green
@@ -10,9 +9,12 @@ $env:PYTHONPYCACHEPREFIX = "$env:LOCALAPPDATA\pycache"
 $env:FORCE_CMAKE = "1"
 $env:CMAKE_ARGS = "-DGGML_VULKAN=on"
 
-python main.py
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "`nEngine stopped unexpectedly with error code $LASTEXITCODE." -ForegroundColor Red
-    Read-Host 'Press Enter to exit'
+try {
+    python main.py
+} catch {
+    Write-Host "`nEngine stopped unexpectedly: $_" -ForegroundColor Red
 }
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "`nEngine stopped with exit code $LASTEXITCODE." -ForegroundColor Red
+}
+Read-Host 'Press Enter to exit'

@@ -10,6 +10,9 @@ from typing import List, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.shared.security import verify_path_containment
 from src.core.domain.models import (
@@ -247,8 +250,8 @@ def rename_file_endpoint(req: RenameRequest):
                 pass
             try:
                 cursor.execute("UPDATE file_revisions SET filepath = ? WHERE filepath = ? OR filepath = ?", (norm_new, real_old, old_fp))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f'Failed to update revision history for rename: {e}')
             conn.commit()
         index_directory(parent_dir)
         return {"status": "success", "old_filepath": real_old, "new_filepath": norm_new, "filepath": norm_new}

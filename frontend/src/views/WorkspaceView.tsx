@@ -98,10 +98,12 @@ function SplitWorkspace({ file, onClose }: any) {
   const [insights, setInsights] = useState<any>(null);
   
   useEffect(() => {
+    let cancelled = false;
     setContent(null);
     setInsights(null);
-    api.fileRaw(file.relative_path).then(setContent).catch(console.error);
-    api.fileInsights(file.relative_path).then(setInsights).catch(console.error);
+    api.fileRaw(file.relative_path).then(res => { if (!cancelled) setContent(res); }).catch(console.error);
+    api.fileInsights(file.relative_path).then(res => { if (!cancelled) setInsights(res); }).catch(console.error);
+    return () => { cancelled = true; };
   }, [file]);
 
   return (

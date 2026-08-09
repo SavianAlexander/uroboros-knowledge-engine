@@ -11,6 +11,16 @@ import ChatView from './views/ChatView';
 import ConfigView from './views/ConfigView';
 import SettingsView from './views/SettingsView';
 
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: Error) { console.error('React Error Boundary:', error); }
+  render() {
+    if (this.state.hasError) return <div style={{padding:'2rem',textAlign:'center'}}><h2>Something went wrong</h2><button onClick={() => this.setState({hasError:false})}>Retry</button></div>;
+    return this.props.children;
+  }
+}
+
 function AppLayout() {
   const { activeView, theme } = useApp();
 
@@ -65,7 +75,9 @@ function AppLayout() {
 export default function App() {
   return (
     <AppProvider>
-      <AppLayout />
+      <ErrorBoundary>
+        <AppLayout />
+      </ErrorBoundary>
     </AppProvider>
   );
 }

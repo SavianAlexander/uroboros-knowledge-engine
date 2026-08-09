@@ -188,8 +188,8 @@ def delete_snapshot_endpoint(timestamp: int):
         from src.infrastructure.database import delete_db_snapshot
         delete_db_snapshot(timestamp)
         return {"status": "success", "deleted_timestamp": timestamp}
-    except Exception:
-        return {"status": "success", "deleted_timestamp": timestamp}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/snapshots/restore")
 def restore_snapshot_endpoint(timestamp: int):

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 import { ChatSession, ChatMessage } from '../types';
 import { glassCardClasses } from '../lib/utils';
@@ -12,6 +12,8 @@ export default function ChatView() {
 
   const [activeSession, setActiveSession] = useState<string | null>(null);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     api.chatSessions().then(data => {
       setSessions(data || []);
@@ -19,17 +21,22 @@ export default function ChatView() {
         setActiveSession(data[0].id);
         setMessages(data[0].messages || []);
       }
-    });
-  }, []);
+    }).catch(e => console.error('Failed to load sessions:', e));
+  }, [activeSession]);
 
   const handleNewSession = async () => {
-    const s = await api.createChatSession('New Conversation');
-    setSessions(prev => [s, ...prev]);
-    setActiveSession(s.id);
-    setMessages([]);
+    try {
+      const s = await api.createChatSession('New Conversation');
+      setSessions(prev => [s, ...prev]);
+      setActiveSession(s.id);
+      setMessages([]);
+    } catch (e) {
+      console.error('Failed to create session:', e);
+    }
   };
 
   const handleSelectSession = (s: ChatSession) => {
+    abortRef.current?.abort();
     setActiveSession(s.id);
     setMessages(s.messages || []);
   };
@@ -44,10 +51,14 @@ export default function ChatView() {
     setIsStreaming(true);
 
     try {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       // Add empty assistant message to append to
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: '' }]);
       
-      const response = await api.ragStream(userMsg.content, activeSession);
+      const response = await api.ragStream(userMsg.content, activeSession ?? undefined, { signal: controller.signal });
       
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -72,7 +83,7 @@ export default function ChatView() {
                   const newMsgs = [...prev];
                   const last = newMsgs[newMsgs.length - 1];
                   if (last.role === 'assistant') {
-                    last.content = currentResponse;
+                    newMsgs[newMsgs.length - 1] = { ...last, content: currentResponse };
                   }
                   return newMsgs;
                 });
