@@ -12,7 +12,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import know
 import main
 
-PORT = 8035
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(('127.0.0.1', 0))
+PORT = s.getsockname()[1]
+s.close()
 DB_FILE = "screenshot_temp.db"
 SANDBOX_DIR = Path("test_sandbox_screenshot").resolve()
 
@@ -36,14 +40,14 @@ def cleanup():
         if os.path.exists(fpath):
             try:
                 os.remove(fpath)
-            except Exception:
-                pass
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in capture_views.py: {e}")
     # Cleanup Sandbox
     if SANDBOX_DIR.exists():
         try:
             shutil.rmtree(SANDBOX_DIR)
-        except Exception:
-            pass
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in capture_views.py: {e}")
 
 def main_capture():
     cleanup()

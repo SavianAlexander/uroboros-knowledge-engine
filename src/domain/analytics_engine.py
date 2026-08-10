@@ -18,19 +18,11 @@ from src.core.domain.models import (
 _analytics_cache: Dict[tuple, tuple] = {}
 CACHE_TTL_SECONDS = 3.0
 
+from src.infrastructure.database import get_db_connection, DB_FILE
 
-def _connect(db_path: Optional[str] = None) -> sqlite3.Connection:
-    target_path = db_path if db_path is not None else know.DB_FILE
-    conn = sqlite3.connect(target_path, timeout=10.0)
-    try:
-        conn.execute("PRAGMA journal_mode = WAL")
-        conn.execute("PRAGMA temp_store = MEMORY")
-        conn.execute("PRAGMA cache_size = -64000")
-        conn.execute("PRAGMA mmap_size = 268435456")
-    except Exception:
-        pass
-    conn.row_factory = sqlite3.Row
-    return conn
+def _connect(db_path: Optional[str] = None):
+    target_path = db_path if db_path is not None else DB_FILE
+    return get_db_connection(target_path)
 
 
 def clear_analytics_cache() -> None:
@@ -81,7 +73,10 @@ def get_indexing_overview(db_path: Optional[str] = None) -> AnalyticsOverviewRes
             indexing_status="idle",
             storage_total_bytes=storage_bytes
         )
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in analytics_engine.py")
         res = AnalyticsOverviewResponse(
             total_documents=0,
             total_chunks=0,
@@ -163,7 +158,10 @@ def get_storage_breakdown(db_path: Optional[str] = None) -> StorageBreakdownResp
             by_extension=by_ext,
             top_directories=top_dirs
         )
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in analytics_engine.py")
         res = StorageBreakdownResponse(
             by_mime={},
             by_extension={},
@@ -231,7 +229,10 @@ def get_tag_distribution(db_path: Optional[str] = None) -> TagDistributionRespon
             top_tags=top_tags,
             tag_cooccurrence=cooccurrence
         )
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in analytics_engine.py")
         res = TagDistributionResponse(
             total_tags=0,
             top_tags=[],
@@ -296,7 +297,10 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
                     from src.infrastructure.telemetry import GLOBAL_TELEMETRY
                     if GLOBAL_TELEMETRY.latencies:
                         avg_latency = float(sum(GLOBAL_TELEMETRY.latencies) / len(GLOBAL_TELEMETRY.latencies))
+                except (KeyboardInterrupt, MemoryError, SystemExit):
+                    raise
                 except Exception:
+                    import logging; logging.getLogger(__name__).exception("Swallowed error in analytics_engine.py")
                     avg_latency = 0.0
 
             except sqlite3.OperationalError:
@@ -308,7 +312,10 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
             top_queries=top_queries,
             recent_queries=recent_queries
         )
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in analytics_engine.py")
         res = SearchActivityResponse(
             total_queries=0,
             avg_latency_ms=0.0,

@@ -6,6 +6,7 @@ import { ViewId } from '../types';
 
 export default function Sidebar() {
   const { activeView, setActiveView, setCommandPaletteOpen } = useApp();
+  const [imgError, setImgError] = React.useState(false);
 
   const navItems: { id: ViewId; label: string; icon: React.ElementType }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -21,7 +22,7 @@ export default function Sidebar() {
   return (
     <div className="w-64 h-full flex flex-col dark:bg-slate-900/40 bg-white/40 backdrop-blur-xl border-r dark:border-white/5 border-slate-200 p-4 flex-shrink-0">
       <div className="flex items-center gap-3 mb-8 px-2">
-        <img src="/assets/uroboros_logo.svg" alt="Uroboros" className="w-8 h-8" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        {!imgError && <img src="/assets/uroboros_logo.svg" alt="Uroboros" className="w-8 h-8" onError={() => setImgError(true)} />}
         <h1 className="text-lg font-semibold tracking-wide text-slate-900 dark:text-slate-100">Uroboros</h1>
       </div>
 

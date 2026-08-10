@@ -34,8 +34,10 @@ def extract_text_from_image(filepath: str) -> Dict[str, Any]:
             text = res_text.strip()
             coords = res_coords or []
             engine_used = "winrt"
-    except Exception:
-        pass
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in ocr_engine.py: {e}")
 
     # Tier 1b: Attempt pytesseract OCR if WinRT was unavailable or failed
     if not text:
@@ -67,16 +69,20 @@ def extract_text_from_image(filepath: str) -> Dict[str, Any]:
                         })
                 if words_list:
                     text = " ".join(words_list)
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in ocr_engine.py: {e}")
 
             if not text:
                 text = pytesseract.image_to_string(img).strip()
 
             if text:
                 engine_used = "tesseract"
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in ocr_engine.py: {e}")
 
     # Tier 2: Pillow EXIF metadata and image property fallback
     if not text:
@@ -98,8 +104,10 @@ def extract_text_from_image(filepath: str) -> Dict[str, Any]:
                         if isinstance(val, (str, int, float)):
                             exif_dict[str(tag_name)] = val
                             exif_lines.append(f"{tag_name}: {val}")
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in ocr_engine.py: {e}")
 
             metadata = {
                 "width": width,
@@ -118,8 +126,10 @@ def extract_text_from_image(filepath: str) -> Dict[str, Any]:
 
             text = " ".join(text_parts)
             engine_used = "pillow_exif"
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in ocr_engine.py: {e}")
 
     # Tier 3: Zero-dependency stdlib file property metadata fallback
     if not text:
@@ -128,7 +138,10 @@ def extract_text_from_image(filepath: str) -> Dict[str, Any]:
         try:
             size_bytes = os.path.getsize(filepath)
             mtime_iso = datetime.fromtimestamp(os.path.getmtime(filepath)).isoformat()
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in ocr_engine.py")
             size_bytes = 0
             mtime_iso = "unknown"
 

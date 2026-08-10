@@ -7,6 +7,7 @@ and undirected `shared_tag_cluster` edge logic.
 
 import os
 import sys
+from src.infrastructure.database import get_db_connection
 import time
 import shutil
 import tempfile
@@ -150,7 +151,7 @@ class TestGraphEdgesAndWeightCalculations(unittest.TestCase):
 
     def test_07_directed_wikilink_edges_and_weights(self):
         """Verify directed wikilink_to edge directionality, weight aggregation, self-link filtering, and missing link handling."""
-        with sqlite3.connect(know.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             # File 1: references File 2 THREE times, File 3 ONCE, references ITSELF once, and references missing File 99
             f1_content = (
@@ -191,7 +192,7 @@ class TestGraphEdgesAndWeightCalculations(unittest.TestCase):
 
     def test_08_case_insensitive_and_slug_title_matching(self):
         """Verify wikilinks resolve targets across case, extensions, and slug variations."""
-        with sqlite3.connect(know.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (1, 'c:/src.md', 'Source.md', 'See [[target document]], [[TARGET_DOCUMENT.MD]], and [[target-document]]')")
             cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (2, 'c:/tgt.md', 'Target Document.md', 'Target content')")
@@ -212,7 +213,7 @@ class TestGraphEdgesAndWeightCalculations(unittest.TestCase):
 
     def test_09_undirected_shared_tag_cluster_weight(self):
         """Verify shared_tag_cluster edges sum shared tags correctly and order IDs canonically (d1 < d2)."""
-        with sqlite3.connect(know.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("INSERT INTO files (id, filepath, filename) VALUES (10, 'c:/d10.md', 'd10.md')")
             cursor.execute("INSERT INTO files (id, filepath, filename) VALUES (5, 'c:/d5.md', 'd5.md')")
@@ -246,7 +247,7 @@ class TestGraphEdgesAndWeightCalculations(unittest.TestCase):
 
     def test_10_tag_cluster_size_capping_behavior(self):
         """Verify super-common tags (> 100 documents) do not generate quadratic cluster blowup."""
-        with sqlite3.connect(know.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             # Create 105 files
             file_rows = [(i, f"c:/doc_{i}.md", f"doc_{i}.md") for i in range(1, 106)]

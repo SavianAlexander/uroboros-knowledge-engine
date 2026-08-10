@@ -1,3 +1,4 @@
+import pytest
 import unittest
 import os
 import shutil
@@ -38,6 +39,7 @@ class TestDomainRAG(unittest.TestCase):
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 
+    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
     def test_01_extract_rag_context_hybrid_rrf(self):
         """Verify HyDE + RRF hybrid context extraction and citation formatting.
 

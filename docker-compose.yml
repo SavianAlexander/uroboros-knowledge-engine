@@ -1,19 +1,23 @@
-version: '3.8'
-
 services:
   uroboros:
     build: .
     container_name: uroboros_engine
     ports:
       - "8000:8000"
+      - "8098:8098/udp"
     volumes:
       - .:/app
+      - uroboros_data:/app/data
     environment:
       - PORT=8000
       - HOST=0.0.0.0
+      - DB_FILE=/app/data/knowledge.db
       # Required by local environment integrations (e.g. Tududi internal AI)
       - LLM_API_KEY=ollama
       - OPENAI_API_BASE=http://host.docker.internal:11434/v1
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+volumes:
+  uroboros_data:

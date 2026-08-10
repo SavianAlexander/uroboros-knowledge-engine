@@ -101,7 +101,7 @@ function SplitWorkspace({ file, onClose }: any) {
     let cancelled = false;
     setContent(null);
     setInsights(null);
-    api.fileRaw(file.relative_path).then(res => { if (!cancelled) setContent(res); }).catch(e => { console.error(e); if (!cancelled) setContent({ content: 'Failed to load file content.' }); });
+    api.fileRaw(file.relative_path).then(res => { if (!cancelled) setContent(typeof res === 'string' ? { content: res } : (res || { content: '' })); }).catch(e => { console.error(e); if (!cancelled) setContent({ content: 'Failed to load file content.' }); });
     api.fileInsights(file.relative_path).then(res => { if (!cancelled) setInsights(res); }).catch(e => { console.error(e); if (!cancelled) setInsights({ summary: 'No summary available due to error.' }); });
     return () => { cancelled = true; };
   }, [file]);
@@ -122,6 +122,7 @@ function SplitWorkspace({ file, onClose }: any) {
         <div className="flex-1 border-r border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/50 p-6 overflow-y-auto">
           {content ? (
              <textarea 
+               aria-label="File Content Preview"
                className="w-full h-full bg-transparent resize-none outline-none font-mono text-sm text-slate-800 dark:text-slate-200"
                value={content.content || ''}
                readOnly

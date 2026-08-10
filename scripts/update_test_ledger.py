@@ -293,6 +293,7 @@ def run_single_module(mod_name):
     try:
         suite = unittest.defaultTestLoader.loadTestsFromName(mod_name)
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in update_test_ledger.py")
         suite = None
 
     if suite and suite.countTestCases() > 0:
@@ -454,6 +455,8 @@ def run_ledger_audit(target_modules=None, parallel=False, max_workers=None):
     generate_soc2_report(start_timestamp, total_failed, total_errors)
 
     print(f"Master Audit Engine v8.0 complete! Total Passed: {total_passed} | Failed: {total_failed} | Duration: {total_duration}s")
+    if total_failed > 0 or total_errors > 0:
+        sys.exit(1)
 
 if __name__ == "__main__":
     if "--tui" in sys.argv:

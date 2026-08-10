@@ -43,136 +43,40 @@ class _MainModule(sys.modules[__name__].__class__):
     def _db_version(self, value):
         _infra_db._db_version = value
 
+    @property
+    def is_testing(self):
+        import src.core.config
+        return src.core.config.is_testing
+
+    @is_testing.setter
+    def is_testing(self, value):
+        import src.core.config
+        src.core.config.is_testing = value
+
+    @property
+    def ACTIVE_DIR(self):
+        import src.core.config
+        return src.core.config.ACTIVE_DIR
+
+    @ACTIVE_DIR.setter
+    def ACTIVE_DIR(self, value):
+        import src.core.config
+        src.core.config.ACTIVE_DIR = value
+
 sys.modules[__name__].__class__ = _MainModule
 
-ACTIVE_DIR = "dumps"
-is_testing = True
+from src.core.config import ACTIVE_DIR
 
-_llm_lock = threading.Lock()
-try:
-    import llama_cpp
-    Llama = llama_cpp.Llama
-except Exception:
-    Llama = None
-
-@contextmanager
-def db_conn():
-    conn = sqlite3.connect(_infra_db.DB_FILE, timeout=30.0)
-    conn.row_factory = sqlite3.Row
-    try:
-        yield conn
-    finally:
-        conn.close()
-
-class QueryCache:
-    def __init__(self, capacity=50):
-        self.capacity = capacity
-        self.hits = 0
-        self.misses = 0
-        self.lock = threading.Lock()
-        self.mem_cache = {}
-        self.cache = self.mem_cache
-
-    def get(self, key):
-        with self.lock:
-            if key in self.mem_cache:
-                self.hits += 1
-                val = self.mem_cache.pop(key)
-                self.mem_cache[key] = val
-                return val
-            try:
-                with db_conn() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT response_json FROM query_cache WHERE query_key = ?", (key,))
-                    row = cursor.fetchone()
-                    if row:
-                        val = json.loads(row[0])
-                        self.mem_cache[key] = val
-                        self.hits += 1
-                        return val
-            except Exception:
-                pass
-            self.misses += 1
-            return None
-
-    def set(self, key, value):
-        with self.lock:
-            self.mem_cache[key] = value
-            if len(self.mem_cache) > self.capacity:
-                self.mem_cache.pop(next(iter(self.mem_cache)))
-            try:
-                with db_conn() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT COUNT(*) FROM query_cache")
-                    count = cursor.fetchone()[0]
-                    if count >= self.capacity:
-                        cursor.execute("DELETE FROM query_cache WHERE cached_at = (SELECT MIN(cached_at) FROM query_cache)")
-
-                    cursor.execute(
-                        "INSERT OR REPLACE INTO query_cache (query_key, response_json, cached_at) VALUES (?, ?, ?)",
-                        (key, json.dumps(value), time.time())
-                    )
-                    conn.commit()
-            except Exception:
-                pass
-
-    def invalidate(self):
-        with self.lock:
-            self.mem_cache.clear()
-            try:
-                with db_conn() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("DELETE FROM query_cache")
-                    conn.commit()
-            except Exception:
-                pass
-
-    clear = invalidate
-
-    def get_stats(self):
-        with self.lock:
-            total_requests = self.hits + self.misses
-            hit_ratio = (
-                round((self.hits / total_requests) * 100, 2)
-                if total_requests > 0
-                else 0.0
-            )
-            size = 0
-            try:
-                with db_conn() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT COUNT(*) FROM query_cache")
-                    size = cursor.fetchone()[0]
-            except Exception:
-                pass
-            return {
-                "hits": self.hits,
-                "misses": self.misses,
-                "hit_ratio": hit_ratio,
-                "cache_size": size,
-            }
-
-    stats = get_stats
-
-GLOBAL_QUERY_CACHE = QueryCache()
-
-def get_llm():
-    if Llama is None:
-        return None
-    try:
-        model_path = os.environ.get("LLM_MODEL_PATH", "models/llama-2-7b.Q4_K_M.gguf")
-        if os.path.exists(model_path):
-            return Llama(model_path=model_path, n_ctx=2048, verbose=False)
-        return Llama(model_path=model_path, verbose=False)
-    except Exception:
-        pass
-    return None
-
-def get_fallback_llm():
-    return get_llm()
-
-def expand_query_with_llm(query: str) -> str:
-    return query
+from src.core.state import (
+    db_conn,
+    QueryCache,
+    GLOBAL_QUERY_CACHE,
+    _llm_lock,
+    Llama,
+    get_llm,
+    get_fallback_llm,
+    expand_query_with_llm
+)
 
 if __name__ == "__main__":
     import uvicorn

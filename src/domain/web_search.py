@@ -31,7 +31,10 @@ def strip_html_tags(html_str: str) -> str:
     try:
         parser.feed(html_str)
         return parser.get_text()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in web_search.py")
         return html_str
 
 def fetch_web_context(query: str, max_results: int = 3, timeout: float = 4.0) -> List[Dict[str, Any]]:
@@ -84,6 +87,7 @@ def fetch_web_context(query: str, max_results: int = 3, timeout: float = 4.0) ->
                             })
     except Exception:
         # Silently catch network errors, socket timeouts, connection failures, offline mode
+        import logging; logging.getLogger(__name__).exception("Swallowed error in web_search.py")
         return []
 
     return results[:max_results]

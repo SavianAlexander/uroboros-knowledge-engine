@@ -6,6 +6,9 @@ import os
 import asyncio
 import time
 import functools
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Windows Native OCR setup (WinRT)
 HAS_WINRT = False
@@ -43,7 +46,10 @@ async def _async_ocr_structured(filepath):
                     "h": rect.height
                 })
         return result.text, coords
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
         return f"[OCR Error: {str(e)}]", []
 
 def extract_ocr_text_structured(filepath):
@@ -71,8 +77,11 @@ def extract_ocr_text_structured(filepath):
 
             if res_text and not res_text.startswith("[OCR Error"):
                 return res_text, res_coords
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+            logger.warning(f"Error in WinRT OCR structured: {e}")
 
     # Try pytesseract OCR fallback
     try:
@@ -82,8 +91,11 @@ def extract_ocr_text_structured(filepath):
         text = pytesseract.image_to_string(img)
         if text.strip():
             return text.strip(), []
-    except Exception:
-        pass
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+        logger.warning(f"Error in pytesseract OCR: {e}")
 
     # Try EXIF / Metadata extraction fallback
     try:
@@ -103,7 +115,10 @@ def extract_ocr_text_structured(filepath):
         metadata.append(f"Mode: {img.mode}")
 
         return f"[OCR Fallback - Image Metadata Extraction]\n" + "\n".join(metadata), []
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
         return f"[Image Parsing Error: {str(e)}]", []
 
 def extract_pdf_ocr(filepath):
@@ -131,10 +146,19 @@ def extract_pdf_ocr(filepath):
                 finally:
                     try:
                         os.unlink(temp_path)
-                    except Exception:
-                        pass
-            except Exception:
-                pass
+                    except (KeyboardInterrupt, MemoryError, SystemExit):
+                        raise
+                    except Exception as e:
+                        import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+                        logger.warning(f"Error unlinking temp file: {e}")
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+                logger.warning(f"Error processing PDF page: {e}")
         return "\n\n".join(text_parts), all_coords
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
         return f"[Scanned PDF OCR Error: {str(e)}]", []

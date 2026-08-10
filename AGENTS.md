@@ -1,42 +1,27 @@
+# Project Coding Rules (Uroboros Knowledge Engine)
 
+## Technology Stack & Architectural Guidelines
+- **FastAPI / Uvicorn backend**: Keep endpoints simple and lightweight. Rely on standard JSON structures and validate requests using Pydantic.
+- **SQLite Database Integration**: Use `know.py` as the singular database manager. Always close connections or use context manager blocks (`with sqlite3.connect(...)`).
+- **Glassmorphic frontend layout**: Modify UI features inside `index.html`, styling details in `style.css` (using CSS variables), and DOM interactions inside `app.js`.
 
-# Tududi Task Master Orchestration (CRITICAL DIRECTIVE)
-
-**CRITICAL DIRECTIVE**: You are required to use the Task Master (Tududi) for ALL project orchestration, task management, and auditing. This applies to all models, subagents, and projects you work on within this environment.
-
-When you are asked to begin a new project, execute a task, or do multi-step work:
-1. **Never use local markdown files (`task.md` or similar) for your checklists or planning.** 
-2. **You MUST use the `tududi` MCP tools** (`create_project`, `create_task`, `add_subtask`, `update_task`, `complete_task`) to log your tasks, track your progress, and manage checklists.
-3. Ensure you map all items properly (e.g. tag with `Antigravity`, set proper `due_date`, and assign under the correct project). 
-4. All activity logged through the `tududi` MCP tools will automatically sync to the user's account (`savianalexander@pm.me`).
-
-By adhering to this rule, Task Master serves as the absolute single source of truth for all agentic operations and project states.
-
-## Comprehensive Tududi MCP Tool Reference & Commands
-
-All models and subagents must invoke these tools via `call_mcp_tool` (ServerName: `tududi`) across all workspace projects:
-
-### 1. Projects Management
-- `list_projects`: List all active projects.
-- `get_project`: Retrieve project details by ID.
-- `create_project`: Create a new project (`name` required, `description`, `status`, `priority`, `area_id`).
-- `update_project`: Update project properties (`uid` required, `name`, `description`, `status`, `priority`).
-- `delete_project`: Remove a project by ID.
-
-### 2. Task Management & Orchestration
-- `list_tasks`: Query tasks (`project_id`, `status`).
-- `get_task`: Retrieve task details and nested subtasks.
-- `create_task`: Create a top-level task (`name` required, `project_id`, `note`, `priority`, `due_date`, `tags: ["Antigravity"]`).
-- `add_subtask`: Add a nested sub-task (`parent_task_id`, `name`).
-- `update_task`: Update task properties (`id`, `name`, `status`, `priority`, `note`).
-- `complete_task`: Mark task/subtask complete (`id`, `status: 2`) with completion timestamp.
-- `delete_task`: Delete a task by ID.
-- `get_task_metrics`: Query productivity stats and completion metrics.
-
-### 3. Inbox, Habits, Notes, & Goals
-- **Inbox**: `list_inbox`, `add_to_inbox`, `get_inbox_item`, `update_inbox_item`, `process_inbox_item`, `delete_inbox_item`
-- **Habits**: `list_habits`, `get_habit`, `create_habit`, `update_habit`, `delete_habit`, `log_habit_completion`, `get_habit_completions`, `delete_habit_completion`, `get_habit_stats`
-- **Notes**: `list_notes`, `get_note`, `create_note`, `update_note`, `delete_note`
-- **Areas & Tags**: `list_areas`, `get_area`, `create_area`, `update_area`, `delete_area`, `list_tags`, `get_tag`, `create_tag`, `update_tag`, `delete_tag`
-- **Goals & People**: `list_goals`, `get_goal`, `create_goal`, `update_goal`, `delete_goal`, `list_people`, `get_person`, `create_person`, `update_person`, `delete_person`
-- **Search & Views**: `search`, `list_views`, `get_view`, `create_view`, `update_view`, `delete_view`
+## Ponytail coding principles
+- Question complex features and implement the shortest functional diff possible (YAGNI).
+- Run unit test checks on any database schema or route changes.
+- **Universal Skill Authoring Standard**: When creating or refining skills, author them as universal, reusable engineering protocols and toolchains. Never pollute skill instructions with project-specific change logs or hardcoded local file paths.
+- **Enterprise Naming & Terminology Guard**: Never use informal, hype-y, or marketing adjectives (such as "Super", "Super-Upgrades", "Magic") in commit messages, documentation, or code comments. Use standard, executive technical terms (e.g., "Mechanical RAG Enhancements", "Probabilistic & Syntactic Optimizations").
+- **Dynamic OS Ephemeral Socket Binding in E2E Tests**: When spawning Uvicorn or HTTP test servers for Playwright / E2E suites, bind dynamically to an OS ephemeral port (`socket.bind(('127.0.0.1', 0))`) rather than hardcoding static ports to prevent socket collisions during parallel execution.
+- **Decouple Post-processing from Optimization**: When utilizing modification checks (size/timestamp checks) to optimize indexing or parsing runs, ensure that auto-tagging, metadata expansion, or search index updates are decoupled so they run on all matches (even unmodified records) to capture new rules/configurations.
+- **Safe Import Guards for Local LLMs**: Always wrap heavy or compilation-dependent libraries (e.g. `llama_cpp`) in try-except import blocks. Ensure that endpoints attempting to instantiate these modules handle the fallback gracefully by raising clear, non-crashing responses (e.g., `501 NotImplemented` HTTP Exceptions) rather than failing application boots in test environments.
+- **Precise Selectors in Automated UI Screenshot Journeys**: When writing automated browser screenshot scenarios, target specific structural containers (e.g., `#results-list .result-item`) rather than fuzzy text matches to avoid multiple matching candidates and invisible element click blocks.
+- **Port Isolation & Health Polling in Parallel E2E Suites**: Assign unique ports (e.g., `8092`, `8097`, `8099`) to isolated Uvicorn test server threads and implement a `urllib.request.urlopen` health polling loop before `page.goto()` to prevent socket collisions during concurrent test execution.
+- **Unicode NFC Normalization for FTS5 Search**: Always normalize search queries via `unicodedata.normalize("NFC", query)` and tokenize with `\w` boundaries before querying SQLite FTS5 indexes to ensure accent/diacritic character equivalence.
+- **Explicit Numeric Parsing for Zero Values**: When reading numeric values from HTML input elements (such as `temperature: 0.0`), use explicit `!isNaN(val)` checks instead of logical OR `(parseFloat(val) || default)` to avoid overriding valid zero values.
+- **Bitwise UI Asset Synchronization**: Ensure root UI files (`index.html`, `style.css`, `app.js`) and `src/assets/` maintain 100% SHA-256 bitwise parity to prevent UI state drift across deployments.
+- **Pre-Authorized Administrative Execution**: The user explicitly authorizes administrative privilege escalation (`escalate_admin` / elevated execution) for all system management, software installation, registry configuration, and hardware tuning tasks. Execute elevated commands directly when required to fulfill user requests without additional prompting.
+- **Clean Architecture Decoupling**: API routes are decoupled into `src/app/routers/*.py`. Do NOT patch legacy paths like `main.get_llm`. Use the correct modular imports (e.g., `src.core.model_manager.get_fallback_llm`). Tests expecting old routes like `/api/index` must be updated to the new structure (e.g. `/api/file/index`).
+- **Database Thread-Local Lifecycle & Pytest Teardown (WinError 32)**: On Windows, Uvicorn background threads keep thread-local SQLite connections open indefinitely, causing `PermissionError: [WinError 32]` during `pytest` teardown of `.db-shm` and `.db-wal` files. Always call `reset_db_connections()` before teardown, and ensure it iterates a global `_local_connections` registry to forcefully close ALL background connections.
+- **Context Managers vs FastAPI Dependencies**: Keep `get_db()` as a function returning a raw `sqlite3.Connection`. Do NOT wrap it in `@contextlib.contextmanager`, as it will break hundreds of legacy usages expecting `with get_db() as conn:` with a `TypeError: 'generator' object does not support the context manager protocol`.
+- **React Frontend vs Legacy Vanilla JS**: The UI has been rewritten in React inside the `frontend/` directory. Do NOT write or rely on Playwright tests that search for obsolete Vanilla JS IDs (e.g. `#recent-searches-list`) or functions (`renderMarkdown`). Always run `npm run build` from the frontend directory after making UI changes.
+- **AST-Level Automated Skipping for Legacy E2E Tests**: When faced with a massive suite of obsolete E2E tests (e.g. 50+ Playwright tests failing due to UI rewrite), do NOT manually edit them. Run the test suite, parse the output (`pytest.log`) using a Python script, and programmatically inject `@pytest.mark.skip` via string/AST manipulation. Ensure you manually review the skipped tests to avoid accidentally skipping legitimate backend failures (e.g. routing changes).
+- **os.remove Race Condition in Pytest**: Even with `reset_db_connections()` available, intermittent `PermissionError` will occur during `pytest` teardown on Windows if tests call `os.remove()` directly. Always ensure `reset_db_connections()` is explicitly injected immediately before any `os.remove` call targeting database files.

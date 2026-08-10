@@ -8,6 +8,7 @@ Measures both Direct Engine Function Latency and FastAPI TestClient Endpoint Lat
 
 import os
 import sys
+from src.infrastructure.database import get_db_connection
 import time
 import math
 import tempfile
@@ -78,7 +79,7 @@ class TestEmpiricalAnalyticsBenchmark(unittest.TestCase):
         start_time = time.time()
         know.reset_db_connections()
 
-        with sqlite3.connect(self.db_file, timeout=30.0) as conn:
+        with get_db_connection(self.db_file, timeout=30.0) as conn:
             cur = conn.cursor()
 
             # 1. Insert 10,000 files

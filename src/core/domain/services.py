@@ -48,7 +48,8 @@ def reciprocal_rank_fusion(fts_results: List[Dict[str, Any]], vector_results: Li
 def generate_hyde_expansion(query: str) -> str:
     """Generate hypothetical document snippet for vector query expansion."""
     try:
-        from main import get_fallback_llm, is_testing
+        from src.core.model_manager import get_fallback_llm
+        from src.core.config import is_testing
         if is_testing:
             return f"{query} - hypothetical answer context"
         llm = get_fallback_llm()
@@ -68,8 +69,10 @@ def generate_hyde_expansion(query: str) -> str:
             excerpt = completion["choices"][0]["message"]["content"].strip()
             if excerpt:
                 return f"{query}\n{excerpt}"
-    except Exception:
-        pass
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in services.py: {e}")
     return query
 
 def generate_key_takeaways(text: str, num_bullets: int = 3) -> List[str]:
@@ -108,7 +111,10 @@ def _safe_match(pat: str, text: str) -> bool:
         try:
             regex_pat = fnmatch.translate(pat)
             return bool(re.search(regex_pat, text, re.IGNORECASE))
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in services.py")
             return pat.lower() in text.lower()
 
 def extract_ai_tags(content: str, filename: str, rule_matches: Optional[List[Tuple[str, str]]] = None) -> List[str]:
@@ -131,7 +137,8 @@ def extract_ai_tags(content: str, filename: str, rule_matches: Optional[List[Tup
                 tags.append(tag)
 
     try:
-        from main import is_testing, get_fallback_llm
+        from src.core.config import is_testing
+        from src.core.state import get_fallback_llm
         if is_testing:
             return tags
         llm = get_fallback_llm()
@@ -156,8 +163,10 @@ def extract_ai_tags(content: str, filename: str, rule_matches: Optional[List[Tup
             for t in ai_tags:
                 if t not in tags:
                     tags.append(t)
-    except Exception:
-        pass
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in services.py: {e}")
     return tags
 
 def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> List[str]:

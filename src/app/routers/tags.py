@@ -57,8 +57,10 @@ def get_suggested_tags_endpoint(filepath: Optional[str] = None, path: Optional[s
             from src.core.domain.services import suggest_tags_from_text
             suggested = suggest_tags_from_text(content)
             return {"status": "success", "suggested_tags": suggested}
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in tags.py: {e}")
     return {"status": "success", "suggested_tags": []}
 
 @router.post("/api/file/tag")
@@ -103,9 +105,12 @@ def delete_file_tag_endpoint(filepath: str, tag: str):
 def get_active_vault_endpoint():
     """Retrieve active vault folder path."""
     try:
-        from main import ACTIVE_DIR
+        from src.core.config import ACTIVE_DIR
         return {"active_vault": ACTIVE_DIR}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in tags.py")
         return {"active_vault": "dumps"}
 
 @router.get("/api/rules")
@@ -123,7 +128,10 @@ def add_rule_endpoint(req: RuleRequest):
         raise HTTPException(status_code=400, detail="Pattern cannot be empty")
     try:
         re.compile(req.pattern)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in tags.py: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid regex pattern: {str(e)}")
     with get_db() as conn:
         cursor = conn.cursor()
@@ -131,8 +139,10 @@ def add_rule_endpoint(req: RuleRequest):
         conn.commit()
         try:
             conn.execute("PRAGMA wal_checkpoint(FULL)")
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in tags.py: {e}")
     return {"status": "success", "pattern": req.pattern, "tag": req.tag}
 
 @router.post("/api/rules/test-preview")
@@ -142,7 +152,10 @@ def preview_rule_endpoint(req: RuleRequest):
         raise HTTPException(status_code=400, detail="Pattern cannot be empty")
     try:
         rx = re.compile(req.pattern, re.IGNORECASE)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in tags.py: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid regex pattern: {str(e)}")
 
     matches = []
@@ -350,8 +363,10 @@ def list_sync_peers_endpoint():
             addr = f"http://{p['ip']}:{p['port']}"
             if addr not in existing_addrs:
                 peers.append({"id": idx, "address": addr, "name": f"Node-{p['node_id'][:6]}"})
-    except Exception:
-        pass
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in tags.py: {e}")
 
     return {"status": "success", "peers": peers}
 
@@ -412,8 +427,10 @@ def get_sync_delta_endpoint(req: SyncDeltaRequest):
             try:
                 with open(fp, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in tags.py: {e}")
         else:
             try:
                 with get_db() as conn:
@@ -422,8 +439,10 @@ def get_sync_delta_endpoint(req: SyncDeltaRequest):
                     row = cursor.fetchone()
                     if row and row[0]:
                         content = row[0]
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in tags.py: {e}")
 
         if not sha256_val and content:
             import hashlib
@@ -481,7 +500,10 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                     res_data = json.loads(resp.read().decode("utf-8"))
                     if isinstance(res_data, dict) and "hashes" in res_data:
                         remote_hashes = res_data.get("hashes", {})
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
             except Exception:
+                import logging; logging.getLogger(__name__).exception("Swallowed error in tags.py")
                 remote_hashes = None
 
             if remote_hashes is not None:
@@ -505,7 +527,10 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                                     f.write(content)
                                 synced.append(fn)
                                 total_bytes += len(content.encode("utf-8"))
+                    except (KeyboardInterrupt, MemoryError, SystemExit):
+                        raise
                     except Exception:
+                        import logging; logging.getLogger(__name__).exception("Swallowed error in tags.py")
                         manifest_url = f"{target_peer_clean}/api/sync/manifest"
                         with urllib.request.urlopen(manifest_url, timeout=5.0) as resp:
                             data = json.loads(resp.read().decode("utf-8"))
@@ -545,7 +570,10 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                 """, (time.time(), target_peer, "pull", len(synced), total_bytes, "success"))
                 conn.commit()
 
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in tags.py: {e}")
             import time
             try:
                 with get_db() as conn:
@@ -555,8 +583,10 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                         VALUES (?, ?, ?, ?, ?, ?)
                     """, (time.time(), target_peer, "pull", 0, 0, "failed"))
                     conn.commit()
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in tags.py: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to reach peer: {str(e)}")
 
     return {

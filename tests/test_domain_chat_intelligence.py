@@ -37,8 +37,8 @@ class TestDomainChatIntelligence(unittest.TestCase):
         gc.collect()
         try:
             self.tmp_dir.cleanup()
-        except Exception:
-            pass
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in test_domain_chat_intelligence.py: {e}")
 
     def test_01_chat_session_lifecycle_crud(self):
         """

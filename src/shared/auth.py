@@ -51,7 +51,10 @@ def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
             return None
 
         return payload
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in auth.py")
         return None
 
 def verify_api_key(x_api_key: Optional[str] = None, authorization: Optional[str] = None) -> bool:

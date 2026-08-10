@@ -81,6 +81,7 @@ class TestDeepFuzzingAndConcurrency(unittest.TestCase):
                 self.assertIsInstance(content, str)
                 self.assertIsInstance(coords, list)
             except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_deep_fuzzing_and_concurrency.py: {e}")
                 self.fail(f"extract_content crashed on binary payload with ext '{ext}': {e}")
 
     def test_03_concurrent_revision_history_race_condition(self):
@@ -100,6 +101,7 @@ class TestDeepFuzzingAndConcurrency(unittest.TestCase):
                 for i in range(10):
                     save_file_revision(target_file, f"revision from worker {worker_id} iter {i}")
             except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_deep_fuzzing_and_concurrency.py: {e}")
                 errors.append(f"Worker {worker_id} revision error: {e}")
 
         threads = [threading.Thread(target=revision_worker, args=(w,)) for w in range(5)]
@@ -131,6 +133,7 @@ class TestDeepFuzzingAndConcurrency(unittest.TestCase):
                 count = cursor.fetchone()[0]
                 self.assertEqual(count, 5)
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_deep_fuzzing_and_concurrency.py: {e}")
             self.fail(f"TF-IDF zero-variance matrix math crashed: {e}")
 
     def test_05_extract_ai_tags_fuzzing(self):
@@ -152,6 +155,7 @@ class TestDeepFuzzingAndConcurrency(unittest.TestCase):
                 tags = extract_ai_tags("quantum physics paper content", "document.txt", rule_matches=[(r_pat, t_name)])
                 self.assertIsInstance(tags, list)
             except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_deep_fuzzing_and_concurrency.py: {e}")
                 self.fail(f"extract_ai_tags failed on pattern '{r_pat}': {e}")
 
     def test_06_integer_overflow_and_float_mtime_precision(self):
@@ -218,6 +222,7 @@ class TestDeepFuzzingAndConcurrency(unittest.TestCase):
                     )
                     conn.commit()
             except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_deep_fuzzing_and_concurrency.py: {e}")
                 errors.append(f"Worker {worker_id} error: {e}")
 
         threads = [threading.Thread(target=tag_worker, args=(w,)) for w in range(10)]
@@ -282,6 +287,7 @@ class TestDeepFuzzingAndConcurrency(unittest.TestCase):
             snaps = list_db_snapshots()
             self.assertIsInstance(snaps, list)
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_deep_fuzzing_and_concurrency.py: {e}")
             self.fail(f"Snapshot creation/listing failed: {e}")
 
     def test_13_fuzz_ocr_coordinate_parser_with_corrupt_data(self):

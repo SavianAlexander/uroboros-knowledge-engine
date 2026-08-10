@@ -11,7 +11,10 @@ HAS_LLAMA = False
 try:
     import llama_cpp
     HAS_LLAMA = True
+except (KeyboardInterrupt, MemoryError, SystemExit):
+    raise
 except Exception:
+    import logging; logging.getLogger(__name__).exception("Swallowed error in llm.py")
     HAS_LLAMA = False
 
 _llm_instance = None
@@ -29,8 +32,10 @@ def get_fallback_llm():
         if os.path.exists(model_path):
             _llm_instance = llama_cpp.Llama(model_path=model_path, n_ctx=MAX_CONTEXT, verbose=False)
             return _llm_instance
-    except Exception:
-        pass
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in llm.py: {e}")
     return None
 
 def is_llm_available() -> bool:

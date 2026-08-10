@@ -9,6 +9,9 @@ import hashlib
 import functools
 import wave
 from typing import Tuple, List, Dict, Any, Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 import pypdf
 import docx
@@ -27,7 +30,11 @@ def calculate_sha256(filepath: str) -> Optional[str]:
             while chunk := f.read(65536):
                 sha256.update(chunk)
         return sha256.hexdigest()
-    except Exception:
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in parsers.py: {e}")
+        logger.warning(f"Error calculating SHA256 for {filepath}: {e}")
         return None
 
 @functools.lru_cache(maxsize=4096)
@@ -81,7 +88,11 @@ def parse_audio_metadata(filepath: str) -> Dict[str, Any]:
                 "samplerate": params.framerate,
                 "bitrate": f"{params.framerate * params.sampwidth * 8 * params.nchannels // 1000} kbps"
             }
-    except Exception:
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in parsers.py: {e}")
+        logger.warning(f"Error parsing audio metadata for {filepath}: {e}")
         return {"duration": 0.0, "channels": 0, "samplerate": 0, "bitrate": "0 kbps"}
 
 def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any]]]:
@@ -99,7 +110,10 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
                         return ocr_res, ocr_coords
                     return f"[Parsing Error: Unreadable PDF content]", []
                 return extracted, []
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
             except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in parsers.py: {e}")
                 return f"[Parsing Error: {str(e)}]", []
         elif suffix == '.docx':
             doc = docx.Document(filepath)
@@ -134,5 +148,8 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
             strings = RE_PRINTABLE_BYTES.findall(raw_bytes[:1024 * 512])
             decoded = " ".join([s.decode('ascii') for s in strings])
             return f"[Extracted Binary Strings]\n{decoded}", []
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in parsers.py: {e}")
         return f"[Parsing Error: {str(e)}]", []

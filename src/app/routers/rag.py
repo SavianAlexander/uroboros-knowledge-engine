@@ -71,7 +71,7 @@ def chat_stream_endpoint(req: ChatRequest):
     llm = get_fallback_llm()
     if not is_llm_available() and llm is None:
         try:
-            from main import is_testing
+            from src.core.config import is_testing
             if not is_testing:
                 raise HTTPException(status_code=501, detail="llama-cpp-python is not installed. LLM runner disabled.")
         except ImportError:
@@ -93,7 +93,10 @@ def chat_stream_endpoint(req: ChatRequest):
         try:
             from src.domain.web_search import fetch_web_context
             web_sources = fetch_web_context(user_query, max_results=3)
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in rag.py")
             web_sources = []
 
     # 3. Session resolution and user message turn persistence
@@ -138,7 +141,10 @@ def chat_stream_endpoint(req: ChatRequest):
                     tok = chunk["choices"][0]["text"]
                     full_response_text += tok
                     yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
             except Exception:
+                import logging; logging.getLogger(__name__).exception("Swallowed error in rag.py")
                 fallback_toks = ["Grounded ", "response ", "based ", "on ", "retrieved ", "documents."]
                 for tok in fallback_toks:
                     full_response_text += tok
@@ -208,7 +214,7 @@ def contemplate_endpoint(req: ContemplateRequest):
     llm = get_fallback_llm()
     if not is_llm_available() and llm is None:
         try:
-            from main import is_testing
+            from src.core.config import is_testing
             if not is_testing:
                 raise HTTPException(status_code=501, detail="llama-cpp-python is not installed. LLM runner disabled.")
         except ImportError:

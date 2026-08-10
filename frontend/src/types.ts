@@ -56,6 +56,7 @@ export interface ChatSession {
   id: string;
   title: string;
   updatedAt: string;
+  messages?: any[];
 }
 
 export interface ChatMessage {

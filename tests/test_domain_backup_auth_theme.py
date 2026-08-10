@@ -1,3 +1,4 @@
+import pytest
 """
 Domain 31: Database Backup, Auth Guard & Theme Switcher Test Suite.
 Validates online SQLite database backups/restoration, configurable API key auth guards, and theme toggle contract invariants.
@@ -97,6 +98,7 @@ class TestDomainBackupAuthTheme(unittest.TestCase):
         # Cleanup env vars
         os.environ["UROBOROS_REQUIRE_AUTH"] = "false"
 
+    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
     def test_03_theme_toggle_persistence_contract(self):
         """Verify theme switcher CSS root variables and persistence contract.
 

@@ -6,6 +6,7 @@ and shared tag cluster edge generation.
 
 import os
 import sys
+from src.infrastructure.database import get_db_connection
 import time
 import shutil
 import tempfile
@@ -133,7 +134,7 @@ class TestDomainGraphPerformance(unittest.TestCase):
         """
         from src.app.routers.search import get_graph_data_endpoint
 
-        with sqlite3.connect(know.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             file_rows = []
             now = time.time()
@@ -183,7 +184,7 @@ class TestDomainGraphPerformance(unittest.TestCase):
         Invariants: Graph builder creates `wikilink_to` edges connecting document nodes.
         Outcomes: Verifies edge relationship extraction and correct source/target node pairing.
         """
-        with sqlite3.connect(know.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO files (id, filepath, filename, content) VALUES (1, 'c:/a.md', 'Alpha.md', 'See [[Beta.md]] and [[Gamma.md#sec|Link]])')"
@@ -213,7 +214,7 @@ class TestDomainGraphPerformance(unittest.TestCase):
         Invariants: Graph builder forms `shared_tag_cluster` edges with weights matching shared tag counts.
         Outcomes: Verifies cluster edge weight computation and document co-tag adjacency.
         """
-        with sqlite3.connect(know.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("INSERT INTO files (id, filepath, filename) VALUES (1, 'c:/doc1.md', 'doc1.md')")
             cursor.execute("INSERT INTO files (id, filepath, filename) VALUES (2, 'c:/doc2.md', 'doc2.md')")
@@ -244,7 +245,7 @@ class TestDomainGraphPerformance(unittest.TestCase):
         Invariants: Endpoint query parameters (`limit`, `include_wikilinks`, `include_clusters`) restrict output contents.
         Outcomes: Verifies parameter filtering, node limits, and edge toggle options.
         """
-        with sqlite3.connect(know.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             for i in range(1, 11):
                 cursor.execute(
@@ -272,7 +273,7 @@ class TestDomainGraphPerformance(unittest.TestCase):
         Invariants: Graph API JSON response populates both modern `edges` and legacy `links` array fields.
         Outcomes: Verifies JSON schema field compliance and backward compatibility aliases.
         """
-        with sqlite3.connect(know.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("INSERT INTO files (id, filepath, filename, file_size, mime_type, modified_at) VALUES (1, 'c:/a.md', 'a.md', 512, 'text/markdown', 123456)")
             cursor.execute("INSERT INTO tags (file_id, tag) VALUES (1, 'demo')")

@@ -27,4 +27,5 @@ if %errorlevel% neq 0 (
     echo.
     echo Engine stopped unexpectedly with error code %errorlevel%.
     pause
+    exit /b %errorlevel%
 )

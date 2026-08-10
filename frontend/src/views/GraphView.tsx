@@ -3,6 +3,7 @@ import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import { glassCardClasses } from '../lib/utils';
 import { Filter, Maximize, RotateCcw } from 'lucide-react';
+import { api } from '../lib/api';
 
 export default function GraphView() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -18,9 +19,9 @@ export default function GraphView() {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   useEffect(() => {
-    fetch('/api/graph/data')
-      .then(r => r.json())
+    api.graphData()
       .then(data => {
+        if (!data) throw new Error('No data');
         const n = (data.nodes || []).map((d: any) => ({
           ...d,
           type: d.type || d.category || 'document',
@@ -36,7 +37,11 @@ export default function GraphView() {
         setEdges(e);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setNodes([]);
+        setEdges([]);
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -81,55 +86,74 @@ export default function GraphView() {
     return { nodes: filteredNodes, links: filteredEdges };
   }, [filteredNodes, filteredEdges]);
 
+  // ponytail: cache materials to avoid webgl memory leak
+  const materialCache = useRef<Record<string, THREE.SpriteMaterial>>({});
+
+  useEffect(() => {
+    return () => {
+      Object.values(materialCache.current).forEach(mat => {
+        mat.map?.dispose();
+        mat.dispose();
+      });
+    };
+  }, []);
+
   const nodeThreeObject = useCallback((node: any) => {
-    const size = 128;
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return false;
-
     const type = node.type || 'document';
-    let color = '#64748b';
-    let icon = '📄';
-    
-    if (type === 'document') {
-      color = '#818CF8';
-      icon = '📄';
-    } else if (type === 'tag') {
-      color = '#34D399';
-      icon = '🏷️';
-    } else if (type === 'concept') {
-      color = '#FBBF24';
-      icon = '💡';
+    const isSelected = selectedNode && selectedNode.id === node.id;
+    const cacheKey = `${type}-${isSelected}`;
+
+    if (!materialCache.current[cacheKey]) {
+      const size = 128;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return false;
+
+      let color = '#64748b';
+      let icon = '📄';
+      
+      if (type === 'document') {
+        color = '#818CF8';
+        icon = '📄';
+      } else if (type === 'tag') {
+        color = '#34D399';
+        icon = '🏷️';
+      } else if (type === 'concept') {
+        color = '#FBBF24';
+        icon = '💡';
+      }
+
+      // Draw background circle
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size / 2 - 4, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      if (isSelected) {
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+      } else {
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#0f172a';
+        ctx.stroke();
+      }
+
+      // Draw icon
+      ctx.font = '64px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(icon, size / 2, size / 2 + 6);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      const material = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+      materialCache.current[cacheKey] = material;
     }
 
-    // Draw background circle
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2 - 4, 0, 2 * Math.PI);
-    ctx.fillStyle = color;
-    ctx.fill();
-
-    if (selectedNode && selectedNode.id === node.id) {
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
-    } else {
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = '#0f172a';
-      ctx.stroke();
-    }
-
-    // Draw icon
-    ctx.font = '64px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(icon, size / 2, size / 2 + 6);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    const material = new THREE.SpriteMaterial({ map: texture, depthTest: false });
-    const sprite = new THREE.Sprite(material);
+    const sprite = new THREE.Sprite(materialCache.current[cacheKey]);
     
     // Set scale relative to node importance or standard size
     const scale = type === 'document' ? 14 : 10;

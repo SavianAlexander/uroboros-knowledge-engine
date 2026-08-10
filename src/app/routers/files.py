@@ -42,31 +42,14 @@ ACTIVE_DIR = "dumps"
 
 def get_active_dir():
     try:
-        from main import ACTIVE_DIR as m_dir
+        from src.core.config import ACTIVE_DIR as m_dir
         return m_dir
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in files.py")
         return ACTIVE_DIR
 
-@router.get("/")
-def get_index():
-    asset_path = Path("src/assets/index.html")
-    if not asset_path.exists():
-        asset_path = Path("index.html")
-    return FileResponse(str(asset_path))
-
-@router.get("/style.css")
-def get_css():
-    asset_path = Path("src/assets/style.css")
-    if not asset_path.exists():
-        asset_path = Path("style.css")
-    return FileResponse(str(asset_path), media_type="text/css")
-
-@router.get("/app.js")
-def get_js():
-    asset_path = Path("src/assets/app.js")
-    if not asset_path.exists():
-        asset_path = Path("app.js")
-    return FileResponse(str(asset_path), media_type="application/javascript")
 
 @router.get("/api/file/raw")
 @router.get("/api/file")
@@ -99,13 +82,11 @@ def get_raw_file(path: str):
                 content = f.read()
 
         import re
+        from collections import Counter
         words = [w.lower() for w in re.findall(r'\b[a-zA-Z]{3,}\b', content)]
-        freq = {}
-        for w in words:
-            if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'):
-                freq[w] = freq.get(w, 0) + 1
-        top_words = [w for w, _ in sorted(freq.items(), key=lambda x: x[1], reverse=True)[:5]]
-        suggested_tags = list(set(top_words))
+        freq = Counter(w for w in words if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'))
+        # ponytail: shortest diff wins
+        suggested_tags = [w for w, _ in freq.most_common(5)]
 
         res = {
             "id": file_id,
@@ -123,7 +104,10 @@ def get_raw_file(path: str):
         return res
     except HTTPException:
         raise
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/file/save")
@@ -155,22 +139,26 @@ def save_file_endpoint(req: FileSaveRequest):
                 cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (norm_path,))
                 fn = os.path.basename(norm_path)
                 cursor.execute("INSERT INTO fts_files (filepath, filename, content) VALUES (?, ?, ?)", (norm_path, fn, req.content))
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in files.py: {e}")
             conn.commit()
 
         try:
-            import sys
-            if "main" in sys.modules and hasattr(sys.modules["main"], "GLOBAL_QUERY_CACHE"):
-                c = getattr(sys.modules["main"], "GLOBAL_QUERY_CACHE", None)
-                if c and hasattr(c, "clear"):
-                    c.clear()
-        except Exception:
-            pass
-
+            from src.core.state import GLOBAL_QUERY_CACHE
+            if GLOBAL_QUERY_CACHE is not None:
+                GLOBAL_QUERY_CACHE.invalidate()
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in files.py: {e}")
         index_directory(os.path.dirname(norm_path))
         return {"status": "success", "filepath": norm_path, "path": norm_path}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/file/tree")
@@ -212,7 +200,10 @@ def delete_file_endpoint(req: DeleteFileRequest):
                 cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
             conn.commit()
         return {"status": "success", "deleted": norm_path}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/file/rename")
@@ -236,8 +227,10 @@ def rename_file_endpoint(req: RenameRequest):
         if os.path.exists(norm_new) and norm_new != real_old:
             try:
                 os.remove(norm_new)
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in files.py: {e}")
         os.rename(real_old, norm_new)
         with get_db() as conn:
             cursor = conn.cursor()
@@ -246,18 +239,26 @@ def rename_file_endpoint(req: RenameRequest):
             cursor.execute("UPDATE files SET filepath = ?, filename = ? WHERE filepath = ? OR filepath = ?", (norm_new, req.new_name, real_old, old_fp))
             try:
                 cursor.execute("DELETE FROM fts_files WHERE filepath = ? OR filepath = ?", (real_old, old_fp))
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in files.py: {e}")
             try:
                 cursor.execute("UPDATE file_revisions SET filepath = ? WHERE filepath = ? OR filepath = ?", (norm_new, real_old, old_fp))
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
             except Exception as e:
-                logger.exception("Failed to update revision history for rename: %s", e)
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+                logger.exception("Failed to update revision history for rename") # ponytail: remove redundant format
             conn.commit()
         index_directory(parent_dir)
         return {"status": "success", "old_filepath": real_old, "new_filepath": norm_new, "filepath": norm_new}
     except HTTPException:
         raise
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/bulk_delete")
@@ -271,8 +272,10 @@ def bulk_delete_endpoint(req: BulkDeleteRequest):
             if os.path.exists(fp):
                 os.remove(fp)
                 deleted.append(fp)
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in files.py: {e}")
     return {"status": "success", "deleted": deleted}
 
 @router.post("/api/upload")
@@ -289,7 +292,10 @@ def upload_file_endpoint(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, f)
         index_directory(base)
         return {"status": "success", "filename": file.filename, "filepath": dest_path}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 class TranscribeRequest(BaseModel):
@@ -313,23 +319,42 @@ def transcribe_audio_endpoint(req: TranscribeRequest):
     index_directory(parent_dir)
     return {"status": "success", "transcription": result, "transcript_file": transcript_file}
 
-@router.post("/api/index")
-def trigger_index_endpoint(req: IndexRequest):
-    """Trigger directory indexing task with disk space check."""
-    dir_p = req.get_dir()
+from src.core.jobs import get_job_manager
+
+@router.post("/api/file/index")
+def index_directory_endpoint(req: IndexRequest):
+    """Trigger background indexing and extraction across all supported files in active directory."""
+    # ponytail: shortest diff wins
+    dir_p = req.directory if req.directory else get_active_dir()
+
+    if req.directory:
+        verify_path_containment(req.directory)
+
+    if not os.path.exists(dir_p):
+        os.makedirs(dir_p, exist_ok=True)
+        
     try:
-        total, used, free = shutil.disk_usage(dir_p if (dir_p and os.path.exists(dir_p)) else ".")
-        if free < 10 * 1024 * 1024:
+        disk_usage = shutil.disk_usage(dir_p)
+        if disk_usage.free < 100 * 1024 * 1024:
             raise HTTPException(status_code=507, detail="Insufficient storage space to complete index operation")
     except HTTPException:
         raise
-    except Exception:
-        pass
-    try:
-        index_directory(dir_p)
-        return {"status": "success", "indexed_dir": dir_p}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging; logging.error(f"Swallowed error in files.py: {e}")
+        
+    jm = get_job_manager()
+    job_id = jm.submit_job(index_directory, dir_p)
+    return {"status": "queued", "job_id": job_id, "indexed_dir": dir_p}
+
+@router.get("/api/jobs/{job_id}")
+def get_job_status(job_id: str):
+    jm = get_job_manager()
+    job = jm.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
 
 @router.get("/api/file/summary")
 def get_file_summary_endpoint(path: str):
@@ -343,7 +368,10 @@ def get_file_summary_endpoint(path: str):
         summary = generate_summary(text)
         takeaways = generate_key_takeaways(text)
         return {"filepath": path, "summary": summary, "takeaways": takeaways}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/file/revisions")
@@ -385,15 +413,20 @@ def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: 
                 row = cursor.fetchone()
                 if row:
                     db_content = row[0]
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in files.py: {e}")
 
     content = db_content
     if content is None and fp and os.path.exists(fp):
         try:
             with open(fp, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in files.py")
             content = None
 
     error_prefixes = (
@@ -410,9 +443,12 @@ def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: 
         return {"filepath": fp or "", "path": fp or "", "insights": "*This document contains no readable text content to extract insights.*"}
 
     try:
-        from main import get_fallback_llm as main_get_fallback_llm
+        from src.core.model_manager import get_fallback_llm as main_get_fallback_llm
         llm = main_get_fallback_llm()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in files.py")
         llm = get_fallback_llm()
 
     if not is_llm_available() and llm is None:
@@ -441,7 +477,10 @@ def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: 
         return {"filepath": fp, "path": fp, "insights": insights}
     except HTTPException:
         raise
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/open")
@@ -455,5 +494,8 @@ def open_file_endpoint(req: OpenFileRequest):
     try:
         os.startfile(fp)
         return {"status": "opened", "filepath": fp}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))

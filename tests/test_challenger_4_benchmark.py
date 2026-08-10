@@ -15,6 +15,7 @@ Measures both REST TestClient Endpoint Latency and Direct Engine Latency (p50, p
 
 import os
 import sys
+from src.infrastructure.database import get_db_connection
 import time
 import math
 import tempfile
@@ -66,7 +67,7 @@ def populate_large_dataset(db_file):
     start_time = time.time()
     know.reset_db_connections()
 
-    with sqlite3.connect(db_file, timeout=30.0) as conn:
+    with get_db_connection(db_file, timeout=30.0) as conn:
         cur = conn.cursor()
 
         exts = [".pdf", ".md", ".txt", ".docx", ".png", ".json", ".csv", ".py", ".html", ".xml"]

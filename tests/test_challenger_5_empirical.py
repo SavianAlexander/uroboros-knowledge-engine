@@ -13,6 +13,7 @@ Verifies:
 
 import os
 import sys
+from src.infrastructure.database import get_db_connection
 import time
 import math
 import tempfile
@@ -62,7 +63,7 @@ def calc_percentiles(samples_ms):
 
 def seed_large_dataset(db_file):
     know.reset_db_connections()
-    with sqlite3.connect(db_file, timeout=30.0) as conn:
+    with get_db_connection(db_file, timeout=30.0) as conn:
         cur = conn.cursor()
 
         exts = [".pdf", ".md", ".txt", ".docx", ".png", ".json", ".csv", ".py", ".html", ".xml"]

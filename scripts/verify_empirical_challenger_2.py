@@ -122,7 +122,7 @@ conn.close()
 # 2A: Direct DB Read Latency Test
 print("\n--- 2A: Database Read Latency Test (1000 iterations) ---", flush=True)
 read_times = []
-with sqlite3.connect(db_benchmark_path, timeout=30.0) as conn:
+with get_db_connection(db_benchmark_path, timeout=30.0) as conn:
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     for i in range(1000):
@@ -197,8 +197,8 @@ print(f"  Backend Search Latency Target (<5.0ms avg & p95): {'PASS' if search_la
 # Cleanup benchmark temp db
 try:
     os.remove(db_benchmark_path)
-except Exception:
-    pass
+except Exception as e:
+    import logging; logging.error(f"Swallowed error in verify_empirical_challenger_2.py: {e}")
 
 # ==============================================================================
 # TEST 3: Zero Informal / Hype Strings Scan (Production Source Code Only)
@@ -254,6 +254,7 @@ for filepath in files_to_scan:
                             'content': line.strip()
                         })
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in verify_empirical_challenger_2.py: {e}")
         print(f"Error reading {rel_path}: {e}", flush=True)
 
 print(f"Scanned {len(files_to_scan)} production source files.", flush=True)

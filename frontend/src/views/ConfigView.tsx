@@ -19,15 +19,15 @@ export default function ConfigView() {
     try {
       const snaps = await api.snapshots();
       setSnapshots(snaps.snapshots || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); setSnapshots([]); }
     try {
       const peers = await api.syncPeers();
       setSyncPeers(peers.peers || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); setSyncPeers([]); }
     try {
       const logs = await api.syncLogs();
       setSyncLogs(logs.logs || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); setSyncLogs([]); }
   };
 
   const handleCapture = async () => {
@@ -79,12 +79,7 @@ export default function ConfigView() {
   const handleAddPeer = async () => {
     if (!newPeer) return;
     try {
-      const res = await fetch('/api/sync/peers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: newPeer, name: newPeer })
-      });
-      if (!res.ok) throw new Error('Failed to add peer');
+      await api.addSyncPeer(newPeer, newPeer);
       setNewPeer('');
       await loadData();
     } catch (e) {
@@ -215,7 +210,7 @@ export default function ConfigView() {
             <div>
               <label htmlFor="semantic-chunk-size" className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Semantic Chunk Size</label>
               <div className="flex items-center gap-3">
-                <input id="semantic-chunk-size" type="range" aria-label="Semantic Chunk Size" min="256" max="2048" step="128" defaultValue="1024" className="flex-1 accent-purple-500" />
+                <input id="semantic-chunk-size" type="range" min="256" max="2048" step="128" defaultValue="1024" onChange={() => {}} className="flex-1 accent-purple-500" />
                 <span className="text-sm text-slate-600 dark:text-slate-400 w-16 text-right font-mono bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-white/5">1024</span>
               </div>
               <p className="text-[10px] text-slate-500 mt-1">Target token count per vector node</p>
@@ -224,7 +219,7 @@ export default function ConfigView() {
             <div>
               <label htmlFor="chunk-overlap" className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Chunk Overlap</label>
               <div className="flex items-center gap-3">
-                <input id="chunk-overlap" type="range" aria-label="Chunk Overlap" min="0" max="512" step="32" defaultValue="128" className="flex-1 accent-purple-500" />
+                <input id="chunk-overlap" type="range" min="0" max="512" step="32" defaultValue="128" onChange={() => {}} className="flex-1 accent-purple-500" />
                 <span className="text-sm text-slate-600 dark:text-slate-400 w-16 text-right font-mono bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-white/5">128</span>
               </div>
               <p className="text-[10px] text-slate-500 mt-1">Token overlap between adjacent chunks to preserve context</p>
@@ -232,7 +227,7 @@ export default function ConfigView() {
 
             <div>
               <label htmlFor="embedding-model" className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Embedding Model</label>
-              <select id="embedding-model" aria-label="Embedding Model" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 p-2.5 outline-none focus:border-purple-500/50">
+              <select id="embedding-model" onChange={() => {}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 p-2.5 outline-none focus:border-purple-500/50">
                 <option>text-embedding-3-small (Default)</option>
                 <option>text-embedding-3-large</option>
                 <option>nomic-embed-text-v1.5</option>

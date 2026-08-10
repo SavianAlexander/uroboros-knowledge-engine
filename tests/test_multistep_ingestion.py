@@ -99,8 +99,8 @@ def test_multistep_ingestion():
     try:
         conn.close()
         shutil.rmtree(temp_dir, ignore_errors=True)
-    except Exception:
-        pass
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in test_multistep_ingestion.py: {e}")
 
     print("[OK] Multistep ingestion workflow validation passed successfully.")
 

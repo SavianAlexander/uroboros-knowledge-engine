@@ -37,7 +37,7 @@ class TestDomainLLM(unittest.TestCase):
         Invariants: Model loader returns valid engine instance without throwing exception.
         Expected Outcomes: main.get_llm() returns non-None mock object.
         """
-        with patch.object(main, 'Llama', MagicMock()):
+        with patch('src.core.model_manager.Llama', MagicMock()):
             with patch('os.path.exists', return_value=True):
                 llm = main.get_llm()
                 self.assertIsNotNone(llm, "Mocked LLM initialization failed")

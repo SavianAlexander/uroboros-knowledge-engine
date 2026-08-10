@@ -101,6 +101,7 @@ def build_executable(check_only=False):
         print("Desktop compilation completed successfully!")
         return res.returncode == 0
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in build_desktop.py: {e}")
         print(f"PyInstaller build step deferred: {e}")
         return False
 

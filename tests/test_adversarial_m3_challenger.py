@@ -78,53 +78,108 @@ def test_sse_stream_fragmentation_handling_simulation():
     assert len(parsed_sources) == 1
     assert parsed_sources[0]["file"] == "doc1.txt"
 
+import time
+import socket
+import threading
+import urllib.request
+import urllib.error
+import uvicorn
+from contextlib import closing
+from src.core.auth_jwt import sign_jwt
+
+def find_free_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
+
 def test_rapid_session_api_stress_crud():
     """
     Empirically stress test backend session creation, listing, getting, and deleting 50 sessions.
+    Refactored to use dynamic OS ephemeral port isolation and a real HTTP server instead of TestClient.
     """
+    port = find_free_port()
+    
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp_dir:
         test_db_path = os.path.join(tmp_dir, "test_rapid_m3.db")
-        orig_db = db.DB_FILE
+        os.environ["DB_FILE"] = test_db_path
+        
+        # Initialize DB in the test process first
         db.DB_FILE = test_db_path
+        db.init_db()
+
+        # Start Uvicorn Server in background thread
+        config = uvicorn.Config("src.app.server:app", host="127.0.0.1", port=port, log_level="critical")
+        server = uvicorn.Server(config)
+        
+        server_thread = threading.Thread(target=server.run)
+        server_thread.daemon = True
+        server_thread.start()
+        
+        # Wait for server to start
+        base_url = f"http://127.0.0.1:{port}"
+        for _ in range(20):
+            try:
+                urllib.request.urlopen(f"{base_url}/api/health")
+                break
+            except Exception:
+                import logging; logging.getLogger(__name__).exception("Swallowed error in test_adversarial_m3_challenger.py")
+                time.sleep(0.1)
+                
         try:
-            db.init_db()
-            test_client = TestClient(app)
+            # Generate JWT for auth
+            token = sign_jwt({"user_id": 999, "username": "test_user", "role": "admin"})
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}"
+            }
             
             created_ids = []
             
             # Rapidly create 50 sessions
             for i in range(50):
-                resp = test_client.post("/api/chat/sessions", json={
-                    "title": f"Stress Session {i}",
-                    "model_path": "models/tinyllama.gguf",
-                    "temperature": 0.7,
-                    "context_window": 4096
-                })
-                assert resp.status_code == 200
-                data = resp.json()
-                created_ids.append(data["id"])
+                req = urllib.request.Request(
+                    f"{base_url}/api/chat/sessions", 
+                    data=json.dumps({
+                        "title": f"Stress Session {i}",
+                        "model_path": "models/tinyllama.gguf",
+                        "temperature": 0.7,
+                        "context_window": 4096
+                    }).encode('utf-8'),
+                    headers=headers,
+                    method="POST"
+                )
+                with urllib.request.urlopen(req) as resp:
+                    assert resp.status == 200
+                    data = json.loads(resp.read().decode())
+                    created_ids.append(data["id"])
             
             assert len(created_ids) == 50
             
             # List sessions
-            list_resp = test_client.get("/api/chat/sessions")
-            assert list_resp.status_code == 200
-            sessions = list_resp.json()
-            assert len(sessions) == 50
+            req = urllib.request.Request(f"{base_url}/api/chat/sessions", headers=headers, method="GET")
+            with urllib.request.urlopen(req) as resp:
+                assert resp.status == 200
+                sessions = json.loads(resp.read().decode())
+                assert len(sessions) == 50
             
             # Delete 25 sessions
             for sid in created_ids[:25]:
-                del_resp = test_client.delete(f"/api/chat/sessions/{sid}")
-                assert del_resp.status_code == 200
+                req = urllib.request.Request(f"{base_url}/api/chat/sessions/{sid}", headers=headers, method="DELETE")
+                with urllib.request.urlopen(req) as resp:
+                    assert resp.status == 200
             
             # Verify list contains remaining 25
-            list_resp2 = test_client.get("/api/chat/sessions")
-            assert list_resp2.status_code == 200
-            assert len(list_resp2.json()) == 25
-            
+            req = urllib.request.Request(f"{base_url}/api/chat/sessions", headers=headers, method="GET")
+            with urllib.request.urlopen(req) as resp:
+                assert resp.status == 200
+                assert len(json.loads(resp.read().decode())) == 25
+                
         finally:
+            server.should_exit = True
+            server_thread.join(timeout=2.0)
             db.reset_db_connections()
-            db.DB_FILE = orig_db
+            os.environ.pop("DB_FILE", None)
 
 def test_sha256_bitwise_sync_check():
     """

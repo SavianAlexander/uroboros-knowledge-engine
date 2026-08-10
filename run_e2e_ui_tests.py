@@ -24,14 +24,6 @@ import uvicorn
 from src.app.server import app
 
 
-def get_ephemeral_port() -> int:
-    """Dynamically bind to an OS ephemeral port to avoid socket collisions."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('127.0.0.1', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
-
 
 class ServerThread(threading.Thread):
     def __init__(self, host: str, port: int):
@@ -58,6 +50,7 @@ def poll_health(host: str, port: int, timeout: float = 10.0) -> bool:
                 if resp.status == 200:
                     return True
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in run_e2e_ui_tests.py")
             time.sleep(0.2)
     return False
 
@@ -89,17 +82,20 @@ def main_runner():
     try:
         verify_asset_parity()
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in run_e2e_ui_tests.py: {e}")
         print(f"Asset Parity Verification Failed: {e}")
         sys.exit(1)
 
     # 2. Ephemeral Port Socket Binding
     host = "127.0.0.1"
-    port = get_ephemeral_port()
-    print(f"[E2E Runner] Dynamic Ephemeral Socket Bound to http://{host}:{port}")
 
     # 3. Start Background Server
-    server_thread = ServerThread(host, port)
+    server_thread = ServerThread(host, 0)
     server_thread.start()
+    time.sleep(1.5)
+    
+    port = server_thread.server.servers[0].sockets[0].getsockname()[1]
+    print(f"[E2E Runner] Dynamic Ephemeral Socket Bound to http://{host}:{port}")
 
     # 4. Health Polling Loop
     print(f"[E2E Runner] Polling /api/health at http://{host}:{port}/api/health...")
@@ -128,6 +124,7 @@ def main_runner():
             suite.addTest(mod_suite)
             print(f"  + Loaded test suite module: {mod_name}")
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in run_e2e_ui_tests.py: {e}")
             print(f"  - ERROR loading test module {mod_name}: {e}")
             server_thread.stop()
             sys.exit(1)

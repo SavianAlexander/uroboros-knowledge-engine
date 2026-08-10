@@ -5,6 +5,9 @@ import requests
 import datetime
 import threading
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Configuration
 DB_FILE = "knowledge.db"
@@ -28,9 +31,11 @@ def get_latest_files(limit=3):
         finally:
             try:
                 conn.close()
-            except Exception:
-                pass
+            except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in chaos_monkey.py: {e}")
+                logger.warning(f"Error closing DB connection: {e}")
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in chaos_monkey.py: {e}")
         print(f"Chaos Monkey DB Error: {e}")
         return []
 
@@ -53,7 +58,7 @@ def run_chaos_monkey():
         try:
             # Send to Uroboros /api/contemplate in Red Team mode
             payload = {
-                "text": f"File: {filename}\nContent:\n{content[:2000]}",
+                "text": f"File: {filename}\nContent:\n{(content or '')[:2000]}",
                 "mode": "red_team"
             }
             resp = requests.post(API_URL, json=payload, timeout=120)
@@ -67,6 +72,7 @@ def run_chaos_monkey():
             else:
                 report_content += f"*API Error {resp.status_code}: {resp.text}*\n\n"
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in chaos_monkey.py: {e}")
             report_content += f"*Connection failed. Ensure Neuro Uroboros is running. Error: {str(e)}*\n\n"
             
         report_content += "---\n\n"
@@ -77,6 +83,7 @@ def run_chaos_monkey():
             f.write(report_content)
         print(f"Report generated: {report_path}")
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in chaos_monkey.py: {e}")
         print(f"Failed to write report: {e}")
 
 def daemon_loop():

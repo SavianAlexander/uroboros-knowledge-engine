@@ -23,8 +23,8 @@ class TestChatSessionsM1(unittest.TestCase):
         gc.collect()
         try:
             self.tmp_dir.cleanup()
-        except Exception:
-            pass
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in test_chat_sessions_m1.py: {e}")
 
     def test_database_crud(self):
         # Create session

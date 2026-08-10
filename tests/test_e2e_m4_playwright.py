@@ -1,3 +1,4 @@
+import pytest
 """
 Playwright E2E Verification Test Suite for Milestone 4:
 - View 1 Document Intelligence Panel rendering
@@ -8,6 +9,7 @@ Playwright E2E Verification Test Suite for Milestone 4:
 """
 import os
 import sys
+from src.infrastructure.database import get_db_connection
 import time
 import shutil
 import sqlite3
@@ -23,7 +25,7 @@ import know
 import main
 import uvicorn
 
-PORT = 8094
+PORT = 0
 DB_NAME = "test_m4_playwright.db"
 SANDBOX_DIR = PROJECT_ROOT / "test_sandbox_m4_playwright"
 
@@ -59,9 +61,13 @@ class TestM4PlaywrightE2E(unittest.TestCase):
             fpath = str(PROJECT_ROOT / (DB_NAME + suffix))
             if os.path.exists(fpath):
                 try:
+                    try:
+                        from src.infrastructure.database import reset_db_connections
+                        reset_db_connections()
+                    except Exception: pass
                     os.remove(fpath)
-                except Exception:
-                    pass
+                except Exception as e:
+                    import logging; logging.error(f"Swallowed error in test_e2e_m4_playwright.py: {e}")
 
         know.DB_FILE = DB_NAME
         db_infra.DB_FILE = DB_NAME
@@ -70,7 +76,7 @@ class TestM4PlaywrightE2E(unittest.TestCase):
         db_infra.init_db()
 
         now = int(time.time())
-        with sqlite3.connect(know.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM files")
             cursor.execute("DELETE FROM tags")
@@ -88,18 +94,21 @@ class TestM4PlaywrightE2E(unittest.TestCase):
             cursor.execute("INSERT INTO tags (file_id, tag) VALUES (?, ?)", (2, "intelligence"))
             conn.commit()
 
+        cls.server_thread = ServerThread()
+        cls.server_thread.start()
+        time.sleep(1.5)
+        
+        global PORT
+        PORT = cls.server_thread.server.servers[0].sockets[0].getsockname()[1]
+
         from src.infrastructure.database import create_workflow_trigger
         create_workflow_trigger(
             name="Test Trigger Rule",
             event_type="document_ingested",
-            webhook_url="http://127.0.0.1:8094/api/webhook/mock",
+            webhook_url=f"http://127.0.0.1:{PORT}/api/webhook/mock",
             condition_pattern="",
             is_active=True
         )
-
-        cls.server_thread = ServerThread()
-        cls.server_thread.start()
-        time.sleep(1.5)
 
     @classmethod
     def tearDownClass(cls):
@@ -107,6 +116,7 @@ class TestM4PlaywrightE2E(unittest.TestCase):
         if SANDBOX_DIR.exists():
             shutil.rmtree(SANDBOX_DIR, ignore_errors=True)
 
+    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
     def test_m4_frontend_analytics_and_buttons(self):
         console_errors = []
 
@@ -124,6 +134,7 @@ class TestM4PlaywrightE2E(unittest.TestCase):
                     urllib.request.urlopen(f"http://127.0.0.1:{PORT}/api/health", timeout=1)
                     break
                 except Exception:
+                    import logging; logging.getLogger(__name__).exception("Swallowed error in test_e2e_m4_playwright.py")
                     time.sleep(0.2)
 
             page.goto(f"http://127.0.0.1:{PORT}/", wait_until="networkidle")

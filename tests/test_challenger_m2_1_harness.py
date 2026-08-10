@@ -94,9 +94,13 @@ class TestChallengerM2Harness(unittest.TestCase):
         db_infra.DB_FILE = cls.orig_db_file
         try:
             if os.path.exists(cls.db_path):
+                try:
+                    from src.infrastructure.database import reset_db_connections
+                    reset_db_connections()
+                except Exception: pass
                 os.remove(cls.db_path)
-        except Exception:
-            pass
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in test_challenger_m2_1_harness.py: {e}")
 
     def setUp(self):
         DelayedWebhookHandler.received_requests.clear()

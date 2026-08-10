@@ -29,7 +29,7 @@ router = APIRouter(tags=["workflows"])
 
 @router.post("/api/v1/workflows/triggers", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 @router.post("/api/workflows/triggers", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
-async def create_trigger_endpoint(req: WorkflowTriggerCreate):
+def create_trigger_endpoint(req: WorkflowTriggerCreate):
     """Create a new workflow trigger rule."""
     is_act = req.is_active if req.is_active is not None else True
     trigger = create_workflow_trigger(
@@ -45,7 +45,7 @@ async def create_trigger_endpoint(req: WorkflowTriggerCreate):
 
 @router.get("/api/v1/workflows/triggers", response_model=List[Dict[str, Any]])
 @router.get("/api/workflows/triggers", response_model=List[Dict[str, Any]])
-async def list_triggers_endpoint(
+def list_triggers_endpoint(
     event_type: Optional[str] = Query(None, description="Filter by event type"),
     active_only: bool = Query(False, description="Filter active triggers only"),
 ):
@@ -56,7 +56,7 @@ async def list_triggers_endpoint(
 
 @router.get("/api/v1/workflows/triggers/{trigger_id}", response_model=Dict[str, Any])
 @router.get("/api/workflows/triggers/{trigger_id}", response_model=Dict[str, Any])
-async def get_trigger_endpoint(trigger_id: int):
+def get_trigger_endpoint(trigger_id: int):
     """Get a single workflow trigger by ID."""
     trigger = get_workflow_trigger(trigger_id)
     if not trigger:
@@ -64,9 +64,21 @@ async def get_trigger_endpoint(trigger_id: int):
     return trigger
 
 
+@router.put("/api/v1/workflows/triggers/{trigger_id}", response_model=Dict[str, Any])
+@router.put("/api/workflows/triggers/{trigger_id}", response_model=Dict[str, Any])
+def update_trigger_endpoint(trigger_id: int, trigger_update: WorkflowTriggerUpdate):
+    """Update a workflow trigger rule.
+    ponytail: Returns Dict[str, Any] like the other endpoints in this file.
+    """
+    updated_trigger = update_workflow_trigger(trigger_id, trigger_update)
+    if not updated_trigger:
+        raise HTTPException(status_code=404, detail="Workflow trigger not found")
+    return updated_trigger
+
+
 @router.delete("/api/v1/workflows/triggers/{trigger_id}")
 @router.delete("/api/workflows/triggers/{trigger_id}")
-async def delete_trigger_endpoint(trigger_id: int):
+def delete_trigger_endpoint(trigger_id: int):
     """Delete a workflow trigger rule."""
     success = delete_workflow_trigger(trigger_id)
     if not success:
@@ -78,7 +90,7 @@ async def delete_trigger_endpoint(trigger_id: int):
 @router.post("/api/workflows/trigger-event")
 @router.post("/api/workflows/test")
 @router.post("/api/v1/workflows/test")
-async def trigger_event_endpoint(req: WorkflowEventTriggerRequest):
+def trigger_event_endpoint(req: WorkflowEventTriggerRequest):
     """Dispatch event or trigger test webhook execution."""
     if req.trigger_id is not None:
         trigger = get_workflow_trigger(req.trigger_id)
@@ -114,7 +126,7 @@ async def trigger_event_endpoint(req: WorkflowEventTriggerRequest):
 
 @router.get("/api/v1/workflows/logs", response_model=List[Dict[str, Any]])
 @router.get("/api/workflows/logs", response_model=List[Dict[str, Any]])
-async def list_logs_endpoint(
+def list_logs_endpoint(
     trigger_id: Optional[int] = Query(None, description="Filter logs by trigger ID"),
     limit: int = Query(100, description="Max logs limit"),
 ):

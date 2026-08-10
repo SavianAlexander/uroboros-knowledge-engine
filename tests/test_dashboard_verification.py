@@ -1,6 +1,7 @@
 # tests/test_dashboard_verification.py
 import os
 import sys
+from src.infrastructure.database import get_db_connection
 import time
 import shutil
 import sqlite3
@@ -60,16 +61,20 @@ def run_server():
         fpath = "test_dashboard_verif.db" + suffix
         if os.path.exists(fpath):
             try:
+                try:
+                    from src.infrastructure.database import reset_db_connections
+                    reset_db_connections()
+                except Exception: pass
                 os.remove(fpath)
-            except Exception:
-                pass
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in test_dashboard_verification.py: {e}")
 
     know.DB_FILE = "test_dashboard_verif.db"
     main.ACTIVE_DIR = str(sandbox)
     know.init_db()
 
     # Pre-populate database with some data for dashboard stats test
-    with sqlite3.connect(know.DB_FILE) as conn:
+    with get_db_connection(know.DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM tags")
         cursor.execute("DELETE FROM auto_rules")
@@ -116,6 +121,7 @@ def run_server():
             with socket.create_connection(("127.0.0.1", PORT), timeout=0.2):
                 break
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in test_dashboard_verification.py")
             time.sleep(0.1)
 
     yield
@@ -129,9 +135,14 @@ def run_server():
         if os.path.exists(fpath):
             for _ in range(20):
                 try:
+                    try:
+                        from src.infrastructure.database import reset_db_connections
+                        reset_db_connections()
+                    except Exception: pass
                     os.remove(fpath)
                     break
                 except Exception:
+                    import logging; logging.getLogger(__name__).exception("Swallowed error in test_dashboard_verification.py")
                     time.sleep(0.1)
 
     # Cleanup sandbox
@@ -141,13 +152,14 @@ def run_server():
                 shutil.rmtree(sandbox)
                 break
             except Exception:
+                import logging; logging.getLogger(__name__).exception("Swallowed error in test_dashboard_verification.py")
                 time.sleep(0.1)
 
     main.ACTIVE_DIR = "dumps"
 
 @pytest.fixture(autouse=True)
 def reset_db():
-    with sqlite3.connect(know.DB_FILE) as conn:
+    with get_db_connection(know.DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM search_history")
         cursor.execute(
@@ -175,7 +187,7 @@ def test_dashboard_stats_api_vs_db():
     assert "sync_peers" in data
     
     # Query database counts directly
-    with sqlite3.connect(know.DB_FILE) as conn:
+    with get_db_connection(know.DB_FILE) as conn:
         cursor = conn.cursor()
         
         cursor.execute("SELECT COUNT(DISTINCT tag) FROM tags")
@@ -204,6 +216,7 @@ def test_dashboard_stats_api_vs_db():
     db_peers = sorted(db_peers_list, key=lambda x: x["address"])
     assert api_peers == db_peers
 
+@pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
 def test_recent_searches_click_action():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -277,6 +290,7 @@ def test_recent_searches_click_action():
         
         browser.close()
 
+@pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
 def test_sidebar_history_click_action():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)

@@ -88,7 +88,10 @@ def parse_citations_and_metadata(
                 citations = parsed
             elif isinstance(parsed, dict):
                 citations = [parsed]
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in chat_intelligence.py")
             citations = []
     elif isinstance(citations_raw, list):
         citations = citations_raw
@@ -103,7 +106,10 @@ def parse_citations_and_metadata(
                 metadata = parsed
             else:
                 metadata = {"raw": parsed}
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in chat_intelligence.py")
             metadata = {"raw_string": metadata_raw}
     elif isinstance(metadata_raw, dict):
         metadata = metadata_raw

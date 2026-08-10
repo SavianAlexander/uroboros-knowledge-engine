@@ -7,6 +7,9 @@ import time
 import shutil
 import threading
 from typing import Callable, Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], None]] = None):
     """Start background directory watcher thread."""
@@ -27,8 +30,11 @@ def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], 
                 if free < 10 * 1024 * 1024:
                     time.sleep(5)
                     continue
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in watcher.py: {e}")
+                logger.warning(f"Error checking disk usage: {e}")
 
             current_files = {}
             ignored_dirs = {".git", "node_modules", "__pycache__", ".venv", "dist", "build"}
@@ -42,8 +48,11 @@ def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], 
                         mtime = os.path.getmtime(fp)
                         size = os.path.getsize(fp)
                         current_files[fp] = (mtime, size)
-                    except Exception:
-                        pass
+                    except (KeyboardInterrupt, MemoryError, SystemExit):
+                        raise
+                    except Exception as e:
+                        import logging; logging.getLogger(__name__).exception(f"Swallowed error in watcher.py: {e}")
+                        logger.warning(f"Error checking file {fp}: {e}")
 
             stable_files = {}
             for fp, stamp in current_files.items():
@@ -81,8 +90,11 @@ def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], 
                             cursor.execute(f"DELETE FROM fts_files WHERE filepath IN ({fp_ph})", del_fps)
                             cursor.execute(f"DELETE FROM fts_file_chunks WHERE file_id IN ({id_ph})", del_ids)
                     conn.close()
-                except Exception:
-                    pass
+                except (KeyboardInterrupt, MemoryError, SystemExit):
+                    raise
+                except Exception as e:
+                    import logging; logging.getLogger(__name__).exception(f"Swallowed error in watcher.py: {e}")
+                    logger.warning(f"Error deleting from DB: {e}")
 
             if has_changes:
                 index_directory(directory)

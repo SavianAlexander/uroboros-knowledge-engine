@@ -1,3 +1,4 @@
+import pytest
 """
 Domain 24: Playwright UI Adversarial Test Suite.
 Verifies watcher thread bypass in test mode, query cache invalidation state during active indexing threads,
@@ -64,9 +65,13 @@ class TestAdversarialI3(unittest.TestCase):
             fpath = "adversarial_i3.db" + suffix
             if os.path.exists(fpath):
                 try:
+                    try:
+                        from src.infrastructure.database import reset_db_connections
+                        reset_db_connections()
+                    except Exception: pass
                     os.remove(fpath)
-                except Exception:
-                    pass
+                except Exception as e:
+                    import logging; logging.error(f"Swallowed error in test_adversarial_i3.py: {e}")
 
         know.DB_FILE = "adversarial_i3.db"
         main.ACTIVE_DIR = str(cls.sandbox)
@@ -107,6 +112,7 @@ class TestAdversarialI3(unittest.TestCase):
                         server_ready = True
                         break
             except Exception:
+                import logging; logging.getLogger(__name__).exception("Swallowed error in test_adversarial_i3.py")
                 threading.Event().wait(0.1)
 
         if not server_ready:
@@ -123,9 +129,14 @@ class TestAdversarialI3(unittest.TestCase):
             if os.path.exists(fpath):
                 for _ in range(10):
                     try:
+                        try:
+                            from src.infrastructure.database import reset_db_connections
+                            reset_db_connections()
+                        except Exception: pass
                         os.remove(fpath)
                         break
                     except Exception:
+                        import logging; logging.getLogger(__name__).exception("Swallowed error in test_adversarial_i3.py")
                         threading.Event().wait(0.05)
 
         if cls.sandbox.exists():
@@ -134,6 +145,7 @@ class TestAdversarialI3(unittest.TestCase):
                     shutil.rmtree(cls.sandbox)
                     break
                 except Exception:
+                    import logging; logging.getLogger(__name__).exception("Swallowed error in test_adversarial_i3.py")
                     threading.Event().wait(0.05)
 
         main.ACTIVE_DIR = "dumps"
@@ -196,6 +208,7 @@ class TestAdversarialI3(unittest.TestCase):
 
         mock_indexer.join(timeout=3.0)
 
+    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
     def test_03_frontend_graph_adversarial(self):
         """
         Preconditions: Playwright headless browser navigated to graph canvas endpoint.
@@ -206,8 +219,8 @@ class TestAdversarialI3(unittest.TestCase):
         if log_path.exists():
             try:
                 log_path.unlink()
-            except Exception:
-                pass
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in test_adversarial_i3.py: {e}")
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)

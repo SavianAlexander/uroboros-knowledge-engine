@@ -36,7 +36,10 @@ def export_stats_csv_endpoint():
             media_type="text/csv",
             headers={"Content-Disposition": "attachment; filename=system_stats.csv"},
         )
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in export.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -54,7 +57,10 @@ def export_results_endpoint(query: str = "", format: str = "csv"):
                     (clean_q,),
                 )
                 rows = cursor.fetchall()
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
             except Exception:
+                import logging; logging.getLogger(__name__).exception("Swallowed error in export.py")
                 cursor.execute("SELECT filepath, filename, file_size, modified_at FROM files LIMIT 100")
                 rows = cursor.fetchall()
         else:
@@ -74,7 +80,10 @@ def export_results_endpoint(query: str = "", format: str = "csv"):
             media_type="text/csv",
             headers={"Content-Disposition": f"attachment; filename=uroboros_export.{format}"},
         )
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in export.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -96,5 +105,8 @@ def export_pdf_report_endpoint(style_template: str = "compact"):
             media_type="application/pdf",
             headers={"Content-Disposition": "attachment; filename=report.pdf"},
         )
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in export.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))

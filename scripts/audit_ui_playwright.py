@@ -29,6 +29,7 @@ def run_playwright_ui_audit():
         try:
             page.goto("http://127.0.0.1:8085", wait_until="networkidle", timeout=10000)
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in audit_ui_playwright.py: {e}")
             print(f"Initial navigation failed: {e}")
             sys.exit(1)
             
@@ -121,6 +122,7 @@ def run_playwright_ui_audit():
                 page.click(view['selector'])
                 time.sleep(0.5) # Wait for fadeSlideIn transition
             except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in audit_ui_playwright.py: {e}")
                 audit_results.append((view['id'], "TAB_CLICK_FAILED", str(e)))
                 print(f"❌ Failed to click tab button '{view['selector']}': {e}")
                 continue
@@ -160,6 +162,7 @@ def run_playwright_ui_audit():
                 print("  - Command Palette Modal failed to open.")
                 audit_results.append(("command_palette", "FAILED", "Modal not visible after Ctrl+P"))
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in audit_ui_playwright.py: {e}")
             print(f"  - Command Palette test error: {e}")
 
         # 2. Accordion Toggle in Settings View
@@ -174,6 +177,7 @@ def run_playwright_ui_audit():
             else:
                 print("  - Accordion header not found.")
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in audit_ui_playwright.py: {e}")
             print(f"  - Accordion test error: {e}")
 
         browser.close()

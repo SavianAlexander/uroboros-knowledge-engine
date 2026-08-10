@@ -34,7 +34,10 @@ def get_file_acl(filepath: str) -> str:
             st = os.stat(filepath)
             mode = oct(st.st_mode)[-3:]
             return f"POSIX mode: {mode}"
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in security.py")
         return "Standard Permission"
 
 import tempfile
@@ -46,6 +49,8 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
     try:
         base = Path(base_dir).resolve() if base_dir else get_active_sandbox_dir()
         target = Path(path_str).resolve()
+        # DEBUG
+        print(f"DEBUG verify_path_containment: target={target}, base={base}")
         
         is_inside_base = False
         try:
@@ -69,7 +74,10 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
         return target
     except HTTPException:
         raise
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in security.py: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid path containment check: {str(e)}")
 
 import re

@@ -173,10 +173,12 @@ class TestRouterMicroUnits(unittest.TestCase):
         Invariants: Indexing request under insufficient storage space must trigger HTTP 507.
         Outcomes: Response status is 507 and error detail indicates storage insufficiency.
         """
+        import collections
+        _usage = collections.namedtuple('usage', 'total used free')
         old_disk_usage = shutil.disk_usage
         try:
-            shutil.disk_usage = lambda path: (100 * 1024 * 1024, 99 * 1024 * 1024, 1 * 1024 * 1024)
-            response = self.client.post("/api/index", json={"directory": "."})
+            shutil.disk_usage = lambda path: _usage(100 * 1024 * 1024, 99 * 1024 * 1024, 1 * 1024 * 1024)
+            response = self.client.post("/api/file/index", json={})
             self.assertEqual(response.status_code, 507)
             self.assertIn("Insufficient storage space", response.json()["detail"])
         finally:

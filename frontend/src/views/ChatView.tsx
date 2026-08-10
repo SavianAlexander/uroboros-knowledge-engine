@@ -11,18 +11,23 @@ export default function ChatView() {
   const [isStreaming, setIsStreaming] = useState(false);
 
   const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [modelConfig, setModelConfig] = useState('Llama-3-8B-Instruct.gguf');
 
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+    // ponytail: using simple abort flag since api might not take signal
     api.chatSessions().then(data => {
+      if (controller.signal.aborted) return;
       setSessions(data || []);
       if (data && data.length > 0 && !activeSession) {
         setActiveSession(data[0].id);
         setMessages(data[0].messages || []);
       }
     }).catch(e => console.error('Failed to load sessions:', e));
-  }, [activeSession]);
+    return () => controller.abort();
+  }, []);
 
   const handleNewSession = async () => {
     try {
@@ -65,12 +70,16 @@ export default function ChatView() {
       if (!reader) return;
 
       let currentResponse = '';
+      let buffer = '';
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
         
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        // ponytail: buffer stream chunks
+        if (value) buffer += decoder.decode(value, { stream: !done });
+        
+        const lines = buffer.split('\n');
+        buffer = done ? '' : (lines.pop() || '');
+        
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const dataStr = line.slice(6).trim();
@@ -95,6 +104,7 @@ export default function ChatView() {
             } catch (err) {}
           }
         }
+        if (done) break;
       }
     } catch (err) {
       console.error('Chat stream error:', err);
@@ -125,7 +135,7 @@ export default function ChatView() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5"><Settings className="w-3 h-3" /> Model Config</span>
           </div>
-          <select aria-label="Model Config" className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 p-2 outline-none">
+          <select aria-label="Model Config" value={modelConfig} onChange={(e) => setModelConfig(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 p-2 outline-none">
             <option>Llama-3-8B-Instruct.gguf</option>
             <option>Mistral-7B-v0.2.gguf</option>
           </select>

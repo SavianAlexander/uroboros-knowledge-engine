@@ -17,8 +17,9 @@ RUN mkdir -p dumps vault backups
 COPY . .
 
 EXPOSE 8000
+EXPOSE 8098/udp
 
 ENV PORT=8000
 ENV HOST=0.0.0.0
 
-CMD ["python", "main.py"]
+CMD ["uvicorn", "src.app.server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

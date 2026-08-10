@@ -152,6 +152,7 @@ class TestM2EmpiricalStressHarness(unittest.TestCase):
                 if '"type": "done"' not in res.text:
                     errors.append(f"Client {client_idx} response incomplete: missing done event")
             except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_m2_empirical_stress_harness.py: {e}")
                 errors.append(f"Client {client_idx} exception: {e}")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:

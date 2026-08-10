@@ -13,7 +13,11 @@ def run_server(port):
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="error")
 
 def main():
-    port = 8095
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('127.0.0.1', 0))
+    port = s.getsockname()[1]
+    s.close()
     server_thread = threading.Thread(target=run_server, args=(port,), daemon=True)
     server_thread.start()
 
@@ -23,6 +27,7 @@ def main():
             urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=1)
             break
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in capture_ui_screenshots.py")
             time.sleep(0.2)
 
     output_dir = r"C:\Users\Administrator\.gemini\antigravity\brain\065e5556-24ac-45d3-a2ee-8e2dfc5a2eca"

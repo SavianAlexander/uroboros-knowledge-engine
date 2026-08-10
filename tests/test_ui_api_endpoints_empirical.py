@@ -51,9 +51,13 @@ class TestUIAPIEndpointsEmpirical(unittest.TestCase):
         renamed_file = os.path.join(self.test_dir, "renamed_target.txt")
         if os.path.exists(renamed_file):
             try:
+                try:
+                    from src.infrastructure.database import reset_db_connections
+                    reset_db_connections()
+                except Exception: pass
                 os.remove(renamed_file)
-            except Exception:
-                pass
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in test_ui_api_endpoints_empirical.py: {e}")
 
         # Create a specific file to rename
         target_file = os.path.join(self.test_dir, "rename_target.txt")

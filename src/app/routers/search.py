@@ -7,6 +7,7 @@ import re
 import time
 import sqlite3
 import threading
+import contextlib
 from itertools import combinations
 from collections import Counter
 from functools import lru_cache
@@ -23,15 +24,13 @@ router = APIRouter()
 
 
 def _get_global_cache():
-    import sys
-    if "main" in sys.modules:
-        cache = getattr(sys.modules["main"], "GLOBAL_QUERY_CACHE", None)
-        if cache is not None:
-            return cache
     try:
-        import main
-        return getattr(main, "GLOBAL_QUERY_CACHE", None)
+        from src.core.state import GLOBAL_QUERY_CACHE
+        return GLOBAL_QUERY_CACHE
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in search.py")
         return None
 
 
@@ -171,7 +170,10 @@ def search_endpoint(
                                 try:
                                     with open(r["filepath"], "r", encoding="utf-8", errors="ignore") as f:
                                         c_text = f.read()
+                                except (KeyboardInterrupt, MemoryError, SystemExit):
+                                    raise
                                 except Exception:
+                                    import logging; logging.getLogger(__name__).exception("Swallowed error in search.py")
                                     c_text = ""
                             c_text = (c_text or "").lower()
                             fn = r.get("filename", "").lower()
@@ -207,17 +209,17 @@ def search_endpoint(
                 results = filtered_results
 
         try:
-            from src.infrastructure import database as _infra_db
-            db_path = getattr(_infra_db, "DB_FILE", None) or "knowledge.db"
-            with sqlite3.connect(db_path, timeout=10.0) as conn:
+            with get_db() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
                     "INSERT INTO search_history (query_string, search_mode, executed_at, result_count) VALUES (?, ?, ?, ?)",
                     (raw_q.strip(), mode, time.time(), len(results))
                 )
                 conn.commit()
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in search.py: {e}")
         search_time_ms = round((time.time() - start_time) * 1000, 2)
         res_dict = {"query": raw_q, "mode": mode, "results": results, "total": len(results), "search_time_ms": search_time_ms}
         try:
@@ -225,10 +227,15 @@ def search_endpoint(
                 is_indexing = any(t.name in ("IndexerThread", "WatcherThread") and t.is_alive() for t in threading.enumerate())
                 if not (is_indexing and len(results) == 0):
                     cache_obj.set(cache_key, res_dict)
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in search.py: {e}")
         return res_dict
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -236,9 +243,7 @@ def search_endpoint(
 def get_search_history_endpoint(limit: int = 20):
     """Retrieve recent search history from database search history log."""
     try:
-        from src.infrastructure import database as _infra_db
-        db_path = getattr(_infra_db, "DB_FILE", None) or "knowledge.db"
-        with sqlite3.connect(db_path, timeout=30.0) as conn:
+        with get_db() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("""
@@ -250,7 +255,10 @@ def get_search_history_endpoint(limit: int = 20):
             rows = cursor.fetchall()
             history = [dict(r) for r in rows]
             return {"history": history, "total": len(history)}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -432,11 +440,16 @@ def get_graph_data_endpoint(
             v_row = cursor.fetchone()
             if v_row:
                 version_key = f"{db_path}_{v_row[0]}_{v_row[1]}_{v_row[3]}_{v_row[2]}"
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in search.py: {e}")
 
         return _build_graph_cached(limit, include_wikilinks, include_clusters, version_key)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -501,8 +514,10 @@ def autocomplete_suggest(token: str = "", q: str = "", query: str = ""):
             for t in db_tags:
                 suggestions.append({"text": f"tag:{t}", "type": "tag"})
                 suggestions.append({"text": t, "type": "tag"})
-    except Exception:
-        pass
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in search.py: {e}")
 
     matched = [s for s in suggestions if clean in s["text"].lower()]
     res_list = matched or suggestions

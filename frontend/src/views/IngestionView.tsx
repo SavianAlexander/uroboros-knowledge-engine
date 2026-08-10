@@ -32,10 +32,11 @@ export default function IngestionView() {
 
       {/* Pipeline Status Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard icon={<UploadCloud className="text-blue-600 dark:text-blue-400" />} title="Queue" value="0" sub="Files waiting" />
-        <StatCard icon={<FileText className="text-indigo-600 dark:text-indigo-400" />} title="Parsing" value="0" sub="Active extractors" />
-        <StatCard icon={<Layers className="text-purple-600 dark:text-purple-400" />} title="Chunking" value="0/s" sub="Tokens processed" />
-        <StatCard icon={<DatabaseZap className="text-cyan-600 dark:text-cyan-400" />} title="Embedding" value="0/s" sub="Vectors generated" />
+        {/* TODO: Wire to API */}
+        <StatCard icon={<UploadCloud className="text-blue-600 dark:text-blue-400" />} title="Queue" value={stats?.queue || "0"} sub="Files waiting" />
+        <StatCard icon={<FileText className="text-indigo-600 dark:text-indigo-400" />} title="Parsing" value={stats?.parsing || "0"} sub="Active extractors" />
+        <StatCard icon={<Layers className="text-purple-600 dark:text-purple-400" />} title="Chunking" value={stats?.chunking || "0/s"} sub="Tokens processed" />
+        <StatCard icon={<DatabaseZap className="text-cyan-600 dark:text-cyan-400" />} title="Embedding" value={stats?.embedding || "0/s"} sub="Vectors generated" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -69,7 +70,32 @@ export default function IngestionView() {
           <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200 mb-6">Pipeline Controls</h3>
           
           <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:bg-slate-800/80 border border-slate-300 dark:border-white/10 rounded-xl transition-colors group">
+            <button 
+              onClick={() => {
+                api.fetchAPI('/api/file/index', { method: 'POST', body: JSON.stringify({ directory: "" }) })
+                  .then(res => {
+                    if (res.job_id) {
+                      // Start polling
+                      const interval = setInterval(() => {
+                        api.fetchAPI(`/api/jobs/${res.job_id}`)
+                          .then(job => {
+                            setRecentJobs(prev => {
+                              const exists = prev.find(j => j.id === job.id);
+                              if (exists) {
+                                return prev.map(j => j.id === job.id ? { ...j, status: job.status, progress: job.progress } : j);
+                              }
+                              return [{ id: job.id, source: "Full Re-index", status: job.status, progress: job.progress, time: new Date().toLocaleTimeString(), chunks: 0 }, ...prev];
+                            });
+                            if (job.status === 'completed' || job.status === 'failed') {
+                              clearInterval(interval);
+                            }
+                          })
+                          .catch(() => clearInterval(interval));
+                      }, 1000);
+                    }
+                  }).catch(console.error);
+              }}
+              className="w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:bg-slate-800/80 border border-slate-300 dark:border-white/10 rounded-xl transition-colors group">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:bg-indigo-500/20 transition-colors"><RefreshCw className="w-4 h-4" /></div>
                 <div className="text-left">
@@ -135,10 +161,15 @@ export default function IngestionView() {
                         <CheckCircle2 className="w-3.5 h-3.5" /> Success
                       </span>
                     )}
-                    {job.status === 'processing' && (
-                      <span className="inline-flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20 text-xs font-medium">
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Processing
-                      </span>
+                    {(job.status === 'processing' || job.status === 'running') && (
+                      <div className="flex items-center justify-end gap-2">
+                         <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                           <div className="h-full bg-indigo-500" style={{ width: `${job.progress || 0}%` }}></div>
+                         </div>
+                         <span className="inline-flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20 text-xs font-medium">
+                           <RefreshCw className="w-3.5 h-3.5 animate-spin" /> {Math.round(job.progress || 0)}%
+                         </span>
+                      </div>
                     )}
                     {job.status === 'failed' && (
                       <span className="inline-flex items-center gap-1.5 text-red-600 dark:text-red-400 bg-red-500/10 px-2.5 py-1 rounded-lg border border-red-500/20 text-xs font-medium">

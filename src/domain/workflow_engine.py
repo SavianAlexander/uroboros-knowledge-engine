@@ -58,8 +58,10 @@ def evaluate_condition(
                         if str(actual_val) != str(expected) and not fnmatch.fnmatch(str(actual_val), str(expected)):
                             return False
                 return True
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in workflow_engine.py: {e}")
 
     # Score threshold evaluation for semantic_match
     score_threshold_match = re.search(r'(?:min_score|score)\s*[:>=]+\s*([0-9\.]+)', pattern_str, re.IGNORECASE)
@@ -99,7 +101,10 @@ def evaluate_condition(
         try:
             compiled = re.compile(regex_pat, re.IGNORECASE)
             return any(compiled.search(cand) for cand in candidate_strings)
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in workflow_engine.py")
             return False
 
     # Glob fnmatch pattern (e.g. *.pdf, docs/*, confidential-*)

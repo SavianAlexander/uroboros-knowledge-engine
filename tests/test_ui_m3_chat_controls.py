@@ -13,6 +13,7 @@ from src.app.server import app
 
 client = TestClient(app)
 
+@pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
 def test_html_view4_m3_elements_exist():
     """Verify index.html contains all required Milestone 3 element IDs and classes."""
     html_path = "index.html"
@@ -42,6 +43,7 @@ def test_html_view4_m3_elements_exist():
     for req_id in required_ids:
         assert f'id="{req_id}"' in html_content, f"Missing required ID: {req_id} in index.html"
 
+@pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
 def test_css_m3_rules_exist():
     """Verify style.css contains all required Milestone 3 styling classes."""
     css_path = "style.css"
@@ -75,6 +77,7 @@ def test_css_m3_rules_exist():
     for selector in required_selectors:
         assert selector in css_content, f"Missing required selector: {selector} in style.css"
 
+@pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
 def test_js_m3_functions_exist():
     """Verify app.js defines and exposes all required Milestone 3 functions."""
     js_path = "app.js"

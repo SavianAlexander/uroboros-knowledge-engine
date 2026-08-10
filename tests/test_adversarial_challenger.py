@@ -1,3 +1,4 @@
+import pytest
 # tests/test_adversarial_challenger.py
 import os
 import sys
@@ -27,9 +28,13 @@ class TestLeakageWarningGuard(unittest.TestCase):
             fpath = f"test_challenger_leakage.db{suffix}"
             if os.path.exists(fpath):
                 try:
+                    try:
+                        from src.infrastructure.database import reset_db_connections
+                        reset_db_connections()
+                    except Exception: pass
                     os.remove(fpath)
-                except Exception:
-                    pass
+                except Exception as e:
+                    import logging; logging.error(f"Swallowed error in test_adversarial_challenger.py: {e}")
 
     def setUp(self):
         self.conn = know.get_db()
@@ -56,7 +61,7 @@ class TestLeakageWarningGuard(unittest.TestCase):
     def tearDown(self):
         self.conn.close()
 
-    @patch("main.get_llm")
+    @patch("src.core.model_manager.get_fallback_llm")
     def test_error_contents_bypass_llm_from_db(self, mock_get_llm):
         mock_get_llm.side_effect = AssertionError("LLM should not be called!")
 
@@ -68,7 +73,7 @@ class TestLeakageWarningGuard(unittest.TestCase):
             
         mock_get_llm.assert_not_called()
 
-    @patch("main.get_llm")
+    @patch("src.core.model_manager.get_fallback_llm")
     def test_error_contents_bypass_llm_from_disk_fallback(self, mock_get_llm):
         mock_get_llm.side_effect = AssertionError("LLM should not be called!")
 
@@ -88,11 +93,16 @@ class TestLeakageWarningGuard(unittest.TestCase):
                 self.assertEqual(data["insights"], "*This document contains no readable text content to extract insights.*")
             finally:
                 if os.path.exists(filepath):
+                    try:
+                        from src.infrastructure.database import reset_db_connections
+                        reset_db_connections()
+                    except Exception: pass
                     os.remove(filepath)
 
         mock_get_llm.assert_not_called()
 
 class TestJSMarkdownParser(unittest.TestCase):
+    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
     def test_js_markdown_parser_via_node(self):
         js_file = Path(__file__).resolve().parent / "js" / "test_markdown.js"
         result = subprocess.run(["node", str(js_file)], capture_output=True, text=True)

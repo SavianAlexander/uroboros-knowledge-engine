@@ -1,3 +1,4 @@
+$Error.Clear()
 # Uroboros Knowledge Engine - High-Performance PowerShell Launcher
 $Host.UI.RawUI.WindowTitle = "Uroboros Knowledge Engine"
 Write-Host "===================================================" -ForegroundColor Cyan
@@ -9,8 +10,13 @@ $env:PYTHONPYCACHEPREFIX = "$env:LOCALAPPDATA\pycache"
 $env:FORCE_CMAKE = "1"
 $env:CMAKE_ARGS = "-DGGML_VULKAN=on"
 
-python main.py
-$exitCode = if ($LASTEXITCODE -ne $null) { $LASTEXITCODE } else { 1 }
+try {
+    python main.py
+} catch {
+    Write-Host "`nFailed to launch Python engine: $_" -ForegroundColor Red
+    $global:LASTEXITCODE = 1
+}
+$exitCode = if ($LASTEXITCODE -ne $null -and $LASTEXITCODE -ne 0) { $LASTEXITCODE } else { if ($Error.Count -gt 0) { 1 } else { 0 } }
 if ($exitCode -ne 0) {
     Write-Host "`nEngine stopped with exit code $exitCode." -ForegroundColor Red
 }

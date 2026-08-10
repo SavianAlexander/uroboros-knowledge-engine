@@ -71,12 +71,18 @@ def dispatch_webhook_sync(
             last_status_code = e.code
             try:
                 last_response_body = e.read().decode("utf-8", errors="replace")
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
             except Exception:
+                import logging; logging.getLogger(__name__).exception("Swallowed error in webhook_dispatcher.py")
                 last_response_body = str(e)
         except urllib.error.URLError as e:
             last_status_code = None
             last_response_body = f"URLError: {e.reason}"
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in webhook_dispatcher.py: {e}")
             last_status_code = None
             last_response_body = f"Error: {str(e)}"
 

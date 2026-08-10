@@ -165,8 +165,8 @@ def run_check_secrets(target_dir, quiet=False):
                                     "type": desc,
                                     "snippet": line.strip()[:60]
                                 })
-                except Exception:
-                    pass
+                except Exception as e:
+                    import logging; logging.error(f"Swallowed error in architecture_cli.py: {e}")
 
     if not quiet:
         print(f"\n=== Secret Scan Results ({len(findings)} found) ===")
@@ -330,6 +330,7 @@ def run_db_backup(target_dir):
             print(f"[OK] Database safe snapshot created: {dest_path}")
         except Exception as e:
             # Fallback to copy file
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in architecture_cli.py: {e}")
             shutil.copy2(db, dest_path)
             print(f"[OK] Database file copied to backup: {dest_path} (Notice: {e})")
 
@@ -412,8 +413,8 @@ def run_deploy_check(target_dir):
         res = subprocess.run(["git", "status", "--porcelain"], cwd=target_dir, capture_output=True, text=True)
         if res.stdout.strip():
             git_clean = False
-    except Exception:
-        pass
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in architecture_cli.py: {e}")
     checks.append(("Git Working Tree Clean", git_clean, "Uncommitted changes pending" if not git_clean else "Clean"))
 
     ready = True

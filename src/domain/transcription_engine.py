@@ -296,8 +296,10 @@ def transcribe_audio_memo(filepath: str, chunk_duration_sec: float = 10.0) -> Di
             parsed_info = _parse_wav_audio(filepath, chunk_duration_sec=chunk_duration_sec)
         elif ext == ".mp3":
             parsed_info = _parse_mp3_audio(filepath, chunk_duration_sec=chunk_duration_sec)
-    except Exception:
-        pass
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in transcription_engine.py: {e}")
 
     if parsed_info and parsed_info.get("chunks"):
         duration_sec = parsed_info["duration_seconds"]

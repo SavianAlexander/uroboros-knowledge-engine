@@ -81,10 +81,15 @@ class TestDomainWorkflowTriggers(unittest.TestCase):
         cls.server.server_close()
         db_infra.DB_FILE = cls.orig_db_file
         try:
+            db_infra.reset_db_connections()
             if os.path.exists(cls.db_path):
+                try:
+                    from src.infrastructure.database import reset_db_connections
+                    reset_db_connections()
+                except Exception: pass
                 os.remove(cls.db_path)
-        except Exception:
-            pass
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in test_domain_workflow_triggers.py: {e}")
 
     def setUp(self):
         MockWebhookHandler.received_requests.clear()
@@ -168,7 +173,7 @@ class TestDomainWorkflowTriggers(unittest.TestCase):
         Invariants: Dispatches calculate HMAC-SHA256 signature matching secret key and deliver POST request.
         Outcomes: Verifies HMAC signature generation, HTTP POST transmission, and server header verification.
         """
-        secret = "super-secret-hmac-key"
+        secret = "MOCK_SECRET_KEY_FOR_TESTING_ONLY"
         payload = {"event": "document_ingested", "filepath": "test.txt", "timestamp": "2026-08-03T21:00:00Z"}
         
         payload_bytes = json.dumps(payload, default=str).encode("utf-8")

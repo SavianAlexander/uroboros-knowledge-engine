@@ -69,8 +69,8 @@ class MockAdversarialWebhookHandler(BaseHTTPRequestHandler):
                 self.wfile.write(MockAdversarialWebhookHandler.response_body_override.encode("utf-8"))
             else:
                 self.wfile.write(b'{"status": "received"}')
-        except Exception:
-            pass
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in test_adversarial_workflows_webhooks.py: {e}")
 
     def log_message(self, format, *args):
         pass
@@ -101,9 +101,13 @@ class TestAdversarialWorkflowsWebhooks(unittest.TestCase):
         db_infra.DB_FILE = cls.orig_db_file
         try:
             if os.path.exists(cls.db_path):
+                try:
+                    from src.infrastructure.database import reset_db_connections
+                    reset_db_connections()
+                except Exception: pass
                 os.remove(cls.db_path)
-        except Exception:
-            pass
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in test_adversarial_workflows_webhooks.py: {e}")
 
     def setUp(self):
         MockAdversarialWebhookHandler.response_status = 200
@@ -424,6 +428,7 @@ class TestAdversarialWorkflowsWebhooks(unittest.TestCase):
                 if not triggers:
                     errors.append(f"Thread {thread_id} failed to query created trigger")
             except Exception as e:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_adversarial_workflows_webhooks.py: {e}")
                 errors.append(f"Thread {thread_id} raised exception: {str(e)}")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:

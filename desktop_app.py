@@ -8,8 +8,9 @@ import webbrowser
 if hasattr(sys.stdout, 'reconfigure'):
     try:
         sys.stdout.reconfigure(line_buffering=True)
-    except Exception:
-        pass
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in desktop_app.py: {e}")
+        print(f"Swallowed error in desktop_app.py: {e}")
 
 if getattr(sys, 'frozen', False):
     bundle_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))

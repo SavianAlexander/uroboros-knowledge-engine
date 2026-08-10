@@ -33,6 +33,7 @@ export default function SettingsView() {
       a.href = url;
       a.download = 'uroboros_stats_export.csv';
       a.click();
+      window.URL.revokeObjectURL(url);
     } catch(e) {
       console.error(e);
       alert('CSV Export failed.');
@@ -175,7 +176,7 @@ export default function SettingsView() {
               </li>
               <li className="flex justify-between border-b border-slate-200 dark:border-white/5 pb-3">
                 <span className="text-slate-500">SQLite DB Size</span>
-                <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{dbStats ? (dbStats.db_size_bytes / (1024 * 1024)).toFixed(2) + ' MB' : '...'}</span>
+                <span className="font-mono text-xs text-slate-700 dark:text-slate-300">{dbStats ? ((dbStats.db_size_bytes || 0) / (1024 * 1024)).toFixed(2) + ' MB' : '...'}</span>
               </li>
               <li className="flex justify-between pb-2">
                 <span className="text-slate-500">Total Chunks</span>
@@ -226,6 +227,7 @@ export default function SettingsView() {
             <p className="text-xs text-slate-500">Toggle between dark and light appearance</p>
           </div>
           <button 
+            aria-label="Toggle Theme"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="p-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-900 dark:text-slate-200 shadow-inner"
           >

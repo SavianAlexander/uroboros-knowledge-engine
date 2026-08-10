@@ -4,6 +4,7 @@ import json
 import struct
 import sqlite3
 import threading
+import contextlib
 from typing import List, Dict, Tuple, Any
 
 class DenseVectorStore:
@@ -25,7 +26,7 @@ class DenseVectorStore:
         self._load_from_db()
 
     def _init_db(self):
-        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+        with get_db_connection(self.db_path, timeout=30.0) as conn:
             conn.execute("PRAGMA journal_mode = WAL")
             conn.execute("PRAGMA synchronous = NORMAL")
             conn.execute("PRAGMA temp_store = MEMORY")
@@ -39,7 +40,7 @@ class DenseVectorStore:
             conn.commit()
 
     def _load_from_db(self):
-        with self._lock, sqlite3.connect(self.db_path, timeout=30.0) as conn:
+        with self._lock, get_db_connection(self.db_path, timeout=30.0) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT doc_id, vector_blob, meta_json FROM embeddings")
             for row in cursor.fetchall():
@@ -49,7 +50,10 @@ class DenseVectorStore:
                         vec = struct.unpack(self._pack_format, blob)
                         self.vectors[doc_id] = vec
                         self.metadata[doc_id] = json.loads(meta_json) if meta_json else {}
+                    except (KeyboardInterrupt, MemoryError, SystemExit):
+                        raise
                     except Exception:
+                        import logging; logging.getLogger(__name__).exception("Swallowed error in vector_store.py")
                         pass # Ignore malformed blobs
 
     def add_vector(self, doc_id: str, vector: List[float], meta: Dict[str, Any] = None):
@@ -75,7 +79,7 @@ class DenseVectorStore:
             self.vectors[doc_id] = normalized
             self.metadata[doc_id] = meta_dict
             
-        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+        with get_db_connection(self.db_path, timeout=30.0) as conn:
             conn.execute(
                 "INSERT OR REPLACE INTO embeddings (doc_id, vector_blob, meta_json) VALUES (?, ?, ?)", 
                 (doc_id, blob, meta_json)
@@ -111,6 +115,6 @@ class DenseVectorStore:
         with self._lock:
             self.vectors.clear()
             self.metadata.clear()
-        with sqlite3.connect(self.db_path, timeout=30.0) as conn:
+        with get_db_connection(self.db_path, timeout=30.0) as conn:
             conn.execute("DELETE FROM embeddings")
             conn.commit()

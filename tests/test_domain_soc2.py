@@ -59,8 +59,8 @@ class TestDomainSOC2(unittest.TestCase):
                             for pat in secret_patterns:
                                 if pat.search(content):
                                     leaks.append(f_path)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        import logging; logging.error(f"Swallowed error in test_domain_soc2.py: {e}")
 
         self.assertEqual(len(leaks), 0, f"SOC 2 Security Violation: Secrets detected in {leaks}")
 

@@ -49,6 +49,7 @@ class TestDomainChaos(unittest.TestCase):
             self.assertIsNotNone(row)
             conn.close()
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_domain_chaos.py: {e}")
             self.fail(f"Corrupt binary payload ingestion crashed engine: {e}")
 
     def test_02_chaos_simulated_read_lock_recovery(self):
@@ -88,6 +89,7 @@ class TestDomainChaos(unittest.TestCase):
                     c = know.get_db()
                     c.close()
             except Exception as ex:
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_domain_chaos.py: {ex}")
                 errors.append(ex)
 
         threads = [threading.Thread(target=worker) for _ in range(5)]

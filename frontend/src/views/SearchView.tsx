@@ -14,11 +14,13 @@ export default function SearchView() {
   const [newTag, setNewTag] = useState('');
 
   React.useEffect(() => {
+    let isMounted = true;
     if (selectedFile) {
       api.getNotes(selectedFile.path)
-        .then(data => setFileNote(data.content || ''))
-        .catch(() => setFileNote(''));
+        .then(data => { if (isMounted) setFileNote(data.content || ''); })
+        .catch(() => { if (isMounted) setFileNote(''); });
     }
+    return () => { isMounted = false; };
   }, [selectedFile]);
 
   const handleSaveNote = async () => {
@@ -32,8 +34,11 @@ export default function SearchView() {
   const handleAddTag = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && newTag.trim() && selectedFile) {
       try {
-        await api.addTag(selectedFile.path, newTag.trim());
-        setSelectedFile({ ...selectedFile, tags: [...selectedFile.tags, newTag.trim()] });
+        const currentTags = selectedFile.tags || [];
+        const trimmed = newTag.trim();
+        if (!trimmed || currentTags.includes(trimmed)) return;
+        await api.addTag(selectedFile.path, trimmed);
+        setSelectedFile({ ...selectedFile, tags: [...currentTags, trimmed] });
         setNewTag('');
       } catch (err) { console.error(err); }
     }
@@ -56,6 +61,7 @@ export default function SearchView() {
       setResults(res.results || res || []);
     } catch (err) {
       console.error(err);
+      setResults([]);
     } finally {
       setIsLoading(false);
     }
@@ -142,6 +148,7 @@ export default function SearchView() {
       <AnimatePresence>
         {selectedFile && (
           <motion.div
+            key="file-inspector-backdrop"
             initial={{ x: '100%', opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: '100%', opacity: 0 }}

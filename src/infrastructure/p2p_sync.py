@@ -37,16 +37,20 @@ class P2PPeerBeacon:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         try:
             sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
         sock.settimeout(1.0)
         
         message = json.dumps({"node_id": self.node_id, "port": self.http_port, "ts": time.time()}).encode("utf-8")
         while self.running:
             try:
                 sock.sendto(message, (MULTICAST_GROUP, UDP_PORT))
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
             for _ in range(int(BROADCAST_INTERVAL * 10)):
                 if not self.running:
                     break
@@ -57,8 +61,10 @@ class P2PPeerBeacon:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         try:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
 
         bound = False
         for bind_addr in ["", "0.0.0.0"]:
@@ -66,7 +72,10 @@ class P2PPeerBeacon:
                 sock.bind((bind_addr, UDP_PORT))
                 bound = True
                 break
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
             except Exception:
+                import logging; logging.getLogger(__name__).exception("Swallowed error in p2p_sync.py")
                 continue
 
         if not bound:
@@ -76,8 +85,10 @@ class P2PPeerBeacon:
         try:
             mreq = struct.pack("4sl", socket.inet_aton(MULTICAST_GROUP), socket.INADDR_ANY)
             sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-        except Exception:
-            pass
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
 
         sock.settimeout(1.0)
 
@@ -97,8 +108,10 @@ class P2PPeerBeacon:
                             "port": peer_port,
                             "last_seen": time.time()
                         }
-            except Exception:
-                pass
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
         sock.close()
 
 def get_active_peers() -> List[Dict[str, Any]]:
@@ -141,8 +154,10 @@ def get_local_document_hashes(vault_dir: Optional[str] = None) -> Dict[str, Dict
                             sha256_val = hashlib.sha256(f.read()).hexdigest()
                         size = os.path.getsize(fp)
                         mod_at = os.path.getmtime(fp)
-                    except Exception:
-                        pass
+                    except (KeyboardInterrupt, MemoryError, SystemExit):
+                        raise
+                    except Exception as e:
+                        import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
 
                 if not sha256_val and content:
                     sha256_val = hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -161,8 +176,10 @@ def get_local_document_hashes(vault_dir: Optional[str] = None) -> Dict[str, Dict
                     "size": size,
                     "modified_at": mod_at_float
                 }
-    except Exception:
-        pass
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
 
     try:
         from src.infrastructure.database import get_active_dir
@@ -186,10 +203,14 @@ def get_local_document_hashes(vault_dir: Optional[str] = None) -> Dict[str, Dict
                                 "size": sz,
                                 "modified_at": mt
                             }
-                        except Exception:
-                            pass
-    except Exception:
-        pass
+                        except (KeyboardInterrupt, MemoryError, SystemExit):
+                            raise
+                        except Exception as e:
+                            import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
 
     return hashes
 

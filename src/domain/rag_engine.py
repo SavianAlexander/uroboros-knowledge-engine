@@ -45,7 +45,8 @@ def generate_hyde_expansion(query: str) -> str:
     expanded = raw_query
 
     try:
-        from main import get_fallback_llm, is_testing
+        from src.core.model_manager import get_fallback_llm
+        from src.core.config import is_testing
         if is_testing:
             expanded = f"{raw_query} - hypothetical answer context"
         else:
@@ -66,7 +67,10 @@ def generate_hyde_expansion(query: str) -> str:
                 excerpt = completion["choices"][0]["message"]["content"].strip()
                 if excerpt:
                     expanded = f"{raw_query}\n{excerpt}"
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in rag_engine.py")
         expanded = raw_query
 
     return expanded
@@ -312,7 +316,10 @@ def extract_advanced_rag_context(
                 )
                 cursor.execute(query_sql, sql_params)
                 fts_hits = [dict(row) for row in cursor.fetchall()]
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
             except Exception:
+                import logging; logging.getLogger(__name__).exception("Swallowed error in rag_engine.py")
                 try:
                     conn = get_db()
                     cursor = conn.cursor()
@@ -322,7 +329,10 @@ def extract_advanced_rag_context(
                         (like_term, like_term)
                     )
                     fts_hits = [dict(row) for row in cursor.fetchall()]
+                except (KeyboardInterrupt, MemoryError, SystemExit):
+                    raise
                 except Exception:
+                    import logging; logging.getLogger(__name__).exception("Swallowed error in rag_engine.py")
                     fts_hits = []
 
         vec_hits = []
@@ -330,7 +340,10 @@ def extract_advanced_rag_context(
             vec_hits = MiniVectorEngine.search_semantic(expanded_q or sq)
             if "ext" in filters:
                 vec_hits = [v for v in vec_hits if (v.get("filename") or "").lower().endswith(f".{filters['ext']}")]
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
         except Exception:
+            import logging; logging.getLogger(__name__).exception("Swallowed error in rag_engine.py")
             vec_hits = []
 
         all_fts_hits.extend(fts_hits)

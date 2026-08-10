@@ -13,11 +13,11 @@ export default function DashboardView() {
   const [systemStats, setSystemStats] = useState<any>(null);
 
   useEffect(() => {
-    api.health().then(setStats).catch(() => {});
-    api.stats().then(setSystemStats).catch(() => {});
+    api.health().then(setStats).catch(() => setStats({ status: 'Error loading data' }));
+    api.stats().then(setSystemStats).catch(() => setSystemStats({ total_tags: 0 }));
     
     api.storage().then(data => {
-      if (!data) return;
+      if (!data) return setStorage({ totalDocuments: 0, distribution: [] });
       const distribution = Object.entries(data.by_mime || {})
         .map(([mime, count]) => ({ mime: mime || 'unknown', count: count as number }))
         .sort((a, b) => b.count - a.count)
@@ -25,18 +25,18 @@ export default function DashboardView() {
       
       const totalDocuments = Object.values(data.by_mime || {}).reduce((acc: number, val: any) => acc + (val as number), 0);
       setStorage({ totalDocuments, distribution });
-    }).catch(() => setStorage(null));
+    }).catch(() => setStorage({ totalDocuments: 0, distribution: [] }));
 
     api.searchActivity().then(data => {
-      if (!data) return;
+      if (!data) return setActivity({ timeline: [] });
       setActivity(data);
-    }).catch(() => setActivity(null));
+    }).catch(() => setActivity({ timeline: [] }));
 
     api.recentSearches().then(data => {
       setRecent(Array.isArray(data) ? data : []);
     }).catch(() => setRecent([]));
 
-    api.workflowTriggers().then(data => setTriggers(Array.isArray(data) ? data : [])).catch(() => {});
+    api.workflowTriggers().then(data => setTriggers(Array.isArray(data) ? data : [])).catch(() => setTriggers([]));
   }, []);
 
   const pieColors = ['#818CF8', '#22D3EE', '#34D399', '#FBBF24'];
@@ -67,7 +67,7 @@ export default function DashboardView() {
         <div className={`${glassCardClasses} p-6 col-span-1 lg:col-span-2 flex flex-col`}>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200">Search Telemetry & Indexing</h3>
-            <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-700 dark:text-slate-300 px-3 py-1 outline-none">
+            <select aria-label="Telemetry Date Range" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-700 dark:text-slate-300 px-3 py-1 outline-none">
               <option>Last 7 Days</option>
               <option>Last 30 Days</option>
             </select>

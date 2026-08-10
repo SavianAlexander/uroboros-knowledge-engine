@@ -29,6 +29,7 @@ def download_model():
         print(f"\nModel download complete: {MODEL_PATH}")
         return True
     except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in download_gguf_model.py: {e}")
         print(f"Model download failed or offline: {e}")
         # Create minimal placeholder so local GGUF engine falls back cleanly
         with open(MODEL_PATH, "w", encoding="utf-8") as f:

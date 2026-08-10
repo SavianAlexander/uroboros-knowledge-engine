@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppProvider, useApp } from './store/AppContext';
 import Sidebar from './components/Sidebar';
 import CommandPalette from './components/CommandPalette';
@@ -10,6 +10,8 @@ import GraphView from './views/GraphView';
 import ChatView from './views/ChatView';
 import ConfigView from './views/ConfigView';
 import SettingsView from './views/SettingsView';
+import LoginView from './views/LoginView';
+import { authEvents } from './lib/api';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
   state = { hasError: false };
@@ -23,6 +25,13 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 
 function AppLayout() {
   const { activeView, theme } = useApp();
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Assume true until 401
+
+  useEffect(() => {
+    const handleAuth = () => setIsAuthenticated(false);
+    authEvents.addEventListener('unauthorized', handleAuth);
+    return () => authEvents.removeEventListener('unauthorized', handleAuth);
+  }, []);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -49,15 +58,17 @@ function AppLayout() {
   };
 
   return (
-    <div className={`flex h-screen w-full overflow-hidden font-sans ${theme === 'dark' ? 'text-slate-200 bg-slate-950' : 'text-slate-900 bg-slate-50'}`} style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-      {theme === 'dark' ? (
-        <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-900/20 blur-[120px] rounded-full mix-blend-screen" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-900/20 blur-[120px] rounded-full mix-blend-screen" />
-        </div>
-      ) : (
-        <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-100/50 blur-[120px] rounded-full mix-blend-multiply" />
+    <>
+      {!isAuthenticated && <LoginView onLogin={() => { setIsAuthenticated(true); window.location.reload(); }} />}
+      <div className={`flex h-screen w-full overflow-hidden font-sans ${theme === 'dark' ? 'text-slate-200 bg-slate-950' : 'text-slate-900 bg-slate-50'}`} style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+        {theme === 'dark' ? (
+          <div className="fixed inset-0 pointer-events-none z-0">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-900/20 blur-[120px] rounded-full mix-blend-screen" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-900/20 blur-[120px] rounded-full mix-blend-screen" />
+          </div>
+        ) : (
+          <div className="fixed inset-0 pointer-events-none z-0">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-100/50 blur-[120px] rounded-full mix-blend-multiply" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-100/50 blur-[120px] rounded-full mix-blend-multiply" />
         </div>
       )}
@@ -69,6 +80,7 @@ function AppLayout() {
       </div>
       <CommandPalette />
     </div>
+    </>
   );
 }
 

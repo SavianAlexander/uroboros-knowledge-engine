@@ -105,6 +105,7 @@ class TestDomainDB(unittest.TestCase):
         try:
             conn.close()
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_domain_db.py: {e}")
             self.fail(f"Double-close raised exception: {e}")
 
     def test_05_connection_timeout_guard(self):
@@ -210,6 +211,7 @@ class TestDomainDB(unittest.TestCase):
         try:
             know.run_maintenance()
         except Exception as e:
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_domain_db.py: {e}")
             self.fail(f"run_maintenance raised exception: {e}")
 
 if __name__ == "__main__":

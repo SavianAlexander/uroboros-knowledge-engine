@@ -1,17 +1,53 @@
+import { cachedFetch } from './cache';
+
 const BASE_URL = '/api';
 
+export const authEvents = new EventTarget();
+
+const getAuthHeaders = () => {
+  const key = localStorage.getItem('uroboros_api_key');
+  return key ? { 'Authorization': `Bearer ${key}` } : {};
+};
+
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {}),
-    },
-  });
-  if (!res.ok) {
-    throw new Error(`API Error: ${res.status}`);
+  const method = options?.method || 'GET';
+
+  const doFetch = async () => {
+    let res: Response;
+    try {
+      res = await fetch(`${BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+          ...(options?.headers || {}),
+        },
+      });
+    } catch (e) {
+      throw new Error('Network error or server unreachable');
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      authEvents.dispatchEvent(new Event('unauthorized'));
+    }
+
+    if (!res.ok) {
+      throw new Error(`API Error: ${res.status}`);
+    }
+
+    let data;
+    try {
+      data = await res.json();
+    } catch (e) {
+      throw new Error('Malformed JSON response');
+    }
+    return data;
+  };
+
+  if (method === 'GET') {
+    return cachedFetch(endpoint, doFetch, 3000); // 3-second deduplication
   }
-  return await res.json();
+  return doFetch();
 }
 
 export const api = {
@@ -45,8 +81,19 @@ export const api = {
     fetchAPI<any>('/chat/sessions', { method: 'POST', body: JSON.stringify({ title }) }),
   deleteChatSession: (id: string) =>
     fetchAPI<any>(`/chat/sessions/${id}`, { method: 'DELETE' }),
-  ragStream: (message: string, session_id?: string, options?: RequestInit) =>
-    fetch(`${BASE_URL}/chat/stream`, { method: 'POST', ...options, headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) }, body: JSON.stringify({ message, session_id }) }),
+  ragStream: (message: string, session_id?: string, options?: RequestInit) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', ...getAuthHeaders() };
+    if (options?.headers) {
+      if (options.headers instanceof Headers) {
+        options.headers.forEach((v, k) => { headers[k] = v; });
+      } else if (Array.isArray(options.headers)) {
+        options.headers.forEach(([k, v]) => { headers[k] = v; });
+      } else {
+        Object.assign(headers, options.headers);
+      }
+    }
+    return fetch(`${BASE_URL}/chat/stream`, { method: 'POST', ...options, headers, body: JSON.stringify({ message, session_id }) });
+  },
 
   // Files
   fileRaw: (path: string) => fetchAPI<any>(`/file/raw?path=${encodeURIComponent(path)}`),
@@ -54,7 +101,7 @@ export const api = {
   upload: (file: File) => {
     const fd = new FormData();
     fd.append('file', file);
-    return fetch(`${BASE_URL}/upload`, { method: 'POST', body: fd }).then(r => r.json());
+    return fetch(`${BASE_URL}/upload`, { method: 'POST', headers: { ...getAuthHeaders() }, body: fd }).then(r => r.json());
   },
   deleteFile: (filepath: string) =>
     fetchAPI<any>('/file/delete', { method: 'POST', body: JSON.stringify({ filepath }) }),
@@ -77,6 +124,7 @@ export const api = {
   macros: () => fetchAPI<any>('/macros'),
   aliases: () => fetchAPI<any>('/aliases'),
   syncPeers: () => fetchAPI<any>('/sync/peers'),
+  addSyncPeer: (url: string, name: string) => fetchAPI<any>('/sync/peers', { method: 'POST', body: JSON.stringify({ url, name }) }),
   syncExchange: (peer_url: string) =>
     fetchAPI<any>('/sync/exchange', { method: 'POST', body: JSON.stringify({ peer_url }) }),
   syncLogs: () => fetchAPI<any>('/sync/logs'),
@@ -109,8 +157,8 @@ export const api = {
     fetchAPI<any>(`/bookmarks/delete`, { method: 'POST', body: JSON.stringify({ id }) }),
 
   // Export
-  exportCSV: () => fetch(`${BASE_URL}/export`).then(r => r.blob()),
-  exportPDF: () => fetch(`${BASE_URL}/report/export`).then(r => r.blob()),
+  exportCSV: () => fetch(`${BASE_URL}/export`, { headers: { ...getAuthHeaders() } }).then(r => r.blob()),
+  exportPDF: () => fetch(`${BASE_URL}/report/export`, { headers: { ...getAuthHeaders() } }).then(r => r.blob()),
 
   // Notes
   getNotes: (filepath: string) => fetchAPI<any>(`/notes?path=${encodeURIComponent(filepath)}`),
