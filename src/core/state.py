@@ -19,6 +19,13 @@ class QueryCache:
         self.lock = threading.Lock()
         self.mem_cache = {}
         self.cache = self.mem_cache
+        try:
+            with db_conn() as conn:
+                cursor = conn.cursor()
+                cursor.execute("CREATE TABLE IF NOT EXISTS query_cache (query_key TEXT PRIMARY KEY, response_json TEXT, cached_at REAL)")
+                conn.commit()
+        except Exception:
+            pass
 
     def get(self, key):
         with self.lock:
@@ -44,7 +51,7 @@ class QueryCache:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in state.py: {e}")
+                import logging; logging.warning(f"Swallowed error in state.py: {e}")
             self.misses += 1
             return None
 
@@ -70,7 +77,7 @@ class QueryCache:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in state.py: {e}")
+                import logging; logging.warning(f"Swallowed error in state.py: {e}")
 
     def invalidate(self):
         with self.lock:
@@ -83,7 +90,7 @@ class QueryCache:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in state.py: {e}")
+                import logging; logging.warning(f"Swallowed error in state.py: {e}")
 
     clear = invalidate
 
@@ -104,7 +111,7 @@ class QueryCache:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in state.py: {e}")
+                import logging; logging.warning(f"Swallowed error in state.py: {e}")
             return {
                 "hits": self.hits,
                 "misses": self.misses,

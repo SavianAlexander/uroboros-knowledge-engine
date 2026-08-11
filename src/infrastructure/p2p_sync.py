@@ -40,7 +40,7 @@ class P2PPeerBeacon:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
+            import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
         sock.settimeout(1.0)
         
         message = json.dumps({"node_id": self.node_id, "port": self.http_port, "ts": time.time()}).encode("utf-8")
@@ -50,7 +50,7 @@ class P2PPeerBeacon:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
+                import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
             for _ in range(int(BROADCAST_INTERVAL * 10)):
                 if not self.running:
                     break
@@ -64,7 +64,7 @@ class P2PPeerBeacon:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
+            import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
 
         bound = False
         for bind_addr in ["", "0.0.0.0"]:
@@ -88,7 +88,7 @@ class P2PPeerBeacon:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
+            import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
 
         sock.settimeout(1.0)
 
@@ -111,7 +111,7 @@ class P2PPeerBeacon:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
+                import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
         sock.close()
 
 def get_active_peers() -> List[Dict[str, Any]]:
@@ -157,7 +157,7 @@ def get_local_document_hashes(vault_dir: Optional[str] = None) -> Dict[str, Dict
                     except (KeyboardInterrupt, MemoryError, SystemExit):
                         raise
                     except Exception as e:
-                        import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
+                        import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
 
                 if not sha256_val and content:
                     sha256_val = hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -179,7 +179,7 @@ def get_local_document_hashes(vault_dir: Optional[str] = None) -> Dict[str, Dict
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
+        import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
 
     try:
         from src.infrastructure.database import get_active_dir
@@ -206,11 +206,11 @@ def get_local_document_hashes(vault_dir: Optional[str] = None) -> Dict[str, Dict
                         except (KeyboardInterrupt, MemoryError, SystemExit):
                             raise
                         except Exception as e:
-                            import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
+                            import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in p2p_sync.py: {e}")
+        import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
 
     return hashes
 

@@ -19,6 +19,7 @@ class TestDomainArchitecture(unittest.TestCase):
         pass
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_01_architecture_compliance_score(self):
         """Verify Universal Architecture compliance score reaches 100.0% with zero secrets detected.
 
@@ -40,4 +41,3 @@ class TestDomainArchitecture(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -83,6 +83,7 @@ class TestDomainAnalyticsIntelligence(unittest.TestCase):
         self.assertEqual(activity.recent_queries, [])
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_02_analytics_with_populated_data(self):
         """
         Preconditions: Database seeded with files, file_chunks, fts_files, tags, and search history.

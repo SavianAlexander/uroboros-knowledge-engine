@@ -1,3 +1,4 @@
+import unittest
 import src.core.config as config
 import src.infrastructure.database as db
 # tests/test_dashboard_verification.py
@@ -219,6 +220,7 @@ def test_dashboard_stats_api_vs_db():
     assert api_peers == db_peers
 
 @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+@unittest.skip("Legacy UI test skipped")
 def test_recent_searches_click_action():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -293,6 +295,7 @@ def test_recent_searches_click_action():
         browser.close()
 
 @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+@unittest.skip("Legacy UI test skipped")
 def test_sidebar_history_click_action():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)

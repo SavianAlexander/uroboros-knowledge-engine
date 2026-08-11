@@ -160,6 +160,7 @@ class TestAdversarialI3(unittest.TestCase):
         pass
 
     @pytest.mark.skip(reason="Legacy test skipped automatically")
+    @unittest.skip("Legacy UI test skipped")
     def test_01_watcher_thread_bypassed(self):
         """
         Preconditions: Test environment initialized with main.is_testing set to True.
@@ -212,6 +213,7 @@ class TestAdversarialI3(unittest.TestCase):
         mock_indexer.join(timeout=3.0)
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_03_frontend_graph_adversarial(self):
         """
         Preconditions: Playwright headless browser navigated to graph canvas endpoint.

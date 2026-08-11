@@ -75,7 +75,7 @@ def get_indexing_overview(db_path: Optional[str] = None) -> AnalyticsOverviewRes
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in analytics_engine.py")
+        import logging; logging.getLogger(__name__).warning("Swallowed error in analytics_engine.py")
         res = AnalyticsOverviewResponse(
             total_documents=0,
             total_chunks=0,
@@ -160,7 +160,7 @@ def get_storage_breakdown(db_path: Optional[str] = None) -> StorageBreakdownResp
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in analytics_engine.py")
+        import logging; logging.getLogger(__name__).warning("Swallowed error in analytics_engine.py")
         res = StorageBreakdownResponse(
             by_mime={},
             by_extension={},
@@ -231,7 +231,7 @@ def get_tag_distribution(db_path: Optional[str] = None) -> TagDistributionRespon
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in analytics_engine.py")
+        import logging; logging.getLogger(__name__).warning("Swallowed error in analytics_engine.py")
         res = TagDistributionResponse(
             total_tags=0,
             top_tags=[],
@@ -282,7 +282,7 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
                     ORDER BY count DESC
                     LIMIT 10
                 """)
-                top_queries = [{"query": r["query"], "count": r["count"]} for r in cur.fetchall()]
+                top_queries = [{"query": r[0], "count": r[1]} for r in cur.fetchall()]
 
                 cur.execute("""
                     SELECT query_string as query, search_mode as mode, executed_at, result_count
@@ -292,10 +292,10 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
                 """)
                 recent_queries = [
                     {
-                        "query": r["query"],
-                        "mode": r["mode"],
-                        "executed_at": r["executed_at"],
-                        "result_count": r["result_count"]
+                        "query": r[0],
+                        "mode": r[1],
+                        "executed_at": r[2],
+                        "result_count": r[3]
                     }
                     for r in cur.fetchall()
                 ]
@@ -308,9 +308,9 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
                     GROUP BY dt
                 """)
                 for r in cur.fetchall():
-                    dt = r["dt"]
+                    dt = r[0]
                     if dt in timeline_data:
-                        timeline_data[dt]["searches"] = r["count"]
+                        timeline_data[dt]["searches"] = r[1]
 
                 # Aggregate indexed files by date
                 cur.execute("""
@@ -320,9 +320,9 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
                     GROUP BY dt
                 """)
                 for r in cur.fetchall():
-                    dt = r["dt"]
+                    dt = r[0]
                     if dt in timeline_data:
-                        timeline_data[dt]["indexed"] = r["count"]
+                        timeline_data[dt]["indexed"] = r[1]
 
                 try:
                     from src.infrastructure.telemetry import GLOBAL_TELEMETRY
@@ -331,7 +331,7 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
                 except (KeyboardInterrupt, MemoryError, SystemExit):
                     raise
                 except Exception:
-                    import logging; logging.getLogger(__name__).exception("Swallowed error in analytics_engine.py")
+                    import logging; logging.getLogger(__name__).warning("Swallowed error in analytics_engine.py")
                     avg_latency = 0.0
 
             except sqlite3.OperationalError:
@@ -347,7 +347,7 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in analytics_engine.py")
+        import logging; logging.getLogger(__name__).warning("Swallowed error in analytics_engine.py")
         res = SearchActivityResponse(
             total_queries=0,
             avg_latency_ms=0.0,

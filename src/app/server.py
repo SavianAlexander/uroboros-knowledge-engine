@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in server.py: {e}")
+        import logging; logging.warning(f"Swallowed error in server.py: {e}")
     try:
         yield
     finally:
@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in server.py: {e}")
+                import logging; logging.warning(f"Swallowed error in server.py: {e}")
 
 app = FastAPI(title="Uroboros Knowledge Database", default_response_class=UJSONResponse, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)

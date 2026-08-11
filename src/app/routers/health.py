@@ -190,7 +190,7 @@ def get_snapshots_endpoint():
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in health.py: {e}")
+            import logging; logging.warning(f"Swallowed error in health.py: {e}")
         res.append(str(t))
     return {"snapshots": res}
 

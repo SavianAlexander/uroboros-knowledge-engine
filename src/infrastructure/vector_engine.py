@@ -55,7 +55,7 @@ def search_files(query: str) -> List[Dict[str, Any]]:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in database.py: {e}")
+            import logging; logging.warning(f"Swallowed error in database.py: {e}")
 
         if "NEAR(" in norm_query:
             import re
@@ -85,7 +85,7 @@ def search_files(query: str) -> List[Dict[str, Any]]:
                 except (KeyboardInterrupt, MemoryError, SystemExit):
                     raise
                 except Exception as e:
-                    import logging; logging.error(f"Swallowed error in database.py: {e}")
+                    import logging; logging.warning(f"Swallowed error in database.py: {e}")
 
         import re
         words = re.findall(r'\w+', norm_query)
@@ -102,7 +102,7 @@ def search_files(query: str) -> List[Dict[str, Any]]:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in database.py: {e}")
+                import logging; logging.warning(f"Swallowed error in database.py: {e}")
         return []
 
 def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, int, int], None]] = None, on_complete_callback: Optional[Callable[[], None]] = None, job_id: Optional[str] = None):
@@ -132,7 +132,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in database.py: {e}")
+        import logging; logging.warning(f"Swallowed error in database.py: {e}")
 
     path = Path(dir_path).resolve()
     if not path.is_dir():
@@ -180,7 +180,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in database.py: {e}")
+                import logging; logging.warning(f"Swallowed error in database.py: {e}")
         return
 
     if total_files > 100 and len(all_files) > 50:
@@ -189,7 +189,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in database.py: {e}")
+            import logging; logging.warning(f"Swallowed error in database.py: {e}")
 
     modified_tasks = []
     unmodified_tasks = []
@@ -405,7 +405,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
                         except (KeyboardInterrupt, MemoryError, SystemExit):
                             raise
                         except Exception as e:
-                            import logging; logging.error(f"Swallowed error in database.py: {e}")
+                            import logging; logging.warning(f"Swallowed error in database.py: {e}")
 
             # Decoupled tag sync for unmodified tasks
             for task in unmodified_tasks:
@@ -422,7 +422,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in database.py: {e}")
+            import logging; logging.warning(f"Swallowed error in database.py: {e}")
 
     print(f"Indexing completed. Indexed: {indexed_count}, Updated: {updated_count}")
 

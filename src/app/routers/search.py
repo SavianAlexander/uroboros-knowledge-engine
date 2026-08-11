@@ -220,7 +220,7 @@ def search_endpoint(
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in search.py: {e}")
+            import logging; logging.warning(f"Swallowed error in search.py: {e}")
         search_time_ms = round((time.time() - start_time) * 1000, 2)
         res_dict = {"query": raw_q, "mode": mode, "results": results, "total": len(results), "search_time_ms": search_time_ms}
         try:
@@ -231,7 +231,7 @@ def search_endpoint(
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in search.py: {e}")
+            import logging; logging.warning(f"Swallowed error in search.py: {e}")
         return res_dict
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
@@ -444,7 +444,7 @@ def get_graph_data_endpoint(
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in search.py: {e}")
+            import logging; logging.warning(f"Swallowed error in search.py: {e}")
 
         return _build_graph_cached(limit, include_wikilinks, include_clusters, version_key)
     except (KeyboardInterrupt, MemoryError, SystemExit):
@@ -518,7 +518,7 @@ def autocomplete_suggest(token: str = "", q: str = "", query: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in search.py: {e}")
+        import logging; logging.warning(f"Swallowed error in search.py: {e}")
 
     matched = [s for s in suggestions if clean in s["text"].lower()]
     res_list = matched or suggestions

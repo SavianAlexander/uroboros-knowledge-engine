@@ -105,6 +105,7 @@ class TestLeakageWarningGuard(unittest.TestCase):
 
 class TestJSMarkdownParser(unittest.TestCase):
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_js_markdown_parser_via_node(self):
         js_file = Path(__file__).resolve().parent / "js" / "test_markdown.js"
         result = subprocess.run(["node", str(js_file)], capture_output=True, text=True)

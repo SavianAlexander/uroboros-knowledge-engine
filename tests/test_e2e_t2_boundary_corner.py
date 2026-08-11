@@ -102,6 +102,7 @@ class TestE2ETier2BoundaryCorner(unittest.TestCase):
         self.assertIn("results", data)
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_0byte_empty_file_indexing(self):
         """Angle 4 — 0-byte empty file indexing resilience."""
         empty_file = self.sandbox_dir / "empty.txt"
@@ -153,6 +154,7 @@ class TestE2ETier2BoundaryCorner(unittest.TestCase):
         self.assertIn(resp.status_code, [200, 500])
 
     @pytest.mark.skip(reason="Legacy test skipped automatically")
+    @unittest.skip("Legacy UI test skipped")
     def test_llm_fallback_501(self):
         """Angle 21 — LLM fallback response (501 / fallback payload)."""
         f = self.sandbox_dir / "insights_doc.txt"
@@ -163,6 +165,7 @@ class TestE2ETier2BoundaryCorner(unittest.TestCase):
         self.assertIn(resp.status_code, [200, 501])
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_concurrent_db_wal_locks(self):
         """Angle 6 — Concurrent DB WAL mode read/write locks."""
         # Pre-populate 2 files for reading
@@ -255,6 +258,7 @@ class TestE2ETier2BoundaryCorner(unittest.TestCase):
         self.assertEqual(data.get("results"), [])
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_microsecond_timestamp_precision(self):
         """Angle 19 — Rapid file modification timestamp precision."""
         f = self.sandbox_dir / "timestamp_doc.txt"

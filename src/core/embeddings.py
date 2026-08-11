@@ -28,7 +28,7 @@ def generate_embedding(text: str) -> List[float]:
             res_body = json.loads(res.read().decode("utf-8"))
             return res_body.get("embedding", [])
     except Exception as e:
-        logging.error(f"Failed to generate embedding via Ollama: {e}")
+        logging.warning(f"Failed to generate embedding via Ollama: {e}")
         return []
 
 def cosine_similarity(v1: List[float], v2: List[float]) -> float:

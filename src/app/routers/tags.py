@@ -60,7 +60,7 @@ def get_suggested_tags_endpoint(filepath: Optional[str] = None, path: Optional[s
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in tags.py: {e}")
+            import logging; logging.warning(f"Swallowed error in tags.py: {e}")
     return {"status": "success", "suggested_tags": []}
 
 @router.post("/api/file/tag")
@@ -110,7 +110,7 @@ def get_active_vault_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in tags.py")
+        import logging; logging.getLogger(__name__).warning("Swallowed error in tags.py")
         return {"active_vault": "dumps"}
 
 @router.get("/api/rules")
@@ -131,7 +131,7 @@ def add_rule_endpoint(req: RuleRequest):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in tags.py: {e}")
+        import logging; logging.getLogger(__name__).warning(f"Swallowed error in tags.py: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid regex pattern: {str(e)}")
     with get_db() as conn:
         cursor = conn.cursor()
@@ -142,7 +142,7 @@ def add_rule_endpoint(req: RuleRequest):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in tags.py: {e}")
+            import logging; logging.warning(f"Swallowed error in tags.py: {e}")
     return {"status": "success", "pattern": req.pattern, "tag": req.tag}
 
 @router.post("/api/rules/test-preview")
@@ -155,7 +155,7 @@ def preview_rule_endpoint(req: RuleRequest):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in tags.py: {e}")
+        import logging; logging.getLogger(__name__).warning(f"Swallowed error in tags.py: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid regex pattern: {str(e)}")
 
     matches = []
@@ -366,7 +366,7 @@ def list_sync_peers_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in tags.py: {e}")
+        import logging; logging.warning(f"Swallowed error in tags.py: {e}")
 
     return {"status": "success", "peers": peers}
 
@@ -430,7 +430,7 @@ def get_sync_delta_endpoint(req: SyncDeltaRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in tags.py: {e}")
+                import logging; logging.warning(f"Swallowed error in tags.py: {e}")
         else:
             try:
                 with get_db() as conn:
@@ -442,7 +442,7 @@ def get_sync_delta_endpoint(req: SyncDeltaRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in tags.py: {e}")
+                import logging; logging.warning(f"Swallowed error in tags.py: {e}")
 
         if not sha256_val and content:
             import hashlib
@@ -504,7 +504,7 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception:
-                import logging; logging.getLogger(__name__).exception("Swallowed error in tags.py")
+                import logging; logging.getLogger(__name__).warning("Swallowed error in tags.py")
                 remote_hashes = None
 
             if remote_hashes is not None:
@@ -531,33 +531,41 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                     except (KeyboardInterrupt, MemoryError, SystemExit):
                         raise
                     except Exception:
-                        import logging; logging.getLogger(__name__).exception("Swallowed error in tags.py")
+                        import logging; logging.getLogger(__name__).warning("Swallowed error in tags.py")
                         manifest_url = f"{target_peer_clean}/api/sync/manifest"
-                        with urllib.request.urlopen(manifest_url, timeout=5.0) as resp:
-                            data = json.loads(resp.read().decode("utf-8"))
-                            peer_manifest = data.get("manifest", [])
-                            for item in peer_manifest:
-                                fn = item.get("filename") or "synced_file.txt"
-                                if fn in to_pull:
-                                    content = item.get("content") or ""
-                                    fp = os.path.join(active_dir, fn)
-                                    with open(fp, "w", encoding="utf-8") as f:
-                                        f.write(content)
-                                    synced.append(fn)
-                                    total_bytes += len(content.encode("utf-8"))
+                        try:
+                            with urllib.request.urlopen(manifest_url, timeout=5.0) as resp:
+                                data = json.loads(resp.read().decode("utf-8"))
+                                peer_manifest = data.get("manifest", [])
+                                for item in peer_manifest:
+                                    fn = item.get("filename") or "synced_file.txt"
+                                    if fn in to_pull:
+                                        content = item.get("content") or ""
+                                        fp = os.path.join(active_dir, fn)
+                                        with open(fp, "w", encoding="utf-8") as f:
+                                            f.write(content)
+                                        synced.append(fn)
+                                        total_bytes += len(content.encode("utf-8"))
+                        except Exception as e:
+                            import logging; logging.getLogger(__name__).warning("Swallowed error in tags.py manifest fallback 1")
+                            raise e
             else:
                 manifest_url = f"{target_peer_clean}/api/sync/manifest"
-                with urllib.request.urlopen(manifest_url, timeout=5.0) as resp:
-                    data = json.loads(resp.read().decode("utf-8"))
-                    peer_manifest = data.get("manifest", [])
-                    for item in peer_manifest:
-                        fn = item.get("filename") or "synced_file.txt"
-                        content = item.get("content") or ""
-                        fp = os.path.join(active_dir, fn)
-                        with open(fp, "w", encoding="utf-8") as f:
-                            f.write(content)
-                        synced.append(fn)
-                        total_bytes += len(content.encode("utf-8"))
+                try:
+                    with urllib.request.urlopen(manifest_url, timeout=5.0) as resp:
+                        data = json.loads(resp.read().decode("utf-8"))
+                        peer_manifest = data.get("manifest", [])
+                        for item in peer_manifest:
+                            fn = item.get("filename") or "synced_file.txt"
+                            content = item.get("content") or ""
+                            fp = os.path.join(active_dir, fn)
+                            with open(fp, "w", encoding="utf-8") as f:
+                                f.write(content)
+                            synced.append(fn)
+                            total_bytes += len(content.encode("utf-8"))
+                except Exception as e:
+                    import logging; logging.getLogger(__name__).warning("Swallowed error in tags.py manifest fallback 2")
+                    raise e
 
             if synced:
                 index_directory(active_dir)
@@ -574,7 +582,7 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.getLogger(__name__).exception(f"Swallowed error in tags.py: {e}")
+            import logging; logging.getLogger(__name__).warning(f"Swallowed error in tags.py: {e}")
             import time
             try:
                 with get_db() as conn:
@@ -587,7 +595,7 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in tags.py: {e}")
+                import logging; logging.warning(f"Swallowed error in tags.py: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to reach peer: {str(e)}")
 
     return {

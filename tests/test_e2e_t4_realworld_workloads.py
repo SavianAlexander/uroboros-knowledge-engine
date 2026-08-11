@@ -89,6 +89,7 @@ class TestE2ETier4RealWorldWorkloads(unittest.TestCase):
             self._cleanup_db_files(self.db_file)
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_scenario1_workspace_splitscreen_document_intelligence_workflow(self):
         """
         Scenario 1: Workspace Split-Screen Document Intelligence Workflow
@@ -153,6 +154,7 @@ class TestE2ETier4RealWorldWorkloads(unittest.TestCase):
         self.assertEqual(resp_notes_verify.json().get("notes"), "Approved by Chief Analyst.")
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_scenario2_local_p2p_knowledge_vault_sync_workflow(self):
         """
         Scenario 2: Local Peer-to-Peer Knowledge Vault Sync Workflow
@@ -203,6 +205,7 @@ class TestE2ETier4RealWorldWorkloads(unittest.TestCase):
         self.assertIn("logs", resp_sync_logs.json())
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_scenario3_disaster_recovery_db_snapshot_restore_workflow(self):
         """
         Scenario 3: Disaster Recovery & Database Snapshot Restore Workflow

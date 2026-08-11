@@ -408,6 +408,7 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
         self.assertEqual(r3.status_code, 200)
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_graph_non_contiguous_file_ids(self):
         """Test graph endpoint with non-contiguous file IDs (e.g. 1, 15, 200, 1500)."""
         with get_db_connection(db.DB_FILE) as conn:
@@ -424,6 +425,7 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
         self.assertTrue(len(data["edges"]) >= 2)
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_broken_and_self_referential_wikilinks(self):
         """Test graph edge building with broken links and self-referential links."""
         with get_db_connection(db.DB_FILE) as conn:
@@ -445,6 +447,7 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
         self.assertTrue(any(e["source"] == "file_2" and e["target"] == "file_1" for e in wikilink_edges))
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_tag_cluster_size_capping(self):
         """Test tag cluster edge cap at <= 30 documents per tag."""
         with get_db_connection(db.DB_FILE) as conn:

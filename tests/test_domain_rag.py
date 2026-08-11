@@ -42,6 +42,7 @@ class TestDomainRAG(unittest.TestCase):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_01_extract_rag_context_hybrid_rrf(self):
         """Verify HyDE + RRF hybrid context extraction and citation formatting.
 

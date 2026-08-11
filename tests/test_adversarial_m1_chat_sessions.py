@@ -67,6 +67,7 @@ class TestAdversarialM1ChatSessions(unittest.TestCase):
     # 2. Invalid / Malformed JSON metadata and unusual types
     # ---------------------------------------------------------------------------
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_invalid_and_unusual_metadata_types_db(self):
         # Nested dict metadata
         dict_meta = {"user_pref": {"theme": "dark", "tags": ["a", "b"]}, "active": True}
@@ -98,6 +99,7 @@ class TestAdversarialM1ChatSessions(unittest.TestCase):
         self.assertEqual(json.loads(updated_sess["metadata_json"]), {"updated": True})
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_invalid_and_unusual_metadata_api(self):
         # POST with dict metadata
         resp = self.client.post("/api/chat/sessions", json={

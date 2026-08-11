@@ -143,6 +143,7 @@ class TestAdversarialUIStress(unittest.TestCase):
         pass
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_01_rapid_tab_toggle_stress(self):
         """
         Preconditions: Running application server with UI tab views.
@@ -181,6 +182,7 @@ class TestAdversarialUIStress(unittest.TestCase):
             browser.close()
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_02_adversarial_unbalanced_quotes_search_query(self):
         """
         Preconditions: UI Explorer search tab open.
@@ -215,6 +217,7 @@ class TestAdversarialUIStress(unittest.TestCase):
             browser.close()
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_03_canvas_zoom_stress_bounds(self):
         """
         Preconditions: Concept graph canvas view loaded in UI.
@@ -254,6 +257,7 @@ class TestAdversarialUIStress(unittest.TestCase):
             browser.close()
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_04_dom_selector_compliance_and_error_tally(self):
         """
         Preconditions: Application file tree and search result containers rendered.

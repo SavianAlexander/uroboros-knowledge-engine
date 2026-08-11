@@ -34,42 +34,42 @@ async function run() {
     await delay(1000);
 
     // Helper to capture a view
-    const captureView = async (buttonText, filename) => {
-        console.log(`Capturing: ${buttonText}`);
-        // Click the sidebar button that contains the text
-        await page.locator(`button:has-text("${buttonText}")`).click();
+    const captureView = async (buttonId, filename) => {
+        console.log(`Capturing: ${buttonId}`);
+        // Click the sidebar button that contains the data-tab ID
+        await page.locator(`button[data-tab="${buttonId}"]`).click();
         await delay(1000); // wait for transitions
         await page.screenshot({ path: path.join(outDir, filename), fullPage: true });
     };
 
     // 1. Dashboard View
-    await captureView('Dashboard', '01_dashboard.png');
+    await captureView('dashboard', '01_dashboard.png');
 
     // 2. Workspace View
-    await captureView('Workspace', '02_workspace.png');
+    await captureView('workspace', '02_workspace.png');
 
     // 3. Explorer / Search View
-    await captureView('Explorer', '03_search.png');
+    await captureView('search', '03_search.png');
 
     // 4. Ingestion View
-    await captureView('Ingestion', '04_ingestion.png');
+    await captureView('ingestion', '04_ingestion.png');
 
     // 5. Graph View
-    await captureView('Graph', '05_graph.png');
+    await captureView('graph', '05_graph.png');
 
     // 6. AI Chat View
-    await captureView('AI Chat', '06_chat.png');
+    await captureView('chat', '06_chat.png');
 
     // 7. Processes / Config View
-    await captureView('Processes', '07_config.png');
+    await captureView('config', '07_config.png');
 
     // 8. System Settings View
-    await captureView('System', '08_settings.png');
+    await captureView('settings', '08_settings.png');
 
     // 9. Command Palette Modal
     console.log('Capturing: Command Palette');
     // Open Command Palette
-    await page.locator('button:has-text("Command Palette")').click();
+    await page.locator('[data-testid="command-palette-btn"]').click();
     await delay(500);
     await page.screenshot({ path: path.join(outDir, '09_command_palette.png'), fullPage: true });
     // Close Command Palette (Escape key)

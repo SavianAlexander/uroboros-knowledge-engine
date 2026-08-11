@@ -35,7 +35,7 @@ def create_db_snapshot() -> int:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in database.py: {e}")
+        import logging; logging.warning(f"Swallowed error in database.py: {e}")
     timestamp = int(time.time())
     dest = f"{db.DB_FILE}.snapshot-{timestamp}"
     if os.path.exists(dest):
@@ -56,13 +56,13 @@ def create_db_snapshot() -> int:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in database.py: {e}")
+            import logging; logging.warning(f"Swallowed error in database.py: {e}")
         try:
             if c_src: c_src.close()
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in database.py: {e}")
+            import logging; logging.warning(f"Swallowed error in database.py: {e}")
         c_dst = None
         c_src = None
         shutil.copy2(db.DB_FILE, dest)
@@ -92,13 +92,13 @@ def restore_db_snapshot(timestamp: int) -> bool:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in database.py: {e}")
+                import logging; logging.warning(f"Swallowed error in database.py: {e}")
             try:
                 if c_src: c_src.close()
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in database.py: {e}")
+                import logging; logging.warning(f"Swallowed error in database.py: {e}")
             c_dst = None
             c_src = None
             shutil.copy2(src, db.DB_FILE)
@@ -118,7 +118,7 @@ def delete_db_snapshot(timestamp: int) -> bool:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in database.py: {e}")
+            import logging; logging.warning(f"Swallowed error in database.py: {e}")
     return False
 
 def list_db_snapshots() -> List[Dict[str, Any]]:
@@ -132,6 +132,6 @@ def list_db_snapshots() -> List[Dict[str, Any]]:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in database.py: {e}")
+            import logging; logging.warning(f"Swallowed error in database.py: {e}")
     snapshots.sort(key=lambda x: x["timestamp"], reverse=True)
     return snapshots

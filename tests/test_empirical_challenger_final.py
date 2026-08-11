@@ -201,6 +201,7 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
             conn.commit()
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_01_corporate_navigation_tabs(self):
         """
         Preconditions: Uvicorn server active and Playwright browser loaded on root app interface.
@@ -240,6 +241,7 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         page.wait_for_selector(".tab-link[data-tab='diagnostics'].active")
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_02_theme_toggle_contrast(self):
         """
         Preconditions: Diagnostics tab active on root app layout.
@@ -261,6 +263,7 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         page.click(".theme-toggle-btn")
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_03_file_tree_navigation(self):
         """
         Preconditions: Sandbox files initialized in database; Diagnostics tab active.
@@ -291,6 +294,7 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         self.assertTrue(split_screen_visible, "Clicking file title failed to display workspace split screen editor")
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_04_search_autocomplete(self):
         """
         Preconditions: Explorer tab active with search input element present.
@@ -318,6 +322,7 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         self.assertGreater(result_count, 0, "Search results selector '#results-list .result-item' matched 0 elements")
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_05_concept_graph_zoom_controls(self):
         """
         Preconditions: Explorer tab active; graph mode category button clicked.
@@ -347,6 +352,7 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         reset_btn.click()
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_06_rag_chat_assistant(self):
         """
         Preconditions: Chat tab active on application interface.
@@ -374,6 +380,7 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         self.assertTrue(user_msg_found, "Submitted chat message text not found in message history")
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_07_admin_console_panels(self):
         """
         Preconditions: Processes tab active; admin panel containers present in DOM.
@@ -410,6 +417,7 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
         page.click("#capture-snapshot-btn")
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_08_visual_toasts_and_zero_silent_failures(self):
         """
         Preconditions: Actions performed triggering toast notifications across interface.

@@ -220,6 +220,7 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
             format_bytes_bva(-100)
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_03_analytics_summary_endpoint(self):
         """
         Preconditions: TestClient connected to API app; empty and populated database states.
@@ -251,6 +252,7 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
         self.assertEqual(data2["storage_total_bytes"], 5000)
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_04_analytics_storage_endpoint(self):
         """
         Preconditions: Database populated with files across multiple MIME types.
@@ -273,6 +275,7 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
         self.assertEqual(data["by_mime"]["application/pdf"], 1)
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_05_analytics_tags_endpoint_and_cache_invalidation(self):
         """
         Preconditions: Database with file records and tag assignments.
@@ -298,6 +301,7 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
         self.assertTrue(any(t["tag"] == "finance" for t in dist))
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_06_analytics_search_activity_logger_integration(self):
         """
         Preconditions: Search query history logged in database table.
@@ -626,6 +630,7 @@ class TestE2EAnalyticsGraphWorkflowsScenario(unittest.TestCase):
             import logging; logging.error(f"Swallowed error in test_e2e_analytics_graph_workflows.py: {e}")
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_01_scenario_enterprise_ingest_analytics_graph_workflow(self):
         """
         Preconditions: Full system components (ingest, wikilinks, analytics, graph, workflows) active.

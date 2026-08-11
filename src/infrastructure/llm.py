@@ -35,7 +35,7 @@ def get_fallback_llm():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in llm.py: {e}")
+        import logging; logging.warning(f"Swallowed error in llm.py: {e}")
     return None
 
 def is_llm_available() -> bool:

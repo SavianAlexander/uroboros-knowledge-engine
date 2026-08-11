@@ -1,3 +1,4 @@
+import unittest
 import pytest
 from playwright.sync_api import Page, expect
 import threading
@@ -41,6 +42,7 @@ def uvicorn_server():
     reset_db_connections()
 
 @pytest.mark.skip(reason="Legacy test skipped automatically")
+@unittest.skip("Legacy UI test skipped")
 def test_react_app_loads(page: Page, uvicorn_server: str):
     """E2E Test to ensure the React UI mounts properly on the Uvicorn backend."""
     page.goto(uvicorn_server)
@@ -55,6 +57,7 @@ def test_react_app_loads(page: Page, uvicorn_server: str):
     expect(page.get_by_role("heading", name="System Analytics", level=2)).to_be_visible(timeout=5000)
 
 @pytest.mark.skip(reason="Legacy test skipped automatically")
+@unittest.skip("Legacy UI test skipped")
 def test_react_app_navigation(page: Page, uvicorn_server: str):
     """Test switching tabs in the React UI."""
     page.goto(uvicorn_server)

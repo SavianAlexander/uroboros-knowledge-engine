@@ -138,7 +138,7 @@ def save_file_endpoint(req: FileSaveRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in files.py: {e}")
+                import logging; logging.warning(f"Swallowed error in files.py: {e}")
             conn.commit()
 
         try:
@@ -148,7 +148,7 @@ def save_file_endpoint(req: FileSaveRequest):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in files.py: {e}")
+            import logging; logging.warning(f"Swallowed error in files.py: {e}")
         index_directory(os.path.dirname(norm_path))
         return {"status": "success", "filepath": norm_path, "path": norm_path}
     except (KeyboardInterrupt, MemoryError, SystemExit):
@@ -226,7 +226,7 @@ def rename_file_endpoint(req: RenameRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in files.py: {e}")
+                import logging; logging.warning(f"Swallowed error in files.py: {e}")
         os.rename(real_old, norm_new)
         with get_db() as conn:
             cursor = conn.cursor()
@@ -238,7 +238,7 @@ def rename_file_endpoint(req: RenameRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in files.py: {e}")
+                import logging; logging.warning(f"Swallowed error in files.py: {e}")
             try:
                 cursor.execute("UPDATE file_revisions SET filepath = ? WHERE filepath = ? OR filepath = ?", (norm_new, real_old, old_fp))
             except (KeyboardInterrupt, MemoryError, SystemExit):
@@ -271,7 +271,7 @@ def bulk_delete_endpoint(req: BulkDeleteRequest):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in files.py: {e}")
+            import logging; logging.warning(f"Swallowed error in files.py: {e}")
     return {"status": "success", "deleted": deleted}
 
 @router.post("/api/upload")
@@ -338,7 +338,7 @@ def index_directory_endpoint(req: IndexRequest):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in files.py: {e}")
+        import logging; logging.warning(f"Swallowed error in files.py: {e}")
         
     jm = get_job_manager()
     job_id = jm.submit_job(index_directory, dir_p)
@@ -412,7 +412,7 @@ def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: 
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in files.py: {e}")
+            import logging; logging.warning(f"Swallowed error in files.py: {e}")
 
     content = db_content
     if content is None and fp and os.path.exists(fp):

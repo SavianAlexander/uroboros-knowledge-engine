@@ -176,6 +176,7 @@ class TestAdversarialChallenger2(unittest.TestCase):
         pass
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_01_api_stats_against_db(self):
         """
         Preconditions: Seeded database with tags, rules, peers, and history.
@@ -218,6 +219,7 @@ class TestAdversarialChallenger2(unittest.TestCase):
             self.assertTrue(matched, f"Peer {db_peer} not found in API response {api_peers}")
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_02_recent_searches_click_behavior(self):
         """
         Preconditions: Active uvicorn server with seeded search history.

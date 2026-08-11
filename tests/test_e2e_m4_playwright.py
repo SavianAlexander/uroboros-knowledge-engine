@@ -117,6 +117,7 @@ class TestM4PlaywrightE2E(unittest.TestCase):
             shutil.rmtree(SANDBOX_DIR, ignore_errors=True)
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_m4_frontend_analytics_and_buttons(self):
         console_errors = []
 

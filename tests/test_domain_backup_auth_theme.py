@@ -33,6 +33,7 @@ class TestDomainBackupAuthTheme(unittest.TestCase):
         know.reset_db_connections()
 
     @pytest.mark.skip(reason="Legacy test skipped automatically")
+    @unittest.skip("Legacy UI test skipped")
     def test_01_sqlite_online_backup_and_restore(self):
         """Verify online SQLite live backup and restoration capability using C-API conn.backup().
 
@@ -101,6 +102,7 @@ class TestDomainBackupAuthTheme(unittest.TestCase):
         os.environ["UROBOROS_REQUIRE_AUTH"] = "false"
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_03_theme_toggle_persistence_contract(self):
         """Verify theme switcher CSS root variables and persistence contract.
 

@@ -72,7 +72,7 @@ def generate_hyde_expansion(query: str) -> str:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in services.py: {e}")
+        import logging; logging.warning(f"Swallowed error in services.py: {e}")
     return query
 
 def generate_key_takeaways(text: str, num_bullets: int = 3) -> List[str]:
@@ -166,7 +166,7 @@ def extract_ai_tags(content: str, filename: str, rule_matches: Optional[List[Tup
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in services.py: {e}")
+        import logging; logging.warning(f"Swallowed error in services.py: {e}")
     return tags
 
 def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> List[str]:

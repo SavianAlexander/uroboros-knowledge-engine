@@ -40,6 +40,7 @@ export default function Sidebar() {
                   ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5"
               )}
+              data-tab={item.id}
             >
               <Icon className="w-4 h-4" />
               {item.label}
@@ -55,6 +56,7 @@ export default function Sidebar() {
         <button
           onClick={() => setCommandPaletteOpen(true)}
           className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all text-sm font-medium border dark:border-white/5 border-slate-200 bg-slate-100/50 dark:bg-slate-800/30"
+          data-testid="command-palette-btn"
         >
           <Command className="w-4 h-4" />
           <span>Command Palette</span>

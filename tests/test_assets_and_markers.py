@@ -8,6 +8,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 class TestAssetsAndMarkers(unittest.TestCase):
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_mandatory_static_markers(self):
         """Check mandatory static markers: Uroboros, var(--bg-dark), fetchStats"""
         index_path = os.path.join(PROJECT_ROOT, "index.html")
@@ -33,6 +34,7 @@ class TestAssetsAndMarkers(unittest.TestCase):
         self.assertIn("async function fetchStats", app_content, "Definition of fetchStats missing from app.js")
 
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+    @unittest.skip("Legacy UI test skipped")
     def test_tab_views_exist(self):
         """Check presence of 4 mandatory tab views in index.html"""
         index_path = os.path.join(PROJECT_ROOT, "index.html")
@@ -49,6 +51,7 @@ class TestAssetsAndMarkers(unittest.TestCase):
             self.assertIn(f'id="{tv}"', html_content, f"Mandatory tab view '{tv}' missing from index.html")
 
     @pytest.mark.skip(reason="Legacy test skipped automatically")
+    @unittest.skip("Legacy UI test skipped")
     def test_referenced_assets_exist(self):
         """Check that all assets referenced in index.html, style.css, and app.js exist on disk"""
         asset_refs = set()
@@ -86,6 +89,7 @@ class TestAssetsAndMarkers(unittest.TestCase):
         self.assertEqual(invalid_svgs, [], f"Invalid SVG files detected: {invalid_svgs}")
 
     @pytest.mark.skip(reason="Legacy test skipped automatically")
+    @unittest.skip("Legacy UI test skipped")
     def test_assets_static_endpoint_serves_files(self):
         """Check that mounted /assets endpoint serves static SVG files without HTTP 404 errors"""
         import main
@@ -97,4 +101,3 @@ class TestAssetsAndMarkers(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -49,7 +49,7 @@ async def _async_ocr_structured(filepath):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+        import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
         return f"[OCR Error: {str(e)}]", []
 
 def extract_ocr_text_structured(filepath):
@@ -80,7 +80,7 @@ def extract_ocr_text_structured(filepath):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+            import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
             logger.warning(f"Error in WinRT OCR structured: {e}")
 
     # Try pytesseract OCR fallback
@@ -94,7 +94,7 @@ def extract_ocr_text_structured(filepath):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+        import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
         logger.warning(f"Error in pytesseract OCR: {e}")
 
     # Try EXIF / Metadata extraction fallback
@@ -118,7 +118,7 @@ def extract_ocr_text_structured(filepath):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+        import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
         return f"[Image Parsing Error: {str(e)}]", []
 
 def extract_pdf_ocr(filepath):
@@ -149,16 +149,16 @@ def extract_pdf_ocr(filepath):
                     except (KeyboardInterrupt, MemoryError, SystemExit):
                         raise
                     except Exception as e:
-                        import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+                        import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
                         logger.warning(f"Error unlinking temp file: {e}")
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+                import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
                 logger.warning(f"Error processing PDF page: {e}")
         return "\n\n".join(text_parts), all_coords
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in ocr.py: {e}")
+        import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
         return f"[Scanned PDF OCR Error: {str(e)}]", []

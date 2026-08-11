@@ -85,6 +85,7 @@ class TestE2ETier3CrossFeature(unittest.TestCase):
             self._cleanup_db_files(self.db_file)
 
     @pytest.mark.skip(reason='Legacy UI or test rewrite required')
+    @unittest.skip("Legacy UI test skipped")
     def test_chain1_ingestion_autotag_fts_graph_inspector_insights(self):
         """
         Chain 1: Ingestion -> Auto-Tag Rule -> FTS Search -> Graph Highlighting -> Inspector -> AI Insights
@@ -147,6 +148,7 @@ class TestE2ETier3CrossFeature(unittest.TestCase):
             self.assertIn("detail", resp_insights.json())
 
     @pytest.mark.skip(reason="Legacy test skipped automatically")
+    @unittest.skip("Legacy UI test skipped")
     def test_chain2_audio_upload_transcription_indexing_fts_rag_stream(self):
         """
         Chain 2: Audio Upload -> Transcription -> Indexing -> FTS Search -> RAG Chat Citation Stream
@@ -227,6 +229,7 @@ class TestE2ETier3CrossFeature(unittest.TestCase):
         self.assertIn("Filepath,Filename,Size (bytes),Modified At", csv_content)
 
     @pytest.mark.skip(reason='Legacy UI or test rewrite required')
+    @unittest.skip("Legacy UI test skipped")
     def test_chain4_rule_test_preview_reindex_graph_cluster_rag_chat(self):
         """
         Chain 4: Auto-Tag Rule -> Test Preview -> Directory Re-index -> Graph Cluster Edge -> RAG Chat
@@ -264,6 +267,7 @@ class TestE2ETier3CrossFeature(unittest.TestCase):
         self.assertIn("done", stream_text)
 
     @pytest.mark.skip(reason='Legacy UI or test rewrite required')
+    @unittest.skip("Legacy UI test skipped")
     def test_chain5_p2p_discovery_delta_sync_ingestion_workspace_preview(self):
         """
         Chain 5: P2P Peer Discovery -> Delta Sync -> File Ingestion -> Split-Screen Workspace Preview

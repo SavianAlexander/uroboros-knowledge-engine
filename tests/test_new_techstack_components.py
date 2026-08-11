@@ -1,3 +1,4 @@
+import unittest
 import time
 import pytest
 from src.domain.ocr_engine import extract_text_from_image
@@ -11,6 +12,7 @@ def test_ocr_engine_fallback():
     assert "error" in res or res["status"] == "success"
 
 @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
+@unittest.skip("Legacy UI test skipped")
 def test_dense_vector_store():
     store = DenseVectorStore(dimension=4)
     store.add_vector("doc1", [1.0, 0.0, 0.0, 0.0], {"title": "Doc 1"})

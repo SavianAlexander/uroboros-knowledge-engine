@@ -152,7 +152,7 @@ def get_active_dir() -> str:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in database.py: {e}")
+        import logging; logging.warning(f"Swallowed error in database.py: {e}")
     try:
         with get_db() as conn:
             cursor = conn.cursor()
@@ -163,14 +163,14 @@ def get_active_dir() -> str:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in database.py: {e}")
+        import logging; logging.warning(f"Swallowed error in database.py: {e}")
     try:
         if DB_FILE:
             return os.path.dirname(os.path.abspath(DB_FILE))
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in database.py: {e}")
+        import logging; logging.warning(f"Swallowed error in database.py: {e}")
     return os.getcwd()
 
 _local_connections = []
@@ -189,7 +189,7 @@ def get_db():
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in database.py: {e}")
+                import logging; logging.warning(f"Swallowed error in database.py: {e}")
             conn = None
             _local.connection = None
             _local.connection_path = None

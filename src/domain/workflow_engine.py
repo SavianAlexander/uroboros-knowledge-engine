@@ -60,7 +60,7 @@ def evaluate_condition(
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in workflow_engine.py: {e}")
+            import logging; logging.warning(f"Swallowed error in workflow_engine.py: {e}")
 
     # Score threshold evaluation for semantic_match
     score_threshold_match = re.search(r'(?:min_score|score)\s*[:>=]+\s*([0-9\.]+)', pattern_str, re.IGNORECASE)

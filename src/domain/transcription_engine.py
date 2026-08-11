@@ -299,7 +299,7 @@ def transcribe_audio_memo(filepath: str, chunk_duration_sec: float = 10.0) -> Di
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.error(f"Swallowed error in transcription_engine.py: {e}")
+        import logging; logging.warning(f"Swallowed error in transcription_engine.py: {e}")
 
     if parsed_info and parsed_info.get("chunks"):
         duration_sec = parsed_info["duration_seconds"]
