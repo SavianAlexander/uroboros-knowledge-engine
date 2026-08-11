@@ -257,6 +257,14 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
     avg_latency = 0.0
     top_queries: List[Dict[str, Any]] = []
     recent_queries: List[Dict[str, Any]] = []
+    timeline_data: Dict[str, Dict[str, int]] = {}
+
+    # Initialize last 7 days
+    from datetime import datetime, timedelta
+    today = datetime.utcnow().date()
+    for i in range(6, -1, -1):
+        dt_str = (today - timedelta(days=i)).strftime("%Y-%m-%d")
+        timeline_data[dt_str] = {"date": dt_str[-5:], "searches": 0, "indexed": 0}
 
     try:
         with _connect(db_path) as conn:
@@ -292,6 +300,30 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
                     for r in cur.fetchall()
                 ]
 
+                # Aggregate searches by date
+                cur.execute("""
+                    SELECT date(executed_at, 'unixepoch') as dt, COUNT(*) as count
+                    FROM search_history
+                    WHERE executed_at > (strftime('%s', 'now') - 7 * 86400)
+                    GROUP BY dt
+                """)
+                for r in cur.fetchall():
+                    dt = r["dt"]
+                    if dt in timeline_data:
+                        timeline_data[dt]["searches"] = r["count"]
+
+                # Aggregate indexed files by date
+                cur.execute("""
+                    SELECT date(created_at, 'unixepoch') as dt, COUNT(*) as count
+                    FROM files
+                    WHERE created_at > (strftime('%s', 'now') - 7 * 86400)
+                    GROUP BY dt
+                """)
+                for r in cur.fetchall():
+                    dt = r["dt"]
+                    if dt in timeline_data:
+                        timeline_data[dt]["indexed"] = r["count"]
+
                 try:
                     from src.infrastructure.telemetry import GLOBAL_TELEMETRY
                     if GLOBAL_TELEMETRY.latencies:
@@ -309,7 +341,8 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
             total_queries=total_queries,
             avg_latency_ms=round(avg_latency, 2),
             top_queries=top_queries,
-            recent_queries=recent_queries
+            recent_queries=recent_queries,
+            timeline=list(timeline_data.values())
         )
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
@@ -319,7 +352,8 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
             total_queries=0,
             avg_latency_ms=0.0,
             top_queries=[],
-            recent_queries=[]
+            recent_queries=[],
+            timeline=list(timeline_data.values())
         )
 
     _analytics_cache[cache_key] = (res, now)

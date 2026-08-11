@@ -17,15 +17,15 @@ export default function DashboardView() {
     api.stats().then(setSystemStats).catch(() => setSystemStats({ total_tags: 0 }));
     
     api.storage().then(data => {
-      if (!data) return setStorage({ totalDocuments: 0, distribution: [] });
+      if (!data) return setStorage({ totalDocuments: 0, distribution: [], topDirectories: [] });
       const distribution = Object.entries(data.by_mime || {})
         .map(([mime, count]) => ({ mime: mime || 'unknown', count: count as number }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
       
       const totalDocuments = Object.values(data.by_mime || {}).reduce((acc: number, val: any) => acc + (val as number), 0);
-      setStorage({ totalDocuments, distribution });
-    }).catch(() => setStorage({ totalDocuments: 0, distribution: [] }));
+      setStorage({ totalDocuments, distribution, topDirectories: data.top_directories || [] });
+    }).catch(() => setStorage({ totalDocuments: 0, distribution: [], topDirectories: [] }));
 
     api.searchActivity().then(data => {
       if (!data) return setActivity({ timeline: [] });
@@ -129,16 +129,33 @@ export default function DashboardView() {
             )}
           </div>
           {storage && (
-            <div className="space-y-3">
-              {storage.distribution.map((item: any, i: number) => (
-                <div key={item.mime} className="flex justify-between items-center text-sm">
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: pieColors[i % pieColors.length] }} />
-                    {item.mime.split('/')[1]?.toUpperCase() || item.mime}
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Top Types</h4>
+                {storage.distribution.map((item: any, i: number) => (
+                  <div key={item.mime} className="flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: pieColors[i % pieColors.length] }} />
+                      {item.mime.split('/')[1]?.toUpperCase() || item.mime}
+                    </div>
+                    <span className="text-slate-600 dark:text-slate-400">{item.count.toLocaleString()} files</span>
                   </div>
-                  <span className="text-slate-600 dark:text-slate-400">{item.count.toLocaleString()} files</span>
+                ))}
+              </div>
+              {storage.topDirectories && storage.topDirectories.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Top Directories</h4>
+                  {storage.topDirectories.map((dir: any, i: number) => (
+                    <div key={i} className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 truncate pr-2 max-w-[150px]">
+                        <HardDrive className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                        <span className="truncate" title={dir.directory}>{dir.directory}</span>
+                      </div>
+                      <span className="text-slate-600 dark:text-slate-400 whitespace-nowrap">{(dir.size_bytes / (1024 * 1024)).toFixed(1)} MB</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

@@ -246,6 +246,7 @@ class SearchActivityResponse(BaseModel):
     avg_latency_ms: float = 0.0
     top_queries: List[Dict[str, Any]] = Field(default_factory=list)
     recent_queries: List[Dict[str, Any]] = Field(default_factory=list)
+    timeline: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class WorkflowTriggerCreate(BaseModel):
