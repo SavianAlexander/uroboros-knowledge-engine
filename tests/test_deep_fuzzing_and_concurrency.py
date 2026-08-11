@@ -15,10 +15,10 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 import src.infrastructure.database as db_module
-from src.infrastructure.database import (
-    get_db, init_db, run_maintenance, save_file_revision,
-    index_directory, create_db_snapshot
-)
+from src.infrastructure.database import get_db, init_db, run_maintenance
+from src.infrastructure.repositories.files import save_file_revision
+from src.infrastructure.vector_engine import index_directory
+from src.infrastructure.repositories.snapshots import create_db_snapshot
 from src.infrastructure.parsers import (
     safe_write_file, safe_read_file, extract_content, parse_audio_metadata
 )
@@ -281,7 +281,7 @@ class TestDeepFuzzingAndConcurrency(unittest.TestCase):
         Invariants: Snapshot generator creates backup file and list helper reads available snapshots.
         Expected Outcomes: create_db_snapshot succeeds and list_db_snapshots returns a list instance.
         """
-        from src.infrastructure.database import create_db_snapshot, list_db_snapshots
+        from src.infrastructure.repositories.snapshots import create_db_snapshot, list_db_snapshots
         try:
             ts = create_db_snapshot()
             snaps = list_db_snapshots()

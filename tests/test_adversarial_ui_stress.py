@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 import pytest
 """
 Domain 22: Adversarial UI Stress Test Suite.
@@ -69,11 +71,11 @@ class TestAdversarialUIStress(unittest.TestCase):
                 except Exception as e:
                     import logging; logging.error(f"Swallowed error in test_adversarial_ui_stress.py: {e}")
 
-        know.DB_FILE = DB_NAME
-        main.ACTIVE_DIR = str(SANDBOX_DIR)
+        db.DB_FILE = DB_NAME
+        config.ACTIVE_DIR = str(SANDBOX_DIR)
         know.init_db()
 
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM files")
             cursor.execute("DELETE FROM tags")
@@ -134,8 +136,8 @@ class TestAdversarialUIStress(unittest.TestCase):
             shutil.rmtree(SANDBOX_DIR, ignore_errors=True)
 
     def setUp(self):
-        know.DB_FILE = DB_NAME
-        main.ACTIVE_DIR = str(SANDBOX_DIR)
+        db.DB_FILE = DB_NAME
+        config.ACTIVE_DIR = str(SANDBOX_DIR)
 
     def tearDown(self):
         pass

@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 # tests/test_adversarial_path_traversal.py
 import os
 import sys
@@ -14,7 +16,7 @@ import main
 class TestPathTraversalProtections(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        know.DB_FILE = "test_adversarial_traversal.db"
+        db.DB_FILE = "test_adversarial_traversal.db"
         know.init_db()
         cls.client = TestClient(main.app)
         cls.outside_path = "../outside_test_file.txt"
@@ -106,11 +108,11 @@ class TestPathTraversalProtections(unittest.TestCase):
         self.assertIn("Path traversal", response.json()["detail"])
 
     def test_upload_file_path_traversal(self):
-        outside_dest = os.path.abspath(os.path.join(main.ACTIVE_DIR, "../../traversal_upload.txt"))
+        outside_dest = os.path.abspath(os.path.join(config.ACTIVE_DIR, "../../traversal_upload.txt"))
         if os.path.exists(outside_dest):
             os.remove(outside_dest)
 
-        inside_dest = os.path.join(main.ACTIVE_DIR, "traversal_upload.txt")
+        inside_dest = os.path.join(config.ACTIVE_DIR, "traversal_upload.txt")
         if os.path.exists(inside_dest):
             os.remove(inside_dest)
 
@@ -148,14 +150,14 @@ class TestPathTraversalProtections(unittest.TestCase):
         mock_response.__enter__.return_value = mock_response
 
         # Target file that should NOT be created outside ACTIVE_DIR
-        outside_sync_file = os.path.abspath(os.path.join(main.ACTIVE_DIR, "../../outside_sync.txt"))
+        outside_sync_file = os.path.abspath(os.path.join(config.ACTIVE_DIR, "../../outside_sync.txt"))
         if os.path.exists(outside_sync_file):
             try:
                 os.remove(outside_sync_file)
             except Exception as e:
                 import logging; logging.error(f"Swallowed error in test_adversarial_path_traversal.py: {e}")
 
-        inside_sync_file = os.path.join(main.ACTIVE_DIR, "outside_sync.txt")
+        inside_sync_file = os.path.join(config.ACTIVE_DIR, "outside_sync.txt")
         if os.path.exists(inside_sync_file):
             try:
                 os.remove(inside_sync_file)

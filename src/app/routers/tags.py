@@ -488,7 +488,8 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
             import json
             import time
             from src.infrastructure.p2p_sync import get_local_document_hashes, compute_sync_delta
-            from src.infrastructure.database import get_active_dir, index_directory
+            from src.infrastructure.database import get_active_dir
+            from src.infrastructure.vector_engine import index_directory
 
             active_dir = get_active_dir()
             remote_hashes = None

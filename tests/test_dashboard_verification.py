@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 # tests/test_dashboard_verification.py
 import os
 import sys
@@ -14,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Set database and folder before importing main/know
 import know
-know.DB_FILE = "test_dashboard_verif.db"
+db.DB_FILE = "test_dashboard_verif.db"
 
 # Mock watcher to prevent background threads
 def mock_watcher(directory, callback=None):
@@ -69,12 +71,12 @@ def run_server():
             except Exception as e:
                 import logging; logging.error(f"Swallowed error in test_dashboard_verification.py: {e}")
 
-    know.DB_FILE = "test_dashboard_verif.db"
-    main.ACTIVE_DIR = str(sandbox)
+    db.DB_FILE = "test_dashboard_verif.db"
+    config.ACTIVE_DIR = str(sandbox)
     know.init_db()
 
     # Pre-populate database with some data for dashboard stats test
-    with get_db_connection(know.DB_FILE) as conn:
+    with get_db_connection(db.DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM tags")
         cursor.execute("DELETE FROM auto_rules")
@@ -155,11 +157,11 @@ def run_server():
                 import logging; logging.getLogger(__name__).exception("Swallowed error in test_dashboard_verification.py")
                 time.sleep(0.1)
 
-    main.ACTIVE_DIR = "dumps"
+    config.ACTIVE_DIR = "dumps"
 
 @pytest.fixture(autouse=True)
 def reset_db():
-    with get_db_connection(know.DB_FILE) as conn:
+    with get_db_connection(db.DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM search_history")
         cursor.execute(
@@ -187,7 +189,7 @@ def test_dashboard_stats_api_vs_db():
     assert "sync_peers" in data
     
     # Query database counts directly
-    with get_db_connection(know.DB_FILE) as conn:
+    with get_db_connection(db.DB_FILE) as conn:
         cursor = conn.cursor()
         
         cursor.execute("SELECT COUNT(DISTINCT tag) FROM tags")

@@ -12,8 +12,7 @@ import urllib.request
 import urllib.error
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
-
-from src.infrastructure.database import log_workflow_execution
+from src.infrastructure.repositories.workflows import log_workflow_execution
 
 
 def compute_hmac_signature(secret: str, payload_bytes: bytes) -> str:

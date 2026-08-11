@@ -1,3 +1,4 @@
+import src.infrastructure.database as db
 """
 Standalone assert-based test check for the multistep ingestion workflow.
 Validates: Upload -> Directory Indexing -> Parser Fallback -> Auto-Tag Rules -> SQLite & FTS DB Storage.
@@ -14,7 +15,7 @@ import know
 def test_multistep_ingestion():
     temp_dir = os.path.realpath(tempfile.mkdtemp(prefix="test_ingest_"))
     db_file = os.path.join(temp_dir, "test_ingest.db")
-    know.DB_FILE = db_file
+    db.DB_FILE = db_file
     if hasattr(know, "reset_db_connections"):
         know.reset_db_connections()
     know.init_db()

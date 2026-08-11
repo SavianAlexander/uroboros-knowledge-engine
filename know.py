@@ -104,46 +104,12 @@ from src.infrastructure.llm import (
     require_llm,
     stream_completion
 )
-from src.infrastructure.database import (
-    DB_FILE,
-    DB_TIMEOUT,
-    MiniVectorEngine,
-    SQLiteConnectionPool,
-    add_chat_message,
-    backup_db_online,
-    create_chat_session,
-    create_db_snapshot,
-    create_workflow_trigger,
-    db_status,
-    delete_chat_session,
-    delete_db_snapshot,
-    delete_workflow_trigger,
-    extract_rag_context,
-    get_active_dir,
-    get_chat_messages,
-    get_chat_session,
-    get_db,
-    get_db_connection,
-    get_file_revisions,
-    get_pool,
-    get_workflow_trigger,
-    index_directory,
-    init_db,
-    list_chat_sessions,
-    list_db_snapshots,
-    list_workflow_logs,
-    list_workflow_triggers,
-    log_workflow_execution,
-    migrate_folder_path,
-    reset_db_connections,
-    restore_db_snapshot,
-    revert_file_revision,
-    run_maintenance,
-    save_file_revision,
-    search_files,
-    update_chat_session,
-    update_workflow_trigger
-)
+from src.infrastructure.database import DB_FILE, DB_TIMEOUT, SQLiteConnectionPool, backup_db_online, db_status, get_active_dir, get_db, get_db_connection, get_pool, init_db, migrate_folder_path, reset_db_connections, run_maintenance
+from src.infrastructure.vector_engine import MiniVectorEngine, extract_rag_context, index_directory, search_files
+from src.infrastructure.repositories.chat import add_chat_message, create_chat_session, delete_chat_session, get_chat_messages, get_chat_session, list_chat_sessions, update_chat_session
+from src.infrastructure.repositories.snapshots import create_db_snapshot, delete_db_snapshot, list_db_snapshots, restore_db_snapshot
+from src.infrastructure.repositories.workflows import create_workflow_trigger, delete_workflow_trigger, get_workflow_trigger, list_workflow_logs, list_workflow_triggers, log_workflow_execution, update_workflow_trigger
+from src.infrastructure.repositories.files import get_file_revisions, revert_file_revision, save_file_revision
 import src.infrastructure.database as _infra_db
 from src.domain.rag_engine import (
     generate_hyde_expansion,
@@ -161,40 +127,7 @@ from src.domain.web_search import (
 )
 
 
-class _KnowModule(sys.modules[__name__].__class__):
-    @property
-    def DB_FILE(self):
-        return _infra_db.DB_FILE
 
-    @DB_FILE.setter
-    def DB_FILE(self, value):
-        _infra_db.DB_FILE = value
-
-    @property
-    def _db_version(self):
-        return _infra_db._db_version
-
-    @_db_version.setter
-    def _db_version(self, value):
-        _infra_db._db_version = value
-
-    @property
-    def _cached_doc_vectors(self):
-        return _infra_db.MiniVectorEngine._cached_doc_vectors
-
-    @_cached_doc_vectors.setter
-    def _cached_doc_vectors(self, value):
-        _infra_db.MiniVectorEngine._cached_doc_vectors = value
-
-    @property
-    def _cached_inverted_index(self):
-        return _infra_db.MiniVectorEngine._cached_inverted_index
-
-    @_cached_inverted_index.setter
-    def _cached_inverted_index(self, value):
-        _infra_db.MiniVectorEngine._cached_inverted_index = value
-
-sys.modules[__name__].__class__ = _KnowModule
 
 def main():
     if len(sys.argv) > 1 and sys.argv[1] == "init":

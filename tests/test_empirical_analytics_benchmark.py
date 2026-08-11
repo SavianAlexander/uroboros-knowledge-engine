@@ -1,3 +1,4 @@
+import src.infrastructure.database as db
 """
 Empirical Performance Benchmark for Milestone 1 Analytics Endpoints.
 Evaluates response latency (p50, p95, p99) under:
@@ -62,15 +63,15 @@ class TestEmpiricalAnalyticsBenchmark(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
         self.db_file = os.path.join(self.temp_dir, "benchmark_knowledge.db")
-        self.original_db = know.DB_FILE
-        know.DB_FILE = self.db_file
+        self.original_db = db.DB_FILE
+        db.DB_FILE = self.db_file
         know.init_db()
         clear_analytics_cache()
         self.client = TestClient(app)
 
     def tearDown(self):
         know.reset_db_connections()
-        know.DB_FILE = self.original_db
+        db.DB_FILE = self.original_db
         clear_analytics_cache()
 
     def populate_large_dataset(self):

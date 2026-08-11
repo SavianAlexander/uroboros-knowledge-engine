@@ -15,7 +15,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 
 import src.infrastructure.database as _infra_db
-from src.infrastructure.database import search_files, get_db
+from src.infrastructure.vector_engine import search_files
+from src.infrastructure.database import get_db
 from src.core.domain.services import parse_query_operators, suggest_tags_from_text, sanitise_fts_query
 from src.core.domain.models import ValidateQueryRequest
 from src.domain.wikilink_parser import parse_wikilinks, slugify_title, normalize_target_title

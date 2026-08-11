@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 import pytest
 """
 Domain 23: Playwright UI Challenger Test Suite 2.
@@ -51,7 +53,7 @@ class TestAdversarialChallenger2(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sandbox = Path(tempfile.mkdtemp(prefix="test_sandbox_challenger_2_")).resolve()
-        know.DB_FILE = DB_NAME
+        db.DB_FILE = DB_NAME
         know.reset_db_connections()
 
         for suffix in ["", "-wal", "-shm"]:
@@ -66,7 +68,7 @@ class TestAdversarialChallenger2(unittest.TestCase):
                 except Exception as e:
                     import logging; logging.error(f"Swallowed error in test_adversarial_challenger_2.py: {e}")
 
-        main.ACTIVE_DIR = str(cls.sandbox)
+        config.ACTIVE_DIR = str(cls.sandbox)
         know.init_db()
 
         with get_db_connection(DB_NAME) as conn:
@@ -167,8 +169,8 @@ class TestAdversarialChallenger2(unittest.TestCase):
                     threading.Event().wait(0.05)
 
     def setUp(self):
-        know.DB_FILE = DB_NAME
-        main.ACTIVE_DIR = str(self.sandbox)
+        db.DB_FILE = DB_NAME
+        config.ACTIVE_DIR = str(self.sandbox)
 
     def tearDown(self):
         pass
@@ -180,7 +182,7 @@ class TestAdversarialChallenger2(unittest.TestCase):
         Invariants: GET /api/stats must return aggregate metrics exactly matching direct SQLite queries.
         Outcomes: total_tags, total_rules, and sync_peers JSON payloads match database contents.
         """
-        know.DB_FILE = DB_NAME
+        db.DB_FILE = DB_NAME
         client = TestClient(main.app)
         
         response = client.get("/api/stats")

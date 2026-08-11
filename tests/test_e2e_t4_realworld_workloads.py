@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 import pytest
 """
 Tier 4 Real-World Application Workload Scenarios for Uroboros Knowledge Engine.
@@ -14,7 +16,7 @@ from unittest.mock import patch
 
 # ponytail: override DB_FILE before importing main/know to isolate tests
 import know
-know.DB_FILE = "e2e_t4_test.db"
+db.DB_FILE = "e2e_t4_test.db"
 
 
 # Mock watcher to prevent background thread spawning during imports
@@ -62,8 +64,8 @@ class TestE2ETier4RealWorldWorkloads(unittest.TestCase):
         self.sandbox_dir_str = str(self.sandbox_dir)
 
         # Update global references
-        know.DB_FILE = self.db_file
-        main.ACTIVE_DIR = self.sandbox_dir_str
+        db.DB_FILE = self.db_file
+        config.ACTIVE_DIR = self.sandbox_dir_str
 
         # Cleanup & Init DB
         self._cleanup_db_files(self.db_file)

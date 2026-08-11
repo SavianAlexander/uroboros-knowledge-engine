@@ -1,3 +1,4 @@
+import src.core.config as config
 import pytest
 """
 End-to-End Test Suite for Document Intelligence & Analytics Panel (R1),
@@ -172,7 +173,7 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
         self.test_db = os.path.join(self.tmp_dir, "test_analytics.db")
         self.old_db = db_infra.DB_FILE
         db_infra.DB_FILE = self.test_db
-        main.ACTIVE_DIR = self.tmp_dir
+        config.ACTIVE_DIR = self.tmp_dir
         reset_db_connections()
         init_db()
         self.client = TestClient(app)
@@ -335,7 +336,7 @@ class TestR2KnowledgeGraphWikilinks(unittest.TestCase):
         self.test_db = os.path.join(self.tmp_dir, "test_graph.db")
         self.old_db = db_infra.DB_FILE
         db_infra.DB_FILE = self.test_db
-        main.ACTIVE_DIR = self.tmp_dir
+        config.ACTIVE_DIR = self.tmp_dir
         reset_db_connections()
         init_db()
         self.client = TestClient(app)
@@ -487,7 +488,7 @@ class TestR3WorkflowTriggersWebhooks(unittest.TestCase):
         self.test_db = os.path.join(self.tmp_dir, "test_workflows.db")
         self.old_db = db_infra.DB_FILE
         db_infra.DB_FILE = self.test_db
-        main.ACTIVE_DIR = self.tmp_dir
+        config.ACTIVE_DIR = self.tmp_dir
         reset_db_connections()
         init_db()
         self.client = TestClient(app)
@@ -610,7 +611,7 @@ class TestE2EAnalyticsGraphWorkflowsScenario(unittest.TestCase):
         self.test_db = os.path.join(self.tmp_dir, "test_scenario.db")
         self.old_db = db_infra.DB_FILE
         db_infra.DB_FILE = self.test_db
-        main.ACTIVE_DIR = self.tmp_dir
+        config.ACTIVE_DIR = self.tmp_dir
         reset_db_connections()
         init_db()
         self.client = TestClient(app)

@@ -16,7 +16,8 @@ def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], 
     start_active_folder_watcher.active = True
 
     def watch_loop():
-        from src.infrastructure.database import get_db, index_directory, DB_FILE
+        from src.infrastructure.database import get_db, DB_FILE
+        from src.infrastructure.vector_engine import index_directory
         last_checked = {}
         pending_stable = {}
 

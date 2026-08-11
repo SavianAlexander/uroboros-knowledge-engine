@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 import pytest
 import unittest
 import os
@@ -18,10 +20,10 @@ import main
 class TestDomainRAG(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="test_domain_rag_")
-        self.db_backup = know.DB_FILE
-        self.active_backup = main.ACTIVE_DIR
-        know.DB_FILE = os.path.join(self.test_dir, "test_know.db")
-        main.ACTIVE_DIR = self.test_dir
+        self.db_backup = db.DB_FILE
+        self.active_backup = config.ACTIVE_DIR
+        db.DB_FILE = os.path.join(self.test_dir, "test_know.db")
+        config.ACTIVE_DIR = self.test_dir
         know.reset_db_connections()
         know.init_db()
         self.client = TestClient(main.app)
@@ -34,8 +36,8 @@ class TestDomainRAG(unittest.TestCase):
 
     def tearDown(self):
         know.reset_db_connections()
-        know.DB_FILE = self.db_backup
-        main.ACTIVE_DIR = self.active_backup
+        db.DB_FILE = self.db_backup
+        config.ACTIVE_DIR = self.active_backup
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 

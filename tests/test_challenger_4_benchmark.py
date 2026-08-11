@@ -1,3 +1,4 @@
+import src.infrastructure.database as db
 """
 Challenger 4 Empirical Benchmark Verification Script.
 Empirically benchmarks all 4 REST endpoints:
@@ -209,8 +210,8 @@ def run_benchmark(client, db_file, state_label, num_iterations=50):
 def main():
     temp_dir = tempfile.mkdtemp()
     db_file = os.path.join(temp_dir, "challenger_knowledge.db")
-    original_db = know.DB_FILE
-    know.DB_FILE = db_file
+    original_db = db.DB_FILE
+    db.DB_FILE = db_file
     know.init_db()
     clear_analytics_cache()
     client = TestClient(app)
@@ -248,7 +249,7 @@ def main():
 
     finally:
         know.reset_db_connections()
-        know.DB_FILE = original_db
+        db.DB_FILE = original_db
         clear_analytics_cache()
 
 if __name__ == "__main__":

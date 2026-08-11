@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 import pytest
 import unittest
 import os
@@ -16,10 +18,10 @@ import main
 class TestDomainVector(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="test_domain_vec_")
-        self.db_backup = know.DB_FILE
-        self.active_backup = main.ACTIVE_DIR
-        know.DB_FILE = os.path.join(self.test_dir, "test_know.db")
-        main.ACTIVE_DIR = self.test_dir
+        self.db_backup = db.DB_FILE
+        self.active_backup = config.ACTIVE_DIR
+        db.DB_FILE = os.path.join(self.test_dir, "test_know.db")
+        config.ACTIVE_DIR = self.test_dir
         know.reset_db_connections()
         know.init_db()
 
@@ -27,8 +29,8 @@ class TestDomainVector(unittest.TestCase):
         know.reset_db_connections()
         know._cached_doc_vectors = None
         know._cached_inverted_index = None
-        know.DB_FILE = self.db_backup
-        main.ACTIVE_DIR = self.active_backup
+        db.DB_FILE = self.db_backup
+        config.ACTIVE_DIR = self.active_backup
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 
@@ -42,7 +44,7 @@ class TestDomainVector(unittest.TestCase):
         cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (1, '/tmp/doc1.txt', 'doc1.txt', 'Astrophysics')")
         cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (1, 0, 'Astrophysics', '[0.1, 0.9]')")
         conn.commit()
-        know._db_version += 1
+        db._db_version += 1
 
         mock_emb.return_value = [0.1, 0.9]
         hits = know.MiniVectorEngine.search_semantic("quantum physics")
@@ -88,13 +90,13 @@ class TestDomainVector(unittest.TestCase):
         """Verify database version increment invalidates cached vector matrix state.
 
         Preconditions: Vector engine cache version recorded.
-        Invariants: Incrementing know._db_version signals cache staleness.
+        Invariants: Incrementing db._db_version signals cache staleness.
         Expected Outcomes: Version variable correctly updates to force cache rebuild.
         """
-        know._db_version += 1
-        v1 = know._db_version
-        know._db_version += 1
-        v2 = know._db_version
+        db._db_version += 1
+        v1 = db._db_version
+        db._db_version += 1
+        v2 = db._db_version
         self.assertEqual(v2, v1 + 1)
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
@@ -110,7 +112,7 @@ class TestDomainVector(unittest.TestCase):
 
         mock_emb.return_value = [0.1, 0.9]
         know.index_directory(self.test_dir)
-        know._db_version += 1
+        db._db_version += 1
 
         hits = know.MiniVectorEngine.search_semantic("quantumconcept")
         self.assertGreater(len(hits), 0)

@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 """
 Adversarial Edge Correctness and Wikilink Stress Test Suite.
 Evaluates wikilink parser syntax variants, target document matching,
@@ -134,24 +136,24 @@ class TestGraphEdgesAndWeightCalculations(unittest.TestCase):
 
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="test_challenger_m3_")
-        self.db_backup = know.DB_FILE
-        self.active_backup = main.ACTIVE_DIR
-        know.DB_FILE = os.path.join(self.test_dir, "test_graph.db")
-        main.ACTIVE_DIR = self.test_dir
+        self.db_backup = db.DB_FILE
+        self.active_backup = config.ACTIVE_DIR
+        db.DB_FILE = os.path.join(self.test_dir, "test_graph.db")
+        config.ACTIVE_DIR = self.test_dir
         know.reset_db_connections()
         know.init_db()
         self.client = TestClient(main.app)
 
     def tearDown(self):
         know.reset_db_connections()
-        know.DB_FILE = self.db_backup
-        main.ACTIVE_DIR = self.active_backup
+        db.DB_FILE = self.db_backup
+        config.ACTIVE_DIR = self.active_backup
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def test_07_directed_wikilink_edges_and_weights(self):
         """Verify directed wikilink_to edge directionality, weight aggregation, self-link filtering, and missing link handling."""
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             # File 1: references File 2 THREE times, File 3 ONCE, references ITSELF once, and references missing File 99
             f1_content = (
@@ -192,7 +194,7 @@ class TestGraphEdgesAndWeightCalculations(unittest.TestCase):
 
     def test_08_case_insensitive_and_slug_title_matching(self):
         """Verify wikilinks resolve targets across case, extensions, and slug variations."""
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (1, 'c:/src.md', 'Source.md', 'See [[target document]], [[TARGET_DOCUMENT.MD]], and [[target-document]]')")
             cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (2, 'c:/tgt.md', 'Target Document.md', 'Target content')")
@@ -213,7 +215,7 @@ class TestGraphEdgesAndWeightCalculations(unittest.TestCase):
 
     def test_09_undirected_shared_tag_cluster_weight(self):
         """Verify shared_tag_cluster edges sum shared tags correctly and order IDs canonically (d1 < d2)."""
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("INSERT INTO files (id, filepath, filename) VALUES (10, 'c:/d10.md', 'd10.md')")
             cursor.execute("INSERT INTO files (id, filepath, filename) VALUES (5, 'c:/d5.md', 'd5.md')")
@@ -247,7 +249,7 @@ class TestGraphEdgesAndWeightCalculations(unittest.TestCase):
 
     def test_10_tag_cluster_size_capping_behavior(self):
         """Verify super-common tags (> 100 documents) do not generate quadratic cluster blowup."""
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             # Create 105 files
             file_rows = [(i, f"c:/doc_{i}.md", f"doc_{i}.md") for i in range(1, 106)]

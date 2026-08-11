@@ -1,3 +1,4 @@
+import src.infrastructure.database as db
 import pytest
 """
 Unit & Integration Test Suite for Milestone 1 Document Intelligence Analytics Engine and REST API.
@@ -36,12 +37,12 @@ class TestDomainAnalyticsIntelligence(unittest.TestCase):
         self.tmp_db_fd, self.tmp_db_path = tempfile.mkstemp(suffix=".db")
         os.close(self.tmp_db_fd)
 
-        self.orig_db_file = know.DB_FILE
-        know.DB_FILE = self.tmp_db_path
+        self.orig_db_file = db.DB_FILE
+        db.DB_FILE = self.tmp_db_path
         init_db()
 
     def tearDown(self):
-        know.DB_FILE = self.orig_db_file
+        db.DB_FILE = self.orig_db_file
         clear_analytics_cache()
         if os.path.exists(self.tmp_db_path):
             try:

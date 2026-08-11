@@ -27,13 +27,9 @@ from src.core.domain.models import (
     RenameRequest,
 )
 from src.core.domain.services import generate_summary, generate_key_takeaways
-from src.infrastructure.database import (
-    get_file_revisions,
-    revert_file_revision,
-    index_directory,
-    save_file_revision,
-    get_db,
-)
+from src.infrastructure.repositories.files import get_file_revisions, revert_file_revision, save_file_revision
+from src.infrastructure.vector_engine import index_directory
+from src.infrastructure.database import get_db
 from src.infrastructure.llm import is_llm_available, get_fallback_llm
 
 router = APIRouter()

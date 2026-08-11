@@ -281,8 +281,9 @@ def extract_advanced_rag_context(
     raw_q = str(query).strip()
     cleaned_q, filters = parse_metadata_filters(raw_q)
     target_q = cleaned_q or raw_q
+    from src.infrastructure.database import get_db
 
-    from src.infrastructure.database import get_db, MiniVectorEngine
+    from src.infrastructure.vector_engine import MiniVectorEngine
     from src.core.domain.services import chunk_text_hierarchical, expand_synonyms
 
     synonym_expanded_q = expand_synonyms(target_q)

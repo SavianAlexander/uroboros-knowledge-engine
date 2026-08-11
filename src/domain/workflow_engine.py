@@ -8,8 +8,7 @@ import json
 import fnmatch
 import logging
 from typing import Dict, Any, List, Optional
-
-from src.infrastructure.database import list_workflow_triggers
+from src.infrastructure.repositories.workflows import list_workflow_triggers
 from src.infrastructure.webhook_dispatcher import WebhookDispatcher
 
 logger = logging.getLogger(__name__)

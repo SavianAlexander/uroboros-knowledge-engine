@@ -1,0 +1,11 @@
+{
+  "attestation_date": "2026-08-10T01:58:16Z",
+  "compliance_status": "NON_COMPLIANT",
+  "trust_services_criteria": {
+    "Security": "NON_COMPLIANT (Zero secret leaks, path containment)",
+    "Availability": "NON_COMPLIANT (50MB RAM guard, 60s DB lock timeout)",
+    "Processing Integrity": "NON_COMPLIANT (SHA-256 integrity, atomic DB snapshot)",
+    "Confidentiality": "NON_COMPLIANT (File ACL permissions tracking)",
+    "Privacy": "NON_COMPLIANT (User memory lifecycle control)"
+  }
+}

@@ -17,7 +17,6 @@ from src.core.domain.models import (
 # Global TTL cache dictionary: key -> (result, timestamp)
 _analytics_cache: Dict[tuple, tuple] = {}
 CACHE_TTL_SECONDS = 3.0
-
 from src.infrastructure.database import get_db_connection, DB_FILE
 
 def _connect(db_path: Optional[str] = None):

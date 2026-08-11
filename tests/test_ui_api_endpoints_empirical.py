@@ -1,3 +1,4 @@
+import src.core.config as config
 """
 Empirical verification test suite for all 9 UI API endpoints in Uroboros Knowledge Engine.
 Challenger 1 Gate Verification.
@@ -16,14 +17,15 @@ if root_dir not in sys.path:
 
 import main
 from src.app.server import app
-from src.infrastructure.database import init_db, index_directory, get_db
+from src.infrastructure.database import init_db, get_db
+from src.infrastructure.vector_engine import index_directory
 
 class TestUIAPIEndpointsEmpirical(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_dir = os.path.abspath("dumps")
         os.makedirs(cls.test_dir, exist_ok=True)
-        main.ACTIVE_DIR = cls.test_dir
+        config.ACTIVE_DIR = cls.test_dir
         cls.db_file = os.path.join(cls.test_dir, "test_ui_endpoints.db")
         main._infra_db.DB_FILE = cls.db_file
         init_db()

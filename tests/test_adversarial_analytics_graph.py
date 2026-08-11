@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 import pytest
 """
 Adversarial & Boundary Coverage Test Suite for Analytics Engine, Wikilink Parser, Search Router, and Knowledge Graph Visualizer.
@@ -157,12 +159,12 @@ class TestAdversarialAnalyticsEngine(unittest.TestCase):
         clear_analytics_cache()
         self.tmp_db_fd, self.tmp_db_path = tempfile.mkstemp(suffix=".db")
         os.close(self.tmp_db_fd)
-        self.orig_db_file = know.DB_FILE
-        know.DB_FILE = self.tmp_db_path
+        self.orig_db_file = db.DB_FILE
+        db.DB_FILE = self.tmp_db_path
         init_db()
 
     def tearDown(self):
-        know.DB_FILE = self.orig_db_file
+        db.DB_FILE = self.orig_db_file
         clear_analytics_cache()
         if os.path.exists(self.tmp_db_path):
             try:
@@ -295,12 +297,12 @@ class TestAdversarialAnalyticsAndSearchRouters(unittest.TestCase):
         clear_analytics_cache()
         self.tmp_db_fd, self.tmp_db_path = tempfile.mkstemp(suffix=".db")
         os.close(self.tmp_db_fd)
-        self.orig_db_file = know.DB_FILE
-        know.DB_FILE = self.tmp_db_path
+        self.orig_db_file = db.DB_FILE
+        db.DB_FILE = self.tmp_db_path
         init_db()
 
     def tearDown(self):
-        know.DB_FILE = self.orig_db_file
+        db.DB_FILE = self.orig_db_file
         clear_analytics_cache()
         if os.path.exists(self.tmp_db_path):
             try:
@@ -377,16 +379,16 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
 
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="test_adv_graph_")
-        self.orig_db_file = know.DB_FILE
-        self.orig_active_dir = main.ACTIVE_DIR
-        know.DB_FILE = os.path.join(self.test_dir, "test_adv_graph.db")
-        main.ACTIVE_DIR = self.test_dir
+        self.orig_db_file = db.DB_FILE
+        self.orig_active_dir = config.ACTIVE_DIR
+        db.DB_FILE = os.path.join(self.test_dir, "test_adv_graph.db")
+        config.ACTIVE_DIR = self.test_dir
         init_db()
         self.client = TestClient(app)
 
     def tearDown(self):
-        know.DB_FILE = self.orig_db_file
-        main.ACTIVE_DIR = self.orig_active_dir
+        db.DB_FILE = self.orig_db_file
+        config.ACTIVE_DIR = self.orig_active_dir
         if os.path.exists(self.test_dir):
             try:
                 import shutil
@@ -408,7 +410,7 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
     def test_graph_non_contiguous_file_ids(self):
         """Test graph endpoint with non-contiguous file IDs (e.g. 1, 15, 200, 1500)."""
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             conn.execute("INSERT INTO files (id, filepath, filename, content) VALUES (1, '/doc1.md', 'doc1.md', 'Hello')")
             conn.execute("INSERT INTO files (id, filepath, filename, content) VALUES (15, '/doc15.md', 'doc15.md', '[[doc1.md]]')")
             conn.execute("INSERT INTO files (id, filepath, filename, content) VALUES (200, '/doc200.md', 'doc200.md', '[[doc15.md]]')")
@@ -424,7 +426,7 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
     def test_broken_and_self_referential_wikilinks(self):
         """Test graph edge building with broken links and self-referential links."""
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             # Doc 1 has self-link [[doc1]] and broken link [[NonExistentDoc]]
             conn.execute("INSERT INTO files (id, filepath, filename, content) VALUES (1, '/doc1.md', 'doc1.md', 'Link to [[doc1]] and [[NonExistentDoc]]')")
             # Doc 2 links to Doc 1
@@ -445,7 +447,7 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
     @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
     def test_tag_cluster_size_capping(self):
         """Test tag cluster edge cap at <= 30 documents per tag."""
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             # Create 35 files for heavy tag 'popular'
             for i in range(1, 36):
                 conn.execute("INSERT INTO files (id, filepath, filename) VALUES (?, ?, ?)", (i, f"/f{i}.md", f"f{i}.md"))
@@ -466,7 +468,7 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
     def test_1000_node_graph_performance_and_schema(self):
         """Test 1,000 document nodes graph resolution and schema integrity (< 500ms backend latency)."""
         num_docs = 1000
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             conn.execute("PRAGMA synchronous = OFF")
             conn.execute("BEGIN TRANSACTION")
 

@@ -7,7 +7,6 @@ import csv
 from typing import Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-
 from src.infrastructure.database import get_db
 from src.core.domain.services import sanitise_fts_query
 

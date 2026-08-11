@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 """
 Unit and Integration Performance Test Suite for Knowledge Graph & Wikilink Engine.
 Benchmarks 1,000-node graph query execution latency (< 50ms), wikilink regex parsing,
@@ -111,18 +113,18 @@ class TestDomainGraphPerformance(unittest.TestCase):
 
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="test_graph_perf_")
-        self.db_backup = know.DB_FILE
-        self.active_backup = main.ACTIVE_DIR
-        know.DB_FILE = os.path.join(self.test_dir, "test_graph.db")
-        main.ACTIVE_DIR = self.test_dir
+        self.db_backup = db.DB_FILE
+        self.active_backup = config.ACTIVE_DIR
+        db.DB_FILE = os.path.join(self.test_dir, "test_graph.db")
+        config.ACTIVE_DIR = self.test_dir
         know.reset_db_connections()
         know.init_db()
         self.client = TestClient(main.app)
 
     def tearDown(self):
         know.reset_db_connections()
-        know.DB_FILE = self.db_backup
-        main.ACTIVE_DIR = self.active_backup
+        db.DB_FILE = self.db_backup
+        config.ACTIVE_DIR = self.active_backup
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 
@@ -134,7 +136,7 @@ class TestDomainGraphPerformance(unittest.TestCase):
         """
         from src.app.routers.search import get_graph_data_endpoint
 
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             file_rows = []
             now = time.time()
@@ -184,7 +186,7 @@ class TestDomainGraphPerformance(unittest.TestCase):
         Invariants: Graph builder creates `wikilink_to` edges connecting document nodes.
         Outcomes: Verifies edge relationship extraction and correct source/target node pairing.
         """
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO files (id, filepath, filename, content) VALUES (1, 'c:/a.md', 'Alpha.md', 'See [[Beta.md]] and [[Gamma.md#sec|Link]])')"
@@ -214,7 +216,7 @@ class TestDomainGraphPerformance(unittest.TestCase):
         Invariants: Graph builder forms `shared_tag_cluster` edges with weights matching shared tag counts.
         Outcomes: Verifies cluster edge weight computation and document co-tag adjacency.
         """
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("INSERT INTO files (id, filepath, filename) VALUES (1, 'c:/doc1.md', 'doc1.md')")
             cursor.execute("INSERT INTO files (id, filepath, filename) VALUES (2, 'c:/doc2.md', 'doc2.md')")
@@ -245,7 +247,7 @@ class TestDomainGraphPerformance(unittest.TestCase):
         Invariants: Endpoint query parameters (`limit`, `include_wikilinks`, `include_clusters`) restrict output contents.
         Outcomes: Verifies parameter filtering, node limits, and edge toggle options.
         """
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             for i in range(1, 11):
                 cursor.execute(
@@ -273,7 +275,7 @@ class TestDomainGraphPerformance(unittest.TestCase):
         Invariants: Graph API JSON response populates both modern `edges` and legacy `links` array fields.
         Outcomes: Verifies JSON schema field compliance and backward compatibility aliases.
         """
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("INSERT INTO files (id, filepath, filename, file_size, mime_type, modified_at) VALUES (1, 'c:/a.md', 'a.md', 512, 'text/markdown', 123456)")
             cursor.execute("INSERT INTO tags (file_id, tag) VALUES (1, 'demo')")

@@ -9,7 +9,6 @@ from fastapi.responses import UJSONResponse
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
-
 from src.infrastructure.database import init_db
 from src.app.routers import health, search, rag, files, tags, export, analytics, workflows
 
@@ -41,33 +40,18 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Uroboros Knowledge Database", default_response_class=UJSONResponse, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-if os.path.exists("assets"):
-    app.mount("/assets", StaticFiles(directory="assets"), name="assets")
-elif os.path.exists("src/assets"):
-    app.mount("/assets", StaticFiles(directory="src/assets"), name="assets")
+if os.path.exists("frontend/dist/assets"):
+    app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
 
 from fastapi.responses import FileResponse
 
 @app.get("/")
 def get_index():
-    asset_path = Path("src/assets/index.html")
+    asset_path = Path("frontend/dist/index.html")
     if not asset_path.exists():
-        asset_path = Path("index.html")
+        # Fallback for dev mode
+        return FileResponse("index.html") if os.path.exists("index.html") else UJSONResponse({"error": "UI build not found. Run npm run build in frontend/."})
     return FileResponse(str(asset_path))
-
-@app.get("/style.css")
-def get_css():
-    asset_path = Path("src/assets/style.css")
-    if not asset_path.exists():
-        asset_path = Path("style.css")
-    return FileResponse(str(asset_path), media_type="text/css")
-
-@app.get("/app.js")
-def get_js():
-    asset_path = Path("src/assets/app.js")
-    if not asset_path.exists():
-        asset_path = Path("app.js")
-    return FileResponse(str(asset_path), media_type="application/javascript")
 
 from fastapi import Depends
 from src.app.auth import verify_api_key

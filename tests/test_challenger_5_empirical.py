@@ -1,3 +1,4 @@
+import src.infrastructure.database as db
 """
 Challenger 5 Empirical Benchmark Test Harness.
 Empirically benchmarks all 4 REST endpoints (/api/analytics/overview, /api/analytics/storage, /api/analytics/tags, /api/analytics/search-activity)
@@ -180,8 +181,8 @@ def benchmark_suite(client, db_file, iterations=100):
 def run_all_challenger_benchmarks():
     temp_dir = tempfile.mkdtemp()
     db_file = os.path.join(temp_dir, "challenger5_test.db")
-    orig_db = know.DB_FILE
-    know.DB_FILE = db_file
+    orig_db = db.DB_FILE
+    db.DB_FILE = db_file
     know.init_db()
     clear_analytics_cache()
     client = TestClient(app)
@@ -214,7 +215,7 @@ def run_all_challenger_benchmarks():
         return empty_res, large_res
     finally:
         know.reset_db_connections()
-        know.DB_FILE = orig_db
+        db.DB_FILE = orig_db
         clear_analytics_cache()
 
 

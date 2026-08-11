@@ -12,9 +12,9 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 import src.infrastructure.database as db_module
-from src.infrastructure.database import (
-    get_db, init_db, save_file_revision, get_file_revisions, revert_file_revision, index_directory
-)
+from src.infrastructure.database import get_db, init_db
+from src.infrastructure.repositories.files import save_file_revision, get_file_revisions, revert_file_revision
+from src.infrastructure.vector_engine import index_directory
 from src.infrastructure.parsers import safe_write_file, safe_read_file, calculate_sha256
 from src.core.domain.services import chunk_text, sanitise_fts_query, reciprocal_rank_fusion
 

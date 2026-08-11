@@ -13,14 +13,7 @@ from src.core.domain.models import (
     WorkflowLogResponse,
     WorkflowEventTriggerRequest,
 )
-from src.infrastructure.database import (
-    create_workflow_trigger,
-    list_workflow_triggers,
-    get_workflow_trigger,
-    update_workflow_trigger,
-    delete_workflow_trigger,
-    list_workflow_logs,
-)
+from src.infrastructure.repositories.workflows import create_workflow_trigger, list_workflow_triggers, get_workflow_trigger, update_workflow_trigger, delete_workflow_trigger, list_workflow_logs
 from src.domain.workflow_engine import WorkflowEngine
 from src.infrastructure.webhook_dispatcher import WebhookDispatcher
 

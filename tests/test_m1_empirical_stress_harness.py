@@ -1,3 +1,4 @@
+import src.core.config as config
 """
 Empirical stress-test harness for Milestone 1 backend router changes.
 Covers:
@@ -22,7 +23,8 @@ from fastapi.testclient import TestClient
 
 from main import app
 import src.infrastructure.database as db_infra
-from src.infrastructure.database import get_db, init_db, reset_db_connections, db_status, search_files
+from src.infrastructure.database import get_db, init_db, reset_db_connections, db_status
+from src.infrastructure.vector_engine import search_files
 from src.shared.security import verify_path_containment, get_file_acl
 
 client = TestClient(app)
@@ -36,7 +38,7 @@ def setup_stress_env(tmp_path):
 
     import main
     old_active = getattr(main, "ACTIVE_DIR", "dumps")
-    main.ACTIVE_DIR = "dumps"
+    config.ACTIVE_DIR = "dumps"
 
     old_db = db_infra.DB_FILE
     db_infra.DB_FILE = test_db
@@ -47,7 +49,7 @@ def setup_stress_env(tmp_path):
 
     reset_db_connections()
     db_infra.DB_FILE = old_db
-    main.ACTIVE_DIR = old_active
+    config.ACTIVE_DIR = old_active
 
 
 # ----------------------------------------------------------------------------

@@ -14,10 +14,8 @@ from src.core.domain.models import (
     RAGStreamRequest, ChatRequest, ChatResponse, ContemplateRequest, ContemplateResponse,
     CreateSessionRequest, UpdateSessionRequest, AddMessageRequest
 )
-from src.infrastructure.database import (
-    extract_rag_context, create_chat_session, list_chat_sessions, get_chat_session,
-    update_chat_session, delete_chat_session, add_chat_message, get_chat_messages
-)
+from src.infrastructure.vector_engine import extract_rag_context
+from src.infrastructure.repositories.chat import create_chat_session, list_chat_sessions, get_chat_session, update_chat_session, delete_chat_session, add_chat_message, get_chat_messages
 from src.infrastructure.llm import is_llm_available, get_fallback_llm
 
 router = APIRouter()

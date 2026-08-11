@@ -10,7 +10,8 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 import src.infrastructure.database as db_module
-from src.infrastructure.database import get_db, init_db, run_maintenance, create_db_snapshot
+from src.infrastructure.database import get_db, init_db, run_maintenance
+from src.infrastructure.repositories.snapshots import create_db_snapshot
 from src.infrastructure.parsers import safe_write_file, safe_read_file
 from src.core.domain.services import (
     chunk_text,

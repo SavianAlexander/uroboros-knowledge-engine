@@ -8,15 +8,8 @@ import platform
 import sqlite3
 from fastapi import APIRouter, HTTPException
 import src.infrastructure.database as _infra_db
-from src.infrastructure.database import (
-    get_db,
-    db_status,
-    create_db_snapshot,
-    restore_db_snapshot,
-    list_db_snapshots,
-    run_maintenance,
-    calculate_sha256,
-)
+from src.infrastructure.database import get_db, db_status, run_maintenance, calculate_sha256
+from src.infrastructure.repositories.snapshots import create_db_snapshot, restore_db_snapshot, list_db_snapshots
 
 router = APIRouter()
 
@@ -205,7 +198,7 @@ def get_snapshots_endpoint():
 def delete_snapshot_endpoint(timestamp: int):
     """Delete snapshot by timestamp."""
     try:
-        from src.infrastructure.database import delete_db_snapshot
+        from src.infrastructure.repositories.snapshots import delete_db_snapshot
         delete_db_snapshot(timestamp)
         return {"status": "success", "deleted_timestamp": timestamp}
     except HTTPException:
@@ -219,7 +212,6 @@ def delete_snapshot_endpoint(timestamp: int):
 @router.post("/api/snapshots/restore")
 def restore_snapshot_endpoint(timestamp: int):
     """Restore database from a snapshot timestamp."""
-    from src.infrastructure.database import restore_db_snapshot # ponytail: add missing import
     success = restore_db_snapshot(timestamp)
     if not success:
         raise HTTPException(status_code=404, detail="Snapshot not found or invalid")

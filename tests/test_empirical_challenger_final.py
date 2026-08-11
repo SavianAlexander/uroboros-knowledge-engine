@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 import pytest
 # tests/test_empirical_challenger_final.py
 """
@@ -161,11 +163,11 @@ class TestEmpiricalChallengerFinal(unittest.TestCase):
                 except Exception as e:
                     import logging; logging.error(f"Swallowed error in test_empirical_challenger_final.py: {e}")
 
-        know.DB_FILE = DB_NAME
-        main.ACTIVE_DIR = str(SANDBOX_DIR)
+        db.DB_FILE = DB_NAME
+        config.ACTIVE_DIR = str(SANDBOX_DIR)
         know.init_db()
 
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             now = 1700000000
             cursor.execute("DELETE FROM files")

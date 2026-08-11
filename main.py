@@ -26,44 +26,7 @@ from src.core.domain.services import (
     sanitise_fts_query,
 )
 
-class _MainModule(sys.modules[__name__].__class__):
-    @property
-    def DB_FILE(self):
-        return _infra_db.DB_FILE
 
-    @DB_FILE.setter
-    def DB_FILE(self, value):
-        _infra_db.DB_FILE = value
-
-    @property
-    def _db_version(self):
-        return _infra_db._db_version
-
-    @_db_version.setter
-    def _db_version(self, value):
-        _infra_db._db_version = value
-
-    @property
-    def is_testing(self):
-        import src.core.config
-        return src.core.config.is_testing
-
-    @is_testing.setter
-    def is_testing(self, value):
-        import src.core.config
-        src.core.config.is_testing = value
-
-    @property
-    def ACTIVE_DIR(self):
-        import src.core.config
-        return src.core.config.ACTIVE_DIR
-
-    @ACTIVE_DIR.setter
-    def ACTIVE_DIR(self, value):
-        import src.core.config
-        src.core.config.ACTIVE_DIR = value
-
-sys.modules[__name__].__class__ = _MainModule
 
 from src.core.config import ACTIVE_DIR
 

@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 import pytest
 # tests/test_adversarial_challenger.py
 import os
@@ -17,8 +19,8 @@ import main
 class TestLeakageWarningGuard(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        know.DB_FILE = "test_challenger_leakage.db"
-        main.ACTIVE_DIR = "dumps"
+        db.DB_FILE = "test_challenger_leakage.db"
+        config.ACTIVE_DIR = "dumps"
         os.makedirs("dumps", exist_ok=True)
         know.init_db()
 

@@ -1,3 +1,4 @@
+import src.core.config as config
 import pytest
 """
 Playwright E2E Verification Test Suite for Milestone 4:
@@ -69,14 +70,14 @@ class TestM4PlaywrightE2E(unittest.TestCase):
                 except Exception as e:
                     import logging; logging.error(f"Swallowed error in test_e2e_m4_playwright.py: {e}")
 
-        know.DB_FILE = DB_NAME
+        db.DB_FILE = DB_NAME
         db_infra.DB_FILE = DB_NAME
-        main.ACTIVE_DIR = str(SANDBOX_DIR)
+        config.ACTIVE_DIR = str(SANDBOX_DIR)
         know.init_db()
         db_infra.init_db()
 
         now = int(time.time())
-        with get_db_connection(know.DB_FILE) as conn:
+        with get_db_connection(db.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM files")
             cursor.execute("DELETE FROM tags")
@@ -100,8 +101,7 @@ class TestM4PlaywrightE2E(unittest.TestCase):
         
         global PORT
         PORT = cls.server_thread.server.servers[0].sockets[0].getsockname()[1]
-
-        from src.infrastructure.database import create_workflow_trigger
+        from src.infrastructure.repositories.workflows import create_workflow_trigger
         create_workflow_trigger(
             name="Test Trigger Rule",
             event_type="document_ingested",

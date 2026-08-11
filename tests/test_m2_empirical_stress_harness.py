@@ -1,3 +1,5 @@
+import src.core.config as config
+import src.infrastructure.database as db
 """
 Empirical Stress and Performance Test Harness for Milestone 2.
 Evaluates:
@@ -31,10 +33,10 @@ class TestM2EmpiricalStressHarness(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_dir = tempfile.mkdtemp(prefix="m2_empirical_test_")
-        cls.db_backup = know.DB_FILE
-        cls.active_backup = main.ACTIVE_DIR
-        know.DB_FILE = os.path.join(cls.test_dir, "test_m2_know.db")
-        main.ACTIVE_DIR = cls.test_dir
+        cls.db_backup = db.DB_FILE
+        cls.active_backup = config.ACTIVE_DIR
+        db.DB_FILE = os.path.join(cls.test_dir, "test_m2_know.db")
+        config.ACTIVE_DIR = cls.test_dir
         know.reset_db_connections()
         know.init_db()
 
@@ -50,8 +52,8 @@ class TestM2EmpiricalStressHarness(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         know.reset_db_connections()
-        know.DB_FILE = cls.db_backup
-        main.ACTIVE_DIR = cls.active_backup
+        db.DB_FILE = cls.db_backup
+        config.ACTIVE_DIR = cls.active_backup
         if os.path.exists(cls.test_dir):
             shutil.rmtree(cls.test_dir, ignore_errors=True)
 
