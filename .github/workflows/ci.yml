@@ -28,6 +28,6 @@ jobs:
       - name: Run Architecture Doctor & Tests
         run: |
           python scripts/architecture_cli.py doctor .
-          python run_domain_tests.py || (echo "TEST FAILURE DETECTED, DUMPING LEDGER:" && cat docs/test_audit_ledger.json && exit 1)
+          python run_domain_tests.py || (echo "TEST FAILURE DETECTED, DUMPING LEDGER:" && cat tests/test_audit_ledger.json && echo "DUMPING JUNIT XML:" && cat tests/test_results.xml && exit 1)
       - name: Run E2E UI Tests
         run: python run_e2e_ui_tests.py
