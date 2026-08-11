@@ -32,7 +32,6 @@ class TestDomainContractChaos(unittest.TestCase):
         cls.test_dir = tempfile.mkdtemp(prefix="test_contract_chaos_")
         cls.db_path = os.path.join(cls.test_dir, "test_contract.db")
         db_module.DB_FILE = cls.db_path
-        db.DB_FILE = cls.db_path
         reset_db_connections()
         init_db()
 
@@ -51,7 +50,6 @@ class TestDomainContractChaos(unittest.TestCase):
 
     def setUp(self):
         db_module.DB_FILE = self.db_path
-        db.DB_FILE = self.db_path
 
     def tearDown(self):
         pass
