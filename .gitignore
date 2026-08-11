@@ -38,3 +38,4 @@ build/UroborosKnowledgeHub/
 *.pkg
 *.pyz
 *.zip
+scripts/node_modules/

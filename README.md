@@ -63,42 +63,42 @@ Here is a visual guide to the system architecture and views of Uroboros Knowledg
 ### 1. Dashboard
 The primary command center showing database status, real-time indexing velocity, storage usage, tag distributions, and search telemetry.
 
-![Main Dashboard](docs/ux_journey/01_dashboard_view.png)
+![Main Dashboard](docs/ux_journey/01_dashboard.png)
 
 ### 2. Workspace
 Manage your local corpus, inspect the knowledge graph layout natively, and browse indexable files directly from your workspace directory.
 
-![Workspace](docs/ux_journey/02_workspace_view.png)
+![Workspace](docs/ux_journey/02_workspace.png)
 
 ### 3. Explorer
 Search files with hybrid lexical-semantic search, filter by similarity thresholds, preview text files in real-time, and stack multi-tag queries.
 
-![Explorer](docs/ux_journey/03_explorer_view.png)
+![Explorer](docs/ux_journey/03_search.png)
 
 ### 4. Ingestion Pipeline
 Control the document extraction and vectorization process. Add files, scrape URLs, and monitor the embedding jobs in real time.
 
-![Ingestion Pipeline](docs/ux_journey/04_ingestion_view.png)
+![Ingestion Pipeline](docs/ux_journey/04_ingestion.png)
 
 ### 5. Interactive 3D Knowledge Graph
 Explore a full 3D layout (`react-force-graph-3d`) of relationships across your documents and parsed entities with custom 3D Sprites.
 
-![Knowledge Graph](docs/ux_journey/05_graph_view.png)
+![Knowledge Graph](docs/ux_journey/05_graph.png)
 
 ### 6. Conversational RAG Assistant (AI Chat)
 Query stored knowledge with automatic source-citation links and seamless context retrieval.
 
-![Conversational Assistant](docs/ux_journey/06_chat_view.png)
+![Conversational Assistant](docs/ux_journey/06_chat.png)
 
 ### 7. Process Configuration (Config)
 Configure Auto-Tag Rules, DB Snapshots, P2P LAN Synching, FTS Synonyms, Query Macros, and Tag Aliases.
 
-![Process Config](docs/ux_journey/07_config_view.png)
+![Process Config](docs/ux_journey/07_config.png)
 
 ### 8. System Settings
 Update system parameters, API keys, run indexing sweeps, monitor environment configuration, and export DB stats.
 
-![System Settings](docs/ux_journey/08_settings_view.png)
+![System Settings](docs/ux_journey/08_settings.png)
 
 ### 9. Command Palette (Ctrl+K)
 Instantly jump between views, open ingestion, or search across the app with the fast keyboard-activated spotlight modal.
