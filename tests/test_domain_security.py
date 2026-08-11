@@ -21,8 +21,10 @@ class TestDomainSecurity(unittest.TestCase):
         self.test_dir = tempfile.mkdtemp(prefix="test_domain_sec_")
         self.db_backup = db.DB_FILE
         self.active_backup = config.ACTIVE_DIR
+        self.main_active_backup = getattr(main, "ACTIVE_DIR", None)
         db.DB_FILE = os.path.join(self.test_dir, "test_know.db")
         config.ACTIVE_DIR = self.test_dir
+        main.ACTIVE_DIR = self.test_dir
         know.reset_db_connections()
         know.init_db()
 
@@ -30,6 +32,8 @@ class TestDomainSecurity(unittest.TestCase):
         know.reset_db_connections()
         db.DB_FILE = self.db_backup
         config.ACTIVE_DIR = self.active_backup
+        if self.main_active_backup is not None:
+            main.ACTIVE_DIR = self.main_active_backup
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 
