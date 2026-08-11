@@ -37,13 +37,21 @@ def search_files(query: str) -> List[Dict[str, Any]]:
         cursor = conn.cursor()
         try:
             cursor.execute("""
-                SELECT files.id, files.filepath, files.filename, files.file_size, files.mime_type, files.modified_at, files.content
+                SELECT files.id, files.filepath, files.filename, files.file_size, files.mime_type, files.modified_at, files.content, bm25(fts_files) as bm25_score
                 FROM fts_files JOIN files ON fts_files.filepath = files.filepath
-                WHERE fts_files MATCH ? LIMIT 100
+                WHERE fts_files MATCH ? ORDER BY bm25_score LIMIT 100
             """, (norm_query,))
             rows = cursor.fetchall()
             if rows:
-                return [dict(r) for r in rows]
+                results = [dict(r) for r in rows]
+                import time, math
+                now = time.time()
+                for r in results:
+                    score = -r.get('bm25_score', 0)
+                    age_days = max(0, now - r.get('modified_at', now)) / 86400.0
+                    r['final_score'] = score * math.exp(-0.05 * age_days)
+                results.sort(key=lambda x: x['final_score'], reverse=True)
+                return results
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
@@ -59,13 +67,21 @@ def search_files(query: str) -> List[Dict[str, Any]]:
                 fts_near = f'NEAR({quoted_words}, {dist})'
                 try:
                     cursor.execute("""
-                        SELECT files.id, files.filepath, files.filename, files.file_size, files.mime_type, files.modified_at, files.content
+                        SELECT files.id, files.filepath, files.filename, files.file_size, files.mime_type, files.modified_at, files.content, bm25(fts_files) as bm25_score
                         FROM fts_files JOIN files ON fts_files.filepath = files.filepath
-                        WHERE fts_files MATCH ? LIMIT 100
+                        WHERE fts_files MATCH ? ORDER BY bm25_score LIMIT 100
                     """, (fts_near,))
                     rows = cursor.fetchall()
                     if rows:
-                        return [dict(r) for r in rows]
+                        results = [dict(r) for r in rows]
+                        import time, math
+                        now = time.time()
+                        for r in results:
+                            score = -r.get('bm25_score', 0)
+                            age_days = max(0, now - r.get('modified_at', now)) / 86400.0
+                            r['final_score'] = score * math.exp(-0.05 * age_days)
+                        results.sort(key=lambda x: x['final_score'], reverse=True)
+                        return results
                 except (KeyboardInterrupt, MemoryError, SystemExit):
                     raise
                 except Exception as e:

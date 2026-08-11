@@ -539,6 +539,7 @@ def init_db():
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_workflow_logs_event_type ON workflow_logs(event_type)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_workflow_logs_status ON workflow_logs(status)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_workflow_logs_executed_at ON workflow_logs(executed_at DESC)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_workflow_logs_trigger_executed ON workflow_logs(trigger_id, executed_at DESC, id DESC)")
 
             conn.commit()
             cursor.execute("PRAGMA wal_checkpoint(PASSIVE)")
