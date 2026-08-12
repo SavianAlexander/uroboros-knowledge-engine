@@ -57,7 +57,10 @@ def fetch_web_context(query: str, max_results: int = 3, timeout: float = 4.0) ->
         with urllib.request.urlopen(req, timeout=timeout) as response:
             if response.status == 200:
                 raw_payload = response.read().decode('utf-8', errors='ignore')
-                data = json.loads(raw_payload)
+                try:
+                    data = json.loads(raw_payload) if raw_payload else {}
+                except (json.JSONDecodeError, ValueError):
+                    data = {}
 
                 abstract = data.get("AbstractText", "").strip()
                 heading = data.get("Heading", "").strip() or raw_query

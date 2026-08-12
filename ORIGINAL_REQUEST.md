@@ -152,3 +152,34 @@ After modifying the root `index.html`, `style.css`, and `app.js`, the correspond
 - [ ] Starting the server with `python main.py` and opening `http://127.0.0.1:8000` renders the new UI
 - [ ] No JavaScript console errors on page load
 - [ ] Every navigation tab renders its view without blank screens
+
+## 2026-08-11T21:23:03Z
+
+Create a unified deployment script (`setup.ps1`) for the Uroboros Knowledge Engine that strictly leverages Docker, re-integrating Ollama with AMD GPU passthrough, automatically pulling required models, and verifying the architecture via automated E2E tests.
+
+Working directory: `c:\Users\Administrator\Desktop\Neuro Alexander`
+Integrity mode: development
+
+## Requirements
+
+### R1. Re-Dockerize Ollama
+Modify `docker-compose.yml` to include the `ollama/ollama` image. Configure the deployment to use GPU passthrough utilizing the `amd` driver.
+
+### R2. Automated Setup Lifecycle
+Create a `setup.ps1` script that executes `docker-compose up -d --build` to spin up the Nginx, FastAPI, and Ollama containers.
+
+### R3. Pre-fetch LLM Models
+The `setup.ps1` script must automatically execute `docker exec` against the running Ollama container to pull the `qwen2.5:7b` model immediately after startup.
+
+### R4. Automated E2E Verification
+The script must conclude by running the isolated test runner (`docker-compose -f docker-compose.test.yml up --abort-on-container-exit --build`) to guarantee the deployment is healthy.
+
+## Acceptance Criteria
+
+### Execution & Validation
+- [ ] `docker-compose.yml` is successfully updated with Ollama and AMD GPU configurations.
+- [ ] A `setup.ps1` script exists and handles the full deployment lifecycle.
+- [ ] The `setup.ps1` script successfully pre-fetches `qwen2.5:7b` automatically.
+- [ ] The `setup.ps1` script triggers the E2E tests which pass with an exit code of 0.
+- [ ] All required containers (Nginx, API, Ollama) start successfully without native host dependencies.
+

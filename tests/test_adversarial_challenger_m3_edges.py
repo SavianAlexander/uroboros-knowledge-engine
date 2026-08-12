@@ -178,12 +178,12 @@ class TestGraphEdgesAndWeightCalculations(unittest.TestCase):
 
         edge_map = {(e["source"], e["target"]): e["weight"] for e in wikilink_edges}
         
-        # Verify directionality & weight
+        # Verify directionality & weight (3 explicit wikilinks + 1 implicit entity match = 4)
         self.assertIn(("file_1", "file_2"), edge_map)
-        self.assertEqual(edge_map[("file_1", "file_2")], 3)
+        self.assertEqual(edge_map[("file_1", "file_2")], 4)
 
         self.assertIn(("file_1", "file_3"), edge_map)
-        self.assertEqual(edge_map[("file_1", "file_3")], 1)
+        self.assertEqual(edge_map[("file_1", "file_3")], 2)
 
         # Verify no self-loop edge (file_1 -> file_1)
         self.assertNotIn(("file_1", "file_1"), edge_map)

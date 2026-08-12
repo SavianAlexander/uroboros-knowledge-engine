@@ -167,3 +167,25 @@ def extract_target_titles(content: str) -> List[str]:
             titles.append(match.target_title)
     return titles
 
+RE_IMPLICIT_ENTITY = re.compile(r'\b(?:[A-Z][a-z0-9]+\s){1,2}[A-Z][a-z0-9]+\b')
+
+@lru_cache(maxsize=8192)
+def extract_implicit_entities(content: str) -> List[str]:
+    """
+    Extracts implicit entities (capitalized proper nouns, e.g. 'Project Uroboros')
+    to establish implicit graph edges without manual wikilinks.
+    """
+    if not content:
+        return []
+    
+    seen = set()
+    entities = []
+    for match in RE_IMPLICIT_ENTITY.finditer(content):
+        entity = match.group(0)
+        # Avoid common sentence starters if possible, but keep it mechanically simple
+        if entity not in seen:
+            seen.add(entity)
+            entities.append(entity)
+            
+    return entities
+

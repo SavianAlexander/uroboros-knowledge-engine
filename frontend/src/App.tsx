@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './store/AppContext';
 import Sidebar from './components/Sidebar';
 import CommandPalette from './components/CommandPalette';
 import DashboardView from './views/DashboardView';
-import WorkspaceView from './views/WorkspaceView';
-import SearchView from './views/SearchView';
-import IngestionView from './views/IngestionView';
-import GraphView from './views/GraphView';
-import ChatView from './views/ChatView';
-import ConfigView from './views/ConfigView';
-import SettingsView from './views/SettingsView';
-import LoginView from './views/LoginView';
 import { authEvents } from './lib/api';
+
+const WorkspaceView = lazy(() => import('./views/WorkspaceView'));
+const SearchView = lazy(() => import('./views/SearchView'));
+const IngestionView = lazy(() => import('./views/IngestionView'));
+const GraphView = lazy(() => import('./views/GraphView'));
+const ChatView = lazy(() => import('./views/ChatView'));
+const ConfigView = lazy(() => import('./views/ConfigView'));
+const SettingsView = lazy(() => import('./views/SettingsView'));
+const LoginView = lazy(() => import('./views/LoginView'));
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
   state = { hasError: false };
@@ -44,17 +45,23 @@ function AppLayout() {
   }, [theme]);
 
   const renderView = () => {
-    switch (activeView) {
-      case 'dashboard': return <DashboardView />;
-      case 'workspace': return <WorkspaceView />;
-      case 'search': return <SearchView />;
-      case 'ingestion': return <IngestionView />;
-      case 'graph': return <GraphView />;
-      case 'chat': return <ChatView />;
-      case 'config': return <ConfigView />;
-      case 'settings': return <SettingsView />;
-      default: return <DashboardView />;
-    }
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-400 text-sm font-medium">Loading View...</div>}>
+        {(() => {
+          switch (activeView) {
+            case 'dashboard': return <DashboardView />;
+            case 'workspace': return <WorkspaceView />;
+            case 'search': return <SearchView />;
+            case 'ingestion': return <IngestionView />;
+            case 'graph': return <GraphView />;
+            case 'chat': return <ChatView />;
+            case 'config': return <ConfigView />;
+            case 'settings': return <SettingsView />;
+            default: return <DashboardView />;
+          }
+        })()}
+      </Suspense>
+    );
   };
 
   return (

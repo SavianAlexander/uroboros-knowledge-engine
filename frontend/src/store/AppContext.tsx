@@ -6,6 +6,7 @@ interface AppContextType extends AppState {
   setTheme: (theme: 'dark' | 'light') => void;
   setSearchQuery: (query: string) => void;
   setCommandPaletteOpen: (isOpen: boolean) => void;
+  setActiveWorkspace: (workspace: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -15,13 +16,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [activeWorkspace, setActiveWorkspace] = useState('Default');
 
   return (
     <AppContext.Provider value={{
       activeView, setActiveView,
       theme, setTheme,
       searchQuery, setSearchQuery,
-      isCommandPaletteOpen, setCommandPaletteOpen
+      isCommandPaletteOpen, setCommandPaletteOpen,
+      activeWorkspace, setActiveWorkspace
     }}>
       {children}
     </AppContext.Provider>

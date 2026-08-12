@@ -5,6 +5,7 @@ export interface AppState {
   theme: 'dark' | 'light';
   searchQuery: string;
   isCommandPaletteOpen: boolean;
+  activeWorkspace: string;
 }
 
 // API Types

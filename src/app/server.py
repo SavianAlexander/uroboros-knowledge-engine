@@ -56,6 +56,8 @@ def get_index():
 from fastapi import Depends
 from src.app.auth import verify_api_key
 
+from src.app.routers import health, search, rag, files, tags, export, analytics, workflows, briefing
+
 app.include_router(health.router) # Health remains unprotected
 app.include_router(search.router, dependencies=[Depends(verify_api_key)])
 app.include_router(rag.router, dependencies=[Depends(verify_api_key)])
@@ -64,6 +66,7 @@ app.include_router(tags.router, dependencies=[Depends(verify_api_key)])
 app.include_router(export.router, dependencies=[Depends(verify_api_key)])
 app.include_router(analytics.router, dependencies=[Depends(verify_api_key)])
 app.include_router(workflows.router, dependencies=[Depends(verify_api_key)])
+app.include_router(briefing.router, dependencies=[Depends(verify_api_key)])
 from src.app import auth
 app.include_router(auth.router)
 

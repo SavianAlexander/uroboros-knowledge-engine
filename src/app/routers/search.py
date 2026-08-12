@@ -365,17 +365,30 @@ def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: b
             "weight": 1
         })
 
-    # 2. Wikilink to edges
+    # 2. Wikilink & Implicit Entity edges
     if include_wikilinks:
+        from src.domain.wikilink_parser import extract_implicit_entities
         wikilink_counts = Counter()
         doc_get = doc_lookup.get
         for fid, filepath, filename, file_size, mime_type, modified_at, content in files:
-            if not content or '[[' not in content:
+            if not content:
                 continue
             src_nid = doc_nid_list[fid]
-            matches = parse_wikilinks(content)
-            for m in matches:
-                target_nid = doc_get(m.target_title) or doc_get(m.target_title.lower()) or doc_get(m.slug) or (doc_get(m.slug.replace('-', '_')) if '-' in m.slug else None)
+            
+            # Explicit wikilinks
+            if '[[' in content:
+                matches = parse_wikilinks(content)
+                for m in matches:
+                    target_nid = doc_get(m.target_title) or doc_get(m.target_title.lower()) or doc_get(m.slug) or (doc_get(m.slug.replace('-', '_')) if '-' in m.slug else None)
+                    if target_nid and target_nid != src_nid:
+                        wikilink_counts[(src_nid, target_nid)] += 1
+            
+            # Implicit entities (Semantic Relation)
+            entities = extract_implicit_entities(content)
+            for ent in entities:
+                ent_norm = normalize_target_title(ent)
+                ent_slug = slugify_title(ent)
+                target_nid = doc_get(ent_norm) or doc_get(ent_norm.lower()) or doc_get(ent_slug) or (doc_get(ent_slug.replace('-', '_')) if '-' in ent_slug else None)
                 if target_nid and target_nid != src_nid:
                     wikilink_counts[(src_nid, target_nid)] += 1
 
@@ -409,8 +422,8 @@ def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: b
                 }
                 for (d1, d2), shared_count in pair_shared_counts.items()
             ]
-            edges.extend(cluster_edges)
-
+    from src.domain.louvain_clustering import apply_louvain_communities
+    nodes = apply_louvain_communities(nodes, edges)
 
     return {
         "nodes": nodes,

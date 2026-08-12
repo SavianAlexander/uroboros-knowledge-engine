@@ -120,11 +120,25 @@ def chat_stream_endpoint(req: ChatRequest):
         full_response_text = ""
         if llm:
             prompt_parts = []
+            
+            # Causality Reflection Loop
+            causality_keywords = ["why", "how did", "what caused", "reason", "because"]
+            if any(kw in user_query.lower() for kw in causality_keywords):
+                try:
+                    from src.infrastructure.repositories.workflows import list_workflow_logs
+                    logs = list_workflow_logs(limit=10)
+                    if logs:
+                        causality_ctx = "\n".join([f"- [{log['executed_at']}] Event: {log['event_type']} (Status: {log['status']}) - {log.get('response_body') or ''}" for log in logs])
+                        prompt_parts.append(f"Causality Event History Context:\n{causality_ctx}")
+                except Exception:
+                    pass
+
             if local_context:
                 prompt_parts.append(f"Context:\n{local_context}")
             if web_sources:
                 web_str = "\n".join([f"- {w.get('title')}: {w.get('snippet')}" for w in web_sources])
                 prompt_parts.append(f"Web Context:\n{web_str}")
+                
             prompt_parts.append(f"User Question: {user_query}\nAnswer:")
             full_prompt = "\n\n".join(prompt_parts)
 

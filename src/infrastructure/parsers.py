@@ -103,7 +103,15 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
         if suffix == '.pdf':
             try:
                 reader = pypdf.PdfReader(filepath)
-                extracted = "\n".join([page.extract_text() or "" for page in reader.pages])
+                page_texts = []
+                for page in reader.pages:
+                    txt = ""
+                    try:
+                        txt = page.extract_text(extraction_mode="layout") or ""
+                    except Exception:
+                        txt = page.extract_text() or ""
+                    page_texts.append(txt)
+                extracted = "\n".join(page_texts)
                 if len(extracted.strip()) < 50:
                     ocr_res, ocr_coords = extract_pdf_ocr(filepath)
                     if ocr_res and ocr_res.strip():
@@ -132,6 +140,24 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
             return "\n".join(text_lines), []
         elif suffix in ['.png', '.jpg', '.jpeg', '.bmp']:
             return extract_ocr_text_structured(filepath)
+        elif suffix in ['.mp3', '.wav', '.m4a', '.flac', '.ogg']:
+            meta = parse_audio_metadata(filepath)
+            transcript = ""
+            try:
+                # Try local faster-whisper or whisper model if available
+                import whisper
+                model = whisper.load_model("tiny")
+                res = model.transcribe(filepath)
+                transcript = res.get("text", "").strip()
+            except Exception:
+                pass
+            
+            dur = meta.get("duration", 0.0)
+            ch = meta.get("channels", 0)
+            sr = meta.get("samplerate", 0)
+            header = f"[Audio Voice Memo | Duration: {dur}s | Channels: {ch} | SampleRate: {sr} Hz]"
+            content_str = f"{header}\n{transcript}" if transcript else header
+            return content_str, []
         elif suffix == '.zip':
             import zipfile
             with zipfile.ZipFile(filepath, 'r') as z:

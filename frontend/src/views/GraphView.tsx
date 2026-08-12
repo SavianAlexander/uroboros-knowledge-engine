@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
-import { glassCardClasses } from '../lib/utils';
+import { glassCardClasses, debounce } from '../lib/utils';
 import { Filter, Maximize, RotateCcw } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -13,10 +13,14 @@ export default function GraphView() {
   const [loading, setLoading] = useState(true);
   const [selectedNode, setSelectedNode] = useState<any | null>(null);
   const [filter, setFilter] = useState<string>('');
+  const [searchInput, setSearchInput] = useState<string>('');
   const [categoryFilters, setCategoryFilters] = useState<Record<string, boolean>>({
     document: true, tag: true, concept: true,
   });
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+
+  // ponytail: debounce graph physics recalculation
+  const debouncedSetFilter = useCallback(debounce((val: string) => setFilter(val), 150), []);
 
   useEffect(() => {
     api.graphData()
@@ -46,14 +50,18 @@ export default function GraphView() {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const observer = new ResizeObserver(entries => {
+    
+    // ponytail: debounce resize events to prevent webgl thrashing
+    const handleResize = debounce((entries: ResizeObserverEntry[]) => {
       if (entries[0]) {
         setDimensions({
           width: entries[0].contentRect.width,
           height: entries[0].contentRect.height
         });
       }
-    });
+    }, 150);
+    
+    const observer = new ResizeObserver(handleResize);
     observer.observe(containerRef.current);
     
     // Initial size setup
@@ -201,8 +209,11 @@ export default function GraphView() {
           <input
             type="text"
             placeholder="Filter nodes..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              debouncedSetFilter(e.target.value);
+            }}
             className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 w-52"
           />
           <div className="flex gap-1 bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg p-1">

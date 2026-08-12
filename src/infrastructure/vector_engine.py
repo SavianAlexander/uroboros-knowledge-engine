@@ -448,7 +448,7 @@ class MiniVectorEngine:
             
             # Fetch all chunks that have embeddings
             cursor.execute('''
-                SELECT c.id, c.file_id, c.chunk_index, c.text_content as content, c.embedding_json, 
+                SELECT c.id, c.file_id, c.chunk_index, c.content, c.embedding_json, 
                        f.filepath, f.filename, f.modified_at
                 FROM file_chunks c
                 JOIN files f ON c.file_id = f.id

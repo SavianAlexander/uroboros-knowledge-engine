@@ -1,5 +1,5 @@
 services:
-  uroboros:
+  uroboros_engine:
     build: .
     container_name: uroboros_engine
     ports:
@@ -12,12 +12,48 @@ services:
       - PORT=8000
       - HOST=0.0.0.0
       - DB_FILE=/app/data/knowledge.db
-      # Required by local environment integrations (e.g. Tududi internal AI)
       - LLM_API_KEY=ollama
       - OPENAI_API_BASE=http://host.docker.internal:11434/v1
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  uroboros_frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: uroboros_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      uroboros_engine:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
 
 volumes:
   uroboros_data:

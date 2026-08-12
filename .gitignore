@@ -20,6 +20,9 @@ knowledge.db*
 dumps/*
 !dumps/.gitkeep
 test_sandbox/
+.venv/
+*.log
+failure*.txt
 
 # OS files
 .DS_Store

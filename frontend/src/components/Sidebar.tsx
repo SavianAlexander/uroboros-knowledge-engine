@@ -5,7 +5,7 @@ import { cn } from '../lib/utils';
 import { ViewId } from '../types';
 
 export default function Sidebar() {
-  const { activeView, setActiveView, setCommandPaletteOpen } = useApp();
+  const { activeView, setActiveView, setCommandPaletteOpen, activeWorkspace, setActiveWorkspace } = useApp();
   const [imgError, setImgError] = React.useState(false);
 
   const navItems: { id: ViewId; label: string; icon: React.ElementType }[] = [
@@ -21,9 +21,22 @@ export default function Sidebar() {
 
   return (
     <div className="w-64 h-full flex flex-col dark:bg-slate-900/40 bg-white/40 backdrop-blur-xl border-r dark:border-white/5 border-slate-200 p-4 flex-shrink-0">
-      <div className="flex items-center gap-3 mb-8 px-2">
-        {!imgError && <img src="/assets/uroboros_logo.svg" alt="Uroboros" className="w-8 h-8" onError={() => setImgError(true)} />}
-        <h1 className="text-lg font-semibold tracking-wide text-slate-900 dark:text-slate-100">Uroboros</h1>
+      <div className="flex flex-col gap-2 mb-6 px-2">
+        <div className="flex items-center gap-3">
+          {!imgError && <img src="/assets/uroboros_logo.svg" alt="Uroboros" className="w-8 h-8" onError={() => setImgError(true)} />}
+          <h1 className="text-lg font-semibold tracking-wide text-slate-900 dark:text-slate-100">Uroboros</h1>
+        </div>
+        <select
+          value={activeWorkspace}
+          onChange={(e) => setActiveWorkspace(e.target.value)}
+          className="w-full text-xs px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 focus:outline-none cursor-pointer"
+          data-testid="workspace-select"
+        >
+          <option value="Default">🌐 Default Workspace</option>
+          <option value="Personal">👤 Personal Notes</option>
+          <option value="Enterprise">🏢 Enterprise Docs</option>
+          <option value="Codebase">💻 Source Codebase</option>
+        </select>
       </div>
 
       <nav className="flex-1 space-y-1">

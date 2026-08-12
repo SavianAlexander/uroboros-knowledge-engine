@@ -11,6 +11,7 @@ Standalone E2E UI Test Runner for Uroboros Knowledge Engine.
 - Returns exit code 0 when all test suites pass.
 """
 
+import os
 import sys
 import time
 import socket
@@ -96,6 +97,7 @@ def main_runner():
     time.sleep(1.5)
     
     port = server_thread.server.servers[0].sockets[0].getsockname()[1]
+    os.environ["FRONTEND_URL"] = f"http://{host}:{port}"
     print(f"[E2E Runner] Dynamic Ephemeral Socket Bound to http://{host}:{port}")
 
     # 4. Health Polling Loop
@@ -114,6 +116,7 @@ def main_runner():
         "tests.test_e2e_t2_boundary_corner",
         "tests.test_e2e_t3_cross_feature",
         "tests.test_e2e_t4_realworld_workloads",
+        "tests.test_react_e2e_playwright",
     ]
 
     loader = unittest.TestLoader()

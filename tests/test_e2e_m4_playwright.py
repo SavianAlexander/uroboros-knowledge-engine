@@ -70,14 +70,14 @@ class TestM4PlaywrightE2E(unittest.TestCase):
                 except Exception as e:
                     import logging; logging.error(f"Swallowed error in test_e2e_m4_playwright.py: {e}")
 
-        db.DB_FILE = DB_NAME
+        know.DB_FILE = DB_NAME
         db_infra.DB_FILE = DB_NAME
         config.ACTIVE_DIR = str(SANDBOX_DIR)
         know.init_db()
         db_infra.init_db()
 
         now = int(time.time())
-        with get_db_connection(db.DB_FILE) as conn:
+        with get_db_connection(know.DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM files")
             cursor.execute("DELETE FROM tags")

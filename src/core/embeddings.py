@@ -9,7 +9,7 @@ from typing import List
 
 # Default to the local docker-compose Ollama instance
 OLLAMA_BASE_URL = os.environ.get("OPENAI_API_BASE", "http://host.docker.internal:11434/v1")
-OLLAMA_MODEL = "nomic-embed-text" # Standard small embedding model on ollama
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
 
 @functools.lru_cache(maxsize=4096)
 def generate_embedding(text: str) -> List[float]:
@@ -18,15 +18,27 @@ def generate_embedding(text: str) -> List[float]:
         return []
         
     try:
-        # Check if we should use Ollama directly via its native API (faster than v1 compat layer)
         base = OLLAMA_BASE_URL.replace("/v1", "")
         url = f"{base}/api/embeddings"
-        data = json.dumps({"model": OLLAMA_MODEL, "prompt": text[:4000]}).encode("utf-8")
+        data = json.dumps({
+            "model": OLLAMA_MODEL,
+            "prompt": text[:4000],
+            "keep_alive": "24h"
+        }).encode("utf-8")
         req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
         
-        with urllib.request.urlopen(req, timeout=10) as res:
-            res_body = json.loads(res.read().decode("utf-8"))
-            return res_body.get("embedding", [])
+        try:
+            with urllib.request.urlopen(req, timeout=10) as res:
+                res_body = json.loads(res.read().decode("utf-8"))
+                return res_body.get("embedding", [])
+        except urllib.error.URLError as url_err:
+            if "host.docker.internal" in base or "getaddrinfo failed" in str(url_err):
+                fallback_url = url.replace("host.docker.internal", "127.0.0.1")
+                fallback_req = urllib.request.Request(fallback_url, data=data, headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(fallback_req, timeout=10) as res:
+                    res_body = json.loads(res.read().decode("utf-8"))
+                    return res_body.get("embedding", [])
+            raise url_err
     except Exception as e:
         logging.warning(f"Failed to generate embedding via Ollama: {e}")
         return []

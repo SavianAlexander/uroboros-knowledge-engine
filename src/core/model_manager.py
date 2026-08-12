@@ -26,8 +26,15 @@ class OllamaClient:
 
     def __call__(self, prompt, **kwargs):
         try:
+            model = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
             url = f"{self.base_url}/completions"
-            data = {"model": "qwen2.5:7b", "prompt": prompt, "max_tokens": kwargs.get("max_tokens", 256)}
+            data = {
+                "model": model,
+                "prompt": prompt,
+                "max_tokens": kwargs.get("max_tokens", 256),
+                "keep_alive": "24h",
+                "options": {"num_ctx": 2048, "num_thread": 4, "low_vram": False}
+            }
             res = self.session.post(url, json=data, timeout=30)
             res.raise_for_status()
             res_body = res.json()
@@ -38,8 +45,15 @@ class OllamaClient:
             
     def create_chat_completion(self, messages, **kwargs):
         try:
+            model = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
             url = f"{self.base_url}/chat/completions"
-            data = {"model": "qwen2.5:7b", "messages": messages, "max_tokens": kwargs.get("max_tokens", 256)}
+            data = {
+                "model": model,
+                "messages": messages,
+                "max_tokens": kwargs.get("max_tokens", 256),
+                "keep_alive": "24h",
+                "options": {"num_ctx": 2048, "num_thread": 4, "low_vram": False}
+            }
             res = self.session.post(url, json=data, timeout=30)
             res.raise_for_status()
             return res.json()

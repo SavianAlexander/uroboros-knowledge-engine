@@ -170,19 +170,50 @@ def extract_ai_tags(content: str, filename: str, rule_matches: Optional[List[Tup
     return tags
 
 def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> List[str]:
-    """Split text into chunks of specified size and overlap with 10MB memory safety ceiling."""
+    """
+    Split text into AST heading-aware and Markdown table-preserving chunks.
+    Keeps Markdown tables (| ... |) intact within unified chunk boundaries.
+    """
     if not text or not text.strip():
         return []
     if len(text) > 10_000_000:
         text = text[:10_000_000]
+
+    lines = text.splitlines(keepends=True)
     chunks = []
-    start = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunks.append(text[start:end])
-        if end >= len(text):
-            break
-        start += (chunk_size - overlap)
+    curr_chunk = []
+    curr_size = 0
+    in_table = False
+
+    for line in lines:
+        is_header = line.lstrip().startswith(('# ', '## ', '### ', '#### '))
+        is_table_row = line.strip().startswith('|') and line.strip().endswith('|')
+
+        if is_table_row:
+            in_table = True
+        elif in_table and not is_table_row:
+            in_table = False
+
+        # Do not break chunk inside a markdown table unless max size reached
+        if (is_header or (curr_size >= chunk_size and not in_table)) and curr_chunk:
+            chunks.append("".join(curr_chunk))
+            # Keep overlap lines if not in table
+            overlap_buf = []
+            buf_len = 0
+            for prev_line in reversed(curr_chunk):
+                if buf_len + len(prev_line) > overlap:
+                    break
+                overlap_buf.insert(0, prev_line)
+                buf_len += len(prev_line)
+            curr_chunk = overlap_buf
+            curr_size = buf_len
+
+        curr_chunk.append(line)
+        curr_size += len(line)
+
+    if curr_chunk:
+        chunks.append("".join(curr_chunk))
+
     return chunks
 
 def parse_query_operators(q_str: str) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:

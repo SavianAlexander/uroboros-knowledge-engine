@@ -50,8 +50,11 @@ class SQLiteConnectionPool:
                     self.created += 1
                     conn = sqlite3.connect(self.db_path, timeout=self.timeout, check_same_thread=False)
                     conn.row_factory = sqlite3.Row
-                    # Enable WAL mode per-connection defensively
+                    # Enable WAL mode and memory-mapped I/O per-connection
                     conn.execute("PRAGMA journal_mode = WAL")
+                    conn.execute("PRAGMA synchronous = NORMAL")
+                    conn.execute("PRAGMA mmap_size = 268435456")
+                    conn.execute("PRAGMA cache_size = -16000")
                     return conn
             # Block until a connection is available if we are at max
             return self.pool.get()

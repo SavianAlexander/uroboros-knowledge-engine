@@ -205,11 +205,13 @@ def parse_metadata_filters(query: str) -> Tuple[str, Dict[str, str]]:
         tokens.append(token)
     return " ".join(tokens), filters
 
+RE_TEMPORAL = re.compile(r'\b(?:19|20)\d{2}\b|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,4}\b|\bQ[1-4]\s*(?:19|20)\d{2}\b', re.IGNORECASE)
+
 def precision_cross_rerank(query: str, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Pass-2 Mechanical Precision Re-ranking:
     Scores candidates based on term coverage density, exact phrase proximity, header alignment,
-    and exponential modification recency decay weighting.
+    exponential modification recency decay weighting, and Narrative Time alignment.
     """
     if not query or not candidates:
         return candidates or []
@@ -221,6 +223,8 @@ def precision_cross_rerank(query: str, candidates: List[Dict[str, Any]]) -> List
     import time
     now_ts = time.time()
     decay_rate = 1e-7  # Gentle exponential recency decay multiplier
+    
+    query_temporal_markers = set(m.lower() for m in RE_TEMPORAL.findall(query))
 
     reranked = []
     for cand in candidates:
@@ -242,15 +246,23 @@ def precision_cross_rerank(query: str, candidates: List[Dict[str, Any]]) -> List
 
         # 3. Filename/Header Match Boost
         header_boost = 0.25 if any(t in filename for t in q_terms) else 0.0
+        
+        # 4. Aspect of Time (Narrative Time Boost)
+        temporal_boost = 0.0
+        if query_temporal_markers:
+            doc_temporal_markers = set(m.lower() for m in RE_TEMPORAL.findall(content))
+            shared_time = query_temporal_markers & doc_temporal_markers
+            if shared_time:
+                temporal_boost = 0.5 * len(shared_time)
 
-        # 4. Recency Time-Decay Boost
+        # 5. Recency Time-Decay Boost
         age_seconds = max(0.0, now_ts - mod_at)
         recency_decay = math.exp(-decay_rate * age_seconds)
 
         base_score = float(item.get("rrf_score", 0.1))
-        precision_score = round(base_score * (1.0 + coverage_score + phrase_boost + header_boost) * recency_decay, 6)
+        precision_score = round(base_score * (1.0 + coverage_score + phrase_boost + header_boost + temporal_boost) * recency_decay, 6)
         item["rrf_score"] = precision_score
-        item["precision_boost"] = round(coverage_score + phrase_boost + header_boost, 4)
+        item["precision_boost"] = round(coverage_score + phrase_boost + header_boost + temporal_boost, 4)
         item["recency_decay"] = round(recency_decay, 4)
         reranked.append(item)
 
@@ -379,8 +391,28 @@ def extract_advanced_rag_context(
             "filepath": fpath,
             "confidence_score": score
         })
-        context_blocks.append(f"{citation_str}\n{snippet}")
+    # 2-Hop GraphRAG Traversal
+    graph_context_blocks = []
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        for hit in deduped_hits[:3]:
+            fpath = hit.get("filepath", "")
+            if not fpath:
+                continue
+            cursor.execute("SELECT tag FROM tags WHERE file_id = (SELECT id FROM files WHERE filepath = ?)", (fpath,))
+            file_tags = [r[0] for r in cursor.fetchall()]
+            if file_tags:
+                placeholders = ",".join(["?"] * len(file_tags))
+                cursor.execute(f"SELECT DISTINCT f.filename FROM files f JOIN tags t ON f.id = t.file_id WHERE t.tag IN ({placeholders}) AND f.filepath != ? LIMIT 3", (*file_tags, fpath))
+                neighbors = [r[0] for r in cursor.fetchall()]
+                if neighbors:
+                    graph_context_blocks.append(f"[Graph Context: '{hit.get('filename')}' connected to: {', '.join(neighbors)}]")
+    except Exception:
+        pass
 
     context_text = "\n\n".join(context_blocks)
+    if graph_context_blocks:
+        context_text = "\n".join(graph_context_blocks) + "\n\n" + context_text
     return context_text, citations
 
