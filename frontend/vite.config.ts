@@ -33,6 +33,16 @@ export default defineConfig(() => {
         output: {
           entryFileNames: 'app.js',
           chunkFileNames: 'chunks/[name].js',
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('three') || id.includes('force-graph')) {
+                return 'vendor-graph';
+              }
+              if (id.includes('lucide-react')) {
+                return 'vendor-icons';
+              }
+            }
+          },
           assetFileNames: (assetInfo) => {
             if (assetInfo.name && assetInfo.name.endsWith('.css')) {
               return 'style.css';
