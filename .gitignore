@@ -16,13 +16,17 @@ __pycache__/
 # ponytail: ignored !knowledge.db since instruction explicitly states knowledge.db should be gitignored
 knowledge.db*
 
-# Temporary logs or watch dirs
+# Temporary logs, scratch scripts, and one-shot patches
 dumps/*
 !dumps/.gitkeep
 test_sandbox/
 .venv/
 *.log
 failure*.txt
+ci.log
+scratch*.py
+scratch/
+data/
 
 # OS files
 .DS_Store
@@ -30,6 +34,7 @@ Thumbs.db
 
 # E2E temporary files
 e2e_knowledge*
+e2e_t*
 test_sandbox_*
 *.snapshot-*
 test_*.db*
