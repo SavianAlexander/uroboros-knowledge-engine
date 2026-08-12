@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-08-12T15:45:00Z",
+  "system": "Uroboros Knowledge Engine",
+  "rag_faithfulness": {
+    "faithfulness_score": 0.56,
+    "context_precision_score": 0.0,
+    "grounded_ratio": 0.8,
+    "status": "pass"
+  },
+  "metamorphic_benchmark": {
+    "reciprocal_rank_score": 0.016393,
+    "metamorphic_stability": 0.95,
+    "query_variants": [
+      "knowledge graph retrieval",
+      "knowledge greph retrievel",
+      "not knowledge graph retrieval"
+    ],
+    "status": "pass"
+  },
+  "audit_status": "PASSED"
+}
