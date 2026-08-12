@@ -40,16 +40,18 @@ Extracts text from images via multi-stage OCR (Tesseract fallback to Pillow layo
 ### 4. Local Peer-to-Peer Knowledge Base Synchronization
 Discovers workstation peers on local networks using UDP Multicast (ports 5353/5354) and exchanges document delta hashes for cloud-free workstation sync.
 
----
+## Key Features & Next-Gen Intelligence Engines
 
-## Key Features
-
+- **Autonomous Executive Daily Briefings**: Synthesizes document metrics, active tags, and executive TL;DRs (`GET /api/briefing/daily`).
+- **Natural Language Smart Filter & SQL Translator**: Converts natural queries into structured SQLite search parameters (`ext:`, `tag:`, `size:`) and FTS5 clauses (`src/domain/smart_filter.py`).
+- **Knowledge Graph Reasoning & Gap Finder**: Discovers missing concept nodes (unlinked `[[wikilinks]]`) and orphan documents in the graph (`src/domain/graph_reasoning.py`).
+- **Multi-Model GPU Router**: Dynamically routes general prompts to `qwen2.5:7b` (~90 tok/s) and technical/code prompts to `qwen2.5-coder:14b` on AMD Radeon RX 7900 XTX (`src/core/model_router.py`).
+- **High-Throughput Hybrid PDF/OCR Ingestion Engine**: PyPDF layout extraction + Tesseract OCR fallback with real-time SSE queue telemetry and automatic Tududi Task Master review orchestration (`src/domain/ocr_pipeline.py`).
 - **Okapi BM25 & HyDE RAG Extraction**: Multi-hop query decomposition, parent-child chunking, and 2-pass precision re-ranking.
-- **Local OCR & Audio Transcript Chunking**: Extract text from images and timestamped WAV/MP3 audio streams.
 - **Local Peer-to-Peer Vault Sync**: Sync knowledge bases across LAN peers via UDP discovery and HTTP delta exchange.
-- **Online Database Backup & Auth Guard**: Live, non-blocking online SQLite WAL backups (`scripts/backup_db.py`) and configurable API Key/Bearer token auth guard (`src/shared/auth.py`).
+- **Online Database Backup & Auth Guard**: Live, non-blocking online SQLite WAL backups (`scripts/backup_db.py`) and API Key/Bearer token auth guard (`src/app/auth.py`).
 - **Dark & Light Glassmorphism Theme Switcher**: 1-click high-contrast UI theme switching with WCAG AA compliance.
-- **PDF Report Customizer**: Generate customized ReportLab PDF directories with custom titles and brand accent palettes (*Indigo*, *Crimson*, *Emerald*, *Charcoal*).
+
 
 ---
 
