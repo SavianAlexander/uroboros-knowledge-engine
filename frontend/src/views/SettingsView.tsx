@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { glassCardClasses } from '../lib/utils';
 import { ShieldCheck, HardDrive, Cpu, Terminal, Moon, Sun, KeyRound, Server, AlertTriangle, RefreshCw, Download, FileText } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import { api } from '../lib/api';
+import { useApp } from '../store/AppContext';
 
 export default function SettingsView() {
   const { toast } = useToast();
@@ -51,11 +53,13 @@ export default function SettingsView() {
   };
 
   const handleVacuum = async () => {
+    if (!confirm('Run SQLite VACUUM? This will lock the database temporarily.')) return;
     try {
-      await api.fetchAPI('/api/maintenance/vacuum', { method: 'POST' }).catch(() => {});
+      await api.systemMaintenance();
       toast('VACUUM Complete', 'SQLite pages defragmented successfully', 'success');
     } catch(e) {
-      toast('VACUUM Scheduled', 'Database defragmentation queued', 'info');
+      console.error(e);
+      toast('VACUUM Failed', 'Database maintenance failed', 'error');
     }
   };
 

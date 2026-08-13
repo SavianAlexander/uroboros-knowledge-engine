@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { glassCardClasses } from '../lib/utils';
 import { Settings2, Database, Key, Webhook, SplitSquareHorizontal, Layers, Fingerprint, HardDrive, RefreshCw, ArchiveRestore, Globe, Network, Activity } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import { api } from '../lib/api';
 
 export default function ConfigView() {
   const { toast } = useToast();
