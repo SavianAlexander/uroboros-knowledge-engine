@@ -89,36 +89,14 @@ class TestAdversarialUIStress(unittest.TestCase):
             cursor.execute("INSERT INTO tags (file_id, tag) VALUES (?, ?)", (1, "stress"))
             conn.commit()
 
-        import socket
-        sock = socket.socket()
-        sock.bind(('127.0.0.1', 0))
-        cls.port = sock.getsockname()[1]
-        sock.close()
-
-        cls.server = ServerThread(cls.port)
-        cls.server.start()
-
-        # Health polling loop (up to 10 seconds)
-        server_ready = False
-        start_time = time.time()
-        while time.time() - start_time < 10.0:
-            if not cls.server.is_alive():
-                raise RuntimeError(f"Server thread died before initialization on port {cls.port}")
-            try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{cls.port}/api/health", timeout=1.0) as resp:
-                    if resp.status == 200:
-                        server_ready = True
-                        break
-            except Exception:
-                threading.Event().wait(0.1)
-
-        if not server_ready:
-            raise RuntimeError(f"Uvicorn server failed to respond on port {cls.port}")
+        cls.server = None
+        cls.port = PORT
 
     @classmethod
     def tearDownClass(cls):
-        cls.server.stop()
-        cls.server.join(timeout=5.0)
+        if cls.server:
+            cls.server.stop()
+            cls.server.join(timeout=5.0)
         try:
             from src.infrastructure.database import reset_db_connections
             reset_db_connections()
