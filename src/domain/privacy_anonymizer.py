@@ -19,7 +19,7 @@ def anonymize_text_pii(text: str) -> Dict[str, Any]:
     Redacts sensitive PII from text before vector embedding or storage.
     Returns anonymized text and redaction count metadata.
     """
-    if not text:
+    if not text or not isinstance(text, str):
         return {"anonymized_text": "", "redactions_count": 0, "status": "success"}
 
     anonymized = text

@@ -22,7 +22,7 @@ def scan_prompt_injection(text: str) -> Dict[str, Any]:
     Scans text for adversarial prompt injection patterns.
     Returns safety status and flagged injection triggers.
     """
-    if not text:
+    if not text or not isinstance(text, str):
         return {"is_safe": True, "injection_triggers": [], "sanitized_text": "", "status": "success"}
 
     flagged_triggers = []
