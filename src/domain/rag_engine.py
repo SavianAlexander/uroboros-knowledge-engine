@@ -235,14 +235,14 @@ def precision_cross_rerank(query: str, candidates: List[Dict[str, Any]]) -> List
 
         # 1. Term Coverage Density
         matched_terms = set(t for t in q_terms if t in content)
-        coverage_score = len(matched_terms) / len(q_terms)
+        coverage_score = (len(matched_terms) / len(q_terms)) if q_terms else 0.0
 
         # 2. Phrase Proximity Boost
         phrase_boost = 0.0
         if len(q_terms) >= 2:
             bigrams = [" ".join(q_terms[i:i+2]) for i in range(len(q_terms)-1)]
             matched_bigrams = sum(1 for b in bigrams if b in content)
-            phrase_boost = (matched_bigrams / len(bigrams)) * 0.4
+            phrase_boost = ((matched_bigrams / len(bigrams)) * 0.4) if bigrams else 0.0
 
         # 3. Filename/Header Match Boost
         header_boost = 0.25 if any(t in filename for t in q_terms) else 0.0
