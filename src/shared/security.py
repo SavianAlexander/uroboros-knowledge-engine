@@ -49,8 +49,6 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
     try:
         base = Path(base_dir).resolve() if base_dir else get_active_sandbox_dir()
         target = Path(path_str).resolve()
-        # DEBUG
-        print(f"DEBUG verify_path_containment: target={target}, base={base}")
         
         is_inside_base = False
         try:

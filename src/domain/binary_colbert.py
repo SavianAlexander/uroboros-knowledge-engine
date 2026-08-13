@@ -10,9 +10,11 @@ from typing import Dict, Any, List, Tuple
 
 def _quantize_to_binary_bitpack(vector: List[float]) -> int:
     """Quantizes a float vector into a 64-bit integer bitpack based on sign (> 0 -> 1)."""
+    if not vector or not isinstance(vector, (list, tuple)):
+        return 0
     bitpack = 0
     for i, val in enumerate(vector[:64]):
-        if val > 0.0:
+        if isinstance(val, (int, float)) and val > 0.0:
             bitpack |= (1 << i)
     return bitpack
 

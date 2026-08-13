@@ -28,8 +28,8 @@ def bandit_select_pipeline(intent: str = "FACTUAL") -> Dict[str, Any]:
 
     for arm_name, stats in _BANDIT_ARMS.items():
         # Beta(alpha, beta) sample approximation using stdlib random
-        alpha = stats["successes"] + 1
-        beta = (stats["trials"] - stats["successes"]) + 1
+        alpha = max(1, stats["successes"] + 1)
+        beta = max(1, (stats["trials"] - stats["successes"]) + 1)
         sample = random.betavariate(alpha, beta)
 
         if sample > best_score:

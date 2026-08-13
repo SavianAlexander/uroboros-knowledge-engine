@@ -204,7 +204,6 @@ def get_db():
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception:
-                import logging; logging.getLogger(__name__).exception("Swallowed error in database.py")
                 conn = None
                 _local.connection = None
                 _local.connection_path = None
