@@ -70,17 +70,22 @@ def evaluate_condition(
     # Score threshold evaluation for semantic_match
     score_threshold_match = re.search(r'(?:min_score|score)\s*[:>=]+\s*([0-9\.]+)', pattern_str, re.IGNORECASE)
     if score_threshold_match:
-        threshold = float(score_threshold_match.group(1))
-        actual_score = float(payload.get("score", payload.get("confidence", 0.0)))
-        return actual_score >= threshold
+        try:
+            threshold = float(score_threshold_match.group(1))
+            val_raw = payload.get("score", payload.get("confidence", 0.0))
+            actual_score = float(val_raw) if val_raw is not None else 0.0
+            return actual_score >= threshold
+        except (ValueError, TypeError):
+            return False
 
     # Standard numeric pattern (e.g., "0.85") when event is semantic_match
     if event_type == "semantic_match" and re.match(r'^[0-9\.]+$', pattern_str):
         try:
             threshold = float(pattern_str)
-            actual_score = float(payload.get("score", payload.get("confidence", 0.0)))
+            val_raw = payload.get("score", payload.get("confidence", 0.0))
+            actual_score = float(val_raw) if val_raw is not None else 0.0
             return actual_score >= threshold
-        except ValueError:
+        except (ValueError, TypeError):
             pass
 
     # Check candidate fields based on event type
