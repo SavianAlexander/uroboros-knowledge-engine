@@ -10,8 +10,8 @@ def save_file_revision(filepath: str, content: str):
     norm_path = os.path.abspath(filepath)
     content_hash = hashlib.sha256(content.encode("utf-8", errors="ignore")).hexdigest()
     with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
-        with conn:
-            cursor = conn.cursor()
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS file_revisions (id INTEGER PRIMARY KEY AUTOINCREMENT, filepath TEXT, content TEXT, sha256 TEXT, created_at REAL)")
         cursor.execute("""
             INSERT INTO file_revisions (filepath, content, sha256)
             VALUES (?, ?, ?)
