@@ -635,15 +635,24 @@ def migrate_folder_path(old_dir: str, new_dir: str):
 def log_audit_event(event_type: str, description: str, metadata: dict = None):
     """Log an audit event entry into system_audit_ledger."""
     try:
-        init_db()
         metadata_str = json.dumps(metadata) if metadata else "{}"
-        with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
-            with conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    INSERT INTO system_audit_ledger (event_type, description, timestamp, metadata_json)
-                    VALUES (?, ?, ?, ?)
-                """, (event_type, description, time.time(), metadata_str))
+        try:
+            with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
+                with conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT INTO system_audit_ledger (event_type, description, timestamp, metadata_json)
+                        VALUES (?, ?, ?, ?)
+                    """, (event_type, description, time.time(), metadata_str))
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            init_db()
+            with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
+                with conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT INTO system_audit_ledger (event_type, description, timestamp, metadata_json)
+                        VALUES (?, ?, ?, ?)
+                    """, (event_type, description, time.time(), metadata_str))
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error logging audit event: {e}")
 
@@ -659,12 +668,19 @@ def _parse_audit_metadata(r: sqlite3.Row) -> dict:
 def get_audit_ledger(limit: int = 50) -> list:
     """Retrieve recent system audit ledger entries."""
     try:
-        init_db()
-        with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, event_type, description, timestamp, metadata_json FROM system_audit_ledger ORDER BY timestamp DESC LIMIT ?", (limit,))
-            return [_parse_audit_metadata(r) for r in cursor.fetchall()]
+        try:
+            with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute("SELECT id, event_type, description, timestamp, metadata_json FROM system_audit_ledger ORDER BY timestamp DESC LIMIT ?", (limit,))
+                return [_parse_audit_metadata(r) for r in cursor.fetchall()]
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            init_db()
+            with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute("SELECT id, event_type, description, timestamp, metadata_json FROM system_audit_ledger ORDER BY timestamp DESC LIMIT ?", (limit,))
+                return [_parse_audit_metadata(r) for r in cursor.fetchall()]
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error getting audit ledger: {e}")
         return []

@@ -18,6 +18,8 @@ import docx
 from striprtf.striprtf import rtf_to_text
 import openpyxl
 
+logging.getLogger("pypdf").setLevel(logging.ERROR)
+
 from src.infrastructure.ocr import extract_ocr_text_structured, extract_pdf_ocr
 
 RE_PRINTABLE_BYTES = re.compile(b'[\x20-\x7E]{4,}')
@@ -132,8 +134,6 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
                     pass
 
                 # Fallback engine: pypdf
-                import logging
-                logging.getLogger("pypdf").setLevel(logging.ERROR)
                 reader = pypdf.PdfReader(filepath)
                 page_texts = []
                 for page in reader.pages:

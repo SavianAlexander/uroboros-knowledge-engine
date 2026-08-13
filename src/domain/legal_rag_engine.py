@@ -1,6 +1,14 @@
-import re
-import unicodedata
-from typing import List, Dict, Any, Tuple
+from functools import lru_cache
+
+@lru_cache(maxsize=1024)
+def _extract_legal_citations_cached(nfc_text: str) -> Tuple[str, ...]:
+    citations = []
+    for compiled_re in LegalRegulatoryRAGEngine.COMPILED_PATTERNS:
+        matches = compiled_re.findall(nfc_text)
+        for m in matches:
+            if m not in citations:
+                citations.append(m)
+    return tuple(citations)
 
 class LegalRegulatoryRAGEngine:
     """
@@ -35,18 +43,14 @@ class LegalRegulatoryRAGEngine:
 
     @classmethod
     def extract_legal_citations(cls, text: str) -> List[str]:
-        """Extract explicit statutory & regulatory clause citations from text with zero recompilation overhead."""
+        """Extract explicit statutory & regulatory clause citations from text with zero recompilation overhead.
+        # ponytail: LRU-cached citation extraction; ceiling: 1024 text blocks; upgrade: C-extension regex scanner
+        """
         if not text or not isinstance(text, str):
             return []
         
         nfc_text = unicodedata.normalize("NFC", text)
-        citations = []
-        for compiled_re in cls.COMPILED_PATTERNS:
-            matches = compiled_re.findall(nfc_text)
-            for m in matches:
-                if m not in citations:
-                    citations.append(m)
-        return citations
+        return list(_extract_legal_citations_cached(nfc_text))
 
     @classmethod
     def chunk_legal_document(cls, text: str, file_path: str = "") -> List[Dict[str, Any]]:

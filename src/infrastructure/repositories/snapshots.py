@@ -6,50 +6,52 @@ import sqlite3
 import logging
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timezone
-from src.infrastructure.database import get_db, get_db_connection, reset_db_connections, DB_FILE
+import src.infrastructure.database as db_module
+from src.infrastructure.database import get_db, get_db_connection, reset_db_connections
 
 logger = logging.getLogger(__name__)
 
 def create_db_snapshot() -> int:
     """Create atomic database snapshot using native SQLite backup API with closed connection."""
+    target_db = db_module.DB_FILE
     try:
-        with get_db_connection(DB_FILE, timeout=10.0) as conn:
+        with get_db_connection(target_db, timeout=10.0) as conn:
             with conn:
                 conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        logger.warning(f"Swallowed error in database.py: {e}")
+        import logging; logging.warning(f"Swallowed error in database.py: {e}")
     timestamp = int(time.time())
-    dest = f"{DB_FILE}.snapshot-{timestamp}"
+    dest = f"{target_db}.snapshot-{timestamp}"
     if os.path.exists(dest):
         timestamp = int(time.time() * 1000)
-        dest = f"{DB_FILE}.snapshot-{timestamp}"
+        dest = f"{target_db}.snapshot-{timestamp}"
     c_src = None
     c_dst = None
     try:
-        c_src = sqlite3.connect(DB_FILE)
+        c_src = sqlite3.connect(target_db)
         c_dst = sqlite3.connect(dest)
         c_src.backup(c_dst)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        logger.exception(f"Swallowed error in database.py: {e}")
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in database.py: {e}")
         try:
             if c_dst: c_dst.close()
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            logger.warning(f"Swallowed error in database.py: {e}")
+            import logging; logging.warning(f"Swallowed error in database.py: {e}")
         try:
             if c_src: c_src.close()
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            logger.warning(f"Swallowed error in database.py: {e}")
+            import logging; logging.warning(f"Swallowed error in database.py: {e}")
         c_dst = None
         c_src = None
-        shutil.copy2(DB_FILE, dest)
+        shutil.copy2(target_db, dest)
     finally:
         if c_dst: c_dst.close()
         if c_src: c_src.close()
@@ -57,35 +59,36 @@ def create_db_snapshot() -> int:
 
 def restore_db_snapshot(timestamp: int) -> bool:
     """Restore database from snapshot timestamp."""
-    src = f"{DB_FILE}.snapshot-{timestamp}"
+    target_db = db_module.DB_FILE
+    src = f"{target_db}.snapshot-{timestamp}"
     if os.path.exists(src):
         reset_db_connections()
         c_src = None
         c_dst = None
         try:
             c_src = sqlite3.connect(src)
-            c_dst = sqlite3.connect(DB_FILE)
+            c_dst = sqlite3.connect(target_db)
             c_src.backup(c_dst)
             return True
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            logger.exception(f"Swallowed error in database.py: {e}")
+            import logging; logging.getLogger(__name__).exception(f"Swallowed error in database.py: {e}")
             try:
                 if c_dst: c_dst.close()
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                logger.warning(f"Swallowed error in database.py: {e}")
+                import logging; logging.warning(f"Swallowed error in database.py: {e}")
             try:
                 if c_src: c_src.close()
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                logger.warning(f"Swallowed error in database.py: {e}")
+                import logging; logging.warning(f"Swallowed error in database.py: {e}")
             c_dst = None
             c_src = None
-            shutil.copy2(src, DB_FILE)
+            shutil.copy2(src, target_db)
             return True
         finally:
             if c_dst: c_dst.close()
@@ -94,7 +97,8 @@ def restore_db_snapshot(timestamp: int) -> bool:
 
 def delete_db_snapshot(timestamp: int) -> bool:
     """Delete a database snapshot by timestamp."""
-    src = f"{DB_FILE}.snapshot-{timestamp}"
+    target_db = db_module.DB_FILE
+    src = f"{target_db}.snapshot-{timestamp}"
     if os.path.exists(src):
         try:
             os.remove(src)
@@ -102,13 +106,14 @@ def delete_db_snapshot(timestamp: int) -> bool:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            logger.warning(f"Swallowed error in database.py: {e}")
+            import logging; logging.warning(f"Swallowed error in database.py: {e}")
     return False
 
 def list_db_snapshots() -> List[Dict[str, Any]]:
     """List available database snapshots."""
+    target_db = db_module.DB_FILE
     snapshots = []
-    for f in glob.glob(f"{DB_FILE}.snapshot-*"):
+    for f in glob.glob(f"{target_db}.snapshot-*"):
         try:
             ts = f.split("-")[-1]
             size = os.path.getsize(f)

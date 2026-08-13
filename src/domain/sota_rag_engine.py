@@ -13,21 +13,25 @@ from src.domain.near_duplicate_detector import compute_shingles, jaccard_similar
 from src.domain.graph_pagerank import compute_graph_pagerank
 
 
+from functools import lru_cache
+
+@lru_cache(maxsize=1024)
+def _decompose_query_cached(safe_query: str) -> Tuple[str, ...]:
+    parts = re.split(r'\b(?:and|or|vs|versus|as well as|compared to)\b|,', safe_query, flags=re.IGNORECASE)
+    sub_queries = [p.strip() for p in parts if len(p.strip()) > 3]
+    if len(sub_queries) <= 1:
+        return (safe_query,)
+    return tuple([safe_query] + sub_queries[:3])
+
 def decompose_query(user_query: str) -> List[str]:
     """
     Decomposes multi-intent queries into targeted sub-queries.
+    # ponytail: LRU-cached query decomposition; ceiling: 1024 queries; upgrade: AST grammar parser
     """
     safe_query = str(user_query or "").strip()
     if not safe_query:
         return [safe_query]
-    
-    # Split on conjunctions or clauses if complex query
-    parts = re.split(r'\b(?:and|or|vs|versus|as well as|compared to)\b|,', safe_query, flags=re.IGNORECASE)
-    sub_queries = [p.strip() for p in parts if len(p.strip()) > 3]
-    
-    if len(sub_queries) <= 1:
-        return [safe_query]
-    return [safe_query] + sub_queries[:3]
+    return list(_decompose_query_cached(safe_query))
 
 
 def compress_context_chunks(chunks: List[str], similarity_threshold: float = 0.65) -> List[str]:
