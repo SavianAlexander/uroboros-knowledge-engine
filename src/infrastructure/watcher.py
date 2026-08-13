@@ -90,7 +90,6 @@ def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], 
                             cursor.execute(f"DELETE FROM files WHERE id IN ({id_ph})", del_ids)
                             cursor.execute(f"DELETE FROM fts_files WHERE filepath IN ({fp_ph})", del_fps)
                             cursor.execute(f"DELETE FROM fts_file_chunks WHERE file_id IN ({id_ph})", del_ids)
-                    conn.close()
                 except (KeyboardInterrupt, MemoryError, SystemExit):
                     raise
                 except Exception as e:

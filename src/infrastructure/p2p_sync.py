@@ -75,7 +75,6 @@ class P2PPeerBeacon:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception:
-                import logging; logging.getLogger(__name__).exception("Swallowed error in p2p_sync.py")
                 continue
 
         if not bound:
