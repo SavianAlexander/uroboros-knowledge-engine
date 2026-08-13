@@ -32,11 +32,15 @@ def binary_colbert_maxsim(query_token_vecs: List[List[float]], doc_token_vecs: L
     MaxSim = sum over query tokens of max(similarity with doc tokens).
     # ponytail: zero-dependency binary ColBERT MaxSim late interaction
     """
-    if not query_token_vecs or not doc_token_vecs:
+    valid_q = [qv for qv in query_token_vecs if isinstance(qv, (list, tuple))]
+    valid_d = [dv for dv in doc_token_vecs if isinstance(dv, (list, tuple))]
+    if not valid_q or not valid_d:
         return 0.0
 
-    q_bitpacks = [_quantize_to_binary_bitpack(qv) for qv in query_token_vecs]
-    d_bitpacks = [_quantize_to_binary_bitpack(dv) for dv in doc_token_vecs]
+    q_bitpacks = [_quantize_to_binary_bitpack(qv) for qv in valid_q]
+    d_bitpacks = [_quantize_to_binary_bitpack(dv) for dv in valid_d]
+    if not q_bitpacks:
+        return 0.0
 
     total_maxsim = 0.0
     for q_bits in q_bitpacks:
@@ -47,6 +51,8 @@ def binary_colbert_maxsim(query_token_vecs: List[List[float]], doc_token_vecs: L
             sim = (64.0 - h_dist) / 64.0
             if sim > max_sim:
                 max_sim = sim
+                if max_sim == 1.0:
+                    break
         total_maxsim += max_sim
 
     return round(total_maxsim / float(len(q_bitpacks)), 4)

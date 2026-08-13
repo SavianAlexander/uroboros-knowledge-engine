@@ -51,7 +51,7 @@ def parse_python_ast(source_code: str, filename: str = "<unknown>") -> Dict[str,
     """
     Parses Python source code into structural AST entities and graph edges.
     """
-    if not source_code:
+    if not source_code or not isinstance(source_code, str) or not source_code.strip():
         return {"status": "empty", "classes": [], "functions": [], "imports": [], "calls": []}
 
     try:
