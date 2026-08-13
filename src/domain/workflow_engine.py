@@ -37,9 +37,14 @@ def evaluate_condition(
                 # Check key-value rules inside JSON
                 for key, expected in cond_obj.items():
                     if key in ("min_score", "score_threshold", "score"):
-                        actual_score = float(payload.get("score", payload.get("confidence", 0.0)))
-                        if actual_score < float(expected):
-                            return False
+                        try:
+                            val_raw = payload.get("score", payload.get("confidence", 0.0))
+                            actual_score = float(val_raw) if val_raw is not None else 0.0
+                            expected_score = float(expected) if expected is not None else 0.0
+                            if actual_score < expected_score:
+                                return False
+                        except (ValueError, TypeError):
+                            pass
                     elif key in ("pattern", "glob", "file_pattern"):
                         target_str = str(payload.get("filepath", payload.get("filename", "")))
                         if not fnmatch.fnmatch(target_str, str(expected)):
