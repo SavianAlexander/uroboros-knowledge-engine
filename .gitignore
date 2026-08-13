@@ -25,6 +25,8 @@ test_sandbox/
 *.log
 failure*.txt
 ci.log
+test_results.xml
+*.xml
 scratch*.py
 scratch/
 data/
