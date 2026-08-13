@@ -77,9 +77,6 @@ def index_single_file(filepath, user_id=0):
     matched_tags = extract_ai_tags(content, filename)
     acl_permissions = get_file_acl(filepath)
 
-    # Import batch embedding function
-    from src.core.embeddings import generate_embeddings_batch
-
     # Chunk + Embed (outside DB transaction)
     chunks_data = []
     raw_chunks = chunk_text(content, chunk_size=1024)
@@ -270,7 +267,6 @@ def main():
             cur.execute(f"SELECT COUNT(*) FROM {table}")
             print(f"  {table}: {cur.fetchone()[0]}")
 
-    from src.infrastructure.database import run_maintenance
     run_maintenance()
 
 

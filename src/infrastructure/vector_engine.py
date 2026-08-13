@@ -793,20 +793,20 @@ class MiniVectorEngine:
 
         doc_graph_boosts = {}
         try:
-            conn = get_db()
-            cursor = conn.cursor()
-            for cand in vec_candidates[:5]:
-                file_id = cand.get("id")
-                if not file_id:
-                    continue
-                cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (file_id,))
-                tags = [r[0] for r in cursor.fetchall()]
-                if tags:
-                    placeholders = ",".join(["?"] * len(tags))
-                    cursor.execute(f"SELECT DISTINCT file_id FROM tags WHERE tag IN ({placeholders}) AND file_id != ?", (*tags, file_id))
-                    neighbor_ids = [r[0] for r in cursor.fetchall()]
-                    for n_id in neighbor_ids:
-                        doc_graph_boosts[n_id] = doc_graph_boosts.get(n_id, 0.0) + 0.05
+            cand_ids = [c.get("id") for c in vec_candidates[:5] if c.get("id")]
+            if cand_ids:
+                conn = get_db()
+                cursor = conn.cursor()
+                placeholders = ",".join(["?"] * len(cand_ids))
+                cursor.execute(f"""
+                    SELECT t2.file_id, COUNT(DISTINCT t1.tag) as shared_tags
+                    FROM tags t1
+                    JOIN tags t2 ON t1.tag = t2.tag AND t1.file_id != t2.file_id
+                    WHERE t1.file_id IN ({placeholders})
+                    GROUP BY t2.file_id
+                """, tuple(cand_ids))
+                for r in cursor.fetchall():
+                    doc_graph_boosts[r[0]] = round(0.05 * r[1], 4)
         except Exception:
             pass
 
