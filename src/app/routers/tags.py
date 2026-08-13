@@ -520,7 +520,7 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                             delta_res = json.loads(resp.read().decode("utf-8"))
                             files_list = delta_res.get("files", [])
                             for item in files_list:
-                                fn = item.get("filename") or "synced_file.txt"
+                                fn = os.path.basename(item.get("filename") or "synced_file.txt")
                                 content = item.get("content") or ""
                                 fp = os.path.join(active_dir, fn)
                                 with open(fp, "w", encoding="utf-8") as f:
@@ -537,7 +537,7 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                                 data = json.loads(resp.read().decode("utf-8"))
                                 peer_manifest = data.get("manifest", [])
                                 for item in peer_manifest:
-                                    fn = item.get("filename") or "synced_file.txt"
+                                    fn = os.path.basename(item.get("filename") or "synced_file.txt")
                                     if fn in to_pull:
                                         content = item.get("content") or ""
                                         fp = os.path.join(active_dir, fn)
@@ -555,7 +555,7 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                         data = json.loads(resp.read().decode("utf-8"))
                         peer_manifest = data.get("manifest", [])
                         for item in peer_manifest:
-                            fn = item.get("filename") or "synced_file.txt"
+                            fn = os.path.basename(item.get("filename") or "synced_file.txt")
                             content = item.get("content") or ""
                             fp = os.path.join(active_dir, fn)
                             with open(fp, "w", encoding="utf-8") as f:
