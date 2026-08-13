@@ -16,7 +16,9 @@ def parse_codebase_ast(code_snippet: str) -> Dict[str, Any]:
         return {"symbols": [], "classes": [], "functions": [], "imports": [], "status": "empty_code"}
 
     try:
-        tree = ast.parse(code_snippet)
+        import unicodedata
+        norm_code = unicodedata.normalize("NFC", code_snippet)
+        tree = ast.parse(norm_code)
     except Exception as e:
         return {"symbols": [], "error": str(e), "status": "ast_parse_error"}
 

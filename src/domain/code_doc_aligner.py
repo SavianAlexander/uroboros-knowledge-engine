@@ -16,7 +16,9 @@ def check_code_docstring_alignment(code_snippet: str) -> Dict[str, Any]:
         return {"alignment_issues": [], "status": "empty_code"}
 
     try:
-        tree = ast.parse(code_snippet)
+        import unicodedata
+        norm_code = unicodedata.normalize("NFC", code_snippet)
+        tree = ast.parse(norm_code)
     except Exception as e:
         return {"alignment_issues": [], "error": str(e), "status": "syntax_error"}
 

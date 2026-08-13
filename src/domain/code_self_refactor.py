@@ -16,7 +16,9 @@ def analyze_and_propose_refactoring(code_snippet: str) -> Dict[str, Any]:
         return {"proposals": [], "status": "empty_code"}
 
     try:
-        tree = ast.parse(code_snippet)
+        import unicodedata
+        norm_code = unicodedata.normalize("NFC", code_snippet)
+        tree = ast.parse(norm_code)
     except Exception as e:
         return {"proposals": [], "error": str(e), "status": "syntax_error"}
 

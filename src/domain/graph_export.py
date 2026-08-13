@@ -33,10 +33,10 @@ def export_graph_to_graphml(graph_data: Dict[str, Any]) -> str:
     ]
 
     for node in nodes:
-        nid = str(node.get("id", ""))
-        label = str(node.get("name") or node.get("label") or nid).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        ntype = str(node.get("type", "node"))
-        group = str(node.get("group") or node.get("community", 0))
+        nid = str(node.get("id", "")).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        label = str(node.get("name") or node.get("label") or nid).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        ntype = str(node.get("type", "node")).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        group = str(node.get("group") or node.get("community", 0)).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
         xml_lines.append(f'    <node id="{nid}">')
         xml_lines.append(f'      <data key="d0">{label}</data>')
@@ -45,9 +45,9 @@ def export_graph_to_graphml(graph_data: Dict[str, Any]) -> str:
         xml_lines.append('    </node>')
 
     for idx, edge in enumerate(edges, start=1):
-        src = str(edge.get("source", ""))
-        target = str(edge.get("target", ""))
-        relation = str(edge.get("relation") or edge.get("type", "link"))
+        src = str(edge.get("source", "")).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        target = str(edge.get("target", "")).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        relation = str(edge.get("relation") or edge.get("type", "link")).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
         try:
             weight = int(edge.get("weight", 1))
         except (ValueError, TypeError):

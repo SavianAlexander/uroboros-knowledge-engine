@@ -16,8 +16,9 @@ def detect_semantic_contradictions(
     """
     contradictions = []
 
-    valid_a = [str(c) for c in (doc_a_clauses or []) if c is not None]
-    valid_b = [str(c) for c in (doc_b_clauses or []) if c is not None]
+    import unicodedata
+    valid_a = [unicodedata.normalize("NFC", str(c)) for c in (doc_a_clauses or []) if c is not None]
+    valid_b = [unicodedata.normalize("NFC", str(c)) for c in (doc_b_clauses or []) if c is not None]
 
     for c_a in valid_a:
         norm_a = c_a.lower()

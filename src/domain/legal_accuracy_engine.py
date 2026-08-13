@@ -1,3 +1,4 @@
+import math
 import functools
 import unicodedata
 import hashlib
@@ -57,14 +58,19 @@ class LegalAccuracyEngine:
         if not vec1 or not vec2 or len(vec1) != len(vec2):
             return 0.0
 
-        dot_product = sum(float(a) * float(b) for a, b in zip(vec1, vec2))
-        norm1 = float(sum(float(a) * float(a) for a in vec1)) ** 0.5
-        norm2 = float(sum(float(b) * float(b) for b in vec2)) ** 0.5
+        dot_product = 0.0
+        norm1_sq = 0.0
+        norm2_sq = 0.0
+        for a, b in zip(vec1, vec2):
+            fa, fb = float(a), float(b)
+            dot_product += fa * fb
+            norm1_sq += fa * fa
+            norm2_sq += fb * fb
 
-        if norm1 == 0.0 or norm2 == 0.0:
+        if norm1_sq == 0.0 or norm2_sq == 0.0:
             return 0.0
 
-        similarity = dot_product / (norm1 * norm2)
+        similarity = dot_product / (math.sqrt(norm1_sq) * math.sqrt(norm2_sq))
         # Clamp bounds strictly between -1.0 and +1.0
         return max(-1.0, min(1.0, similarity))
 

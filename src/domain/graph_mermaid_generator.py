@@ -55,11 +55,15 @@ def generate_mermaid_graph(focus_doc: str = "", max_nodes: int = 15) -> Dict[str
             src_id = re.sub(r'\W+', '_', src)
             tgt_id = re.sub(r'\W+', '_', tgt)
 
+            clean_src = src.replace('"', '&quot;')
+            clean_tgt = tgt.replace('"', '&quot;')
+
             if src_id not in seen_nodes:
-                lines.append(f'  {src_id}["{src}"]')
+                lines.append(f'  {src_id}["{clean_src}"]')
                 seen_nodes.add(src_id)
+
             if tgt_id not in seen_nodes:
-                lines.append(f'  {tgt_id}["{tgt}"]')
+                lines.append(f'  {tgt_id}["{clean_tgt}"]')
                 seen_nodes.add(tgt_id)
 
             lines.append(f'  {src_id} --> {tgt_id}')

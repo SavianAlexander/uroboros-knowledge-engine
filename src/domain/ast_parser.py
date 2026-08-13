@@ -55,7 +55,9 @@ def parse_python_ast(source_code: str, filename: str = "<unknown>") -> Dict[str,
         return {"status": "empty", "classes": [], "functions": [], "imports": [], "calls": []}
 
     try:
-        tree = ast.parse(source_code, filename=filename)
+        import unicodedata
+        norm_code = unicodedata.normalize("NFC", source_code)
+        tree = ast.parse(norm_code, filename=filename)
         visitor = CodeASTVisitor()
         visitor.visit(tree)
 

@@ -21,9 +21,11 @@ def inspect_privacy_compliance(text_content: str) -> Dict[str, Any]:
     if not text_content:
         return {"status": "clean", "risk_score": 0.0, "violations": []}
 
+    import unicodedata
+    norm_text = unicodedata.normalize("NFC", str(text_content))
     violations = []
     
-    emails = RE_EMAIL.findall(text_content)
+    emails = RE_EMAIL.findall(norm_text)
     if emails:
         violations.append({"type": "PII_EMAIL", "count": len(emails), "samples": emails[:2]})
 
@@ -38,7 +40,7 @@ def inspect_privacy_compliance(text_content: str) -> Dict[str, Any]:
     risk_score = min(len(violations) * 0.35, 1.0)
     
     # Generate masked version
-    masked_text = RE_EMAIL.sub("[REDACTED_EMAIL]", text_content)
+    masked_text = RE_EMAIL.sub("[REDACTED_EMAIL]", norm_text)
     masked_text = RE_SSN.sub("[REDACTED_SSN]", masked_text)
     masked_text = RE_API_KEY.sub("[REDACTED_API_KEY]", masked_text)
 

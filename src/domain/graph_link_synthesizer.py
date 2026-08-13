@@ -20,9 +20,8 @@ def auto_synthesize_wikilinks(text_content: str, known_doc_titles: List[str]) ->
     links_added = 0
     added_titles = []
 
-    for title in known_doc_titles:
-        if len(title.strip()) < 3:
-            continue
+    valid_titles = [str(t).strip() for t in (known_doc_titles or []) if t is not None and len(str(t).strip()) >= 3]
+    for title in valid_titles:
         
         title_pattern = re.escape(title.strip())
         # Match title outside existing [[wikilinks]]

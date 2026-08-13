@@ -33,8 +33,14 @@ def find_multihop_pathways(start_doc: str, target_doc: Optional[str] = None, max
         node_map = {r["id"]: r["filename"] for r in rows}
         name_to_id = {r["filename"].lower(): r["id"] for r in rows}
 
-        start_id = name_to_id.get(start_doc.lower())
-        target_id = name_to_id.get(target_doc.lower()) if target_doc else None
+        if not start_doc or not isinstance(start_doc, str):
+            return {"pathways": [], "status": "error", "message": "Invalid or missing start_doc parameter"}
+
+        clean_start = start_doc.lower()
+        clean_target = target_doc.lower() if target_doc and isinstance(target_doc, str) else None
+
+        start_id = name_to_id.get(clean_start)
+        target_id = name_to_id.get(clean_target) if clean_target else None
 
         if not start_id:
             # Fuzzy match start document
