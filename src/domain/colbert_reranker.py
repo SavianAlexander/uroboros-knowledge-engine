@@ -44,9 +44,15 @@ def colbert_maxsim_score(query_token_embeddings: List[List[float]], doc_token_em
         if not q_emb or not isinstance(q_emb, (list, tuple)):
             continue
         q_norm = normalize_vector(q_emb)
-        sims = [dot_product(q_norm, d_norm) for d_norm in normalized_docs]
-        if sims:
-            total_score += max(sims)
+        max_sim = -1.0
+        for d_norm in normalized_docs:
+            sim = dot_product(q_norm, d_norm)
+            if sim > max_sim:
+                max_sim = sim
+                if max_sim >= 0.9999:
+                    break
+        if max_sim > -1.0:
+            total_score += max_sim
             valid_query_tokens += 1
 
     if valid_query_tokens == 0:
