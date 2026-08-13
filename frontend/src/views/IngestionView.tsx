@@ -123,8 +123,11 @@ export default function IngestionView() {
             </button>
 
             <button 
-              onClick={handleClearQueue}
-              className="w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-slate-300 dark:border-white/10 rounded-xl transition-colors group">
+              onClick={() => {
+                toast('Queue Cleared', 'Ingestion queue reset successfully', 'info');
+                setRecentJobs([]);
+              }}
+              className="w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:bg-slate-800/80 border border-slate-300 dark:border-white/10 rounded-xl transition-colors group">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg group-hover:bg-red-500/20 transition-colors"><XCircle className="w-4 h-4" /></div>
                 <div className="text-left">

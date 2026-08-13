@@ -146,24 +146,45 @@ export default function SettingsView() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <div className="md:col-span-1 text-sm font-medium text-slate-700 dark:text-slate-300">OpenAI API Key</div>
               <div className="md:col-span-2">
-                <input type="password" value={envData.OPENAI_API_KEY || ''} readOnly className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-4 py-2.5 text-slate-600 dark:text-slate-400 font-mono text-sm focus:outline-none" />
+                <input 
+                  type="password" 
+                  value={openaiKey} 
+                  onChange={(e) => setOpenaiKey(e.target.value)} 
+                  placeholder="sk-proj-..." 
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-4 py-2.5 text-slate-900 dark:text-slate-200 font-mono text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50" 
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <div className="md:col-span-1 text-sm font-medium text-slate-700 dark:text-slate-300">Anthropic API Key</div>
               <div className="md:col-span-2">
-                <input type="password" value={envData.ANTHROPIC_API_KEY || ''} placeholder="sk-ant-..." readOnly className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-4 py-2.5 text-slate-900 dark:text-slate-200 font-mono text-sm placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50" />
+                <input 
+                  type="password" 
+                  value={anthropicKey} 
+                  onChange={(e) => setAnthropicKey(e.target.value)} 
+                  placeholder="sk-ant-..." 
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-4 py-2.5 text-slate-900 dark:text-slate-200 font-mono text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50" 
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <div className="md:col-span-1 text-sm font-medium text-slate-700 dark:text-slate-300">Local Inference Endpoint</div>
               <div className="md:col-span-2">
-                <input type="text" value={envData.OLLAMA_HOST || 'http://localhost:11434/api'} readOnly className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-4 py-2.5 text-slate-900 dark:text-slate-200 font-mono text-sm focus:outline-none focus:border-indigo-500/50" />
+                <input 
+                  type="text" 
+                  value={ollamaHost} 
+                  onChange={(e) => setOllamaHost(e.target.value)} 
+                  placeholder="http://localhost:11434/api" 
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-4 py-2.5 text-slate-900 dark:text-slate-200 font-mono text-sm focus:outline-none focus:border-indigo-500/50" 
+                />
               </div>
             </div>
           </div>
           <div className="mt-6 flex justify-end">
-            <button className="px-5 py-2.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:bg-white/10 text-slate-900 dark:text-slate-200 rounded-xl text-sm font-medium transition-colors border border-slate-300 dark:border-white/10">
+            <button 
+              onClick={handleUpdateCredentials}
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition-colors shadow-lg shadow-indigo-600/20"
+            >
               Update Credentials
             </button>
           </div>

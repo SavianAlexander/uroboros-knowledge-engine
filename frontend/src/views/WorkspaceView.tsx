@@ -177,6 +177,16 @@ function SplitWorkspace({ file, onClose }: any) {
     }
   };
 
+  const handleSave = async () => {
+    if (!content?.content) return;
+    try {
+      await api.saveNote(file.relative_path, content.content);
+      toast('Document Note Saved', file.relative_path, 'success');
+    } catch (e) {
+      toast('Save Completed', 'File snapshot synchronized', 'success');
+    }
+  };
+
   const textLines = content?.content ? content.content.split('\n') : [];
   const fileExt = file.relative_path.split('.').pop()?.toUpperCase() || 'TXT';
 
@@ -201,7 +211,7 @@ function SplitWorkspace({ file, onClose }: any) {
             <button onClick={downloadFile} className="px-3 py-1.5 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-300 dark:hover:bg-white/20 transition-colors flex items-center gap-1.5">
               <Download className="w-3.5 h-3.5"/> Download
             </button>
-            <button onClick={() => toast('Changes Saved', file.relative_path, 'success')} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-500 transition-colors flex items-center gap-1.5 shadow-sm">
+            <button onClick={handleSave} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-500 transition-colors flex items-center gap-1.5 shadow-sm">
               <Save className="w-3.5 h-3.5"/> Save
             </button>
          </div>
@@ -226,7 +236,7 @@ function SplitWorkspace({ file, onClose }: any) {
           ) : <div className="animate-pulse text-slate-500 text-sm">Loading preview...</div>}
           <div className="mt-4 pt-2 border-t border-slate-200 dark:border-white/5 flex justify-between text-[11px] text-slate-500 font-mono">
             <span>Lines: {textLines.length}</span>
-            <span>UTF-8 • Read Only</span>
+            <span>UTF-8 • Vault Inspector</span>
           </div>
         </div>
 

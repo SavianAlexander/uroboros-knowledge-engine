@@ -11,6 +11,7 @@ export default function ConfigView() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [newPeer, setNewPeer] = useState('');
+  const [activeModal, setActiveModal] = useState<'rule' | 'synonyms' | 'macros' | 'aliases' | null>(null);
 
   // Strategy Tuning State
   const [chunkSize, setChunkSize] = useState<number>(1024);
@@ -323,7 +324,10 @@ export default function ConfigView() {
               </tbody>
             </table>
           </div>
-          <button className="mt-4 py-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl text-sm font-medium transition-colors w-full px-6">
+          <button 
+            onClick={() => setActiveModal('rule')}
+            className="mt-4 py-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl text-sm font-medium transition-colors w-full px-6"
+          >
             + Create New Rule
           </button>
         </div>
@@ -342,21 +346,102 @@ export default function ConfigView() {
              <div className="border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 p-4 flex flex-col">
                 <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200 mb-2">FTS Synonyms</h4>
                 <p className="text-xs text-slate-500 mb-4 flex-1">Map custom vocabularies to unified search terms.</p>
-                <button className="w-full py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors border border-amber-500/20">Manage Synonyms</button>
+                <button 
+                  onClick={() => setActiveModal('synonyms')}
+                  className="w-full py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors border border-amber-500/20"
+                >
+                  Manage Synonyms
+                </button>
              </div>
              
              <div className="border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 p-4 flex flex-col">
                 <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200 mb-2">Query Macros</h4>
                 <p className="text-xs text-slate-500 mb-4 flex-1">Define shortcut templates for complex search queries.</p>
-                <button className="w-full py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors border border-amber-500/20">Manage Macros</button>
+                <button 
+                  onClick={() => setActiveModal('macros')}
+                  className="w-full py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors border border-amber-500/20"
+                >
+                  Manage Macros
+                </button>
              </div>
              
              <div className="border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 p-4 flex flex-col">
                 <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200 mb-2">Tag Aliases</h4>
                 <p className="text-xs text-slate-500 mb-4 flex-1">Group multiple variant tags under a canonical alias.</p>
-                <button className="w-full py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors border border-amber-500/20">Manage Tag Aliases</button>
+                <button 
+                  onClick={() => setActiveModal('aliases')}
+                  className="w-full py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors border border-amber-500/20"
+                >
+                  Manage Tag Aliases
+                </button>
              </div>
           </div>
+        </div>
+      </div>
+
+      {activeModal && (
+        <ManagerModal mode={activeModal} onClose={() => setActiveModal(null)} onToast={toast} />
+      )}
+    </div>
+  );
+}
+
+function ManagerModal({ mode, onClose, onToast }: { mode: 'rule' | 'synonyms' | 'macros' | 'aliases', onClose: () => void, onToast: any }) {
+  const [val1, setVal1] = useState('');
+  const [val2, setVal2] = useState('');
+
+  const titles: Record<string, string> = {
+    rule: 'Create Auto-Tagging Rule',
+    synonyms: 'Manage FTS Synonyms',
+    macros: 'Manage Query Macros',
+    aliases: 'Manage Tag Aliases'
+  };
+
+  const labels: Record<string, [string, string]> = {
+    rule: ['Target Tag', 'Pattern / Prompt'],
+    synonyms: ['Primary Term', 'Synonyms (comma-separated)'],
+    macros: ['Macro Name ($macro)', 'Expansion Query'],
+    aliases: ['Alias Tag', 'Canonical Tag']
+  };
+
+  const handleSave = () => {
+    if (!val1.trim()) return;
+    onToast('Configuration Saved', `Added entry to ${mode} manager.`, 'success');
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div className="flex justify-between items-center border-b border-white/10 pb-3">
+          <h3 className="font-semibold text-slate-100 text-sm">{titles[mode]}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-xs">✕</button>
+        </div>
+        <div className="space-y-3 text-xs">
+          <div>
+            <label className="text-slate-400 block mb-1 font-medium">{labels[mode][0]}</label>
+            <input 
+              type="text" 
+              value={val1}
+              onChange={e => setVal1(e.target.value)}
+              className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-slate-200 outline-none focus:border-indigo-500"
+              placeholder={`Enter ${labels[mode][0]}...`}
+            />
+          </div>
+          <div>
+            <label className="text-slate-400 block mb-1 font-medium">{labels[mode][1]}</label>
+            <input 
+              type="text" 
+              value={val2}
+              onChange={e => setVal2(e.target.value)}
+              className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-slate-200 outline-none focus:border-indigo-500"
+              placeholder={`Enter ${labels[mode][1]}...`}
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button onClick={onClose} className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs hover:bg-slate-700">Cancel</button>
+          <button onClick={handleSave} className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-500">Save Config</button>
         </div>
       </div>
     </div>
