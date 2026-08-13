@@ -20,7 +20,9 @@ def classify_query_intent(query: str) -> Dict[str, Any]:
     if not query:
         return {"intent": "factual_lookup", "confidence": 1.0, "preset": {"top_k": 5, "rerank": True}, "status": "success"}
 
-    words = set(re.findall(r'\b[a-zA-Z0-9_-]+\b', query.lower()))
+    import unicodedata
+    norm_query = unicodedata.normalize("NFC", query)
+    words = set(re.findall(r'\b[\w-]+\b', norm_query.lower()))
 
     code_count = len(words.intersection(CODE_KEYWORDS))
     math_count = len(words.intersection(MATH_KEYWORDS))

@@ -26,7 +26,9 @@ def evaluate_hallucination_risk(query: str, passages: List[Dict[str, Any]]) -> D
             "status": "refused"
         }
 
-    query_words = set(re.findall(r'\b[a-zA-Z0-9_-]{3,}\b', str_query.lower()))
+    import unicodedata
+    norm_query = unicodedata.normalize("NFC", str_query)
+    query_words = set(re.findall(r'\b[\w-]{3,}\b', norm_query.lower()))
     if not query_words:
         return {
             "query": str_query,

@@ -103,10 +103,21 @@ class LegalRegulatoryRAGEngine:
         """
         Assemble pin-point legal RAG response with mandatory citation grounding matrix.
         """
+        if not chunks or not isinstance(chunks, list):
+            return {
+                "status": "empty",
+                "query": str(query or ""),
+                "pinpoint_citations": [],
+                "grounded_sources_count": 0,
+                "sources": [],
+                "legal_disclaimer": "This RAG response provides statutory citation mapping for regulatory analysis purposes."
+            }
+
         all_citations = []
         grounded_sources = []
+        valid_chunks = [c for c in chunks if isinstance(c, dict)]
 
-        for c in chunks:
+        for c in valid_chunks:
             cites = c.get("citations", [])
             for cite in cites:
                 if cite not in all_citations:

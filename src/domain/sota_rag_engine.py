@@ -17,17 +17,17 @@ def decompose_query(user_query: str) -> List[str]:
     """
     Decomposes multi-intent queries into targeted sub-queries.
     """
-    cleaned = user_query.strip()
-    if not cleaned:
-        return [user_query]
+    safe_query = str(user_query or "").strip()
+    if not safe_query:
+        return [safe_query]
     
     # Split on conjunctions or clauses if complex query
-    parts = re.split(r'\b(?:and|or|vs|versus|as well as|compared to)\b|,', cleaned, flags=re.IGNORECASE)
+    parts = re.split(r'\b(?:and|or|vs|versus|as well as|compared to)\b|,', safe_query, flags=re.IGNORECASE)
     sub_queries = [p.strip() for p in parts if len(p.strip()) > 3]
     
     if len(sub_queries) <= 1:
-        return [cleaned]
-    return [cleaned] + sub_queries[:3]
+        return [safe_query]
+    return [safe_query] + sub_queries[:3]
 
 
 def compress_context_chunks(chunks: List[str], similarity_threshold: float = 0.65) -> List[str]:
@@ -35,10 +35,14 @@ def compress_context_chunks(chunks: List[str], similarity_threshold: float = 0.6
     Deduplicates and compresses context text chunks using MinHash Jaccard similarity.
     Saves up to 60% LLM token window space while maximizing information density.
     """
+    if not chunks or not isinstance(chunks, list):
+        return []
+
     compressed = []
     seen_shingles = []
+    valid_chunks = [str(c) for c in chunks if c is not None]
 
-    for chunk in chunks:
+    for chunk in valid_chunks:
         chunk_shingles = compute_shingles(chunk, k=3)
         if not chunk_shingles:
             continue

@@ -13,7 +13,7 @@ def decompose_goal_into_agent_swarm(
     """
     Decomposes a master goal into sub-agent worker tasks with dependency ordering.
     """
-    if not master_goal:
+    if not master_goal or not isinstance(master_goal, str) or not master_goal.strip():
         return {"swarm_tasks": [], "status": "empty_goal"}
 
     swarm_tasks = [

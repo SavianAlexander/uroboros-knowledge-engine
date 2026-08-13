@@ -30,11 +30,15 @@ def compute_ngram_overlap(claim: str, source_text: str) -> float:
     if not claim or not source_text or not isinstance(claim, str) or not isinstance(source_text, str):
         return 0.0 if (claim and not source_text) else 1.0
 
-    claim_words = set(w.lower() for w in RE_WORD.findall(claim) if w.lower() not in STOP_WORDS)
+    import unicodedata
+    claim_norm = unicodedata.normalize("NFC", claim)
+    source_norm = unicodedata.normalize("NFC", source_text)
+
+    claim_words = set(w.lower() for w in RE_WORD.findall(claim_norm) if w.lower() not in STOP_WORDS)
     if not claim_words:
         return 1.0
     
-    source_words = set(w.lower() for w in RE_WORD.findall(source_text) if w.lower() not in STOP_WORDS)
+    source_words = set(w.lower() for w in RE_WORD.findall(source_norm) if w.lower() not in STOP_WORDS)
     overlap = claim_words.intersection(source_words)
     return round(len(overlap) / float(len(claim_words)), 4)
 

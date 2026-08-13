@@ -32,11 +32,11 @@ def analyze_and_propose_refactoring(code_snippet: str) -> Dict[str, Any]:
                     "suggestion": "Decompose into helper functions (Ponytail principle: keep functions concise)."
                 })
         elif isinstance(node, ast.Try):
-            if any(isinstance(h.type, ast.Name) and h.type.id == "Exception" for h in node.handlers):
+            if any(h.type is None or (isinstance(h.type, ast.Name) and h.type.id in ("Exception", "BaseException")) for h in node.handlers):
                 proposals.append({
                     "target": "try_except_block",
-                    "issue": "broad_exception_catch",
-                    "suggestion": "Catch specific exception types to prevent masking bugs."
+                    "issue": "broad_or_bare_exception_catch",
+                    "suggestion": "Catch specific exception types to prevent masking bugs (Ponytail: no bare excepts)."
                 })
 
     return {

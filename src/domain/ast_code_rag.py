@@ -12,7 +12,7 @@ def parse_codebase_ast(code_snippet: str) -> Dict[str, Any]:
     """
     Parses Python code into AST structure and returns symbols, classes, functions, and imports.
     """
-    if not code_snippet:
+    if not code_snippet or not isinstance(code_snippet, str) or not code_snippet.strip():
         return {"symbols": [], "classes": [], "functions": [], "imports": [], "status": "empty_code"}
 
     try:
