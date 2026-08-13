@@ -1,26 +1,35 @@
 ---
 name: Bug Report
-about: Create a report to help us improve the search engine
+about: Create a report to help us improve Uroboros Knowledge Engine
 title: '[BUG] '
-labels: bug
+labels: 'bug'
 assignees: ''
-
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Bug Description
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Search for '...'
-3. Click on '....'
-4. See error
+A clear and concise summary of the issue or error.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Steps to Reproduce
 
-**Environment (please complete the following information):**
-- OS: [e.g. Windows, macOS]
-- Browser: [e.g. Chrome, Firefox]
-- Python Version: [e.g. 3.12]
+1. Execute command: `...`
+2. Submit payload: `...`
+3. Observe error: `...`
+
+## Expected Behavior
+
+A clear description of what was expected to happen.
+
+## Empirical Log & Stack Trace
+
+```text
+[Paste un-truncated log error output or Python traceback here]
+```
+
+## System Environment
+
+- **OS**: Windows / Linux / macOS
+- **Python Version**: `3.12.x`
+- **FastAPI Version**: `0.111.0`
+- **SQLite Version**: FTS5 WAL enabled
+- **Hardware Profile**: RAM / VRAM

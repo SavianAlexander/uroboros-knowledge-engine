@@ -1,20 +1,29 @@
 ---
 name: Feature Request
-about: Suggest an idea or enhancement for Uroboros
-title: '[FEATURE] '
-labels: enhancement
+about: Suggest an architectural improvement or domain engine enhancement
+title: '[FEAT] '
+labels: 'enhancement'
 assignees: ''
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex: I always want to be able to do [...] but it is difficult because [...].
+## Feature Proposal Summary
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+A clear and concise description of the proposed feature or architectural improvement.
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+## Problem / Use Case
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+Is your feature request related to a specific limitation or performance optimization? Describe the problem cleanly.
+
+## Proposed Architectural Solution
+
+Describe the domain module design, router endpoint, or infrastructure changes required.
+
+- **Target Domain File**: `src/domain/...`
+- **Target Router Endpoint**: `src/app/routers/...`
+- **Performance Impact**: Expected $P_{50}$ latency or memory footprint reduction.
+
+## Ponytail Minimalist Evaluation
+
+- [ ] Can this be solved using the Python Standard Library?
+- [ ] Does an existing helper module in `src/domain/` already solve this?
+- [ ] Does this require adding new PyPI dependencies? (If yes, justify strictly).
