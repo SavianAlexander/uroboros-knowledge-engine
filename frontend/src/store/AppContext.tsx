@@ -13,10 +13,24 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [activeView, setActiveView] = useState<ViewId>('dashboard');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setThemeState] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('uroboros_theme') as 'dark' | 'light') || 'dark';
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [isCommandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [activeWorkspace, setActiveWorkspace] = useState('Default');
+  const [activeWorkspace, setActiveWorkspaceState] = useState(() => {
+    return localStorage.getItem('uroboros_workspace') || 'Default';
+  });
+
+  const setTheme = (t: 'dark' | 'light') => {
+    setThemeState(t);
+    localStorage.setItem('uroboros_theme', t);
+  };
+
+  const setActiveWorkspace = (w: string) => {
+    setActiveWorkspaceState(w);
+    localStorage.setItem('uroboros_workspace', w);
+  };
 
   return (
     <AppContext.Provider value={{

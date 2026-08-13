@@ -23,7 +23,13 @@ export default function Sidebar() {
     <div className="w-64 h-full flex flex-col dark:bg-slate-900/40 bg-white/40 backdrop-blur-xl border-r dark:border-white/5 border-slate-200 p-4 flex-shrink-0">
       <div className="flex flex-col gap-2 mb-6 px-2">
         <div className="flex items-center gap-3">
-          {!imgError && <img src="/assets/uroboros_logo.svg" alt="Uroboros" className="w-8 h-8" onError={() => setImgError(true)} />}
+          {!imgError ? (
+            <img src="/assets/uroboros_logo.svg" alt="Uroboros" className="w-8 h-8" onError={() => setImgError(true)} />
+          ) : (
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-500/30">
+              U
+            </div>
+          )}
           <h1 className="text-lg font-semibold tracking-wide text-slate-900 dark:text-slate-100">Uroboros</h1>
         </div>
         <select

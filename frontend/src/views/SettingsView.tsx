@@ -53,7 +53,6 @@ export default function SettingsView() {
   };
 
   const handleVacuum = async () => {
-    if (!confirm('Run SQLite VACUUM? This will lock the database temporarily.')) return;
     try {
       await api.systemMaintenance();
       toast('VACUUM Complete', 'SQLite pages defragmented successfully', 'success');
@@ -62,6 +61,7 @@ export default function SettingsView() {
       toast('VACUUM Failed', 'Database maintenance failed', 'error');
     }
   };
+
 
   const handleBackup = async () => {
     try {
