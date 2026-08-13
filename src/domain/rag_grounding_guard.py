@@ -65,6 +65,7 @@ def verify_rag_grounding(
     else:
         valid_chunks = []
     combined_source = " ".join(valid_chunks)
+    source_words = _extract_word_set(combined_source) if combined_source else set()
     
     verified_sentences = []
     hallucination_warnings = []
@@ -72,7 +73,14 @@ def verify_rag_grounding(
     total_grounding_score = 0.0
     
     for sent in sentences:
-        overlap = compute_ngram_overlap(sent, combined_source)
+        claim_words = _extract_word_set(sent)
+        if not claim_words:
+            overlap = 1.0
+        elif not source_words:
+            overlap = 0.0
+        else:
+            overlap = round(len(claim_words & source_words) / float(len(claim_words)), 4)
+
         total_grounding_score += overlap
         is_grounded = overlap >= threshold
         
