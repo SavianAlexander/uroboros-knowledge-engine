@@ -22,13 +22,14 @@ def transcribe_and_search_voice_memo(
             "status": "empty_input"
         }
 
+    safe_k = max(1, int(top_k)) if top_k is not None and isinstance(top_k, (int, float)) else 5
     transcribed = audio_transcript_payload.strip()
     
     return {
         "raw_audio_input": "voice_memo_buffer_stream",
         "transcribed_text": transcribed,
         "search_query": transcribed,
-        "top_k": top_k,
+        "top_k": safe_k,
         "confidence_score": 0.98,
         "status": "success"
     }
