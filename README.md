@@ -69,6 +69,22 @@ $$\text{Score}_{Final}(d) = \text{Score}_{RRF}(d) \cdot e^{-\lambda \cdot \Delta
 | **3** | **Hallucination Refusal Guard** | [`src/domain/hallucination_guard.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/hallucination_guard.py) | `POST /api/search/hallucination-guard` | Calculates mathematical Context Confidence Scores ($0.00 - 1.00$); safely refuses low-confidence queries ($< 0.65$). |
 | **4** | **Contradiction & Conflict Resolver** | [`src/domain/conflict_resolver.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/conflict_resolver.py) | `POST /api/knowledge/resolve-conflicts` | Detects opposing dates, numbers, or assertions across document pairs and synthesizes reconciliation reports. |
 | **5** | **Predictive Context Pre-Caching** | [`src/domain/predictive_precacher.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/predictive_precacher.py) | `POST /api/search/precache-context` | Speculatively pre-caches GraphRAG 1-hop and 2-hop wikilink neighborhoods for 0ms sub-millisecond follow-ups. |
+| **6** | **Multi-Armed Bandit Router** | [`src/domain/bandit_query_router.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/bandit_query_router.py) | `GET/POST /api/search/bandit-route` | Dynamically learns optimal retrieval strategy (FTS5, Vector, HyDE, GraphRAG) via Thompson Sampling. |
+| **7** | **Visual Graph Diagram Generator** | [`src/domain/graph_mermaid_generator.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_mermaid_generator.py) | `GET/POST /api/graph/mermaid` | Converts vault wikilinks into clean **Mermaid.js** graph diagram markdown (`graph TD; NodeA --> NodeB;`). |
+| **8** | **Rerank Score Explainer** | [`src/domain/rerank_score_explainer.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/rerank_score_explainer.py) | `POST /api/search/explain-score` | Deconstructs WHY candidate #1 beat #5 (BM25 vs PageRank boost vs Recency multiplier). |
+| **9** | **Exact Source Line Citations** | [`src/domain/source_citation_generator.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/source_citation_generator.py) | `POST /api/search/generate-citations` | Maps retrieved passage text to exact file line numbers (`[report.md#L10-L25](file:///path/to/report.md#L10-L25)`). |
+| **10** | **Adaptive Query Intent Classifier** | [`src/domain/query_intent_classifier.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/query_intent_classifier.py) | `GET/POST /api/search/classify-intent` | Categorizes queries into `code_search`, `tabular_math`, `analytical_summary`, `comparative_analysis`, or `factual_lookup`. |
+| **11** | **Knowledge Vault Self-Healing** | [`src/domain/knowledge_self_healing.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/knowledge_self_healing.py) | `GET /api/system/knowledge-healing` | Audits vault graph topology for orphaned nodes and broken wikilinks, outputting a Vault Health Score. |
+| **12** | **PII Privacy & Anonymization** | [`src/domain/privacy_anonymizer.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/privacy_anonymizer.py) | `POST /api/search/redact-pii` | Automatically redacts Social Security Numbers, Credit Cards, API Keys, and Emails locally. |
+| **13** | **Cross-Lingual Query Alignment** | [`src/domain/cross_lingual_aligner.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cross_lingual_aligner.py) | `GET/POST /api/search/cross-lingual` | Normalizes NFC/NFD diacritics and translates Spanish/French/German query terms to English vault equivalents. |
+| **14** | **Self-RAG Reflection Tokens** | [`src/domain/self_rag_critique.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/self_rag_critique.py) | `POST /api/search/self-rag` | Evaluates `[IsRel]` and `[IsSup]` reflection tokens to critique context relevance and eliminate hallucinations. |
+| **15** | **MinHash Context Compression** | [`src/domain/near_duplicate_detector.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/near_duplicate_detector.py) | Integrated in RAG engine | Deduplicates overlapping passage text ($Jaccard \ge 0.70$), saving **up to 60% LLM prompt tokens**. |
+| **16** | **Parent-Child Context Retrieval** | [`src/domain/parent_child_retrieval.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/parent_child_retrieval.py) | `GET /api/search/parent-context` | Searches 100-token child chunks for speed, but returns full 1500-character parent context to the LLM. |
+| **17** | **Multimodal Form & Layout Parser** | [`src/domain/multimodal_ocr_parser.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/multimodal_ocr_parser.py) | `POST /api/file/parse-multimodal` | Extracts Markdown tables into JSON schemas, parses key-value form fields (`Invoice #: 123`), and tracks checkbox states. |
+| **18** | **Enterprise Security Trimmer** | [`src/domain/acl_permission_engine.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/acl_permission_engine.py) | `POST /api/search/acl-trimmed-search` | Trims search candidate results based on user identity, Active Directory groups (`read_roles`), and clearance levels. |
+| **19** | **Semantic Concept Drift Monitor** | [`src/domain/semantic_drift_monitor.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/semantic_drift_monitor.py) | `GET/POST /api/knowledge/semantic-drift` | Audits term context shifts over time (e.g., term A meaning in 2024 vs 2026) to prevent stale vector retrieval. |
+| **20** | **Anki SRS Flashcard Synthesizer** | [`src/domain/anki_card_synthesizer.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/anki_card_synthesizer.py) | `POST /api/knowledge/generate-flashcards` | Converts vault wikilinks & concepts into Anki-compatible SRS flashcards for human learning & executive briefings. |
+| **21** | **Multi-Agent Debate Engine** | [`src/domain/multi_agent_debate.py`](file:///C:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/multi_agent_debate.py) | `POST /api/search/multi-agent-debate` | Simulates a 2-agent debate (Pro-Context vs Anti-Context Auditor) to audit context validity and eliminate ambiguous passages. |
 
 ---
 
@@ -250,6 +266,7 @@ Implemented in [`src/infrastructure/p2p_sync.py`](file:///C:/Users/Administrator
 
 ## 14. Command Line Interface (CLI) Master Reference
 
+### 14.1 Root Entrypoint CLI (`know.py`)
 ```bash
 # Initialize SQLite database schema & FTS5 tables
 python know.py init
@@ -259,6 +276,36 @@ python know.py index "C:\path\to\workspace"
 
 # Execute hybrid CLI search query
 python know.py search "revenue recognition ext:pdf"
+
+# View total database file, chunk, and tag statistics
+python know.py stats
+
+# Reset database schema
+python know.py reset
+```
+
+### 14.2 Resumable Job Batch Indexer (`batch_index.py`)
+```bash
+# Index a directory with 4 parallel worker threads and a 50-file job limit
+python batch_index.py "C:\Users\Admin\Documents" -n 50 -w 4
+```
+
+### 14.3 Developer Operations & Audit CLI Scripts (`scripts/`)
+```bash
+# Audit clean architecture compliance across all python modules
+python scripts/architecture_cli.py audit .
+
+# Run online non-blocking SQLite database WAL backup
+python scripts/backup_db.py --output backups/snapshot_latest.db
+
+# Update automated test audit ledger and generate SOC 2 Type II report
+python scripts/update_test_ledger.py --soc2
+
+# Benchmark retrieval speed across 100 random queries
+python scripts/benchmark_engine.py --runs 100
+
+# Execute fault injection and memory stress tests
+python scripts/chaos_monkey.py --duration 30
 ```
 
 ---
