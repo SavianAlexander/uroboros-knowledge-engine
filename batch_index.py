@@ -37,10 +37,16 @@ def get_indexed_filepaths(conn):
 def index_single_file(filepath, user_id=0):
     """Parse, embed, and write a single file to the DB. Returns (chunks, tags, embedded_count, parse_time, embed_time)."""
     filepath = os.path.normpath(filepath)
-    filename = os.path.basename(filepath)
-    suffix = os.path.splitext(filepath)[1].lower()
-    file_size = os.path.getsize(filepath)
-    modified_at = os.path.getmtime(filepath)
+    if not os.path.exists(filepath):
+        return (0, 0, 0, 0.0, 0.0)
+
+    try:
+        filename = os.path.basename(filepath)
+        suffix = os.path.splitext(filepath)[1].lower()
+        file_size = os.path.getsize(filepath)
+        modified_at = os.path.getmtime(filepath)
+    except (OSError, FileNotFoundError, PermissionError):
+        return (0, 0, 0, 0.0, 0.0)
 
     # Parse
     t0 = time.time()
@@ -52,8 +58,11 @@ def index_single_file(filepath, user_id=0):
         content = content[:500]
 
     # Compute SHA256 safely
-    with open(filepath, "rb") as f:
-        sha256 = hashlib.sha256(f.read(10 * 1024 * 1024)).hexdigest()
+    try:
+        with open(filepath, "rb") as f:
+            sha256 = hashlib.sha256(f.read(10 * 1024 * 1024)).hexdigest()
+    except (OSError, FileNotFoundError, PermissionError):
+        sha256 = hashlib.sha256(content.encode("utf-8", errors="ignore")).hexdigest()
 
     mime_map = {
         ".pdf": "application/pdf", ".epub": "application/epub+zip",

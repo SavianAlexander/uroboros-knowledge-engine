@@ -14,6 +14,14 @@ def execute_counterfactual_rag(query: str, max_scenarios: int = 2) -> Dict[str, 
     1. Primary Pass -> Extract standard RAG context.
     2. Counterfactual Pass -> Generate inverse query hypotheses and retrieve edge cases.
     """
+    if not query or not isinstance(query, str) or not query.strip():
+        return {
+            "status": "empty",
+            "query": str(query or ""),
+            "primary_context": "",
+            "scenarios": [],
+            "stress_tested": False
+        }
     formatted_ctx, primary_snippets = extract_advanced_rag_context(query, max_chunks=3)
     
     counter_query = f"NOT {query} alternative exceptions failure modes"
