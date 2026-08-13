@@ -66,14 +66,16 @@ class TestAdversarialI3(unittest.TestCase):
         for suffix in ["", "-wal", "-shm"]:
             fpath = "adversarial_i3.db" + suffix
             if os.path.exists(fpath):
-                try:
+                for _ in range(10):
                     try:
-                        from src.infrastructure.database import reset_db_connections
-                        reset_db_connections()
-                    except Exception: pass
-                    os.remove(fpath)
-                except Exception as e:
-                    import logging; logging.error(f"Swallowed error in test_adversarial_i3.py: {e}")
+                        try:
+                            from src.infrastructure.database import reset_db_connections
+                            reset_db_connections()
+                        except Exception: pass
+                        os.remove(fpath)
+                        break
+                    except Exception:
+                        threading.Event().wait(0.05)
 
         db.DB_FILE = "adversarial_i3.db"
         config.ACTIVE_DIR = str(cls.sandbox)
@@ -138,7 +140,6 @@ class TestAdversarialI3(unittest.TestCase):
                         os.remove(fpath)
                         break
                     except Exception:
-                        import logging; logging.getLogger(__name__).exception("Swallowed error in test_adversarial_i3.py")
                         threading.Event().wait(0.05)
 
         if cls.sandbox.exists():

@@ -132,7 +132,6 @@ class TestAdversarialChallenger2(unittest.TestCase):
                         server_ready = True
                         break
             except Exception:
-                import logging; logging.getLogger(__name__).exception("Swallowed error in test_adversarial_challenger_2.py")
                 threading.Event().wait(0.1)
 
         if not server_ready:
@@ -156,7 +155,6 @@ class TestAdversarialChallenger2(unittest.TestCase):
                         os.remove(fpath)
                         break
                     except Exception:
-                        import logging; logging.getLogger(__name__).exception("Swallowed error in test_adversarial_challenger_2.py")
                         threading.Event().wait(0.05)
 
         if cls.sandbox.exists():
