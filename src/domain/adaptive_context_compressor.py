@@ -13,13 +13,17 @@ def compress_context_entropy(context_chunks: List[str], target_reduction: float 
     Compresses text chunks by removing low-entropy filler prose while preserving key entities and numbers.
     # ponytail: zero-dependency semantic entropy context compressor
     """
-    if not context_chunks:
+    if not context_chunks or not isinstance(context_chunks, list):
+        return {"status": "empty", "compressed_chunks": [], "original_chars": 0, "compressed_chars": 0}
+
+    valid_chunks = [str(c) for c in context_chunks if c is not None]
+    if not valid_chunks:
         return {"status": "empty", "compressed_chunks": [], "original_chars": 0, "compressed_chars": 0}
 
     compressed = []
-    total_orig = sum(len(c) for c in context_chunks)
+    total_orig = sum(len(c) for c in valid_chunks)
 
-    for chunk in context_chunks:
+    for chunk in valid_chunks:
         sentences = [s.strip() for s in re.split(r'[^.!?]+[.!?]+', chunk) if s.strip()]
         if not sentences:
             sentences = [chunk]
