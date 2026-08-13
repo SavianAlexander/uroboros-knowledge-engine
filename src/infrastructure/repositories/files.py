@@ -1,36 +1,15 @@
-from src.infrastructure.database import get_db, get_db_connection, get_db_write_connection, get_pool
-import src.infrastructure.database as db
 import os
-import re
 import time
-import glob
-import shutil
-import sqlite3
 import hashlib
-import threading
-from typing import Dict, List, Any, Tuple, Optional, Callable
-import mimetypes
-import concurrent.futures
-import uuid
-import json
-import contextlib
-import logging
-from datetime import datetime, timezone
-import queue
-from datetime import datetime, timezone
-from pathlib import Path
-from src.shared.security import get_file_acl
-from src.core.domain.services import (
-    extract_ai_tags,
-    chunk_text,
-)
-from src.infrastructure.parsers import extract_content, parse_audio_metadata, calculate_sha256, calculate_sha256_cached
+import sqlite3
+from typing import Dict, List, Any, Optional
+from src.infrastructure.database import get_db, get_db_write_connection, DB_FILE, DB_TIMEOUT
 
 def save_file_revision(filepath: str, content: str):
     """Save a snapshot of file content into file_revisions with safe connection management."""
     norm_path = os.path.abspath(filepath)
     content_hash = hashlib.sha256(content.encode("utf-8", errors="ignore")).hexdigest()
-    with get_db_write_connection(db.DB_FILE, timeout=db.DB_TIMEOUT) as conn:
+    with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
         with conn:
             cursor = conn.cursor()
         cursor.execute("""

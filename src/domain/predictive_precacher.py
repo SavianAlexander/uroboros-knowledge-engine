@@ -38,10 +38,12 @@ def precache_graph_neighborhood(source_doc: str) -> Dict[str, Any]:
             wikilinks = [m.strip() for m in RE_WIKILINKS.findall(src_content)]
 
             precached = []
-            for wl in wikilinks:
-                cursor.execute("SELECT id, filename, content FROM files WHERE filename LIKE ? LIMIT 1", (f"%{wl}%",))
-                target_row = cursor.fetchone()
-                if target_row:
+            if wikilinks:
+                wikilinks = list(set(wikilinks))[:50]  # Deduplicate and limit to prevent max var limits
+                conditions = " OR ".join(["filename LIKE ?"] * len(wikilinks))
+                params = [f"%{wl}%" for wl in wikilinks]
+                cursor.execute(f"SELECT id, filename, content FROM files WHERE {conditions}", tuple(params))
+                for target_row in cursor.fetchall():
                     t_name = target_row["filename"]
                     t_content = target_row["content"] or ""
                     _PRECACHE_BUFFER[t_name.lower()] = {

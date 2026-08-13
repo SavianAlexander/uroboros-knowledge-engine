@@ -11,6 +11,35 @@ import sqlite3
 from typing import Dict, Any
 
 
+from functools import lru_cache
+
+@lru_cache(maxsize=2)
+def _get_cached_db_counts(cache_epoch: int) -> tuple:
+    from src.infrastructure.database import get_db
+    f_cnt, c_cnt, t_cnt = 0, 0, 0
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM files")
+            row_f = cursor.fetchone()
+            f_cnt = row_f[0] if row_f else 0
+
+            try:
+                cursor.execute("SELECT COUNT(*) FROM file_chunks")
+                row_c = cursor.fetchone()
+                c_cnt = row_c[0] if row_c else 0
+            except Exception:
+                cursor.execute("SELECT COUNT(*) FROM document_chunks")
+                row_c = cursor.fetchone()
+                c_cnt = row_c[0] if row_c else 0
+
+            cursor.execute("SELECT COUNT(*) FROM tags")
+            row_t = cursor.fetchone()
+            t_cnt = row_t[0] if row_t else 0
+    except Exception:
+        pass
+    return f_cnt, c_cnt, t_cnt
+
 def gather_system_telemetry() -> Dict[str, Any]:
     """
     Returns real-time OS, Python runtime, and SQLite connection pool telemetry.
@@ -33,32 +62,9 @@ def gather_system_telemetry() -> Dict[str, Any]:
             if os.path.exists(wal_file):
                 wal_size_bytes = os.path.getsize(wal_file)
 
-        # 3. Database Record Counts
-        files_count = 0
-        chunks_count = 0
-        tags_count = 0
-
-        try:
-            with get_db() as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT COUNT(*) FROM files")
-                row_f = cursor.fetchone()
-                files_count = row_f[0] if row_f else 0
-
-                try:
-                    cursor.execute("SELECT COUNT(*) FROM file_chunks")
-                    row_c = cursor.fetchone()
-                    chunks_count = row_c[0] if row_c else 0
-                except Exception:
-                    cursor.execute("SELECT COUNT(*) FROM document_chunks")
-                    row_c = cursor.fetchone()
-                    chunks_count = row_c[0] if row_c else 0
-
-                cursor.execute("SELECT COUNT(*) FROM tags")
-                row_t = cursor.fetchone()
-                tags_count = row_t[0] if row_t else 0
-        except Exception:
-            pass
+        # 3. Database Record Counts (Cached 15s)
+        cache_epoch = int(time.time() // 15)
+        files_count, chunks_count, tags_count = _get_cached_db_counts(cache_epoch)
 
         return {
             "runtime": {

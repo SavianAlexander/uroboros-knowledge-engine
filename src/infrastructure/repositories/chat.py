@@ -1,29 +1,11 @@
-from src.infrastructure.database import get_db, get_db_connection, get_db_write_connection, get_pool
-import src.infrastructure.database as db
-import os
-import re
 import time
-import glob
-import shutil
 import sqlite3
-import hashlib
-import threading
-from typing import Dict, List, Any, Tuple, Optional, Callable
-import mimetypes
-import concurrent.futures
 import uuid
 import json
-import contextlib
-import logging
-import queue
-from pathlib import Path
-from src.shared.security import get_file_acl
+from typing import Dict, List, Any, Optional
+from datetime import datetime, timezone
+from src.infrastructure.database import get_db
 from src.core.context import get_current_user_id
-from src.core.domain.services import (
-    extract_ai_tags,
-    chunk_text,
-)
-from src.infrastructure.parsers import extract_content, parse_audio_metadata, calculate_sha256, calculate_sha256_cached
 
 def create_chat_session(
     title: Optional[str] = None,
