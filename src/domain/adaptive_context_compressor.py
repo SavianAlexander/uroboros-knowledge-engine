@@ -24,7 +24,9 @@ def compress_context_entropy(context_chunks: List[str], target_reduction: float 
     total_orig = sum(len(c) for c in valid_chunks)
 
     for chunk in valid_chunks:
-        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', chunk) if s.strip()]
+        import unicodedata
+        norm_chunk = unicodedata.normalize("NFC", chunk)
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', norm_chunk) if s.strip()]
         if not sentences:
             sentences = [chunk]
 

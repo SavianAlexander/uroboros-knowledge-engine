@@ -36,9 +36,10 @@ def allocate_context_budget(
     memory_budget = int(token_budget * 0.15)
     system_budget = int(token_budget * 0.10)
 
-    fitted_snippets = [str(s)[:500] for s in vector_snippets][:5]
-    fitted_graph = [str(g)[:300] for g in graph_pathways][:3]
-    fitted_memories = [str(m)[:200] for m in episodic_memories][:3]
+    import unicodedata
+    fitted_snippets = [unicodedata.normalize("NFC", str(s))[:500] for s in vector_snippets][:5]
+    fitted_graph = [unicodedata.normalize("NFC", str(g))[:300] for g in graph_pathways][:3]
+    fitted_memories = [unicodedata.normalize("NFC", str(m))[:200] for m in episodic_memories][:3]
 
     total_chars = sum(len(s) for s in fitted_snippets) + sum(len(g) for g in fitted_graph)
     approx_tokens = max(10, total_chars // 4)
