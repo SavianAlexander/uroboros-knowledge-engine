@@ -2,12 +2,29 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import { glassCardClasses, debounce } from '../lib/utils';
-import { Filter, Maximize, RotateCcw } from 'lucide-react';
+import { Filter, Maximize, RotateCcw, Download } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../components/Toast';
 
 export default function GraphView() {
   const { toast } = useToast();
+  const handleExportGraphML = async () => {
+    try {
+      toast('Exporting GraphML', 'Generating XML topology payload...', 'info');
+      const blob = await api.exportGraphML();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `knowledge_graph_${new Date().toISOString().slice(0, 10)}.graphml`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast('GraphML Exported', 'Downloaded GraphML XML payload', 'success');
+    } catch (e: any) {
+      toast('Export Failed', e.message || 'Could not export GraphML', 'error');
+    }
+  };
   const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<any>();
   const [nodes, setNodes] = useState<any[]>([]);
@@ -249,6 +266,10 @@ export default function GraphView() {
                toast('Camera Reset', 'Camera centered at origin', 'info');
             }} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg p-2 text-slate-400 hover:text-white transition-colors" title="Reset Camera">
                <RotateCcw className="w-4 h-4" />
+            </button>
+            <button onClick={handleExportGraphML} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-slate-300 hover:text-white transition-colors text-xs flex items-center gap-1.5" title="Export GraphML XML">
+               <Download className="w-3.5 h-3.5 text-indigo-400" />
+               <span>GraphML</span>
             </button>
         </div>
       </div>
