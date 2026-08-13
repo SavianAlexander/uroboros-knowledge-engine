@@ -48,7 +48,8 @@ def rrf_search_endpoint(
     try:
         from src.infrastructure.vector_engine import MiniVectorEngine
         engine = MiniVectorEngine()
-        results = engine.search_hybrid_rrf(query=query, top_k=limit, k=k)
+        safe_limit = max(1, min(limit, 500))
+        results = engine.search_hybrid_rrf(query=query, top_k=safe_limit, k=k)
         search_time_ms = round((time.time() - start_time) * 1000, 2)
         return {
             "query": query,
@@ -305,6 +306,7 @@ def search_endpoint(
 def get_search_history_endpoint(limit: int = 20):
     """Retrieve recent search history from database search history log."""
     try:
+        safe_limit = max(1, min(limit, 500))
         with get_db() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
@@ -313,7 +315,7 @@ def get_search_history_endpoint(limit: int = 20):
                 FROM search_history
                 ORDER BY executed_at DESC, id DESC
                 LIMIT ?
-            """, (limit,))
+            """, (safe_limit,))
             rows = cursor.fetchall()
             history = [dict(r) for r in rows]
             return {"history": history, "total": len(history)}
