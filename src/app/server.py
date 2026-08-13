@@ -42,6 +42,11 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 if os.path.exists("frontend/dist/assets"):
     app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
+elif os.path.exists("assets"):
+    app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+
+if os.path.exists("frontend/dist/chunks"):
+    app.mount("/chunks", StaticFiles(directory="frontend/dist/chunks"), name="chunks")
 
 from fastapi.responses import FileResponse
 
@@ -77,8 +82,13 @@ from fastapi import HTTPException
 
 @app.get("/{full_path:path}")
 def spa_fallback(full_path: str):
-    if full_path.startswith("api/") or full_path.startswith("assets/") or full_path.startswith("docs") or full_path.startswith("openapi.json") or full_path.startswith("health") or full_path.startswith("metrics"):
+    if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("openapi.json") or full_path.startswith("health") or full_path.startswith("metrics"):
         raise HTTPException(status_code=404, detail="Not Found")
+
+    dist_file = Path("frontend/dist") / full_path
+    if dist_file.is_file():
+        return FileResponse(str(dist_file))
+
     asset_path = Path("frontend/dist/index.html")
     if asset_path.exists():
         return FileResponse(str(asset_path))
