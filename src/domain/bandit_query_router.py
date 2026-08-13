@@ -4,7 +4,10 @@ Learns which retrieval strategy (FTS5, Vector, HyDE, GraphRAG) yields the highes
 """
 
 import random
+import threading
 from typing import Dict, Any, List
+
+_lock = threading.Lock()
 
 # Bandit arms state
 _BANDIT_ARMS = {
@@ -22,25 +25,27 @@ def bandit_select_pipeline(intent: str = "FACTUAL") -> Dict[str, Any]:
     """
     global _BANDIT_ARMS
 
-    # Thompson Sampling sampling from Beta distribution approximation
     best_arm = None
     best_score = -1.0
 
-    for arm_name, stats in _BANDIT_ARMS.items():
-        # Beta(alpha, beta) sample approximation using stdlib random
-        alpha = max(1, stats["successes"] + 1)
-        beta = max(1, (stats["trials"] - stats["successes"]) + 1)
-        sample = random.betavariate(alpha, beta)
+    with _lock:
+        for arm_name, stats in _BANDIT_ARMS.items():
+            # Beta(alpha, beta) sample approximation using stdlib random
+            alpha = max(1, stats["successes"] + 1)
+            beta = max(1, (stats["trials"] - stats["successes"]) + 1)
+            sample = random.betavariate(alpha, beta)
 
-        if sample > best_score:
-            best_score = sample
-            best_arm = arm_name
+            if sample > best_score:
+                best_score = sample
+                best_arm = arm_name
+
+        arms_snapshot = {k: dict(v) for k, v in _BANDIT_ARMS.items()}
 
     return {
         "intent": intent,
         "selected_pipeline": best_arm,
         "bandit_confidence": round(best_score, 4),
-        "arms_state": _BANDIT_ARMS,
+        "arms_state": arms_snapshot,
         "status": "success"
     }
 
@@ -50,12 +55,18 @@ def record_bandit_feedback(pipeline_name: str, is_successful: bool) -> Dict[str,
     Records reward feedback ([IsSup] = 1.0 vs 0.0) to update bandit arm weights.
     """
     global _BANDIT_ARMS
-    if pipeline_name in _BANDIT_ARMS:
-        _BANDIT_ARMS[pipeline_name]["trials"] += 1
-        if is_successful:
-            _BANDIT_ARMS[pipeline_name]["successes"] += 1
-        s = _BANDIT_ARMS[pipeline_name]["successes"]
-        t = _BANDIT_ARMS[pipeline_name]["trials"]
-        _BANDIT_ARMS[pipeline_name]["weight"] = round(s / float(t), 4)
+    with _lock:
+        if pipeline_name in _BANDIT_ARMS:
+            _BANDIT_ARMS[pipeline_name]["trials"] += 1
+            if is_successful:
+                _BANDIT_ARMS[pipeline_name]["successes"] += 1
+            s = _BANDIT_ARMS[pipeline_name]["successes"]
+            t = _BANDIT_ARMS[pipeline_name]["trials"]
+            _BANDIT_ARMS[pipeline_name]["weight"] = round(s / float(max(1, t)), 4)
+            return {
+                "pipeline": pipeline_name,
+                "updated_arm": dict(_BANDIT_ARMS[pipeline_name]),
+                "status": "success"
+            }
 
-    return {"pipeline": pipeline_name, "updated_stats": _BANDIT_ARMS.get(pipeline_name), "status": "success"}
+    return {"pipeline": pipeline_name, "status": "not_found"}

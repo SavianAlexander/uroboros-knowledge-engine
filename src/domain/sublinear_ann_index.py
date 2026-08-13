@@ -68,15 +68,21 @@ def search_sublinear_ann(
     """
     Sub-linear ANN search over vector candidates using Random Projection LSH.
     """
-    dim = len(query_vec) if query_vec else 128
+    dim = len(query_vec) if query_vec and isinstance(query_vec, list) else 128
     lsh = LSHVectorIndex(dimension=dim)
 
-    for item in index_vectors:
-        vec_id = item.get("id", "vec_0")
-        vec = item.get("vector", [0.1] * dim)
+    if not index_vectors or not isinstance(index_vectors, list):
+        index_vectors = []
+
+    valid_vectors = [item for item in index_vectors if isinstance(item, dict)]
+
+    for item in valid_vectors:
+        vec_id = str(item.get("id") or "vec_0")
+        vec = item.get("vector") if isinstance(item.get("vector"), list) else [0.1] * dim
         lsh.add_vector(vec_id, vec)
 
-    matches = lsh.query(query_vec if query_vec else [0.1] * dim, top_k=top_k)
+    safe_k = max(1, int(top_k)) if top_k is not None and isinstance(top_k, (int, float)) else 5
+    matches = lsh.query(query_vec if query_vec and isinstance(query_vec, list) else [0.1] * dim, top_k=safe_k)
 
     return {
         "query_dimension": dim,

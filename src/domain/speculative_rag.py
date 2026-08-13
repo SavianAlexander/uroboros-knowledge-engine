@@ -11,7 +11,17 @@ def synthesize_speculative_drafts(query: str, passages: List[Dict[str, Any]]) ->
     Synthesizes and ranks 3 draft context candidate representations in parallel.
     Zero-dependency stdlib implementation.
     """
-    if not passages:
+    if not passages or not isinstance(passages, list):
+        return {
+            "best_draft": "No context available.",
+            "drafts": [],
+            "verification_score": 0.0,
+            "latency_reduction_pct": 75.0,
+            "status": "success"
+        }
+
+    valid_passages = [p for p in passages if isinstance(p, dict)]
+    if not valid_passages:
         return {
             "best_draft": "No context available.",
             "drafts": [],
@@ -21,8 +31,8 @@ def synthesize_speculative_drafts(query: str, passages: List[Dict[str, Any]]) ->
         }
 
     drafts = []
-    for idx, p in enumerate(passages[:3]):
-        filename = p.get("filename", f"doc_{idx}.md")
+    for idx, p in enumerate(valid_passages[:3]):
+        filename = str(p.get("filename") or f"doc_{idx}.md")
         content = p.get("content") or p.get("text") or ""
         snippet = content[:300] if len(content) > 300 else content
 

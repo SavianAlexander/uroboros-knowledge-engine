@@ -14,19 +14,22 @@ def evaluate_hallucination_risk(query: str, passages: List[Dict[str, Any]]) -> D
     Evaluates context coverage and calculates confidence score. Refuses if confidence < 0.65.
     Zero-dependency stdlib implementation.
     """
-    if not passages:
+    str_query = str(query or "").strip()
+    valid_passages = [p for p in passages if isinstance(p, dict)] if isinstance(passages, list) else []
+
+    if not valid_passages:
         return {
-            "query": query,
+            "query": str_query,
             "confidence_score": 0.0,
             "should_refuse": True,
             "refusal_reason": "Zero relevant passages retrieved from knowledge vault.",
             "status": "refused"
         }
 
-    query_words = set(re.findall(r'\b[a-zA-Z0-9_-]{3,}\b', query.lower()))
+    query_words = set(re.findall(r'\b[a-zA-Z0-9_-]{3,}\b', str_query.lower()))
     if not query_words:
         return {
-            "query": query,
+            "query": str_query,
             "confidence_score": 1.0,
             "should_refuse": False,
             "status": "success"
@@ -35,7 +38,7 @@ def evaluate_hallucination_risk(query: str, passages: List[Dict[str, Any]]) -> D
     matched_words = set()
     total_length = 0
 
-    for p in passages:
+    for p in valid_passages:
         content = (p.get("content") or p.get("text") or "").lower()
         total_length += len(content)
         for w in query_words:
@@ -48,7 +51,7 @@ def evaluate_hallucination_risk(query: str, passages: List[Dict[str, Any]]) -> D
     should_refuse = confidence_score < MIN_CONFIDENCE_THRESHOLD
 
     return {
-        "query": query,
+        "query": str_query,
         "matched_terms": list(matched_words),
         "missing_terms": list(query_words - matched_words),
         "confidence_score": confidence_score,
