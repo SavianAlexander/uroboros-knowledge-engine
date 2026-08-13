@@ -307,7 +307,8 @@ def extract_advanced_rag_context(
 
     for sq in sub_queries:
         expanded_q = generate_hyde_expansion(sq)
-        sanitized_q = sanitize_fts_query(expanded_q) or sanitize_fts_query(sq)
+        sanitized_q = sanitize_fts_query(sq) or sanitize_fts_query(expanded_q)
+
 
         fts_hits = []
         if sanitized_q:

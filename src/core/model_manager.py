@@ -186,6 +186,11 @@ class IsolatedLlamaClient:
                 logging.error(f"LLM Process timeout or crash: {e}")
                 raise HTTPException(status_code=503, detail="LLM Engine Fault")
 
+    def create_completion(self, prompt=None, **kwargs):
+        if prompt is not None:
+            kwargs["prompt"] = prompt
+        return self(prompt, **kwargs)
+
     def create_chat_completion(self, messages, **kwargs):
         import logging
         from fastapi import HTTPException
