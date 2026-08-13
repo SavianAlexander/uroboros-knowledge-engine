@@ -147,7 +147,7 @@ def chat_stream_endpoint(req: ChatRequest):
                     prompt=full_prompt,
                     stream=True,
                     max_tokens=256,
-                    temperature=req.temperature or 0.3
+                    temperature=req.temperature if req.temperature is not None else 0.3
                 )
                 for chunk in stream:
                     tok = chunk["choices"][0]["text"]
