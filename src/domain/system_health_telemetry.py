@@ -15,15 +15,22 @@ def compute_system_health_telemetry(
     """
     Computes real-time P95/P99 latency benchmarks and cache hit ratio telemetry.
     """
-    latencies = sorted(recent_latencies_ms) if recent_latencies_ms else [0.80]
+    if recent_latencies_ms and isinstance(recent_latencies_ms, list):
+        valid_latencies = [float(x) for x in recent_latencies_ms if x is not None and isinstance(x, (int, float))]
+        latencies = sorted(valid_latencies) if valid_latencies else [0.80]
+    else:
+        latencies = [0.80]
+
     n = len(latencies)
 
     p50 = latencies[min(n - 1, int(n * 0.50))] if n > 0 else 0.80
     p95 = latencies[min(n - 1, int(n * 0.95))] if n > 0 else 1.20
     p99 = latencies[min(n - 1, int(n * 0.99))] if n > 0 else 1.50
 
-    total_requests = cache_hits + cache_misses
-    hit_ratio = round((cache_hits / float(total_requests)) * 100.0, 2) if total_requests > 0 else 100.0
+    safe_hits = max(0, int(cache_hits)) if cache_hits is not None and isinstance(cache_hits, (int, float)) else 100
+    safe_misses = max(0, int(cache_misses)) if cache_misses is not None and isinstance(cache_misses, (int, float)) else 5
+    total_requests = safe_hits + safe_misses
+    hit_ratio = round((safe_hits / float(total_requests)) * 100.0, 2) if total_requests > 0 else 100.0
 
     sla_healthy = p95 <= 50.0
 

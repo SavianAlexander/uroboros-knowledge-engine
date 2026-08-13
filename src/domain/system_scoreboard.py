@@ -14,7 +14,8 @@ def generate_system_scoreboard(root_dir: str = "src") -> Dict[str, Any]:
     Synthesizes a master system health report across all 19 SOTA domain components.
     # ponytail: aggregate executive scoreboard generator
     """
-    arch = audit_codebase_architecture(root_dir)
+    safe_dir = str(root_dir) if root_dir and isinstance(root_dir, str) else "src"
+    arch = audit_codebase_architecture(safe_dir)
     bench = benchmark_vector_retrieval(num_queries=3)
     privacy = inspect_privacy_compliance("System status check. Clean telemetry.")
 
