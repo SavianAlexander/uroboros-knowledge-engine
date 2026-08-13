@@ -16,7 +16,7 @@ class LegalAccuracyEngine:
     @functools.lru_cache(maxsize=512)
     def normalize_text_nfc(text: str) -> str:
         """Enforce strict NFC (Normalization Form C) Unicode standard with LRU caching."""
-        if not text:
+        if not text or not isinstance(text, str):
             return ""
         return unicodedata.normalize("NFC", text)
 
@@ -25,8 +25,10 @@ class LegalAccuracyEngine:
         """Verify exact cryptographic SHA-256 bitwise parity."""
         if content is None or expected_sha256 is None:
             return False
-        computed = hashlib.sha256(content.encode("utf-8", errors="ignore")).hexdigest()
-        return computed.lower() == expected_sha256.lower()
+        safe_content = str(content)
+        safe_sha256 = str(expected_sha256)
+        computed = hashlib.sha256(safe_content.encode("utf-8", errors="ignore")).hexdigest()
+        return computed.lower() == safe_sha256.lower()
 
     @staticmethod
     def sanitize_fts5_query_legal(query: str) -> str:
@@ -34,6 +36,8 @@ class LegalAccuracyEngine:
         Sanitize search query for legal-grade FTS5 execution.
         Prevents operator injection, preserves diacritics via NFC, and tokenizes cleanly.
         """
+        if not query or not isinstance(query, str):
+            return '""'
         nfc_query = unicodedata.normalize("NFC", query)
         # Strip dangerous FTS5 operators and quotes while preserving words and numbers
         cleaned = re.sub(r'[\*\:\^\/\"\'\{\}\[\]\(\)]', ' ', nfc_query)
