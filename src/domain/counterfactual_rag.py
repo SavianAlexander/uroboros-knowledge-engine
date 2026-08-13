@@ -56,8 +56,12 @@ def simulate_counterfactual_scenario(
     Simulates counterfactual scenarios over a given set of contexts.
     """
     res = execute_counterfactual_rag(query)
-    total_ctx = len(retrieved_contexts) if retrieved_contexts else 0
-    excluded_cnt = len(counterfactual_indices) if counterfactual_indices else 0
-    res["provided_contexts_count"] = total_ctx
-    res["active_context_count"] = max(0, total_ctx - excluded_cnt)
-    return res
+    total_ctx = len(retrieved_contexts) if isinstance(retrieved_contexts, (list, tuple, set)) else 0
+    excluded_cnt = len(counterfactual_indices) if isinstance(counterfactual_indices, (list, tuple, set)) else 0
+    return {
+        "status": "success",
+        "query": str(query or ""),
+        "total_contexts": total_ctx,
+        "excluded_count": excluded_cnt,
+        "base_execution": res
+    }
