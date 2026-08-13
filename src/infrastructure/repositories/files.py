@@ -3,7 +3,7 @@ import time
 import hashlib
 import sqlite3
 from typing import Dict, List, Any, Optional
-from src.infrastructure.database import get_db, get_db_write_connection, DB_FILE, DB_TIMEOUT
+from src.infrastructure.database import get_db, get_db_connection, get_db_write_connection, DB_FILE, DB_TIMEOUT
 
 def save_file_revision(filepath: str, content: str):
     """Save a snapshot of file content into file_revisions with safe connection management."""
@@ -28,7 +28,7 @@ def save_file_revision(filepath: str, content: str):
 def get_file_revisions(filepath: str) -> List[Dict[str, Any]]:
     """Retrieve last 5 revision snapshots for a file with safe connection management."""
     norm_path = os.path.abspath(filepath)
-    with get_db_connection(db.DB_FILE, timeout=db.DB_TIMEOUT) as conn:
+    with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("""
@@ -42,7 +42,7 @@ def get_file_revisions(filepath: str) -> List[Dict[str, Any]]:
 def revert_file_revision(filepath: str, revision_id: int) -> bool:
     """Revert a file to a specific revision ID with correct column name (modified_at)."""
     norm_path = os.path.abspath(filepath)
-    with get_db_write_connection(db.DB_FILE, timeout=db.DB_TIMEOUT) as conn:
+    with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
         with conn:
             conn.row_factory = sqlite3.Row
         cursor = conn.cursor()

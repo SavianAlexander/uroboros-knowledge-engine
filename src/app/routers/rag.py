@@ -157,8 +157,34 @@ def chat_stream_endpoint(req: ChatRequest):
         except Exception:
             pass
 
+def _smart_extract_context(context: str, query: str, max_chars: int = 6000) -> str:
+    if len(context) <= max_chars:
+        return context
+    import re
+    keywords = set([kw for kw in re.findall(r'\w+', query.lower()) if len(kw) > 3])
+    if not keywords:
+        return context[:max_chars]
+    sentences = re.split(r'(?<=[.!?])\s+', context)
+    scored = []
+    for idx, s in enumerate(sentences):
+        s_lower = s.lower()
+        score = sum(1 for kw in keywords if kw in s_lower)
+        scored.append((score, idx, s))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    selected_indices = []
+    current_len = 0
+    for score, idx, s in scored:
+        if current_len + len(s) > max_chars:
+            continue
+        selected_indices.append(idx)
+        current_len += len(s)
+    selected_indices.sort()
+    selected_text = " ... ".join([sentences[i] for i in selected_indices])
+    return selected_text if selected_text else context[:max_chars]
+
+        # Inside _generate_stream
         if local_context:
-            truncated_local = local_context[:6000] if len(local_context) > 6000 else local_context
+            truncated_local = _smart_extract_context(local_context, user_query, 6000)
             messages.append({"role": "system", "content": f"Document Vault Context:\n{truncated_local}"})
         if web_sources:
             web_str = "\n".join([f"- {w.get('title')}: {w.get('snippet')}" for w in web_sources])
