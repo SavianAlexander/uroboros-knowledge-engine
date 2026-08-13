@@ -199,6 +199,20 @@ def search_post_endpoint(payload: Dict[str, Any] = Body(...)):
 
 
 @router.get("/api/search")
+
+def _batch_fetch_tags(file_ids):
+    tags_map = {fid: [] for fid in file_ids}
+    if not file_ids:
+        return tags_map
+    with get_db() as conn:
+        cursor = conn.cursor()
+        placeholders = ",".join(["?"] * len(file_ids))
+        cursor.execute(f"SELECT file_id, tag FROM tags WHERE file_id IN ({placeholders})", tuple(file_ids))
+        for row in cursor.fetchall():
+            tags_map[row[0]].append(row[1].lower())
+    return tags_map
+
+@router.post("/api/search")
 def search_endpoint(
     query: Optional[str] = None,
     q: Optional[str] = None,
@@ -258,32 +272,30 @@ def search_endpoint(
         if tag:
             tag_list = [t.strip().lower() for t in tag.split(",") if t.strip()]
             filtered = []
-            with get_db() as conn:
-                cursor = conn.cursor()
-                for r in results:
-                    fid = r.get("id")
-                    if fid:
-                        cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (fid,))
-                        f_tags = [t[0].lower() for t in cursor.fetchall()]
-                        if tag_mode.upper() == "AND":
-                            if all(t in f_tags for t in tag_list):
-                                filtered.append(r)
-                        else:
-                            if any(t in f_tags for t in tag_list):
-                                filtered.append(r)
+            file_ids = [r.get("id") for r in results if r.get("id")]
+            tags_map = _batch_fetch_tags(file_ids)
+            for r in results:
+                fid = r.get("id")
+                if fid:
+                    f_tags = tags_map.get(fid, [])
+                    if tag_mode.upper() == "AND":
+                        if all(t in f_tags for t in tag_list):
+                            filtered.append(r)
+                    else:
+                        if any(t in f_tags for t in tag_list):
+                            filtered.append(r)
             results = filtered
         elif operators.get("tag"):
             req_tags = [t.lower() for t in (operators["tag"] if isinstance(operators["tag"], list) else [operators["tag"]])]
             filtered = []
-            with get_db() as conn:
-                cursor = conn.cursor()
-                for r in results:
-                    fid = r.get("id")
-                    if fid:
-                        cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (fid,))
-                        f_tags = [t[0].lower() for t in cursor.fetchall()]
-                        if any(t in f_tags for t in req_tags):
-                            filtered.append(r)
+            file_ids = [r.get("id") for r in results if r.get("id")]
+            tags_map = _batch_fetch_tags(file_ids)
+            for r in results:
+                fid = r.get("id")
+                if fid:
+                    f_tags = tags_map.get(fid, [])
+                    if any(t in f_tags for t in req_tags):
+                        filtered.append(r)
             results = filtered
 
         if operators.get("type"):

@@ -3,16 +3,22 @@ Dynamic Entropy-Based Semantic Boundary Chunker Engine.
 Calculates semantic distance between consecutive sentence n-grams and creates topic boundaries when distance spikes above threshold theta.
 Zero-dependency, stdlib implementation.
 """
+import functools
 import re
 import math
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 from src.domain.rag_grounding_guard import split_sentences, RE_WORD, STOP_WORDS
 
 
+@functools.lru_cache(maxsize=2048)
+def _get_sentence_words_tuple(sentence: str) -> Tuple[str, ...]:
+    return tuple(set(w.lower() for w in RE_WORD.findall(sentence) if w.lower() not in STOP_WORDS))
+
+
 def get_sentence_words(sentence: str) -> set:
     """Extracts non-stopword tokens from a sentence string."""
-    return set(w.lower() for w in RE_WORD.findall(sentence) if w.lower() not in STOP_WORDS)
+    return set(_get_sentence_words_tuple(sentence))
 
 
 def compute_jaccard_distance(s1_words: set, s2_words: set) -> float:
