@@ -33,6 +33,7 @@ def anonymize_text_pii(text: str) -> Dict[str, Any]:
 
     anonymized = replace_and_count(RE_EMAIL, "[REDACTED_EMAIL]", anonymized)
     anonymized = replace_and_count(RE_SSN, "[REDACTED_SSN]", anonymized)
+    anonymized = replace_and_count(RE_CREDIT_CARD, "[REDACTED_CARD]", anonymized)
     anonymized = replace_and_count(RE_API_KEY, "[REDACTED_API_KEY]", anonymized)
     anonymized = replace_and_count(RE_IPV4, "[REDACTED_IP]", anonymized)
 

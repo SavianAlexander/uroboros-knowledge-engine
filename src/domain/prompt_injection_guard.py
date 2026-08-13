@@ -13,7 +13,9 @@ INJECTION_PATTERNS = [
     re.compile(r'dan\s+mode', re.IGNORECASE),
     re.compile(r'developer\s+mode\s+enabled', re.IGNORECASE),
     re.compile(r'reveal\s+(system\s+)?prompt', re.IGNORECASE),
-    re.compile(r'bypass\s+safety\s+filter', re.IGNORECASE)
+    re.compile(r'bypass\s+safety\s+filter', re.IGNORECASE),
+    re.compile(r'disregard\s+(all\s+)?rules', re.IGNORECASE),
+    re.compile(r'jailbreak\s+enabled', re.IGNORECASE)
 ]
 
 

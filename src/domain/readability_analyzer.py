@@ -40,7 +40,7 @@ def analyze_readability(text: str) -> Dict[str, Any]:
     Calculates Flesch Reading Ease, Flesch-Kincaid Grade Level, and Sentiment Polarity.
     Zero-dependency stdlib implementation.
     """
-    if not text or not isinstance(text, str) or not text.strip():
+    if not text or not isinstance(text, (str, bytes)):
         return {
             "flesch_reading_ease": 100.0,
             "flesch_kincaid_grade": 0.0,
@@ -50,11 +50,25 @@ def analyze_readability(text: str) -> Dict[str, Any]:
             "total_words": 0,
             "total_sentences": 0,
             "total_syllables": 0,
-            "status": "success"
+            "status": "empty"
         }
 
-    sentences = [s.strip() for s in RE_SENTENCE.split(text.strip()) if s.strip()]
-    words = RE_WORD.findall(text)
+    str_text = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
+    if not str_text.strip():
+        return {
+            "flesch_reading_ease": 100.0,
+            "flesch_kincaid_grade": 0.0,
+            "reading_level": "Very Easy",
+            "sentiment_score": 0.0,
+            "sentiment_label": "Neutral",
+            "total_words": 0,
+            "total_sentences": 0,
+            "total_syllables": 0,
+            "status": "empty"
+        }
+
+    sentences = [s.strip() for s in RE_SENTENCE.split(str_text.strip()) if s.strip()]
+    words = RE_WORD.findall(str_text)
 
     total_sentences = max(1, len(sentences))
     total_words = max(1, len(words))

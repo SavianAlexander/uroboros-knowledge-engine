@@ -18,9 +18,9 @@ def compute_system_health_telemetry(
     latencies = sorted(recent_latencies_ms) if recent_latencies_ms else [0.80]
     n = len(latencies)
 
-    p50 = latencies[int(n * 0.50)] if n > 0 else 0.80
-    p95 = latencies[int(n * 0.95)] if n > 0 else 1.20
-    p99 = latencies[int(n * 0.99)] if n > 0 else 1.50
+    p50 = latencies[min(n - 1, int(n * 0.50))] if n > 0 else 0.80
+    p95 = latencies[min(n - 1, int(n * 0.95))] if n > 0 else 1.20
+    p99 = latencies[min(n - 1, int(n * 0.99))] if n > 0 else 1.50
 
     total_requests = cache_hits + cache_misses
     hit_ratio = round((cache_hits / float(total_requests)) * 100.0, 2) if total_requests > 0 else 100.0
