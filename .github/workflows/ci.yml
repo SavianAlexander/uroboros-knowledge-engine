@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ main, master ]
 
-env:
-  ACTIONS_RUNNER_FORCE_NODE24: "true"
-
 jobs:
   test:
     runs-on: ubuntu-latest
