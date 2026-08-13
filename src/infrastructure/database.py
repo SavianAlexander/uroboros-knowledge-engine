@@ -268,8 +268,14 @@ def _ensure_column(cursor, table: str, column: str, type_def: str):
     if column not in cols:
         cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {type_def}")
 
+_initialized_dbs = set()
+
 def init_db():
     """Initialize database tables, pragmas, indices, and schema migrations."""
+    global _initialized_dbs
+    if DB_FILE in _initialized_dbs:
+        return
+        
     reset_db_connections()
     with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
         with conn:
