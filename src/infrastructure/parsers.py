@@ -171,19 +171,20 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
             return extract_ocr_text_structured(filepath)
         elif suffix in ['.mp3', '.wav', '.m4a', '.flac', '.ogg']:
             meta = parse_audio_metadata(filepath)
-            transcript = ""
-            try:
-                # Try local faster-whisper or whisper model if available
-                import whisper
-                model = whisper.load_model("tiny")
-                res = model.transcribe(filepath)
-                transcript = res.get("text", "").strip()
-            except Exception:
-                pass
-            
             dur = meta.get("duration", 0.0)
             ch = meta.get("channels", 0)
             sr = meta.get("samplerate", 0)
+            transcript = ""
+            if dur > 0 and sr > 0:
+                try:
+                    # ponytail: safe import guard for whisper/torch DLL loads on valid audio headers
+                    import whisper
+                    model = whisper.load_model("tiny")
+                    res = model.transcribe(filepath)
+                    transcript = res.get("text", "").strip()
+                except (Exception, BaseException, OSError, AttributeError):
+                    pass
+            
             header = f"[Audio Voice Memo | Duration: {dur}s | Channels: {ch} | SampleRate: {sr} Hz]"
             content_str = f"{header}\n{transcript}" if transcript else header
             return content_str, []
