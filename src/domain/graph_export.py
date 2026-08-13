@@ -6,6 +6,8 @@ Provides zero-dependency GraphML XML serialization for Gephi, Cytoscape, and Net
 from typing import Dict, List, Any
 import xml.etree.ElementTree as ET
 
+import html
+
 def export_graph_to_graphml(graph_data: Dict[str, Any]) -> str:
     """
     Serializes Knowledge Graph nodes and edges into standard GraphML XML format.
@@ -32,11 +34,14 @@ def export_graph_to_graphml(graph_data: Dict[str, Any]) -> str:
         '  <graph id="UroborosKnowledgeGraph" edgedefault="undirected">'
     ]
 
+    def _esc(val: Any) -> str:
+        return html.escape(str(val if val is not None else ""), quote=True)
+
     for node in nodes:
-        nid = str(node.get("id", "")).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
-        label = str(node.get("name") or node.get("label") or nid).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
-        ntype = str(node.get("type", "node")).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
-        group = str(node.get("group") or node.get("community", 0)).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        nid = _esc(node.get("id", ""))
+        label = _esc(node.get("name") or node.get("label") or nid)
+        ntype = _esc(node.get("type", "node"))
+        group = _esc(node.get("group") or node.get("community", 0))
 
         xml_lines.append(f'    <node id="{nid}">')
         xml_lines.append(f'      <data key="d0">{label}</data>')
@@ -45,9 +50,9 @@ def export_graph_to_graphml(graph_data: Dict[str, Any]) -> str:
         xml_lines.append('    </node>')
 
     for idx, edge in enumerate(edges, start=1):
-        src = str(edge.get("source", "")).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
-        target = str(edge.get("target", "")).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
-        relation = str(edge.get("relation") or edge.get("type", "link")).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+        src = _esc(edge.get("source", ""))
+        target = _esc(edge.get("target", ""))
+        relation = _esc(edge.get("relation") or edge.get("type", "link"))
         try:
             weight = int(edge.get("weight", 1))
         except (ValueError, TypeError):

@@ -9,19 +9,27 @@ from typing import Dict, Any, List
 RE_WORD = re.compile(r'\b[a-zA-Z0-9_-]{3,}\b')
 
 
+import functools
+
+@functools.lru_cache(maxsize=2048)
+def _get_words_set(text: str) -> set:
+    if not text:
+        return set()
+    safe_text = unicodedata.normalize("NFC", str(text))
+    return set(RE_WORD.findall(safe_text.lower()))
+
+
 def evaluate_relevance(query: str, context_chunk: str) -> Dict[str, Any]:
     """
     Evaluates [IsRel] reflection token: Is context chunk relevant to query?
     """
-    safe_q = unicodedata.normalize("NFC", str(query or ""))
-    safe_c = unicodedata.normalize("NFC", str(context_chunk or ""))
-    q_words = set(RE_WORD.findall(safe_q.lower()))
-    c_words = set(RE_WORD.findall(safe_c.lower()))
+    q_words = _get_words_set(query)
+    c_words = _get_words_set(context_chunk)
 
     if not q_words or not c_words:
         return {"token": "[IsRel:No]", "score": 0.0, "relevant": False}
 
-    overlap = len(q_words.intersection(c_words))
+    overlap = len(q_words & c_words)
     relevance_score = round(overlap / float(len(q_words)), 4)
     is_rel = relevance_score >= 0.15
 
@@ -36,15 +44,13 @@ def evaluate_support(answer: str, context_chunk: str) -> Dict[str, Any]:
     """
     Evaluates [IsSup] reflection token: Is generated answer factually grounded in context?
     """
-    safe_a = unicodedata.normalize("NFC", str(answer or ""))
-    safe_c = unicodedata.normalize("NFC", str(context_chunk or ""))
-    a_words = set(RE_WORD.findall(safe_a.lower()))
-    c_words = set(RE_WORD.findall(safe_c.lower()))
+    a_words = _get_words_set(answer)
+    c_words = _get_words_set(context_chunk)
 
     if not a_words or not c_words:
         return {"token": "[IsSup:No]", "score": 0.0, "supported": False}
 
-    overlap = len(a_words.intersection(c_words))
+    overlap = len(a_words & c_words)
     support_score = round(overlap / float(len(a_words)), 4)
     is_sup = support_score >= 0.40
 
