@@ -18,10 +18,12 @@ def dot_product(v1: List[float], v2: List[float]) -> float:
 
 def normalize_vector(v: List[float]) -> List[float]:
     """Applies L2 normalization to a vector."""
-    norm = math.sqrt(sum(x * x for x in v))
+    if not v or not isinstance(v, (list, tuple)):
+        return []
+    norm = math.sqrt(sum(x * x for x in v if isinstance(x, (int, float))))
     if norm == 0.0:
-        return v
-    return [x / norm for x in v]
+        return list(v)
+    return [round(x / norm, 6) for x in v if isinstance(x, (int, float))]
 
 
 def colbert_maxsim_score(query_token_embeddings: List[List[float]], doc_token_embeddings: List[List[float]]) -> float:

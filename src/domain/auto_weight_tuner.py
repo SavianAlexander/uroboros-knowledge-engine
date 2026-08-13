@@ -16,10 +16,14 @@ def optimize_search_parameters(
     """
     weights = current_weights or {"vector_weight": 0.50, "keyword_weight": 0.30, "colbert_weight": 0.20, "chunk_size": 512}
 
-    if not historical_feedback:
+    if not historical_feedback or not isinstance(historical_feedback, list):
         return {"optimized_weights": weights, "status": "no_feedback_data", "adjustment_applied": False}
 
-    avg_satisfaction = sum(f.get("score", 0.5) for f in historical_feedback) / float(len(historical_feedback))
+    valid_feedback = [f for f in historical_feedback if isinstance(f, dict)]
+    if not valid_feedback:
+        return {"optimized_weights": weights, "status": "no_feedback_data", "adjustment_applied": False}
+
+    avg_satisfaction = sum(f.get("score", 0.5) for f in valid_feedback) / float(len(valid_feedback))
 
     if avg_satisfaction < 0.60:
         # Boost ColBERT rerank and decrease chunk size for higher precision
