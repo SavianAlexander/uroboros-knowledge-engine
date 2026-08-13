@@ -31,9 +31,14 @@ scratch*.py
 scratch/
 data/
 
-# OS files
+# OS and IDE files
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+.env
+.env.*
+!.env.example
 
 # E2E temporary files
 e2e_knowledge*
