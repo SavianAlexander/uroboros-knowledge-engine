@@ -41,19 +41,18 @@ def chunk_by_semantic_entropy(
         return []
 
     sentences = split_sentences(text)
+    if not sentences:
+        return []
 
+    sentence_words_list = [get_sentence_words(s) for s in sentences]
     chunks = []
     current_sentences = []
     current_length = 0
+    prev_words = None
 
     for i, sent in enumerate(sentences):
-        sent_words = get_sentence_words(sent)
-        
-        if current_sentences:
-            prev_words = get_sentence_words(current_sentences[-1])
-            distance = compute_jaccard_distance(prev_words, sent_words)
-        else:
-            distance = 0.0
+        sent_words = sentence_words_list[i]
+        distance = compute_jaccard_distance(prev_words, sent_words) if prev_words is not None else 0.0
 
         # Trigger boundary if distance exceeds threshold or character length exceeds limit
         if current_sentences and (distance >= distance_threshold or (current_length + len(sent) > max_chunk_size)):
@@ -67,9 +66,11 @@ def chunk_by_semantic_entropy(
             })
             current_sentences = [sent]
             current_length = len(sent)
+            prev_words = sent_words
         else:
             current_sentences.append(sent)
             current_length += len(sent)
+            prev_words = sent_words
 
     if current_sentences:
         chunk_content = " ".join(current_sentences)

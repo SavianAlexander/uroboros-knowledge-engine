@@ -15,11 +15,10 @@ import uuid
 import json
 import contextlib
 import logging
-from datetime import datetime, timezone
 import queue
-from datetime import datetime, timezone
 from pathlib import Path
 from src.shared.security import get_file_acl
+from src.core.context import get_current_user_id
 from src.core.domain.services import (
     extract_ai_tags,
     chunk_text,
@@ -39,7 +38,6 @@ def create_chat_session(
     session_title = title if title is not None else "New Chat"
     meta_str = json.dumps(metadata_json) if isinstance(metadata_json, (dict, list)) else metadata_json
     
-    from src.core.context import get_current_user_id
     user_id = get_current_user_id() or 0
 
     with get_db() as conn:
@@ -64,7 +62,6 @@ def create_chat_session(
 
 def list_chat_sessions(limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
     """List most recent chat sessions."""
-    from src.core.context import get_current_user_id
     user_id = get_current_user_id() or 0
     with get_db() as conn:
         conn.row_factory = sqlite3.Row
@@ -91,7 +88,6 @@ def list_chat_sessions(limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]
 
 def get_chat_session(session_id: str) -> Optional[Dict[str, Any]]:
     """Get full chat session including ordered messages."""
-    from src.core.context import get_current_user_id
     user_id = get_current_user_id() or 0
     with get_db() as conn:
         conn.row_factory = sqlite3.Row
@@ -113,7 +109,6 @@ def update_chat_session(
     metadata_json: Optional[Any] = None
 ) -> Optional[Dict[str, Any]]:
     """Update metadata and parameters for a chat session."""
-    from src.core.context import get_current_user_id
     user_id = get_current_user_id() or 0
     with get_db() as conn:
         conn.row_factory = sqlite3.Row
@@ -152,7 +147,6 @@ def update_chat_session(
 
 def delete_chat_session(session_id: str) -> bool:
     """Delete a chat session and cascade delete all associated messages."""
-    from src.core.context import get_current_user_id
     user_id = get_current_user_id() or 0
     with get_db() as conn:
         cursor = conn.cursor()

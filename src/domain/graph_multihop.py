@@ -19,12 +19,18 @@ def find_multihop_pathways(start_doc: str, target_doc: Optional[str] = None, max
 
         if DB_FILE and os.path.dirname(DB_FILE):
             os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
-        init_db()
-        with get_db_connection(DB_FILE) as conn:
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, filename, filepath, content FROM files")
-            rows = cursor.fetchall()
+        def _fetch_all_files():
+            with get_db_connection(DB_FILE) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute("SELECT id, filename, filepath, content FROM files")
+                return cursor.fetchall()
+
+        try:
+            rows = _fetch_all_files()
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+            init_db()
+            rows = _fetch_all_files()
 
         if not rows:
             return {"pathways": [], "status": "success"}

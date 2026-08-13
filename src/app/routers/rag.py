@@ -4,10 +4,13 @@ RAG, streaming chat, and contemplation endpoints.
 import json
 import time
 import asyncio
+import logging
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
+
+logger = logging.getLogger(__name__)
 
 from src.core.domain.models import (
     RAGStreamRequest, ChatRequest, ChatResponse, ContemplateRequest, ContemplateResponse,
@@ -120,31 +123,31 @@ def chat_stream_endpoint(req: ChatRequest):
 
         # Stream response tokens
         full_response_text = ""
-        if llm:
-            code_kws = ["code", "python", "function", "class", "script", "api", "sql", "react", "bug", "fix", "err"]
-            math_kws = ["math", "formula", "proof", "calculate", "equation", "matrix", "ratio"]
+        
+        system_prompt = (
+            "You are Uroboros AI, a world-class senior staff AI research assistant and domain expert. "
+            "Provide clear, thorough, highly analytical, and well-structured answers using Markdown headings, "
+            "code snippets, and bullet points. Synthesize information accurately from the provided document context. "
+            "When citing facts from Document Vault Context, explicitly reference the source file name."
+        )
+        code_kws = ["code", "python", "function", "class", "script", "api", "sql", "react", "bug", "fix", "err"]
+        math_kws = ["math", "formula", "proof", "calculate", "equation", "matrix", "ratio"]
+        if any(kw in user_query.lower() for kw in code_kws):
+            system_prompt += " Focus on writing clean, modular, production-grade code with complete docstrings, type annotations, and error handling."
+        elif any(kw in user_query.lower() for kw in math_kws):
+            system_prompt += " Format mathematical expressions using standard LaTeX notation ($...$ for inline, $$...$$ for block)."
 
-            system_prompt = (
-                "You are Uroboros AI, a world-class senior staff AI research assistant and domain expert. "
-                "Provide clear, thorough, highly analytical, and well-structured answers using Markdown headings, "
-                "code snippets, and bullet points. Synthesize information accurately from the provided document context. "
-                "When citing facts from Document Vault Context, explicitly reference the source file name."
-            )
-            if any(kw in user_query.lower() for kw in code_kws):
-                system_prompt += " Focus on writing clean, modular, production-grade code with complete docstrings, type annotations, and error handling."
-            elif any(kw in user_query.lower() for kw in math_kws):
-                system_prompt += " Format mathematical expressions using standard LaTeX notation ($...$ for inline, $$...$$ for block)."
-
-def _append_causality_logs(user_query, messages):
-    causality_keywords = ["why", "how did", "what caused", "reason", "because"]
-    if any(kw in user_query.lower() for kw in causality_keywords):
-        try:
-            logs = list_workflow_logs(limit=10)
-            if logs:
-                causality_ctx = "\n".join([f"- [{log['executed_at']}] Event: {log['event_type']} (Status: {log['status']}) - {log.get('response_body') or ''}" for log in logs])
-                messages.append({"role": "system", "content": f"Causality Event History Context:\n{causality_ctx}"})
-        except Exception:
-            pass
+        messages = [{"role": "system", "content": system_prompt}]
+        causality_keywords = ["why", "how did", "what caused", "reason", "because"]
+        if any(kw in user_query.lower() for kw in causality_keywords):
+            try:
+                from src.infrastructure.repositories.workflows import list_workflow_logs
+                logs = list_workflow_logs(limit=10)
+                if logs:
+                    causality_ctx = "\n".join([f"- [{log['executed_at']}] Event: {log['event_type']} (Status: {log['status']}) - {log.get('response_body') or ''}" for log in logs])
+                    messages.append({"role": "system", "content": f"Causality Event History Context:\n{causality_ctx}"})
+            except Exception:
+                pass
 
         try:
             past_msgs = get_chat_messages(session_id, limit=6)
@@ -163,35 +166,35 @@ def _append_causality_logs(user_query, messages):
 
         messages.append({"role": "user", "content": user_query})
 
-        try:
-            if hasattr(llm, "stream_chat"):
-                model_choice = getattr(req, "model_config", None) or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
-                temp_val = req.temperature if req.temperature is not None else 0.3
-                for tok in llm.stream_chat(messages=messages, model_name=model_choice, temperature=temp_val):
+        if llm:
+            try:
+                if hasattr(llm, "stream_chat"):
+                    model_choice = getattr(req, "model_config", None) or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+                    temp_val = req.temperature if req.temperature is not None else 0.3
+                    for tok in llm.stream_chat(messages=messages, model_name=model_choice, temperature=temp_val):
+                        full_response_text += tok
+                        yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
+                else:
+                    full_prompt = "\n\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages])
+                    stream = llm.create_completion(
+                        prompt=full_prompt,
+                        stream=True,
+                        max_tokens=1024,
+                        temperature=req.temperature if req.temperature is not None else 0.3
+                    )
+                    for chunk in stream:
+                        tok = chunk["choices"][0]["text"]
+                        full_response_text += tok
+                        yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                import logging; logging.error(f"Streaming exception in rag.py: {e}")
+                fallback_toks = ["Grounded ", "response ", "based ", "on ", "retrieved ", "documents."]
+                for tok in fallback_toks:
                     full_response_text += tok
                     yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
-            else:
-                full_prompt = "\n\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages])
-                stream = llm.create_completion(
-                    prompt=full_prompt,
-                    stream=True,
-                    max_tokens=1024,
-                    temperature=req.temperature if req.temperature is not None else 0.3
-                )
-                for chunk in stream:
-                    tok = chunk["choices"][0]["text"]
-                    full_response_text += tok
-                    yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
-        except (KeyboardInterrupt, MemoryError, SystemExit):
-            raise
-        except Exception as e:
-            logger.error(f"Streaming exception in rag.py: {e}")
-            logger.exception("Swallowed error in rag.py")
-            fallback_toks = ["Grounded ", "response ", "based ", "on ", "retrieved ", "documents."]
-            for tok in fallback_toks:
-                full_response_text += tok
-                yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
-                time.sleep(0.01)
+                    time.sleep(0.01)
         else:
             fallback_toks = ["Synthesized ", "response ", "grounded ", "in ", "retrieved ", "vault ", "documents."]
             for tok in fallback_toks:

@@ -5,6 +5,8 @@ Zero-dependency, stdlib-first math implementation.
 """
 import math
 import functools
+from typing import List, Dict, Any, Tuple
+
 def dot_product(v1: List[float], v2: List[float]) -> float:
     """Calculates dot product of two equal-length float vectors."""
     min_len = min(len(v1), len(v2))

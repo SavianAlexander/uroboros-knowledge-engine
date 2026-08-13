@@ -2,6 +2,7 @@
 Zero-dependency Source Line Citation & Footnote Map Generator.
 Maps retrieved text passages to exact file line numbers (filepath#L10-L25) for 100% executive auditability.
 """
+import urllib.parse
 import unicodedata
 import os
 from typing import Dict, Any, List, Optional
@@ -60,7 +61,6 @@ def generate_source_citations(passages: List[Dict[str, Any]]) -> List[Dict[str, 
         start_l = loc["start_line"] if loc else 1
         end_l = loc["end_line"] if loc else 1
 
-        import urllib.parse
         clean_path = filepath.replace('\\', '/')
         encoded_path = urllib.parse.quote(clean_path, safe="/:!#@$&'()*+,;=")
         citation_link = f"file:///{encoded_path}#L{start_l}-L{end_l}" if filepath else filename

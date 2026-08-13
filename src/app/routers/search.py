@@ -37,6 +37,42 @@ from src.domain.rerank_score_explainer import explain_candidate_score
 
 router = APIRouter()
 
+def _filter_by_excluded_tags(results, exc_val):
+    exc_tags = [t.lower() for t in (exc_val if isinstance(exc_val, list) else [exc_val])]
+    filtered = []
+    with get_db() as conn:
+        cursor = conn.cursor()
+        for r in results:
+            fid = r.get("id")
+            if fid:
+                cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (fid,))
+                f_tags = [t[0].lower() for t in cursor.fetchall()]
+                if not any(t in f_tags for t in exc_tags):
+                    filtered.append(r)
+            else:
+                filtered.append(r)
+    return filtered
+
+def _filter_by_excluded_words(results, exc_val):
+    words_exc = exc_val if isinstance(exc_val, list) else [exc_val]
+    for w_exc in words_exc:
+        w_lower = str(w_exc).lower()
+        filtered = []
+        for r in results:
+            c_text = r.get("content")
+            if not c_text and r.get("filepath") and os.path.exists(r["filepath"]):
+                try:
+                    with open(r["filepath"], "r", encoding="utf-8", errors="ignore") as f:
+                        c_text = f.read()
+                except Exception:
+                    c_text = ""
+            c_text = (c_text or "").lower()
+            fn = r.get("filename", "").lower()
+            if w_lower not in c_text and w_lower not in fn:
+                filtered.append(r)
+        results = filtered
+    return results
+
 
 def _get_global_cache():
     try:

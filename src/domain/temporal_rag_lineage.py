@@ -31,26 +31,26 @@ def get_temporal_knowledge_lineage(filename: str = "") -> Dict[str, Any]:
     try:
         try:
             rows = _fetch_rows()
-        except sqlite3.OperationalError:
+        except (sqlite3.OperationalError, sqlite3.DatabaseError):
             init_db()
             rows = _fetch_rows()
+    except Exception:
+        rows = []
 
-        timeline = []
-        for idx, r in enumerate(rows):
-            timeline.append({
-                "version_id": f"v{r['id']}",
-                "filename": unicodedata.normalize("NFC", str(r["filename"] or "")),
-                "filepath": r["filepath"],
-                "timestamp": r["created_at"] or "2026-08-12T00:00:00Z",
-                "change_type": "UPDATED" if idx > 0 else "INITIAL"
-            })
+    timeline = []
+    for idx, r in enumerate(rows):
+        timeline.append({
+            "version_id": f"v{r['id']}",
+            "filename": unicodedata.normalize("NFC", str(r["filename"] or "")),
+            "filepath": r["filepath"],
+            "timestamp": r["created_at"] or "2026-08-12T00:00:00Z",
+            "change_type": "UPDATED" if idx > 0 else "INITIAL"
+        })
 
-        return {
-            "query_filename": filename or "All Vault Documents",
-            "versions_count": len(timeline),
-            "timeline": timeline,
-            "status": "success"
-        }
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    return {
+        "query_filename": filename or "All Vault Documents",
+        "versions_count": len(timeline),
+        "timeline": timeline,
+        "status": "success"
+    }
 
