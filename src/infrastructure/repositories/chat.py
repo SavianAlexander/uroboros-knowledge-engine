@@ -81,7 +81,11 @@ def list_chat_sessions(limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]
     sessions = []
     for r in rows:
         d = dict(r)
-        d["metadata_json"] = json.loads(d["metadata_json"]) if d["metadata_json"] else None
+        if d.get("metadata_json"):
+            try:
+                d["metadata_json"] = json.loads(d["metadata_json"])
+            except (ValueError, TypeError, json.JSONDecodeError):
+                pass
         sessions.append(d)
     return sessions
 

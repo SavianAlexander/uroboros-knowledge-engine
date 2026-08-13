@@ -37,7 +37,7 @@ def synthesize_faq_from_queries(
 
     return {
         "faqs": faqs,
-        "total_queries_analyzed": len(query_history),
+        "total_queries_analyzed": len(valid_queries),
         "total_faqs_synthesized": len(faqs),
         "status": "success"
     }

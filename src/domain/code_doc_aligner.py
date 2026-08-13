@@ -24,7 +24,12 @@ def check_code_docstring_alignment(code_snippet: str) -> Dict[str, Any]:
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             doc = ast.get_docstring(node)
-            func_args = [a.arg for a in node.args.args if a.arg != "self"]
+            all_args = (
+                getattr(node.args, "posonlyargs", []) +
+                node.args.args +
+                getattr(node.args, "kwonlyargs", [])
+            )
+            func_args = [a.arg for a in all_args if a.arg not in ("self", "cls")]
             
             if not doc:
                 issues.append({"function": node.name, "issue": "missing_docstring"})

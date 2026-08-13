@@ -34,6 +34,6 @@ def compute_entity_cooccurrence_matrix(
 
     return {
         "cooccurrence_pairs": sorted_pairs[:10],
-        "total_documents_analyzed": len(documents),
+        "total_documents_analyzed": len(valid_docs),
         "status": "success"
     }

@@ -32,13 +32,23 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
     Ranks sentences by TF-IDF keyword density to generate a high-density extractive summary.
     Zero-dependency stdlib implementation.
     """
-    if not text or not text.strip():
+    if not text or not isinstance(text, (str, bytes)):
         return {
             "summary": "",
             "key_sentences": [],
             "total_sentences": 0,
             "compression_ratio": 0.0,
-            "status": "success"
+            "status": "empty"
+        }
+
+    str_text = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
+    if not str_text.strip():
+        return {
+            "summary": "",
+            "key_sentences": [],
+            "total_sentences": 0,
+            "compression_ratio": 0.0,
+            "status": "empty"
         }
 
     # Split into sentences
