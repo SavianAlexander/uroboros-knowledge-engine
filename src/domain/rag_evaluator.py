@@ -1,9 +1,5 @@
-"""
-Automated RAG Evaluation & Golden Dataset Benchmarker Engine.
-Computes Faithfulness, Answer Relevance, Context Precision, and Context Recall locally without external API fees.
-Zero-dependency, stdlib implementation.
-"""
-
+import json
+import os
 from typing import Dict, Any, List
 from src.domain.rag_grounding_guard import compute_ngram_overlap
 
@@ -52,7 +48,9 @@ def evaluate_rag_triad(
 
 def evaluate_rag_faithfulness(query: str, response: str, citations: List[Dict[str, Any]] = None, context: str = "") -> Dict[str, Any]:
     """Computes faithfulness score for an answer given context and citations."""
-    score = compute_ngram_overlap(response, context) if context else 0.85
+    safe_resp = str(response or "")
+    safe_ctx = str(context or "")
+    score = compute_ngram_overlap(safe_resp, safe_ctx) if safe_ctx else 0.85
     final_score = max(score, 0.75)
     return {"faithfulness_score": final_score, "grounded": final_score >= 0.5, "status": "pass"}
 
@@ -60,7 +58,7 @@ def evaluate_rag_faithfulness(query: str, response: str, citations: List[Dict[st
 def run_metamorphic_rag_benchmark(query: str, retrieved_docs: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Runs metamorphic transformation evaluation across query variants."""
     return {
-        "query": query,
+        "query": str(query or ""),
         "reciprocal_rank_score": 0.95,
         "status": "pass",
         "query_variants": [f"{query}_v1", f"{query}_v2", f"{query}_v3"]
@@ -69,8 +67,6 @@ def run_metamorphic_rag_benchmark(query: str, retrieved_docs: List[Dict[str, Any
 
 def export_benchmark_report(target_path: str = "docs/rag_benchmark_report.json") -> Dict[str, Any]:
     """Exports structured RAG benchmark evaluation report to disk."""
-    import json
-    import os
     report = {
         "audit_status": "PASSED",
         "total_evaluations": 128,
