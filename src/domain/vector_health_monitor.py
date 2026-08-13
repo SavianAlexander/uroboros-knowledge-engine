@@ -24,7 +24,8 @@ def audit_vector_health() -> Dict[str, Any]:
         cursor = conn.cursor()
 
         cursor.execute("SELECT COUNT(*) as cnt FROM files")
-        total_files = cursor.fetchone()["cnt"]
+        row = cursor.fetchone()
+        total_files = row["cnt"] if row else 0
 
         # Check vector_embeddings or embeddings table if exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('vector_embeddings', 'embeddings')")
@@ -36,11 +37,13 @@ def audit_vector_health() -> Dict[str, Any]:
 
         if "vector_embeddings" in tables:
             cursor.execute("SELECT COUNT(DISTINCT file_id) as cnt FROM vector_embeddings")
-            embedded_count = cursor.fetchone()["cnt"]
+            row_emb = cursor.fetchone()
+            embedded_count = row_emb["cnt"] if row_emb else 0
             missing_count = max(0, total_files - embedded_count)
         elif "embeddings" in tables:
             cursor.execute("SELECT COUNT(DISTINCT file_id) as cnt FROM embeddings")
-            embedded_count = cursor.fetchone()["cnt"]
+            row_emb = cursor.fetchone()
+            embedded_count = row_emb["cnt"] if row_emb else 0
             missing_count = max(0, total_files - embedded_count)
 
         coverage_pct = round((embedded_count / float(max(1, total_files))) * 100.0, 2)
