@@ -24,8 +24,9 @@ def apply_temporal_decay_scoring(
     if not valid_candidates:
         return []
 
+    safe_half_life = float(half_life_days) if half_life_days is not None and isinstance(half_life_days, (int, float)) and half_life_days > 0 else 90.0
     now = time.time()
-    decay_lambda = math.log(2.0) / half_life_days
+    decay_lambda = math.log(2.0) / safe_half_life
 
     scored_results = []
     for cand in valid_candidates:
