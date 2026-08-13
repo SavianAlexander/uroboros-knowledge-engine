@@ -63,8 +63,11 @@ class SQLiteConnectionPool:
 
     def return_connection(self, conn):
         try:
-            # We don't want a connection with a broken transaction state to go back to the pool
-            # but sqlite rollback handles it. 
+            if conn and getattr(conn, "in_transaction", False):
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
             self.pool.put_nowait(conn)
         except queue.Full:
             try:
