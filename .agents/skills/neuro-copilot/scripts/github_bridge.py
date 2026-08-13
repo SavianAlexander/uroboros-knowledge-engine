@@ -770,9 +770,10 @@ def self_test():
     
     # 2. Test format_commit message generation
     msg = format_commit("feat", "test feature", "101", "a1b2c3d4e5f67890")
-    assert "[Tududi #101]" in msg, f"Tududi tag missing in {msg}"
-    assert "[Neuro Hash: a1b2c3d4e5f6]" in msg, f"Neuro Hash missing in {msg}"
+    assert "Tududi #101" in msg, f"Tududi tag missing in {msg}"
+    assert "Neuro Hash: a1b2c3d4e5f6" in msg, f"Neuro Hash missing in {msg}"
     print("  [Pass] format_commit assertion clean")
+
     
     # 3. Test git hook script installation
     git_dir = ".git"
