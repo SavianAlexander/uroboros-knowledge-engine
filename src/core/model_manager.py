@@ -63,10 +63,12 @@ class OllamaClient:
 
     def _post_with_fallback(self, endpoint: str, data: dict, timeout: int = 15):
         ensure_single_llama_server_instance()
+        clean_ep = endpoint if endpoint.startswith("/") else f"/{endpoint}"
+        clean_base = self.base_url.rstrip("/")
         endpoints = [
-            f"{self.base_url}{endpoint}",
-            f"http://127.0.0.1:11434/v1{endpoint}",
-            f"http://localhost:11434/v1{endpoint}"
+            f"{clean_base}{clean_ep}",
+            f"http://127.0.0.1:11434/v1{clean_ep}",
+            f"http://localhost:11434/v1{clean_ep}"
         ]
         for url in endpoints:
             try:

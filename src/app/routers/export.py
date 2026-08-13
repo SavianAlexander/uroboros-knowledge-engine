@@ -46,26 +46,25 @@ def export_stats_csv_endpoint():
 def export_results_endpoint(query: str = "", format: str = "csv"):
     """Export search results as a CSV spreadsheet download."""
     try:
-        conn = get_db()
-        cursor = conn.cursor()
-        if query:
-            clean_q = sanitise_fts_query(query)
-            try:
-                cursor.execute(
-                    "SELECT files.filepath, files.filename, files.file_size, files.modified_at FROM fts_files JOIN files ON fts_files.filepath = files.filepath WHERE fts_files MATCH ? LIMIT 100",
-                    (clean_q,),
-                )
-                rows = cursor.fetchall()
-            except (KeyboardInterrupt, MemoryError, SystemExit):
-                raise
-            except Exception:
-                import logging; logging.getLogger(__name__).exception("Swallowed error in export.py")
+        with get_db() as conn:
+            cursor = conn.cursor()
+            if query:
+                clean_q = sanitise_fts_query(query)
+                try:
+                    cursor.execute(
+                        "SELECT files.filepath, files.filename, files.file_size, files.modified_at FROM fts_files JOIN files ON fts_files.filepath = files.filepath WHERE fts_files MATCH ? LIMIT 100",
+                        (clean_q,),
+                    )
+                    rows = cursor.fetchall()
+                except (KeyboardInterrupt, MemoryError, SystemExit):
+                    raise
+                except Exception:
+                    import logging; logging.getLogger(__name__).exception("Swallowed error in export.py")
+                    cursor.execute("SELECT filepath, filename, file_size, modified_at FROM files LIMIT 100")
+                    rows = cursor.fetchall()
+            else:
                 cursor.execute("SELECT filepath, filename, file_size, modified_at FROM files LIMIT 100")
                 rows = cursor.fetchall()
-        else:
-            cursor.execute("SELECT filepath, filename, file_size, modified_at FROM files LIMIT 100")
-            rows = cursor.fetchall()
-        conn.close()
 
         output = io.StringIO()
         writer = csv.writer(output)
