@@ -55,7 +55,9 @@ def analyze_readability(text: str) -> Dict[str, Any]:
             "status": "empty"
         }
 
-    str_text = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
+    import unicodedata
+    raw_text = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
+    str_text = unicodedata.normalize("NFC", raw_text)
     if not str_text.strip():
         return {
             "flesch_reading_ease": 100.0,

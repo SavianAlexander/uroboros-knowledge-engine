@@ -14,11 +14,11 @@ def audit_semantic_concept_drift(term: str = "") -> Dict[str, Any]:
     """
     try:
         import os
-        from src.infrastructure.database import get_db, init_db
+        from src.infrastructure.database import get_db_connection, DB_FILE, init_db
 
         init_db()
-        conn = get_db()
-        cursor = conn.cursor()
+        with get_db_connection(DB_FILE) as conn:
+            cursor = conn.cursor()
 
         query_sql = "SELECT id, filename, content, created_at FROM files"
         params = []

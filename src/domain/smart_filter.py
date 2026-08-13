@@ -31,12 +31,13 @@ def parse_natural_language_filter(query: str) -> Dict[str, Any]:
     size_match = _RE_SIZE.search(raw)
     if size_match:
         try:
-            val = int(val)
-            unit = (unit or "b").lower()
-            multiplier = 1048576 if unit == "mb" else (1024 if unit == "kb" else 1)
+            op, val, unit = size_match.groups()
+            val_int = int(val)
+            unit_str = (unit or "b").lower()
+            multiplier = 1048576 if unit_str == "mb" else (1024 if unit_str == "kb" else 1)
             filters["size_op"] = op
-            filters["size_bytes"] = val * multiplier
-        except (ValueError, OverflowError):
+            filters["size_bytes"] = val_int * multiplier
+        except (ValueError, OverflowError, TypeError):
             pass
 
     # Clean FTS keywords
