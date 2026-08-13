@@ -35,12 +35,13 @@ def is_user_authorized(
         return False
 
     # 3. Check allowed roles/groups (Active Directory / Entra ID Security Groups)
-    allowed_roles = set(document_acl.get("read_roles", []))
+    import unicodedata
+    allowed_roles = set(unicodedata.normalize("NFC", str(r)) for r in document_acl.get("read_roles", []))
     if not allowed_roles or "*" in allowed_roles:
         return True  # Open to all authenticated users
 
-    user_roles = set(user_context.get("roles", []))
-    user_groups = set(user_context.get("groups", []))
+    user_roles = set(unicodedata.normalize("NFC", str(r)) for r in user_context.get("roles", []))
+    user_groups = set(unicodedata.normalize("NFC", str(g)) for g in user_context.get("groups", []))
     user_principal = user_roles.union(user_groups)
 
     return len(allowed_roles.intersection(user_principal)) > 0

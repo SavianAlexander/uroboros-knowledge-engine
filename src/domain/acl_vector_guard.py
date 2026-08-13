@@ -21,13 +21,16 @@ def filter_candidates_by_acl(
     allowed = []
     blocked_count = 0
 
-    roles_set = set(r.lower() for r in user_roles)
+    import unicodedata
+    norm_user_tenant = unicodedata.normalize("NFC", str(user_tenant_id or "default"))
+    roles_set = set(unicodedata.normalize("NFC", str(r)).lower() for r in user_roles)
     # Admin roles bypass role checks
     is_admin = "admin" in roles_set or "role:admin" in roles_set
 
     for cand in candidates:
-        doc_tenant = cand.get("tenant_id", "default")
-        doc_roles = set(r.lower() for r in cand.get("allowed_roles", []))
+        raw_tenant = str(cand.get("tenant_id", "default"))
+        doc_tenant = unicodedata.normalize("NFC", raw_tenant)
+        doc_roles = set(unicodedata.normalize("NFC", str(r)).lower() for r in cand.get("allowed_roles", []))
 
         # Check Tenant Isolation
         if doc_tenant != "global" and doc_tenant != user_tenant_id:
