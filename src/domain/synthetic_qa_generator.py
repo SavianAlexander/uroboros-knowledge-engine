@@ -21,8 +21,9 @@ def generate_synthetic_qa_triples(
 
     sentences = [s for s in split_sentences(document_text) if len(s) > 20]
     
+    limit = max(0, int(max_triples)) if max_triples is not None and isinstance(max_triples, (int, float)) else 5
     triples = []
-    for idx, sent in enumerate(sentences[:max_triples]):
+    for idx, sent in enumerate(sentences[:limit]):
         # Extract main key phrase for question generation
         words = re.findall(r'\b[a-zA-Z]{4,}\b', sent)
         key_phrase = " ".join(words[:3]) if len(words) >= 3 else "concept"

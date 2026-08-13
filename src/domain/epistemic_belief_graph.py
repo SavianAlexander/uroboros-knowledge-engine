@@ -22,9 +22,12 @@ def update_epistemic_belief_graph(
     for b in beliefs:
         # Simple negation conflict heuristic
         b_norm = str(b.get("claim", "") or "").lower()
-        if ("not " in norm_claim and norm_claim.replace("not ", "") in b_norm) or \
-           ("not " in b_norm and b_norm.replace("not ", "") in norm_claim):
-            conflicts.append(b)
+        claim_stripped = norm_claim.replace("not ", "").strip()
+        b_stripped = b_norm.replace("not ", "").strip()
+        if claim_stripped and b_stripped:
+            if ("not " in norm_claim and claim_stripped in b_norm) or \
+               ("not " in b_norm and b_stripped in norm_claim):
+                conflicts.append(b)
 
     new_entry = {
         "belief_id": f"bel_{len(beliefs)+1}",
