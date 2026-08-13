@@ -19,14 +19,16 @@ def auto_correct_grounding(
     audit = verify_rag_grounding(llm_response, source_chunks)
     warnings = audit.get("hallucination_warnings", [])
 
-    patched_response = llm_response
+    safe_response = str(llm_response or "")
+    patched_response = safe_response
     patches_applied = []
 
     for ungrounded_claim in warnings:
         # Micro-retrieval for ungrounded claim sentence
         _, micro_snippets = extract_advanced_rag_context(ungrounded_claim, max_chunks=1)
         if micro_snippets:
-            verified_snippet = micro_snippets[0].get("snippet", "")
+            first_snip = micro_snippets[0]
+            verified_snippet = first_snip.get("snippet", "") if isinstance(first_snip, dict) else str(first_snip)
             patch_note = f" [Verified Context: {verified_snippet[:150]}...]"
             patched_response = patched_response.replace(ungrounded_claim, f"{ungrounded_claim}{patch_note}")
             patches_applied.append({"claim": ungrounded_claim, "patch": patch_note})

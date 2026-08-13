@@ -13,11 +13,12 @@ def generate_audio_podcast_script(db_path: Optional[str] = None) -> Dict[str, An
     # ponytail: conversational script generation without external audio dependencies
     """
     try:
-        briefing = generate_daily_briefing(db_path) if db_path else {"total_files": 12, "active_tags": ["python", "rag"], "executive_summary": "System operating smoothly."}
+        briefing = generate_daily_briefing(db_path) if db_path is not None else generate_daily_briefing()
         
-        total_files = briefing.get("total_files", 0)
-        tags = briefing.get("active_tags", [])
-        summary = briefing.get("executive_summary", "")
+        total_files = briefing.get("total_files", 0) if isinstance(briefing, dict) else 0
+        raw_tags = briefing.get("active_tags", []) if isinstance(briefing, dict) else []
+        tags = raw_tags if isinstance(raw_tags, list) else []
+        summary = briefing.get("executive_summary", "") if isinstance(briefing, dict) else ""
 
         script_turns = [
             {

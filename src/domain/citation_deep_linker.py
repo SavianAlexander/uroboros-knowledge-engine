@@ -33,10 +33,10 @@ def create_deep_citation_link(
         end_pos = start_pos + len(clean_target)
         return {
             "citation_id": citation_id,
-            "target_sentence": target_sentence.strip(),
+            "target_sentence": clean_target,
             "start_char": start_pos,
             "end_char": end_pos,
-            "highlight_snippet": target_sentence.strip(),
+            "highlight_snippet": source_document_text[start_pos:end_pos],
             "found": True,
             "status": "success"
         }
