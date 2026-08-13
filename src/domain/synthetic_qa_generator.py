@@ -5,6 +5,7 @@ Zero-dependency, stdlib implementation.
 """
 
 import re
+import unicodedata
 from typing import Dict, Any, List
 from src.domain.rag_grounding_guard import split_sentences
 
@@ -19,7 +20,8 @@ def generate_synthetic_qa_triples(
     if not document_text or not isinstance(document_text, str) or not document_text.strip():
         return {"triples": [], "count": 0, "status": "empty_text"}
 
-    sentences = [s for s in split_sentences(document_text) if len(s) > 20]
+    norm_doc = unicodedata.normalize("NFC", document_text)
+    sentences = [s for s in split_sentences(norm_doc) if len(s) > 20]
     
     limit = max(0, int(max_triples)) if max_triples is not None and isinstance(max_triples, (int, float)) else 5
     triples = []
