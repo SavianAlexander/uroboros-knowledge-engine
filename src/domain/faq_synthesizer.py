@@ -13,13 +13,16 @@ def synthesize_faq_from_queries(
     """
     Analyzes query history, clusters similar questions, and returns synthesized FAQ entries.
     """
-    if not query_history:
+    if not query_history or not isinstance(query_history, list):
+        return {"faqs": [], "total_queries_analyzed": 0, "status": "empty_input"}
+
+    valid_queries = [str(q).strip().lower() for q in query_history if q and str(q).strip()]
+    if not valid_queries:
         return {"faqs": [], "total_queries_analyzed": 0, "status": "empty_input"}
 
     freq_map: Dict[str, int] = {}
-    for q in query_history:
-        norm = q.strip().lower()
-        freq_map[norm] = freq_map.get(norm, 0) + 1
+    for q in valid_queries:
+        freq_map[q] = freq_map.get(q, 0) + 1
 
     sorted_queries = sorted(freq_map.items(), key=lambda x: x[1], reverse=True)
     

@@ -14,10 +14,14 @@ def compute_entity_cooccurrence_matrix(
     """
     Computes entity co-occurrence frequency pairs across documents.
     """
+    if not documents or not isinstance(documents, list):
+        return {"cooccurrence_pairs": [], "total_documents_analyzed": 0, "status": "success"}
+
+    valid_docs = [d for d in documents if isinstance(d, dict)]
     co_occurrences: Dict[str, int] = {}
-    
-    for doc in documents:
-        text = doc.get("content", "")
+
+    for doc in valid_docs:
+        text = str(doc.get("content", "") or "")
         # Heuristic entity extraction: capitalized words
         entities = sorted(list(set(re.findall(r'\b[A-Z][a-z]{3,}\b', text))))
         

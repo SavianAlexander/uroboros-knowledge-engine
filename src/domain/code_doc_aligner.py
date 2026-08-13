@@ -12,7 +12,7 @@ def check_code_docstring_alignment(code_snippet: str) -> Dict[str, Any]:
     """
     Checks alignment between function code arguments and docstrings.
     """
-    if not code_snippet:
+    if not code_snippet or not isinstance(code_snippet, str) or not code_snippet.strip():
         return {"alignment_issues": [], "status": "empty_code"}
 
     try:

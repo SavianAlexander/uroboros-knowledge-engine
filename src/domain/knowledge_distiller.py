@@ -15,12 +15,26 @@ def export_knowledge_distillation_dataset(
     """
     Exports high-confidence RAG interactions into fine-tuning JSONL payloads.
     """
+    if not rag_interaction_logs or not isinstance(rag_interaction_logs, list):
+        return {
+            "format": format_type,
+            "exported_records_count": 0,
+            "jsonl_payload": "",
+            "status": "empty"
+        }
+
     export_records = []
 
     for log in rag_interaction_logs:
-        query = log.get("query", "")
-        answer = log.get("answer", "")
-        context = " ".join(log.get("contexts", []))
+        if not isinstance(log, dict):
+            continue
+        query = str(log.get("query") or "")
+        answer = str(log.get("answer") or "")
+        raw_contexts = log.get("contexts")
+        if isinstance(raw_contexts, list):
+            context = " ".join(str(c) for c in raw_contexts if c is not None)
+        else:
+            context = str(raw_contexts or "")
 
         if format_type.lower() == "alpaca":
             export_records.append({

@@ -48,7 +48,9 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
         return None
     try:
         base = Path(base_dir).resolve() if base_dir else get_active_sandbox_dir()
-        target = Path(path_str).resolve()
+        import urllib.parse
+        decoded_path = urllib.parse.unquote(str(path_str))
+        target = Path(decoded_path).resolve()
         
         is_inside_base = False
         try:
@@ -61,8 +63,8 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
             temp_dir = Path(tempfile.gettempdir()).resolve()
             try:
                 target.relative_to(temp_dir)
-                # Ensure no '..' or traversal sequences in original path_str
-                if ".." not in path_str:
+                # Ensure no '..' or traversal sequences in original path_str or decoded path
+                if ".." not in path_str and ".." not in decoded_path:
                     is_inside_base = True
             except ValueError:
                 pass
