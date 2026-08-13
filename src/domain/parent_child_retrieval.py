@@ -22,13 +22,15 @@ def expand_child_chunks_to_parents(file_ids: List[int], max_chars_per_parent: in
         if DB_FILE and os.path.dirname(DB_FILE):
             os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
         init_db()
-        conn = get_db()
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-
-        placeholders = ",".join("?" for _ in file_ids)
-        cursor.execute(f"SELECT id, filename, filepath, content FROM files WHERE id IN ({placeholders})", file_ids)
-        rows = cursor.fetchall()
+        safe_ids = [fid for fid in file_ids if isinstance(fid, (int, str))][:500]
+        if not safe_ids:
+            return []
+        with get_db() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            placeholders = ",".join("?" for _ in safe_ids)
+            cursor.execute(f"SELECT id, filename, filepath, content FROM files WHERE id IN ({placeholders})", safe_ids)
+            rows = cursor.fetchall()
 
         parent_contexts = []
         for r in rows:

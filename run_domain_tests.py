@@ -2,6 +2,10 @@ import os
 import sys
 import time
 import subprocess
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # Ensure root directory is on sys.path
 root_dir = os.path.abspath(os.path.dirname(__file__))

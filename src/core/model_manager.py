@@ -231,9 +231,12 @@ class ModelManager:
                 if Llama is not None:
                     try:
                         model_path = os.environ.get("LLM_MODEL_PATH", "models/llama-2-7b.Q4_K_M.gguf")
-                        self._llm = IsolatedLlamaClient(model_path)
+                        if os.path.exists(model_path):
+                            self._llm = IsolatedLlamaClient(model_path)
+                        else:
+                            logging.info(f"Local LLM GGUF model file not found at '{model_path}'. Skipping isolated worker initialization.")
                     except Exception as e:
-                        logging.error(f"Failed to setup LLM isolation in model_manager.py: {e}")
+                        logging.warning(f"Failed to setup LLM isolation in model_manager.py: {e}")
             return self._llm
 
     def unload(self):
