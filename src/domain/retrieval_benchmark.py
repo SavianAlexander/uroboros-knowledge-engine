@@ -29,14 +29,17 @@ def benchmark_vector_retrieval(
     query_vec = [0.1] * dimension
     latencies_ms = []
 
-    for _ in range(num_queries):
+    safe_queries = max(1, int(num_queries)) if num_queries is not None and isinstance(num_queries, (int, float)) else 10
+
+    for _ in range(safe_queries):
         start = time.perf_counter()
         results = store.search_nearest_2phase(query_vec, top_k=5, coarse_dim=32, candidate_k=15)
         elapsed_ms = (time.perf_counter() - start) * 1000.0
         latencies_ms.append(elapsed_ms)
 
     avg_latency = round(sum(latencies_ms) / float(len(latencies_ms)), 4) if latencies_ms else 0.0
-    p99_latency = round(sorted(latencies_ms)[int(len(latencies_ms) * 0.95)], 4) if latencies_ms else 0.0
+    idx_p99 = max(0, min(len(latencies_ms) - 1, int(len(latencies_ms) * 0.95)))
+    p99_latency = round(sorted(latencies_ms)[idx_p99], 4) if latencies_ms else 0.0
 
     return {
         "status": "success",

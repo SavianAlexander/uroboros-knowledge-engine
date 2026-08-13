@@ -11,11 +11,29 @@ def explain_candidate_score(candidate: Dict[str, Any]) -> Dict[str, Any]:
     Deconstructs candidate search score into component weights and explanations.
     Zero-dependency stdlib implementation.
     """
-    filename = candidate.get("filename", "document.md")
-    fts_rank = candidate.get("fts_rank", 1)
-    pagerank_score = candidate.get("pagerank_score", 0.001)
-    recency_multiplier = candidate.get("recency_multiplier", 1.0)
-    final_score = candidate.get("final_score") or candidate.get("rrf_score") or 0.05
+    if not candidate or not isinstance(candidate, dict):
+        candidate = {}
+
+    filename = str(candidate.get("filename") or "document.md")
+    try:
+        fts_rank = int(candidate.get("fts_rank", 1))
+    except (ValueError, TypeError):
+        fts_rank = 1
+
+    try:
+        pagerank_score = float(candidate.get("pagerank_score", 0.001))
+    except (ValueError, TypeError):
+        pagerank_score = 0.001
+
+    try:
+        recency_multiplier = float(candidate.get("recency_multiplier", 1.0))
+    except (ValueError, TypeError):
+        recency_multiplier = 1.0
+
+    try:
+        final_score = float(candidate.get("final_score") or candidate.get("rrf_score") or 0.05)
+    except (ValueError, TypeError):
+        final_score = 0.05
 
     bm25_weight = round(1.0 / (60.0 + fts_rank), 6)
     pr_boost = round(pagerank_score * 10.0, 6)

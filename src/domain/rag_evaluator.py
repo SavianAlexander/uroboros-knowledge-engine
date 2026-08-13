@@ -21,20 +21,21 @@ def evaluate_rag_triad(
     3. Context Precision: Signal-to-noise ratio of top contexts vs query.
     4. Context Recall: Overlap of retrieved contexts against golden answer (if provided).
     """
-    combined_context = " ".join(retrieved_contexts) if retrieved_contexts else ""
-    
+    safe_contexts = [str(c) for c in (retrieved_contexts or []) if c and isinstance(c, str)]
+    combined_context = " ".join(safe_contexts) if safe_contexts else ""
+
     # 1. Faithfulness
-    faithfulness = compute_ngram_overlap(answer, combined_context) if combined_context else 0.0
-    
+    faithfulness = compute_ngram_overlap(str(answer or ""), combined_context) if combined_context else 0.0
+
     # 2. Answer Relevance
-    relevance = compute_ngram_overlap(query, answer) if answer else 0.0
-    
+    relevance = compute_ngram_overlap(str(query or ""), str(answer or "")) if answer else 0.0
+
     # 3. Context Precision
-    context_scores = [compute_ngram_overlap(query, c) for c in retrieved_contexts] if retrieved_contexts else [0.0]
+    context_scores = [compute_ngram_overlap(str(query or ""), c) for c in safe_contexts] if safe_contexts else [0.0]
     precision = round(sum(context_scores) / float(len(context_scores)), 4)
-    
+
     # 4. Context Recall
-    recall = compute_ngram_overlap(golden_answer, combined_context) if golden_answer and combined_context else 1.0
+    recall = compute_ngram_overlap(str(golden_answer), combined_context) if golden_answer and combined_context else 1.0
 
     ragas_score = round((faithfulness + relevance + precision + recall) / 4.0, 4)
 
