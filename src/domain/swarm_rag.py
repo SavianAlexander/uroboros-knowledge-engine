@@ -29,9 +29,10 @@ def _run_explorer_agent(query: str, db_path: Optional[str] = None) -> Dict[str, 
 def _run_graph_agent(query: str, start_doc: Optional[str] = None) -> Dict[str, Any]:
     """Graph Traversal Agent: Discovers multi-hop entity pathways and wikilink connections."""
     try:
+        safe_query = str(query or "")
         if not start_doc:
-            words = [w for w in query.split() if len(w) > 3]
-            start_doc = words[0] if words else query
+            words = [w for w in safe_query.split() if len(w) > 3]
+            start_doc = words[0] if words else safe_query
 
         pathways = find_multihop_pathways(start_doc=start_doc, max_hops=2)
         return {
