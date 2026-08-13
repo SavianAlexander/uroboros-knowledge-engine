@@ -41,7 +41,7 @@ In addition to interpersonal conduct standards, all contributors (human develope
 
 ### 3.2 Deterministic Security & Cryptographic Integrity
 - **PII Scrubbing**: PII redaction rules ([`pii_privacy_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/pii_privacy_guard.py)) and Zero-Knowledge proofs ([`zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py)) must remain functional and enforced across all pull requests.
-- **Audit Trail Compliance**: All administrative and file ingestion operations must log immutable entries to the cryptographic audit ledger ([`system_audit_ledger`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/crypto_audit_ledger.py)).
+- **Audit Trail Compliance**: All administrative and file ingestion operations must log immutable entries to the cryptographic audit ledger ([`crypto_audit_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/crypto_audit_ledger.py)).
 
 ### 3.3 Ponytail Minimalist Dependency Guardrails
 - **Standard Library First**: Avoid introducing third-party dependencies when native Python standard library modules or platform APIs solve the problem.
@@ -112,6 +112,27 @@ This Code of Conduct operates in alignment with our automated SOC 2 Type II trus
 
 ---
 
-## 10. Attribution
+## 10. Algorithmic Neutrality, Bias Prevention & Grounding Proofs
+
+1. **Zero Factual Hallucination Standard**: All RAG models and generative responses must be evaluated against retrieved source passages via [`rag_grounding_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/rag_grounding_guard.py). Unverified claims or low-confidence outputs ($< 0.65$) must trigger refusal reports rather than speculative generation.
+2. **Algorithmic Neutrality**: Context weighting algorithms (BM25, Vector, RRF, ColBERT MaxSim) must remain mathematically objective and unbiased across all document categories, domains, and languages.
+
+---
+
+## 11. Autonomous Swarm Ethics & Memory Safety
+
+1. **Swarm Collision Avoidance**: Multi-agent swarm searches ([`swarm_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/swarm_rag.py)) must enforce thread isolation and memory bounds to prevent race conditions or resource starvation.
+2. **Agent Memory Lifecycle**: Episodic agent memories ([`agent_memory.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/agent_memory.py)) must be sanitized of PII and structured with explicit expiration timestamps to prevent memory leakage.
+
+---
+
+## 12. Hardware Circuit Breaker & Memory Panic Isolation
+
+1. **Single-Instance Enforcement**: To prevent VRAM pagefile exhaustion, hardware process guards ([`model_manager.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/core/model_manager.py)) must strictly cap loaded LLM processes to 1 active instance (`OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`).
+2. **Panic Recovery**: Process memory limit guards ([`system_stability_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/system_stability_guard.py)) are mandated to trigger automatic garbage collection and WAL connection resets whenever RAM utilization exceeds 90%.
+
+---
+
+## 13. Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.1, available at https://www.contributor-covenant.org/version/2/1/code_of_conduct.html, with additions for air-gapped zero-cloud data sovereignty, AI agent governance, and Ponytail minimalist engineering principles.
