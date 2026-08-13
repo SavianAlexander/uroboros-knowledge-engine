@@ -300,7 +300,7 @@ def run_single_module(mod_name):
         runner = unittest.TextTestRunner(stream=open(os.devnull, 'w'))
         res = runner.run(suite)
         mod_t1 = time.time()
-        passed = res.testsRun - len(res.failures) - len(res.errors) - len(res.skipped)
+        passed = max(0, res.testsRun - len(res.failures) - len(res.errors) - len(res.skipped))
         failures_cnt = len(res.failures)
         errors_cnt = len(res.errors)
         skipped_cnt = len(res.skipped)

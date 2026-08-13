@@ -5,6 +5,7 @@ Zero-dependency, stdlib implementation.
 """
 
 import re
+import unicodedata
 from typing import Dict, Any
 
 RE_EMAIL = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b')
@@ -22,7 +23,6 @@ def anonymize_text_pii(text: str) -> Dict[str, Any]:
     if not text or not isinstance(text, str):
         return {"anonymized_text": "", "redactions_count": 0, "status": "success"}
 
-    import unicodedata
     anonymized = unicodedata.normalize("NFC", str(text))
     redactions = 0
 

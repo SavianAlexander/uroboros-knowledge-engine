@@ -26,7 +26,10 @@ def generate_executive_briefing(
             "status": "empty_input"
         }
 
-    combined = " ".join(document_chunks[:5])
+    import unicodedata
+    norm_title = unicodedata.normalize("NFC", str(title or "Executive Briefing"))
+    norm_chunks = [unicodedata.normalize("NFC", str(c)) for c in document_chunks if c]
+    combined = " ".join(norm_chunks[:5])
     
     key_takeaways = [
         f"Core Focus: {document_chunks[0][:120]}...",

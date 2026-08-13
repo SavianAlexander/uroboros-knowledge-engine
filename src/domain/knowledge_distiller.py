@@ -25,12 +25,13 @@ def export_knowledge_distillation_dataset(
 
     export_records = []
 
+    import unicodedata
     fmt = str(format_type or "alpaca").lower()
     for log in rag_interaction_logs:
         if not isinstance(log, dict):
             continue
-        query = str(log.get("query") or "").strip()
-        answer = str(log.get("answer") or "").strip()
+        query = unicodedata.normalize("NFC", str(log.get("query") or "")).strip()
+        answer = unicodedata.normalize("NFC", str(log.get("answer") or "")).strip()
         if not query or not answer:
             continue
 

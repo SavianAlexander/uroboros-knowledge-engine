@@ -14,21 +14,20 @@ def audit_index_health() -> Dict[str, Any]:
     Returns index health metrics and self-healing recommendations.
     """
     try:
-        conn = db_infra.get_db()
-        cursor = conn.cursor()
-        
-        cursor.execute("PRAGMA page_count;")
-        row_p = cursor.fetchone()
-        page_count = row_p[0] if row_p else 0
-        
-        cursor.execute("PRAGMA freelist_count;")
-        row_f = cursor.fetchone()
-        freelist_count = row_f[0] if row_f else 0
-        
-        fragmentation_pct = round((freelist_count / float(page_count)) * 100, 2) if page_count > 0 else 0.0
-        needs_healing = fragmentation_pct > 15.0
-        
-        conn.close()
+        from src.infrastructure.database import DB_FILE, get_db_connection
+        with get_db_connection(DB_FILE) as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("PRAGMA page_count;")
+            row_p = cursor.fetchone()
+            page_count = row_p[0] if row_p else 0
+            
+            cursor.execute("PRAGMA freelist_count;")
+            row_f = cursor.fetchone()
+            freelist_count = row_f[0] if row_f else 0
+            
+            fragmentation_pct = round((freelist_count / float(page_count)) * 100, 2) if page_count > 0 else 0.0
+            needs_healing = fragmentation_pct > 15.0
         
         return {
             "page_count": page_count,

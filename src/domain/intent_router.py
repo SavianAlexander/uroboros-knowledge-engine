@@ -4,6 +4,7 @@ Classifies query intent and dynamically routes execution to the optimal RAG pipe
 Zero-dependency, stdlib implementation.
 """
 
+import unicodedata
 from typing import Dict, Any, List
 
 
@@ -12,7 +13,6 @@ def classify_query_intent(query: str) -> str:
     if not query or not isinstance(query, str):
         return "hybrid_fact_retrieval"
 
-    import unicodedata
     q_lower = unicodedata.normalize("NFC", str(query)).lower()
 
     if any(k in q_lower for k in ["def ", "class ", "import ", "function", "error", "bug", "traceback"]):

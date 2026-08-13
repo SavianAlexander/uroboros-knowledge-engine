@@ -11,29 +11,30 @@ def generate_daily_briefing(db_path: str = DB_FILE) -> Dict[str, Any]:
     try:
         target_db = db_path or DB_FILE
         init_db()
+        import unicodedata
         with get_db_connection(target_db) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
-        # Document Metrics
-        cursor.execute("SELECT COUNT(*) as cnt FROM files")
-        row_files = cursor.fetchone()
-        total_files = row_files["cnt"] if row_files else 0
+            # Document Metrics
+            cursor.execute("SELECT COUNT(*) as cnt FROM files")
+            row_files = cursor.fetchone()
+            total_files = row_files["cnt"] if row_files else 0
 
-        cursor.execute("SELECT tag, COUNT(*) as cnt FROM tags GROUP BY tag ORDER BY cnt DESC LIMIT 5")
-        top_tags = [{"tag": r["tag"], "count": r["cnt"]} for r in cursor.fetchall()]
+            cursor.execute("SELECT tag, COUNT(*) as cnt FROM tags GROUP BY tag ORDER BY cnt DESC LIMIT 5")
+            top_tags = [{"tag": unicodedata.normalize("NFC", str(r["tag"])), "count": r["cnt"]} for r in cursor.fetchall()]
 
-        cursor.execute("SELECT filename, modified_at, filepath FROM files ORDER BY modified_at DESC LIMIT 5")
-        recent_files = [{"filename": r["filename"], "filepath": r["filepath"]} for r in cursor.fetchall()]
+            cursor.execute("SELECT filename, modified_at, filepath FROM files ORDER BY modified_at DESC LIMIT 5")
+            recent_files = [{"filename": unicodedata.normalize("NFC", str(r["filename"])), "filepath": r["filepath"]} for r in cursor.fetchall()]
 
-        # Vector & Chunk Metrics
-        cursor.execute("SELECT COUNT(*) as cnt FROM file_chunks")
-        row_chunks = cursor.fetchone()
-        total_chunks = row_chunks["cnt"] if row_chunks else 0
+            # Vector & Chunk Metrics
+            cursor.execute("SELECT COUNT(*) as cnt FROM file_chunks")
+            row_chunks = cursor.fetchone()
+            total_chunks = row_chunks["cnt"] if row_chunks else 0
 
-        cursor.execute("SELECT COUNT(*) as cnt FROM file_chunks WHERE embedding_json IS NOT NULL AND embedding_json != '[]'")
-        row_emb = cursor.fetchone()
-        total_embedded = row_emb["cnt"] if row_emb else 0
+            cursor.execute("SELECT COUNT(*) as cnt FROM file_chunks WHERE embedding_json IS NOT NULL AND embedding_json != '[]'")
+            row_emb = cursor.fetchone()
+            total_embedded = row_emb["cnt"] if row_emb else 0
 
         coverage_pct = round((total_embedded / total_chunks * 100), 1) if total_chunks > 0 else 0.0
 

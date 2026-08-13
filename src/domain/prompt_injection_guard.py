@@ -5,6 +5,7 @@ Zero-dependency, stdlib implementation.
 """
 
 import re
+import unicodedata
 from typing import Dict, Any, List
 
 INJECTION_PATTERNS = [
@@ -27,7 +28,6 @@ def scan_prompt_injection(text: str) -> Dict[str, Any]:
     if not text or not isinstance(text, str):
         return {"is_safe": True, "injection_triggers": [], "sanitized_text": "", "status": "success"}
 
-    import unicodedata
     flagged_triggers = []
     sanitized = unicodedata.normalize("NFC", str(text))
 

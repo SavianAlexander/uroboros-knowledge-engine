@@ -18,26 +18,25 @@ def detect_and_resolve_conflicts(topic: str = "") -> Dict[str, Any]:
     """
     conn = None
     try:
-        import os
-        from src.infrastructure.database import DB_FILE, init_db
+        import unicodedata
+        from src.infrastructure.database import get_db_connection, DB_FILE, init_db
 
-        if DB_FILE and os.path.dirname(DB_FILE):
-            os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
         init_db()
+        norm_topic = unicodedata.normalize("NFC", str(topic)) if topic else ""
 
-        conn = sqlite3.connect(DB_FILE, timeout=5.0)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        with get_db_connection(DB_FILE) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        query_sql = "SELECT id, filename, filepath, content FROM files"
-        params = []
-        if topic:
-            query_sql += " WHERE content LIKE ? OR filename LIKE ?"
-            params.extend([f"%{topic}%", f"%{topic}%"])
-        query_sql += " LIMIT 15"
+            query_sql = "SELECT id, filename, filepath, content FROM files"
+            params = []
+            if norm_topic:
+                query_sql += " WHERE content LIKE ? OR filename LIKE ?"
+                params.extend([f"%{norm_topic}%", f"%{norm_topic}%"])
+            query_sql += " LIMIT 15"
 
-        cursor.execute(query_sql, params)
-        rows = cursor.fetchall()
+            cursor.execute(query_sql, params)
+            rows = cursor.fetchall()
 
         if len(rows) < 2:
             return {

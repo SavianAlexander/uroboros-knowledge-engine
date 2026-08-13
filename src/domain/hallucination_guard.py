@@ -8,6 +8,7 @@ import unicodedata
 from typing import Dict, Any, List
 
 MIN_CONFIDENCE_THRESHOLD = 0.65
+RE_QUERY_TERMS = re.compile(r'\b[\w-]{3,}\b')
 
 
 def evaluate_hallucination_risk(query: str, passages: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -28,7 +29,7 @@ def evaluate_hallucination_risk(query: str, passages: List[Dict[str, Any]]) -> D
         }
 
     norm_query = unicodedata.normalize("NFC", str_query)
-    query_words = set(re.findall(r'\b[\w-]{3,}\b', norm_query.lower()))
+    query_words = set(RE_QUERY_TERMS.findall(norm_query.lower()))
     if not query_words:
         return {
             "query": str_query,
