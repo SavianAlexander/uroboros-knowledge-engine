@@ -4,9 +4,37 @@ import { Search, X, LayoutDashboard, FolderTree, DatabaseZap, Share2, MessageSqu
 import { motion, AnimatePresence } from 'motion/react';
 import { ViewId } from '../types';
 
+interface CommandItem {
+  id: ViewId;
+  title: string;
+  category: string;
+  icon: React.ElementType;
+}
+
 export default function CommandPalette() {
   const { isCommandPaletteOpen, setCommandPaletteOpen, setActiveView } = useApp();
-  const [filter, setFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const commands: CommandItem[] = [
+    { id: 'dashboard', title: 'Go to Dashboard', category: 'Navigation', icon: LayoutDashboard },
+    { id: 'workspace', title: 'Open Workspace Explorer', category: 'Navigation', icon: FolderTree },
+    { id: 'search', title: 'Open Search & Filtering', category: 'Navigation', icon: Search },
+    { id: 'ingestion', title: 'File Ingestion & Batch Indexer', category: 'Data', icon: DatabaseZap },
+    { id: 'graph', title: 'Knowledge Graph Visualization', category: 'Analytics', icon: Share2 },
+    { id: 'chat', title: 'AI RAG Chat Assistant', category: 'AI Tools', icon: MessageSquare },
+    { id: 'config', title: 'Processes & Strategy Config', category: 'System', icon: Settings2 },
+    { id: 'settings', title: 'System Settings & Maintenance', category: 'System', icon: ShieldCheck },
+  ];
+
+  const filteredCommands = commands.filter(cmd =>
+    cmd.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cmd.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchTerm]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -17,10 +45,22 @@ export default function CommandPalette() {
       if (e.key === 'Escape') {
         setCommandPaletteOpen(false);
       }
+      if (isCommandPaletteOpen) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setSelectedIndex(prev => (prev + 1) % (filteredCommands.length || 1));
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setSelectedIndex(prev => (prev - 1 + filteredCommands.length) % (filteredCommands.length || 1));
+        } else if (e.key === 'Enter' && filteredCommands[selectedIndex]) {
+          e.preventDefault();
+          navigateTo(filteredCommands[selectedIndex].id);
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setCommandPaletteOpen]);
+  }, [isCommandPaletteOpen, setCommandPaletteOpen, filteredCommands, selectedIndex]);
 
   const navigateTo = (view: ViewId) => {
     setActiveView(view);
@@ -45,7 +85,7 @@ export default function CommandPalette() {
             key="command-palette-dialog"
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            exit={{ opacity: 0, scale: 1, y: 0 }}
             className="relative w-full max-w-xl bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-10"
           >
             <div className="flex items-center px-4 py-3 border-b border-white/10">
