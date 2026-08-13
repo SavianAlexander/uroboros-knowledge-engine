@@ -10,8 +10,14 @@ def export_graph_to_graphml(graph_data: Dict[str, Any]) -> str:
     """
     Serializes Knowledge Graph nodes and edges into standard GraphML XML format.
     """
-    nodes = graph_data.get("nodes", [])
-    edges = graph_data.get("edges", [])
+    if not graph_data or not isinstance(graph_data, dict):
+        return '<?xml version="1.0" encoding="UTF-8"?><graphml></graphml>'
+
+    raw_nodes = graph_data.get("nodes", [])
+    nodes = [n for n in raw_nodes if isinstance(n, dict)] if isinstance(raw_nodes, list) else []
+
+    raw_edges = graph_data.get("edges", [])
+    edges = [e for e in raw_edges if isinstance(e, dict)] if isinstance(raw_edges, list) else []
 
     xml_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -42,7 +48,10 @@ def export_graph_to_graphml(graph_data: Dict[str, Any]) -> str:
         src = str(edge.get("source", ""))
         target = str(edge.get("target", ""))
         relation = str(edge.get("relation") or edge.get("type", "link"))
-        weight = int(edge.get("weight", 1))
+        try:
+            weight = int(edge.get("weight", 1))
+        except (ValueError, TypeError):
+            weight = 1
 
         xml_lines.append(f'    <edge id="e{idx}" source="{src}" target="{target}">')
         xml_lines.append(f'      <data key="d3">{relation}</data>')

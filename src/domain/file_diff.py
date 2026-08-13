@@ -11,8 +11,8 @@ def compare_text_content(text_a: str, text_b: str, label_a: str = "Version A", l
     Compares two text strings line-by-line using stdlib difflib.
     Returns unified diff lines, additions count, deletions count, and similarity ratio.
     """
-    lines_a = (text_a or "").splitlines()
-    lines_b = (text_b or "").splitlines()
+    lines_a = str(text_a or "").splitlines()
+    lines_b = str(text_b or "").splitlines()
 
     matcher = difflib.SequenceMatcher(None, lines_a, lines_b)
     similarity_ratio = round(matcher.ratio(), 4)
