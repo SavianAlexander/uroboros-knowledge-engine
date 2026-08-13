@@ -13,7 +13,7 @@ def mask_payload_with_zk_proof(sensitive_text: str, secret_salt: str = "uroboros
     Generates a salt-hashed zero-knowledge verification proof for a sensitive text payload.
     # ponytail: zero-dependency salt-hashed ZK proof generator
     """
-    if not sensitive_text:
+    if not sensitive_text or not isinstance(sensitive_text, str):
         return {"status": "empty", "zk_proof": "", "masked_payload": ""}
 
     combined = f"{secret_salt}:{sensitive_text}:{secret_salt}"

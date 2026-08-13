@@ -17,17 +17,28 @@ def apply_temporal_decay_scoring(
     Applies exponential time-decay weighting to candidate search results based on updated_at timestamp.
     half_life_days controls decay rate (default 90 days).
     """
-    if not candidates:
+    if not candidates or not isinstance(candidates, list):
+        return []
+
+    valid_candidates = [c for c in candidates if isinstance(c, dict)]
+    if not valid_candidates:
         return []
 
     now = time.time()
     decay_lambda = math.log(2.0) / half_life_days
 
     scored_results = []
-    for cand in candidates:
+    for cand in valid_candidates:
         cand_copy = dict(cand)
-        base_score = float(cand.get("score", 0.5))
-        timestamp = float(cand.get("timestamp", now))
+        try:
+            base_score = float(cand.get("score", 0.5))
+        except (ValueError, TypeError):
+            base_score = 0.5
+
+        try:
+            timestamp = float(cand.get("timestamp", now))
+        except (ValueError, TypeError):
+            timestamp = now
         
         age_days = max(0.0, (now - timestamp) / 86400.0)
         decay_factor = math.exp(-decay_lambda * age_days)

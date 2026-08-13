@@ -13,8 +13,14 @@ def extract_visual_canvas_regions(
     """
     Processes visual document layout coordinates and returns text bounding boxes, image regions, and diagram nodes.
     """
-    text_blocks = raw_document_layout.get("text_blocks", [])
-    image_blocks = raw_document_layout.get("images", [])
+    if not raw_document_layout or not isinstance(raw_document_layout, dict):
+        return {"visual_regions": [], "total_text_regions": 0, "total_diagram_regions": 0, "status": "success"}
+
+    raw_text = raw_document_layout.get("text_blocks", [])
+    text_blocks = [b for b in raw_text if isinstance(b, dict)] if isinstance(raw_text, list) else []
+
+    raw_img = raw_document_layout.get("images", [])
+    image_blocks = [i for i in raw_img if isinstance(i, dict)] if isinstance(raw_img, list) else []
 
     parsed_regions = []
     for idx, block in enumerate(text_blocks):
