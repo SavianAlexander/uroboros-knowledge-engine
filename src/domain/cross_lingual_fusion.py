@@ -22,7 +22,7 @@ def expand_cross_lingual_query(query: str) -> str:
         return ""
 
     expanded_terms = [query]
-    words = [w.lower() for w in query.split()]
+    words = [w.strip(".,;:!?\"'()[]{}").lower() for w in query.split() if w.strip(".,;:!?\"'()[]{}")]
 
     for w in words:
         if w in CROSS_LINGUAL_DICT:

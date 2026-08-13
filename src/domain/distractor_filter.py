@@ -27,13 +27,22 @@ def filter_distractor_chunks(
     filtered = []
     distractors = []
 
+    def _safe_float(val, default=0.0):
+        if val is None:
+            return default
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return default
+
     for cand in valid_candidates:
         content = cand.get("content") or cand.get("text") or ""
         score = compute_ngram_overlap(query, content)
         cand_copy = dict(cand)
         cand_copy["intent_overlap_score"] = score
+        cand_score = _safe_float(cand.get("score"), 0.0)
         
-        if score >= min_intent_overlap or cand.get("score", 0.0) >= 0.70:
+        if score >= min_intent_overlap or cand_score >= 0.70:
             filtered.append(cand_copy)
         else:
             distractors.append(cand_copy)

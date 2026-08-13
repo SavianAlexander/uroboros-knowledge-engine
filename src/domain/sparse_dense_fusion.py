@@ -23,8 +23,10 @@ def rerank_sparse_dense_fusion(
         return {"reranked_chunks": [], "status": "empty_input"}
 
     # Dynamic scalar computation based on query characteristics
-    is_code = "def " in safe_query or "class " in safe_query or "import " in safe_query
-    is_legal = "policy" in safe_query.lower() or "contract" in safe_query.lower()
+    import unicodedata
+    norm_query = unicodedata.normalize("NFC", safe_query)
+    is_code = "def " in norm_query or "class " in norm_query or "import " in norm_query
+    is_legal = "policy" in norm_query.lower() or "contract" in norm_query.lower()
 
     if is_code:
         alpha, beta, gamma = 0.5, 0.2, 0.3  # High lexical precision for code
