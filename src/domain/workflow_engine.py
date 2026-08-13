@@ -39,12 +39,7 @@ def evaluate_condition(
                     if key in ("min_score", "score_threshold", "score"):
                         try:
                             val_raw = payload.get("score", payload.get("confidence", 0.0))
-                            if isinstance(val_raw, (int, float)):
-                                actual_score = float(val_raw)
-                            elif isinstance(val_raw, str) and val_raw.replace('.', '', 1).isdigit():
-                                actual_score = float(val_raw)
-                            else:
-                                return False
+                            actual_score = float(val_raw)
                             expected_score = float(expected) if expected is not None else 0.0
                             if actual_score < expected_score:
                                 return False

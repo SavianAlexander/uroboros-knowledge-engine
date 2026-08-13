@@ -97,6 +97,22 @@ def unified_vector_search_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/api/v1/search")
+@router.post("/api/search")
+def search_post_endpoint(payload: Dict[str, Any] = Body(...)):
+    """POST search endpoint for keyword, vector, and hybrid queries."""
+    q_str = payload.get("query") or payload.get("q")
+    mode_str = payload.get("search_type") or payload.get("mode") or "keyword"
+    limit_num = payload.get("limit") or 10
+    tag_val = payload.get("tag")
+    tag_mode_val = payload.get("tag_mode", "OR")
+    res = search_endpoint(query=q_str, mode=mode_str, tag=tag_val, tag_mode=tag_mode_val)
+    if isinstance(res, dict) and "results" in res and isinstance(res["results"], list):
+        res["results"] = res["results"][:limit_num]
+        res["total"] = len(res["results"])
+    return res
+
+
 @router.get("/api/search")
 def search_endpoint(
     query: Optional[str] = None,

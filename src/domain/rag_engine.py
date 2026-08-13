@@ -138,7 +138,8 @@ def jaccard_deduplicate(snippets: List[Any], threshold: float = 0.70) -> List[An
         else:
             text_content = str(item)
 
-        words = set(_RE_WORDS.findall(text_content.lower()))
+        safe_str = str(text_content or "").lower()
+        words = set(_RE_WORDS.findall(safe_str))
 
         is_duplicate = False
         if words:

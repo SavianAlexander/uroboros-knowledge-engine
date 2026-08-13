@@ -87,20 +87,27 @@ def index_single_file(filepath, user_id=0):
 
     # Check DB for pre-existing chunk hashes to skip duplicate vector generation!
     chunks_to_embed = []
-    chunk_hashes = []
+    chunk_hashes = [hashlib.sha256(chunk.encode('utf-8')).hexdigest() for chunk in raw_chunks]
     cached_embeddings = {}
 
-    with get_db() as conn:
-        cur = conn.cursor()
-        for chunk in raw_chunks:
-            c_hash = hashlib.sha256(chunk.encode('utf-8')).hexdigest()
-            chunk_hashes.append(c_hash)
-            cur.execute("SELECT embedding_json FROM file_chunks WHERE chunk_hash = ? AND embedding_json IS NOT NULL AND embedding_json != '[]' LIMIT 1", (c_hash,))
-            row = cur.fetchone()
-            if row and row[0]:
-                cached_embeddings[c_hash] = row[0]
-            elif chunk not in chunks_to_embed:
-                chunks_to_embed.append(chunk)
+    if chunk_hashes:
+        with get_db() as conn:
+            cur = conn.cursor()
+            # Batch query in groups of 500 to stay within SQLite query parameter limits
+            for i in range(0, len(chunk_hashes), 500):
+                sub_hashes = chunk_hashes[i:i+500]
+                placeholders = ','.join('?' for _ in sub_hashes)
+                cur.execute(
+                    f"SELECT chunk_hash, embedding_json FROM file_chunks WHERE chunk_hash IN ({placeholders}) AND embedding_json IS NOT NULL AND embedding_json != '[]'",
+                    sub_hashes
+                )
+                for row in cur.fetchall():
+                    if row[1] and row[0] not in cached_embeddings:
+                        cached_embeddings[row[0]] = row[1]
+
+    for chunk, c_hash in zip(raw_chunks, chunk_hashes):
+        if c_hash not in cached_embeddings and chunk not in chunks_to_embed:
+            chunks_to_embed.append(chunk)
 
     new_embeddings = generate_embeddings_batch(chunks_to_embed, batch_size=64) if chunks_to_embed else []
     new_emb_map = {chunk: json.dumps(emb) if emb else None for chunk, emb in zip(chunks_to_embed, new_embeddings)}

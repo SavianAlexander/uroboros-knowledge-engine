@@ -32,9 +32,15 @@ def build_raptor_tree(doc_chunks: List[Dict[str, str]]) -> Dict[str, Any]:
     for i, c in enumerate(level_0):
         chunk_group.append(c["text"])
         if len(chunk_group) == 3 or i == len(level_0) - 1:
+            combined = " ".join(chunk_group)
+            try:
+                from src.core.domain.services import generate_summary
+                summary_body = generate_summary(combined) or combined[:250]
+            except Exception:
+                summary_body = combined[:250]
             summary_node = {
                 "node_id": f"l1_summary_{len(level_1)}",
-                "summary_text": f"Abstract Summary of group: {' '.join(chunk_group)[:200]}...",
+                "summary_text": f"Abstract Summary: {summary_body}",
                 "child_ids": [f"l0_{j}" for j in range(i - len(chunk_group) + 1, i + 1)]
             }
             level_1.append(summary_node)

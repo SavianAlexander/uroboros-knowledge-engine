@@ -55,8 +55,10 @@ class SQLiteConnectionPool:
                     # Enable WAL mode and lightweight memory-mapped I/O per-connection
                     conn.execute("PRAGMA journal_mode = WAL")
                     conn.execute("PRAGMA synchronous = NORMAL")
-                    conn.execute("PRAGMA mmap_size = 67108864")
-                    conn.execute("PRAGMA cache_size = -4000")
+                    conn.execute("PRAGMA temp_store = MEMORY")
+                    conn.execute("PRAGMA cache_size = -64000")
+                    conn.execute("PRAGMA mmap_size = 268435456")
+                    conn.execute("PRAGMA journal_size_limit = 67108864")
                     return conn
             # Block until a connection is available if we are at max
             return self.pool.get()
@@ -323,6 +325,8 @@ def init_db():
             """)
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_modified ON files(modified_at)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_filename ON files(filename)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_sha256 ON files(sha256)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_mime_type ON files(mime_type)')
 
             cursor.execute("PRAGMA table_info(files)")
             columns = [row[1] for row in cursor.fetchall()]
@@ -357,6 +361,7 @@ def init_db():
                     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
                 )
             """)
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_tags_tag ON tags(tag)')
 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS auto_rules (

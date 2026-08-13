@@ -44,8 +44,12 @@ def gather_system_telemetry() -> Dict[str, Any]:
             cursor.execute("SELECT COUNT(*) FROM files")
             files_count = cursor.fetchone()[0]
 
-            cursor.execute("SELECT COUNT(*) FROM document_chunks")
-            chunks_count = cursor.fetchone()[0]
+            try:
+                cursor.execute("SELECT COUNT(*) FROM file_chunks")
+                chunks_count = cursor.fetchone()[0]
+            except Exception:
+                cursor.execute("SELECT COUNT(*) FROM document_chunks")
+                chunks_count = cursor.fetchone()[0]
 
             cursor.execute("SELECT COUNT(*) FROM tags")
             tags_count = cursor.fetchone()[0]

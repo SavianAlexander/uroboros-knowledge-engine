@@ -9,7 +9,7 @@ import mcp.server.stdio
 
 server = Server("neuro-mcp")
 
-NEURO_API_URL = os.environ.get("NEURO_API_URL", "http://127.0.0.1:8000")
+NEURO_API_URL = os.environ.get("NEURO_API_URL", "http://127.0.0.1:8085")
 API_KEY = os.environ.get("NEURO_API_KEY", "")
 
 async def make_request(method: str, endpoint: str, **kwargs):

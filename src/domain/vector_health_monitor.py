@@ -27,15 +27,20 @@ def audit_vector_health() -> Dict[str, Any]:
         row = cursor.fetchone()
         total_files = row["cnt"] if row else 0
 
-        # Check vector_embeddings or embeddings table if exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('vector_embeddings', 'embeddings')")
+        # Check file_chunks, vector_embeddings or embeddings table if exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('file_chunks', 'vector_embeddings', 'embeddings')")
         tables = [r[0] for r in cursor.fetchall()]
 
         embedded_count = 0
         dimension = None
         missing_count = total_files
 
-        if "vector_embeddings" in tables:
+        if "file_chunks" in tables:
+            cursor.execute("SELECT COUNT(DISTINCT file_id) as cnt FROM file_chunks WHERE embedding_json IS NOT NULL AND embedding_json != '[]'")
+            row_emb = cursor.fetchone()
+            embedded_count = row_emb["cnt"] if row_emb else 0
+            missing_count = max(0, total_files - embedded_count)
+        elif "vector_embeddings" in tables:
             cursor.execute("SELECT COUNT(DISTINCT file_id) as cnt FROM vector_embeddings")
             row_emb = cursor.fetchone()
             embedded_count = row_emb["cnt"] if row_emb else 0

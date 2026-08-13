@@ -231,9 +231,13 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
             'coords': []
         }
 
-        curr_sha = calculate_sha256(filepath)
-        if cached and cached['modified_at'] == modified_at and cached['file_size'] == file_size and cached.get('sha256') == curr_sha:
-            unmodified_tasks.append(task)
+        if cached and cached['modified_at'] == modified_at and cached['file_size'] == file_size:
+            curr_sha = calculate_sha256_cached(filepath, modified_at)
+            if cached.get('sha256') == curr_sha:
+                unmodified_tasks.append(task)
+            else:
+                task['is_modified'] = True
+                modified_tasks.append(task)
         else:
             task['is_modified'] = True
             modified_tasks.append(task)

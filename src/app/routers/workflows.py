@@ -79,6 +79,8 @@ def delete_trigger_endpoint(trigger_id: int):
     return {"status": "deleted", "trigger_id": trigger_id, "id": trigger_id}
 
 
+@router.post("/api/v1/workflows/trigger")
+@router.post("/api/workflows/trigger")
 @router.post("/api/v1/workflows/trigger-event")
 @router.post("/api/workflows/trigger-event")
 @router.post("/api/workflows/test")

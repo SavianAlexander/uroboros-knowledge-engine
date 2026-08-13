@@ -53,6 +53,7 @@ def get_index():
         return FileResponse("index.html") if os.path.exists("index.html") else JSONResponse({"error": "UI build not found. Run npm run build in frontend/."})
     return FileResponse(str(asset_path))
 
+
 from fastapi import Depends
 from src.app.auth import verify_api_key
 
@@ -70,5 +71,19 @@ app.include_router(briefing.router, dependencies=[Depends(verify_api_key)])
 app.include_router(ocr.router, dependencies=[Depends(verify_api_key)])
 from src.app import auth
 app.include_router(auth.router)
+
+
+from fastapi import HTTPException
+
+@app.get("/{full_path:path}")
+def spa_fallback(full_path: str):
+    if full_path.startswith("api/") or full_path.startswith("assets/") or full_path.startswith("docs") or full_path.startswith("openapi.json") or full_path.startswith("health") or full_path.startswith("metrics"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    asset_path = Path("frontend/dist/index.html")
+    if asset_path.exists():
+        return FileResponse(str(asset_path))
+    if os.path.exists("index.html"):
+        return FileResponse("index.html")
+    return JSONResponse({"error": "UI build not found. Run npm run build in frontend/."})
 
 
