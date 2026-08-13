@@ -30,11 +30,13 @@ def detect_and_resolve_conflicts(topic: str = "") -> Dict[str, Any]:
         cursor = conn.cursor()
 
         query_sql = "SELECT id, filename, filepath, content FROM files"
+        params = []
         if topic:
-            query_sql += f" WHERE content LIKE '%{topic}%' OR filename LIKE '%{topic}%'"
+            query_sql += " WHERE content LIKE ? OR filename LIKE ?"
+            params.extend([f"%{topic}%", f"%{topic}%"])
         query_sql += " LIMIT 15"
 
-        cursor.execute(query_sql)
+        cursor.execute(query_sql, params)
         rows = cursor.fetchall()
 
         if len(rows) < 2:

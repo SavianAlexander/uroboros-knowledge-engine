@@ -21,11 +21,13 @@ def audit_semantic_concept_drift(term: str = "") -> Dict[str, Any]:
         cursor = conn.cursor()
 
         query_sql = "SELECT id, filename, content, created_at FROM files"
+        params = []
         if term:
-            query_sql += f" WHERE content LIKE '%{term}%' OR filename LIKE '%{term}%'"
+            query_sql += " WHERE content LIKE ? OR filename LIKE ?"
+            params.extend([f"%{term}%", f"%{term}%"])
         query_sql += " ORDER BY id ASC LIMIT 20"
 
-        cursor.execute(query_sql)
+        cursor.execute(query_sql, params)
         rows = cursor.fetchall()
 
         if not rows:
