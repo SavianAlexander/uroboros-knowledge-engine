@@ -36,10 +36,10 @@ def detect_near_duplicates(similarity_threshold: float = 0.80) -> Dict[str, Any]
     """
     try:
         import os
-        from src.infrastructure.database import get_db_connection, init_db
+        from src.infrastructure.database import get_db_connection, init_db, DB_FILE
 
         init_db()
-        with get_db_connection() as conn:
+        with get_db_connection(DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL LIMIT 50")
             rows = cursor.fetchall()

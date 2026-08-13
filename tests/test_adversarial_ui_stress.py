@@ -62,14 +62,16 @@ class TestAdversarialUIStress(unittest.TestCase):
         for suffix in ["", "-wal", "-shm"]:
             fpath = str(PROJECT_ROOT / (DB_NAME + suffix))
             if os.path.exists(fpath):
-                try:
+                for _ in range(10):
                     try:
-                        from src.infrastructure.database import reset_db_connections
-                        reset_db_connections()
-                    except Exception: pass
-                    os.remove(fpath)
-                except Exception as e:
-                    import logging; logging.error(f"Swallowed error in test_adversarial_ui_stress.py: {e}")
+                        try:
+                            from src.infrastructure.database import reset_db_connections
+                            reset_db_connections()
+                        except Exception: pass
+                        os.remove(fpath)
+                        break
+                    except Exception:
+                        threading.Event().wait(0.05)
 
         db.DB_FILE = DB_NAME
         config.ACTIVE_DIR = str(SANDBOX_DIR)
