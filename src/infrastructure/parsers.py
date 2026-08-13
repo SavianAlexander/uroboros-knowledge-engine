@@ -91,7 +91,6 @@ def parse_audio_metadata(filepath: str) -> Dict[str, Any]:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in parsers.py: {e}")
         logger.warning(f"Error parsing audio metadata for {filepath}: {e}")
         return {"duration": 0.0, "channels": 0, "samplerate": 0, "bitrate": "0 kbps"}
 
