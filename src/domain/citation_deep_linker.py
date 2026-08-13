@@ -15,12 +15,19 @@ def create_deep_citation_link(
     """
     Finds exact character start/end offsets for a target sentence in a source document.
     """
-    if not source_document_text or not target_sentence:
+    if not source_document_text or not isinstance(source_document_text, str):
         return {"citation_id": citation_id, "start_char": 0, "end_char": 0, "found": False}
 
-    start_pos = source_document_text.find(target_sentence.strip())
+    if not target_sentence or not isinstance(target_sentence, str):
+        return {"citation_id": citation_id, "start_char": 0, "end_char": 0, "found": False}
+
+    clean_target = target_sentence.strip()
+    if not clean_target:
+        return {"citation_id": citation_id, "start_char": 0, "end_char": 0, "found": False}
+
+    start_pos = source_document_text.find(clean_target)
     if start_pos != -1:
-        end_pos = start_pos + len(target_sentence.strip())
+        end_pos = start_pos + len(clean_target)
         return {
             "citation_id": citation_id,
             "target_sentence": target_sentence.strip(),

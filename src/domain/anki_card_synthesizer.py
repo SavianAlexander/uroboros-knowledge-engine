@@ -13,10 +13,15 @@ def synthesize_anki_flashcards(passages: List[Dict[str, Any]]) -> Dict[str, Any]
     Synthesizes Anki-compatible Q&A flashcards from vault passages and wikilinks.
     Zero-dependency stdlib implementation.
     """
+    if not passages or not isinstance(passages, list):
+        passages = []
+
+    valid_passages = [p for p in passages if isinstance(p, dict)]
+
     cards = []
-    for idx, p in enumerate(passages):
-        filename = p.get("filename", f"card_{idx}.md")
-        content = p.get("content") or p.get("text") or ""
+    for idx, p in enumerate(valid_passages):
+        filename = str(p.get("filename") or f"card_{idx}.md")
+        content = str(p.get("content") or p.get("text") or "")
 
         wikilinks = RE_WIKILINKS.findall(content)
         for wl in wikilinks:

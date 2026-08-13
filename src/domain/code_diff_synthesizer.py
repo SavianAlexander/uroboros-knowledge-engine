@@ -16,8 +16,8 @@ def generate_refactoring_patch(
     """
     Generates a unified git diff patch string between original and modified code versions.
     """
-    orig_lines = original_code.splitlines(keepends=True)
-    mod_lines = modified_code.splitlines(keepends=True)
+    orig_lines = str(original_code or "").splitlines(keepends=True)
+    mod_lines = str(modified_code or "").splitlines(keepends=True)
 
     diff = difflib.unified_diff(
         orig_lines,
