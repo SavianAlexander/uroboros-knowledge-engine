@@ -15,7 +15,7 @@ STOP_WORDS = {"the", "and", "is", "in", "it", "of", "to", "a", "for", "with", "o
 
 def split_sentences(text: str) -> List[str]:
     """Splits text into discrete sentences."""
-    if not text:
+    if not text or not isinstance(text, str):
         return []
     sents = [s.strip() for s in RE_SENTENCE.findall(text)]
     rem = RE_SENTENCE.sub("", text).strip()
@@ -52,8 +52,14 @@ def verify_rag_grounding(
     Verifies every claim sentence in the LLM response against the retrieved source context chunks.
     Identifies grounded vs potential hallucination sentences.
     """
-    sentences = split_sentences(llm_response)
-    combined_source = " ".join(source_chunks)
+    safe_response = str(llm_response or "")
+    sentences = split_sentences(safe_response)
+
+    if source_chunks and isinstance(source_chunks, list):
+        valid_chunks = [str(c) for c in source_chunks if c is not None]
+    else:
+        valid_chunks = []
+    combined_source = " ".join(valid_chunks)
     
     verified_sentences = []
     hallucination_warnings = []
