@@ -18,8 +18,7 @@ export default function LoginView({ onLogin }: { onLogin: () => void }) {
     setError('');
     
     try {
-      const BASE_URL = localStorage.getItem('api_base_url') || '/api';
-      const res = await fetch(`${BASE_URL}/api/auth/login`, {
+      const res = await fetch(`/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username.trim(), password })

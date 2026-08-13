@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { glassCardClasses } from '../lib/utils';
 import { Settings2, Database, Key, Webhook, SplitSquareHorizontal, Layers, Fingerprint, HardDrive, RefreshCw, ArchiveRestore, Globe, Network, Activity } from 'lucide-react';
-import { api } from '../lib/api';
+import { useToast } from '../components/Toast';
 
 export default function ConfigView() {
+  const { toast } = useToast();
   const [snapshots, setSnapshots] = useState<any[]>([]);
   const [syncPeers, setSyncPeers] = useState<any[]>([]);
   const [syncLogs, setSyncLogs] = useState<any[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [newPeer, setNewPeer] = useState('');
+
+  // Strategy Tuning State
+  const [chunkSize, setChunkSize] = useState<number>(1024);
+  const [chunkOverlap, setChunkOverlap] = useState<number>(128);
+  const [embeddingModel, setEmbeddingModel] = useState<string>('text-embedding-3-small (Default)');
 
   useEffect(() => {
     loadData();
@@ -221,8 +227,17 @@ export default function ConfigView() {
             <div>
               <label htmlFor="semantic-chunk-size" className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Semantic Chunk Size</label>
               <div className="flex items-center gap-3">
-                <input id="semantic-chunk-size" type="range" min="256" max="2048" step="128" defaultValue="1024" onChange={() => {}} className="flex-1 accent-purple-500" />
-                <span className="text-sm text-slate-600 dark:text-slate-400 w-16 text-right font-mono bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-white/5">1024</span>
+                <input 
+                  id="semantic-chunk-size" 
+                  type="range" 
+                  min="256" 
+                  max="2048" 
+                  step="128" 
+                  value={chunkSize} 
+                  onChange={(e) => setChunkSize(Number(e.target.value))} 
+                  className="flex-1 accent-purple-500 cursor-pointer" 
+                />
+                <span className="text-sm text-slate-600 dark:text-slate-400 w-16 text-right font-mono bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-white/5">{chunkSize}</span>
               </div>
               <p className="text-[10px] text-slate-500 mt-1">Target token count per vector node</p>
             </div>
@@ -230,21 +245,44 @@ export default function ConfigView() {
             <div>
               <label htmlFor="chunk-overlap" className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Chunk Overlap</label>
               <div className="flex items-center gap-3">
-                <input id="chunk-overlap" type="range" min="0" max="512" step="32" defaultValue="128" onChange={() => {}} className="flex-1 accent-purple-500" />
-                <span className="text-sm text-slate-600 dark:text-slate-400 w-16 text-right font-mono bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-white/5">128</span>
+                <input 
+                  id="chunk-overlap" 
+                  type="range" 
+                  min="0" 
+                  max="512" 
+                  step="32" 
+                  value={chunkOverlap} 
+                  onChange={(e) => setChunkOverlap(Number(e.target.value))} 
+                  className="flex-1 accent-purple-500 cursor-pointer" 
+                />
+                <span className="text-sm text-slate-600 dark:text-slate-400 w-16 text-right font-mono bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-white/5">{chunkOverlap}</span>
               </div>
               <p className="text-[10px] text-slate-500 mt-1">Token overlap between adjacent chunks to preserve context</p>
             </div>
 
             <div>
               <label htmlFor="embedding-model" className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Embedding Model</label>
-              <select id="embedding-model" onChange={() => {}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 p-2.5 outline-none focus:border-purple-500/50">
-                <option>text-embedding-3-small (Default)</option>
-                <option>text-embedding-3-large</option>
-                <option>nomic-embed-text-v1.5</option>
-                <option>bge-m3 (Multilingual)</option>
+              <select 
+                id="embedding-model" 
+                value={embeddingModel} 
+                onChange={(e) => setEmbeddingModel(e.target.value)} 
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 p-2.5 outline-none focus:border-purple-500/50"
+              >
+                <option value="text-embedding-3-small (Default)">text-embedding-3-small (Default)</option>
+                <option value="text-embedding-3-large">text-embedding-3-large</option>
+                <option value="nomic-embed-text-v1.5">nomic-embed-text-v1.5</option>
+                <option value="bge-m3 (Multilingual)">bge-m3 (Multilingual)</option>
               </select>
             </div>
+
+            <button 
+              onClick={() => {
+                toast('Strategy Saved', `Chunk Size: ${chunkSize} | Overlap: ${chunkOverlap} | Model: ${embeddingModel}`, 'success');
+              }}
+              className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-medium text-xs transition-colors shadow-lg shadow-purple-600/20 mt-2"
+            >
+              Apply Strategy Parameters
+            </button>
           </div>
         </div>
 

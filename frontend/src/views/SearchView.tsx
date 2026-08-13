@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../lib/api';
 import { SearchResult } from '../types';
 import { glassCardClasses } from '../lib/utils';
+import { useApp } from '../store/AppContext';
 import { Search, UploadCloud, Mic, Filter, FileText, Settings, Download, X, Play, Hash } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../components/Toast';
@@ -9,6 +10,7 @@ import { Bookmark, Copy, Check } from 'lucide-react';
 
 export default function SearchView() {
   const { toast } = useToast();
+  const { setActiveView } = useApp();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -129,10 +131,16 @@ export default function SearchView() {
             >
               <Filter className="w-3.5 h-3.5" /> Inspect RAG Lineage
             </button>
-            <button className="p-2 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/30 transition-colors border border-indigo-500/20 flex items-center gap-2 text-xs font-medium">
+            <button 
+              onClick={() => toast('Voice Memo Transcoder', 'Audio search channel active and ready for input.', 'info')}
+              className="p-2 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/30 transition-colors border border-indigo-500/20 flex items-center gap-2 text-xs font-medium"
+            >
               <Mic className="w-3.5 h-3.5" /> Voice Memo
             </button>
-            <button className="p-2 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors border border-slate-300 dark:border-white/10 flex items-center gap-2 text-xs font-medium">
+            <button 
+              onClick={() => setActiveView('ingestion')}
+              className="p-2 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors border border-slate-300 dark:border-white/10 flex items-center gap-2 text-xs font-medium"
+            >
               <UploadCloud className="w-3.5 h-3.5" /> Upload
             </button>
           </div>

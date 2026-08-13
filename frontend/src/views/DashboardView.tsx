@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { glassCardClasses } from '../lib/utils';
+import { useApp } from '../store/AppContext';
 import SystemControlsCard from '../components/SystemControlsCard';
 import { Activity, HardDrive, FileText, Zap, Clock, CheckCircle2, XCircle, Search } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export default function DashboardView() {
+  const { setActiveView } = useApp();
   const [stats, setStats] = useState<any>(null);
   const [storage, setStorage] = useState<any>(null);
   const [activity, setActivity] = useState<any>(null);
@@ -169,7 +171,7 @@ export default function DashboardView() {
           <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2">
             <Zap className="w-5 h-5 text-amber-500" /> Active Workflow Triggers
           </h3>
-          <button className="text-sm bg-amber-500/20 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-lg hover:bg-amber-500/30 transition-colors">New Rule</button>
+          <button onClick={() => setActiveView('config')} className="text-sm bg-amber-500/20 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-lg hover:bg-amber-500/30 transition-colors">New Rule</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
@@ -203,7 +205,7 @@ export default function DashboardView() {
           <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2">
             <Clock className="w-5 h-5 text-indigo-500 dark:text-indigo-400" /> Recent Execution History
           </h3>
-          <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">View All</button>
+          <button onClick={() => setActiveView('search')} className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">View All</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
