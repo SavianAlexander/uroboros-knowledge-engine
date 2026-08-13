@@ -1,19 +1,16 @@
 import re
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
+from functools import lru_cache
 
 _RE_EXT = re.compile(r'\b(pdf|docx|md|txt|png|jpg|mp3|csv|json)\b', re.IGNORECASE)
 _RE_TAG = re.compile(r'\btagged\s+([a-zA-Z0-9_-]+)', re.IGNORECASE)
 _RE_SIZE = re.compile(r'\bsize\s*(>|<|=)\s*(\d+)\s*(mb|kb|b)?\b', re.IGNORECASE)
 _RE_STOP_FTS = re.compile(r'\b(files|documents|notes|from|last|week|month)\b', re.IGNORECASE)
 
-def parse_natural_language_filter(query: str) -> Dict[str, Any]:
-    """
-    Parses natural language query strings into structured SQLite search parameters and filters.
-    Example: "pdf files tagged architecture size > 1mb" ->
-    {'fts_term': 'files', 'filters': {'ext': 'pdf', 'tag': 'architecture', 'size_op': '>', 'size_bytes': 1048576}}
-    """
+@lru_cache(maxsize=1024)
+def _parse_nl_filter_cached(query: str) -> Tuple[str, Tuple[Tuple[str, Any], ...]]:
     if not query or not str(query).strip():
-        return {"fts_term": "", "filters": {}}
+        return "", ()
 
     raw = str(query).strip()
     filters: Dict[str, Any] = {}
@@ -46,7 +43,16 @@ def parse_natural_language_filter(query: str) -> Dict[str, Any]:
     cleaned_fts = _RE_SIZE.sub('', cleaned_fts)
     cleaned_fts = _RE_STOP_FTS.sub('', cleaned_fts).strip()
 
+    return cleaned_fts or raw, tuple(filters.items())
+
+def parse_natural_language_filter(query: str) -> Dict[str, Any]:
+    """
+    Parses natural language query strings into structured SQLite search parameters and filters.
+    Example: "pdf files tagged architecture size > 1mb" ->
+    {'fts_term': 'files', 'filters': {'ext': 'pdf', 'tag': 'architecture', 'size_op': '>', 'size_bytes': 1048576}}
+    """
+    fts_term, filter_items = _parse_nl_filter_cached(query)
     return {
-        "fts_term": cleaned_fts or raw,
-        "filters": filters
+        "fts_term": fts_term,
+        "filters": dict(filter_items)
     }
