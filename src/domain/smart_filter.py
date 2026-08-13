@@ -30,12 +30,14 @@ def parse_natural_language_filter(query: str) -> Dict[str, Any]:
     # Extract size constraint
     size_match = _RE_SIZE.search(raw)
     if size_match:
-        op, val, unit = size_match.groups()
-        val = int(val)
-        unit = (unit or "b").lower()
-        multiplier = 1048576 if unit == "mb" else (1024 if unit == "kb" else 1)
-        filters["size_op"] = op
-        filters["size_bytes"] = val * multiplier
+        try:
+            val = int(val)
+            unit = (unit or "b").lower()
+            multiplier = 1048576 if unit == "mb" else (1024 if unit == "kb" else 1)
+            filters["size_op"] = op
+            filters["size_bytes"] = val * multiplier
+        except (ValueError, OverflowError):
+            pass
 
     # Clean FTS keywords
     cleaned_fts = _RE_TAG.sub('', raw)

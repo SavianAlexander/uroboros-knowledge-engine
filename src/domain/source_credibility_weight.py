@@ -32,7 +32,7 @@ def apply_source_credibility_weighting(
     weighted_results = []
     for cand in valid_candidates:
         cand_copy = dict(cand)
-        doc_type = (cand.get("doc_type") or "general").lower()
+        doc_type = str(cand.get("doc_type") or "general").lower()
         multiplier = AUTHORITY_MULTIPLIERS.get(doc_type, 1.00)
         
         base_score = float(cand.get("score", 0.5))

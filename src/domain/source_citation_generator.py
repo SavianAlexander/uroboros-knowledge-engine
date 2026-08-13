@@ -53,9 +53,9 @@ def generate_source_citations(passages: List[Dict[str, Any]]) -> List[Dict[str, 
 
     citations = []
     for p in valid_passages:
-        filepath = p.get("filepath", "")
-        content = p.get("content") or p.get("text") or ""
-        filename = p.get("filename") or (os.path.basename(filepath) if filepath else "source.md")
+        filepath = str(p.get("filepath") or "")
+        content = str(p.get("content") or p.get("text") or "")
+        filename = str(p.get("filename") or (os.path.basename(filepath) if filepath else "source.md"))
 
         loc = locate_text_in_file(filepath, content) if filepath else None
         start_l = loc["start_line"] if loc else 1
