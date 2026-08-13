@@ -26,11 +26,13 @@ def get_temporal_knowledge_lineage(filename: str = "") -> Dict[str, Any]:
         cursor = conn.cursor()
 
         query_sql = "SELECT id, filename, filepath, created_at FROM files"
+        params = []
         if filename:
-            query_sql += f" WHERE filename LIKE '%{filename}%'"
+            query_sql += " WHERE filename LIKE ?"
+            params.append(f"%{filename}%")
         query_sql += " ORDER BY id DESC LIMIT 20"
 
-        cursor.execute(query_sql)
+        cursor.execute(query_sql, params)
         rows = cursor.fetchall()
 
         timeline = []
