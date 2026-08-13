@@ -1,19 +1,19 @@
 import time
 import sqlite3
 from typing import Dict, Any, List
-from src.infrastructure.database import get_db
+from src.infrastructure.database import get_db_connection, init_db, DB_FILE
 
-def generate_daily_briefing() -> Dict[str, Any]:
+def generate_daily_briefing(db_path: str = DB_FILE) -> Dict[str, Any]:
     """
     Synthesizes an Executive Daily Briefing across workspace documents.
     Aggregates recent files, top active tags, document count metrics, and AI summary insights.
     """
     try:
-        from src.infrastructure.database import get_db, init_db
+        target_db = db_path or DB_FILE
         init_db()
-        conn = get_db()
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        with get_db_connection(target_db) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
         # Document Metrics
         cursor.execute("SELECT COUNT(*) as cnt FROM files")
