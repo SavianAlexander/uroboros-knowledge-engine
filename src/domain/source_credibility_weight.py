@@ -22,11 +22,15 @@ def apply_source_credibility_weighting(
     """
     Applies authority weighting multipliers to candidate search results.
     """
-    if not candidates:
+    if not candidates or not isinstance(candidates, list):
+        return []
+
+    valid_candidates = [c for c in candidates if isinstance(c, dict)]
+    if not valid_candidates:
         return []
 
     weighted_results = []
-    for cand in candidates:
+    for cand in valid_candidates:
         cand_copy = dict(cand)
         doc_type = (cand.get("doc_type") or "general").lower()
         multiplier = AUTHORITY_MULTIPLIERS.get(doc_type, 1.00)

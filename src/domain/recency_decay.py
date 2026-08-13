@@ -14,14 +14,18 @@ def apply_recency_decay(candidates: List[Dict[str, Any]], decay_half_life_days: 
     Applies exponential recency decay to candidate search scores based on document mtime.
     Zero-dependency stdlib implementation.
     """
-    if not candidates:
+    if not candidates or not isinstance(candidates, list):
+        return []
+
+    valid_candidates = [c for c in candidates if isinstance(c, dict)]
+    if not valid_candidates:
         return []
 
     now = time.time()
     decay_lambda = math.log(2) / float(max(1.0, decay_half_life_days))
 
     reranked = []
-    for cand in candidates:
+    for cand in valid_candidates:
         mtime = cand.get("mtime") or cand.get("updated_at") or now
         if isinstance(mtime, (int, float)):
             delta_sec = max(0.0, now - float(mtime))
