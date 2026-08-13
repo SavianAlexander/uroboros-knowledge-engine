@@ -16,7 +16,7 @@ def generate_synthetic_qa_triples(
     """
     Parses document text and generates synthetic QA triples for offline benchmarking.
     """
-    if not document_text:
+    if not document_text or not isinstance(document_text, str) or not document_text.strip():
         return {"triples": [], "count": 0, "status": "empty_text"}
 
     sentences = [s for s in split_sentences(document_text) if len(s) > 20]

@@ -17,13 +17,17 @@ def filter_distractor_chunks(
     Filters candidate chunks by computing core intent overlap score.
     Removes distractor chunks that fall below min_intent_overlap threshold.
     """
-    if not candidates:
+    if not candidates or not isinstance(candidates, list):
+        return {"filtered_candidates": [], "distractor_count": 0, "status": "success"}
+
+    valid_candidates = [c for c in candidates if isinstance(c, dict)]
+    if not valid_candidates:
         return {"filtered_candidates": [], "distractor_count": 0, "status": "success"}
 
     filtered = []
     distractors = []
 
-    for cand in candidates:
+    for cand in valid_candidates:
         content = cand.get("content") or cand.get("text") or ""
         score = compute_ngram_overlap(query, content)
         cand_copy = dict(cand)

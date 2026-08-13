@@ -12,7 +12,10 @@ def locate_text_in_file(filepath: str, snippet: str) -> Optional[Dict[str, int]]
     Locates the exact start_line and end_line of a snippet in a file.
     Zero-dependency stdlib implementation.
     """
-    if not os.path.exists(filepath):
+    if not filepath or not isinstance(filepath, str) or not os.path.exists(filepath):
+        return None
+
+    if not snippet or not isinstance(snippet, str):
         return None
 
     clean_snippet = snippet.strip()
@@ -41,8 +44,15 @@ def generate_source_citations(passages: List[Dict[str, Any]]) -> List[Dict[str, 
     """
     Generates exact markdown citations and line mappings for retrieved passages.
     """
+    if not passages or not isinstance(passages, list):
+        return []
+
+    valid_passages = [p for p in passages if isinstance(p, dict)]
+    if not valid_passages:
+        return []
+
     citations = []
-    for p in passages:
+    for p in valid_passages:
         filepath = p.get("filepath", "")
         content = p.get("content") or p.get("text") or ""
         filename = p.get("filename") or (os.path.basename(filepath) if filepath else "source.md")
