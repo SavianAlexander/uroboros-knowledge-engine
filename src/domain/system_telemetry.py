@@ -39,20 +39,24 @@ def gather_system_telemetry() -> Dict[str, Any]:
         tags_count = 0
 
         try:
-            conn = get_db()
-            cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM files")
-            files_count = cursor.fetchone()[0]
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM files")
+                row_f = cursor.fetchone()
+                files_count = row_f[0] if row_f else 0
 
-            try:
-                cursor.execute("SELECT COUNT(*) FROM file_chunks")
-                chunks_count = cursor.fetchone()[0]
-            except Exception:
-                cursor.execute("SELECT COUNT(*) FROM document_chunks")
-                chunks_count = cursor.fetchone()[0]
+                try:
+                    cursor.execute("SELECT COUNT(*) FROM file_chunks")
+                    row_c = cursor.fetchone()
+                    chunks_count = row_c[0] if row_c else 0
+                except Exception:
+                    cursor.execute("SELECT COUNT(*) FROM document_chunks")
+                    row_c = cursor.fetchone()
+                    chunks_count = row_c[0] if row_c else 0
 
-            cursor.execute("SELECT COUNT(*) FROM tags")
-            tags_count = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM tags")
+                row_t = cursor.fetchone()
+                tags_count = row_t[0] if row_t else 0
         except Exception:
             pass
 
