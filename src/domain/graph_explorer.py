@@ -13,13 +13,13 @@ def generate_graph_topology(
     """
     Generates interactive graph topology nodes and edges with Louvain community clusters.
     """
-    source_documents = source_documents or []
+    valid_docs = [d for d in source_documents if isinstance(d, dict)] if isinstance(source_documents, list) else []
     
     nodes = []
     edges = []
     
     # Default node clusters if no documents passed
-    if not source_documents:
+    if not valid_docs:
         nodes = [
             {"id": "doc_1", "label": "Architecture Guide", "cluster": 0, "pagerank": 0.35},
             {"id": "doc_2", "label": "Vector Search API", "cluster": 0, "pagerank": 0.25},
@@ -30,7 +30,7 @@ def generate_graph_topology(
             {"source": "doc_1", "target": "doc_3", "weight": 0.65}
         ]
     else:
-        for idx, doc in enumerate(source_documents):
+        for idx, doc in enumerate(valid_docs):
             doc_id = doc.get("id") or f"doc_{idx}"
             label = doc.get("filename") or doc.get("title") or doc_id
             nodes.append({
@@ -43,7 +43,7 @@ def generate_graph_topology(
                 edges.append({
                     "source": nodes[0]["id"],
                     "target": doc_id,
-                    "weight": round(0.9 - (idx * 0.1), 2)
+                    "weight": max(0.05, round(0.9 - (idx * 0.1), 2))
                 })
 
     return {
