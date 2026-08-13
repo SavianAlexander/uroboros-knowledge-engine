@@ -27,6 +27,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pyinstaller
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -41,6 +42,18 @@ jobs:
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
           npm run build
 
-      - name: Verify PyInstaller Desktop Spec & Build
+      - name: Compile PyInstaller Desktop Executable
         run: |
-          python build_desktop.py --check-only
+          python build_desktop.py
+
+      - name: Upload Web Frontend Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-frontend-dist
+          path: frontend/dist/
+
+      - name: Upload Desktop Bundle Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-bundle
+          path: dist/
