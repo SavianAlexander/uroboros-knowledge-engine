@@ -34,13 +34,15 @@ def extract_entities_from_text(text: str, top_k: int = 10) -> Dict[str, Any]:
     Extracts key domain entities, technical terms, and TF-IDF word frequencies.
     Zero-dependency stdlib implementation.
     """
-    if not text or not text.strip():
+    if not text or not isinstance(text, str) or not text.strip():
         return {
             "entities": [],
             "keywords": [],
             "total_words": 0,
             "status": "success"
         }
+
+    k = max(1, int(top_k)) if top_k is not None and isinstance(top_k, (int, float)) else 10
 
     words = RE_WORD.findall(text)
     total_words = len(words)
@@ -50,7 +52,7 @@ def extract_entities_from_text(text: str, top_k: int = 10) -> Dict[str, Any]:
     entity_counts = Counter(w for w in capitalized if w.lower() not in STOP_WORDS)
     top_entities = [
         {"entity": term, "count": count}
-        for term, count in entity_counts.most_common(top_k)
+        for term, count in entity_counts.most_common(k)
     ]
 
     # 2. Term Frequency Analysis (excluding stop words)

@@ -19,17 +19,18 @@ def generate_vault_instruction_dataset(
     Synthesizes instruction-following dataset pairs from indexed vault content.
     # ponytail: zero-dependency stdlib ShareGPT JSONL formatter
     """
+    safe_limit = max(1, int(limit)) if limit is not None and isinstance(limit, (int, float)) else 50
     dataset_items = []
     try:
         with get_db_connection(db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             try:
-                cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL AND length(content) > 50 LIMIT ?", (limit,))
+                cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL AND length(content) > 50 LIMIT ?", (safe_limit,))
                 rows = cursor.fetchall()
             except Exception:
                 try:
-                    cursor.execute("SELECT id, filename, filepath, content FROM documents WHERE content IS NOT NULL AND length(content) > 50 LIMIT ?", (limit,))
+                    cursor.execute("SELECT id, filename, filepath, content FROM documents WHERE content IS NOT NULL AND length(content) > 50 LIMIT ?", (safe_limit,))
                     rows = cursor.fetchall()
                 except Exception:
                     rows = []
