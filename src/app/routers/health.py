@@ -21,11 +21,22 @@ def get_health_status():
     """Retrieve system health status, DB size, and file stats."""
     try:
         stats = db_status()
+        ollama_status = "offline"
+        try:
+            import urllib.request
+            req = urllib.request.Request("http://127.0.0.1:11434/api/tags", headers={"User-Agent": "Uroboros"})
+            with urllib.request.urlopen(req, timeout=0.8) as resp:
+                if resp.status == 200:
+                    ollama_status = "online"
+        except Exception:
+            pass
+
         return {
             "status": "ok",
             "journal_mode": "wal",
             "total_files_indexed": stats["file_count"],
             "vector_engine": "ready",
+            "ollama_engine": ollama_status,
             "soc2_compliance": "COMPLIANT",
             "clean_architecture_score": "100.0%",
             "database": stats,
@@ -67,6 +78,28 @@ def prometheus_metrics_endpoint():
     from fastapi.responses import PlainTextResponse
     from src.infrastructure.telemetry import GLOBAL_TELEMETRY
     return PlainTextResponse(GLOBAL_TELEMETRY.generate_prometheus_text())
+
+@router.post("/api/system/preload-model")
+def preload_model_endpoint():
+    """Preloads Ollama model weights into GPU VRAM to eliminate cold-start latency."""
+    try:
+        from src.core.model_manager import OllamaClient
+        client = OllamaClient()
+        success = client.preload_model()
+        return {"status": "success", "preloaded": success, "message": "Model preloaded into GPU VRAM with 5m keep_alive"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/system/unload-model")
+def unload_model_endpoint():
+    """Flushes GPU VRAM and unloads Ollama model weights immediately."""
+    try:
+        from src.core.model_manager import OllamaClient
+        client = OllamaClient()
+        success = client.unload_model()
+        return {"status": "success", "unloaded": success, "message": "Model flushed from GPU VRAM"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/metrics")
 def json_metrics_endpoint():

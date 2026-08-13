@@ -31,7 +31,7 @@ async def ingest_pdf_file(background_tasks: BackgroundTasks, file: UploadFile = 
     with open(temp_path, "wb") as f:
         f.write(content)
 
-    result = engine.process_pdf(temp_path)
+    result = await asyncio.to_thread(engine.process_pdf, temp_path)
 
     queue_item = {
         "id": len(_ingestion_queue) + 1,

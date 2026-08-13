@@ -160,17 +160,37 @@ def save_file_endpoint(req: FileSaveRequest):
 @router.get("/api/file/tree")
 @router.get("/api/tree")
 def get_file_tree():
-    """Retrieve file tree directory structure of active workspace."""
+    """Retrieve file tree directory structure of active workspace, including all indexed RAG documents."""
     base = get_active_dir()
     if not os.path.exists(base):
         os.makedirs(base, exist_ok=True)
     tree = []
+    seen = set()
     for root, dirs, files in os.walk(base):
         dirs[:] = [d for d in dirs if d not in {".git", "node_modules", "__pycache__", ".venv"}]
         for f in files:
             fp = os.path.join(root, f)
+            abs_p = os.path.abspath(fp)
             rel = os.path.relpath(fp, base)
             tree.append({"filepath": fp, "relative_path": rel, "size": os.path.getsize(fp)})
+            seen.add(abs_p)
+
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT filepath, filename, file_size FROM files")
+            for row in cursor.fetchall():
+                fp = row[0]
+                if fp:
+                    abs_p = os.path.abspath(fp)
+                    if abs_p not in seen:
+                        rel = os.path.relpath(fp, base) if abs_p.startswith(os.path.abspath(base)) else (row[1] or os.path.basename(fp))
+                        sz = row[2] if row[2] is not None else (os.path.getsize(fp) if os.path.exists(fp) else 0)
+                        tree.append({"filepath": fp, "relative_path": rel, "size": sz})
+                        seen.add(abs_p)
+    except Exception:
+        pass
+
     return {"base": base, "tree": tree}
 
 @router.post("/api/file/delete")

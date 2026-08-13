@@ -34,24 +34,9 @@ export default function Sidebar() {
         {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
       </button>
 
-      <div className="flex flex-col gap-2 mb-6 px-2 w-full">
-        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          {!imgError && <img src="/assets/uroboros_logo.svg" alt="Uroboros" className="w-8 h-8" onError={() => setImgError(true)} />}
-          {!collapsed && <h1 className="text-lg font-semibold tracking-wide text-slate-900 dark:text-slate-100">Uroboros</h1>}
-        </div>
-        {!collapsed && (
-          <select
-            value={activeWorkspace}
-            onChange={(e) => setActiveWorkspace(e.target.value)}
-            className="w-full text-xs px-2 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 focus:outline-none cursor-pointer"
-            data-testid="workspace-select"
-          >
-            <option value="Default">🌐 Default Workspace</option>
-            <option value="Personal">👤 Personal Notes</option>
-            <option value="Enterprise">🏢 Enterprise Docs</option>
-            <option value="Codebase">💻 Source Codebase</option>
-          </select>
-        )}
+      <div className="flex items-center gap-3 mb-6 px-2 w-full">
+        {!imgError && <img src="/assets/uroboros_logo.svg" alt="Uroboros" className="w-8 h-8" onError={() => setImgError(true)} />}
+        {!collapsed && <h1 className="text-lg font-semibold tracking-wide text-slate-900 dark:text-slate-100">Uroboros</h1>}
       </div>
 
       <nav className="flex-1 space-y-1 w-full">

@@ -7,7 +7,7 @@ import { Activity, HardDrive, FileText, Zap, Clock, CheckCircle2, XCircle, Searc
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export default function DashboardView() {
-  const { setActiveView } = useApp();
+  const { setActiveView, activeWorkspace } = useApp();
   const [stats, setStats] = useState<any>(null);
   const [storage, setStorage] = useState<any>(null);
   const [activity, setActivity] = useState<any>(null);
@@ -40,7 +40,7 @@ export default function DashboardView() {
     }).catch(() => setRecent([]));
 
     api.workflowTriggers().then(data => setTriggers(Array.isArray(data) ? data : [])).catch(() => setTriggers([]));
-  }, []);
+  }, [activeWorkspace]);
 
   const pieColors = ['#818CF8', '#22D3EE', '#34D399', '#FBBF24'];
 

@@ -5,9 +5,12 @@ import { glassCardClasses, debounce } from '../lib/utils';
 import { Filter, Maximize, RotateCcw, Download } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../components/Toast';
+import { useApp } from '../store/AppContext';
 
 export default function GraphView() {
   const { toast } = useToast();
+  const { activeWorkspace } = useApp();
+
   const handleExportGraphML = async () => {
     try {
       toast('Exporting GraphML', 'Generating XML topology payload...', 'info');
@@ -42,6 +45,7 @@ export default function GraphView() {
   const debouncedSetFilter = useCallback(debounce((val: string) => setFilter(val), 150), []);
 
   useEffect(() => {
+    setLoading(true);
     api.graphData()
       .then(data => {
         if (!data) throw new Error('No data');
@@ -65,7 +69,7 @@ export default function GraphView() {
         setEdges([]);
         setLoading(false);
       });
-  }, []);
+  }, [activeWorkspace]);
 
   useEffect(() => {
     if (!containerRef.current) return;

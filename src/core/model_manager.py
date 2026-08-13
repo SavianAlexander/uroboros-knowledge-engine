@@ -20,7 +20,7 @@ import subprocess
 os.environ["OLLAMA_NUM_PARALLEL"] = "1"
 os.environ["OLLAMA_MAX_LOADED_MODELS"] = "1"
 
-_llm_semaphore = threading.Semaphore(2)
+_llm_semaphore = threading.Semaphore(1)
 _process_cleanup_lock = threading.Lock()
 _last_cleanup_time = 0.0
 
@@ -60,14 +60,16 @@ class OllamaClient:
         import requests
         self.session = requests.Session()
 
-    def _post_with_fallback(self, endpoint: str, data: dict, timeout: int = 15):
+    def _post_with_fallback(self, endpoint: str, data: dict, timeout: int = 45):
         ensure_single_llama_server_instance()
         clean_ep = endpoint if endpoint.startswith("/") else f"/{endpoint}"
         clean_base = self.base_url.rstrip("/")
         endpoints = [
             f"{clean_base}{clean_ep}",
             f"http://127.0.0.1:11434/v1{clean_ep}",
-            f"http://localhost:11434/v1{clean_ep}"
+            f"http://localhost:11434/v1{clean_ep}",
+            f"http://127.0.0.1:11434{clean_ep.replace('/v1', '')}",
+            f"http://localhost:11434{clean_ep.replace('/v1', '')}"
         ]
         for url in endpoints:
             try:
@@ -77,19 +79,55 @@ class OllamaClient:
             except Exception:
                 continue
         return None
+
+    def stream_chat(self, messages: list, model_name: str = None, temperature: float = 0.3):
+        """Yield token chunks from native Ollama /api/chat streaming endpoint."""
+        import urllib.request
+        import json
+        model = model_name or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+        payload = {
+            "model": model,
+            "messages": messages,
+            "stream": True,
+            "options": {"num_ctx": 4096, "temperature": temperature}
+        }
+        data_bytes = json.dumps(payload).encode("utf-8")
+        urls = ["http://127.0.0.1:11434/api/chat", "http://localhost:11434/api/chat"]
+        
+        for u in urls:
+            try:
+                req = urllib.request.Request(u, data=data_bytes, headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=45) as resp:
+                    for line in resp:
+                        if not line:
+                            continue
+                        try:
+                            item = json.loads(line.decode("utf-8"))
+                            tok = item.get("message", {}).get("content", "")
+                            if tok:
+                                yield tok
+                            if item.get("done"):
+                                return
+                        except Exception:
+                            continue
+                return
+            except Exception as e:
+                logging.warning(f"Ollama stream_chat fallback on {u}: {e}")
+                continue
     def __call__(self, prompt, **kwargs):
         if not _llm_semaphore.acquire(blocking=False):
             logging.warning("LLM concurrency limit reached; skipping background inference for stability.")
             return {"choices": [{"text": ""}]}
         try:
             model = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
-            keep_alive = os.environ.get("OLLAMA_KEEP_ALIVE", "2m")
+            keep_alive = os.environ.get("OLLAMA_KEEP_ALIVE", "5m")
+            max_toks = min(kwargs.get("max_tokens", 1024), 2048)
             data = {
                 "model": model,
                 "prompt": prompt,
-                "max_tokens": min(kwargs.get("max_tokens", 256), 512),
+                "max_tokens": max_toks,
                 "keep_alive": keep_alive,
-                "options": {"num_ctx": 2048, "num_thread": 4, "low_vram": True}
+                "options": {"num_ctx": 4096, "num_thread": 4, "temperature": kwargs.get("temperature", 0.3)}
             }
             res_body = self._post_with_fallback("/completions", data)
             if res_body:
@@ -101,7 +139,7 @@ class OllamaClient:
         finally:
             _llm_semaphore.release()
 
-    def create_completion(self, prompt: str, stream: bool = False, max_tokens: int = 256, temperature: float = 0.3, **kwargs):
+    def create_completion(self, prompt: str, stream: bool = False, max_tokens: int = 1024, temperature: float = 0.3, **kwargs):
         if stream:
             res_dict = self(prompt, max_tokens=max_tokens, temperature=temperature, **kwargs)
             text = res_dict.get("choices", [{}])[0].get("text", "")
@@ -115,13 +153,14 @@ class OllamaClient:
             return {"choices": [{"message": {"content": ""}}]}
         try:
             model = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
-            keep_alive = os.environ.get("OLLAMA_KEEP_ALIVE", "2m")
+            keep_alive = os.environ.get("OLLAMA_KEEP_ALIVE", "5m")
+            max_toks = min(kwargs.get("max_tokens", 1024), 2048)
             data = {
                 "model": model,
                 "messages": messages,
-                "max_tokens": min(kwargs.get("max_tokens", 256), 512),
+                "max_tokens": max_toks,
                 "keep_alive": keep_alive,
-                "options": {"num_ctx": 2048, "num_thread": 4, "low_vram": True}
+                "options": {"num_ctx": 4096, "num_thread": 4, "temperature": kwargs.get("temperature", 0.3)}
             }
             res_body = self._post_with_fallback("/chat/completions", data)
             if res_body:
@@ -132,6 +171,18 @@ class OllamaClient:
             return {"choices": [{"message": {"content": ""}}]}
         finally:
             _llm_semaphore.release()
+
+    def preload_model(self, model_name: str = None) -> bool:
+        """Intelligently preloads model weights into GPU VRAM with keep_alive=5m to eliminate cold-start latency."""
+        m = model_name or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+        res = self._post_with_fallback("/generate", {"model": m, "keep_alive": "5m"})
+        return res is not None
+
+    def unload_model(self, model_name: str = None) -> bool:
+        """Intelligently flushes GPU VRAM and unloads model weights immediately."""
+        m = model_name or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+        res = self._post_with_fallback("/generate", {"model": m, "keep_alive": 0})
+        return res is not None
 
 
 
@@ -264,5 +315,37 @@ def get_llm():
 def get_fallback_llm():
     return get_llm()
 
+import functools
+
+@functools.lru_cache(maxsize=128)
 def expand_query_with_llm(query: str) -> str:
+    """HyDE Query Expansion: Synthesizes search terms & hypothetical document keywords using local LLM with LRU caching."""
+    if not query or len(query.strip()) < 3:
+        return query
+    try:
+        client = get_llm()
+        if client and hasattr(client, "stream_chat"):
+            prompt_msgs = [
+                {"role": "system", "content": "You are a search query expansion engine. Generate 3 concise search terms or synonyms for the query, separated by spaces. Return only the terms without quotes or punctuation."},
+                {"role": "user", "content": query}
+            ]
+            expanded = "".join(list(client.stream_chat(prompt_msgs, temperature=0.1)))
+            if expanded and len(expanded.strip()) > 0:
+                clean_exp = " ".join(expanded.strip().splitlines())
+                return f"{query} {clean_exp}"
+    except Exception:
+        pass
     return query
+
+def auto_preload_model_async(model_name: str = "qwen2.5:7b"):
+    """Spawns a daemon thread that automatically pre-warms the specified model into GPU VRAM in the background."""
+    def _bg_warmup():
+        try:
+            client = get_llm()
+            if hasattr(client, "preload_model"):
+                client.preload_model(model_name)
+                logging.info(f"[Auto-Preload] Intelligently pre-warmed {model_name} into VRAM.")
+        except Exception as e:
+            logging.debug(f"[Auto-Preload] Background warmup notice: {e}")
+    threading.Thread(target=_bg_warmup, daemon=True).start()
+

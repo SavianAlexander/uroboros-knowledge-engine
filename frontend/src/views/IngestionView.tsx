@@ -3,9 +3,11 @@ import { glassCardClasses } from '../lib/utils';
 import { DatabaseZap, FileText, UploadCloud, RefreshCw, Layers, CheckCircle2, XCircle, Clock, Workflow } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../components/Toast';
+import { useApp } from '../store/AppContext';
 
 export default function IngestionView() {
   const { toast } = useToast();
+  const { activeWorkspace } = useApp();
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
 
@@ -29,12 +31,12 @@ export default function IngestionView() {
 
     // Fetch initial logs
     setPipelineLogs([
-      `[${new Date().toLocaleTimeString()}] Pipeline initialized. Listening for file events...`,
+      `[${new Date().toLocaleTimeString()}] Workspace switched to '${activeWorkspace}'. Listening for file events...`,
       `[${new Date().toLocaleTimeString()}] FTS5 Full-Text Indexing online.`,
       `[${new Date().toLocaleTimeString()}] Vector Embedder: NomIC HNSW engine ready.`,
       `[${new Date().toLocaleTimeString()}] System health check passed cleanly.`
     ]);
-  }, []);
+  }, [activeWorkspace]);
 
   const triggerReindex = () => {
     toast('Re-index Triggered', 'Scanning vault directories for modified documents', 'info');

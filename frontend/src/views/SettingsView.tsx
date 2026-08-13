@@ -16,12 +16,21 @@ export default function SettingsView() {
   const [ollamaHost, setOllamaHost] = useState('');
 
   useEffect(() => {
+    // Load persisted settings from localStorage fallback
+    const savedOpenAI = localStorage.getItem('uroboros_openai_key') || '';
+    const savedAnthropic = localStorage.getItem('uroboros_anthropic_key') || '';
+    const savedOllama = localStorage.getItem('uroboros_ollama_host') || '';
+
+    if (savedOpenAI) setOpenaiKey(savedOpenAI);
+    if (savedAnthropic) setAnthropicKey(savedAnthropic);
+    if (savedOllama) setOllamaHost(savedOllama);
+
     api.systemEnv().then(res => {
       const data = res.env || res;
       setEnvData(data);
-      if (data.OPENAI_API_KEY) setOpenaiKey(data.OPENAI_API_KEY);
-      if (data.ANTHROPIC_API_KEY) setAnthropicKey(data.ANTHROPIC_API_KEY);
-      if (data.OLLAMA_HOST) setOllamaHost(data.OLLAMA_HOST);
+      if (data.OPENAI_API_KEY && !savedOpenAI) setOpenaiKey(data.OPENAI_API_KEY);
+      if (data.ANTHROPIC_API_KEY && !savedAnthropic) setAnthropicKey(data.ANTHROPIC_API_KEY);
+      if (data.OLLAMA_HOST && !savedOllama) setOllamaHost(data.OLLAMA_HOST);
     }).catch(console.error);
 
     api.stats().then(res => setDbStats(res)).catch(console.error);
@@ -73,7 +82,10 @@ export default function SettingsView() {
   };
 
   const handleUpdateCredentials = () => {
-    toast('Credentials Saved', 'LLM Provider keys updated securely', 'success');
+    localStorage.setItem('uroboros_openai_key', openaiKey);
+    localStorage.setItem('uroboros_anthropic_key', anthropicKey);
+    localStorage.setItem('uroboros_ollama_host', ollamaHost);
+    toast('Credentials Saved', 'LLM Provider keys persisted to user settings', 'success');
   };
 
   return (

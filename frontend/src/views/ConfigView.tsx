@@ -15,9 +15,22 @@ export default function ConfigView() {
   const [activeModal, setActiveModal] = useState<'rule' | 'synonyms' | 'macros' | 'aliases' | null>(null);
 
   // Strategy Tuning State
-  const [chunkSize, setChunkSize] = useState<number>(1024);
-  const [chunkOverlap, setChunkOverlap] = useState<number>(128);
-  const [embeddingModel, setEmbeddingModel] = useState<string>('text-embedding-3-small (Default)');
+  const [chunkSize, setChunkSize] = useState<number>(() => {
+    return Number(localStorage.getItem('uroboros_chunk_size')) || 1024;
+  });
+  const [chunkOverlap, setChunkOverlap] = useState<number>(() => {
+    return Number(localStorage.getItem('uroboros_chunk_overlap')) || 128;
+  });
+  const [embeddingModel, setEmbeddingModel] = useState<string>(() => {
+    return localStorage.getItem('uroboros_embedding_model') || 'text-embedding-3-small (Default)';
+  });
+
+  const handleApplyStrategy = () => {
+    localStorage.setItem('uroboros_chunk_size', String(chunkSize));
+    localStorage.setItem('uroboros_chunk_overlap', String(chunkOverlap));
+    localStorage.setItem('uroboros_embedding_model', embeddingModel);
+    toast('Strategy Saved', `Chunk Size: ${chunkSize} | Overlap: ${chunkOverlap} | Model: ${embeddingModel}`, 'success');
+  };
 
   useEffect(() => {
     loadData();
@@ -283,9 +296,7 @@ export default function ConfigView() {
             </div>
 
             <button 
-              onClick={() => {
-                toast('Strategy Saved', `Chunk Size: ${chunkSize} | Overlap: ${chunkOverlap} | Model: ${embeddingModel}`, 'success');
-              }}
+              onClick={handleApplyStrategy}
               className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-medium text-xs transition-colors shadow-lg shadow-purple-600/20 mt-2"
             >
               Apply Strategy Parameters

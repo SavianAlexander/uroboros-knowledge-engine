@@ -54,6 +54,7 @@ class SQLiteConnectionPool:
                     conn.row_factory = sqlite3.Row
                     # Enable WAL mode and lightweight memory-mapped I/O per-connection
                     conn.execute("PRAGMA journal_mode = WAL")
+                    conn.execute("PRAGMA busy_timeout = 5000")
                     conn.execute("PRAGMA synchronous = NORMAL")
                     conn.execute("PRAGMA temp_store = MEMORY")
                     conn.execute("PRAGMA cache_size = -64000")
@@ -230,6 +231,7 @@ def get_db():
                 conn = sqlite3.connect(DB_FILE, check_same_thread=False, timeout=DB_TIMEOUT)
                 conn.row_factory = sqlite3.Row
                 conn.execute("PRAGMA journal_mode = WAL")
+                conn.execute("PRAGMA busy_timeout = 5000")
                 conn.execute("PRAGMA synchronous = NORMAL")
                 conn.execute("PRAGMA temp_store = MEMORY")
                 conn.execute("PRAGMA cache_size = -64000")
@@ -269,6 +271,7 @@ def init_db():
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("PRAGMA journal_mode = WAL")
+            cursor.execute("PRAGMA busy_timeout = 5000;")
             cursor.execute("PRAGMA cache_size = -64000;")
             cursor.execute("PRAGMA mmap_size = 268435456;")
             cursor.execute("PRAGMA auto_vacuum = INCREMENTAL;")

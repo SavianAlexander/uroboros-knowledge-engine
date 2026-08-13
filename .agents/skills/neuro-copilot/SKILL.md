@@ -9,18 +9,40 @@ This skill dictates how you (the AI Agent) must interact with the **Neuro MCP Se
 
 ---
 
-## The Tri-Engine Mandate
+## The Tri-Engine Mandate & Autonomous Subagent Protocol
 
 You have access to three primary orchestration engines:
-1. **Neuro (`neuro-mcp`)**: The local AI brain. Stores semantic vector embeddings, FTS5 keyword indexes, Binary ColBERT reranking matrices, Knowledge Graph wikilinks, and cryptographic document provenance signatures.
+1. **Neuro (`neuro-mcp` & Local RAG Brain)**: The local AI brain. Stores semantic vector embeddings, FTS5 keyword indexes, Binary ColBERT reranking matrices, Knowledge Graph wikilinks, and cryptographic document provenance signatures.
 2. **Tududi (`tududi`)**: The Task Master & Execution Auditor. Serves as the single source of truth for all project execution, subtask checklists, and habit tracking under Project #13 (*Neuro Alexander*).
 3. **GitHub (`gh` CLI & Git)**: Codebase Dominance & CI/CD Control. Manages Pull Requests (`gh pr`), Issue synchronization (`gh issue`), GitHub Actions workflow monitoring (`gh run`), Git commit provenance, diff security auditing (`audit_pr_diff`), conflict resolution (`resolve_conflicts`), dependency security scanning (`audit_security_dependencies`), bloat detection (`detect_bloat`), terminal dashboard rendering (`dashboard`), and release tagging (`gh release`).
 
----
+### 🤖 Autonomous Subagent Delegation Protocol (`neuro-copilot-agent`)
 
-## Tooling & Command Palette (20 Commands)
+When `/neuro-copilot` is activated for deep codebase research, multi-file auditing, or vault document synthesis:
+- **Define / Invoke Subagent**: Use `define_subagent` and `invoke_subagent` to spawn a specialized subagent named `neuro-copilot-agent` (Role: `Local RAG Brain Co-Pilot & Codebase Researcher`).
+- **Token Efficiency Standard**: The subagent executes context-heavy lookups using `query_local_brain` (`python .agents/skills/neuro-copilot/scripts/github_bridge.py query_local_brain --query "..."`), `neuro_search`, and file reading in a separate isolated conversation, saving parent model tokens.
+- **Executive Synthesis**: The subagent synthesizes findings and reports back with structured Markdown analysis.
 
-Use the dependency-efficient Python bridge helper script (`scripts/github_bridge.py`) to execute Tri-Engine CLI automations:
+## Standardized Modular Bridge Architecture (3 Dedicated CLI Bridges)
+
+The skill uses 3 modular, zero-dependency Python CLI bridge scripts located in `scripts/`:
+
+1. **Neuro Knowledge Engine Bridge (`scripts/neuro_bridge.py`)**:
+   - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py query --text "..."`: Query local RAG brain with HyDE expansion.
+   - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py ingest --path "..."`: Ingest document or directory into vault.
+   - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py stats`: Audit knowledge vault size & chunk metrics.
+   - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py self_test`: Run Neuro bridge self-tests.
+
+2. **Tududi Task Master Bridge (`scripts/tududi_bridge.py`)**:
+   - `python .agents/skills/neuro-copilot/scripts/tududi_bridge.py list`: Fetch active Tududi tasks for Project #13.
+   - `python .agents/skills/neuro-copilot/scripts/tududi_bridge.py metrics`: Query project completion stats & audit metrics.
+   - `python .agents/skills/neuro-copilot/scripts/tududi_bridge.py self_test`: Run Tududi bridge self-tests.
+
+3. **GitHub & Git Provenance Bridge (`scripts/github_bridge.py`)**:
+   - `python .agents/skills/neuro-copilot/scripts/github_bridge.py dashboard`: Render executive terminal dashboard.
+   - `python .agents/skills/neuro-copilot/scripts/github_bridge.py run_full_pipeline`: 1-click full Tri-Engine pipeline pass.
+
+Use the standardized bridge scripts (`scripts/neuro_bridge.py`, `scripts/tududi_bridge.py`, `scripts/github_bridge.py`) to execute Tri-Engine CLI automations:
 
 | Command | Subcommand | Purpose |
 | :--- | :--- | :--- |

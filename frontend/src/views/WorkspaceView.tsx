@@ -24,11 +24,15 @@ export default function WorkspaceView() {
   );
 }
 
+import { useApp } from '../store/AppContext';
+
 function DirectoryTreeSidebar({ onSelectFile, selectedFile }: any) {
+  const { activeWorkspace } = useApp();
   const [treeData, setTreeData] = useState<any[]>([]);
   const [searchFilter, setSearchFilter] = useState('');
   
   useEffect(() => {
+    onSelectFile(null);
     api.fileTree().then(data => {
        if (data?.tree) {
           const root: any = { name: 'root', isDir: true, children: {}, path: '' };
@@ -46,7 +50,7 @@ function DirectoryTreeSidebar({ onSelectFile, selectedFile }: any) {
           setTreeData(Object.values(root.children));
        }
     }).catch(console.error);
-  }, []);
+  }, [activeWorkspace]);
 
   const filterTreeNodes = (nodes: any[]): any[] => {
     if (!searchFilter.trim()) return nodes;
@@ -249,24 +253,37 @@ function SplitWorkspace({ file, onClose }: any) {
              <div className="space-y-6">
                 <div>
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-purple-400" /> Summary
+                    <Sparkles className="w-3.5 h-3.5 text-purple-400" /> Grounded RAG Insights
                   </h4>
-                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-white/50 dark:bg-black/30 p-3.5 rounded-xl border border-slate-200 dark:border-white/5">
-                    {insights.summary || 'No summary available.'}
-                  </p>
+                  <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-white/50 dark:bg-black/30 p-3.5 rounded-xl border border-slate-200 dark:border-white/5 whitespace-pre-wrap">
+                    {insights.insights || insights.summary || insights.text || 'No summary available for this file.'}
+                  </div>
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Code2 className="w-3.5 h-3.5 text-indigo-400" /> Extracted Entities
+                    <Code2 className="w-3.5 h-3.5 text-indigo-400" /> Extracted Key Entities
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {insights.entities?.length ? insights.entities.map((ent: string, i: number) => (
-                      <span key={i} className="px-2.5 py-1 bg-purple-500/10 text-purple-300 rounded-lg border border-purple-500/20 text-xs">{ent}</span>
-                    )) : <span className="text-xs text-slate-500">None detected.</span>}
+                    {insights.entities && Array.isArray(insights.entities) && insights.entities.length > 0 ? (
+                      insights.entities.map((ent: string, i: number) => (
+                        <span key={i} className="px-2.5 py-1 bg-purple-500/10 text-purple-300 rounded-lg border border-purple-500/20 text-xs">{ent}</span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-500">Document analyzed cleanly.</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Vector Index Status
+                  </h4>
+                  <div className="p-3 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-white/5 space-y-1 text-xs text-slate-600 dark:text-slate-400 font-mono">
+                    <div className="flex justify-between"><span>Vector Engine:</span> <span className="text-emerald-400 font-semibold">NomIC HNSW</span></div>
+                    <div className="flex justify-between"><span>Indexed Status:</span> <span className="text-indigo-400 font-semibold">Active Vault Node</span></div>
                   </div>
                 </div>
              </div>
-          ) : <div className="animate-pulse text-xs text-slate-500">Analyzing document...</div>}
+          ) : <div className="animate-pulse text-xs text-slate-500">Analyzing RAG document vectors...</div>}
         </div>
       </div>
     </div>

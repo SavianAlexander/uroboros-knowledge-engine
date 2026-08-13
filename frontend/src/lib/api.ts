@@ -6,7 +6,11 @@ export const authEvents = new EventTarget();
 
 const getAuthHeaders = () => {
   const key = localStorage.getItem('uroboros_api_key');
-  return key ? { 'Authorization': `Bearer ${key}` } : {};
+  const ws = localStorage.getItem('uroboros_workspace') || 'Default';
+  return {
+    ...(key ? { 'Authorization': `Bearer ${key}` } : {}),
+    'X-Workspace': ws
+  };
 };
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {

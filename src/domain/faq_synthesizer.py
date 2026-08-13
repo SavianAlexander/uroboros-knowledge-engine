@@ -36,7 +36,7 @@ def synthesize_faq_from_queries(
     faqs = []
     for norm_key, count in sorted_queries[:5]:
         q_display = display_map[norm_key]
-        formatted_question = q_display[0].upper() + q_display[1:] if q_display else q_display
+        formatted_question = ' '.join([w.capitalize() for w in q_display.split()]) if q_display else q_display
         faqs.append({
             "question": formatted_question,
             "query_frequency": count,

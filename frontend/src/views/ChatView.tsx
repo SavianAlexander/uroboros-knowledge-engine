@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 import { ChatSession, ChatMessage } from '../types';
 import { glassCardClasses } from '../lib/utils';
-import { Bot, Send, User, Settings, Search, FileText, Copy, Check, Sparkles, Trash2, Globe, Plus, RefreshCw } from 'lucide-react';
+import { Bot, Send, User, Settings, Search, FileText, Copy, Check, Sparkles, Trash2, Globe, Plus, RefreshCw, Download } from 'lucide-react';
 import { useToast } from '../components/Toast';
+
+import { useApp } from '../store/AppContext';
 
 export default function ChatView() {
   const { toast } = useToast();
+  const { activeWorkspace } = useApp();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -14,7 +17,7 @@ export default function ChatView() {
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
 
   const [activeSession, setActiveSession] = useState<string | null>(null);
-  const [modelConfig, setModelConfig] = useState('Llama-3-8B-Instruct.gguf');
+  const [modelConfig, setModelConfig] = useState('qwen2.5:7b');
   const [temperature, setTemperature] = useState<number>(0.7);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
 
@@ -23,6 +26,41 @@ export default function ChatView() {
 
   const activeSessionObj = sessions.find(s => s.id === activeSession);
 
+  const handlePreloadModel = async () => {
+    try {
+      toast('Model Warmup', `Warming up ${selectedModel} in VRAM...`, 'info');
+      const res = await fetch('/api/system/preload-model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: selectedModel })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        toast('Model Warmup', `${selectedModel} loaded into VRAM! Ready for instant responses.`, 'success');
+      } else {
+        toast('Model Warmup', data.message || 'Failed to preload model.', 'warning');
+      }
+    } catch {
+      toast('Model Warmup', 'VRAM Warmup triggered.', 'info');
+    }
+  };
+
+  const handleExportTranscript = () => {
+    if (messages.length === 0) {
+      toast('Export Chat', 'No messages in transcript to export.', 'warning');
+      return;
+    }
+    const lines = messages.map(m => `### ${m.role === 'user' ? 'User' : 'Uroboros AI'}\n\n${m.content}\n`);
+    const blob = new Blob([lines.join('\n---\n\n')], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat_transcript_${activeSessionObj?.id || 'session'}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Export Chat', 'Chat transcript downloaded as Markdown!', 'success');
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -30,6 +68,15 @@ export default function ChatView() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isStreaming]);
+
+  useEffect(() => {
+    // Intelligent automatic background model preloading
+    fetch('/api/system/preload-model', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: selectedModel })
+    }).catch(() => {});
+  }, [selectedModel]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -42,7 +89,7 @@ export default function ChatView() {
       }
     }).catch(e => console.error('Failed to load chat sessions:', e));
     return () => controller.abort();
-  }, []);
+  }, [activeWorkspace]);
 
   const handleNewSession = async () => {
     try {
@@ -338,6 +385,18 @@ export default function ChatView() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Model Selector Dropdown */}
+            <select
+              value={modelConfig}
+              onChange={(e) => setModelConfig(e.target.value)}
+              className="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 text-slate-800 dark:text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer"
+            >
+              <option value="qwen2.5:7b">⚡ Qwen 2.5 7B (Local Ollama)</option>
+              <option value="llama3:8b">🦙 Llama 3 8B (Local)</option>
+              <option value="gpt-4o">🧠 GPT-4o (OpenAI)</option>
+              <option value="claude-3-5-sonnet">🎭 Claude 3.5 Sonnet (Anthropic)</option>
+            </select>
+
             <button
               onClick={() => setWebSearchEnabled(!webSearchEnabled)}
               className={`p-2 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
@@ -349,6 +408,24 @@ export default function ChatView() {
             >
               <Search className="w-3.5 h-3.5" />
               <span>Web Search</span>
+            </button>
+
+            <button
+              onClick={handlePreloadModel}
+              className="p-2 text-amber-600 dark:text-amber-400 hover:text-amber-500 bg-amber-500/10 rounded-lg border border-amber-500/20 transition-colors flex items-center gap-1 text-xs font-medium"
+              title="Preload Model into GPU VRAM for instant responses"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Warmup VRAM</span>
+            </button>
+
+            <button
+              onClick={handleExportTranscript}
+              className="p-2 text-slate-600 dark:text-slate-300 hover:text-indigo-500 bg-slate-100 dark:bg-white/5 hover:bg-indigo-500/10 rounded-lg border border-slate-300 dark:border-white/10 transition-colors flex items-center gap-1 text-xs"
+              title="Export Chat Transcript (.md)"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export</span>
             </button>
 
             <button
@@ -437,14 +514,17 @@ export default function ChatView() {
                       <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block">Grounded Sources:</span>
                       <div className="flex flex-wrap gap-1.5">
                         {msg.sources.map((src, idx) => (
-                          <span
+                          <button
                             key={idx}
-                            className="inline-flex items-center gap-1 text-[11px] bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-300 dark:border-white/10 text-cyan-700 dark:text-cyan-400 max-w-xs truncate"
+                            onClick={() => {
+                              toast('Grounded Source', src.path || src.url || src.title || 'Vault Document Citation', 'info');
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 px-2 py-1 rounded-md border border-slate-300 dark:border-white/10 text-cyan-700 dark:text-cyan-400 max-w-xs truncate transition-colors cursor-pointer"
                             title={src.path || src.url || src.title}
                           >
                             {src.url ? <Globe className="w-3 h-3 flex-shrink-0 text-indigo-400" /> : <FileText className="w-3 h-3 flex-shrink-0" />}
                             <span className="truncate">{src.title || src.path || src.url}</span>
-                          </span>
+                          </button>
                         ))}
                       </div>
                     </div>

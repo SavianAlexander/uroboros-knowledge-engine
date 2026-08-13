@@ -19,14 +19,23 @@ import time
 import ast
 import argparse
 
+# Add project root directory to sys.path for local brain RAG imports
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+if os.getcwd() not in sys.path:
+    sys.path.insert(0, os.getcwd())
+
 def run_cmd(cmd, cwd=None):
-    """Run a shell command and return (stdout, stderr, exit_code)."""
+    """Run a shell command and return (stdout, stderr, exit_code) with UTF-8 decoding resilience."""
     try:
         res = subprocess.run(
             cmd,
             shell=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=cwd or os.getcwd()
         )
         return res.stdout.strip(), res.stderr.strip(), res.returncode
@@ -752,6 +761,54 @@ def generate_release_notes(tag=None, publish=False):
         
     return 0
 
+def query_local_brain(query_text: str):
+    """Query local Uroboros Knowledge Engine & RAG brain directly from CLI."""
+    if not query_text:
+        return json.dumps({"status": "error", "message": "Query string required"})
+    try:
+        from src.domain.rag_engine import extract_advanced_rag_context
+        from src.core.model_manager import expand_query_with_llm
+        expanded = expand_query_with_llm(query_text)
+        context, citations = extract_advanced_rag_context(expanded, max_chunks=5)
+        return json.dumps({
+            "status": "success",
+            "query": query_text,
+            "expanded_query": expanded,
+            "citations_count": len(citations),
+            "citations": citations,
+            "local_context_preview": context[:1000] if context else ""
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+def neuro_ingest_cli(target_path: str):
+    """Ingest a file or directory into the local Neuro Knowledge Engine from CLI."""
+    if not target_path or not os.path.exists(target_path):
+        return json.dumps({"status": "error", "message": f"Target path '{target_path}' not found"})
+    try:
+        from know import index_directory
+        count = index_directory(target_path)
+        return json.dumps({"status": "success", "target": target_path, "indexed": count}, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+def tududi_sync_cli():
+    """Fetch active Tududi tasks directly from local SQLite database or API bridge."""
+    try:
+        db_path = os.environ.get("TUDUDI_DB_PATH", "tududi.sqlite")
+        if os.path.exists(db_path):
+            import sqlite3
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name, status, priority, due_date FROM tasks WHERE project_id=13 ORDER BY id DESC LIMIT 10")
+            rows = [dict(r) for r in cursor.fetchall()]
+            conn.close()
+            return json.dumps({"status": "success", "source": "local_sqlite", "active_tasks_count": len(rows), "tasks": rows}, indent=2)
+        return json.dumps({"status": "notice", "message": "Tududi local database sync ready via MCP bridge"})
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
 def self_test():
     """Built-in assert-based unit test suite for github_bridge (Ponytail standard)."""
     print("=== Running Neuro Co-Pilot Bridge Self-Test Suite ===")
@@ -863,15 +920,26 @@ def main():
     subparsers.add_parser("detect_bloat", help="Audit Python codebase for deep nesting & over-engineering")
     subparsers.add_parser("dashboard", help="Render executive ASCII terminal dashboard")
     subparsers.add_parser("run_full_pipeline", help="Execute 1-click full Tri-Engine pipeline")
-    rel_parser = subparsers.add_parser("generate_release_notes", help="Generate Markdown release notes")
-    rel_parser.add_argument("--tag", help="Release tag name (e.g. v1.2.0)")
-    rel_parser.add_argument("--publish", action="store_true", help="Publish as GitHub Release via gh release create")
+    brain_parser = subparsers.add_parser("query_local_brain", help="Query local Uroboros Knowledge Engine & RAG brain")
+    brain_parser.add_argument("--query", required=True, help="Search query string for local RAG brain")
+    ingest_parser = subparsers.add_parser("neuro_ingest_cli", help="Ingest a file or directory into local Neuro Knowledge Engine")
+    ingest_parser.add_argument("--filepath", required=True, help="Target file or folder path to index")
+    subparsers.add_parser("tududi_sync_cli", help="Fetch active Tududi tasks directly from local SQLite database or API bridge")
     subparsers.add_parser("self_test", help="Run built-in assertion self-tests")
 
     args = parser.parse_args()
 
     if not args.command or args.command == "check_health":
         sys.exit(check_health())
+    elif args.command == "query_local_brain":
+        print(query_local_brain(args.query))
+        sys.exit(0)
+    elif args.command == "neuro_ingest_cli":
+        print(neuro_ingest_cli(args.filepath))
+        sys.exit(0)
+    elif args.command == "tududi_sync_cli":
+        print(tududi_sync_cli())
+        sys.exit(0)
     elif args.command == "sync_issues":
         sys.exit(sync_issues())
     elif args.command == "diagnose_ci":
