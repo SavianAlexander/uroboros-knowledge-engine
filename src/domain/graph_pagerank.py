@@ -15,12 +15,13 @@ def compute_graph_pagerank(damping_factor: float = 0.85, max_iterations: int = 2
     Zero-dependency stdlib implementation.
     """
     try:
+        from src.infrastructure.database import get_db_connection, DB_FILE, init_db
         try:
             with get_db_connection(DB_FILE) as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT id, filename, filepath, content FROM files")
                 rows = cursor.fetchall()
-        except (sqlite3.OperationalError, sqlite3.DatabaseError):
+        except (sqlite3.OperationalError, sqlite3.DatabaseError, NameError):
             init_db()
             with get_db_connection(DB_FILE) as conn:
                 cursor = conn.cursor()
@@ -44,7 +45,8 @@ def compute_graph_pagerank(damping_factor: float = 0.85, max_iterations: int = 2
             content = r[3] or ""
             matches = RE_WIKILINKS.findall(content)
             for m in matches:
-                target_title = m.strip().lower()
+                target_str = m[0] if isinstance(m, tuple) else m
+                target_title = target_str.strip().lower()
                 if target_title in title_to_id:
                     v = title_to_id[target_title]
                     if u != v:

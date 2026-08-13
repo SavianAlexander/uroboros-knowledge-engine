@@ -113,6 +113,8 @@ def reset_db_connections():
     if hasattr(_local, "connection"):
         _local.connection = None
     _local.connection_path = None
+    global _initialized_dbs
+    _initialized_dbs.clear()
 
 _db_write_lock = threading.Lock()
 
