@@ -3,7 +3,8 @@ import ast
 from pathlib import Path
 import sys
 
-log_path = r'C:\Users\Administrator\.gemini\antigravity\brain\4ed55087-465a-4302-9ead-cda8df953596\.system_generated\tasks\task-358.log'
+import sys
+log_path = sys.argv[1] if len(sys.argv) > 1 else "pytest.log"
 with open(log_path, 'r', encoding='utf-8') as f:
     content = f.read()
 

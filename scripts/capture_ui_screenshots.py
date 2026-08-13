@@ -30,7 +30,7 @@ def main():
             import logging; logging.getLogger(__name__).exception("Swallowed error in capture_ui_screenshots.py")
             time.sleep(0.2)
 
-    output_dir = r"C:\Users\Administrator\.gemini\antigravity\brain\065e5556-24ac-45d3-a2ee-8e2dfc5a2eca"
+    output_dir = os.environ.get("ARTIFACT_DIR", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "docs", "ux_journey")))
     os.makedirs(output_dir, exist_ok=True)
 
     with sync_playwright() as p:

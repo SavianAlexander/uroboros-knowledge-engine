@@ -829,7 +829,7 @@ python know.py reset
 ### 21.2 Resumable Job Batch Indexer (`batch_index.py`)
 ```bash
 # Index a directory with 4 parallel worker threads and a 50-file job limit
-python batch_index.py "C:\Users\Admin\Documents" -n 50 -w 4
+python batch_index.py "./docs" -n 50 -w 4
 ```
 
 ### 21.3 Developer Operations & Audit CLI Scripts (`scripts/`)

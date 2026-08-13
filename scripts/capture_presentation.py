@@ -15,7 +15,7 @@ import main
 
 # Target directories
 DOCS_DIR = os.path.join(root_dir, "docs", "ux_journey")
-ARTIFACT_DIR = r"C:\Users\Administrator\.gemini\antigravity\brain\065e5556-24ac-45d3-a2ee-8e2dfc5a2eca"
+ARTIFACT_DIR = os.environ.get("ARTIFACT_DIR", os.path.join(root_dir, "docs", "artifacts"))
 os.makedirs(DOCS_DIR, exist_ok=True)
 os.makedirs(ARTIFACT_DIR, exist_ok=True)
 

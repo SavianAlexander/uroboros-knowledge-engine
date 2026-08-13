@@ -19,11 +19,11 @@ SVG_ASSETS = {
 }
 
 def generate():
-    dirs = [
-        r"C:\Users\Administrator\Desktop\Neuro Alexander\src\assets",
-        r"C:\Users\Administrator\Desktop\Neuro Alexander\src\assets\icons"
+    target_dirs = [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "assets")),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "assets", "icons"))
     ]
-    for d in dirs:
+    for d in target_dirs:
         os.makedirs(d, exist_ok=True)
         for name, content in SVG_ASSETS.items():
             path = os.path.join(d, name)
