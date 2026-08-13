@@ -433,6 +433,36 @@ def revert_file_revision_endpoint(req: RevertRequest):
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/api/file/ocr-coords")
+def get_file_ocr_coords_endpoint(path: str, term: Optional[str] = None):
+    """Retrieve spatial OCR bounding box coordinates for a document, with optional keyword filtering."""
+    verify_path_containment(path)
+    norm_path = os.path.abspath(path)
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM files WHERE filepath = ? OR filepath = ?", (norm_path, path))
+            row = cursor.fetchone()
+            if not row:
+                return {"filepath": path, "words_count": 0, "coords": []}
+            file_id = row[0]
+            if term:
+                cursor.execute(
+                    "SELECT word, x, y, w, h FROM ocr_coords WHERE file_id = ? AND word LIKE ? LIMIT 500",
+                    (file_id, f"%{term}%")
+                )
+            else:
+                cursor.execute(
+                    "SELECT word, x, y, w, h FROM ocr_coords WHERE file_id = ? LIMIT 1000",
+                    (file_id,)
+                )
+            coords = [{"word": r[0], "x": r[1], "y": r[2], "w": r[3], "h": r[4]} for r in cursor.fetchall()]
+            return {"filepath": path, "words_count": len(coords), "coords": coords}
+    except Exception as e:
+        logger.exception(f"Swallowed error in files.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/api/file/insights")
 @router.post("/api/file/insights")
 def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: Optional[str] = None):

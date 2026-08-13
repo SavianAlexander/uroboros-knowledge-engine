@@ -197,7 +197,11 @@ def search_endpoint(
     cache_key = f"{raw_q}:{mode}:{tag}:{tag_mode}"
     cache_obj = _get_global_cache()
     if cache_obj is not None:
-        cached_val = cache_obj.get(cache_key)
+        cached_val = None
+        if hasattr(cache_obj, "get_semantic"):
+            cached_val, sim = cache_obj.get_semantic(cache_key)
+        else:
+            cached_val = cache_obj.get(cache_key)
         if cached_val is not None:
             return cached_val
 
@@ -345,7 +349,10 @@ def search_endpoint(
             if cache_obj:
                 is_indexing = any(t.name in ("IndexerThread", "WatcherThread") and t.is_alive() for t in threading.enumerate())
                 if not (is_indexing and len(results) == 0):
-                    cache_obj.set(cache_key, res_dict)
+                    if hasattr(cache_obj, "set_semantic"):
+                        cache_obj.set_semantic(cache_key, res_dict)
+                    else:
+                        cache_obj.set(cache_key, res_dict)
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
@@ -542,6 +549,42 @@ def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: b
                 for (d1, d2), shared_count in pair_shared_counts.items()
             ]
             edges.extend(cluster_edges)
+
+    # 4. Semantic Similarity Edges (Vector Cosine Similarity Graph RAG)
+    if include_clusters:
+        try:
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT file_id, embedding_json FROM file_chunks 
+                    WHERE chunk_index = 0 AND embedding_json IS NOT NULL AND length(embedding_json) > 10
+                    LIMIT 200
+                """)
+                emb_rows = cursor.fetchall()
+                parsed_embs = []
+                for fid, emb_j in emb_rows:
+                    if fid in doc_nid_list:
+                        try:
+                            parsed_embs.append((fid, json.loads(emb_j)))
+                        except Exception:
+                            pass
+
+                from src.core.state import cosine_similarity
+                for i in range(len(parsed_embs)):
+                    fid1, vec1 = parsed_embs[i]
+                    for j in range(i + 1, min(i + 15, len(parsed_embs))):
+                        fid2, vec2 = parsed_embs[j]
+                        sim = cosine_similarity(vec1, vec2)
+                        if sim >= 0.85:
+                            edges.append({
+                                "source": doc_nid_list[fid1],
+                                "target": doc_nid_list[fid2],
+                                "type": "semantic_similarity",
+                                "relation": "semantic_similarity",
+                                "weight": round(sim, 2)
+                            })
+        except Exception:
+            pass
 
     from src.domain.louvain_clustering import apply_louvain_communities
     nodes = apply_louvain_communities(nodes, edges)

@@ -5,6 +5,7 @@ import os
 import sys
 import platform
 import sqlite3
+import threading
 import logging
 import urllib.request
 from fastapi import APIRouter, HTTPException
@@ -78,6 +79,33 @@ def get_system_env():
         "ANTHROPIC_API_KEY": os.environ.get("ANTHROPIC_API_KEY", ""),
         "OLLAMA_HOST": os.environ.get("OLLAMA_HOST", "http://localhost:11434/api")
     }
+
+@router.get("/api/watcher/status")
+def get_watcher_status():
+    """Retrieve background file watcher daemon status."""
+    from src.infrastructure.watcher import start_active_folder_watcher
+    from src.core.config import ACTIVE_DIR
+    is_alive = any(t.name == "WatcherThread" and t.is_alive() for t in threading.enumerate())
+    return {
+        "active": getattr(start_active_folder_watcher, "active", False) and is_alive,
+        "watched_directory": ACTIVE_DIR,
+        "thread_alive": is_alive
+    }
+
+@router.post("/api/watcher/start")
+def start_watcher():
+    """Start background directory watcher daemon."""
+    from src.infrastructure.watcher import start_active_folder_watcher
+    from src.core.config import ACTIVE_DIR
+    start_active_folder_watcher(ACTIVE_DIR)
+    return {"status": "started", "watched_directory": ACTIVE_DIR}
+
+@router.post("/api/watcher/stop")
+def stop_watcher():
+    """Stop background directory watcher daemon."""
+    from src.infrastructure.watcher import start_active_folder_watcher
+    start_active_folder_watcher.active = False
+    return {"status": "stopped"}
 
 @router.get("/metrics")
 def prometheus_metrics_endpoint():

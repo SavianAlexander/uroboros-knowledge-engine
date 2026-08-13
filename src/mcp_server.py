@@ -122,11 +122,89 @@ async def handle_call_tool(
             return [types.TextContent(type="text", text=f"Triggered {event_type} workflow.\nResponse: {res}")]
             
         raise ValueError(f"Unknown tool: {name}")
-            
     except httpx.HTTPStatusError as e:
         return [types.TextContent(type="text", text=f"HTTP Error: {e.response.text}")]
     except Exception as e:
         return [types.TextContent(type="text", text=f"Error: {str(e)}")]
+
+@server.list_resources()
+async def handle_list_resources() -> list[types.Resource]:
+    return [
+        types.Resource(
+            uri="neuro://vault/stats",
+            name="Knowledge Vault Statistics",
+            description="High-level indexing statistics, document count, and database size.",
+            mimeType="application/json",
+        ),
+        types.Resource(
+            uri="neuro://vault/recent",
+            name="Recently Indexed Documents",
+            description="List of recently ingested and modified documents in the vault.",
+            mimeType="application/json",
+        ),
+    ]
+
+@server.read_resource()
+async def handle_read_resource(uri: str) -> str:
+    if uri == "neuro://vault/stats":
+        res = await make_request("GET", "/api/health")
+        return json.dumps(res, indent=2)
+    if uri == "neuro://vault/recent":
+        res = await make_request("GET", "/api/file/tree")
+        return json.dumps(res, indent=2)
+    raise ValueError(f"Unknown resource URI: {uri}")
+
+@server.list_prompts()
+async def handle_list_prompts() -> list[types.Prompt]:
+    return [
+        types.Prompt(
+            name="analyze_document",
+            description="Analyze and extract key architectural insights from an ingested document.",
+            arguments=[
+                types.PromptArgument(name="filepath", description="Absolute or relative path of the file", required=True)
+            ],
+        ),
+        types.Prompt(
+            name="search_and_synthesize",
+            description="Search the knowledge vault and synthesize an executive brief.",
+            arguments=[
+                types.PromptArgument(name="topic", description="The search topic or question", required=True)
+            ],
+        ),
+    ]
+
+@server.get_prompt()
+async def handle_get_prompt(name: str, arguments: dict | None) -> types.GetPromptResult:
+    args = arguments or {}
+    if name == "analyze_document":
+        fp = args.get("filepath", "")
+        return types.GetPromptResult(
+            description=f"Analyze document: {fp}",
+            messages=[
+                types.PromptMessage(
+                    role="user",
+                    content=types.TextContent(
+                        type="text",
+                        text=f"Please analyze the document located at '{fp}' in the Uroboros Knowledge Vault. Extract key findings, concepts, and architectural takeaways."
+                    )
+                )
+            ]
+        )
+    if name == "search_and_synthesize":
+        topic = args.get("topic", "")
+        return types.GetPromptResult(
+            description=f"Synthesize brief on {topic}",
+            messages=[
+                types.PromptMessage(
+                    role="user",
+                    content=types.TextContent(
+                        type="text",
+                        text=f"Query the knowledge engine for '{topic}' and synthesize an executive summary with citations."
+                    )
+                )
+            ]
+        )
+    raise ValueError(f"Unknown prompt name: {name}")
 
 async def main():
     if not HAS_MCP:

@@ -42,7 +42,10 @@ FILE_DOMAIN_MAPPING = {
     "tests/test_domain_p2p_sync.py": ["DomainP2PSync"],
     "scripts/backup_db.py": ["DomainBackupAuthTheme"],
     "src/shared/auth.py": ["DomainBackupAuthTheme"],
-    "tests/test_domain_backup_auth_theme.py": ["DomainBackupAuthTheme"]
+    "tests/test_domain_backup_auth_theme.py": ["DomainBackupAuthTheme"],
+    "src/core/state.py": ["DomainAdvancedFeatures"],
+    "scripts/benchmark_engine.py": ["DomainAdvancedFeatures"],
+    "tests/test_domain_advanced_features.py": ["DomainAdvancedFeatures"]
 }
 
 DOMAIN_TEST_MODULES = [
@@ -78,10 +81,18 @@ DOMAIN_TEST_MODULES = [
     "tests.test_e2e_analytics_graph_workflows",
     "tests.test_domain_ocr_transcription",
     "tests.test_domain_p2p_sync",
-    "tests.test_domain_backup_auth_theme"
+    "tests.test_domain_backup_auth_theme",
+    "tests.test_domain_advanced_features"
 ]
 
 BUG_RELATION_TAXONOMY = {
+    "DomainAdvancedFeatures": [
+        {"test": "test_01_cosine_similarity_edge_cases", "component": "src/core/state.py", "prevents": "Vector cosine similarity math anomalies or zero division"},
+        {"test": "test_02_semantic_query_cache", "component": "src/core/state.py", "prevents": "Semantic query cache hit / threshold retrieval failure"},
+        {"test": "test_03_file_watcher_endpoints", "component": "src/app/routers/health.py", "prevents": "Directory watcher daemon status/start/stop lifecycle error"},
+        {"test": "test_04_ocr_coords_endpoint", "component": "src/app/routers/files.py", "prevents": "OCR spatial bounding box coordinate lookup/filtering error"},
+        {"test": "test_05_micro_benchmark_execution", "component": "scripts/benchmark_engine.py", "prevents": "Performance micro-benchmarking telemetry failure"}
+    ],
     "DomainBackupAuthTheme": [
         {"test": "test_01_sqlite_online_backup_and_restore", "component": "scripts/backup_db.py", "prevents": "Online SQLite live backup or point-in-time restore failure"},
         {"test": "test_02_verify_api_key_auth_guard_toggle", "component": "src/shared/auth.py", "prevents": "Configurable API key or Bearer token auth guard validation error"},
