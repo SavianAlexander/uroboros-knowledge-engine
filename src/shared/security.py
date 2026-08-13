@@ -78,7 +78,7 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
         except ValueError:
             pass
 
-        if not is_inside_base:
+        if not is_inside_base and base == BASE_DIR:
             temp_dirs = [Path(tempfile.gettempdir()).resolve(), Path("/tmp").resolve(), Path("/var/tmp").resolve()]
             for td in temp_dirs:
                 try:

@@ -89,6 +89,7 @@ class TestAdversarialI3(unittest.TestCase):
             ("general.txt", "General document about gravity in astrophysics context.")
         ]
 
+        os.makedirs(cls.sandbox, exist_ok=True)
         for fname, content in files_data:
             fpath = cls.sandbox / fname
             fpath.write_text(content, encoding="utf-8")

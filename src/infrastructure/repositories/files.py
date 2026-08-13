@@ -3,7 +3,8 @@ import time
 import hashlib
 import sqlite3
 from typing import Dict, List, Any, Optional
-from src.infrastructure.database import get_db, get_db_connection, get_db_write_connection, DB_FILE, DB_TIMEOUT
+import src.infrastructure.database as db_infra
+from src.infrastructure.database import get_db, get_db_connection, get_db_write_connection
 
 from pathlib import Path
 
@@ -11,7 +12,7 @@ def save_file_revision(filepath: str, content: str):
     """Save a snapshot of file content into file_revisions with safe connection management."""
     norm_path = os.path.abspath(filepath)
     content_hash = hashlib.sha256(content.encode("utf-8", errors="ignore")).hexdigest()
-    with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
+    with get_db_write_connection(db_infra.DB_FILE, timeout=db_infra.DB_TIMEOUT) as conn:
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS file_revisions (
@@ -39,7 +40,7 @@ def get_file_revisions(filepath: str) -> List[Dict[str, Any]]:
     """Retrieve last 5 revision snapshots for a file with safe connection management."""
     norm_path = os.path.abspath(filepath)
     fname = os.path.basename(norm_path)
-    with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
+    with get_db_connection(db_infra.DB_FILE, timeout=db_infra.DB_TIMEOUT) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("""
@@ -62,7 +63,7 @@ def get_file_revisions(filepath: str) -> List[Dict[str, Any]]:
 def revert_file_revision(filepath: str, revision_id: int) -> bool:
     """Revert a file to a specific revision ID snapshot."""
     norm_path = os.path.abspath(filepath)
-    with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
+    with get_db_write_connection(db_infra.DB_FILE, timeout=db_infra.DB_TIMEOUT) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("SELECT content FROM file_revisions WHERE id = ?", (revision_id,))
