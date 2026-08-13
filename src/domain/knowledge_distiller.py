@@ -29,8 +29,11 @@ def export_knowledge_distillation_dataset(
     for log in rag_interaction_logs:
         if not isinstance(log, dict):
             continue
-        query = str(log.get("query") or "")
-        answer = str(log.get("answer") or "")
+        query = str(log.get("query") or "").strip()
+        answer = str(log.get("answer") or "").strip()
+        if not query or not answer:
+            continue
+
         raw_contexts = log.get("contexts")
         if isinstance(raw_contexts, list):
             context = " ".join(str(c) for c in raw_contexts if c is not None)
