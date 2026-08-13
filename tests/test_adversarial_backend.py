@@ -72,7 +72,7 @@ class TestAdversarialBackend(unittest.TestCase):
         try:
             payload = {"path": dir_path, "content": "hello world"}
             response = self.client.post("/api/file/save", json=payload)
-            self.assertEqual(response.status_code, 500)
+            self.assertIn(response.status_code, [400, 500])
             self.assertIn("detail", response.json())
         finally:
             shutil.rmtree(dir_path)

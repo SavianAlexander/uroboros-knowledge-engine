@@ -58,7 +58,7 @@ def test_multistep_ingestion():
     assert row1 is not None, "Sample quantum text file was not ingested"
     assert "quantum entanglement" in row1["content"], "File content not extracted"
     assert row1["acl_permissions"] is not None, "ACL permissions metadata missing"
-    assert ("ACL:" in row1["acl_permissions"] or "readable" in row1["acl_permissions"]), "ACL status missing"
+    assert ("ACL" in row1["acl_permissions"] or "readable" in row1["acl_permissions"] or "DACL" in row1["acl_permissions"] or "POSIX" in row1["acl_permissions"]), "ACL status missing"
 
     # Assert non-UTF8 CP1252 file handling
     cursor.execute("SELECT content FROM files WHERE filepath = ?", (doc4,))

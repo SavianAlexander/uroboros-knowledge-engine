@@ -158,6 +158,10 @@ def save_file_endpoint(req: FileSaveRequest):
 
         index_directory(os.path.dirname(norm_path))
         return {"status": "success", "filepath": norm_path, "path": norm_path}
+    except HTTPException:
+        raise
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
