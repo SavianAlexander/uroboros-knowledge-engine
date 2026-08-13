@@ -14,13 +14,16 @@ def compare_text_content(text_a: str, text_b: str, label_a: str = "Version A", l
     lines_a = str(text_a or "").splitlines()
     lines_b = str(text_b or "").splitlines()
 
+    safe_label_a = str(label_a or "Version A")
+    safe_label_b = str(label_b or "Version B")
+
     matcher = difflib.SequenceMatcher(None, lines_a, lines_b)
     similarity_ratio = round(matcher.ratio(), 4)
 
     diff_generator = difflib.unified_diff(
         lines_a, lines_b,
-        fromfile=label_a,
-        tofile=label_b,
+        fromfile=safe_label_a,
+        tofile=safe_label_b,
         lineterm=""
     )
     diff_lines = list(diff_generator)
