@@ -170,7 +170,7 @@ class TestAdversarialI3(unittest.TestCase):
         cache_key = "notexistinanyfile:keyword:None:OR"
         self.assertIsNotNone(main.GLOBAL_QUERY_CACHE.get(cache_key))
 
-        mock_indexer = threading.Thread(name="IndexerThread", target=lambda: threading.Event().wait(0.5))
+        mock_indexer = threading.Thread(name="IndexerThread", target=lambda: threading.Event().wait(2.0))
         mock_indexer.start()
 
         main.GLOBAL_QUERY_CACHE.invalidate()

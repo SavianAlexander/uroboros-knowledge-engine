@@ -198,20 +198,23 @@ def search_post_endpoint(payload: Dict[str, Any] = Body(...)):
     return res
 
 
-@router.get("/api/search")
-
 def _batch_fetch_tags(file_ids):
     tags_map = {fid: [] for fid in file_ids}
     if not file_ids:
         return tags_map
     with get_db() as conn:
         cursor = conn.cursor()
-        placeholders = ",".join(["?"] * len(file_ids))
-        cursor.execute(f"SELECT file_id, tag FROM tags WHERE file_id IN ({placeholders})", tuple(file_ids))
-        for row in cursor.fetchall():
-            tags_map[row[0]].append(row[1].lower())
+        chunk_size = 500
+        for i in range(0, len(file_ids), chunk_size):
+            chunk = file_ids[i:i + chunk_size]
+            placeholders = ",".join(["?"] * len(chunk))
+            cursor.execute(f"SELECT file_id, tag FROM tags WHERE file_id IN ({placeholders})", tuple(chunk))
+            for row in cursor.fetchall():
+                tags_map[row[0]].append(str(row[1]).lower())
     return tags_map
 
+
+@router.get("/api/search")
 @router.post("/api/search")
 def search_endpoint(
     query: Optional[str] = None,

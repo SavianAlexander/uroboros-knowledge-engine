@@ -85,7 +85,7 @@ def generate_hyde_expansion(query: str) -> str:
 
     return expanded
 
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 def rrf_rerank(fts_results: List[Dict[str, Any]], vector_results: List[Dict[str, Any]], k: int = 60, alpha: float = 0.5) -> List[Dict[str, Any]]:
     """
@@ -111,13 +111,79 @@ def rrf_rerank(fts_results: List[Dict[str, Any]], vector_results: List[Dict[str,
         if key not in item_map:
             item_map[key] = dict(item)
 
-    sorted_keys = sorted(scores.keys(), key=lambda x: scores[x], reverse=True)
-    fused_results = []
-    for key in sorted_keys:
-        item = item_map[key]
-        item["rrf_score"] = round(scores[key], 6)
-        fused_results.append(item)
-    return fused_results
+def okapi_bm25_rerank(documents: List[Dict[str, Any]], query: str, k1: float = 1.5, b: float = 0.75, decay_lambda: float = 0.0001) -> List[Dict[str, Any]]:
+    """
+    Heavy Upgrade: Native Zero-Dependency Okapi BM25 search ranking engine with term saturation (k1=1.5),
+    document length normalization (b=0.75), and exponential recency time-decay.
+    # ponytail: zero-dependency Okapi BM25 algorithm; ceiling: in-memory candidate re-ranking; upgrade: SQLite FTS5 custom C auxiliary module if indexing > 1M documents
+    """
+    if not documents or not query:
+        return documents or []
+
+    query_terms = [w.lower() for w in _RE_WORDS.findall(sanitize_fts_query(query))]
+    if not query_terms:
+        return documents
+
+    N = len(documents)
+    doc_tokens = []
+    doc_lengths = []
+
+    for doc in documents:
+        content = doc.get("content") or doc.get("snippet") or doc.get("text") or ""
+        tokens = [w.lower() for w in _RE_WORDS.findall(str(content))]
+        doc_tokens.append(tokens)
+        doc_lengths.append(len(tokens))
+
+    avgdl = (sum(doc_lengths) / N) if N > 0 else 1.0
+    if avgdl == 0:
+        avgdl = 1.0
+
+    # Calculate Inverse Document Frequency (IDF) for query terms
+    df = defaultdict(int)
+    for tokens in doc_tokens:
+        seen = set(tokens)
+        for term in query_terms:
+            if term in seen:
+                df[term] += 1
+
+    idf = {}
+    for term in query_terms:
+        n_q = df[term]
+        idf[term] = math.log((N - n_q + 0.5) / (n_q + 0.5) + 1.0)
+
+    now = time.time()
+    scored_docs = []
+
+    for idx, doc in enumerate(documents):
+        tokens = doc_tokens[idx]
+        doc_len = doc_lengths[idx]
+        tf = Counter(tokens)
+
+        bm25_score = 0.0
+        for term in query_terms:
+            freq = tf[term]
+            if freq > 0:
+                numerator = freq * (k1 + 1.0)
+                denominator = freq + k1 * (1.0 - b + b * (doc_len / avgdl))
+                bm25_score += idf[term] * (numerator / denominator)
+
+        # Exponential recency decay multiplier e^(-lambda * delta_t)
+        modified_at = doc.get("modified_at") or now
+        if isinstance(modified_at, str):
+            try:
+                modified_at = float(modified_at)
+            except ValueError:
+                modified_at = now
+        age_seconds = max(0.0, now - float(modified_at))
+        decay_factor = math.exp(-decay_lambda * (age_seconds / 86400.0))
+
+        final_score = round(bm25_score * decay_factor, 6)
+        doc_copy = dict(doc)
+        doc_copy["okapi_bm25_score"] = final_score
+        scored_docs.append(doc_copy)
+
+    scored_docs.sort(key=lambda d: d["okapi_bm25_score"], reverse=True)
+    return scored_docs
 
 # Alias for backward compatibility
 reciprocal_rank_fusion = rrf_rerank
