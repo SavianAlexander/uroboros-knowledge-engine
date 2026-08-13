@@ -14,12 +14,17 @@ def rerank_sparse_dense_fusion(
     """
     Reranks chunks using dynamic alpha (sparse), beta (dense), and gamma (ColBERT) scalars.
     """
-    if not candidate_chunks:
+    safe_query = str(query or "")
+    if not candidate_chunks or not isinstance(candidate_chunks, list):
+        return {"reranked_chunks": [], "status": "empty_input"}
+
+    valid_chunks = [c for c in candidate_chunks if isinstance(c, dict)]
+    if not valid_chunks:
         return {"reranked_chunks": [], "status": "empty_input"}
 
     # Dynamic scalar computation based on query characteristics
-    is_code = "def " in query or "class " in query or "import " in query
-    is_legal = "policy" in query.lower() or "contract" in query.lower()
+    is_code = "def " in safe_query or "class " in safe_query or "import " in safe_query
+    is_legal = "policy" in safe_query.lower() or "contract" in safe_query.lower()
 
     if is_code:
         alpha, beta, gamma = 0.5, 0.2, 0.3  # High lexical precision for code
@@ -29,7 +34,7 @@ def rerank_sparse_dense_fusion(
         alpha, beta, gamma = 0.3, 0.4, 0.3  # Balanced hybrid default
 
     reranked = []
-    for chunk in candidate_chunks:
+    for chunk in valid_chunks:
         text = chunk.get("text", "")
         sparse_score = chunk.get("sparse_score", 0.5)
         dense_score = chunk.get("dense_score", 0.6)

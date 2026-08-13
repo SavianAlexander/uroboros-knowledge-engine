@@ -44,7 +44,7 @@ def evaluate_condition(
                             if actual_score < expected_score:
                                 return False
                         except (ValueError, TypeError):
-                            pass
+                            return False
                     elif key in ("pattern", "glob", "file_pattern"):
                         target_str = str(payload.get("filepath", payload.get("filename", "")))
                         if not fnmatch.fnmatch(target_str, str(expected)):

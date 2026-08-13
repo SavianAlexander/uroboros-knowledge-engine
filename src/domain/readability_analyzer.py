@@ -40,7 +40,7 @@ def analyze_readability(text: str) -> Dict[str, Any]:
     Calculates Flesch Reading Ease, Flesch-Kincaid Grade Level, and Sentiment Polarity.
     Zero-dependency stdlib implementation.
     """
-    if not text or not text.strip():
+    if not text or not isinstance(text, str) or not text.strip():
         return {
             "flesch_reading_ease": 100.0,
             "flesch_kincaid_grade": 0.0,
