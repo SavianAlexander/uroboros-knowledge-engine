@@ -25,7 +25,8 @@ def compute_jaccard_distance(s1_words: set, s2_words: set) -> float:
         return 0.0
     intersection = s1_words.intersection(s2_words)
     similarity = len(intersection) / float(len(union))
-    return round(1.0 - similarity, 4)
+    raw_dist = 1.0 - similarity
+    return round(max(0.0, min(1.0, raw_dist)), 4)
 
 
 def chunk_by_semantic_entropy(

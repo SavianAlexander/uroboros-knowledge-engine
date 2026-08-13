@@ -16,16 +16,18 @@ def query_episodic_rag(query: str, session_id: Optional[str] = None) -> Dict[str
     2. Episodic Memory Pass -> Historical user decisions and preferences across sessions.
     # ponytail: session-aware episodic memory RAG
     """
-    formatted_ctx, snippets = extract_advanced_rag_context(query, max_chunks=3)
+    safe_query = str(query or "")
+    formatted_ctx, snippets = extract_advanced_rag_context(safe_query, max_chunks=3)
     memories = list_memories()
 
     # Match query keywords against historical memory keys
-    query_terms = set(w.lower() for w in query.split() if len(w) > 3)
+    query_terms = set(w.lower() for w in safe_query.split() if len(w) > 3)
     relevant_memories = []
-    for m in memories:
-        k_terms = set(m["key"].lower().split("_"))
-        if query_terms.intersection(k_terms):
-            relevant_memories.append(m)
+    for m in (memories or []):
+        if isinstance(m, dict) and m.get("key"):
+            k_terms = set(str(m["key"]).lower().split("_"))
+            if query_terms.intersection(k_terms):
+                relevant_memories.append(m)
 
     return {
         "status": "success",
