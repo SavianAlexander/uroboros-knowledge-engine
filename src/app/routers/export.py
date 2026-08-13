@@ -48,21 +48,19 @@ def export_results_endpoint(query: str = "", format: str = "csv"):
     try:
         with get_db() as conn:
             cursor = conn.cursor()
+            rows = []
             if query:
-                clean_q = sanitise_fts_query(query)
                 try:
                     cursor.execute(
                         "SELECT files.filepath, files.filename, files.file_size, files.modified_at FROM fts_files JOIN files ON fts_files.filepath = files.filepath WHERE fts_files MATCH ? LIMIT 100",
-                        (clean_q,),
+                        (sanitise_fts_query(query),),
                     )
                     rows = cursor.fetchall()
-                except (KeyboardInterrupt, MemoryError, SystemExit):
-                    raise
                 except Exception:
-                    import logging; logging.getLogger(__name__).exception("Swallowed error in export.py")
-                    cursor.execute("SELECT filepath, filename, file_size, modified_at FROM files LIMIT 100")
-                    rows = cursor.fetchall()
-            else:
+                    import logging; logging.getLogger(__name__).exception("Swallowed error in export.py: FTS query fallback triggered")
+                    pass # Fallback below
+
+            if not rows:
                 cursor.execute("SELECT filepath, filename, file_size, modified_at FROM files LIMIT 100")
                 rows = cursor.fetchall()
 

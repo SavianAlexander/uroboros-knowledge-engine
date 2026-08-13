@@ -90,17 +90,16 @@ async def handle_call_tool(
                 
             return [types.TextContent(type="text", text=text_out)]
             
-        elif name == "neuro_ingest":
+        if name == "neuro_ingest":
             url = arguments.get("url")
             # Determine if it's a file or url
             if url.startswith("http"):
                 res = await make_request("POST", "/api/file/ingest-url", json={"url": url})
-            else:
-                return [types.TextContent(type="text", text=f"Local file ingestion via MCP requires explicit path routing. Use HTTP ingest for: {url}")]
-                
-            return [types.TextContent(type="text", text=f"Successfully ingested: {url}\nResponse: {res}")]
+                return [types.TextContent(type="text", text=f"Successfully ingested: {url}\nResponse: {res}")]
             
-        elif name == "neuro_trigger_workflow":
+            return [types.TextContent(type="text", text=f"Local file ingestion via MCP requires explicit path routing. Use HTTP ingest for: {url}")]
+            
+        if name == "neuro_trigger_workflow":
             event_type = arguments.get("event_type")
             payload = arguments.get("payload", {})
             
@@ -110,8 +109,7 @@ async def handle_call_tool(
             })
             return [types.TextContent(type="text", text=f"Triggered {event_type} workflow.\nResponse: {res}")]
             
-        else:
-            raise ValueError(f"Unknown tool: {name}")
+        raise ValueError(f"Unknown tool: {name}")
             
     except httpx.HTTPStatusError as e:
         return [types.TextContent(type="text", text=f"HTTP Error: {e.response.text}")]
