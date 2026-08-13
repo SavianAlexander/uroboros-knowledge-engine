@@ -50,7 +50,19 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
         base = Path(base_dir).resolve() if base_dir else get_active_sandbox_dir()
         import urllib.parse
         decoded_path = urllib.parse.unquote(str(path_str))
-        target = Path(decoded_path).resolve()
+        
+        # Check Windows reserved device names cross-platform
+        path_base_name = Path(decoded_path).name.split('.')[0].upper()
+        if path_base_name in {"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}:
+            raise HTTPException(status_code=400, detail="Reserved system device name detected")
+
+        # Check Windows drive letter or UNC paths on POSIX/Linux
+        if os.name != 'nt':
+            if re.match(r'^[a-zA-Z]:', decoded_path) or decoded_path.startswith("\\\\") or decoded_path.startswith("//"):
+                raise HTTPException(status_code=400, detail="External system path traversal detected")
+
+        normalized = decoded_path.replace("\\", "/")
+        target = Path(normalized).resolve()
         
         is_inside_base = False
         try:

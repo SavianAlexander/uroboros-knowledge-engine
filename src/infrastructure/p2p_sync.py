@@ -83,7 +83,7 @@ class P2PPeerBeacon:
             return
 
         try:
-            mreq = struct.pack("4sl", socket.inet_aton(MULTICAST_GROUP), socket.INADDR_ANY)
+            mreq = struct.pack("4s4s", socket.inet_aton(MULTICAST_GROUP), socket.inet_aton("0.0.0.0"))
             sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
