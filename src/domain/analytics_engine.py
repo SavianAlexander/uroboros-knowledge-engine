@@ -212,8 +212,10 @@ def get_tag_distribution(db_path: Optional[str] = None, pool_limit: int = 15) ->
                     cur.execute("CREATE TEMP TABLE IF NOT EXISTS tmp_cand_tags (file_id INTEGER, tag TEXT, PRIMARY KEY (file_id, tag)) WITHOUT ROWID")
                     cur.execute("DELETE FROM tmp_cand_tags")
 
-                    placeholders = ",".join("?" * len(candidate_tags))
-                    cur.execute(f"INSERT INTO tmp_cand_tags SELECT file_id, tag FROM tags WHERE tag IN ({placeholders})", candidate_tags)
+                    for i in range(0, len(candidate_tags), 500):
+                        chunk = candidate_tags[i:i + 500]
+                        placeholders = ",".join("?" * len(chunk))
+                        cur.execute(f"INSERT INTO tmp_cand_tags SELECT file_id, tag FROM tags WHERE tag IN ({placeholders})", chunk)
 
                     cur.execute("""
                         SELECT t1.tag as tag1, t2.tag as tag2, COUNT(*) as weight
