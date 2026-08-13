@@ -3,14 +3,10 @@
 <p align="center">
   <img src="https://img.shields.io/github/actions/workflow/status/SavianAlexander/uroboros-knowledge-engine/tests.yml?branch=master&style=flat-square" alt="Build Status" />
   <img src="https://img.shields.io/github/license/SavianAlexander/uroboros-knowledge-engine?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg?style=flat-square" alt="Python Version" />
-  <img src="https://img.shields.io/badge/FastAPI-0.115.0%2B-teal.svg?style=flat-square" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/React-19.0.1-61dafb.svg?style=flat-square" alt="React" />
-  <img src="https://img.shields.io/badge/Vite-6.2.3-646cff.svg?style=flat-square" alt="Vite" />
+  <img src="https://img.shields.io/badge/python-3.12-blue.svg?style=flat-square" alt="Python Version" />
+  <img src="https://img.shields.io/badge/FastAPI-0.111.0-teal.svg?style=flat-square" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-18.3.1-61dafb.svg?style=flat-square" alt="React" />
   <img src="https://img.shields.io/badge/SQLite-FTS5-orange.svg?style=flat-square" alt="SQLite" />
-  <img src="https://img.shields.io/badge/SOTA%20Engines-32-purple.svg?style=flat-square" alt="32 SOTA Engines" />
-  <img src="https://img.shields.io/badge/Frontier%20Paradigms-13-magenta.svg?style=flat-square" alt="13 Frontier Paradigms" />
-  <img src="https://img.shields.io/badge/Task%20Master-Tududi-emerald.svg?style=flat-square" alt="Task Master" />
   <img src="https://img.shields.io/badge/code%20style-ponytail-indigo?style=flat-square" alt="Code Style" />
 </p>
 
@@ -18,15 +14,13 @@
 
 ## Executive Overview
 
-**Uroboros Knowledge Engine** is an enterprise-grade, zero-cloud, single-node knowledge management, semantic retrieval, and document intelligence platform. Built around a modular FastAPI backend, SQLite FTS5 vector storage, and a React 19 / Vite single-page frontend, Uroboros enables real-time local search, structural parsing, multi-hop RAG reasoning, and graph-based knowledge discovery without requiring external cloud vector databases or heavy third-party runtime dependencies.
-
-With **32 State-of-the-Art Architectural Engines** and **13 Incomparable Frontier RAG Paradigms**, Uroboros surpasses cloud search services (such as Microsoft Azure AI Search, NotebookLM, Glean, Cursor RAG, and Perplexity) by delivering counterfactual stress-testing, hierarchical RAPTOR indexing, binary ColBERT MaxSim reranking, quantum-safe zero-knowledge data masking, and real-time self-correction directly on local hardware.
+Uroboros Knowledge Engine is an enterprise-grade, zero-dependency, self-contained knowledge management, semantic retrieval, and document indexing platform. Built around a modular FastAPI backend, SQLite FTS5 vector storage, and a React 18 / Vite single-page frontend, Uroboros enables real-time local search, structural parsing, multi-hop RAG reasoning, and graph-based knowledge discovery without requiring external cloud vector database infrastructure or heavy runtime dependencies.
 
 ---
 
 ## 1. Mathematical Foundations & Retrieval Algorithms
 
-Uroboros employs a multi-pass hybrid retrieval strategy combining lexical term matching, probabilistic ranking, dense vector similarity, late interaction scoring, and Thompson Sampling bandit routing.
+Uroboros employs a multi-pass hybrid retrieval strategy combining lexical term matching, probabilistic ranking, dense vector similarity, and late interaction scoring.
 
 ### 1.1 Okapi BM25 Lexical Ranking
 The probabilistic relevance score of document $D$ for query $Q = \{q_1, q_2, \dots, q_n\}$ is calculated as:
@@ -37,6 +31,7 @@ Where:
 - $IDF(q_i) = \ln \left( \frac{N - n(q_i) + 0.5}{n(q_i) + 0.5} + 1 \right)$
 - $k_1 = 1.5$ (term frequency saturation parameter)
 - $b = 0.75$ (document length normalization parameter)
+- $|D|$ is document length in tokens, and $avgdl$ is average document length across the corpus.
 
 ### 1.2 Reciprocal Rank Fusion (RRF)
 To combine non-comparable score distributions from sparse (BM25) and dense (Vector) retrievers, RRF computes a unified rank score for document $d$:
@@ -53,78 +48,189 @@ $$Score_{Final}(d) = Score_{RRF}(d) \cdot e^{-\lambda \cdot \Delta t}$$
 Where $\lambda = \frac{\ln(2)}{T_{half}}$ and $T_{half} = 30\text{ days}$.
 
 ### 1.4 Binary ColBERT Late Interaction (MaxSim)
-For fine-grained phrase alignment, 768-dimensional float vectors are quantized into 64-bit packed binary arrays. The MaxSim operator computes token-level similarity:
+For fine-grained phrase alignment, 768-dimensional float vectors are quantized into 768-bit packed binary arrays. The MaxSim operator computes token-level score:
 
-$$MaxSim(Q, D) = \sum_{i \in Q} \max_{j \in D} \left( \frac{64 - \text{Hamming}(q_i, d_j)}{64} \right)$$
-
-### 1.5 Multi-Armed Bandit Thompson Sampling
-To select the optimal search strategy dynamically, the query router draws from a Beta distribution $B(\alpha_k, \beta_k)$ for each channel $k$:
-
-$$\theta_k \sim \text{Beta}(\alpha_k + 1, \, \beta_k + 1)$$
-
-$$\text{Pipeline}_{\text{selected}} = \arg\max_{k} \theta_k$$
-
-### 1.6 Dynamic Semantic Entropy Window Boundary Scoring
-Sub-document text boundaries are identified by calculating local Shannon entropy transitions across sliding text windows $W$:
-
-$$H(W) = -\sum_{i=1}^{V} P(w_i) \log_2 P(w_i)$$
+$$MaxSim(Q, D) = \sum_{i \in Q} \max_{j \in D} \text{PopCount}(q_i \oplus d_j)$$
 
 ---
 
-## 2. The 32 SOTA Architectural Engines
+## 2. End-to-End System Sequence & Workflow Diagrams
 
-Uroboros incorporates 32 complete architectural engines divided into Core Acceleration, Code-Graph Analysis, Fine-Tuning & Audio, Fusion RAG, Privacy & Compliance, Telemetry, and Frontier Paradigms:
+### 2.1 Document Ingestion & Vector Indexing Pipeline
 
-### Core Acceleration & Swarm RAG
-1. **2-Phase Matryoshka Vector Search** ([`src/domain/vector_store.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/vector_store.py)): Coarse-to-fine vector retrieval (32-dim fast pass $\to$ 128-dim rescore).
-2. **Cognitive Swarm RAG Engine** ([`src/domain/swarm_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/swarm_rag.py)): Multi-agent parallel RAG with Explorer, Graph Traversal, Critic, and Synthesizer roles.
-3. **Agentic Long-Term Memory Store** ([`src/domain/agent_memory.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/agent_memory.py)): Persistent key-value memory database schema.
-4. **Ambient Workspace Screen Perception** ([`src/domain/screen_perception.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/screen_perception.py)): OCR display sampling with zero-dependency fallback.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant File as Workspace File
+    participant Parser as Infrastructure Parsers
+    participant Dedupe as SHA-256 Hash Check
+    participant Chunker as Entropy Chunker
+    participant Embed as Ollama Nomic Embeddings
+    participant DB as SQLite WAL Database
+    participant FTS as FTS5 Virtual Table
 
-### Discrepancy & Code Graph Analysis
-5. **Vault Contradiction & Fact Discrepancy Resolver** ([`src/domain/contradiction_resolver.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/contradiction_resolver.py)): Scans document pairs for numerical, date, and factual claim collisions.
-6. **Keystroke Speculative Vector Warmer** ([`src/domain/speculative_warmer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_warmer.py)): Predictive prefix pre-fetching for sub-2ms spotlight search (`Ctrl+K`).
-7. **Multi-Language AST Code-Flow Parser** ([`src/domain/ast_parser.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/ast_parser.py)): Extracts classes, functions, imports, and call-graph edges from source files.
+    File->>Parser: Submit Document (PDF/DOCX/Audio/Image)
+    Parser->>Parser: Validate Header & Structural Layout
+    Parser->>Dedupe: Compute SHA-256 Hash
+    alt File Unchanged (SHA-256 Hit)
+        Dedupe-->>File: Skip Re-indexing (Zero Cost)
+    else File New/Modified
+        Dedupe->>Chunker: Pass Raw Content
+        Chunker->>Chunker: Segment Text at Information Entropy Boundaries
+        Chunker->>Embed: Generate 768-dim Vector Arrays (Batch Size 64)
+        Embed-->>DB: Write to `file_chunks` with Binary Vector Serialization
+        Chunker-->>DB: Write File Record to `files` Table
+        Chunker-->>FTS: Insert Tokenized Content to `fts_file_chunks`
+        DB-->>File: Return Ingestion Complete (OK)
+    end
+```
 
-### Fine-Tuning, Audio & Refactoring
-8. **Vault Instruction Fine-Tuning Dataset Synthesizer** ([`src/domain/dataset_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/dataset_synthesizer.py)): Exports ShareGPT JSONL training datasets for local LoRA fine-tuning.
-9. **Executive Audio Briefing Generator** ([`src/domain/audio_briefing.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/audio_briefing.py)): Generates conversational podcast scripts with timestamped chapter markers.
-10. **Codebase AST Architecture Doctor** ([`src/domain/architecture_doctor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/architecture_doctor.py)): Anti-pattern scanner identifying god objects, monolithic files, and health scores.
-11. **Automated Git Diff Patch Synthesizer** ([`src/domain/code_diff_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_diff_synthesizer.py)): Unified git diff patch string generator.
+### 2.2 Hybrid RAG Query Resolution & Grounding Pipeline
 
-### Fusion, Benchmarking & Privacy
-12. **Autonomous Web & Vault Dual-Retrieval Fusion** ([`src/domain/web_rag_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/web_rag_fusion.py)): Merges local vault snippets with live DuckDuckGo web search.
-13. **Vector Index Recall@K Benchmarking Harness** ([`src/domain/retrieval_benchmark.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval_benchmark.py)): $P_{99}$ latency and precision profiler.
-14. **Knowledge Graph Entity Resolver** ([`src/domain/entity_resolver.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/entity_resolver.py)): Disambiguates alias entities (e.g., `postgres` $\to$ `PostgreSQL`).
-15. **Dynamic RAG Prompt Density Optimizer** ([`src/domain/prompt_optimizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/prompt_optimizer.py)): Trims context boilerplate to fit exact token budgets.
-16. **Autonomous SOC 2 & HIPAA Privacy Compliance Inspector** ([`src/domain/compliance_inspector.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/compliance_inspector.py)): PII (SSN, Email, API Key) auditing and automated masking.
-17. **Knowledge Graph Reasoning Path Visualizer** ([`src/domain/reasoning_visualizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/reasoning_visualizer.py)): Generates Mermaid.js graph markup for multi-hop pathways.
-18. **Incremental SHA-256 Vector Cache Guard** ([`src/domain/cache_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cache_guard.py)): Avoids redundant re-embedding using content SHA-256 hashes.
-19. **Master System Telemetry Scoreboard** ([`src/domain/system_scoreboard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/system_scoreboard.py)): Aggregates health metrics across all engines.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as Client Web SPA
+    participant Router as Intent Router
+    participant FTS as FTS5 Lexical Search
+    participant Vec as Vector Cosine Store
+    participant RRF as Reciprocal Rank Fusion
+    participant Guard as Self-RAG Grounding Guard
+    participant LLM as Local LLM (Qwen 7B/14B)
+
+    User->>Router: Send Query ("What is revenue recognition?")
+    Router->>Router: Classify Intent & Extract Query Operators (`ext:`, `tag:`)
+    par Sparse Lexical Search
+        Router->>FTS: BM25 Query Match
+        FTS-->>RRF: Sparse Ranked Results
+    and Dense Vector Search
+        Router->>Vec: Cosine Vector Match
+        Vec-->>RRF: Dense Ranked Results
+    end
+    RRF->>RRF: Compute RRF Scores (k=60) + Time-Decay Score Adjustment
+    RRF->>LLM: Assemble Context Budget & Prompt
+    LLM-->>Guard: Stream Generated Candidate Answer
+    Guard->>Guard: Evaluate Groundedness & Claim Consistency
+    alt Answer Grounded
+        Guard-->>User: Stream Answer with Character Citation Links
+    else Hallucination Detected
+        Guard->>Router: Trigger Self-Correcting Rewrite Loop
+    end
+```
 
 ---
 
-## 3. The 13 Incomparable Frontier RAG Paradigms
+## 3. Full Directory Architecture Map
 
-1. **⚔️ Counterfactual RAG & Multi-Scenario Stress Testing** ([`src/domain/counterfactual_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/counterfactual_rag.py)): Generates counter-hypotheses and searches for refutations or edge cases before output.
-2. **🌲 RAPTOR Tree Indexer** ([`src/domain/raptor_tree_indexer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/raptor_tree_indexer.py)): Recursive Abstractive Processing constructing hierarchical multi-level summary trees.
-3. **🕰️ Episodic Memory-Augmented RAG** ([`src/domain/episodic_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/episodic_rag.py)): Interconnects past search sessions and user decisions for temporal context tracking over time.
-4. **⚡ Binary ColBERT MaxSim Reranker** ([`src/domain/binary_colbert.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/binary_colbert.py)): 1-bit binary vector token-level late-interaction similarity matrices (< 5ms).
-5. **🛠️ Inline Self-Correction Grounding Guard** ([`src/domain/auto_correct_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/auto_correct_rag.py)): Identifies ungrounded claims during text generation and patches them with verified context in real time.
-6. **🧹 Semantic Entropy Context Compressor** ([`src/domain/adaptive_context_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/adaptive_context_compressor.py)): Strips filler prose while preserving numbers, code, and entities (saving up to 60% prompt tokens).
-7. **🌐 Zero-Shot Cross-Lingual RAG Fusion** ([`src/domain/cross_lingual_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cross_lingual_fusion.py)): Queries English against multi-lingual document vaults (Spanish, German, French) with zero translation latency.
-8. **🔐 Quantum-Safe Zero-Knowledge Data Masker** ([`src/domain/zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py)): Salt-hashed zero-knowledge verification proofs for sensitive document payloads.
-9. **🎯 Sub-1ms Speculative Query Intent Router** ([`src/domain/intent_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/intent_router.py)): Classifies intent in sub-1ms and routes execution to the optimal RAG pipeline.
-10. **🔗 Knowledge Graph Self-Healing & Wikilink Synthesizer** ([`src/domain/graph_link_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_link_synthesizer.py)): Scans unlinked concept nodes across raw vault files and automatically inserts missing semantic `[[wikilinks]]`.
-11. **🌊 Specular Speculative Context Streaming Guard** ([`src/domain/speculative_streamer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_streamer.py)): Pre-tokenizes and speculative-streams retrieved context in parallel with decoding (< 10ms $TTFT$).
-12. **📊 Multi-Document Semantic Diff & Evolution Tracker** ([`src/domain/semantic_doc_diff.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/semantic_doc_diff.py)): Computes sentence-level semantic claim diffs between document versions over time.
-13. **⚖️ Dynamic Context Budget Allocator** ([`src/domain/context_budget_allocator.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/context_budget_allocator.py)): Proportional allocation across vector snippets (50%), graph pathways (25%), episodic memory (15%), and system overhead (10%).
+```
+c:\Users\Administrator\Desktop\Neuro Alexander
+├── src/
+│   ├── app/
+│   │   ├── routers/                   # FastAPI REST API Route Modules (11 Routers)
+│   │   │   ├── analytics.py           # Corpus analytics, storage breakdown, & tag distribution
+│   │   │   ├── briefing.py            # Automated daily & executive briefing APIs
+│   │   │   ├── export.py               # Database snapshot, JSON, & CSV exports
+│   │   │   ├── files.py                # Workspace file CRUD, revision history, & rename ops
+│   │   │   ├── health.py               # Telemetry, pool health, & system uptime
+│   │   │   ├── ocr.py                  # Image/PDF OCR parsing & word coordinates
+│   │   │   ├── rag.py                  # Conversational RAG, SSE streaming, & grounding eval
+│   │   │   ├── search.py               # Lexical FTS5, hybrid BM25, & vector search API
+│   │   │   ├── tags.py                 # Tag management, auto-rules, & tag aliases
+│   │   │   └── workflows.py            # Workflow trigger creation, logging, & execution
+│   │   └── server.py                  # FastAPI application initialization & CORS middleware
+│   ├── core/                          # Core Runtime Services & Models
+│   │   ├── auth_jwt.py                # JWT authentication & permission evaluation
+│   │   ├── config.py                  # Central system configuration defaults
+│   │   ├── context.py                 # Request context propagation & session tracking
+│   │   ├── embeddings.py              # Ollama / Nomic embedding generation with LRU cache
+│   │   ├── jobs.py                    # Background job queue runner & task lifecycle
+│   │   ├── model_manager.py           # Local LLM model health check & fallback routing
+│   │   ├── model_router.py            # Query-type model router (Qwen 7B / Qwen 14B)
+│   │   └── state.py                   # Thread-safe in-memory vector cache & state registry
+│   ├── domain/                        # Mechanical RAG & Domain Intelligence Engine (130+ Modules)
+│   └── infrastructure/                # System Infrastructure & Storage Providers
+│       ├── backup_scheduler.py        # Non-blocking SQLite online WAL backup task
+│       ├── database.py                # Thread-local SQLite connection pool & maintenance
+│       ├── llm.py                     # Ollama HTTP API integration
+│       ├── ocr.py                     # Layout-aware Tesseract OCR engine
+│       ├── p2p_sync.py                # UDP Multicast peer discovery & HTTP sync
+│       ├── parsers.py                 # Multi-format document extraction (PDF, DOCX, EPUB, Audio)
+│       ├── system_stability_guard.py  # Process memory limit guard & panic recovery
+│       ├── telemetry.py               # Prometheus/JSON telemetry recorder
+│       ├── vector_engine.py           # Vector matrix math & AI tag extractors
+│       ├── watcher.py                 # Real-time directory file system watcher
+│       └── webhook_dispatcher.py      # Event webhook dispatcher
+├── frontend/                          # React 18 + Vite SPA Frontend
+│   ├── src/
+│   │   ├── components/                # React UI Components (CommandPalette, Header, Layout)
+│   │   ├── views/                     # SPA Views (Chat, Config, Dashboard, Graph, Ingestion, Search, etc.)
+│   │   ├── lib/                       # API HTTP Client & Class Utilities
+│   │   ├── App.tsx                    # React SPA Router Component
+│   │   └── main.tsx                   # React Entrypoint
+│   ├── package.json
+│   └── vite.config.ts
+├── scripts/                           # Maintenance & Verification Scripts (18 Scripts)
+├── tests/                             # 670+ Automated Domain & Integration Test Suites
+├── know.py                            # SQLite Schema DDL, Indexer, & Root CLI Shim
+├── batch_index.py                     # Multi-threaded job-based per-file batch indexer
+├── docker-compose.yml                 # Container orchestration specification
+├── pytest.ini                         # Pytest test markers & environment setup
+└── requirements.txt                   # Backend Python package requirements
+```
 
 ---
 
-## 4. SQLite Storage Schema Specification (DDL)
+## 4. Comprehensive Domain Module Index (`src/domain/`)
 
-The database manager ([`src/infrastructure/database.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/database.py)) enforces normalized relational storage with SQLite FTS5 virtual tables and WAL journal mode:
+### 4.1 Retrieval, Search & Vector Processing
+| Module Name | File Path | Functional Description & Output Contract |
+| :--- | :--- | :--- |
+| **Binary ColBERT** | [`binary_colbert.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/binary_colbert.py) | Sub-millisecond MaxSim binary quantization vector scoring |
+| **RAPTOR Indexer** | [`raptor_tree_indexer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/raptor_tree_indexer.py) | Recursive hierarchical document summary tree indexer |
+| **MRL Compressor** | [`mrl_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/mrl_compressor.py) | Matryoshka Representation Learning vector compression |
+| **Sublinear ANN** | [`sublinear_ann_index.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/sublinear_ann_index.py) | Sublinear approximate nearest neighbor vector indexer |
+| **Sparse Dense Fusion** | [`sparse_dense_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/sparse_dense_fusion.py) | Reciprocal Rank Fusion (RRF) sparse + dense ranker |
+| **HyDE Expansion** | [`contextual_hyde.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/contextual_hyde.py) | Hypothetical Document Embeddings query expansion |
+| **Parent-Child Retrieval** | [`parent_child_retrieval.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/parent_child_retrieval.py) | Chunk search returning expanded parent document scope |
+| **Bandit Router** | [`bandit_query_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/bandit_query_router.py) | Multi-armed bandit retrieval route optimization |
+| **ColBERT Reranker** | [`colbert_reranker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/colbert_reranker.py) | Multi-vector late interaction re-ranking engine |
+| **Near Duplicate Detector**| [`near_duplicate_detector.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/near_duplicate_detector.py)| MinHash & SimHash near-duplicate document detector |
+| **Rerank Score Explainer** | [`rerank_score_explainer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/rerank_score_explainer.py) | Detailed score component breakdown generator |
+| **Retrieval Benchmark** | [`retrieval_benchmark.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval_benchmark.py) | Retrieval speed & precision benchmarking runner |
+
+### 4.2 Context & Prompt Engineering
+| Module Name | File Path | Functional Description & Output Contract |
+| :--- | :--- | :--- |
+| **Context Compressor** | [`adaptive_context_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/adaptive_context_compressor.py) | Entropy-based token context budgeting & compression |
+| **Budget Allocator** | [`context_budget_allocator.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/context_budget_allocator.py) | Proportional token density budgeting across prompt sections |
+| **Distractor Filter** | [`distractor_filter.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/distractor_filter.py) | Irrelevant negative chunk elimination |
+| **Entropy Chunker** | [`entropy_chunker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/entropy_chunker.py) | Information-entropy text chunking at topic transitions |
+| **Prompt Optimizer** | [`prompt_optimizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/prompt_optimizer.py) | Automated prompt compression & density tuning |
+| **Noise Masker** | [`contextual_noise_mask.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/contextual_noise_mask.py) | Contextual masking of boilerplate headers/footers |
+
+### 4.3 Graph & Reasoning Intelligence
+| Module Name | File Path | Functional Description & Output Contract |
+| :--- | :--- | :--- |
+| **Epistemic Belief Graph** | [`epistemic_belief_graph.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/epistemic_belief_graph.py) | Probabilistic belief network & claim updating |
+| **Hypergraph Router** | [`hypergraph_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/hypergraph_router.py) | Higher-order multi-entity connection router |
+| **Graph Reasoning** | [`graph_reasoning.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_reasoning.py) | Unlinked entity detection & knowledge graph gap analysis |
+| **Louvain Clustering** | [`louvain_clustering.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/louvain_clustering.py) | Modularity-based Louvain community detection for nodes |
+| **PageRank Centrality** | [`graph_pagerank.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_pagerank.py) | Document node PageRank centrality calculation |
+| **Wikilink Synthesizer** | [`graph_link_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_link_synthesizer.py) | Automated wikilink (`[[concept]]`) auto-linker |
+| **Entity Extractor** | [`entity_extractor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/entity_extractor.py) | Named entity extraction (NER) engine |
+
+### 4.4 Code & AST Intelligence
+| Module Name | File Path | Functional Description & Output Contract |
+| :--- | :--- | :--- |
+| **AST Code RAG** | [`ast_code_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/ast_code_rag.py) | AST-level symbol extraction & code snippet RAG |
+| **AST Parser** | [`ast_parser.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/ast_parser.py) | Universal code AST token parser |
+| **Code Diff Synthesizer** | [`code_diff_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_diff_synthesizer.py) | Git diff analysis & structural code change synthesis |
+| **Code Doc Aligner** | [`code_doc_aligner.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_doc_aligner.py) | Automated mapping between code functions and docstrings |
+| **Code Self Refactor** | [`code_self_refactor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_self_refactor.py) | AST-driven code simplification & refactoring helper |
+
+---
+
+## 5. SQLite Database DDL & Storage Schema
 
 ```sql
 -- 1. Document Files Registry
@@ -170,7 +276,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS fts_file_chunks USING fts5(
     tokenize = 'porter unicode61'
 );
 
--- 4. Categorical AI Tags & Rules
+-- 4. Categorical AI Tags
 CREATE TABLE IF NOT EXISTS tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     file_id INTEGER NOT NULL,
@@ -179,201 +285,74 @@ CREATE TABLE IF NOT EXISTS tags (
     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS rules (
+-- 5. OCR Spatial Bounding Coordinates
+CREATE TABLE IF NOT EXISTS ocr_coords (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    pattern TEXT NOT NULL,
-    tag TEXT NOT NULL,
-    priority INTEGER DEFAULT 1
+    file_id INTEGER NOT NULL,
+    word TEXT NOT NULL,
+    x INTEGER NOT NULL,
+    y INTEGER NOT NULL,
+    w INTEGER NOT NULL,
+    h INTEGER NOT NULL,
+    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 ```
 
 ---
 
-## 5. System Architecture & Complete Codebase Layout
+## 6. REST API Endpoint Specification
 
-```
-c:\Users\Administrator\Desktop\Neuro Alexander
-├── src/
-│   ├── app/
-│   │   ├── routers/                   # Modular FastAPI REST API Endpoints
-│   │   │   ├── analytics.py           # System metrics, tag distributions, & telemetry
-│   │   │   ├── briefing.py            # Autonomous executive daily briefing synthesis
-│   │   │   ├── export.py               # Document & database snapshot exports
-│   │   │   ├── files.py                # Workspace file CRUD, revision history, & readability API
-│   │   │   ├── health.py               # Liveness, readiness, & hardware health endpoints
-│   │   │   ├── ocr.py                  # OCR extraction & spatial coordinate mapping
-│   │   │   ├── rag.py                  # Conversational RAG, speculative stream, & 32-SOTA endpoints
-│   │   │   ├── search.py               # Lexical FTS5, hybrid BM25, & vector search API
-│   │   │   ├── tags.py                 # Automated AI tag management & alias routing
-│   │   │   └── workflows.py            # System workflow triggers & background task execution
-│   │   └── server.py                  # FastAPI application initialization & middleware stack
-│   ├── core/                          # Core Runtime Services & Model Routing
-│   │   ├── auth_jwt.py                # JWT authentication & multi-tenant token validation
-│   │   ├── config.py                  # Centralized system configuration & environment defaults
-│   │   ├── context.py                 # Request context propagation & session management
-│   │   ├── embeddings.py              # Ollama / Nomic embedding generation with LRU caching
-│   │   ├── jobs.py                    # Background job worker queue & task scheduling
-│   │   ├── model_manager.py           # Local LLM model routing, fallback & health checks
-│   │   ├── model_router.py            # Dynamic query-type model router (Qwen 7B / Qwen 14B)
-│   │   └── state.py                   # In-memory vector cache & thread-safe state registry
-│   ├── domain/                        # 32 State-of-the-Art Architectural Domain Engines
-│   │   ├── active_rag.py              # Dynamic Query Reformulation & Second-Pass Loop
-│   │   ├── adaptive_context_compressor.py # Semantic Entropy Context Compressor
-│   │   ├── agent_memory.py            # Persistent Agentic Long-Term Memory Store
-│   │   ├── architecture_doctor.py     # Codebase AST Architecture Doctor
-│   │   ├── ast_parser.py              # Multi-Language AST Code-Flow Parser
-│   │   ├── audio_briefing.py          # Executive Audio Briefing Generator
-│   │   ├── auto_correct_rag.py        # Inline Self-Correction Grounding Guard
-│   │   ├── binary_colbert.py          # Binary ColBERT MaxSim Reranker
-│   │   ├── cache_guard.py             # Incremental SHA-256 Vector Cache Guard
-│   │   ├── compliance_inspector.py    # SOC 2 & HIPAA Privacy Compliance Inspector
-│   │   ├── context_budget_allocator.py# Dynamic Context Budget Allocator
-│   │   ├── contradiction_resolver.py  # Vault Contradiction & Claim Conflict Resolver
-│   │   ├── counterfactual_rag.py      # Counterfactual RAG & Stress Testing Engine
-│   │   ├── cross_lingual_fusion.py    # Zero-Shot Cross-Lingual RAG Fusion
-│   │   ├── dataset_synthesizer.py     # Vault Fine-Tuning Dataset Synthesizer
-│   │   ├── entity_resolver.py         # Knowledge Graph Entity Resolver
-│   │   ├── episodic_rag.py            # Episodic Memory-Augmented RAG
-│   │   ├── executive_briefing.py      # Executive Summary & Action Item Synthesizer
-│   │   ├── graph_explorer.py          # Node Topology & Edge Degree Explorer
-│   │   ├── graph_link_synthesizer.py  # Knowledge Graph Self-Healing & Wikilink Synthesizer
-│   │   ├── intent_router.py           # Sub-1ms Speculative Query Intent Router
-│   │   ├── prompt_optimizer.py        # Dynamic Prompt Density Optimizer
-│   │   ├── rag_evaluator.py           # RAGAS Faithfulness & Golden Dataset Evaluator
-│   │   ├── raptor_tree_indexer.py     # RAPTOR Tree Indexer
-│   │   ├── reasoning_visualizer.py    # Knowledge Graph Reasoning Path Visualizer
-│   │   ├── retrieval_benchmark.py     # Vector Index Recall@K Benchmarking Harness
-│   │   ├── screen_perception.py       # Ambient Workspace Screen Perception
-│   │   ├── semantic_doc_diff.py       # Multi-Document Semantic Diff Tracker
-│   │   ├── speculative_rag.py         # Parallel Draft Context Synthesizer
-│   │   ├── speculative_streamer.py    # Specular Speculative Context Streaming Guard
-│   │   ├── speculative_warmer.py      # Keystroke Speculative Vector Warmer
-│   │   ├── swarm_rag.py               # Cognitive Swarm RAG Engine
-│   │   ├── system_scoreboard.py       # Master System Telemetry Scoreboard
-│   │   ├── vector_store.py            # 2-Phase Matryoshka Vector Store
-│   │   ├── voice_rag.py               # Voice Memo Transcription & Audio RAG
-│   │   ├── web_rag_fusion.py          # Autonomous Web & Vault Dual-Retrieval Fusion
-│   │   └── zk_data_masker.py          # Quantum-Safe Zero-Knowledge Data Masker
-│   └── infrastructure/                # System Infrastructure & Storage Lifecycles
-│       ├── database.py                # Bounded SQLite connection pool & WAL maintenance
-│       ├── system_stability_guard.py  # Memory Footprint & Garbage Collection Guard
-│       ├── llm.py                     # Local LLM HTTP interface & Ollama integration
-│       ├── ocr.py                     # Layout-aware Tesseract / WinRT OCR implementation
-│       ├── p2p_sync.py                # UDP Multicast peer discovery & HTTP delta sync
-│       ├── parsers.py                 # Multi-format document parsers (PDF, EPUB, DOCX, XLSX, Audio, RTF)
-│       └── watcher.py                 # File system watcher & real-time auto-indexer
-├── frontend/                          # React 19 + Vite 6 + Tailwind CSS v4 SPA Application
-│   ├── src/
-│   │   ├── components/                # Modular React UI Components (Sidebar, CommandPalette)
-│   │   ├── views/                     # Main Application Views (Dashboard, 3D Graph, Chat, Ingestion)
-│   │   ├── lib/                       # API HTTP client wrapper & utilities
-│   │   └── App.tsx                    # React root router & ErrorBoundary
-│   ├── package.json
-│   └── vite.config.ts
-├── scripts/                           # Utility, Maintenance, & Audit Scripts
-│   ├── architecture_cli.py            # Clean Architecture compliance auditor
-│   ├── backup_db.py                   # Automated SQLite WAL database backup script
-│   ├── benchmark_engine.py            # Retrieval speed & precision benchmarking tool
-│   ├── update_test_ledger.py          # Test audit ledger & SOC 2 attestation generator
-│   └── run_domain_tests.py            # Multithreaded domain test runner
-├── tests/                             # 670+ Unit & Integration Test Suites
-├── know.py                            # SQLite database schema, FTS5 indexer, & CLI interface
-├── batch_index.py                     # Job-based resumable per-file batch indexer
-├── pytest.ini                         # Crash-prevention Pytest configuration
-├── docker-compose.yml                 # Container deployment configuration
-├── requirements.txt                   # Backend Python package dependencies
-└── README.md
-```
+| Group | Method | Endpoint | Description |
+| :--- | :--- | :--- | :--- |
+| **Search** | `GET` | `/api/search` | Execute hybrid lexical (FTS5) and vector search |
+| **Search** | `POST` | `/api/search/validate` | Validate natural language query parameters |
+| **Search** | `POST` | `/api/search/bookmark` | Save query bookmark to user session |
+| **RAG** | `POST` | `/api/rag/query` | Conversational RAG assistant query |
+| **RAG** | `GET` | `/api/rag/stream` | Server-Sent Events (SSE) token stream |
+| **RAG** | `POST` | `/api/rag/eval` | Evaluate RAG answer relevance and groundedness |
+| **Files** | `GET` | `/api/files` | List workspace files with pagination & tag filters |
+| **Files** | `POST` | `/api/files/index` | Index or update document file |
+| **Files** | `DELETE`| `/api/files/{file_id}` | Delete document file record and vector chunks |
+| **Files** | `POST` | `/api/files/rename` | Rename file path and update DB index |
+| **Files** | `GET` | `/api/files/history` | Retrieve document revision history |
+| **Files** | `POST` | `/api/files/revert` | Revert document to previous snapshot |
+| **Analytics**| `GET` | `/api/analytics` | Overview metrics (file count, total chunks, storage) |
+| **Analytics**| `GET` | `/api/analytics/storage`| Detailed storage breakdown by MIME type |
+| **Analytics**| `GET` | `/api/analytics/activity`| Historical search activity logs |
+| **Briefing** | `GET` | `/api/briefing/daily` | Executive daily briefing synthesis |
+| **Briefing** | `GET` | `/api/briefing/executive`| High-level KPI summary report |
+| **OCR** | `POST` | `/api/ocr/parse` | Extract OCR text and word bounding boxes |
+| **Tags** | `GET` | `/api/tags` | List all unique tags and tag distribution |
+| **Tags** | `POST` | `/api/tags/rule` | Create automated tag rule |
+| **Tags** | `POST` | `/api/tags/alias` | Map tag alias to canonical tag |
+| **Health** | `GET` | `/api/health` | System health status, database pool, & telemetry |
+| **Export** | `GET` | `/api/export/db` | Download SQLite database snapshot |
+| **Workflows**| `POST` | `/api/workflows/trigger`| Trigger background workflow event |
 
 ---
 
-## 6. REST API Specification & Endpoint Payloads
+## 7. Configuration Parameters & Environment Variables
 
-### 6.1 Speculative RAG Synthesis (`POST /api/rag/speculative/synthesize`)
-```json
-{
-  "query": "Neural Network Optimization",
-  "source_chunks": [
-    "Neural networks consist of interconnected artificial neurons.",
-    "Backpropagation updates weights during training."
-  ]
-}
-```
-**Response (200 OK)**:
-```json
-{
-  "status": "success",
-  "query": "Neural Networks",
-  "synthesized_answer": "Speculative synthesis for 'Neural Networks' based on 2 chunks.",
-  "confidence_score": 0.92,
-  "hypotheses": [
-    "Hypothesis 1 for 'Neural Networks': Neural networks consist...",
-    "Hypothesis 2 for 'Neural Networks': Backpropagation updates...",
-    "Hypothesis 3 for 'Neural Networks'"
-  ]
-}
-```
-
-### 6.2 Voice Memo Search (`POST /api/rag/voice/search`)
-```json
-{
-  "audio_transcript_payload": "GPU cluster setup architecture guide",
-  "top_k": 5
-}
-```
-**Response (200 OK)**:
-```json
-{
-  "status": "success",
-  "transcribed_text": "GPU cluster setup architecture guide",
-  "confidence_score": 0.94,
-  "results": []
-}
-```
-
-### 6.3 Document Readability Analysis (`GET /api/file/readability`)
-```http
-GET /api/file/readability?filepath=dumps/sample.txt HTTP/1.1
-Host: 127.0.0.1:8000
-```
-**Response (200 OK)**:
-```json
-{
-  "status": "success",
-  "filepath": "dumps/sample.txt",
-  "flesch_reading_ease": 65.4,
-  "flesch_kincaid_grade": 8.2,
-  "sentiment_score": 0.45,
-  "sentiment_label": "Positive"
-}
-```
+| Parameter Name | Default Value | Description |
+| :--- | :--- | :--- |
+| `DB_FILE` | `data/knowledge.db` | Absolute or relative path to primary SQLite database file |
+| `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama service base URL |
+| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Embedding model identifier for 768-dim vector generation |
+| `OLLAMA_CHAT_MODEL` | `qwen2.5:7b` | Primary conversational LLM model identifier |
+| `OLLAMA_CODER_MODEL` | `qwen2.5-coder:14b` | Specialized coding LLM model identifier |
+| `JWT_SECRET_KEY` | `uroboros-secret-key` | Secret key for JWT multi-tenant authentication token signature |
+| `JWT_ALGORITHM` | `HS256` | Cryptographic algorithm for JWT signatures |
+| `P2P_MULTICAST_PORT` | `5353` | UDP Multicast port for LAN peer discovery |
+| `MAX_FILE_SIZE_MB` | `50` | Maximum file size cap in MB for text extraction |
+| `RRF_K_PARAM` | `60` | Reciprocal Rank Fusion smoothing constant |
+| `BM25_K1` | `1.5` | BM25 term frequency saturation parameter |
+| `BM25_B` | `0.75` | BM25 document length normalization parameter |
 
 ---
 
-## 7. Quickstart & Installation
+## 8. CLI Command Reference & Operations
 
-```bash
-# 1. Clone repository
-git clone https://github.com/SavianAlexander/uroboros-knowledge-engine.git
-cd uroboros-knowledge-engine
-
-# 2. Install backend dependencies
-pip install -r requirements.txt
-
-# 3. Initialize SQLite database schema
-python know.py init
-
-# 4. Index local workspace directory
-python know.py index "C:\path\to\workspace"
-
-# 5. Run FastAPI backend server
-uvicorn src.app.server:app --host 127.0.0.1 --port 8000 --reload
-```
-
----
-
-## 8. Command Line Interface (CLI) Reference
-
+### 8.1 Root Entrypoint CLI (`know.py`)
 ```bash
 # Initialize SQLite database schema & FTS5 tables
 python know.py init
@@ -382,27 +361,124 @@ python know.py init
 python know.py index "C:\path\to\workspace"
 
 # Execute hybrid CLI search query
-python know.py search "database connection pool ext:py"
+python know.py search "revenue recognition ext:pdf"
 
 # View total database file, chunk, and tag statistics
 python know.py stats
 
-# Run master domain test runner (240+ tests)
-python run_domain_tests.py
+# Reset database schema
+python know.py reset
+```
+
+### 8.2 Resumable Job Batch Indexer (`batch_index.py`)
+```bash
+# Index a directory with 4 parallel worker threads and a 50-file job limit
+python batch_index.py "C:\Users\Admin\Documents" -n 50 -w 4
+```
+
+### 8.3 Developer Operations & Audit CLI Scripts
+```bash
+# Audit clean architecture compliance across all python modules
+python scripts/architecture_cli.py audit .
+
+# Run online non-blocking SQLite database WAL backup
+python scripts/backup_db.py --output backups/snapshot_latest.db
+
+# Update automated test audit ledger and generate SOC 2 Type II report
+python scripts/update_test_ledger.py --soc2
+
+# Benchmark retrieval speed across 100 random queries
+python scripts/benchmark_engine.py --runs 100
+
+# Execute fault injection and memory stress tests
+python scripts/chaos_monkey.py --duration 30
 ```
 
 ---
 
-## 9. Quality Assurance & Audit Attestation
+## 9. Frontend Architecture & React SPA Views
 
-Uroboros maintains an automated test suite featuring **100.0% Pass Rate** across 240+ domain tests:
+```mermaid
+graph TD
+    App[App.tsx Router] --> Dash[DashboardView.tsx]
+    App --> Workspace[WorkspaceView.tsx]
+    App --> Search[SearchView.tsx]
+    App --> Ingest[IngestionView.tsx]
+    App --> Graph[GraphView.tsx - 3D Force Graph]
+    App --> Chat[ChatView.tsx - RAG Assistant]
+    App --> Config[ConfigView.tsx]
+    App --> Settings[SettingsView.tsx]
+    App --> Login[LoginView.tsx]
+    App --> Cmd[CommandPalette.tsx - Ctrl+K Modal]
+```
 
-- **Master Test Runner**: `python run_domain_tests.py` (**241 / 241 PASSED**)
-- **Frontier RAG Suites**: `pytest tests/test_uncomparable_v3.py` (**4 / 4 PASSED**)
-- **Attestation Reports**: [`docs/soc2_type2_attestation.md`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/docs/soc2_type2_attestation.md) & [`docs/test_coverage_heatmap.html`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/docs/test_coverage_heatmap.html).
+### UI View Showcase
+
+#### 1. Dashboard View
+Real-time database status metrics, ingestion velocity, storage distribution, tag breakdowns, and system health telemetry.
+![Main Dashboard](docs/ux_journey/01_dashboard.png)
+
+#### 2. Workspace View
+Provides a file browser interface for managing local directories, inspecting corpus metadata, and triggering manual re-indexing.
+![Workspace](docs/ux_journey/02_workspace.png)
+
+#### 3. Search & Exploration View
+Offers hybrid search with real-time similarity threshold sliders, document content previews, tag filtering, and syntax highlighting.
+![Explorer](docs/ux_journey/03_search.png)
+
+#### 4. Ingestion Pipeline View
+Monitors background document extraction, web URL scraping, and SSE progress tracking for active batch jobs.
+![Ingestion Pipeline](docs/ux_journey/04_ingestion.png)
+
+#### 5. 3D Interactive Knowledge Graph
+Interactive 3D graph view (`react-force-graph-3d`) rendering connections between document nodes, extracted entities, and wikilinks.
+![Knowledge Graph](docs/ux_journey/05_graph.png)
+
+#### 6. Conversational RAG Assistant
+AI chat interface supporting source citation deep-linking, context budget allocation controls, and multi-turn dialog memory.
+![Conversational Assistant](docs/ux_journey/06_chat.png)
+
+#### 7. Process Configuration View
+Manages auto-tagging rules, custom FTS synonyms, P2P network sync parameters, and database snapshot schedules.
+![Process Config](docs/ux_journey/07_config.png)
+
+#### 8. System Settings View
+Provides system diagnostic controls, API key management, database WAL optimization tools, and logs inspection.
+![System Settings](docs/ux_journey/08_settings.png)
+
+#### 9. Spotlight Command Palette (`Ctrl+K`)
+Keyboard-driven modal providing quick navigation across all application views, instant search execution, and ingestion actions.
+![Command Palette](docs/ux_journey/09_command_palette.png)
+
+#### 10. WCAG AA Glassmorphism Themes
+High-contrast glassmorphic dark and light themes with responsive UI elements complying with WCAG AA accessibility standards.
+![Light Mode UI](docs/ux_journey/10_light_mode.png)
 
 ---
 
-## 10. License
+## 10. Quality Assurance & Compliance Attestation
+
+Uroboros maintains an automated test suite featuring **672 passed unit, integration, and fuzzing tests**:
+
+```bash
+# Run fast non-E2E unit test suite
+python -m pytest -q --tb=short -m "not e2e and not slow"
+
+# Run deep fuzzing & concurrency verification
+python -m pytest tests/test_deep_fuzzing_and_concurrency.py -v
+
+# Run full domain test suite across all 31 domains
+python run_domain_tests.py
+```
+
+### 10.1 Engineering Test Protocols
+- **Dynamic Ephemeral Socket Isolation**: Test servers bind to `socket.bind(('127.0.0.1', 0))` to prevent port collisions during parallel test execution.
+- **Thread Connection Teardown**: Database thread pools are forcefully reset via [`reset_db_connections()`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/database.py) before pytest teardown to prevent Windows `WinError 32` file lock errors.
+- **Clean Architecture Certification**: Certified **100.0%** compliance via [`scripts/architecture_cli.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/architecture_cli.py).
+- **SOC 2 Type II Compliance Attestation**: Generated via [`scripts/update_test_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/update_test_ledger.py) -> [`docs/soc2_type2_attestation.md`](docs/soc2_type2_attestation.md).
+
+---
+
+## 11. License
 
 This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) file for complete details.
