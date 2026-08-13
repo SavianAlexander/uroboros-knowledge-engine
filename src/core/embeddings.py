@@ -52,7 +52,7 @@ def generate_embeddings_batch(texts: List[str], batch_size: int = 64) -> List[Li
         for attempt in range(3):
             try:
                 req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(req, timeout=30) as res:
+                with urllib.request.urlopen(req, timeout=5) as res:
                     body = json.loads(res.read().decode("utf-8"))
                     embs = body.get("embeddings", [])
                     for idx, prompt, emb in zip(b_indices, b_prompts, embs):
@@ -60,14 +60,20 @@ def generate_embeddings_batch(texts: List[str], batch_size: int = 64) -> List[Li
                         if emb:
                             _embed_cache[prompt] = emb
                     break
+            except (urllib.error.URLError, ConnectionError, OSError) as e:
+                # Local Ollama instance is not running or unreachable
+                logging.debug(f"Ollama embedding server offline at {url}: {e}")
+                for idx in b_indices:
+                    results[idx] = []
+                break
             except Exception as e:
                 if attempt < 2:
                     import time
-                    time.sleep(1 * (attempt + 1))
+                    time.sleep(0.5 * (attempt + 1))
                 else:
-                    logging.warning(f"Batch embed failed for slice {b_start}: {e}")
-                    for idx, prompt in zip(b_indices, b_prompts):
-                        results[idx] = generate_embedding(prompt)
+                    logging.debug(f"Batch embed failed for slice {b_start}: {e}")
+                    for idx in b_indices:
+                        results[idx] = []
 
     return results
 

@@ -8,9 +8,8 @@ try:
 except (KeyboardInterrupt, MemoryError, SystemExit):
     raise
 except Exception as e:
-    import logging; logging.getLogger(__name__).exception(f"Swallowed error in model_manager.py: {e}")
+    import logging; logging.getLogger(__name__).debug(f"llama_cpp not available: {e}")
     Llama = None
-    logging.warning(f"llama_cpp not available: {e}")
 
 _lock = threading.Lock()
 

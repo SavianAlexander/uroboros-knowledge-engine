@@ -13,8 +13,8 @@ try:
     HAS_LLAMA = True
 except (KeyboardInterrupt, MemoryError, SystemExit):
     raise
-except Exception:
-    import logging; logging.getLogger(__name__).exception("Swallowed error in llm.py")
+except Exception as e:
+    import logging; logging.getLogger(__name__).debug(f"llama_cpp import unavailable: {e}")
     HAS_LLAMA = False
 
 _llm_instance = None
