@@ -48,12 +48,13 @@ class LSHVectorIndex:
             for item in self.tables[i].get(h, []):
                 candidates.add(item)
 
+        norm_q = math.sqrt(sum(q * q for q in query_vec)) or 1.0
         results = []
         for vec_id, vec in candidates:
             dot = sum(q * v for q, v in zip(query_vec, vec))
-            norm_q = math.sqrt(sum(q * q for q in query_vec)) or 1.0
             norm_v = math.sqrt(sum(v * v for v in vec)) or 1.0
-            sim = dot / (norm_q * norm_v)
+            raw_sim = dot / (norm_q * norm_v)
+            sim = max(-1.0, min(1.0, raw_sim))
             results.append({"id": vec_id, "similarity": round(sim, 4)})
 
         results.sort(key=lambda x: x["similarity"], reverse=True)

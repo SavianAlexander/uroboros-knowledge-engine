@@ -3,6 +3,7 @@ Zero-dependency readability metrics & sentiment polarity analyzer engine.
 Uses Flesch Reading Ease & Flesch-Kincaid Grade Level formulas.
 """
 
+import functools
 import re
 from typing import Dict, Any
 
@@ -22,6 +23,7 @@ NEGATIVE_WORDS = {
 }
 
 
+@functools.lru_cache(maxsize=4096)
 def count_syllables_in_word(word: str) -> int:
     """Estimates syllable count for an English word using stdlib regex rules."""
     word = word.lower().strip()

@@ -34,17 +34,26 @@ def colbert_maxsim_score(query_token_embeddings: List[List[float]], doc_token_em
     if not query_token_embeddings or not doc_token_embeddings:
         return 0.0
 
-    total_score = 0.0
-    for q_emb in query_token_embeddings:
-        q_norm = normalize_vector(q_emb)
-        max_sim = max(
-            dot_product(q_norm, normalize_vector(d_emb))
-            for d_emb in doc_token_embeddings
-        )
-        total_score += max_sim
+    normalized_docs = [normalize_vector(d) for d in doc_token_embeddings if d and isinstance(d, (list, tuple))]
+    if not normalized_docs:
+        return 0.0
 
-    # Normalize by query length for fair candidate comparisons
-    return round(total_score / len(query_token_embeddings), 4)
+    total_score = 0.0
+    valid_query_tokens = 0
+    for q_emb in query_token_embeddings:
+        if not q_emb or not isinstance(q_emb, (list, tuple)):
+            continue
+        q_norm = normalize_vector(q_emb)
+        sims = [dot_product(q_norm, d_norm) for d_norm in normalized_docs]
+        if sims:
+            total_score += max(sims)
+            valid_query_tokens += 1
+
+    if valid_query_tokens == 0:
+        return 0.0
+
+    # Normalize by valid query token length for fair candidate comparisons
+    return round(total_score / float(valid_query_tokens), 4)
 
 
 def _safe_float(val, default=0.0):

@@ -30,12 +30,23 @@ def execute_with_sla_circuit_breaker(
             pass
 
     # Circuit tripped or primary failed -> Fallback to ultra-fast BM25 / FTS5
-    fallback_res = fallback_func()
-    return {
-        "result": fallback_res,
-        "strategy_used": "fallback_fts5_fast",
-        "circuit_tripped": True,
-        "latency_ms": latency_ms,
-        "sla_threshold_ms": max_sla_ms,
-        "status": "degraded_fallback"
-    }
+    try:
+        fallback_res = fallback_func()
+        return {
+            "result": fallback_res,
+            "strategy_used": "fallback_fts5_fast",
+            "circuit_tripped": True,
+            "latency_ms": latency_ms,
+            "sla_threshold_ms": max_sla_ms,
+            "status": "degraded_fallback"
+        }
+    except Exception as e:
+        return {
+            "result": None,
+            "strategy_used": "fallback_failed",
+            "circuit_tripped": True,
+            "latency_ms": latency_ms,
+            "sla_threshold_ms": max_sla_ms,
+            "error": str(e),
+            "status": "degraded_error"
+        }
