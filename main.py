@@ -43,15 +43,24 @@ from src.core.state import (
 
 if __name__ == "__main__":
     import uvicorn
+    import socket
+
     host = os.environ.get("HOST", "127.0.0.1")
     start_port = int(os.environ.get("PORT", 8085))
+    selected_port = None
+
     for p in range(start_port, start_port + 10):
         try:
-            print(f"Starting Uroboros server on http://{host}:{p}")
-            uvicorn.run(app, host=host, port=p)
-            break
-        except OSError as e:
-            if getattr(e, 'errno', None) in (10048, 98):
-                print(f"Port {p} in use, retrying on port {p + 1}...")
-                continue
-            raise
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind((host, p))
+                selected_port = p
+                break
+        except OSError:
+            print(f"Port {p} in use, retrying on port {p + 1}...")
+            continue
+
+    if selected_port is None:
+        selected_port = start_port
+
+    print(f"Starting Uroboros server on http://{host}:{selected_port}")
+    uvicorn.run(app, host=host, port=selected_port)
