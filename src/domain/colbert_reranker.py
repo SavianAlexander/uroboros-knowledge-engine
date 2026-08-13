@@ -8,11 +8,10 @@ import functools
 from typing import List, Dict, Any, Tuple
 
 def dot_product(v1: List[float], v2: List[float]) -> float:
-    """Calculates dot product of two equal-length float vectors."""
-    min_len = min(len(v1), len(v2))
-    if min_len == 0:
+    """Calculates dot product of two equal-length float vectors using C-level zip iterator."""
+    if not v1 or not v2:
         return 0.0
-    return sum(v1[i] * v2[i] for i in range(min_len))
+    return sum(x * y for x, y in zip(v1, v2))
 
 
 @functools.lru_cache(maxsize=4096)
