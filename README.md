@@ -9,7 +9,8 @@
   <img src="https://img.shields.io/badge/SQLite-FTS5-orange.svg?style=flat-square" alt="SQLite" />
   <img src="https://img.shields.io/badge/SOTA%20Engines-32-purple.svg?style=flat-square" alt="32 SOTA Engines" />
   <img src="https://img.shields.io/badge/Frontier%20Paradigms-13-magenta.svg?style=flat-square" alt="13 Frontier Paradigms" />
-  <img src="https://img.shields.io/badge/Domain%20Modules-135-indigo.svg?style=flat-square" alt="135 Domain Modules" />
+  <img src="https://img.shields.io/badge/RAG%20Innovations-21-indigo.svg?style=flat-square" alt="21 RAG Innovations" />
+  <img src="https://img.shields.io/badge/Domain%20Modules-135-blue.svg?style=flat-square" alt="135 Domain Modules" />
   <img src="https://img.shields.io/badge/Test%20Suites-98-emerald.svg?style=flat-square" alt="98 Test Suites" />
   <img src="https://img.shields.io/badge/test%20pass%20rate-100%25-brightgreen.svg?style=flat-square" alt="Test Pass Rate" />
   <img src="https://img.shields.io/badge/code%20style-ponytail-indigo?style=flat-square" alt="Code Style" />
@@ -19,9 +20,9 @@
 
 ## Executive Overview
 
-**Uroboros Knowledge Engine (Neuro Alexander)** is an enterprise-grade, zero-cloud, single-node knowledge management, semantic retrieval, and document intelligence platform. Built around a modular FastAPI backend, SQLite FTS5 vector storage, local Ollama LLM integration, and a React 19 / Vite single-page frontend, Uroboros enables real-time local search, structural parsing, multi-hop RAG reasoning, and graph-based knowledge discovery without requiring external cloud vector databases or heavy third-party runtime dependencies.
+**Uroboros Knowledge Engine (Neuro Alexander)** is an enterprise-grade, zero-cloud, single-node knowledge management, semantic retrieval, document intelligence, and multi-hop RAG platform. Built around a modular FastAPI backend, SQLite FTS5 vector storage, local Ollama / GGUF LLM integration, and a React 19 / Vite single-page frontend, Uroboros enables real-time local search, structural parsing, multi-hop RAG reasoning, and graph-based knowledge discovery without requiring external cloud vector databases or heavy third-party runtime dependencies.
 
-With **32 State-of-the-Art Architectural Engines**, **13 Incomparable Frontier RAG Paradigms**, **21 Single-Node RAG Innovations**, **135 Domain Modules**, and **98 Automated Test Suites**, Uroboros surpasses cloud search services (such as Microsoft Azure AI Search, NotebookLM, Glean, Cursor RAG, and Perplexity) by delivering counterfactual stress-testing, hierarchical RAPTOR indexing, binary ColBERT MaxSim reranking, quantum-safe zero-knowledge data masking, multi-agent adversarial debate, predictive context pre-caching, and hardware single-instance process memory isolation directly on local hardware.
+With **32 State-of-the-Art Architectural Engines**, **13 Incomparable Frontier RAG Paradigms**, **21 Single-Node RAG Innovations**, **135 Domain Modules**, and **98 Automated Test Suites (826 Verification Tests)**, Uroboros surpasses cloud search services (such as Microsoft Azure AI Search, NotebookLM, Glean, Cursor RAG, and Perplexity) by delivering counterfactual stress-testing, hierarchical RAPTOR indexing, binary ColBERT MaxSim reranking, quantum-safe zero-knowledge data masking, multi-agent adversarial debate, predictive context pre-caching, and hardware single-instance process memory isolation directly on local hardware.
 
 ---
 
@@ -32,7 +33,7 @@ With **32 State-of-the-Art Architectural Engines**, **13 Incomparable Frontier R
 - [3. The 13 Incomparable Frontier RAG Paradigms](#3-the-13-incomparable-frontier-rag-paradigms)
 - [4. The 21 Single-Node RAG Innovations Matrix](#4-the-21-single-node-rag-innovations-matrix)
 - [5. Hardware Single-Instance Process Memory Guard](#5-hardware-single-instance-process-memory-guard)
-- [6. End-to-End System Pipeline Architecture](#6-end-to-end-system-pipeline-architecture)
+- [6. End-to-End System Pipeline & Sequence Architecture](#6-end-to-end-system-pipeline--sequence-architecture)
 - [7. Complete Codebase Directory Layout](#7-complete-codebase-directory-layout)
 - [8. API Router Architecture & Specifications (`src/app/routers/`)](#8-api-router-architecture--specifications-srcapprouters)
 - [9. Complete REST API Specifications & Curl Reference](#9-complete-rest-api-specifications--curl-reference)
@@ -48,13 +49,14 @@ With **32 State-of-the-Art Architectural Engines**, **13 Incomparable Frontier R
 - [19. Advanced Query Filter & Operator Syntax Guide](#19-advanced-query-filter--operator-syntax-guide)
 - [20. Configuration Parameters & Environment Variables Reference](#20-configuration-parameters--environment-variables-reference)
 - [21. Command Line Interface (CLI) Master Reference](#21-command-line-interface-cli-master-reference)
-- [22. Frontend Architecture & React SPA View Showcase](#22-frontend-architecture--react-spa-view-showcase)
-- [23. Troubleshooting Matrix & Diagnostic Workflows](#23-troubleshooting-matrix--diagnostic-workflows)
-- [24. Security, PII Redaction, Zero-Knowledge & SOC 2 Compliance](#24-security-pii-redaction-zero-knowledge--soc-2-compliance)
-- [25. Quality Assurance, Testing & Compliance Framework](#25-quality-assurance-testing--compliance-framework)
-- [26. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol](#26-disaster-recovery-snapshot-migration--cold-restore-protocol)
-- [27. Hardware Sizing, GPU Allocation & VRAM Tuning Matrix](#27-hardware-sizing-gpu-allocation--vram-tuning-matrix)
-- [28. License](#28-license)
+- [22. Autonomous Co-Pilot & Task Master Integration (Tududi)](#22-autonomous-co-pilot--task-master-integration-tududi)
+- [23. Frontend Architecture & React SPA View Showcase](#23-frontend-architecture--react-spa-view-showcase)
+- [24. Troubleshooting Matrix & Diagnostic Workflows](#24-troubleshooting-matrix--diagnostic-workflows)
+- [25. Security, PII Redaction, Zero-Knowledge & SOC 2 Compliance](#25-security-pii-redaction-zero-knowledge--soc-2-compliance)
+- [26. Quality Assurance, Testing & Compliance Framework](#26-quality-assurance-testing--compliance-framework)
+- [27. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol](#27-disaster-recovery-snapshot-migration--cold-restore-protocol)
+- [28. Hardware Sizing, GPU Allocation & VRAM Tuning Matrix](#28-hardware-sizing-gpu-allocation--vram-tuning-matrix)
+- [29. License](#29-license)
 
 ---
 
@@ -99,7 +101,24 @@ $$\theta_k \sim \text{Beta}(\alpha_k + 1, \, \beta_k + 1)$$
 
 $$\text{Pipeline}_{\text{selected}} = \arg\max_{k} \theta_k$$
 
-### 1.6 Algorithmic Complexity Bounds Proofs
+### 1.6 MinHash Jaccard Similarity Ratio
+The Jaccard similarity between set of k-shingles $A$ and set of k-shingles $B$ is:
+
+$$\text{Jaccard}(A, B) = \frac{|A \cap B|}{|A \cup B|}$$
+
+### 1.7 PageRank Centrality Power Iteration
+The PageRank vector $\mathbf{r}$ for graph adjacency matrix $\mathbf{M}$ is computed iteratively:
+
+$$\mathbf{r}^{(t+1)} = d \mathbf{M} \mathbf{r}^{(t)} + \frac{1-d}{N} \mathbf{1}$$
+
+Where $d = 0.85$ is the damping factor and $N$ is the number of document nodes.
+
+### 1.8 Flesch Reading Ease Readability Formula
+The readability index $RE$ for a passage is calculated as:
+
+$$RE = 206.835 - 1.015 \left( \frac{\text{total words}}{\text{total sentences}} \right) - 84.6 \left( \frac{\text{total syllables}}{\text{total words}} \right)$$
+
+### 1.9 Algorithmic Complexity Bounds Proofs
 - **Matryoshka Vector Search Complexity**: $O(N \cdot d_{coarse} + K \cdot d_{fine})$, reducing vector scan operations by **75%** over flat brute-force search.
 - **Binary MaxSim Bitpack Complexity**: $O(|Q| \cdot |D|)$ using 1 CPU instruction per 64 dimensions (`POPCNT`), executing in **< 4.2ms**.
 - **GraphRAG Multi-Hop BFS Complexity**: $O(|V| + |E|)$ with visited set pruning, capping maximum depth traversal at $H = 3$.
@@ -211,7 +230,9 @@ sequenceDiagram
 
 ---
 
-## 6. End-to-End System Pipeline Architecture
+## 6. End-to-End System Pipeline & Sequence Architecture
+
+### 6.1 Flowchart Pipeline Architecture
 
 ```mermaid
 flowchart TD
@@ -242,6 +263,68 @@ flowchart TD
 
     Response --> User
     Refusal --> User
+```
+
+### 6.2 Document Ingestion Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant File as Workspace File
+    participant Parser as Infrastructure Parsers
+    participant Dedupe as SHA-256 Hash Check
+    participant Chunker as Entropy Chunker
+    participant Embed as Ollama Nomic Embeddings
+    participant DB as SQLite WAL Database
+    participant FTS as FTS5 Virtual Table
+
+    File->>Parser: Submit Document (PDF/DOCX/Audio/Image)
+    Parser->>Parser: Validate Header & Structural Layout
+    Parser->>Dedupe: Compute SHA-256 Hash
+    alt File Unchanged (SHA-256 Hit)
+        Dedupe-->>File: Skip Re-indexing (Zero Cost)
+    else File New/Modified
+        Dedupe->>Chunker: Pass Raw Content
+        Chunker->>Chunker: Segment Text at Information Entropy Boundaries
+        Chunker->>Embed: Generate 768-dim Vector Arrays (Batch Size 64)
+        Embed-->>DB: Write to `file_chunks` with Binary Vector Serialization
+        Chunker-->>DB: Write File Record to `files` Table
+        Chunker-->>FTS: Insert Tokenized Content to `fts_file_chunks`
+        DB-->>File: Return Ingestion Complete (OK)
+    end
+```
+
+### 6.3 Hybrid RAG Query Resolution Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as Client Web SPA
+    participant Router as Intent Router
+    participant FTS as FTS5 Lexical Search
+    participant Vec as Vector Cosine Store
+    participant RRF as Reciprocal Rank Fusion
+    participant Guard as Self-RAG Grounding Guard
+    participant LLM as Local LLM (Qwen 7B/14B)
+
+    User->>Router: Send Query ("What is revenue recognition?")
+    Router->>Router: Classify Intent & Extract Query Operators (`ext:`, `tag:`)
+    par Sparse Lexical Search
+        Router->>FTS: BM25 Query Match
+        FTS-->>RRF: Sparse Ranked Results
+    and Dense Vector Search
+        Router->>Vec: Cosine Vector Match
+        Vec-->>RRF: Dense Ranked Results
+    end
+    RRF->>RRF: Compute RRF Scores (k=60) + Time-Decay Score Adjustment
+    RRF->>LLM: Assemble Context Budget & Prompt
+    LLM-->>Guard: Stream Generated Candidate Answer
+    Guard->>Guard: Evaluate Groundedness & Claim Consistency
+    alt Answer Grounded
+        Guard-->>User: Stream Answer with Character Citation Links
+    else Hallucination Detected
+        Guard->>Router: Trigger Self-Correcting Rewrite Loop
+    end
 ```
 
 ---
@@ -314,44 +397,15 @@ The REST API layer is split cleanly into 10 specialized routers inside [`src/app
 ## 9. Complete REST API Specifications & Curl Reference
 
 ### 9.1 Hybrid Search API (`GET /api/search`)
-- **Query Params**: `q` (string), `limit` (int, default 10), `threshold` (float, default 0.0)
-- **Response 200 OK**:
-```json
-{
-  "query": "database connection pool ext:py",
-  "total_hits": 4,
-  "results": [
-    {
-      "filepath": "src/infrastructure/database.py",
-      "score": 0.945,
-      "snippet": "class SQLiteConnectionPool...",
-      "line_number": 35
-    }
-  ]
-}
+```bash
+curl -X GET "http://127.0.0.1:8000/api/search?q=database%20connection%20pool%20ext:py&limit=10"
 ```
 
 ### 9.2 Conversational RAG Assistant (`POST /api/rag/query`)
-- **Request Body**:
-```json
-{
-  "query": "How does the SQLite connection pool handle memory caps?",
-  "temperature": 0.0,
-  "stream": false
-}
-```
-- **Response 200 OK**:
-```json
-{
-  "answer": "The SQLite connection pool caps connections at max_connections = 8 and uses 64MB memory-mapped I/O...",
-  "citations": [
-    {
-      "file": "src/infrastructure/database.py",
-      "lines": "L35-L62"
-    }
-  ],
-  "confidence_score": 0.92
-}
+```bash
+curl -X POST "http://127.0.0.1:8000/api/rag/query" \
+     -H "Content-Type: application/json" \
+     -d '{"query": "How does the SQLite connection pool handle memory caps?", "temperature": 0.0, "stream": false}'
 ```
 
 ### 9.3 Speculative RAG Endpoint (`POST /api/search/speculative-rag`)
@@ -369,17 +423,8 @@ curl -X POST "http://127.0.0.1:8000/api/search/hallucination-guard" \
 ```
 
 ### 9.5 Executive Daily Briefing (`GET /api/briefing/daily`)
-- **Response 200 OK**:
-```json
-{
-  "date": "2026-08-12",
-  "summary": "Executive daily summary of corpus updates...",
-  "key_findings": [
-    "32 SOTA engines integrated into RAG router",
-    "Database connection pool RAM reduced by >70%"
-  ],
-  "audio_script_url": "/api/rag/briefing/audio"
-}
+```bash
+curl -X GET "http://127.0.0.1:8000/api/briefing/daily"
 ```
 
 ---
@@ -467,13 +512,11 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 72. [`vector_store.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/vector_store.py): 2-Phase Matryoshka vector store.
 73. [`web_rag_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/web_rag_fusion.py): Local vault + DuckDuckGo web search fusion.
 74. [`zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py): Quantum-safe zero-knowledge data masker.
-75-135. Specialized auxiliary domain helpers (including `architecture_doctor.py`, `agent_memory.py`, `p2p_sync.py` integration modules, and metadata transformers).
+75-135. Specialized auxiliary domain engines (`architecture_doctor.py`, `agent_memory.py`, `p2p_sync.py`, `legal_rag_engine.py`, `legal_accuracy_engine.py`, `voice_rag.py`, `transcription_engine.py`, etc.).
 
 ---
 
 ## 11. Operations & Benchmark Utility Scripts Reference (`scripts/`)
-
-The [`scripts/`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts) directory contains essential CLI maintenance, architecture audit, and testing utilities:
 
 | Script File Path | Target Operation & Execution Syntax | Description |
 | :--- | :--- | :--- |
@@ -485,8 +528,6 @@ The [`scripts/`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/script
 | [`scripts/audit_ui_playwright.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/audit_ui_playwright.py) | `python scripts/audit_ui_playwright.py` | Automated Playwright end-to-end UI audit |
 | [`scripts/capture_showcase.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/capture_showcase.py) | `python scripts/capture_showcase.py` | Captures HD application screenshots |
 | [`scripts/stress_test_domain.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/stress_test_domain.py) | `python scripts/stress_test_domain.py` | Multithreaded domain algorithm stress test |
-| [`scripts/capture_views.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/capture_views.py) | `python scripts/capture_views.py` | Generates UI views showcase captures |
-| [`scripts/verify_empirical_challenger_2.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/verify_empirical_challenger_2.py) | `python scripts/verify_empirical_challenger_2.py` | Empirical accuracy challenger framework |
 
 ---
 
@@ -507,8 +548,6 @@ Uroboros features a multi-format document parsing engine ([`src/infrastructure/p
 ---
 
 ## 13. Complete SQLite Database DDL & Storage Schema
-
-The core database engine ([`src/infrastructure/database.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/database.py)) enforces normalized relational storage with SQLite FTS5 virtual tables and WAL journal mode:
 
 ```sql
 -- 1. Document Files Registry
@@ -554,7 +593,76 @@ CREATE VIRTUAL TABLE IF NOT EXISTS fts_file_chunks USING fts5(
     tokenize = 'porter unicode61'
 );
 
--- 4. Agentic Long-Term Memory Store
+-- 4. Categorical AI Tags & Auto-Rules
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_id INTEGER NOT NULL,
+    tag TEXT NOT NULL,
+    UNIQUE(file_id, tag),
+    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS auto_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pattern TEXT UNIQUE NOT NULL,
+    tag TEXT NOT NULL,
+    priority INTEGER DEFAULT 0
+);
+
+-- 5. Chat Sessions & Messages History
+CREATE TABLE IF NOT EXISTS chat_sessions (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER DEFAULT 0,
+    title TEXT,
+    created_at REAL,
+    updated_at REAL,
+    model_path TEXT,
+    temperature REAL,
+    context_window INTEGER,
+    metadata_json TEXT
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    citations_json TEXT,
+    web_sources_json TEXT,
+    tokens_used INTEGER,
+    created_at TEXT,
+    metadata_json TEXT,
+    FOREIGN KEY(session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+);
+
+-- 6. Workflow Triggers & Execution Logs
+CREATE TABLE IF NOT EXISTS workflow_triggers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    condition_pattern TEXT,
+    webhook_url TEXT NOT NULL,
+    secret_header TEXT,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS workflow_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trigger_id INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    status TEXT NOT NULL,
+    response_status_code INTEGER,
+    response_body TEXT,
+    execution_time_ms REAL DEFAULT 0.0,
+    retry_count INTEGER DEFAULT 0,
+    executed_at TEXT NOT NULL,
+    FOREIGN KEY(trigger_id) REFERENCES workflow_triggers(id) ON DELETE CASCADE
+);
+
+-- 7. Agentic Long-Term Memory Store
 CREATE TABLE IF NOT EXISTS agent_memory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT UNIQUE NOT NULL,
@@ -564,13 +672,14 @@ CREATE TABLE IF NOT EXISTS agent_memory (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. RAG Triad Evaluation Logs
-CREATE TABLE IF NOT EXISTS rag_eval_logs (
+-- 8. Cryptographic System Audit Ledger
+CREATE TABLE IF NOT EXISTS system_audit_ledger (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    query TEXT NOT NULL,
-    context_relevance REAL NOT NULL,
-    groundedness REAL NOT NULL,
-    answer_relevance REAL NOT NULL,
+    event_type TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    details_json TEXT NOT NULL,
+    previous_hash TEXT NOT NULL,
+    current_hash TEXT NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -611,6 +720,19 @@ Uroboros incorporates a multi-tenant authentication and workspace isolation arch
 ## 16. Peer-to-Peer (P2P) LAN Mesh & Synchronization Protocol
 
 Implemented in [`src/infrastructure/p2p_sync.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/p2p_sync.py):
+
+```
+                               ┌────────────────────────────────────────┐
+                               │ UDP Multicast Peer Discovery (5353)    │
+                               └───────────────────┬────────────────────┘
+                                                   │
+                ┌──────────────────────────────────┴──────────────────────────────────┐
+                │                                                                     │
+     [Local Node A: 192.168.1.10]                                          [Peer Node B: 192.168.1.15]
+  ├── SHA-256 Index Manifest Hash                                        ├── SHA-256 Index Manifest Hash
+  └── HTTP Sync Endpoint (`/api/sync/delta`)                             └── HTTP Sync Endpoint (`/api/sync/delta`)
+```
+
 - **UDP Multicast Discovery**: Discovers workstation nodes on local networks using UDP Multicast ports 5353/5354.
 - **Delta Hash Synchronization**: Exchanges SHA-256 document hash sets to synchronize new or modified chunks across LAN peers without cloud dependencies.
 
@@ -653,6 +775,8 @@ Uroboros supports powerful, fine-grained query filter syntax across CLI and REST
 | `modified:>2026-01-01` | Restricts search candidates to files modified after January 1, 2026. |
 | `"straight-line depreciation"` | Exact phrase matching using quotes across FTS5 full-text index. |
 | `min_score:0.75` | Ignores candidate search results with similarity score below threshold. |
+| `-exclude` | Excludes document chunks containing the minus-prefixed term. |
+| `title:<term>` | Matches term specifically against document filename. |
 
 ---
 
@@ -663,11 +787,17 @@ Uroboros supports powerful, fine-grained query filter syntax across CLI and REST
 | `DB_FILE` | `./know.db` | Absolute or relative path to primary SQLite database file |
 | `ACTIVE_DIR` | `./workspace` | Target workspace directory path for file indexing |
 | `OPENAI_API_BASE` | `http://127.0.0.1:11434/v1` | Local Ollama OpenAI-compatible HTTP API base URL |
+| `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama service base URL |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | Primary Ollama LLM model tag for generation |
 | `OLLAMA_KEEP_ALIVE` | `5m` | Memory persistence window for loaded model VRAM |
 | `LLM_API_KEY` | `ollama` | Dummy API key required for OpenAI SDK initialization |
 | `JWT_SECRET` | `uroboros_secret_key` | Secret key used for signing multi-tenant JWT auth tokens |
 | `MAX_CONNECTIONS` | `8` | Maximum connections in `SQLiteConnectionPool` |
+| `P2P_MULTICAST_PORT` | `5353` | UDP Multicast port for LAN peer discovery |
+| `MAX_FILE_SIZE_MB` | `50` | Maximum file size cap in MB for text extraction |
+| `RRF_K_PARAM` | `60` | Reciprocal Rank Fusion smoothing constant |
+| `BM25_K1` | `1.5` | BM25 term frequency saturation parameter |
+| `BM25_B` | `0.75` | BM25 document length normalization parameter |
 
 ---
 
@@ -717,7 +847,30 @@ python scripts/chaos_monkey.py --duration 30
 
 ---
 
-## 22. Frontend Architecture & React SPA View Showcase
+## 22. Autonomous Co-Pilot & Task Master Integration (Tududi)
+
+Uroboros Knowledge Engine integrates natively with AI Agent skill protocols ([`neuro-copilot`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/SKILL.md) and [`tududi-tasks`](file:///C:/Users/Administrator/.gemini/config/skills/tududi-tasks/SKILL.md)):
+
+```mermaid
+graph LR
+    Agent[AI Agent / Antigravity] --> Neuro[Neuro MCP Server]
+    Agent --> Tududi[Tududi Task Master MCP]
+    Neuro --> VectorDB[(SQLite Knowledge DB)]
+    Tududi --> Audit[Audit Trail & Habit Synchronization]
+    
+    subgraph Execution Loop
+        Neuro -- 1. Query Knowledge Context --> Agent
+        Agent -- 2. Log Execution Plan [PLAN, BUILD, TEST, AUDIT] --> Tududi
+        Agent -- 3. Ingest New Documents --> Neuro
+        Tududi -- 4. Mark Task Status Complete --> Audit
+    end
+```
+
+---
+
+## 23. Frontend Architecture & React SPA View Showcase
+
+Built in `frontend/` using React 19, Vite 6, and Tailwind CSS v4:
 
 ```mermaid
 graph TD
@@ -777,7 +930,7 @@ High-contrast glassmorphic dark and light themes with responsive UI elements com
 
 ---
 
-## 23. Troubleshooting Matrix & Diagnostic Workflows
+## 24. Troubleshooting Matrix & Diagnostic Workflows
 
 | Symptom / Issue | Underlying Root Cause | Proven Diagnostic Resolution |
 | :--- | :--- | :--- |
@@ -788,7 +941,7 @@ High-contrast glassmorphic dark and light themes with responsive UI elements com
 
 ---
 
-## 24. Security, PII Redaction, Zero-Knowledge & SOC 2 Compliance
+## 25. Security, PII Redaction, Zero-Knowledge & SOC 2 Compliance
 
 - **100% Zero-Cloud Execution**: Air-gapped single-node deployment with $0 recurring API fees.
 - **Automated PII Scrubbing**: Regex rules redact SSNs, Credit Cards, API Keys, and Emails locally prior to prompt construction.
@@ -798,7 +951,7 @@ High-contrast glassmorphic dark and light themes with responsive UI elements com
 
 ---
 
-## 25. Quality Assurance, Testing & Compliance Framework
+## 26. Quality Assurance, Testing & Compliance Framework
 
 Uroboros maintains an automated test suite featuring **672 passed unit, integration, and fuzzing tests (826 total tests)** with **0 failures**:
 
@@ -813,7 +966,7 @@ python -m pytest tests/
 python run_domain_tests.py
 ```
 
-### 25.1 Engineering Test Protocols
+### 26.1 Engineering Test Protocols
 - **Dynamic Ephemeral Socket Isolation**: Test servers bind to `socket.bind(('127.0.0.1', 0))` to prevent port collisions during parallel test execution.
 - **Thread Connection Teardown**: Database thread pools are forcefully reset via [`reset_db_connections()`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/database.py) before pytest teardown to prevent Windows `WinError 32` file lock errors.
 - **Clean Architecture Certification**: Certified **100.0%** compliance via [`scripts/architecture_cli.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/architecture_cli.py).
@@ -821,7 +974,7 @@ python run_domain_tests.py
 
 ---
 
-## 26. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol
+## 27. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol
 
 Uroboros incorporates zero-downtime database snapshot backup and cold-restore capabilities:
 
@@ -843,7 +996,7 @@ Uroboros incorporates zero-downtime database snapshot backup and cold-restore ca
 
 ---
 
-## 27. Hardware Sizing, GPU Allocation & VRAM Tuning Matrix
+## 28. Hardware Sizing, GPU Allocation & VRAM Tuning Matrix
 
 | System Profile | RAM | VRAM / GPU | Recommended Configuration | Throughput / SLA |
 | :--- | :--- | :--- | :--- | :--- |
@@ -853,53 +1006,6 @@ Uroboros incorporates zero-downtime database snapshot backup and cold-restore ca
 
 ---
 
-## 28. Multilingual Tokenization & CJK Search Processing
-
-Uroboros features native Unicode NFC normalization and multi-language tokenization ([`unicodedata.normalize("NFC", text)`]):
-
-- **Diacritic & Accent Equivalence**: Character strings are normalized to Unicode NFC form before querying SQLite FTS5 indexes, ensuring accent-agnostic match parity (e.g., `canción` $\equiv$ `cancion`).
-- **CJK Sub-word Segmentation**: Chinese, Japanese, and Korean text tokenization utilizes `porter unicode61` character boundaries to enable substring matching without external C-extensions.
-
----
-
-## 29. Containerized Multi-Service Topology & Docker Orchestration
-
-Production deployment is orchestrated via `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-services:
-  uroboros-backend:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - DB_FILE=/app/data/knowledge.db
-      - OLLAMA_HOST=http://host.docker.internal:11434
-    volumes:
-      - ./data:/app/data
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-```
-
----
-
-## 30. Executive Trust & SOC 2 Type II Controls Matrix
-
-| Trust Principle | Control ID | Implementation Mechanism | Audit File / Evidence |
-| :--- | :--- | :--- | :--- |
-| **Security** | `CC6.1` | Local-only zero-cloud vector storage & air-gapped processing | [`docs/soc2_type2_attestation.md`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/docs/soc2_type2_attestation.md) |
-| **Confidentiality** | `C1.1` | Automatic PII redaction and ZK data hashing prior to LLM prompts | [`src/domain/pii_privacy_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/pii_privacy_guard.py) |
-| **Processing Integrity**| `PI1.4` | Self-RAG grounding evaluation guard verifying 100% claim consistency | [`src/domain/rag_grounding_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/rag_grounding_guard.py) |
-| **Availability** | `A1.2` | Non-blocking online SQLite WAL backups and process panic auto-recovery | [`src/infrastructure/backup_scheduler.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/backup_scheduler.py) |
-
----
-
-## 31. License
+## 29. License
 
 This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) file for complete details.
-
