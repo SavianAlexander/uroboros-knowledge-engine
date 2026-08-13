@@ -62,7 +62,10 @@ def generate_source_citations(passages: List[Dict[str, Any]]) -> List[Dict[str, 
         start_l = loc["start_line"] if loc else 1
         end_l = loc["end_line"] if loc else 1
 
-        citation_link = f"file:///{filepath.replace('\\', '/')}#L{start_l}-L{end_l}" if filepath else filename
+        import urllib.parse
+        clean_path = filepath.replace('\\', '/')
+        encoded_path = urllib.parse.quote(clean_path, safe="/:!#@$&'()*+,;=")
+        citation_link = f"file:///{encoded_path}#L{start_l}-L{end_l}" if filepath else filename
         markdown_citation = f"[{filename}#L{start_l}-L{end_l}]({citation_link})"
 
         citations.append({

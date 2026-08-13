@@ -37,7 +37,12 @@ def apply_source_credibility_weighting(
         doc_type = unicodedata.normalize("NFC", raw_type).strip().lower()
         multiplier = AUTHORITY_MULTIPLIERS.get(doc_type, 1.00)
         
-        base_score = float(cand.get("score", 0.5))
+        raw_score = cand.get("score")
+        try:
+            base_score = float(raw_score) if raw_score is not None else 0.5
+        except (ValueError, TypeError):
+            base_score = 0.5
+
         final_credibility_score = round(base_score * multiplier, 4)
 
         cand_copy["doc_type"] = doc_type

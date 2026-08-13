@@ -16,7 +16,10 @@ def execute_with_sla_circuit_breaker(
     """
     Executes search function, triggering fallback strategy if latency exceeds max SLA bounds.
     """
-    if latency_ms <= max_sla_ms:
+    safe_latency = float(latency_ms) if latency_ms is not None and isinstance(latency_ms, (int, float)) else 999.0
+    safe_max_sla = float(max_sla_ms) if max_sla_ms is not None and isinstance(max_sla_ms, (int, float)) else 50.0
+
+    if safe_latency <= safe_max_sla:
         try:
             result = primary_func()
             return {

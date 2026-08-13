@@ -42,8 +42,11 @@ def execute_active_rag_loop(
             "status": "refinement_needed"
         }
 
-    combined_text = " ".join(initial_chunks)
-    score = compute_ngram_overlap(query, combined_text)
+    import unicodedata
+    norm_query = unicodedata.normalize("NFC", str(query or ""))
+    norm_chunks = [unicodedata.normalize("NFC", str(c)) for c in initial_chunks if c]
+    combined_text = " ".join(norm_chunks)
+    score = compute_ngram_overlap(norm_query, combined_text)
     
     second_pass_required = score < confidence_threshold
     refined_query = reformulate_query(query, initial_chunks) if second_pass_required else query

@@ -202,7 +202,8 @@ def get_tag_distribution(db_path: Optional[str] = None) -> TagDistributionRespon
                 total_tags = len(all_tag_rows)
 
                 top_rows = all_tag_rows[:15]
-                top_tags = [{"tag": r[0], "count": r[1]} for r in top_rows[:10]]
+                import unicodedata
+                top_tags = [{"tag": unicodedata.normalize("NFC", str(r[0])), "count": r[1]} for r in top_rows[:10]]
                 # ponytail: Candidate pool capped at top 15 tags with session temp index for O(log N) join under 15ms.
                 candidate_tags = [r[0] for r in top_rows]
 
@@ -222,7 +223,7 @@ def get_tag_distribution(db_path: Optional[str] = None) -> TagDistributionRespon
                         ORDER BY weight DESC
                         LIMIT 20
                     """)
-                    cooccurrence = [{"tag1": r[0], "tag2": r[1], "weight": r[2]} for r in cur.fetchall()]
+                    cooccurrence = [{"tag1": unicodedata.normalize("NFC", str(r[0])), "tag2": unicodedata.normalize("NFC", str(r[1])), "weight": r[2]} for r in cur.fetchall()]
                     cur.execute("DELETE FROM tmp_cand_tags")
 
             except sqlite3.OperationalError:
