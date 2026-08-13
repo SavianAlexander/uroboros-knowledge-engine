@@ -13,8 +13,9 @@ def evaluate_relevance(query: str, context_chunk: str) -> Dict[str, Any]:
     """
     Evaluates [IsRel] reflection token: Is context chunk relevant to query?
     """
-    safe_q = str(query or "")
-    safe_c = str(context_chunk or "")
+    import unicodedata
+    safe_q = unicodedata.normalize("NFC", str(query or ""))
+    safe_c = unicodedata.normalize("NFC", str(context_chunk or ""))
     q_words = set(RE_WORD.findall(safe_q.lower()))
     c_words = set(RE_WORD.findall(safe_c.lower()))
 
@@ -36,8 +37,9 @@ def evaluate_support(answer: str, context_chunk: str) -> Dict[str, Any]:
     """
     Evaluates [IsSup] reflection token: Is generated answer factually grounded in context?
     """
-    safe_a = str(answer or "")
-    safe_c = str(context_chunk or "")
+    import unicodedata
+    safe_a = unicodedata.normalize("NFC", str(answer or ""))
+    safe_c = unicodedata.normalize("NFC", str(context_chunk or ""))
     a_words = set(RE_WORD.findall(safe_a.lower()))
     c_words = set(RE_WORD.findall(safe_c.lower()))
 

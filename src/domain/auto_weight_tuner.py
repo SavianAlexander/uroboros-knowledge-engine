@@ -23,6 +23,8 @@ def optimize_search_parameters(
     if not valid_feedback:
         return {"optimized_weights": weights, "status": "no_feedback_data", "adjustment_applied": False}
 
+    import unicodedata
+
     def _safe_score(f):
         s = f.get("score")
         if s is None:

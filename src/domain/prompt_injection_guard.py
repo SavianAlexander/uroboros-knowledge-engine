@@ -27,8 +27,9 @@ def scan_prompt_injection(text: str) -> Dict[str, Any]:
     if not text or not isinstance(text, str):
         return {"is_safe": True, "injection_triggers": [], "sanitized_text": "", "status": "success"}
 
+    import unicodedata
     flagged_triggers = []
-    sanitized = text
+    sanitized = unicodedata.normalize("NFC", str(text))
 
     for pattern in INJECTION_PATTERNS:
         matches = pattern.findall(text)

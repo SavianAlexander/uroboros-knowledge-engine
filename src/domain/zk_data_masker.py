@@ -16,7 +16,9 @@ def mask_payload_with_zk_proof(sensitive_text: str, secret_salt: str = "uroboros
     if not sensitive_text or not isinstance(sensitive_text, str):
         return {"status": "empty", "zk_proof": "", "masked_payload": ""}
 
-    combined = f"{secret_salt}:{sensitive_text}:{secret_salt}"
+    import unicodedata
+    norm_text = unicodedata.normalize("NFC", str(sensitive_text))
+    combined = f"{secret_salt}:{norm_text}:{secret_salt}"
     zk_proof = hashlib.sha256(combined.encode("utf-8")).hexdigest()
 
     # Redact sensitive words (3+ chars) with hash tokens

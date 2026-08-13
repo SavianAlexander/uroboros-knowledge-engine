@@ -18,11 +18,12 @@ def detect_vault_contradictions(db_path: str = DB_FILE, limit: int = 50) -> Dict
     Scans the files table for potential factual contradictions between documents.
     # ponytail: lightweight n-gram and negation heuristic scan across SQLite chunks
     """
+    safe_limit = max(1, int(limit)) if limit is not None and isinstance(limit, (int, float)) else 50
     try:
         with get_db_connection(db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL LIMIT ?", (limit,))
+            cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL LIMIT ?", (safe_limit,))
             rows = cursor.fetchall()
 
         if len(rows) < 2:

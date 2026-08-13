@@ -12,7 +12,8 @@ def classify_query_intent(query: str) -> str:
     if not query or not isinstance(query, str):
         return "hybrid_fact_retrieval"
 
-    q_lower = query.lower()
+    import unicodedata
+    q_lower = unicodedata.normalize("NFC", str(query)).lower()
 
     if any(k in q_lower for k in ["def ", "class ", "import ", "function", "error", "bug", "traceback"]):
         return "code_search"

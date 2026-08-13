@@ -17,7 +17,10 @@ def evaluate_rag_triad(
     3. Context Precision: Signal-to-noise ratio of top contexts vs query.
     4. Context Recall: Overlap of retrieved contexts against golden answer (if provided).
     """
-    safe_contexts = [str(c) for c in (retrieved_contexts or []) if c and isinstance(c, str)]
+    import unicodedata
+    norm_query = unicodedata.normalize("NFC", str(query or ""))
+    norm_answer = unicodedata.normalize("NFC", str(answer or ""))
+    safe_contexts = [unicodedata.normalize("NFC", str(c)) for c in (retrieved_contexts or []) if c and isinstance(c, str)]
     combined_context = " ".join(safe_contexts) if safe_contexts else ""
 
     # 1. Faithfulness

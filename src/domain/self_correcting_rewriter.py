@@ -17,7 +17,10 @@ def rewrite_grounded_answer(
     Evaluates LLM response for hallucination warnings.
     If hallucinated claims are found, strip-purges or rewrites them using grounded source chunks.
     """
-    guard_res = verify_rag_grounding(llm_response, source_chunks, threshold)
+    import unicodedata
+    norm_resp = unicodedata.normalize("NFC", str(llm_response or ""))
+    norm_chunks = [unicodedata.normalize("NFC", str(c)) for c in source_chunks if c]
+    guard_res = verify_rag_grounding(norm_resp, norm_chunks, threshold)
     
     if guard_res["overall_status"] == "grounded" or not guard_res["hallucination_warnings"]:
         return {

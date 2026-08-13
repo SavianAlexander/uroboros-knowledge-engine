@@ -17,7 +17,7 @@ def generate_executive_briefing(
     """
     Generates a structured 1-page executive briefing summary and action item checklist.
     """
-    if not document_chunks:
+    if not document_chunks or not isinstance(document_chunks, list):
         return {
             "title": title,
             "executive_summary": "No document content provided.",

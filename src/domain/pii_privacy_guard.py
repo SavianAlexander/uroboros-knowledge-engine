@@ -17,7 +17,8 @@ def redact_pii_from_text(text: str) -> Dict[str, Any]:
     Redacts PII tokens from text to guarantee privacy before LLM context insertion.
     Zero-dependency stdlib implementation.
     """
-    redacted_text = text
+    import unicodedata
+    redacted_text = unicodedata.normalize("NFC", str(text or ""))
     pii_counts = {"ssn": 0, "email": 0, "credit_card": 0, "api_key": 0}
 
     # SSN

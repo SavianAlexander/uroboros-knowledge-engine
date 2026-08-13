@@ -6,6 +6,8 @@ import json
 import re
 from typing import Dict, Any, List, Tuple
 
+RE_FTS5_OPERATORS = re.compile(r'[\*\:\^\/\"\'\{\}\[\]\(\)]')
+
 class LegalAccuracyEngine:
     """
     Legal-Grade Deterministic Accuracy Engine.
@@ -41,7 +43,7 @@ class LegalAccuracyEngine:
             return '""'
         nfc_query = unicodedata.normalize("NFC", query)
         # Strip dangerous FTS5 operators and quotes while preserving words and numbers
-        cleaned = re.sub(r'[\*\:\^\/\"\'\{\}\[\]\(\)]', ' ', nfc_query)
+        cleaned = RE_FTS5_OPERATORS.sub(' ', nfc_query)
         tokens = [t.strip() for t in cleaned.split() if t.strip()]
         tokens = [t for t in tokens if t.lower() not in ('and', 'or', 'not', 'near')]
         if not tokens:

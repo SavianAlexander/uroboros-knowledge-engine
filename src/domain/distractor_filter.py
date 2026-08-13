@@ -20,6 +20,8 @@ def filter_distractor_chunks(
     if not candidates or not isinstance(candidates, list):
         return {"filtered_candidates": [], "distractor_count": 0, "status": "success"}
 
+    import unicodedata
+    norm_query = unicodedata.normalize("NFC", str(query or ""))
     valid_candidates = [c for c in candidates if isinstance(c, dict)]
     if not valid_candidates:
         return {"filtered_candidates": [], "distractor_count": 0, "status": "success"}

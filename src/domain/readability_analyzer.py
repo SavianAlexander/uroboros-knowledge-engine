@@ -5,6 +5,7 @@ Uses Flesch Reading Ease & Flesch-Kincaid Grade Level formulas.
 
 import functools
 import re
+import unicodedata
 from typing import Dict, Any
 
 RE_SENTENCE = re.compile(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s+')
@@ -55,7 +56,6 @@ def analyze_readability(text: str) -> Dict[str, Any]:
             "status": "empty"
         }
 
-    import unicodedata
     raw_text = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
     str_text = unicodedata.normalize("NFC", raw_text)
     if not str_text.strip():

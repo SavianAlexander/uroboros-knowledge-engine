@@ -17,8 +17,9 @@ def compress_context_memory(
     if not chat_history:
         return {"summary": "", "compression_ratio": 0.0, "status": "empty_history"}
 
-    user_turns = [msg.get("content", "") for msg in chat_history if msg.get("role") == "user"]
-    assistant_turns = [msg.get("content", "") for msg in chat_history if msg.get("role") == "assistant"]
+    import unicodedata
+    user_turns = [unicodedata.normalize("NFC", str(msg.get("content", ""))) for msg in chat_history if msg.get("role") == "user"]
+    assistant_turns = [unicodedata.normalize("NFC", str(msg.get("content", ""))) for msg in chat_history if msg.get("role") == "assistant"]
 
     summary_text = f"User inquired about: {'; '.join(user_turns[:3])}. Key assistant responses covered: {'; '.join(assistant_turns[:2])}."
     summary_text = summary_text[:target_summary_len]

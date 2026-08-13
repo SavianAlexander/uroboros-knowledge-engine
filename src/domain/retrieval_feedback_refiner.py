@@ -20,7 +20,9 @@ def log_feedback_and_refine(
     """
     global _AFFINITY_LEDGER
 
-    current_weight = _AFFINITY_LEDGER.get(chunk_id, 1.0)
+    import unicodedata
+    norm_chunk_id = unicodedata.normalize("NFC", str(chunk_id or ""))
+    current_weight = _AFFINITY_LEDGER.get(norm_chunk_id, 1.0)
 
     signal_deltas = {
         "click": +0.05,

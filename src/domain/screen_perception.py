@@ -24,11 +24,13 @@ def capture_screen_context(sample_ocr: bool = True) -> Dict[str, Any]:
         else:
             ocr_text = ""
 
+        import unicodedata
+        norm_ocr = unicodedata.normalize("NFC", ocr_text) if ocr_text else ""
         return {
             "status": "active",
             "timestamp": now,
             "resolution": f"{screenshot.width}x{screenshot.height}",
-            "ocr_text_snippet": ocr_text[:500] if ocr_text else "",
+            "ocr_text_snippet": norm_ocr[:500] if norm_ocr else "",
             "has_active_display": True
         }
     except Exception as e:

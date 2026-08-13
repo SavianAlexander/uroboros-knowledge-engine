@@ -30,12 +30,11 @@ def batch_compress_embeddings(embeddings: List[List[float]], target_dim: int = 2
 
 def mrl_cosine_similarity(vec_a: List[float], vec_b: List[float], target_dim: int = 256) -> float:
     """Calculates cosine similarity on Matryoshka truncated vector slices."""
-    trunc_a = truncate_mrl_embedding(vec_a, target_dim)
-    trunc_b = truncate_mrl_embedding(vec_b, target_dim)
-    
-    min_len = min(len(trunc_a), len(trunc_b))
+    min_len = min(len(vec_a), len(vec_b), target_dim)
     if min_len == 0:
         return 0.0
     
+    trunc_a = truncate_mrl_embedding(vec_a, target_dim)
+    trunc_b = truncate_mrl_embedding(vec_b, target_dim)
     dot = sum(trunc_a[i] * trunc_b[i] for i in range(min_len))
     return round(dot, 4)

@@ -8,6 +8,11 @@ import re
 import unicodedata
 from typing import Dict, Any, List
 
+RE_SPLIT_SENTENCE = re.compile(r'(?<=[.!?])\s+')
+RE_NUMBERS = re.compile(r'\d+')
+RE_CODE_SYMBOLS = re.compile(r'[`_(){}\[\]=:]')
+RE_ENTITY = re.compile(r'^[A-Z][a-zA-Z0-9_-]*$')
+
 
 def compress_context_entropy(context_chunks: List[str], target_reduction: float = 0.4) -> Dict[str, Any]:
     """
@@ -26,18 +31,18 @@ def compress_context_entropy(context_chunks: List[str], target_reduction: float 
 
     for chunk in valid_chunks:
         norm_chunk = unicodedata.normalize("NFC", chunk)
-        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', norm_chunk) if s.strip()]
+        sentences = [s.strip() for s in RE_SPLIT_SENTENCE.split(norm_chunk) if s.strip()]
         if not sentences:
             sentences = [chunk]
 
         keep_sentences = []
         for sent in sentences:
             # High-entropy indicators: numbers, code symbols, uppercase entities
-            has_numbers = bool(re.search(r'\d+', sent))
-            has_code = bool(re.search(r'[`_(){}\[\]=:]', sent))
+            has_numbers = bool(RE_NUMBERS.search(sent))
+            has_code = bool(RE_CODE_SYMBOLS.search(sent))
             words = sent.split()
             middle_words = words[1:] if len(words) > 1 else []
-            has_entities = any(bool(re.match(r'^[A-Z][a-zA-Z0-9_-]*$', w.strip(".,;:!?\"'()[]{}"))) for w in middle_words)
+            has_entities = any(bool(RE_ENTITY.match(w.strip(".,;:!?\"'()[]{}"))) for w in middle_words)
 
             if has_numbers or has_code or has_entities or len(words) < 8:
                 keep_sentences.append(sent)

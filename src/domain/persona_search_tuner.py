@@ -39,7 +39,8 @@ def tune_search_by_persona(
     """
     Reranks candidate search results based on active user persona weighting.
     """
-    persona_str = str(persona or "developer").lower()
+    import unicodedata
+    persona_str = unicodedata.normalize("NFC", str(persona or "developer")).lower()
     persona_config = PERSONA_WEIGHTS.get(persona_str, PERSONA_WEIGHTS["developer"])
     boost_terms = set(persona_config["boost_terms"])
 

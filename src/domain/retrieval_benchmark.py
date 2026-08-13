@@ -20,11 +20,13 @@ def benchmark_vector_retrieval(
     """
     store = vector_store or DenseVectorStore(dimension=dimension)
     
+    import unicodedata
     # Ensure dummy vectors exist if store is empty
     if not store.vectors:
         for i in range(20):
             dummy_vec = [0.05 * (i + j) for j in range(dimension)]
-            store.add_vector(f"bench_doc_{i}", dummy_vec, {"title": f"Bench Doc {i}"})
+            title_nfc = unicodedata.normalize("NFC", f"Bench Doc {i}")
+            store.add_vector(f"bench_doc_{i}", dummy_vec, {"title": title_nfc})
 
     query_vec = [0.1] * dimension
     latencies_ms = []

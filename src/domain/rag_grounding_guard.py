@@ -5,6 +5,7 @@ Zero-dependency, stdlib implementation.
 """
 
 import re
+import unicodedata
 from typing import List, Dict, Any
 
 RE_SENTENCE = re.compile(r'[^.!?]+[.!?]+')
@@ -30,7 +31,6 @@ def compute_ngram_overlap(claim: str, source_text: str) -> float:
     if not claim or not source_text or not isinstance(claim, str) or not isinstance(source_text, str):
         return 0.0 if (claim and not source_text) else 1.0
 
-    import unicodedata
     claim_norm = unicodedata.normalize("NFC", claim)
     source_norm = unicodedata.normalize("NFC", source_text)
 

@@ -12,7 +12,8 @@ def generate_hypothetical_document(query: str) -> Dict[str, Any]:
     Generates a structured hypothetical answer document representation for a user query.
     Zero-dependency stdlib implementation.
     """
-    cleaned_query = query.strip()
+    import unicodedata
+    cleaned_query = unicodedata.normalize("NFC", query.strip())
     if not cleaned_query:
         return {"hypothetical_text": "", "keywords": [], "status": "success"}
 

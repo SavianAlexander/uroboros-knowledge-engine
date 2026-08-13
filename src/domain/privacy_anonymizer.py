@@ -22,7 +22,8 @@ def anonymize_text_pii(text: str) -> Dict[str, Any]:
     if not text or not isinstance(text, str):
         return {"anonymized_text": "", "redactions_count": 0, "status": "success"}
 
-    anonymized = text
+    import unicodedata
+    anonymized = unicodedata.normalize("NFC", str(text))
     redactions = 0
 
     def replace_and_count(pattern, replacement, input_str):

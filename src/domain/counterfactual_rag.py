@@ -22,7 +22,9 @@ def execute_counterfactual_rag(query: str, max_scenarios: int = 2) -> Dict[str, 
             "scenarios": [],
             "stress_tested": False
         }
-    formatted_ctx, primary_snippets = extract_advanced_rag_context(query, max_chunks=3)
+    import unicodedata
+    norm_query = unicodedata.normalize("NFC", str(query or ""))
+    formatted_ctx, primary_snippets = extract_advanced_rag_context(norm_query, max_chunks=3)
     
     counter_query = f"NOT {query} alternative exceptions failure modes"
     _, counter_snippets = extract_advanced_rag_context(counter_query, max_chunks=2)
