@@ -98,7 +98,7 @@ export const api = {
     fetchAPI<any>('/chat/sessions', { method: 'POST', body: JSON.stringify({ title }) }),
   deleteChatSession: (id: string) =>
     fetchAPI<any>(`/chat/sessions/${id}`, { method: 'DELETE' }),
-  ragStream: (message: string, session_id?: string, options?: RequestInit) => {
+  ragStream: (message: string, session_id?: string, options?: RequestInit & { web_search?: boolean; temperature?: number; model?: string }) => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json', ...getAuthHeaders() };
     if (options?.headers) {
       if (options.headers instanceof Headers) {
@@ -109,8 +109,15 @@ export const api = {
         Object.assign(headers, options.headers);
       }
     }
-    return fetch(`${BASE_URL}/chat/stream`, { method: 'POST', ...options, headers, body: JSON.stringify({ message, session_id }) });
+    const { web_search, temperature, model, ...fetchOptions } = options || {};
+    return fetch(`${BASE_URL}/chat/stream`, {
+      method: 'POST',
+      ...fetchOptions,
+      headers,
+      body: JSON.stringify({ message, session_id, web_search, temperature, model })
+    });
   },
+
 
   // Files
   fileRaw: (path: string) => fetchAPI<any>(`/file/raw?path=${encodeURIComponent(path)}`),

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 import { ChatSession, ChatMessage } from '../types';
 import { glassCardClasses } from '../lib/utils';
-import { Bot, Send, User, Settings, Search, FileText, Copy, Check, Sparkles } from 'lucide-react';
+import { Bot, Send, User, Settings, Search, FileText, Copy, Check, Sparkles, Trash2, Globe, Plus, RefreshCw } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
 export default function ChatView() {
@@ -11,12 +11,25 @@ export default function ChatView() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
 
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [modelConfig, setModelConfig] = useState('Llama-3-8B-Instruct.gguf');
+  const [temperature, setTemperature] = useState<number>(0.7);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const activeSessionObj = sessions.find(s => s.id === activeSession);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isStreaming]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -27,7 +40,7 @@ export default function ChatView() {
         setActiveSession(data[0].id);
         setMessages(data[0].messages || []);
       }
-    }).catch(e => console.error('Failed to load sessions:', e));
+    }).catch(e => console.error('Failed to load chat sessions:', e));
     return () => controller.abort();
   }, []);
 
@@ -44,28 +57,63 @@ export default function ChatView() {
     }
   };
 
-  const sendPromptText = (promptText: string) => {
-    setInput(promptText);
+  const handleDeleteSession = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      await api.deleteChatSession(id);
+      setSessions(prev => prev.filter(s => s.id !== id));
+      if (activeSession === id) {
+        const remaining = sessions.filter(s => s.id !== id);
+        if (remaining.length > 0) {
+          setActiveSession(remaining[0].id);
+          setMessages(remaining[0].messages || []);
+        } else {
+          setActiveSession(null);
+          setMessages([]);
+        }
+      }
+      toast('Session Deleted', 'Chat session removed', 'info');
+    } catch (err) {
+      console.error('Failed to delete session:', err);
+      toast('Delete Error', 'Could not delete session', 'error');
+    }
+  };
+
+  const handleClearMessages = () => {
+    setMessages([]);
+    toast('Chat Cleared', 'Conversation history cleared', 'info');
   };
 
   const copyMessageText = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedMsgId(id);
-    toast('Copied Message', 'Copied text to clipboard', 'info');
+    toast('Copied Message', 'Text copied to clipboard', 'info');
     setTimeout(() => setCopiedMsgId(null), 2000);
   };
 
   const handleSelectSession = (s: ChatSession) => {
+    if (activeSession === s.id) return;
     abortRef.current?.abort();
     setActiveSession(s.id);
     setMessages(s.messages || []);
   };
 
-  const handleSend = async (e: React.FormEvent) => {
+  const handleSendPromptText = (promptText: string) => {
+    setInput(promptText);
+    executeSend(promptText);
+  };
+
+  const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
-    
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: input };
+    executeSend(input);
+  };
+
+  const executeSend = async (textToSend: string) => {
+    const trimmed = textToSend.trim();
+    if (!trimmed || isStreaming) return;
+
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: trimmed };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsStreaming(true);
@@ -75,57 +123,117 @@ export default function ChatView() {
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Add empty assistant message to append to
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: '' }]);
-      
-      const response = await api.ragStream(userMsg.content, activeSession ?? undefined, { signal: controller.signal });
-      
+      // Add placeholder assistant message
+      const assistantMsgId = (Date.now() + 1).toString();
+      setMessages(prev => [...prev, { id: assistantMsgId, role: 'assistant', content: '', sources: [] }]);
+
+      const response = await api.ragStream(trimmed, activeSession ?? undefined, {
+        signal: controller.signal,
+        web_search: webSearchEnabled,
+        temperature: !isNaN(temperature) ? temperature : 0.7,
+        model: modelConfig
+      });
+
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       if (!reader) return;
 
       let currentResponse = '';
+      let gatheredSources: Array<{ title?: string; path?: string; url?: string; snippet?: string }> = [];
       let buffer = '';
+
       while (true) {
         const { done, value } = await reader.read();
-        
-        // ponytail: buffer stream chunks
         if (value) buffer += decoder.decode(value, { stream: !done });
-        
+
         const lines = buffer.split('\n');
         buffer = done ? '' : (lines.pop() || '');
-        
+
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const dataStr = line.slice(6).trim();
             if (!dataStr) continue;
             try {
               const data = JSON.parse(dataStr);
-              if (data.type === 'token') {
+              if (data.type === 'token' && data.content) {
                 currentResponse += data.content;
                 setMessages(prev => {
                   const newMsgs = [...prev];
-                  const last = newMsgs[newMsgs.length - 1];
-                  if (last.role === 'assistant') {
-                    newMsgs[newMsgs.length - 1] = { ...last, content: currentResponse };
+                  const idx = newMsgs.findIndex(m => m.id === assistantMsgId);
+                  if (idx !== -1) {
+                    newMsgs[idx] = { ...newMsgs[idx], content: currentResponse, sources: gatheredSources };
                   }
                   return newMsgs;
                 });
-              } else if (data.type === 'sources' && data.sources?.length) {
-                 // handle sources if we wanted to
-              } else if (data.type === 'done') {
-                 // Finished
+              } else if (data.type === 'sources' || data.type === 'citations') {
+                const rawSources = data.sources || data.local_citations || data.web_sources || [];
+                gatheredSources = rawSources.map((src: any) => ({
+                  title: src.title || src.filename || src.path || 'Document Context',
+                  path: src.path || src.filepath || '',
+                  url: src.url || src.link || '',
+                  snippet: src.snippet || src.text || ''
+                }));
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const idx = newMsgs.findIndex(m => m.id === assistantMsgId);
+                  if (idx !== -1) {
+                    newMsgs[idx] = { ...newMsgs[idx], sources: gatheredSources };
+                  }
+                  return newMsgs;
+                });
               }
-            } catch (err) {}
+            } catch (err) {
+              // Ignore malformed SSE chunk line
+            }
           }
         }
         if (done) break;
       }
-    } catch (err) {
-      console.error('Chat stream error:', err);
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error('Chat stream error:', err);
+        toast('Stream Error', 'Failed to complete RAG response stream', 'error');
+      }
     } finally {
       setIsStreaming(false);
     }
+  };
+
+  const renderFormattedContent = (content: string, msgId: string) => {
+    if (!content.includes('```')) {
+      return <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>;
+    }
+
+    const parts = content.split(/(```[\s\S]*?```)/g);
+    return (
+      <div className="space-y-3">
+        {parts.map((part, index) => {
+          if (part.startsWith('```') && part.endsWith('```')) {
+            const match = part.match(/^```(\w+)?\n?([\s\S]*?)```$/);
+            const lang = match ? match[1] || 'code' : 'code';
+            const codeText = match ? match[2].trim() : part.slice(3, -3).trim();
+            const codeBlockId = `${msgId}-code-${index}`;
+
+            return (
+              <div key={index} className="my-2 rounded-xl overflow-hidden border border-slate-700/50 bg-slate-900/90 text-slate-100 text-xs font-mono">
+                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800/80 border-b border-slate-700/50 text-slate-400 text-[11px]">
+                  <span>{lang}</span>
+                  <button
+                    onClick={() => copyMessageText(codeBlockId, codeText)}
+                    className="flex items-center gap-1 hover:text-slate-200 transition-colors"
+                  >
+                    {copiedMsgId === codeBlockId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedMsgId === codeBlockId ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+                <pre className="p-3 overflow-x-auto whitespace-pre leading-relaxed">{codeText}</pre>
+              </div>
+            );
+          }
+          return part ? <p key={index} className="text-sm leading-relaxed whitespace-pre-wrap">{part}</p> : null;
+        })}
+      </div>
+    );
   };
 
   return (
@@ -133,75 +241,212 @@ export default function ChatView() {
       {/* Sidebar */}
       <div className="w-72 border-r border-slate-200 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/30 flex flex-col">
         <div className="p-4 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">
-          <h3 className="font-medium text-slate-900 dark:text-slate-200">Sessions</h3>
-          <button onClick={handleNewSession} className="text-xs bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded hover:bg-indigo-500/30 transition-colors">New +</button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {sessions.map(s => (
-            <button key={s.id} onClick={() => handleSelectSession(s)} className={`w-full text-left px-3 py-3 rounded-lg transition-colors border ${activeSession === s.id ? 'bg-indigo-500/10 border-indigo-500/20' : 'hover:bg-slate-100 dark:bg-white/5 border-transparent hover:border-slate-200 dark:hover:border-white/5'}`}>
-              <p className={`text-sm font-medium truncate ${activeSession === s.id ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>{s.title || 'Conversation'}</p>
-              <p className="text-xs text-slate-500 mt-1">{new Date(s.updatedAt || Date.now()).toLocaleDateString()}</p>
-            </button>
-          ))}
+          <h3 className="font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2">
+            <Bot className="w-4 h-4 text-indigo-500" /> Chat Sessions
+          </h3>
+          <button
+            onClick={handleNewSession}
+            className="text-xs bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-lg hover:bg-indigo-500/30 transition-colors flex items-center gap-1 font-medium"
+          >
+            <Plus className="w-3.5 h-3.5" /> New
+          </button>
         </div>
         
-        {/* Model Config Panel */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {sessions.length === 0 ? (
+            <div className="text-center py-8 text-xs text-slate-500">No active sessions. Click "New" to start.</div>
+          ) : (
+            sessions.map(s => (
+              <div
+                key={s.id}
+                onClick={() => handleSelectSession(s)}
+                className={`group w-full text-left px-3 py-2.5 rounded-lg transition-colors border flex items-center justify-between cursor-pointer ${
+                  activeSession === s.id
+                    ? 'bg-indigo-500/10 border-indigo-500/30 dark:border-indigo-500/20'
+                    : 'hover:bg-slate-100 dark:hover:bg-white/5 border-transparent hover:border-slate-200 dark:hover:border-white/5'
+                }`}
+              >
+                <div className="min-w-0 flex-1 pr-2">
+                  <p className={`text-sm font-medium truncate ${activeSession === s.id ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>
+                    {s.title || 'Conversation'}
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    {new Date(s.updatedAt || Date.now()).toLocaleDateString()}
+                  </p>
+                </div>
+                <button
+                  onClick={(e) => handleDeleteSession(e, s.id)}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded transition-all"
+                  title="Delete Session"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Model & Temperature Config Panel */}
         <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-white/50 dark:bg-slate-950/50 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5"><Settings className="w-3 h-3" /> Model Config</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+              <Settings className="w-3.5 h-3.5 text-indigo-500" /> Model Config
+            </span>
           </div>
-          <select aria-label="Model Config" value={modelConfig} onChange={(e) => setModelConfig(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 p-2 outline-none">
-            <option>Llama-3-8B-Instruct.gguf</option>
-            <option>Mistral-7B-v0.2.gguf</option>
+          <select
+            aria-label="Model Config"
+            value={modelConfig}
+            onChange={(e) => setModelConfig(e.target.value)}
+            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg text-xs text-slate-900 dark:text-slate-200 p-2 outline-none focus:border-indigo-500/50"
+          >
+            <option value="Llama-3-8B-Instruct.gguf">Llama-3-8B-Instruct.gguf</option>
+            <option value="Mistral-7B-v0.2.gguf">Mistral-7B-v0.2.gguf</option>
+            <option value="Ollama / Local LLM">Ollama / Local LLM</option>
           </select>
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500">Temp:</span>
-            <input type="range" aria-label="Temperature" min="0" max="1" step="0.1" defaultValue="0.7" className="flex-1 accent-indigo-500" />
-            <span className="text-xs text-slate-600 dark:text-slate-400">0.7</span>
+            <input
+              type="range"
+              aria-label="Temperature"
+              min="0"
+              max="1"
+              step="0.1"
+              value={!isNaN(temperature) ? temperature : 0.7}
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              className="flex-1 accent-indigo-500 cursor-pointer"
+            />
+            <span className="text-xs font-mono text-slate-600 dark:text-slate-400 w-6 text-right">
+              {!isNaN(temperature) ? temperature.toFixed(1) : '0.7'}
+            </span>
           </div>
         </div>
       </div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col bg-white/20 dark:bg-slate-950/20">
-        <div className="p-4 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">
+        {/* Header */}
+        <div className="p-4 border-b border-slate-200 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm">
           <div className="flex flex-col">
-            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-200">Quantum Physics Explainer</h2>
-            <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400"/> RAG Active</span>
+            <h2 className="text-base font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-indigo-500" />
+              {activeSessionObj?.title || 'Neuro RAG Chat Assistant'}
+            </h2>
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              {webSearchEnabled ? 'RAG + Web Search Active' : 'Vault RAG Active'}
+            </span>
           </div>
+
           <div className="flex items-center gap-2">
-            <button className="p-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-200 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-300 dark:border-white/10 transition-colors" title="Web Search Enabled"><Search className="w-4 h-4" /></button>
+            <button
+              onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+              className={`p-2 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
+                webSearchEnabled
+                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm shadow-indigo-500/30'
+                  : 'bg-slate-100 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+              title={webSearchEnabled ? 'Web Search Enabled (Grounding + Web)' : 'Web Search Disabled (Local Vault RAG)'}
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>Web Search</span>
+            </button>
+
+            <button
+              onClick={handleClearMessages}
+              className="p-2 text-slate-500 hover:text-rose-500 bg-slate-100 dark:bg-white/5 hover:bg-rose-500/10 rounded-lg border border-slate-300 dark:border-white/10 transition-colors"
+              title="Clear Messages"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
+        {/* Messages Stream */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto">
-              <Bot className="w-16 h-16 text-slate-700 mb-6" />
-              <h3 className="text-xl font-medium text-slate-700 dark:text-slate-300 mb-2">How can I help you?</h3>
-              <p className="text-sm text-slate-500 mb-8">Ask a question about your knowledge graph, analyze documents, or run web searches.</p>
-              
+            <div className="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto py-12">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6">
+                <Bot className="w-8 h-8 text-indigo-500" />
+              </div>
+              <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-2">
+                How can I assist your vault research today?
+              </h3>
+              <p className="text-xs text-slate-500 max-w-sm mb-8">
+                Ask questions about your local knowledge base, discover semantic connections, or query live web search.
+              </p>
+
               <div className="grid grid-cols-2 gap-3 w-full">
-                <button className="text-left p-3 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100 dark:bg-white/5 transition-colors text-sm text-slate-700 dark:text-slate-300">Summarize the latest research PDF</button>
-                <button className="text-left p-3 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100 dark:bg-white/5 transition-colors text-sm text-slate-700 dark:text-slate-300">Find connections to 'quantum field'</button>
+                <button
+                  onClick={() => handleSendPromptText('Summarize the latest research document in the vault')}
+                  className="text-left p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group"
+                >
+                  <span className="font-medium text-slate-900 dark:text-slate-200 group-hover:text-indigo-500 transition-colors">Summarize Research</span>
+                  <span className="text-[11px] text-slate-500">Synthesize documents in local storage</span>
+                </button>
+
+                <button
+                  onClick={() => handleSendPromptText("Find connections to 'quantum computing'") }
+                  className="text-left p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group"
+                >
+                  <span className="font-medium text-slate-900 dark:text-slate-200 group-hover:text-indigo-500 transition-colors">Discover Connections</span>
+                  <span className="text-[11px] text-slate-500">Explore multi-hop knowledge graph</span>
+                </button>
+
+                <button
+                  onClick={() => handleSendPromptText('Explain vector ColBERT MaxSim reranking')}
+                  className="text-left p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group"
+                >
+                  <span className="font-medium text-slate-900 dark:text-slate-200 group-hover:text-indigo-500 transition-colors">Explain Algorithms</span>
+                  <span className="text-[11px] text-slate-500">Break down retrieval paradigms</span>
+                </button>
+
+                <button
+                  onClick={() => handleSendPromptText('Search the web for recent accounting standards updates')}
+                  className="text-left p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group"
+                >
+                  <span className="font-medium text-slate-900 dark:text-slate-200 group-hover:text-indigo-500 transition-colors">Web Grounding</span>
+                  <span className="text-[11px] text-slate-500">Query live search with WebSearchFetcher</span>
+                </button>
               </div>
             </div>
           ) : (
             messages.map(msg => (
-              <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={msg.id} className={`flex gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'assistant' && (
                   <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
                     <Bot className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   </div>
                 )}
-                
-                <div className={`max-w-[75%] rounded-2xl p-4 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : `${glassCardClasses} rounded-tl-sm text-slate-900 dark:text-slate-200`}`}>
-                  <p className="text-sm leading-relaxed">{msg.content}</p>
-                  
-                  {msg.role === 'assistant' && (
-                    <div className="mt-3 pt-3 border-t border-slate-300 dark:border-white/10 flex items-center gap-2">
-                      <span className="text-xs text-slate-500">Sources:</span>
-                      <span className="flex items-center gap-1 text-xs bg-slate-100 dark:bg-white/5 px-2 py-1 rounded border border-slate-300 dark:border-white/10 text-cyan-600 dark:text-cyan-400"><FileText className="w-3 h-3"/> research.pdf</span>
+
+                <div className={`group relative max-w-[80%] rounded-2xl p-4 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : `${glassCardClasses} rounded-tl-sm text-slate-900 dark:text-slate-200`}`}>
+                  {/* Message Actions */}
+                  <button
+                    onClick={() => copyMessageText(msg.id, msg.content)}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-200 bg-slate-800/40 rounded transition-all"
+                    title="Copy Text"
+                  >
+                    {copiedMsgId === msg.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {/* Formatted Content */}
+                  {renderFormattedContent(msg.content, msg.id)}
+
+                  {/* Grounded Sources */}
+                  {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-3.5 pt-3 border-t border-slate-200/80 dark:border-white/10 space-y-1.5">
+                      <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block">Grounded Sources:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {msg.sources.map((src, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 text-[11px] bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md border border-slate-300 dark:border-white/10 text-cyan-700 dark:text-cyan-400 max-w-xs truncate"
+                            title={src.path || src.url || src.title}
+                          >
+                            {src.url ? <Globe className="w-3 h-3 flex-shrink-0 text-indigo-400" /> : <FileText className="w-3 h-3 flex-shrink-0" />}
+                            <span className="truncate">{src.title || src.path || src.url}</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -214,8 +459,10 @@ export default function ChatView() {
               </div>
             ))
           )}
+
+          {/* Streaming Indicator */}
           {isStreaming && (
-            <div className="flex gap-4 justify-start">
+            <div className="flex gap-3.5 justify-start">
               <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
                 <Bot className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
@@ -223,30 +470,41 @@ export default function ChatView() {
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse delay-75" />
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse delay-150" />
+                <span className="text-xs text-slate-500 ml-1">Streaming RAG response...</span>
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
+        {/* Input Form */}
         <div className="p-4 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-white/5">
           <form onSubmit={handleSend} className="max-w-4xl mx-auto relative flex items-end">
             <textarea
-              className="w-full bg-slate-100/50 dark:bg-slate-800/50 border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 pr-12 text-slate-900 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 resize-none min-h-[52px] max-h-32"
-              placeholder="Message Uroboros..."
+              className="w-full bg-slate-100/50 dark:bg-slate-800/50 border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 pr-12 text-slate-900 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 resize-none min-h-[52px] max-h-32 text-sm leading-relaxed"
+              placeholder="Message Uroboros Knowledge Engine..."
               rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(e);
+                }
+              }}
             />
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={!input.trim() || isStreaming}
-              className="absolute right-2 bottom-2 p-2 bg-indigo-500 hover:bg-indigo-600 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg transition-colors"
+              className="absolute right-2 bottom-2 p-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700/50 disabled:text-slate-500 text-white rounded-lg transition-colors shadow-sm"
+              title="Send Message"
             >
               <Send className="w-4 h-4" />
             </button>
           </form>
-          <div className="text-center mt-2 text-xs text-slate-500">AI can make mistakes. Verify important information.</div>
+          <div className="text-center mt-2 text-[11px] text-slate-500">
+            Neuro Knowledge Engine v2.0 • Grounded Vault RAG + Web Grounding
+          </div>
         </div>
       </div>
     </div>
