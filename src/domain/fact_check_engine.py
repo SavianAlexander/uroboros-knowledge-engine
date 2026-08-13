@@ -16,9 +16,12 @@ def detect_semantic_contradictions(
     """
     contradictions = []
 
-    for c_a in doc_a_clauses:
+    valid_a = [str(c) for c in (doc_a_clauses or []) if c is not None]
+    valid_b = [str(c) for c in (doc_b_clauses or []) if c is not None]
+
+    for c_a in valid_a:
         norm_a = c_a.lower()
-        for c_b in doc_b_clauses:
+        for c_b in valid_b:
             norm_b = c_b.lower()
 
             # Negation or value conflict heuristic

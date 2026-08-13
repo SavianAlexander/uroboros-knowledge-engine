@@ -4,6 +4,7 @@ Clusters recurring user queries and automatically synthesizes a living FAQ datab
 Zero-dependency, stdlib implementation.
 """
 
+import unicodedata
 from typing import List, Dict, Any
 
 
@@ -21,7 +22,6 @@ def synthesize_faq_from_queries(
     for q in query_history:
         if not q or not str(q).strip():
             continue
-        import unicodedata
         raw_str = unicodedata.normalize("NFC", str(q)).strip()
         norm_key = raw_str.lower()
         freq_map[norm_key] = freq_map.get(norm_key, 0) + 1
