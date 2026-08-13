@@ -52,20 +52,20 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
         }
 
     # Split into sentences
-    raw_sentences = RE_SENTENCE.split(text.strip())
+    raw_sentences = RE_SENTENCE.split(str_text.strip())
     sentences = [s.strip() for s in raw_sentences if len(s.strip()) > 15]
 
     if not sentences:
         return {
-            "summary": text[:200],
-            "key_sentences": [text[:200]],
+            "summary": str_text[:200],
+            "key_sentences": [str_text[:200]],
             "total_sentences": 1,
             "compression_ratio": 1.0,
             "status": "success"
         }
 
     # Calculate word frequency scores across document
-    all_words = RE_WORD.findall(text.lower())
+    all_words = RE_WORD.findall(str_text.lower())
     content_words = [w for w in all_words if w not in STOP_WORDS]
     word_counts = Counter(content_words)
 
@@ -85,7 +85,7 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
 
     extracted_sentences = [s[2] for s in top_ranked]
     summary = " ".join(extracted_sentences)
-    ratio = round(len(summary) / float(max(1, len(text))), 4)
+    ratio = round(len(summary) / float(max(1, len(str_text))), 4)
 
     return {
         "summary": summary,
