@@ -14,7 +14,8 @@ def compute_shingles(text: str, k: int = 3) -> Set[str]:
     if not text or not isinstance(text, (str, bytes)):
         return set()
     import unicodedata
-    norm_text = unicodedata.normalize("NFC", str_text)
+    raw_str = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
+    norm_text = unicodedata.normalize("NFC", raw_str)
     words = re.findall(r'\b[\w-]+\b', norm_text.lower())
     if len(words) < k:
         return {" ".join(words)} if words else set()
