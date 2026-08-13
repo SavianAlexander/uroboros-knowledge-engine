@@ -57,7 +57,19 @@ Uroboros incorporates automated security & privacy engines operating inline duri
 
 ---
 
-## 5. Hardware Memory Isolation & Denial-of-Service Protection
+## 5. Threat Model & Attack Vector Mitigation Matrix
+
+| Threat Category | Potential Attack Vector | System Defense Mechanism | Mitigation Engine File Path |
+| :--- | :--- | :--- | :--- |
+| **Prompt Injection** | Adversarial system prompt overrides & jailbreaks | Pattern-matching security filter stripping prompt overrides | [`src/domain/prompt_injection_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/prompt_injection_guard.py) |
+| **PII Exfiltration** | Sensitive SSNs/Emails sent to LLM prompts | Regex masking and automated PII anonymization | [`src/domain/pii_privacy_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/pii_privacy_guard.py) |
+| **Vector Poisoning** | Malicious doc injection to manipulate RAG output | Self-RAG grounding guard & MinHash passage deduplication | [`src/domain/rag_grounding_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/rag_grounding_guard.py) |
+| **Resource Starvation**| Parallel query overload crashing VRAM/RAM | Process lock, `_llm_semaphore=2`, & 90% RAM panic recovery | [`src/core/model_manager.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/core/model_manager.py) |
+| **SQL Injection** | Arbitrary SQL payload injection | Parameterized SQL queries & FTS5 parameter binding | [`src/infrastructure/database.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/database.py) |
+
+---
+
+## 6. Hardware Memory Isolation & Denial-of-Service Protection
 
 To prevent VRAM pagefile exhaustion, process hijacking, or denial-of-service (DoS) attacks on single-node hardware:
 
@@ -67,7 +79,7 @@ To prevent VRAM pagefile exhaustion, process hijacking, or denial-of-service (Do
 
 ---
 
-## 6. SOC 2 Type II Security Controls
+## 7. SOC 2 Type II Security Controls
 
 Uroboros maintains compliance with formal SOC 2 Type II trust principles (Security, Confidentiality, Processing Integrity, Availability):
 
