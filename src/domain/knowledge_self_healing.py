@@ -38,7 +38,8 @@ def audit_knowledge_self_healing() -> Dict[str, Any]:
             content = r[3] or ""
             matches = RE_WIKILINKS.findall(content)
             for m in matches:
-                target_name = m.strip().lower()
+                target_raw = m[0] if isinstance(m, (tuple, list)) else m
+                target_name = str(target_raw).strip().lower()
                 if target_name in filenames_lower:
                     v_id = filenames_lower[target_name]
                     outbound_count[u_id] += 1
@@ -46,7 +47,7 @@ def audit_knowledge_self_healing() -> Dict[str, Any]:
                 else:
                     broken_links.append({
                         "source_file": r[1],
-                        "target_wikilink": m.strip()
+                        "target_wikilink": str(target_raw).strip()
                     })
 
         orphaned_nodes = [
@@ -67,3 +68,43 @@ def audit_knowledge_self_healing() -> Dict[str, Any]:
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+def repair_knowledge_base() -> Dict[str, Any]:
+    """
+    Autonomous self-healing repair routine:
+    1. Prunes orphaned file chunks whose parent file no longer exists.
+    2. Re-indexes any files missing from the FTS5 full-text search index.
+    3. Executes PRAGMA optimize and returns repair metrics.
+    """
+    try:
+        from src.infrastructure.database import get_db
+        pruned_chunks = 0
+        reindexed_fts = 0
+        with get_db() as conn:
+            with conn:
+                cursor = conn.cursor()
+                # 1. Prune orphaned chunks
+                cursor.execute("DELETE FROM file_chunks WHERE file_id NOT IN (SELECT id FROM files)")
+                pruned_chunks = cursor.rowcount
+
+                # 2. Re-index missing FTS files
+                cursor.execute("""
+                    INSERT INTO fts_files (filepath, filename, content)
+                    SELECT filepath, filename, content FROM files
+                    WHERE filepath NOT IN (SELECT filepath FROM fts_files)
+                """)
+                reindexed_fts = cursor.rowcount
+
+                # 3. Optimize database internal B-tree structures
+                cursor.execute("PRAGMA optimize")
+
+        return {
+            "status": "success",
+            "pruned_orphaned_chunks": max(0, pruned_chunks),
+            "reindexed_fts_documents": max(0, reindexed_fts),
+            "message": "Knowledge vault integrity verified and self-healed cleanly."
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+

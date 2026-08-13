@@ -15,13 +15,10 @@ def find_multihop_pathways(start_doc: str, target_doc: Optional[str] = None, max
     Zero-dependency stdlib implementation.
     """
     try:
-        from src.infrastructure.database import get_db_connection, init_db, DB_FILE
+        from src.infrastructure.database import get_db, init_db
 
-        if DB_FILE and os.path.dirname(DB_FILE):
-            os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
         def _fetch_all_files():
-            with get_db_connection(DB_FILE) as conn:
-                conn.row_factory = sqlite3.Row
+            with get_db() as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT id, filename, filepath, content FROM files")
                 return cursor.fetchall()
@@ -35,8 +32,8 @@ def find_multihop_pathways(start_doc: str, target_doc: Optional[str] = None, max
         if not rows:
             return {"pathways": [], "status": "success"}
 
-        node_map = {r["id"]: r["filename"] for r in rows}
-        name_to_id = {r["filename"].lower(): r["id"] for r in rows}
+        node_map = {r[0]: r[1] for r in rows}
+        name_to_id = {str(r[1]).lower(): r[0] for r in rows}
 
         if not start_doc or not isinstance(start_doc, str):
             return {"pathways": [], "status": "error", "message": "Invalid or missing start_doc parameter"}
@@ -60,11 +57,12 @@ def find_multihop_pathways(start_doc: str, target_doc: Optional[str] = None, max
         # Build adjacency graph
         adj = defaultdict(set)
         for r in rows:
-            u = r["id"]
-            content = r["content"] or ""
+            u = r[0]
+            content = r[3] or ""
             matches = RE_WIKILINKS.findall(content)
             for m in matches:
-                target_title = m.strip().lower()
+                target_raw = m[0] if isinstance(m, (tuple, list)) else m
+                target_title = str(target_raw).strip().lower()
                 if target_title in name_to_id:
                     v = name_to_id[target_title]
                     if u != v:

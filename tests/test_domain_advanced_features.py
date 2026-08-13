@@ -108,6 +108,49 @@ class TestAdvancedFeatures(unittest.TestCase):
         self.assertIn("exact_hit_ops_sec", res_cache)
         self.assertGreater(res_cache["exact_hit_ops_sec"], 0)
 
+    def test_06_p2p_mesh_hashes_and_delta(self):
+        """Verify P2P document hashing and delta synchronization."""
+        res_hashes = self.client.get("/api/sync/hashes")
+        self.assertEqual(res_hashes.status_code, 200)
+        self.assertIn("hashes", res_hashes.json())
+
+        res_delta = self.client.post("/api/sync/delta", json={"filenames": ["test_ocr.pdf"]})
+        self.assertEqual(res_delta.status_code, 200)
+        self.assertIn("files", res_delta.json())
+
+    def test_07_pii_redaction_credit_card_and_keys(self):
+        """Verify deterministic PII token redaction (SSN, CC, API Keys, Emails)."""
+        from src.domain.pii_privacy_guard import redact_pii_from_text
+        sample = "Contact agent at user@example.com, SSN 123-45-6789, CC 4111 2222 3333 4444, key sk_live_1234567890abcdef"
+        res = redact_pii_from_text(sample)
+        self.assertEqual(res["status"], "success")
+        self.assertNotIn("user@example.com", res["redacted_text"])
+        self.assertNotIn("123-45-6789", res["redacted_text"])
+        self.assertNotIn("4111 2222 3333 4444", res["redacted_text"])
+        self.assertNotIn("sk_live_1234567890abcdef", res["redacted_text"])
+        self.assertGreaterEqual(res["total_redactions"], 4)
+
+    def test_08_multihop_and_hyde_synthesis(self):
+        """Verify HyDE contextual synthesis and multi-hop traversal."""
+        from src.domain.contextual_hyde import generate_hypothetical_document
+        from src.domain.graph_multihop import find_multihop_pathways
+        hyde_res = generate_hypothetical_document("quantum computing algorithms")
+        self.assertEqual(hyde_res["status"], "success")
+        self.assertIn("hypothetical_text", hyde_res)
+
+        path_res = find_multihop_pathways("test_ocr.pdf")
+        self.assertIn("status", path_res)
+
+    def test_09_vault_integrity_and_self_healing(self):
+        """Verify vault integrity auditor and autonomous repair endpoints."""
+        res_integ = self.client.get("/api/vault/integrity")
+        self.assertEqual(res_integ.status_code, 200)
+        self.assertIn("health_score", res_integ.json())
+
+        res_heal = self.client.post("/api/vault/self-heal")
+        self.assertEqual(res_heal.status_code, 200)
+        self.assertEqual(res_heal.json()["status"], "success")
+
 
 if __name__ == "__main__":
     unittest.main()

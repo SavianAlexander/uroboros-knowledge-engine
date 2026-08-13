@@ -107,6 +107,18 @@ def stop_watcher():
     start_active_folder_watcher.active = False
     return {"status": "stopped"}
 
+@router.get("/api/vault/integrity")
+def get_vault_integrity_endpoint():
+    """Audits vault knowledge base integrity and relationship topology."""
+    from src.domain.knowledge_self_healing import audit_knowledge_self_healing
+    return audit_knowledge_self_healing()
+
+@router.post("/api/vault/self-heal")
+def post_vault_self_heal_endpoint():
+    """Triggers autonomous knowledge vault repair and FTS5 synchronization."""
+    from src.domain.knowledge_self_healing import repair_knowledge_base
+    return repair_knowledge_base()
+
 @router.get("/metrics")
 def prometheus_metrics_endpoint():
     """Expose OpenTelemetry & Prometheus format APM metrics."""

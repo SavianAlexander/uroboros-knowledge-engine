@@ -32,6 +32,12 @@ def redact_pii_from_text(text: str) -> Dict[str, Any]:
         pii_counts["api_key"] += len(key_matches)
         redacted_text = RE_API_KEY.sub("[REDACTED_API_KEY]", redacted_text)
 
+    # Credit Card
+    cc_matches = RE_CREDIT_CARD.findall(redacted_text)
+    if cc_matches:
+        pii_counts["credit_card"] += len(cc_matches)
+        redacted_text = RE_CREDIT_CARD.sub("[REDACTED_CREDIT_CARD]", redacted_text)
+
     # Emails
     email_matches = RE_EMAIL.findall(redacted_text)
     if email_matches:
