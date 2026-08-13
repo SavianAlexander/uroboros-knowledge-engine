@@ -2,7 +2,7 @@
 Zero-dependency Semantic Concept Drift Monitor Engine.
 Tracks term context shifts over time (e.g. term A meaning evolution between 2024 and 2026).
 """
-
+import os
 import sqlite3
 from typing import Dict, Any, List
 
@@ -13,7 +13,6 @@ def audit_semantic_concept_drift(term: str = "") -> Dict[str, Any]:
     Zero-dependency stdlib implementation.
     """
     try:
-        import os
         from src.infrastructure.database import get_db_connection, DB_FILE, init_db
 
         init_db()

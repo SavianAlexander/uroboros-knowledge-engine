@@ -1,7 +1,6 @@
 """
 FastAPI application server instantiation, middleware, static asset mounts, and router registrations.
 """
-
 import os
 from pathlib import Path
 from fastapi import FastAPI

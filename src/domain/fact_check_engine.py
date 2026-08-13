@@ -3,6 +3,7 @@ Semantic Contradiction & Fact-Check Engine.
 Detects factual contradictions between documents (e.g. Policy A vs Policy B).
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -15,8 +16,6 @@ def detect_semantic_contradictions(
     Scans two sets of document clauses for factual contradictions or value conflicts.
     """
     contradictions = []
-
-    import unicodedata
     valid_a = [unicodedata.normalize("NFC", str(c)) for c in (doc_a_clauses or []) if c is not None]
     valid_b = [unicodedata.normalize("NFC", str(c)) for c in (doc_b_clauses or []) if c is not None]
 

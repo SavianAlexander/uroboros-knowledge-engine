@@ -59,7 +59,6 @@ def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
 
 def verify_api_key(x_api_key: Optional[str] = None, authorization: Optional[str] = None) -> bool:
     """Verify API key or Bearer token if UROBOROS_REQUIRE_AUTH environment variable is enabled."""
-    import os
     from fastapi import HTTPException
 
     require_auth = os.environ.get("UROBOROS_REQUIRE_AUTH", "false").lower() in ("true", "1", "yes")

@@ -3,6 +3,7 @@ Adaptive Query-Time Hyper-Graph Knowledge Router Engine.
 Models N-way hyper-edges connecting multiple entities in a single hyper-edge for O(1) relational queries.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List, Set
 
@@ -31,7 +32,6 @@ class HyperGraphRouter:
         """Finds all hyper-edges containing the target node subset in O(1) multi-entity match."""
         if not target_nodes or not isinstance(target_nodes, (set, list, tuple)):
             return []
-        import unicodedata
         targets = set(unicodedata.normalize("NFC", str(n)).lower() for n in target_nodes if n is not None)
         matches = []
         for edge in self.hyper_edges:

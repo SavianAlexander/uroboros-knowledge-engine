@@ -1,8 +1,8 @@
 """
 Zero-dependency extractive document summarization & TF-IDF sentence ranking engine.
 """
-
 import re
+import unicodedata
 from collections import Counter
 from typing import Dict, Any, List
 
@@ -41,7 +41,6 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
             "status": "empty"
         }
 
-    import unicodedata
     raw_str = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
     str_text = unicodedata.normalize("NFC", raw_str)
     if not str_text.strip():
@@ -53,8 +52,19 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
             "status": "empty"
         }
 
+    clean_str = str_text.strip()
+    if '.' not in clean_str and '!' not in clean_str and '?' not in clean_str:
+        return {
+            "summary": clean_str,
+            "key_sentences": [clean_str],
+            "total_sentences": 1,
+            "extracted_sentences_count": 1,
+            "compression_ratio": 1.0,
+            "status": "success"
+        }
+
     # Split into sentences
-    raw_sentences = RE_SENTENCE.split(str_text.strip())
+    raw_sentences = RE_SENTENCE.split(clean_str)
     sentences = [s.strip() for s in raw_sentences if len(s.strip()) > 15]
 
     if not sentences:

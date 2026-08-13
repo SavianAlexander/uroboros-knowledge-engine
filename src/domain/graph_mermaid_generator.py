@@ -2,7 +2,8 @@
 Zero-dependency Mermaid.js Graph Diagram Generator.
 Converts vault document wikilinks into valid Mermaid.js graph diagram markdown strings.
 """
-
+import os
+import unicodedata
 import re
 import sqlite3
 from typing import Dict, Any, List
@@ -15,7 +16,6 @@ def generate_mermaid_graph(focus_doc: str = "", max_nodes: int = 15) -> Dict[str
     Zero-dependency stdlib implementation.
     """
     try:
-        import os
         from src.infrastructure.database import get_db_connection, init_db, DB_FILE
 
         init_db()
@@ -26,8 +26,6 @@ def generate_mermaid_graph(focus_doc: str = "", max_nodes: int = 15) -> Dict[str
 
         if not rows:
             return {"mermaid_code": "graph TD;\n  EmptyVault[\"No Documents Found\"]", "status": "success"}
-
-        import unicodedata
         node_map = {unicodedata.normalize("NFC", str(r[1])).lower(): unicodedata.normalize("NFC", str(r[1])) for r in rows}
         edges = []
 

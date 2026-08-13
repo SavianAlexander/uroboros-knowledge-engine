@@ -2,7 +2,6 @@
 Incremental SHA-256 Vector Memory Cache Invalidation Guard.
 Tracks document SHA-256 hashes to invalidate vector memory caches strictly upon file mutation.
 """
-
 import hashlib
 from typing import Dict, Any, Optional
 

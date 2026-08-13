@@ -3,6 +3,7 @@ AST Code Graph & Structural Symbol RAG Engine.
 Parses Python codebases into AST trees, extracting function definitions, class structures, imports, and call graphs.
 Zero-dependency, stdlib implementation (ast module).
 """
+import unicodedata
 
 import ast
 from typing import Dict, Any, List
@@ -16,7 +17,6 @@ def parse_codebase_ast(code_snippet: str) -> Dict[str, Any]:
         return {"symbols": [], "classes": [], "functions": [], "imports": [], "status": "empty_code"}
 
     try:
-        import unicodedata
         norm_code = unicodedata.normalize("NFC", code_snippet)
         tree = ast.parse(norm_code)
     except Exception as e:

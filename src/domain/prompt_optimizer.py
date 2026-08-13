@@ -13,7 +13,7 @@ def optimize_rag_prompt_density(
 ) -> Dict[str, Any]:
     """
     Optimizes prompt context density by trimming low-relevance boilerplate while enforcing token budget limits.
-    # ponytail: lightweight character/word-based token density budgeting
+    # ponytail: lightweight character/word-based token density budgeting; ceiling: 4 chars/token heuristic estimate; upgrade: use tiktoken or model-specific BPE tokenizer if exact token counting is required
     """
     safe_query = str(query or "")
     safe_budget = max(100, int(token_budget)) if token_budget is not None and isinstance(token_budget, (int, float)) else 1000

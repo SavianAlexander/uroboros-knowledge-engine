@@ -9,6 +9,7 @@ import shutil
 import sqlite3
 import hashlib
 import threading
+import unicodedata
 from typing import Dict, List, Any, Tuple, Optional, Callable
 import mimetypes
 import concurrent.futures
@@ -18,9 +19,11 @@ import contextlib
 import logging
 from datetime import datetime, timezone
 import queue
-from datetime import datetime, timezone
 from pathlib import Path
 from src.shared.security import get_file_acl
+from src.core.context import get_current_user_id
+from src.core.embeddings import generate_embedding, l2_normalize, matryoshka_slice, dot_product
+from src.domain.rag_engine import decompose_multihop_query, parse_metadata_filters, extract_advanced_rag_context
 from src.core.domain.services import (
     extract_ai_tags,
     chunk_text,
@@ -31,7 +34,6 @@ def search_files(query: str) -> List[Dict[str, Any]]:
     """Execute FTS5 keyword search across files with Unicode NFC normalization."""
     if not query or not str(query).strip():
         return []
-    import unicodedata, re
     norm_query = unicodedata.normalize("NFC", str(query).strip())
     clean_fts_query = re.sub(r'[^\w\s]', ' ', norm_query).strip()
     if not clean_fts_query:
@@ -49,7 +51,6 @@ def search_files(query: str) -> List[Dict[str, Any]]:
             rows = cursor.fetchall()
             if rows:
                 results = [dict(r) for r in rows]
-                import time, math
                 now = time.time()
                 for r in results:
                     score = -r.get('bm25_score', 0)
@@ -63,7 +64,6 @@ def search_files(query: str) -> List[Dict[str, Any]]:
             import logging; logging.warning(f"Swallowed error in database.py: {e}")
 
         if "NEAR(" in norm_query:
-            import re
             m = re.search(r'NEAR\((.*?),\s*(\d+)\)', norm_query, re.IGNORECASE)
             if m:
                 words = m.group(1).split()
@@ -79,7 +79,6 @@ def search_files(query: str) -> List[Dict[str, Any]]:
                     rows = cursor.fetchall()
                     if rows:
                         results = [dict(r) for r in rows]
-                        import time, math
                         now = time.time()
                         for r in results:
                             score = -r.get('bm25_score', 0)
@@ -92,7 +91,6 @@ def search_files(query: str) -> List[Dict[str, Any]]:
                 except Exception as e:
                     import logging; logging.warning(f"Swallowed error in database.py: {e}")
 
-        import re
         words = re.findall(r'\w+', norm_query)
         words = [w for w in words if w.lower() not in ('near', 'and', 'or', 'not') and not w.isdigit()]
         if words:
@@ -2099,7 +2097,6 @@ class MiniVectorEngine:
         Phonetic & Script Transliteration Normalizer Engine.
         Normalizes non-ASCII diacritics and accented characters using unicodedata.normalize("NFC").
         """
-        import unicodedata
         normalized_query = unicodedata.normalize("NFC", query)
         hits = MiniVectorEngine.search_semantic(normalized_query, top_k=top_k)
         for cand in hits:
@@ -3091,5 +3088,4 @@ class MiniVectorEngine:
 
 def extract_rag_context(query: str, max_chunks: int = 5):
     """RAG context extractor delegating to domain RAG engine."""
-    from src.domain.rag_engine import extract_advanced_rag_context
     return extract_advanced_rag_context(query, max_chunks=max_chunks, jaccard_threshold=0.70)

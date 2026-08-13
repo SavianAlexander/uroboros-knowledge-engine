@@ -3,7 +3,6 @@ Dynamic Entropy-Based Semantic Boundary Chunker Engine.
 Calculates semantic distance between consecutive sentence n-grams and creates topic boundaries when distance spikes above threshold theta.
 Zero-dependency, stdlib implementation.
 """
-
 import re
 import math
 from typing import List, Dict, Any

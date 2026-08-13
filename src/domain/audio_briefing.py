@@ -2,6 +2,7 @@
 Executive Audio Briefing & Podcast Script Generator.
 Transforms executive daily briefing telemetry into structured conversational podcast scripts.
 """
+import unicodedata
 
 from typing import Dict, Any, List, Optional
 from src.domain.daily_briefing import generate_daily_briefing
@@ -10,12 +11,10 @@ from src.domain.daily_briefing import generate_daily_briefing
 def generate_audio_podcast_script(db_path: Optional[str] = None) -> Dict[str, Any]:
     """
     Synthesizes a 2-speaker interactive podcast script from daily briefing metrics.
-    # ponytail: conversational script generation without external audio dependencies
+    # ponytail: conversational script generation without external audio dependencies; ceiling: 2-speaker SSML text template; upgrade: integrate Edge-TTS or ElevenLabs SDK if audio synthesis is requested
     """
     try:
         briefing = generate_daily_briefing(db_path) if db_path is not None else generate_daily_briefing()
-        
-        import unicodedata
         total_files = briefing.get("total_files", 0) if isinstance(briefing, dict) else 0
         raw_tags = briefing.get("active_tags", []) if isinstance(briefing, dict) else []
         tags = [unicodedata.normalize("NFC", str(t)) for t in raw_tags] if isinstance(raw_tags, list) else []

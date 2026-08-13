@@ -3,7 +3,6 @@ Live SSE Event-Driven Knowledge Sync Engine.
 Generates SSE event payloads for real-time document indexing, search progress, and telemetry updates.
 Zero-dependency, stdlib implementation.
 """
-
 import json
 from typing import Dict, Any, Generator
 

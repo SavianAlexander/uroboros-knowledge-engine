@@ -2,7 +2,7 @@
 Zero-dependency Autonomous Claim & Fact Conflict Resolver Engine.
 Detects contradictory assertions across vault document pairs (e.g. conflicting dates, numbers, or status claims).
 """
-
+import unicodedata
 import re
 import sqlite3
 from typing import Dict, Any, List
@@ -18,7 +18,6 @@ def detect_and_resolve_conflicts(topic: str = "") -> Dict[str, Any]:
     """
     conn = None
     try:
-        import unicodedata
         from src.infrastructure.database import get_db_connection, DB_FILE, init_db
 
         init_db()

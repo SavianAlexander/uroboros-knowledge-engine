@@ -3,7 +3,7 @@ Active RAG Iterative Query Refinement Loop Engine.
 Evaluates initial retrieval confidence and automatically reformulates query for a second targeted retrieval pass if confidence is low.
 Zero-dependency, stdlib implementation.
 """
-
+import unicodedata
 import re
 from typing import List, Dict, Any
 from src.domain.rag_grounding_guard import compute_ngram_overlap
@@ -41,8 +41,6 @@ def execute_active_rag_loop(
             "second_pass_required": True,
             "status": "refinement_needed"
         }
-
-    import unicodedata
     norm_query = unicodedata.normalize("NFC", str(query or ""))
     norm_chunks = [unicodedata.normalize("NFC", str(c)) for c in initial_chunks if c]
     combined_text = " ".join(norm_chunks)

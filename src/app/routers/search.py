@@ -1,7 +1,6 @@
 """
 Search, autocomplete, graph, and export endpoints.
 """
-
 import os
 import re
 import time
@@ -15,11 +14,26 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, Body
 
 import src.infrastructure.database as _infra_db
-from src.infrastructure.vector_engine import search_files
+from src.infrastructure.vector_engine import search_files, MiniVectorEngine
 from src.infrastructure.database import get_db
 from src.core.domain.services import parse_query_operators, suggest_tags_from_text, sanitise_fts_query
 from src.core.domain.models import ValidateQueryRequest
 from src.domain.wikilink_parser import parse_wikilinks, slugify_title, normalize_target_title
+from src.domain.louvain_clustering import apply_louvain_communities
+from src.domain.graph_export import export_graph_to_graphml
+from src.domain.sota_rag_engine import execute_sota_rag_search
+from src.domain.self_rag_critique import critique_rag_passages
+from src.domain.parent_child_retrieval import expand_child_chunks_to_parents
+from src.domain.graph_multihop import find_multihop_pathways
+from src.domain.contextual_hyde import generate_hypothetical_document
+from src.domain.recency_decay import apply_recency_decay
+from src.domain.acl_permission_engine import trim_search_results_by_acl
+from src.domain.pii_privacy_guard import redact_pii_from_text
+from src.domain.cross_lingual_aligner import align_cross_lingual_query
+from src.domain.source_citation_generator import generate_source_citations
+from src.domain.query_intent_classifier import classify_query_intent
+from src.domain.graph_mermaid_generator import generate_mermaid_graph
+from src.domain.rerank_score_explainer import explain_candidate_score
 
 router = APIRouter()
 
@@ -46,7 +60,6 @@ def rrf_search_endpoint(
     if not query:
         return {"query": "", "results": [], "total": 0, "search_time_ms": 0.0, "mode": "rrf_hybrid"}
     try:
-        from src.infrastructure.vector_engine import MiniVectorEngine
         engine = MiniVectorEngine()
         safe_limit = max(1, min(limit, 500))
         results = engine.search_hybrid_rrf(query=query, top_k=safe_limit, k=k)
@@ -66,7 +79,6 @@ def rrf_search_endpoint(
 def vector_metrics_endpoint():
     """Retrieve operational telemetry and memory stats for the Vector Engine."""
     try:
-        from src.infrastructure.vector_engine import MiniVectorEngine
         return MiniVectorEngine.get_vector_engine_metrics()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -83,7 +95,6 @@ def unified_vector_search_endpoint(
     if not query:
         return {"query": "", "results": [], "total": 0, "search_time_ms": 0.0, "strategy": "none"}
     try:
-        from src.infrastructure.vector_engine import MiniVectorEngine
         results, strategy = MiniVectorEngine.search_unified_autoselect(query=query, top_k=limit, mode=mode)
         search_time_ms = round((time.time() - start_time) * 1000, 2)
         return {
@@ -343,7 +354,7 @@ def get_search_history_endpoint(limit: int = 20):
 
 
 @lru_cache(maxsize=32)
-def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: bool, db_version_key: str):
+def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: bool, db_version_key: str, cluster_max_docs: int = 100):
     conn = get_db()
     orig_row_factory = conn.row_factory
     try:
@@ -482,8 +493,8 @@ def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: b
 
     # 3. Shared tag cluster edges (Inverted Index algorithm)
     if include_clusters and tag_to_docs:
-        # ponytail: cap shared tag cluster document list size to <= 100 to optimize graph endpoint latency while supporting dense clusters.
-        cluster_doc_lists = [dl for dl in tag_to_docs.values() if 1 < len(dl) <= 100]
+        c_limit = max(2, min(1000, cluster_max_docs))
+        cluster_doc_lists = [dl for dl in tag_to_docs.values() if 1 < len(dl) <= c_limit]
         if cluster_doc_lists:
             pair_shared_counts = Counter()
             for dl in cluster_doc_lists:
@@ -507,6 +518,7 @@ def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: b
     nodes = apply_louvain_communities(nodes, edges)
 
     return {
+        "status": "success",
         "nodes": nodes,
         "edges": edges,
         "links": edges,
@@ -520,14 +532,16 @@ def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: b
 def get_graph_data_endpoint(
     limit: int = 1000,
     include_wikilinks: bool = True,
-    include_clusters: bool = True
+    include_clusters: bool = True,
+    cluster_max_docs: int = 100
 ):
     """Knowledge Graph data endpoint returning nodes, edges, wikilinks, and cluster links."""
     try:
         from src.infrastructure.database import init_db
         init_db()
         limit = max(1, min(limit, 5000))
-        version_key = f"{limit}_{include_wikilinks}_{include_clusters}"
+        c_max = max(2, min(1000, cluster_max_docs))
+        version_key = f"{limit}_{include_wikilinks}_{include_clusters}_{c_max}"
         try:
             from src.infrastructure import database as _infra_db
             db_path = getattr(_infra_db, "DB_FILE", None) or "knowledge.db"
@@ -542,7 +556,7 @@ def get_graph_data_endpoint(
         except Exception as e:
             import logging; logging.warning(f"Swallowed error in search.py: {e}")
 
-        return _build_graph_cached(limit, include_wikilinks, include_clusters, version_key)
+        return _build_graph_cached(limit, include_wikilinks, include_clusters, version_key, cluster_max_docs=c_max)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
@@ -654,7 +668,6 @@ def export_graph_graphml_endpoint(limit: int = 1000):
 @router.get("/api/search/benchmark")
 def benchmark_search_performance(query: str = "accounting standards"):
     """Runs a real-time latency benchmark comparing FTS5 BM25, NomIC Vector Cosine, and RRF Hybrid search channels."""
-    import time
     from src.infrastructure.vector_engine import MiniVectorEngine
 
     t0 = time.time()

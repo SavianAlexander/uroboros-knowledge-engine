@@ -1,15 +1,24 @@
 """
 Health check and database status endpoints.
 """
-
 import os
 import sys
 import platform
 import sqlite3
+import logging
+import urllib.request
 from fastapi import APIRouter, HTTPException
 import src.infrastructure.database as _infra_db
-from src.infrastructure.database import get_db, db_status, run_maintenance, calculate_sha256
-from src.infrastructure.repositories.snapshots import create_db_snapshot, restore_db_snapshot, list_db_snapshots
+from src.infrastructure.database import get_db, db_status, run_maintenance, calculate_sha256, init_db, get_audit_ledger
+from src.infrastructure.repositories.snapshots import create_db_snapshot, restore_db_snapshot, list_db_snapshots, delete_db_snapshot
+from src.infrastructure.telemetry import GLOBAL_TELEMETRY
+from src.infrastructure.backup_scheduler import create_database_backup, list_backups
+from src.core.model_manager import OllamaClient
+from src.domain.system_telemetry import gather_system_telemetry
+from src.domain.vector_health_monitor import audit_vector_health
+from src.domain.knowledge_self_healing import audit_knowledge_self_healing
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -23,7 +32,6 @@ def get_health_status():
         stats = db_status()
         ollama_status = "offline"
         try:
-            import urllib.request
             req = urllib.request.Request("http://127.0.0.1:11434/api/tags", headers={"User-Agent": "Uroboros"})
             with urllib.request.urlopen(req, timeout=0.8) as resp:
                 if resp.status == 200:
@@ -107,6 +115,14 @@ def json_metrics_endpoint():
     from src.infrastructure.telemetry import GLOBAL_TELEMETRY
     return {"status": "success", "metrics": GLOBAL_TELEMETRY.get_metrics_summary()}
 
+def _fetch_sync_peers(cursor) -> list:
+    try:
+        cursor.execute("SELECT name, address FROM sync_peers")
+        return [{"name": r[0], "address": r[1]} for r in cursor.fetchall()]
+    except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error fetching sync_peers")
+        return []
+
 @router.get("/api/stats")
 def get_system_stats():
     """Retrieve full system statistics including files, chunks, tags, rules, peers, and DB size."""
@@ -132,14 +148,7 @@ def get_system_stats():
             r_chunks = cursor.fetchone()
             total_chunks = r_chunks[0] if r_chunks else 0
             
-            try:
-                cursor.execute("SELECT name, address FROM sync_peers")
-                sync_peers = [{"name": r[0], "address": r[1]} for r in cursor.fetchall()]
-            except (KeyboardInterrupt, MemoryError, SystemExit):
-                raise
-            except Exception:
-                import logging; logging.getLogger(__name__).exception("Swallowed error in health.py")
-                sync_peers = []
+            sync_peers = _fetch_sync_peers(cursor)
             
             cursor.execute("SELECT mime_type, COUNT(*) as count FROM files GROUP BY mime_type ORDER BY count DESC")
             mime_breakdown = [{"mime_type": r[0] or "unknown", "count": r[1]} for r in cursor.fetchall()]

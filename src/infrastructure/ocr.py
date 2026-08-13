@@ -1,11 +1,8 @@
 """
 Windows WinRT OCR and pytesseract / EXIF fallback text extraction.
 """
-
 import os
 import asyncio
-import time
-import functools
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,7 +22,8 @@ async def _async_ocr_structured(filepath):
     if not HAS_WINRT:
         return "[OCR not supported on this platform]", []
     try:
-        file = await StorageFile.get_file_from_path_async(filepath)
+        abs_path = os.path.abspath(filepath)
+        file = await StorageFile.get_file_from_path_async(abs_path)
         stream = await file.open_async(0)
         decoder = await BitmapDecoder.create_async(stream)
         bitmap = await decoder.get_software_bitmap_async()
@@ -49,11 +47,12 @@ async def _async_ocr_structured(filepath):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
+        logger.debug(f"WinRT OCR failed for {filepath}: {e}")
         return f"[OCR Error: {str(e)}]", []
 
 def extract_ocr_text_structured(filepath):
     """Extract OCR text and word bounding box coordinates."""
+    abs_path = os.path.abspath(filepath)
     if HAS_WINRT:
         try:
             try:
@@ -69,34 +68,32 @@ def extract_ocr_text_structured(filepath):
                     def _run_in_thread():
                         new_loop = asyncio.new_event_loop()
                         try:
-                            return new_loop.run_until_complete(_async_ocr_structured(filepath))
+                            return new_loop.run_until_complete(_async_ocr_structured(abs_path))
                         finally:
                             new_loop.close()
                     res_text, res_coords = pool.submit(_run_in_thread).result()
             else:
-                res_text, res_coords = loop.run_until_complete(_async_ocr_structured(filepath))
+                res_text, res_coords = loop.run_until_complete(_async_ocr_structured(abs_path))
 
             if res_text and not res_text.startswith("[OCR Error"):
                 return res_text, res_coords
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
-            logger.warning(f"Error in WinRT OCR structured: {e}")
+            logger.debug(f"Error in WinRT OCR structured: {e}")
 
     # Try pytesseract OCR fallback
     try:
         import pytesseract
         from PIL import Image
-        img = Image.open(filepath)
+        img = Image.open(abs_path)
         text = pytesseract.image_to_string(img)
         if text.strip():
             return text.strip(), []
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
-        logger.warning(f"Error in pytesseract OCR: {e}")
+        logger.debug(f"pytesseract OCR fallback unavailable: {e}")
 
     # Try EXIF / Metadata extraction fallback
     try:
@@ -119,7 +116,7 @@ def extract_ocr_text_structured(filepath):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
+        import logging; logging.getLogger(__name__).debug(f"Swallowed notice in ocr.py: {e}")
         return f"[Image Parsing Error: {str(e)}]", []
 
 def extract_pdf_ocr(filepath):
@@ -150,16 +147,14 @@ def extract_pdf_ocr(filepath):
                     except (KeyboardInterrupt, MemoryError, SystemExit):
                         raise
                     except Exception as e:
-                        import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
-                        logger.warning(f"Error unlinking temp file: {e}")
+                        logger.debug(f"Error unlinking temp file: {e}")
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
-                logger.warning(f"Error processing PDF page: {e}")
+                logger.debug(f"Error processing PDF page: {e}")
         return "\n\n".join(text_parts), all_coords
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Swallowed error in ocr.py: {e}")
+        logger.debug(f"Scanned PDF OCR Error: {e}")
         return f"[Scanned PDF OCR Error: {str(e)}]", []

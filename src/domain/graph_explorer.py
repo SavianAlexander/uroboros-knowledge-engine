@@ -3,6 +3,7 @@ Interactive Knowledge Graph Topology Engine.
 Generates D3/Canvas interactive node and edge topology payloads for GraphView.tsx.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -30,7 +31,6 @@ def generate_graph_topology(
             {"source": "doc_1", "target": "doc_3", "weight": 0.65}
         ]
     else:
-        import unicodedata
         for idx, doc in enumerate(valid_docs):
             doc_id = doc.get("id") or f"doc_{idx}"
             raw_label = doc.get("filename") or doc.get("title") or doc_id

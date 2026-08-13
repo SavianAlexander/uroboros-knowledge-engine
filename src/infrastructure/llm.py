@@ -2,10 +2,12 @@
 LLM Inference infrastructure wrapper with safe try-except import guards for llama_cpp.
 Includes LRU caching, context window bounding, and stream generation.
 """
-
 import os
+import logging
 import functools
 from typing import Optional, List, Dict, Any, Generator
+
+logger = logging.getLogger(__name__)
 
 HAS_LLAMA = False
 try:
@@ -14,7 +16,7 @@ try:
 except (KeyboardInterrupt, MemoryError, SystemExit):
     raise
 except Exception as e:
-    import logging; logging.getLogger(__name__).debug(f"llama_cpp import unavailable: {e}")
+    logger.debug(f"llama_cpp import unavailable: {e}")
     HAS_LLAMA = False
 
 _llm_instance = None
@@ -35,7 +37,7 @@ def get_fallback_llm():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in llm.py: {e}")
+        logger.warning(f"Swallowed error in llm.py: {e}")
     return None
 
 def is_llm_available() -> bool:

@@ -2,6 +2,7 @@
 FastAPI REST Router for Document Intelligence & Vault Analytics endpoints.
 """
 
+import logging
 from fastapi import APIRouter, HTTPException, status
 from src.core.domain.models import (
     AnalyticsOverviewResponse,
@@ -16,6 +17,8 @@ from src.domain.analytics_engine import (
     get_search_activity
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["analytics"])
 
 
@@ -27,7 +30,7 @@ def get_analytics_overview_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in analytics.py: {e}")
+        logger.exception(f"Swallowed error in analytics.py: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve analytics overview: {str(e)}"
@@ -41,7 +44,7 @@ def get_analytics_storage_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in analytics.py: {e}")
+        logger.exception(f"Swallowed error in analytics.py: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve storage breakdown: {str(e)}"

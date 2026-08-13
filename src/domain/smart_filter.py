@@ -4,6 +4,7 @@ from typing import Dict, Any
 _RE_EXT = re.compile(r'\b(pdf|docx|md|txt|png|jpg|mp3|csv|json)\b', re.IGNORECASE)
 _RE_TAG = re.compile(r'\btagged\s+([a-zA-Z0-9_-]+)', re.IGNORECASE)
 _RE_SIZE = re.compile(r'\bsize\s*(>|<|=)\s*(\d+)\s*(mb|kb|b)?\b', re.IGNORECASE)
+_RE_STOP_FTS = re.compile(r'\b(files|documents|notes|from|last|week|month)\b', re.IGNORECASE)
 
 def parse_natural_language_filter(query: str) -> Dict[str, Any]:
     """
@@ -43,7 +44,7 @@ def parse_natural_language_filter(query: str) -> Dict[str, Any]:
     # Clean FTS keywords
     cleaned_fts = _RE_TAG.sub('', raw)
     cleaned_fts = _RE_SIZE.sub('', cleaned_fts)
-    cleaned_fts = re.sub(r'\b(files|documents|notes|from|last|week|month)\b', '', cleaned_fts, flags=re.IGNORECASE).strip()
+    cleaned_fts = _RE_STOP_FTS.sub('', cleaned_fts).strip()
 
     return {
         "fts_term": cleaned_fts or raw,

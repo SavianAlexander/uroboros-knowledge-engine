@@ -3,6 +3,7 @@ Multi-Tenant ACL & Role Vector Isolation Guard Engine.
 Filters candidate vector chunks dynamically based on user tenant ID and role permissions.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import List, Dict, Any
 
@@ -20,8 +21,6 @@ def filter_candidates_by_acl(
 
     allowed = []
     blocked_count = 0
-
-    import unicodedata
     norm_user_tenant = unicodedata.normalize("NFC", str(user_tenant_id or "default"))
     roles_set = set(unicodedata.normalize("NFC", str(r)).lower() for r in user_roles)
     # Admin roles bypass role checks

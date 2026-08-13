@@ -3,7 +3,7 @@ Source Document Credibility & Authority Weighting Engine.
 Computes document authority scores based on document type and applies authority multipliers to search rankings.
 Zero-dependency, stdlib implementation.
 """
-
+import unicodedata
 from typing import List, Dict, Any
 
 AUTHORITY_MULTIPLIERS = {
@@ -31,7 +31,6 @@ def apply_source_credibility_weighting(
 
     weighted_results = []
     for cand in valid_candidates:
-        import unicodedata
         cand_copy = dict(cand)
         raw_type = str(cand.get("doc_type") or "general")
         doc_type = unicodedata.normalize("NFC", raw_type).strip().lower()

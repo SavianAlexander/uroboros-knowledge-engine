@@ -3,6 +3,7 @@ Adversarial Noise & Distractor Filter Engine.
 Filters out candidate chunks with high superficial keyword matches but low core semantic similarity.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import List, Dict, Any
 from src.domain.rag_grounding_guard import compute_ngram_overlap
@@ -19,8 +20,6 @@ def filter_distractor_chunks(
     """
     if not candidates or not isinstance(candidates, list):
         return {"filtered_candidates": [], "distractor_count": 0, "status": "success"}
-
-    import unicodedata
     norm_query = unicodedata.normalize("NFC", str(query or ""))
     valid_candidates = [c for c in candidates if isinstance(c, dict)]
     if not valid_candidates:

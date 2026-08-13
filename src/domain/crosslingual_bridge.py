@@ -3,7 +3,6 @@ Multilingual Latent Vector Projection Bridge Engine.
 Maps multilingual semantic concepts into a unified invariant latent space.
 Zero-dependency, stdlib implementation.
 """
-
 import math
 import unicodedata
 from typing import Dict, Any, List

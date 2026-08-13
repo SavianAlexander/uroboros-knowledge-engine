@@ -3,7 +3,6 @@ Codebase AST Architecture Doctor & Anti-Pattern Sentinel.
 Audits python files for monolithic god objects, excessive function complexity, and import health.
 Zero-dependency, stdlib implementation.
 """
-
 import os
 import ast
 from typing import Dict, Any, List, Optional

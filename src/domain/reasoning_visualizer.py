@@ -2,6 +2,7 @@
 Knowledge Graph Reasoning Path Visualizer.
 Generates Mermaid.js diagram markup detailing multi-hop traversal pathways across document nodes.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -9,15 +10,13 @@ from typing import Dict, Any, List
 def generate_mermaid_reasoning_diagram(pathways: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Converts multi-hop pathway results into Mermaid.js graph markup.
-    # ponytail: zero-dependency Mermaid.js graph markup generator
+    # ponytail: zero-dependency Mermaid.js graph markup generator; ceiling: 2D Mermaid LR flowchart strings; upgrade: generate Cytoscape JSON payload if 3D force-directed layout is requested
     """
     if not pathways:
         return {"status": "empty", "mermaid_markup": "graph TD\n  Empty[No Pathways Found]"}
 
     lines = ["graph LR"]
     seen_edges = set()
-
-    import unicodedata
     for idx, path in enumerate(pathways):
         filenames = path.get("path_filenames", [])
         for i in range(len(filenames) - 1):

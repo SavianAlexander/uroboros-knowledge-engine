@@ -3,7 +3,6 @@ Keystroke Speculative Vector Warmer Engine.
 Pre-fetches candidate document vector IDs into RAM as partial query prefixes are typed.
 Achieves sub-2ms spotlight search retrieval response times.
 """
-
 import time
 from typing import Dict, Any, List, Optional
 from src.domain.vector_store import DenseVectorStore
@@ -32,6 +31,8 @@ class SpeculativeContextWarmer:
             candidate_k=15
         )
         doc_ids = [doc_id for doc_id, score, meta in results]
+        if len(self._prefix_cache) >= 1000:
+            self._prefix_cache.pop(next(iter(self._prefix_cache)))
         self._prefix_cache[prefix_key] = doc_ids
         return doc_ids
 

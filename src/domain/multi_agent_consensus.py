@@ -3,6 +3,7 @@ Multi-Agent Reasoning Consensus Orchestrator Engine.
 Synthesizes multi-perspective debate responses between Developer, Legal, and Executive persona agents into a unified consensus.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -14,7 +15,6 @@ def orchestrate_multi_agent_consensus(
     """
     Orchestrates persona perspectives (Developer, Legal, Executive) and synthesizes a unified consensus.
     """
-    import unicodedata
     norm_query = unicodedata.normalize("NFC", str(query or ""))
     norm_ctxs = [unicodedata.normalize("NFC", str(c)) for c in (retrieved_contexts or []) if c]
     ctx_summary = " ".join(norm_ctxs[:2]) if norm_ctxs else "No context available."

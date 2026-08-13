@@ -3,7 +3,6 @@ Dynamic Context Budget Allocator Engine.
 Dynamically calculates context token budget allocation across vector snippets, graph pathways, and episodic memory.
 Zero-dependency, stdlib implementation.
 """
-
 import unicodedata
 from typing import Dict, Any, List, Optional
 
@@ -22,7 +21,7 @@ def allocate_context_budget(
     - Graph Pathways: 25%
     - Episodic Memory: 15%
     - System Instructions: 10%
-    # ponytail: proportional context budget allocator
+    # ponytail: proportional context budget allocator; ceiling: static 50/25/15/10 ratio allocation; upgrade: use dynamic attention-weighted allocator if model supports 128k context window
     """
     raw_budget = kwargs.get("total_token_budget", max_tokens)
     token_budget = int(raw_budget) if raw_budget is not None and isinstance(raw_budget, (int, float)) and raw_budget > 0 else 8192

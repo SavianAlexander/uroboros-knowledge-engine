@@ -3,6 +3,7 @@ Self-Evolving Sparse-Dense-ColBERT Fusion Reranker Engine.
 Dynamically calculates optimal alpha, beta, gamma scalars per query intent.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -23,7 +24,6 @@ def rerank_sparse_dense_fusion(
         return {"reranked_chunks": [], "status": "empty_input"}
 
     # Dynamic scalar computation based on query characteristics
-    import unicodedata
     norm_query = unicodedata.normalize("NFC", safe_query)
     is_code = "def " in norm_query or "class " in norm_query or "import " in norm_query
     is_legal = "policy" in norm_query.lower() or "contract" in norm_query.lower()

@@ -3,8 +3,8 @@ Autonomous SOC 2 & HIPAA Privacy Compliance Inspector.
 Audits document content for PII, HIPAA medical data, credit cards, and secret API keys.
 Zero-dependency, stdlib implementation.
 """
-
 import re
+import unicodedata
 from typing import Dict, Any, List, Tuple
 
 RE_EMAIL = re.compile(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b')
@@ -16,24 +16,32 @@ RE_CREDIT_CARD = re.compile(r'\b(?:\d[ -]*?){13,16}\b')
 def inspect_privacy_compliance(text_content: str) -> Dict[str, Any]:
     """
     Audits input text for PII, API keys, and HIPAA compliance risks.
-    # ponytail: regex pattern privacy compliance audit
+    # ponytail: regex pattern privacy compliance audit; ceiling: static regex pattern matching; upgrade: add Presidio / NER PII model if fuzzy entity redact is needed
     """
     if not text_content:
         return {"status": "clean", "risk_score": 0.0, "violations": []}
 
-    import unicodedata
     norm_text = unicodedata.normalize("NFC", str(text_content))
+    if '@' not in norm_text and '-' not in norm_text and 'sk_' not in norm_text and 'ghp_' not in norm_text and 'AKIA' not in norm_text:
+        return {
+            "status": "compliant",
+            "risk_score": 0.0,
+            "total_violations": 0,
+            "violations": [],
+            "masked_text": norm_text
+        }
+
     violations = []
     
     emails = RE_EMAIL.findall(norm_text)
     if emails:
         violations.append({"type": "PII_EMAIL", "count": len(emails), "samples": emails[:2]})
 
-    ssns = RE_SSN.findall(text_content)
+    ssns = RE_SSN.findall(norm_text)
     if ssns:
         violations.append({"type": "PII_SSN", "count": len(ssns), "samples": ["***-**-****"] * len(ssns)})
 
-    keys = RE_API_KEY.findall(text_content)
+    keys = RE_API_KEY.findall(norm_text)
     if keys:
         violations.append({"type": "SECRET_API_KEY", "count": len(keys), "samples": ["sk_***"] * len(keys)})
 

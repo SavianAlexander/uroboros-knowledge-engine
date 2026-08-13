@@ -2,9 +2,13 @@
 Zero-dependency Multimodal Document Layout & Form Parser Engine.
 Extracts structured tables, key-value form pairs, and checkbox states ([x] / [ ]) from document text.
 """
-
 import re
 from typing import Dict, Any, List
+
+RE_TABLE_SEPARATOR = re.compile(r'^[|\s:-]+$')
+RE_KEY_VALUE_PAIR = re.compile(r'^([A-Za-z0-9_\s#.\-]{2,30})\s*:\s*(.+)$', flags=re.MULTILINE)
+RE_CHECKBOX_CHECKED = re.compile(r'^\s*[-*]\s*\[[xX]\]\s*(.+)$', flags=re.MULTILINE)
+RE_CHECKBOX_UNCHECKED = re.compile(r'^\s*[-*]\s*\[\s*\]\s*(.+)$', flags=re.MULTILINE)
 
 
 def parse_markdown_tables(text: str) -> List[Dict[str, Any]]:
@@ -38,7 +42,7 @@ def _build_table_structure(table_lines: List[str]) -> Dict[str, Any]:
     data_rows = []
 
     for line in table_lines[1:]:
-        if re.match(r'^[|\s:-]+$', line):
+        if RE_TABLE_SEPARATOR.match(line):
             continue  # Separator line
         row_cells = [c.strip() for c in line.strip("|").split("|")]
         row_dict = {}
@@ -60,7 +64,7 @@ def extract_key_value_pairs(text: str) -> Dict[str, str]:
     """
     if not text or not isinstance(text, str):
         return {}
-    matches = re.findall(r'^([A-Za-z0-9_\s#.\-]{2,30})\s*:\s*(.+)$', text, flags=re.MULTILINE)
+    matches = RE_KEY_VALUE_PAIR.findall(text)
     kv_dict = {}
     for k, v in matches:
         kv_dict[k.strip()] = v.strip()
@@ -73,8 +77,8 @@ def parse_checkbox_states(text: str) -> Dict[str, List[str]]:
     """
     if not text or not isinstance(text, str):
         return {"checked": [], "unchecked": []}
-    checked = re.findall(r'^\s*[-*]\s*\[[xX]\]\s*(.+)$', text, flags=re.MULTILINE)
-    unchecked = re.findall(r'^\s*[-*]\s*\[\s*\]\s*(.+)$', text, flags=re.MULTILINE)
+    checked = RE_CHECKBOX_CHECKED.findall(text)
+    unchecked = RE_CHECKBOX_UNCHECKED.findall(text)
     return {
         "checked": [c.strip() for c in checked],
         "unchecked": [u.strip() for u in unchecked]

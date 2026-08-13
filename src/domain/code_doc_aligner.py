@@ -3,6 +3,7 @@ Semantic Code-Text Alignment & Docstring Harmonizer Engine.
 Compares function implementation logic against docstrings, identifying outdated documentation.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 import ast
@@ -16,7 +17,6 @@ def check_code_docstring_alignment(code_snippet: str) -> Dict[str, Any]:
         return {"alignment_issues": [], "status": "empty_code"}
 
     try:
-        import unicodedata
         norm_code = unicodedata.normalize("NFC", code_snippet)
         tree = ast.parse(norm_code)
     except Exception as e:

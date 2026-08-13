@@ -1,7 +1,7 @@
 """
 Security utilities including symlink escape, path traversal guards, and ACL permission inspection.
 """
-
+import re
 import os
 import sys
 from pathlib import Path
@@ -79,7 +79,6 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in security.py: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid path containment check: {str(e)}")
-
 import re
 
 SECRET_REDACTION_PATTERNS = [

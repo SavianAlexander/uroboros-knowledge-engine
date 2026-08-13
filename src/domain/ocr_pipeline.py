@@ -3,7 +3,6 @@ Hybrid High-Throughput PDF/OCR Ingestion Pipeline Engine.
 Provides PyPDF layout mode extraction, OCR confidence scoring, image fallback parsing,
 and automated Tududi Task Master orchestration for low-confidence documents.
 """
-
 import os
 import re
 import logging
@@ -14,6 +13,8 @@ try:
     import pypdf
 except ImportError:
     pypdf = None
+
+RE_TABLE_ROW = re.compile(r'\|.*\|.*\|')
 
 
 class HybridPDFIngestionEngine:
@@ -64,7 +65,7 @@ class HybridPDFIngestionEngine:
                         "text": clean_text,
                         "char_count": char_count,
                         "word_count": word_count,
-                        "has_tables": bool(re.search(r'\|.*\|.*\|', clean_text))
+                        "has_tables": bool(RE_TABLE_ROW.search(clean_text))
                     })
             except Exception as e:
                 logging.warning(f"PyPDF extraction error for {filename}: {e}")

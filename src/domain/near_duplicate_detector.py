@@ -2,24 +2,30 @@
 Zero-dependency MinHash & Jaccard similarity near-duplicate detector.
 Identifies identical and near-duplicate vault documents.
 """
-
+import os
+import unicodedata
 import re
 import hashlib
 from collections import defaultdict
+import functools
 from typing import Dict, Any, List, Set, Tuple
 
 
-def compute_shingles(text: str, k: int = 3) -> Set[str]:
-    """Extracts word k-shingles from text."""
+@functools.lru_cache(maxsize=2048)
+def _compute_shingles_tuple(text: str, k: int = 3) -> Tuple[str, ...]:
     if not text or not isinstance(text, (str, bytes)):
-        return set()
-    import unicodedata
+        return ()
     raw_str = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
     norm_text = unicodedata.normalize("NFC", raw_str)
     words = re.findall(r'\b[\w-]+\b', norm_text.lower())
     if len(words) < k:
-        return {" ".join(words)} if words else set()
-    return {" ".join(words[i:i+k]) for i in range(len(words) - k + 1)}
+        return (" ".join(words),) if words else ()
+    return tuple(" ".join(words[i:i+k]) for i in range(len(words) - k + 1))
+
+
+def compute_shingles(text: str, k: int = 3) -> Set[str]:
+    """Extracts word k-shingles from text."""
+    return set(_compute_shingles_tuple(text, k))
 
 
 def jaccard_similarity(set_a: Set[str], set_b: Set[str]) -> float:
@@ -37,7 +43,6 @@ def detect_near_duplicates(similarity_threshold: float = 0.80) -> Dict[str, Any]
     Zero-dependency stdlib implementation.
     """
     try:
-        import os
         from src.infrastructure.database import get_db_connection, init_db, DB_FILE
 
         init_db()

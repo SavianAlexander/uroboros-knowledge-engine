@@ -1,7 +1,9 @@
 """
 Tag rules, synonyms, bookmarks, tag colors, query macros, tag aliases, notes, and peer sync endpoints.
 """
-
+import hashlib
+import json
+import time
 import os
 import re
 import sqlite3
@@ -201,7 +203,7 @@ def get_bookmarks_endpoint():
         
         allowed = {"id", "name", "query", "search_mode"}
         safe_cols = [c for c in select_cols if c in allowed]
-        # ponytail: whitelist validated, safe f-string
+        # ponytail: whitelist validated safe column interpolation; ceiling: fixed internal schema columns; upgrade: use ORM projection if dynamic schema migrations are enabled
         cursor.execute(f"SELECT {', '.join(safe_cols)} FROM bookmarks")
         rows = cursor.fetchall()
         bookmarks = []
@@ -444,7 +446,6 @@ def get_sync_delta_endpoint(req: SyncDeltaRequest):
                 import logging; logging.warning(f"Swallowed error in tags.py: {e}")
 
         if not sha256_val and content:
-            import hashlib
             sha256_val = hashlib.sha256(content.encode("utf-8")).hexdigest()
             size = len(content.encode("utf-8"))
 
@@ -486,8 +487,6 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
             target_peer_clean = f"http://{target_peer_clean}"
         try:
             import urllib.request
-            import json
-            import time
             from src.infrastructure.p2p_sync import get_local_document_hashes, compute_sync_delta
             from src.infrastructure.database import get_active_dir
             from src.infrastructure.vector_engine import index_directory
@@ -570,8 +569,6 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
 
             if synced:
                 index_directory(active_dir)
-
-            import time
             with get_db() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
@@ -584,7 +581,6 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
             raise
         except Exception as e:
             import logging; logging.getLogger(__name__).warning(f"Swallowed error in tags.py: {e}")
-            import time
             try:
                 with get_db() as conn:
                     cursor = conn.cursor()

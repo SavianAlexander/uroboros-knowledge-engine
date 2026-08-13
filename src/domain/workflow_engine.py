@@ -2,7 +2,6 @@
 Event Listener Engine and condition rule matching for automated workflow triggers.
 Evaluates document_ingested, tag_assigned, and semantic_match events against pattern and score threshold rules.
 """
-
 import re
 import json
 import fnmatch
@@ -13,6 +12,30 @@ from src.infrastructure.webhook_dispatcher import WebhookDispatcher
 
 logger = logging.getLogger(__name__)
 
+
+def _eval_json_condition(cond_obj: dict, payload: Dict[str, Any]) -> bool:
+    for key, expected in cond_obj.items():
+        if key in ("min_score", "score_threshold", "score"):
+            try:
+                val_raw = payload.get("score", payload.get("confidence", 0.0))
+                if float(val_raw) < (float(expected) if expected is not None else 0.0):
+                    return False
+            except (ValueError, TypeError):
+                return False
+        elif key in ("pattern", "glob", "file_pattern"):
+            if not fnmatch.fnmatch(str(payload.get("filepath", payload.get("filename", ""))), str(expected)):
+                return False
+        elif key == "tag":
+            if not fnmatch.fnmatch(str(payload.get("tag", "")), str(expected)):
+                return False
+        elif key == "mime_type":
+            if not fnmatch.fnmatch(str(payload.get("mime_type", "")), str(expected)):
+                return False
+        else:
+            actual_val = payload.get(key)
+            if str(actual_val) != str(expected) and not fnmatch.fnmatch(str(actual_val), str(expected)):
+                return False
+    return True
 
 def evaluate_condition(
     condition_pattern: Optional[str],
@@ -34,34 +57,7 @@ def evaluate_condition(
         try:
             cond_obj = json.loads(pattern_str)
             if isinstance(cond_obj, dict):
-                # Check key-value rules inside JSON
-                for key, expected in cond_obj.items():
-                    if key in ("min_score", "score_threshold", "score"):
-                        try:
-                            val_raw = payload.get("score", payload.get("confidence", 0.0))
-                            actual_score = float(val_raw)
-                            expected_score = float(expected) if expected is not None else 0.0
-                            if actual_score < expected_score:
-                                return False
-                        except (ValueError, TypeError):
-                            return False
-                    elif key in ("pattern", "glob", "file_pattern"):
-                        target_str = str(payload.get("filepath", payload.get("filename", "")))
-                        if not fnmatch.fnmatch(target_str, str(expected)):
-                            return False
-                    elif key == "tag":
-                        target_tag = str(payload.get("tag", ""))
-                        if not fnmatch.fnmatch(target_tag, str(expected)):
-                            return False
-                    elif key == "mime_type":
-                        target_mime = str(payload.get("mime_type", ""))
-                        if not fnmatch.fnmatch(target_mime, str(expected)):
-                            return False
-                    else:
-                        actual_val = payload.get(key)
-                        if str(actual_val) != str(expected) and not fnmatch.fnmatch(str(actual_val), str(expected)):
-                            return False
-                return True
+                return _eval_json_condition(cond_obj, payload)
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:

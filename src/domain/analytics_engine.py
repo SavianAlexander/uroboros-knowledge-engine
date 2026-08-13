@@ -1,7 +1,8 @@
 """
 Domain Analytics Engine providing fast, thread-safe, cached analytical telemetry and metrics over SQLite vault tables.
 """
-
+from datetime import datetime, timedelta, timezone
+import unicodedata
 import os
 import time
 import sqlite3
@@ -176,10 +177,11 @@ def get_storage_breakdown(db_path: Optional[str] = None) -> StorageBreakdownResp
     return res
 
 
-def get_tag_distribution(db_path: Optional[str] = None) -> TagDistributionResponse:
+def get_tag_distribution(db_path: Optional[str] = None, pool_limit: int = 15) -> TagDistributionResponse:
     target_path = db_path if db_path is not None else know.DB_FILE
     db_ver = getattr(know, "_db_version", 0)
-    cache_key = ("tag_distribution", target_path, db_ver)
+    pool_size = max(5, min(100, pool_limit))
+    cache_key = ("tag_distribution", target_path, db_ver, pool_size)
     now = time.time()
 
     if cache_key in _analytics_cache:
@@ -201,10 +203,8 @@ def get_tag_distribution(db_path: Optional[str] = None) -> TagDistributionRespon
                 all_tag_rows = cur.fetchall()
                 total_tags = len(all_tag_rows)
 
-                top_rows = all_tag_rows[:15]
-                import unicodedata
+                top_rows = all_tag_rows[:pool_size]
                 top_tags = [{"tag": unicodedata.normalize("NFC", str(r[0])), "count": r[1]} for r in top_rows[:10]]
-                # ponytail: Candidate pool capped at top 15 tags with session temp index for O(log N) join under 15ms.
                 candidate_tags = [r[0] for r in top_rows]
 
                 # 2. Co-occurrence using session temporary indexed table for O(log N) candidate join
@@ -266,7 +266,6 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
     timeline_data: Dict[str, Dict[str, int]] = {}
 
     # Initialize last 7 days
-    from datetime import datetime, timedelta, timezone
     today = datetime.now(timezone.utc).date()
 
     for i in range(6, -1, -1):

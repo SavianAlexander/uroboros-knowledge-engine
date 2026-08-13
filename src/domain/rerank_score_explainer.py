@@ -2,6 +2,7 @@
 Zero-dependency Rerank Search Score Deconstruction Explainer Engine.
 Provides human-readable breakdowns explaining WHY candidate documents ranked at specific positions.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -13,8 +14,6 @@ def explain_candidate_score(candidate: Dict[str, Any]) -> Dict[str, Any]:
     """
     if not candidate or not isinstance(candidate, dict):
         candidate = {}
-
-    import unicodedata
     raw_name = str(candidate.get("filename") or "document.md")
     filename = unicodedata.normalize("NFC", raw_name)
     try:

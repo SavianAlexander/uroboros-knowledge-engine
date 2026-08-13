@@ -41,7 +41,7 @@ export default function GraphView() {
   });
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
-  // ponytail: debounce graph physics recalculation
+  // ponytail: debounce graph physics recalculation; ceiling: 150ms text filter debounce; upgrade: use Web Worker for O(N log N) graph physics layout if node count exceeds 5,000 nodes
   const debouncedSetFilter = useCallback(debounce((val: string) => setFilter(val), 150), []);
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function GraphView() {
   useEffect(() => {
     if (!containerRef.current) return;
     
-    // ponytail: debounce resize events to prevent webgl thrashing
+    // ponytail: debounce resize events to prevent webgl thrashing; ceiling: 150ms debounce window; upgrade: use RequestAnimationFrame throttling if sub-16ms fluid canvas resize is needed
     const handleResize = debounce((entries: ResizeObserverEntry[]) => {
       if (entries[0]) {
         setDimensions({
@@ -117,7 +117,7 @@ export default function GraphView() {
     return { nodes: filteredNodes, links: filteredEdges };
   }, [filteredNodes, filteredEdges]);
 
-  // ponytail: cache materials to avoid webgl memory leak
+  // ponytail: cache materials to avoid webgl memory leak; ceiling: in-memory sprite material map; upgrade: add material disposal pipeline if dynamic node color palette switching is added
   const materialCache = useRef<Record<string, THREE.SpriteMaterial>>({});
 
   useEffect(() => {

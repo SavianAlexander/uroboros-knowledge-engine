@@ -2,7 +2,7 @@
 Zero-dependency Predictive Context Pre-Caching Engine.
 Pre-fetches and compresses 1-hop and 2-hop GraphRAG neighbor contexts into memory for zero-latency follow-up queries.
 """
-
+import os
 import sqlite3
 from typing import Dict, Any, List
 from src.shared.regex import RE_WIKILINKS
@@ -18,7 +18,6 @@ def precache_graph_neighborhood(source_doc: str) -> Dict[str, Any]:
     global _PRECACHE_BUFFER
     conn = None
     try:
-        import os
         from src.infrastructure.database import DB_FILE, get_db_connection, init_db
 
         if DB_FILE and os.path.dirname(DB_FILE):

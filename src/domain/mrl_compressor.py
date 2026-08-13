@@ -2,7 +2,6 @@
 Matryoshka Representation Learning (MRL) Vector Truncation & Compression Engine.
 Enables dynamic sub-dimension vector indexing (256d / 512d / 768d) with zero-dependency L2 re-normalization.
 """
-
 import math
 from typing import List, Dict, Any
 

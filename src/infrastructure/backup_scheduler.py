@@ -1,7 +1,6 @@
 """
 Zero-dependency automated background scheduled database backups and snapshot lifecycle manager.
 """
-
 import os
 import glob
 import time

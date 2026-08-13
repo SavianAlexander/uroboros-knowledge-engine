@@ -3,6 +3,7 @@ Entropy Differential Noise Masker Engine.
 Evaluates token-level information density entropy (delta H) and masks low-information boilerplate.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -21,7 +22,6 @@ def mask_low_entropy_noise(text_chunk: str) -> Dict[str, Any]:
     """
     Evaluates lines/tokens for low information entropy and strips repetitive boilerplate.
     """
-    import unicodedata
     norm_text = unicodedata.normalize("NFC", text_chunk)
     lines = norm_text.split("\n")
     clean_lines = []

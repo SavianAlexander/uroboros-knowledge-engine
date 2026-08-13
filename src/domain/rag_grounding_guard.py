@@ -3,7 +3,6 @@ Self-Correction RAG Grounding & Hallucination Guard Engine.
 Verifies LLM response claim sentences against retrieved source context chunks via n-gram overlap and vector entailment heuristics.
 Zero-dependency, stdlib implementation.
 """
-
 import re
 import unicodedata
 from typing import List, Dict, Any
@@ -14,10 +13,14 @@ RE_WORD = re.compile(r'\b[a-zA-Z0-9_-]{3,}\b')
 STOP_WORDS = {"the", "and", "is", "in", "it", "of", "to", "a", "for", "with", "on", "that", "this", "by", "an", "are", "as", "at", "be", "or", "from"}
 
 
+from functools import lru_cache
+
 def split_sentences(text: str) -> List[str]:
     """Splits text into discrete sentences."""
     if not text or not isinstance(text, str):
         return []
+    if '.' not in text and '!' not in text and '?' not in text:
+        return [text.strip()]
     sents = [s.strip() for s in RE_SENTENCE.findall(text)]
     rem = RE_SENTENCE.sub("", text).strip()
     if rem and rem not in sents:
@@ -25,21 +28,23 @@ def split_sentences(text: str) -> List[str]:
     return sents if sents else [text.strip()]
 
 
+@lru_cache(maxsize=1024)
+def _extract_word_set(text: str) -> set:
+    norm = unicodedata.normalize("NFC", text)
+    return set(w.lower() for w in RE_WORD.findall(norm) if w.lower() not in STOP_WORDS)
+
 
 def compute_ngram_overlap(claim: str, source_text: str) -> float:
     """Computes word-level overlap ratio between claim sentence and source text."""
     if not claim or not source_text or not isinstance(claim, str) or not isinstance(source_text, str):
         return 0.0 if (claim and not source_text) else 1.0
 
-    claim_norm = unicodedata.normalize("NFC", claim)
-    source_norm = unicodedata.normalize("NFC", source_text)
-
-    claim_words = set(w.lower() for w in RE_WORD.findall(claim_norm) if w.lower() not in STOP_WORDS)
+    claim_words = _extract_word_set(claim)
     if not claim_words:
         return 1.0
     
-    source_words = set(w.lower() for w in RE_WORD.findall(source_norm) if w.lower() not in STOP_WORDS)
-    overlap = claim_words.intersection(source_words)
+    source_words = _extract_word_set(source_text)
+    overlap = claim_words & source_words
     return round(len(overlap) / float(len(claim_words)), 4)
 
 

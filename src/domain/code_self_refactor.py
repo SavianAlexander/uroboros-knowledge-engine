@@ -3,6 +3,7 @@ Autonomous Code Self-Refactoring & Style Enforcer Engine.
 Analyzes Python AST trees, detects complexity spikes or unused imports, and proposes ponytail-optimized refactorings.
 Zero-dependency, stdlib implementation (ast).
 """
+import unicodedata
 
 import ast
 from typing import Dict, Any, List
@@ -16,7 +17,6 @@ def analyze_and_propose_refactoring(code_snippet: str) -> Dict[str, Any]:
         return {"proposals": [], "status": "empty_code"}
 
     try:
-        import unicodedata
         norm_code = unicodedata.normalize("NFC", code_snippet)
         tree = ast.parse(norm_code)
     except Exception as e:

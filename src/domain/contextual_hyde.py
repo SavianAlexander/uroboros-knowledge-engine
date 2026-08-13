@@ -2,7 +2,7 @@
 Zero-dependency Hypothetical Document Embeddings (HyDE) & Contextual Chunk Prefixing Engine.
 Synthesizes hypothetical answer document representations to boost semantic vector recall.
 """
-
+import unicodedata
 import re
 from typing import Dict, Any, List
 
@@ -12,7 +12,6 @@ def generate_hypothetical_document(query: str) -> Dict[str, Any]:
     Generates a structured hypothetical answer document representation for a user query.
     Zero-dependency stdlib implementation.
     """
-    import unicodedata
     cleaned_query = unicodedata.normalize("NFC", query.strip())
     if not cleaned_query:
         return {"hypothetical_text": "", "keywords": [], "status": "success"}

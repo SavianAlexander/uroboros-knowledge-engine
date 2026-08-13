@@ -3,10 +3,12 @@ Zero-dependency Adaptive Recency Time-Decay Reranking Engine.
 Applies exponential decay scoring to prioritize recently updated vault documents over legacy records.
 Formula: Score_final = Score_initial * exp(-decay_lambda * delta_days)
 """
-
 import math
 import time
+from datetime import datetime
 from typing import Dict, Any, List
+
+_LN_2 = 0.6931471805599453
 
 
 def apply_recency_decay(candidates: List[Dict[str, Any]], decay_half_life_days: float = 30.0) -> List[Dict[str, Any]]:
@@ -22,7 +24,7 @@ def apply_recency_decay(candidates: List[Dict[str, Any]], decay_half_life_days: 
         return []
 
     now = time.time()
-    decay_lambda = math.log(2) / float(max(1.0, decay_half_life_days))
+    decay_lambda = _LN_2 / float(max(1.0, decay_half_life_days))
 
     reranked = []
     for cand in valid_candidates:
@@ -31,7 +33,6 @@ def apply_recency_decay(candidates: List[Dict[str, Any]], decay_half_life_days: 
             delta_sec = max(0.0, now - float(mtime))
         elif isinstance(mtime, str):
             try:
-                from datetime import datetime, timezone
                 clean_str = mtime.replace("Z", "+00:00")
                 dt = datetime.fromisoformat(clean_str)
                 ts = dt.timestamp()

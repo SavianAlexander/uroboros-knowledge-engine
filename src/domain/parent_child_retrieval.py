@@ -2,7 +2,7 @@
 Zero-dependency Hierarchical Parent-Child Context Retrieval Engine.
 Matches small child chunks for speed/precision, but expands to full parent document context.
 """
-
+import os
 import sqlite3
 from typing import Dict, Any, List
 
@@ -18,7 +18,6 @@ def expand_child_chunks_to_parents(file_ids: List[int], max_chars_per_parent: in
     safe_max_chars = max(100, int(max_chars_per_parent)) if max_chars_per_parent is not None and isinstance(max_chars_per_parent, (int, float)) else 1500
 
     try:
-        import os
         from src.infrastructure.database import get_db, init_db, DB_FILE
 
         if DB_FILE and os.path.dirname(DB_FILE):

@@ -2,7 +2,7 @@
 Zero-dependency PII Anonymization & Privacy Guard Engine.
 Detects and redacts sensitive PII (Social Security Numbers, Credit Cards, API Keys, Private Emails).
 """
-
+import unicodedata
 import re
 from typing import Dict, Any, List
 
@@ -17,7 +17,6 @@ def redact_pii_from_text(text: str) -> Dict[str, Any]:
     Redacts PII tokens from text to guarantee privacy before LLM context insertion.
     Zero-dependency stdlib implementation.
     """
-    import unicodedata
     redacted_text = unicodedata.normalize("NFC", str(text or ""))
     pii_counts = {"ssn": 0, "email": 0, "credit_card": 0, "api_key": 0}
 

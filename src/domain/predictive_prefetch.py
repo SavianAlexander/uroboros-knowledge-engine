@@ -3,7 +3,6 @@ Predictive Search Intent Pre-Fetcher Engine.
 Predicts user's next likely search queries based on active document context and pre-warms vector cache.
 Zero-dependency, stdlib implementation.
 """
-
 import re
 from typing import Dict, Any, List
 

@@ -5,7 +5,7 @@ Integrates:
 2. Reciprocal Rank Fusion with PageRank Centrality Boosting (RRF-PGR)
 3. MinHash Sentence Deduplication & Token Context Compression
 """
-
+import os
 import re
 import sqlite3
 from typing import Dict, Any, List, Set
@@ -67,7 +67,6 @@ def execute_sota_rag_search(query: str, top_k: int = 5) -> Dict[str, Any]:
     Outperforms standard RAG pipelines.
     """
     try:
-        import os
         from src.infrastructure.database import get_db, init_db, DB_FILE
 
         if DB_FILE and os.path.dirname(DB_FILE):

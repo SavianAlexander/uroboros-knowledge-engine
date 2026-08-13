@@ -1,7 +1,6 @@
 """
 Zero-dependency TF-IDF term frequency & capitalized domain entity extraction engine.
 """
-
 import re
 import math
 from collections import Counter

@@ -2,7 +2,6 @@
 Zero-dependency Web Search Fetcher using Python standard library modules only.
 Provides WebSearchFetcher class and fetch_web_context function.
 """
-
 import json
 import urllib.request
 import urllib.parse

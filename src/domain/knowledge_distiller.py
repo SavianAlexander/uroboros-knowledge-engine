@@ -3,7 +3,7 @@ Zero-Cost Knowledge Distillation Dataset Exporter Engine.
 Exports high-confidence RAG search paths into Alpaca/ShareGPT JSONL datasets for local model fine-tuning.
 Zero-dependency, stdlib implementation.
 """
-
+import unicodedata
 import json
 from typing import Dict, Any, List
 
@@ -24,8 +24,6 @@ def export_knowledge_distillation_dataset(
         }
 
     export_records = []
-
-    import unicodedata
     fmt = str(format_type or "alpaca").lower()
     for log in rag_interaction_logs:
         if not isinstance(log, dict):

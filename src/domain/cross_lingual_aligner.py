@@ -2,7 +2,6 @@
 Zero-dependency Cross-Lingual Semantic Translation & Alignment Engine.
 Aligns multi-lingual search queries (Spanish, French, German) with English vault documents.
 """
-
 import unicodedata
 import re
 from typing import Dict, Any, List

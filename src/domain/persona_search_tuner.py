@@ -3,6 +3,7 @@ Adaptive Persona-Aware Search Tuning Engine.
 Adjusts vector similarity, graph halo, temporal decay, and keyword weights based on user persona.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -39,7 +40,6 @@ def tune_search_by_persona(
     """
     Reranks candidate search results based on active user persona weighting.
     """
-    import unicodedata
     persona_str = unicodedata.normalize("NFC", str(persona or "developer")).lower()
     persona_config = PERSONA_WEIGHTS.get(persona_str, PERSONA_WEIGHTS["developer"])
     boost_terms = set(persona_config["boost_terms"])

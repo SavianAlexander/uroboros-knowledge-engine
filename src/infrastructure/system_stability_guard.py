@@ -3,7 +3,6 @@ System Stability & Resource Conservation Guard.
 Prevents memory leaks, high RAM consumption, unclosed database handles, and CPU thrashing.
 Zero-dependency, stdlib implementation.
 """
-
 import os
 import gc
 import sqlite3
@@ -18,7 +17,7 @@ def enforce_system_stability() -> Dict[str, Any]:
     Executes system stability cleanup:
     1. Triggers Python Garbage Collection to free unreferenced objects.
     2. Resets thread-local database handles if lingering.
-    # ponytail: zero-dependency system stability guard
+    # ponytail: zero-dependency system stability guard; ceiling: gc.collect() + SQLite connection pool reset; upgrade: add psutil memory threshold watcher if dynamic process recycling is required
     """
     # 1. Python GC Collect
     unreachable = gc.collect()

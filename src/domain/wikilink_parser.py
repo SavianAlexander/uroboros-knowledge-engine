@@ -3,11 +3,10 @@ Wikilink Content Parser Domain Module.
 Provides zero-dependency parsing of markdown wikilink syntax:
   [[target]], [[target|label]], [[target#anchor]], [[target#anchor|label]]
 """
-
 import re
 from functools import lru_cache
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 
 @dataclass(slots=True)
@@ -87,18 +86,16 @@ def slugify_title(title: str) -> str:
 
 
 @lru_cache(maxsize=8192)
-def parse_wikilinks(content: str) -> List[WikilinkMatch]:
+def _parse_wikilinks_cached(content: str) -> Tuple[WikilinkMatch, ...]:
     """
-    Parses content for all wikilinks in syntax:
+    Internal LRU-cached parser for all wikilinks in syntax:
     - [[target]]
     - [[target|label]]
     - [[target#anchor]]
     - [[target#anchor|label]]
-    
-    Returns a list of WikilinkMatch objects.
     """
     if not content or '[[' not in content:
-        return []
+        return ()
     
     matches: List[WikilinkMatch] = []
     
@@ -148,7 +145,12 @@ def parse_wikilinks(content: str) -> List[WikilinkMatch]:
             )
         )
     
-    return matches
+    return tuple(matches)
+
+
+def parse_wikilinks(content: str) -> List[WikilinkMatch]:
+    """Parses content for wikilinks, returning a fresh list copy to protect cache state."""
+    return list(_parse_wikilinks_cached(content))
 
 
 def extract_target_titles(content: str) -> List[str]:
@@ -158,7 +160,7 @@ def extract_target_titles(content: str) -> List[str]:
     """
     if not content or '[[' not in content:
         return []
-    parsed = parse_wikilinks(content)
+    parsed = _parse_wikilinks_cached(content)
     seen = set()
     titles = []
     for match in parsed:
@@ -170,22 +172,22 @@ def extract_target_titles(content: str) -> List[str]:
 RE_IMPLICIT_ENTITY = re.compile(r'\b(?:[A-Z][a-z0-9]+\s){1,2}[A-Z][a-z0-9]+\b')
 
 @lru_cache(maxsize=8192)
-def extract_implicit_entities(content: str) -> List[str]:
-    """
-    Extracts implicit entities (capitalized proper nouns, e.g. 'Project Uroboros')
-    to establish implicit graph edges without manual wikilinks.
-    """
+def _extract_implicit_entities_cached(content: str) -> Tuple[str, ...]:
     if not content:
-        return []
+        return ()
     
     seen = set()
     entities = []
     for match in RE_IMPLICIT_ENTITY.finditer(content):
         entity = match.group(0)
-        # Avoid common sentence starters if possible, but keep it mechanically simple
         if entity not in seen:
             seen.add(entity)
             entities.append(entity)
             
-    return entities
+    return tuple(entities)
+
+
+def extract_implicit_entities(content: str) -> List[str]:
+    """Extracts implicit entities, returning a fresh list copy to protect cache state."""
+    return list(_extract_implicit_entities_cached(content))
 

@@ -2,7 +2,7 @@
 Zero-dependency Source Line Citation & Footnote Map Generator.
 Maps retrieved text passages to exact file line numbers (filepath#L10-L25) for 100% executive auditability.
 """
-
+import unicodedata
 import os
 from typing import Dict, Any, List, Optional
 
@@ -17,8 +17,6 @@ def locate_text_in_file(filepath: str, snippet: str) -> Optional[Dict[str, int]]
 
     if not snippet or not isinstance(snippet, str):
         return None
-
-    import unicodedata
     clean_snippet = unicodedata.normalize("NFC", snippet.strip())
     if not clean_snippet:
         return None

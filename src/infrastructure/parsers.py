@@ -1,13 +1,13 @@
 """
 Document parsing and content extraction modules (PDF, DOCX, RTF, XLSX, Audio, Images, Binary).
 """
-
 import os
 import re
 import time
 import hashlib
 import functools
 import wave
+import zipfile
 from typing import Tuple, List, Dict, Any, Optional
 import logging
 
@@ -21,15 +21,19 @@ import openpyxl
 from src.infrastructure.ocr import extract_ocr_text_structured, extract_pdf_ocr
 
 RE_PRINTABLE_BYTES = re.compile(b'[\x20-\x7E]{4,}')
+RE_HTML_TAGS = re.compile(r'<[^>]+>')
+RE_WHITESPACE_COLLAPSE = re.compile(r'\s+')
 
 def calculate_sha256(filepath: str) -> Optional[str]:
-    """Calculate SHA-256 hash of a file."""
-    sha256 = hashlib.sha256()
+    """Calculate SHA-256 hash of a file using C-level stdlib file_digest."""
     try:
         with open(filepath, 'rb') as f:
+            if hasattr(hashlib, "file_digest"):
+                return hashlib.file_digest(f, "sha256").hexdigest()
+            sha256 = hashlib.sha256()
             while chunk := f.read(65536):
                 sha256.update(chunk)
-        return sha256.hexdigest()
+            return sha256.hexdigest()
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
@@ -101,14 +105,13 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
             return f"[File Size Exceeds 50MB - Extraction Skipped: {os.path.basename(filepath)}]", []
         if suffix == '.epub':
             try:
-                import zipfile
                 epub_texts = []
                 with zipfile.ZipFile(filepath, 'r') as z:
                     for name in z.namelist():
                         if name.endswith(('.html', '.xhtml', '.xml', '.htm')):
                             raw = z.read(name).decode('utf-8', errors='ignore')
-                            clean_text = re.sub(r'<[^>]+>', ' ', raw)
-                            clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+                            clean_text = RE_HTML_TAGS.sub(' ', raw)
+                            clean_text = RE_WHITESPACE_COLLAPSE.sub(' ', clean_text).strip()
                             if len(clean_text) > 30:
                                 epub_texts.append(clean_text)
                 return "\n\n".join(epub_texts), []

@@ -3,6 +3,7 @@ Automated Executive Briefing & Action Item Generator.
 Parses document chunks and generates 1-page executive bullet summaries, key takeaways, and action item checklists.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 import re
@@ -25,8 +26,6 @@ def generate_executive_briefing(
             "action_items": [],
             "status": "empty_input"
         }
-
-    import unicodedata
     norm_title = unicodedata.normalize("NFC", str(title or "Executive Briefing"))
     norm_chunks = [unicodedata.normalize("NFC", str(c)) for c in document_chunks if c]
     combined = " ".join(norm_chunks[:5])

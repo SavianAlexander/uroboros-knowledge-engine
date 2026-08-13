@@ -1,3 +1,4 @@
+import time
 import json
 import urllib.request
 import urllib.error
@@ -12,7 +13,8 @@ OLLAMA_BASE_URL = os.environ.get("OPENAI_API_BASE", "http://host.docker.internal
 # ponytail: qwen2.5:7b is completion-only; nomic-embed-text is the actual embedding model
 OLLAMA_EMBED_MODEL = os.environ.get("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 
-_embed_cache = {}  # ponytail: manual cache so we don't cache error [] results
+MAX_EMBED_CACHE_SIZE = 4096
+_embed_cache = {}  # LRU bounded cache preventing empty error caching
 
 def generate_embeddings_batch(texts: List[str], batch_size: int = 64) -> List[List[float]]:
     """High-performance batch vector embedding generation via local Ollama /api/embed (170+ chunks/sec)."""
@@ -58,6 +60,8 @@ def generate_embeddings_batch(texts: List[str], batch_size: int = 64) -> List[Li
                     for idx, prompt, emb in zip(b_indices, b_prompts, embs):
                         results[idx] = emb
                         if emb:
+                            if len(_embed_cache) >= MAX_EMBED_CACHE_SIZE:
+                                _embed_cache.pop(next(iter(_embed_cache)))
                             _embed_cache[prompt] = emb
                     break
             except (urllib.error.URLError, ConnectionError, OSError) as e:
@@ -68,7 +72,6 @@ def generate_embeddings_batch(texts: List[str], batch_size: int = 64) -> List[Li
                 break
             except Exception as e:
                 if attempt < 2:
-                    import time
                     time.sleep(0.5 * (attempt + 1))
                 else:
                     logging.debug(f"Batch embed failed for slice {b_start}: {e}")

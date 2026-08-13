@@ -3,9 +3,9 @@ Temporal Decay & Recency-Weighted Scoring Engine.
 Applies exponential time-decay scoring (S_final = S_vec * e^(-lambda * delta_t_days)) to favor recent documents over obsolete revisions.
 Zero-dependency, stdlib implementation.
 """
-
 import math
 import time
+import unicodedata
 from typing import List, Dict, Any
 
 
@@ -30,9 +30,8 @@ def apply_temporal_decay_scoring(
 
     scored_results = []
     for cand in valid_candidates:
-        import unicodedata
         cand_copy = dict(cand)
-        if "filename" in cand_copy:
+        if "filename" in cand_copy and cand_copy["filename"]:
             cand_copy["filename"] = unicodedata.normalize("NFC", str(cand_copy["filename"]))
         try:
             base_score = float(cand.get("score", 0.5))

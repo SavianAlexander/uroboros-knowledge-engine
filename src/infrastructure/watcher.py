@@ -1,7 +1,6 @@
 """
 Filesystem watchdog and active directory monitoring thread.
 """
-
 import os
 import time
 import shutil

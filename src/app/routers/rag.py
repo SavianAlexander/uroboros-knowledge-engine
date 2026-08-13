@@ -1,7 +1,6 @@
 """
 RAG, streaming chat, and contemplation endpoints.
 """
-
 import json
 import time
 import asyncio
@@ -14,6 +13,9 @@ from src.core.domain.models import (
     RAGStreamRequest, ChatRequest, ChatResponse, ContemplateRequest, ContemplateResponse,
     CreateSessionRequest, UpdateSessionRequest, AddMessageRequest
 )
+from src.domain.rag_engine import extract_advanced_rag_context
+from src.domain.web_search import fetch_web_context
+from src.infrastructure.repositories.workflows import list_workflow_logs
 from src.infrastructure.vector_engine import extract_rag_context
 from src.infrastructure.repositories.chat import create_chat_session, list_chat_sessions, get_chat_session, update_chat_session, delete_chat_session, add_chat_message, get_chat_messages
 from src.infrastructure.llm import is_llm_available
@@ -77,7 +79,6 @@ def chat_stream_endpoint(req: ChatRequest):
             raise HTTPException(status_code=501, detail="llama-cpp-python is not installed. LLM runner disabled.")
 
     # 1. Grounded local context extraction using domain RAG engine with HyDE query expansion
-    from src.domain.rag_engine import extract_advanced_rag_context
     expanded_query = expand_query_with_llm(user_query)
     local_context, local_citations = extract_advanced_rag_context(expanded_query, max_chunks=5, jaccard_threshold=0.70)
 
@@ -91,7 +92,6 @@ def chat_stream_endpoint(req: ChatRequest):
 
     if should_web_search:
         try:
-            from src.domain.web_search import fetch_web_context
             web_sources = fetch_web_context(user_query, max_results=3)
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
@@ -135,57 +135,52 @@ def chat_stream_endpoint(req: ChatRequest):
             elif any(kw in user_query.lower() for kw in math_kws):
                 system_prompt += " Format mathematical expressions using standard LaTeX notation ($...$ for inline, $$...$$ for block)."
 
-            messages = [{"role": "system", "content": system_prompt}]
+def _append_causality_logs(user_query, messages):
+    causality_keywords = ["why", "how did", "what caused", "reason", "because"]
+    if any(kw in user_query.lower() for kw in causality_keywords):
+        try:
+            logs = list_workflow_logs(limit=10)
+            if logs:
+                causality_ctx = "\n".join([f"- [{log['executed_at']}] Event: {log['event_type']} (Status: {log['status']}) - {log.get('response_body') or ''}" for log in logs])
+                messages.append({"role": "system", "content": f"Causality Event History Context:\n{causality_ctx}"})
+        except Exception:
+            pass
 
-            # Causality Reflection Loop
-            causality_keywords = ["why", "how did", "what caused", "reason", "because"]
-            if any(kw in user_query.lower() for kw in causality_keywords):
-                try:
-                    from src.infrastructure.repositories.workflows import list_workflow_logs
-                    logs = list_workflow_logs(limit=10)
-                    if logs:
-                        causality_ctx = "\n".join([f"- [{log['executed_at']}] Event: {log['event_type']} (Status: {log['status']}) - {log.get('response_body') or ''}" for log in logs])
-                        messages.append({"role": "system", "content": f"Causality Event History Context:\n{causality_ctx}"})
-                except Exception:
-                    pass
+        try:
+            past_msgs = get_chat_messages(session_id, limit=6)
+            if past_msgs and len(past_msgs) > 1:
+                for m in past_msgs[:-1]:
+                    messages.append({"role": m.get("role", "user"), "content": m.get("content", "")})
+        except Exception:
+            pass
 
-            if local_context:
-                truncated_local = local_context[:6000] if len(local_context) > 6000 else local_context
-                messages.append({"role": "system", "content": f"Document Vault Context:\n{truncated_local}"})
-            if web_sources:
-                web_str = "\n".join([f"- {w.get('title')}: {w.get('snippet')}" for w in web_sources])
-                messages.append({"role": "system", "content": f"Live Web Context:\n{web_str}"})
+        if local_context:
+            truncated_local = local_context[:6000] if len(local_context) > 6000 else local_context
+            messages.append({"role": "system", "content": f"Document Vault Context:\n{truncated_local}"})
+        if web_sources:
+            web_str = "\n".join([f"- {w.get('title')}: {w.get('snippet')}" for w in web_sources])
+            messages.append({"role": "system", "content": f"Live Web Context:\n{web_str}"})
 
-            # Multi-turn Conversation Memory
-            try:
-                past_msgs = get_chat_messages(session_id, limit=6)
-                if past_msgs and len(past_msgs) > 1:
-                    for m in past_msgs[:-1]:
-                        messages.append({"role": m.get("role", "user"), "content": m.get("content", "")})
-            except Exception:
-                pass
+        messages.append({"role": "user", "content": user_query})
 
-            messages.append({"role": "user", "content": user_query})
-
-            try:
-                if hasattr(llm, "stream_chat"):
-                    model_choice = getattr(req, "model_config", None) or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
-                    temp_val = req.temperature if req.temperature is not None else 0.3
-                    for tok in llm.stream_chat(messages=messages, model_name=model_choice, temperature=temp_val):
-                        full_response_text += tok
-                        yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
-                else:
-                    full_prompt = "\n\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages])
-                    stream = llm.create_completion(
-                        prompt=full_prompt,
-                        stream=True,
-                        max_tokens=1024,
-                        temperature=req.temperature if req.temperature is not None else 0.3
-                    )
-                    for chunk in stream:
-                        tok = chunk["choices"][0]["text"]
-                        full_response_text += tok
-                        yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
+        try:
+            if hasattr(llm, "stream_chat"):
+                model_choice = getattr(req, "model_config", None) or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+                temp_val = req.temperature if req.temperature is not None else 0.3
+                for tok in llm.stream_chat(messages=messages, model_name=model_choice, temperature=temp_val):
+                    full_response_text += tok
+                    yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
+            else:
+                full_prompt = "\n\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages])
+                stream = llm.create_completion(
+                    prompt=full_prompt,
+                    stream=True,
+                    max_tokens=1024,
+                    temperature=req.temperature if req.temperature is not None else 0.3
+                for chunk in stream:
+                    tok = chunk["choices"][0]["text"]
+                    full_response_text += tok
+                    yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:

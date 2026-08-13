@@ -2,7 +2,7 @@
 Zero-dependency Self-RAG Reflection & Grounding Critique Engine.
 Computes Self-RAG reflection tokens: [IsRel], [IsSup], [IsUse] to eliminate hallucinations.
 """
-
+import unicodedata
 import re
 from typing import Dict, Any, List
 
@@ -13,7 +13,6 @@ def evaluate_relevance(query: str, context_chunk: str) -> Dict[str, Any]:
     """
     Evaluates [IsRel] reflection token: Is context chunk relevant to query?
     """
-    import unicodedata
     safe_q = unicodedata.normalize("NFC", str(query or ""))
     safe_c = unicodedata.normalize("NFC", str(context_chunk or ""))
     q_words = set(RE_WORD.findall(safe_q.lower()))
@@ -37,7 +36,6 @@ def evaluate_support(answer: str, context_chunk: str) -> Dict[str, Any]:
     """
     Evaluates [IsSup] reflection token: Is generated answer factually grounded in context?
     """
-    import unicodedata
     safe_a = unicodedata.normalize("NFC", str(answer or ""))
     safe_c = unicodedata.normalize("NFC", str(context_chunk or ""))
     a_words = set(RE_WORD.findall(safe_a.lower()))

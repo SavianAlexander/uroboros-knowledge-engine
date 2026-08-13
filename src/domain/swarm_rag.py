@@ -3,6 +3,7 @@ Cognitive Swarm RAG Engine (Multi-Agent Tree-of-Thought RAG).
 Executes parallel specialized agents (Explorer, Graph, Adversarial Critic, Synthesizer)
 for deep multi-perspective reasoning over local document vaults.
 """
+import unicodedata
 
 from typing import Dict, Any, List, Optional
 import concurrent.futures
@@ -46,12 +47,10 @@ def _run_graph_agent(query: str, start_doc: Optional[str] = None) -> Dict[str, A
 
 def _run_critic_agent(query: str, context: str) -> Dict[str, Any]:
     """Adversarial Critic Agent: Analyzes context for potential contradictions or gaps."""
-    # ponytail: lightweight heuristic critique audit without heavy external model overhead
+    # ponytail: lightweight heuristic critique audit without heavy external model overhead; ceiling: character length and term overlap critique heuristics; upgrade: instantiate dedicated Critic LLM subagent if full multi-agent swarm debate is enabled
     critique_points = []
     if not context or len(context.strip()) < 20:
         critique_points.append("Insufficient context retrieved for high confidence.")
-    
-    import unicodedata
     safe_query = unicodedata.normalize("NFC", str(query or ""))
     safe_context = unicodedata.normalize("NFC", str(context or ""))
     query_terms = [w.lower() for w in safe_query.split() if len(w) > 3]

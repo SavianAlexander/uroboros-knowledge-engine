@@ -3,6 +3,7 @@ Self-Improving Search Weight & Chunk Tuner Engine.
 Simulates feedback loops on search metrics to dynamically adjust search weights and chunk sizes.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -22,8 +23,6 @@ def optimize_search_parameters(
     valid_feedback = [f for f in historical_feedback if isinstance(f, dict)]
     if not valid_feedback:
         return {"optimized_weights": weights, "status": "no_feedback_data", "adjustment_applied": False}
-
-    import unicodedata
 
     def _safe_score(f):
         s = f.get("score")

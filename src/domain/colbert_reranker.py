@@ -3,7 +3,6 @@ ColBERT Late Interaction Reranker Engine.
 Computes token-level MaxSim similarity matrices between query and document token vectors.
 Zero-dependency, stdlib-first math implementation.
 """
-
 import math
 from typing import List, Dict, Any
 

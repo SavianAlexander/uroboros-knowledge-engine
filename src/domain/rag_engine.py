@@ -2,16 +2,28 @@
 Domain-allocated Advanced RAG Synthesis Engine.
 Provides HyDE query expansion, RRF hybrid re-ranking, and word-level Jaccard snippet deduplication.
 """
-
+import time
 import re
 import math
+import logging
 import unicodedata
+from collections import defaultdict
+from functools import lru_cache
 from typing import List, Dict, Any, Tuple, Optional, Set
+
+from src.core.model_manager import get_fallback_llm
+from src.core.config import is_testing
+
+logger = logging.getLogger(__name__)
 
 _RE_CLEAN_FTS = re.compile(r'[\x00-\x1F\x7F<>]')
 _RE_KEYWORD_OPERATORS = re.compile(r'\s*(\b(OR|NOT|AND)\b|NEAR\([^)]*\))\s*', re.IGNORECASE)
 _RE_WORDS = re.compile(r'\b[a-zA-Z0-9]{2,}\b')
+RE_FTS_ASTERISK = re.compile(r'(^|\s)\*+')
+RE_FTS_SYMBOLS = re.compile(r'[/<>=;~\\()|]|--')
+RE_FTS_WORDS = re.compile(r'\b[\w\*]+\b')
 
+@lru_cache(maxsize=1024)
 def sanitize_fts_query(query: str) -> str:
     """
     Sanitize search query for FTS5 syntax safety, removing unescaped FTS special characters
@@ -23,14 +35,14 @@ def sanitize_fts_query(query: str) -> str:
     # Replace hyphens/dashes with spaces to prevent FTS5 column specification/minus syntax errors
     cleaned = normalized.replace('-', ' ')
     # Strip leading/standalone asterisks
-    cleaned = re.sub(r'(^|\s)\*+', ' ', cleaned)
+    cleaned = RE_FTS_ASTERISK.sub(' ', cleaned)
     # Replace dangerous symbols with space
-    cleaned = re.sub(r'[/<>=;~\\()|]|--', ' ', cleaned)
+    cleaned = RE_FTS_SYMBOLS.sub(' ', cleaned)
     cleaned = _RE_CLEAN_FTS.sub('', cleaned)
     if '"' in cleaned:
         cleaned = cleaned.replace('"', ' ')
     cleaned = _RE_KEYWORD_OPERATORS.sub(' ', cleaned)
-    words = [w for w in re.findall(r'\b[\w\*]+\b', cleaned) if w.lower() not in ('and', 'or', 'not', 'near')]
+    words = [w for w in RE_FTS_WORDS.findall(cleaned) if w.lower() not in ('and', 'or', 'not', 'near')]
     return " ".join(words) if words else ""
 
 def generate_hyde_expansion(query: str) -> str:
@@ -45,8 +57,6 @@ def generate_hyde_expansion(query: str) -> str:
     expanded = raw_query
 
     try:
-        from src.core.model_manager import get_fallback_llm
-        from src.core.config import is_testing
         if is_testing:
             expanded = f"{raw_query} - hypothetical answer context"
         else:
@@ -70,17 +80,19 @@ def generate_hyde_expansion(query: str) -> str:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in rag_engine.py")
+        logger.exception("Swallowed error in rag_engine.py")
         expanded = raw_query
 
     return expanded
+
+from collections import defaultdict
 
 def rrf_rerank(fts_results: List[Dict[str, Any]], vector_results: List[Dict[str, Any]], k: int = 60, alpha: float = 0.5) -> List[Dict[str, Any]]:
     """
     Reciprocal Rank Fusion ranking algorithm blending FTS and vector positions with alpha weighting.
     Formula: RRF_score(d) = (1.0 - alpha) * (1/(k + r_fts(d))) + alpha * (1/(k + r_vec(d)))
     """
-    scores: Dict[str, float] = {}
+    scores: Dict[str, float] = defaultdict(float)
     item_map: Dict[str, Dict[str, Any]] = {}
     
     alpha = max(0.0, min(1.0, float(alpha)))
@@ -89,13 +101,13 @@ def rrf_rerank(fts_results: List[Dict[str, Any]], vector_results: List[Dict[str,
 
     for rank, item in enumerate(fts_results or [], start=1):
         key = item.get("filepath") or item.get("id") or item.get("filename") or str(item)
-        scores[key] = scores.get(key, 0.0) + w_fts * (1.0 / (k + rank))
+        scores[key] += w_fts * (1.0 / (k + rank))
         if key not in item_map:
             item_map[key] = dict(item)
 
     for rank, item in enumerate(vector_results or [], start=1):
         key = item.get("filepath") or item.get("id") or item.get("filename") or str(item)
-        scores[key] = scores.get(key, 0.0) + w_vec * (1.0 / (k + rank))
+        scores[key] += w_vec * (1.0 / (k + rank))
         if key not in item_map:
             item_map[key] = dict(item)
 
@@ -114,10 +126,10 @@ def _compute_word_jaccard(words1: Set[str], words2: Set[str]) -> float:
     """Calculates word-level Jaccard similarity coefficient J(A,B) = |A ∩ B| / |A ∪ B|."""
     if not words1 or not words2:
         return 0.0
-    union_len = len(words1 | words2)
-    if union_len == 0:
+    inter_len = len(words1 & words2)
+    if inter_len == 0:
         return 0.0
-    return len(words1 & words2) / union_len
+    return inter_len / len(words1 | words2)
 
 def jaccard_deduplicate(snippets: List[Any], threshold: float = 0.70) -> List[Any]:
     """
@@ -155,22 +167,27 @@ def jaccard_deduplicate(snippets: List[Any], threshold: float = 0.70) -> List[An
 
     return kept_items
 
-def decompose_multihop_query(query: str) -> List[str]:
-    """
-    Decomposes multi-part / comparative queries into standalone sub-queries for parallel RAG retrieval.
-    Splits on conjunctions (' and ', ' vs ', ' versus ', ' compared to ', ' as well as ').
-    """
+@lru_cache(maxsize=512)
+def _decompose_multihop_cached(query: str) -> Tuple[str, ...]:
     if not query or not str(query).strip():
-        return []
+        return ()
     raw = str(query).strip()
     split_pattern = r'\s+(?:vs\.?|versus|compared\s+to|as\s+well\s+as|along\s+with|\b(?:and|or)\b)\s+'
     parts = re.split(split_pattern, raw, flags=re.IGNORECASE)
     sub_queries = [p.strip() for p in parts if len(p.strip()) >= 3]
     if not sub_queries:
-        return [raw]
+        return (raw,)
     if raw not in sub_queries and len(sub_queries) > 1:
         sub_queries.insert(0, raw)
-    return sub_queries
+    return tuple(sub_queries)
+
+def decompose_multihop_query(query: str) -> List[str]:
+    """
+    Decomposes multi-part / comparative queries into standalone sub-queries for parallel RAG retrieval.
+    Splits on conjunctions (' and ', ' vs ', ' versus ', ' compared to ', ' as well as ').
+    # ponytail: cached multihop query decomposition; ceiling: 512 cached queries; upgrade: Trie parser for complex nested boolean expressions
+    """
+    return list(_decompose_multihop_cached(query))
 
 def trim_to_sentence_boundary(text: str, max_chars: int = 600) -> str:
     """
@@ -220,8 +237,6 @@ def precision_cross_rerank(query: str, candidates: List[Dict[str, Any]]) -> List
     q_terms = [w.lower() for w in re.findall(r'\b[a-zA-Z0-9]{3,}\b', query)]
     if not q_terms:
         return candidates
-
-    import time
     now_ts = time.time()
     decay_rate = 1e-7  # Gentle exponential recency decay multiplier
     
@@ -269,6 +284,21 @@ def precision_cross_rerank(query: str, candidates: List[Dict[str, Any]]) -> List
 
     reranked.sort(key=lambda x: x["rrf_score"], reverse=True)
     return reranked
+
+def _fts_fallback_search(sq: str) -> list:
+    try:
+        from src.infrastructure.database import get_db
+        conn = get_db()
+        cursor = conn.cursor()
+        like_term = f"%{sq}%"
+        cursor.execute(
+            "SELECT filepath, filename, content, modified_at FROM files WHERE filename LIKE ? OR content LIKE ? LIMIT 10",
+            (like_term, like_term)
+        )
+        return [dict(row) for row in cursor.fetchall()]
+    except Exception:
+        import logging; logging.getLogger(__name__).exception("Swallowed error in fts fallback")
+        return []
 
 def extract_advanced_rag_context(
     query: str,
@@ -335,20 +365,7 @@ def extract_advanced_rag_context(
                 raise
             except Exception:
                 import logging; logging.getLogger(__name__).exception("Swallowed error in rag_engine.py")
-                try:
-                    conn = get_db()
-                    cursor = conn.cursor()
-                    like_term = f"%{sq}%"
-                    cursor.execute(
-                        "SELECT filepath, filename, content, modified_at FROM files WHERE filename LIKE ? OR content LIKE ? LIMIT 10",
-                        (like_term, like_term)
-                    )
-                    fts_hits = [dict(row) for row in cursor.fetchall()]
-                except (KeyboardInterrupt, MemoryError, SystemExit):
-                    raise
-                except Exception:
-                    import logging; logging.getLogger(__name__).exception("Swallowed error in rag_engine.py")
-                    fts_hits = []
+                fts_hits = _fts_fallback_search(sq)
 
         vec_hits = []
         try:

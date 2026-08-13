@@ -3,7 +3,6 @@ Zero-Knowledge Cryptographic Audit Ledger Engine.
 Hashes search queries, retrieved contexts, and synthesized answers into an append-only SHA-256 cryptographic chain.
 Zero-dependency, stdlib implementation (hashlib).
 """
-
 import hashlib
 import time
 from typing import Dict, Any, List

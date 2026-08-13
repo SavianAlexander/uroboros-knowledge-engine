@@ -3,7 +3,6 @@ Adversarial Prompt Injection & Indirect Jailbreak Guard Engine.
 Scans text input for indirect prompt injection, jailbreaks, and system override patterns.
 Zero-dependency, stdlib implementation.
 """
-
 import re
 import unicodedata
 from typing import Dict, Any, List

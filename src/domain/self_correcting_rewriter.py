@@ -3,6 +3,7 @@ Agentic Self-Correction RAG Rewriter Engine.
 Scans RAG output and rewrites ungrounded hallucination claims using verified source context.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 from src.domain.rag_grounding_guard import verify_rag_grounding, split_sentences
@@ -17,7 +18,6 @@ def rewrite_grounded_answer(
     Evaluates LLM response for hallucination warnings.
     If hallucinated claims are found, strip-purges or rewrites them using grounded source chunks.
     """
-    import unicodedata
     norm_resp = unicodedata.normalize("NFC", str(llm_response or ""))
     norm_chunks = [unicodedata.normalize("NFC", str(c)) for c in source_chunks if c]
     guard_res = verify_rag_grounding(norm_resp, norm_chunks, threshold)

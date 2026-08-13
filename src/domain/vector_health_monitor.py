@@ -2,7 +2,7 @@
 Zero-dependency Vector Embedding Health & Index Drift Monitor.
 Audits vector embedding coverage, missing vectors, and dimension consistency across vault files.
 """
-
+import os
 import sqlite3
 from typing import Dict, Any, List
 
@@ -13,7 +13,6 @@ def audit_vector_health() -> Dict[str, Any]:
     Zero-dependency stdlib implementation.
     """
     try:
-        import os
         from src.infrastructure.database import get_db, init_db, DB_FILE
 
         if DB_FILE and os.path.dirname(DB_FILE):

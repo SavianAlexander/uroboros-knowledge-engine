@@ -2,6 +2,7 @@
 Master System Telemetry & Benchmark Scoreboard.
 Aggregates health metrics, vector dimensions, privacy risk scores, and architectural health across all engines.
 """
+import unicodedata
 
 from typing import Dict, Any, Optional
 from src.domain.architecture_doctor import audit_codebase_architecture
@@ -12,9 +13,8 @@ from src.domain.compliance_inspector import inspect_privacy_compliance
 def generate_system_scoreboard(root_dir: str = "src") -> Dict[str, Any]:
     """
     Synthesizes a master system health report across all 19 SOTA domain components.
-    # ponytail: aggregate executive scoreboard generator
+    # ponytail: aggregate executive scoreboard generator; ceiling: synchronous domain module metric aggregation; upgrade: export Prometheus / OpenTelemetry metrics if enterprise telemetry dashboard is attached
     """
-    import unicodedata
     safe_dir = unicodedata.normalize("NFC", str(root_dir)) if root_dir and isinstance(root_dir, str) else "src"
     arch = audit_codebase_architecture(safe_dir)
     bench = benchmark_vector_retrieval(num_queries=3)

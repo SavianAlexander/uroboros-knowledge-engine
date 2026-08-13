@@ -2,7 +2,7 @@
 Zero-dependency PageRank centrality algorithm for Knowledge Graph documents.
 Ranks document importance based on incoming/outgoing wikilinks and shared tag connections.
 """
-
+import os
 import sqlite3
 from collections import defaultdict
 from typing import Dict, Any, List
@@ -15,7 +15,6 @@ def compute_graph_pagerank(damping_factor: float = 0.85, max_iterations: int = 2
     Zero-dependency stdlib implementation.
     """
     try:
-        import os
         from src.infrastructure.database import get_db_connection, DB_FILE, init_db
 
         init_db()

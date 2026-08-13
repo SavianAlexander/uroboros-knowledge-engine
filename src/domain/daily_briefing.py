@@ -1,3 +1,4 @@
+import unicodedata
 import time
 import sqlite3
 from typing import Dict, Any, List
@@ -11,7 +12,6 @@ def generate_daily_briefing(db_path: str = DB_FILE) -> Dict[str, Any]:
     try:
         target_db = db_path or DB_FILE
         init_db()
-        import unicodedata
         with get_db_connection(target_db) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()

@@ -3,7 +3,6 @@ Autonomous Vault Contradiction & Fact Discrepancy Resolver.
 Scans SQLite document vault to identify contradictory claims, numerical mismatches, and legacy specs.
 Zero-dependency, stdlib implementation.
 """
-
 import re
 import sqlite3
 import unicodedata
@@ -16,7 +15,7 @@ RE_NEGATION = re.compile(r'\b(not|never|no|deprecated|disabled|removed|unsupport
 def detect_vault_contradictions(db_path: str = DB_FILE, limit: int = 50) -> Dict[str, Any]:
     """
     Scans the files table for potential factual contradictions between documents.
-    # ponytail: lightweight n-gram and negation heuristic scan across SQLite chunks
+    # ponytail: lightweight n-gram and negation heuristic scan across SQLite chunks; ceiling: O(N^2) pairwise n-gram comparison; upgrade: use cross-encoder NLI model if deep factual verification is required
     """
     safe_limit = max(1, int(limit)) if limit is not None and isinstance(limit, (int, float)) else 50
     try:

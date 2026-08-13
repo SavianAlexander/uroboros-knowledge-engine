@@ -11,7 +11,7 @@ from src.domain.web_search import fetch_web_context
 def execute_dual_fusion_rag(query: str, max_local_snippets: int = 3, max_web_results: int = 3) -> Dict[str, Any]:
     """
     Executes dual-retrieval fusion across local SQLite vault documents and live web search.
-    # ponytail: zero-dependency stdlib fallback fusion retriever
+    # ponytail: zero-dependency stdlib fallback fusion retriever; ceiling: keyword rule trigger + DuckDuckGo fallback; upgrade: connect Tavily / Bing Web Search API if real-time web search integration is activated
     """
     formatted_ctx, local_snippets = extract_advanced_rag_context(query, max_chunks=max_local_snippets)
 

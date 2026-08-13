@@ -3,7 +3,7 @@ Vector Index Recall@K & Latency Benchmarking Harness.
 Measures P99 retrieval latency and similarity precision across Matryoshka sub-dimensions.
 Zero-dependency, stdlib implementation.
 """
-
+import unicodedata
 import time
 from typing import Dict, Any, List, Optional
 from src.domain.vector_store import DenseVectorStore
@@ -16,11 +16,9 @@ def benchmark_vector_retrieval(
 ) -> Dict[str, Any]:
     """
     Executes a performance benchmark suite over the dense vector store.
-    # ponytail: zero-dependency micro-benchmark profiler
+    # ponytail: zero-dependency micro-benchmark profiler; ceiling: in-memory synthetic vector latency timing; upgrade: connect pytest-benchmark / Asv suite if automated CI performance regression tracking is enabled
     """
     store = vector_store or DenseVectorStore(dimension=dimension)
-    
-    import unicodedata
     # Ensure dummy vectors exist if store is empty
     if not store.vectors:
         for i in range(20):

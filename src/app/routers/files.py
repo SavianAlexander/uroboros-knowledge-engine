@@ -1,7 +1,7 @@
 """
 File management, uploading, editing, raw inspection, and revision endpoints.
 """
-
+import re
 import os
 import shutil
 import mimetypes
@@ -31,6 +31,15 @@ from src.infrastructure.repositories.files import get_file_revisions, revert_fil
 from src.infrastructure.vector_engine import index_directory
 from src.infrastructure.database import get_db
 from src.infrastructure.llm import is_llm_available, get_fallback_llm
+from src.infrastructure.parsers import parse_audio_metadata, safe_write_file
+from src.domain.transcription_engine import transcribe_audio_memo
+from src.domain.extractive_summarizer import summarize_text
+from src.domain.file_diff import compare_text_content
+from src.domain.entity_extractor import extract_entities_from_text
+from src.domain.readability_analyzer import analyze_readability
+from src.domain.near_duplicate_detector import detect_near_duplicates
+from src.domain.graph_pagerank import compute_graph_pagerank
+from src.domain.multimodal_ocr_parser import parse_multimodal_document_layout
 
 router = APIRouter()
 
@@ -76,12 +85,11 @@ def get_raw_file(path: str):
         else:
             with open(path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
-
         import re
         from collections import Counter
         words = [w.lower() for w in re.findall(r'\b[a-zA-Z]{3,}\b', content)]
         freq = Counter(w for w in words if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'))
-        # ponytail: shortest diff wins
+        # ponytail: frequency-based tag suggestion heuristic; ceiling: top 5 words; upgrade: add NLP entity tagger if domain taxonomy is configured
         suggested_tags = [w for w, _ in freq.most_common(5)]
 
         res = {
@@ -95,7 +103,6 @@ def get_raw_file(path: str):
         }
         ext = os.path.splitext(path)[1].lower()
         if ext in ('.wav', '.mp3', '.flac', '.ogg', '.m4a'):
-            from src.infrastructure.parsers import parse_audio_metadata
             res["audio_metadata"] = parse_audio_metadata(path)
         return res
     except HTTPException:
@@ -123,7 +130,6 @@ def save_file_endpoint(req: FileSaveRequest):
             old_content = f.read()
         save_file_revision(norm_path, old_content)
 
-        from src.infrastructure.parsers import safe_write_file
         safe_write_file(norm_path, req.content)
 
         with get_db() as conn:
@@ -265,7 +271,7 @@ def rename_file_endpoint(req: RenameRequest):
                 raise
             except Exception as e:
                 import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
-                logger.exception("Failed to update revision history for rename") # ponytail: remove redundant format
+                logger.exception("Failed to update revision history for rename") # ponytail: direct logger call; ceiling: standard exception log; upgrade: add structured JSON log formatter if centralized logging is configured
             conn.commit()
         index_directory(parent_dir)
         return {"status": "success", "old_filepath": real_old, "new_filepath": norm_new, "filepath": norm_new}
@@ -340,7 +346,7 @@ from src.core.jobs import get_job_manager
 @router.post("/api/file/index")
 def index_directory_endpoint(req: IndexRequest):
     """Trigger background indexing and extraction across all supported files in active directory."""
-    # ponytail: shortest diff wins
+    # ponytail: direct local path fallback; ceiling: local filesystem; upgrade: add cloud storage adapter if S3 or remote storage URI is provided
     dir_p = req.directory if req.directory else get_active_dir()
 
     if req.directory:

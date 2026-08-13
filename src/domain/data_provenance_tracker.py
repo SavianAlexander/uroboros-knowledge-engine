@@ -3,7 +3,7 @@ Real-Time Data Lineage & Cryptographic Provenance Tracker.
 Tracks file SHA-256 hashes, creation timestamps, and author signatures for end-to-end data provenance auditing.
 Zero-dependency, stdlib implementation.
 """
-
+import unicodedata
 import hashlib
 import time
 from typing import Dict, Any
@@ -14,7 +14,6 @@ def track_data_provenance(
     file_content: str,
     author: str = "system"
 ) -> Dict[str, Any]:
-    import unicodedata
     safe_path = unicodedata.normalize("NFC", str(file_path or ""))
     safe_author = unicodedata.normalize("NFC", str(author or "system"))
 

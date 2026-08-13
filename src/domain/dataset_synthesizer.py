@@ -3,9 +3,9 @@ Vault Instruction Fine-Tuning Dataset Synthesizer.
 Converts local document chunks into high-quality ShareGPT/Alpaca JSONL instruction pairs
 for 1-click local model LoRA fine-tuning. Zero-dependency, stdlib implementation.
 """
-
 import json
 import sqlite3
+import unicodedata
 from typing import Dict, Any, List, Optional
 from src.infrastructure.database import get_db_connection, DB_FILE
 
@@ -17,7 +17,7 @@ def generate_vault_instruction_dataset(
 ) -> Dict[str, Any]:
     """
     Synthesizes instruction-following dataset pairs from indexed vault content.
-    # ponytail: zero-dependency stdlib ShareGPT JSONL formatter
+    # ponytail: zero-dependency stdlib ShareGPT JSONL formatter; ceiling: 50-pair sample extract; upgrade: add LLM synthetic Q&A generator if fine-tuning dataset synthesis is needed
     """
     safe_limit = max(1, int(limit)) if limit is not None and isinstance(limit, (int, float)) else 50
     dataset_items = []
@@ -36,7 +36,6 @@ def generate_vault_instruction_dataset(
                     rows = []
 
         for r in rows:
-            import unicodedata
             raw_filename = r["filename"] if "filename" in r.keys() else f"doc_{r['id']}.md"
             filename = unicodedata.normalize("NFC", str(raw_filename))
             content = unicodedata.normalize("NFC", str(r["content"] or ""))

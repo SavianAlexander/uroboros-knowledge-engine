@@ -3,6 +3,7 @@ Structured Tabular Schema RAG Extractor Engine.
 Parses Markdown/CSV/JSON tables and injects column headers into individual row representations for lossless tabular vector indexing.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import List, Dict, Any
 
@@ -11,7 +12,6 @@ def extract_tabular_schema_chunks(table_text: str) -> List[Dict[str, Any]]:
     """
     Extracts tabular chunks from a Markdown table string, injecting header schema into each row.
     """
-    import unicodedata
     norm_table = unicodedata.normalize("NFC", table_text)
     lines = [line.strip() for line in norm_table.strip().split("\n") if line.strip()]
     table_lines = [l for l in lines if l.startswith("|") and l.endswith("|")]

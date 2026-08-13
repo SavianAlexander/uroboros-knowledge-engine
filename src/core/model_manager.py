@@ -1,6 +1,11 @@
+import json
+import requests
 import os
+import time
+import subprocess
 import threading
 import logging
+from fastapi import HTTPException
 
 try:
     import llama_cpp
@@ -8,13 +13,10 @@ try:
 except (KeyboardInterrupt, MemoryError, SystemExit):
     raise
 except Exception as e:
-    import logging; logging.getLogger(__name__).debug(f"llama_cpp not available: {e}")
+    logging.getLogger(__name__).debug(f"llama_cpp not available: {e}")
     Llama = None
 
 _lock = threading.Lock()
-
-import time
-import subprocess
 
 # Enforce Ollama engine single-instance limits at startup
 os.environ["OLLAMA_NUM_PARALLEL"] = "1"
@@ -57,7 +59,6 @@ def ensure_single_llama_server_instance():
 class OllamaClient:
     def __init__(self, base_url="http://127.0.0.1:11434/v1"):
         self.base_url = os.environ.get("OPENAI_API_BASE", base_url)
-        import requests
         self.session = requests.Session()
 
     def _post_with_fallback(self, endpoint: str, data: dict, timeout: int = 45):
@@ -83,7 +84,6 @@ class OllamaClient:
     def stream_chat(self, messages: list, model_name: str = None, temperature: float = 0.3):
         """Yield token chunks from native Ollama /api/chat streaming endpoint."""
         import urllib.request
-        import json
         model = model_name or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
         payload = {
             "model": model,
@@ -221,8 +221,6 @@ class IsolatedLlamaClient:
         self._lock = threading.Lock()
         
     def __call__(self, prompt, **kwargs):
-        import logging
-        from fastapi import HTTPException
         kwargs["prompt"] = prompt
         with self._lock:
             self._task_queue.put(('completion', kwargs))
@@ -243,8 +241,6 @@ class IsolatedLlamaClient:
         return self(prompt, **kwargs)
 
     def create_chat_completion(self, messages, **kwargs):
-        import logging
-        from fastapi import HTTPException
         kwargs["messages"] = messages
         with self._lock:
             self._task_queue.put(('chat', kwargs))

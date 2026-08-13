@@ -3,6 +3,7 @@ Self-Supervised Retrieval Feedback Auto-Refiner Engine.
 Logs user interaction signals to continuously adjust document chunk affinity vectors.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -19,8 +20,6 @@ def log_feedback_and_refine(
     Adjusts affinity boost multiplier based on feedback signal (click, copy, dwell, ignore).
     """
     global _AFFINITY_LEDGER
-
-    import unicodedata
     norm_chunk_id = unicodedata.normalize("NFC", str(chunk_id or ""))
     current_weight = _AFFINITY_LEDGER.get(norm_chunk_id, 1.0)
 

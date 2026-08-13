@@ -22,7 +22,7 @@ def create_deep_citation_link(
         return {"citation_id": citation_id, "start_char": 0, "end_char": 0, "found": False}
 
     clean_target = target_sentence.strip()
-    if not clean_target:
+    if not clean_target or len(clean_target) > len(source_document_text):
         return {"citation_id": citation_id, "start_char": 0, "end_char": 0, "found": False}
 
     start_pos = source_document_text.find(clean_target)

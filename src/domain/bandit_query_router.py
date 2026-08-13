@@ -2,7 +2,7 @@
 Zero-dependency Multi-Armed Bandit Query Router Engine.
 Learns which retrieval strategy (FTS5, Vector, HyDE, GraphRAG) yields the highest Self-RAG reflection scores.
 """
-
+import unicodedata
 import random
 import threading
 from typing import Dict, Any, List
@@ -23,7 +23,6 @@ def bandit_select_pipeline(intent: str = "FACTUAL") -> Dict[str, Any]:
     Selects the optimal retrieval pipeline using Thompson Sampling / Epsilon-Greedy bandit learning.
     Zero-dependency stdlib implementation.
     """
-    import unicodedata
     safe_intent = unicodedata.normalize("NFC", str(intent)) if intent and isinstance(intent, str) else "FACTUAL"
     global _BANDIT_ARMS
 

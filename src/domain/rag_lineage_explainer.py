@@ -3,6 +3,7 @@ Live RAG Lineage & Telemetry Explainer Engine.
 Generates execution trace telemetry for the RAG Lineage Visualizer drawer in the React UI.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 from src.domain.rag_grounding_guard import verify_rag_grounding
@@ -18,7 +19,6 @@ def get_rag_lineage_telemetry(
     """
     Generates real-time execution lineage telemetry including Self-RAG critique tokens.
     """
-    import unicodedata
     safe_query = unicodedata.normalize("NFC", str(query or ""))
     safe_answer = unicodedata.normalize("NFC", str(answer or ""))
     safe_chunks = [unicodedata.normalize("NFC", str(c)) for c in source_chunks if c] if isinstance(source_chunks, list) else []

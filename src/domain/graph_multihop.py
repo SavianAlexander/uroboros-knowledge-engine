@@ -2,7 +2,7 @@
 Zero-dependency Multi-Hop GraphRAG Traversal Engine.
 Traverses k-hop wikilink & tag edges (u -> v -> w) to discover relational reasoning pathways between vault documents.
 """
-
+import os
 import sqlite3
 from collections import defaultdict, deque
 from typing import Dict, Any, List, Set, Optional
@@ -15,7 +15,6 @@ def find_multihop_pathways(start_doc: str, target_doc: Optional[str] = None, max
     Zero-dependency stdlib implementation.
     """
     try:
-        import os
         from src.infrastructure.database import get_db_connection, init_db, DB_FILE
 
         if DB_FILE and os.path.dirname(DB_FILE):

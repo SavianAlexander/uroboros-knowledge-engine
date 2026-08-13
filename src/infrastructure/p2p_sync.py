@@ -5,6 +5,7 @@ import socket
 import struct
 import threading
 import hashlib
+import logging
 import urllib.request
 from typing import List, Dict, Any, Optional
 
@@ -150,7 +151,7 @@ def get_local_document_hashes(vault_dir: Optional[str] = None) -> Dict[str, Dict
                 if fp and os.path.exists(fp) and os.path.isfile(fp):
                     try:
                         with open(fp, "rb") as f:
-                            sha256_val = hashlib.sha256(f.read()).hexdigest()
+                            sha256_val = hashlib.file_digest(f, "sha256").hexdigest()
                         size = os.path.getsize(fp)
                         mod_at = os.path.getmtime(fp)
                     except (KeyboardInterrupt, MemoryError, SystemExit):

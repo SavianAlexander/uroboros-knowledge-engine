@@ -2,7 +2,7 @@
 Zero-dependency Autonomous Knowledge Base Self-Healing & Gap Detector.
 Audits vault documents for orphaned nodes, broken wikilink cross-references, and missing topic coverage.
 """
-
+import os
 import re
 import sqlite3
 from typing import Dict, Any, List, Set
@@ -15,7 +15,6 @@ def audit_knowledge_self_healing() -> Dict[str, Any]:
     Zero-dependency stdlib implementation.
     """
     try:
-        import os
         from src.infrastructure.database import get_db, init_db
 
         init_db()

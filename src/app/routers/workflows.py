@@ -57,12 +57,10 @@ def get_trigger_endpoint(trigger_id: int):
     return trigger
 
 
-@router.put("/api/v1/workflows/triggers/{trigger_id}", response_model=Dict[str, Any])
-@router.put("/api/workflows/triggers/{trigger_id}", response_model=Dict[str, Any])
+@router.put("/api/v1/workflows/triggers/{trigger_id}", response_model=WorkflowTriggerResponse)
+@router.put("/api/workflows/triggers/{trigger_id}", response_model=WorkflowTriggerResponse)
 def update_trigger_endpoint(trigger_id: int, trigger_update: WorkflowTriggerUpdate):
-    """Update a workflow trigger rule.
-    ponytail: Returns Dict[str, Any] like the other endpoints in this file.
-    """
+    """Update a workflow trigger rule."""
     updated_trigger = update_workflow_trigger(trigger_id, trigger_update)
     if not updated_trigger:
         raise HTTPException(status_code=404, detail="Workflow trigger not found")

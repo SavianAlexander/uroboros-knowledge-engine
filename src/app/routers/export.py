@@ -1,14 +1,19 @@
 """
 Export router for system stats CSV, search results CSV, and PDF reports.
 """
-
+import json
+import sqlite3
+import time
 import io
 import csv
+import logging
 from typing import Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from src.infrastructure.database import get_db
 from src.core.domain.services import sanitise_fts_query
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["export"])
 export_router = router
@@ -38,7 +43,7 @@ def export_stats_csv_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in export.py: {e}")
+        logger.exception(f"Swallowed error in export.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -112,9 +117,6 @@ def export_pdf_report_endpoint(style_template: str = "compact"):
 def export_vault_json_endpoint():
     """Export comprehensive vault inventory, tags, and vector chunk statistics as structured JSON download."""
     try:
-        import time
-        import sqlite3
-        import json
         from fastapi.responses import Response
         with get_db() as conn:
             conn.row_factory = sqlite3.Row

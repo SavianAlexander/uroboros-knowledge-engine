@@ -2,7 +2,6 @@
 Zero-dependency Hallucination-Guarded Refusal & Confidence Engine.
 Calculates mathematical Context Confidence Scores (0.00 - 1.00) and refuses low-confidence queries to prevent false info.
 """
-
 import re
 import unicodedata
 from typing import Dict, Any, List

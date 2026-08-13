@@ -3,6 +3,7 @@ Cross-Lingual Semantic Alignment & Transliteration Engine.
 Maps non-English queries across Spanish, French, and German to English canonical domain terms.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any
 
@@ -40,8 +41,6 @@ def align_cross_lingual_query(query: str, source_lang: str = "auto") -> Dict[str
     """
     if not query:
         return {"original_query": "", "aligned_query": "", "translations_applied": 0, "status": "success"}
-
-    import unicodedata
     query_lower = unicodedata.normalize("NFC", str(query)).lower()
     aligned = query_lower
     translations_applied = 0

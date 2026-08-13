@@ -3,6 +3,7 @@ Hierarchical Context Window Summarization Memory Engine.
 Compresses long conversation histories into dense semantic memory summaries.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -16,8 +17,6 @@ def compress_context_memory(
     """
     if not chat_history:
         return {"summary": "", "compression_ratio": 0.0, "status": "empty_history"}
-
-    import unicodedata
     user_turns = [unicodedata.normalize("NFC", str(msg.get("content", ""))) for msg in chat_history if msg.get("role") == "user"]
     assistant_turns = [unicodedata.normalize("NFC", str(msg.get("content", ""))) for msg in chat_history if msg.get("role") == "assistant"]
 

@@ -11,11 +11,16 @@ export const glassCardClasses = "dark:bg-slate-800/40 bg-white/80 backdrop-blur-
 export const glassButtonClasses = "dark:bg-white/5 bg-slate-100 dark:hover:bg-white/10 hover:bg-slate-200 border dark:border-white/10 border-slate-200 transition-colors backdrop-blur-sm rounded-lg text-slate-900 dark:text-slate-200";
 export const textGradientClasses = "bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 dark:from-indigo-400 dark:via-cyan-400 dark:to-emerald-400 bg-clip-text text-transparent";
 
-// ponytail: zero-dependency debounce helper for UI optimizations
-export function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
+// ponytail: zero-dependency debounce helper with optional leading edge support
+export function debounce<T extends (...args: any[]) => void>(func: T, wait: number, immediate: boolean = false): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   return function(...args: Parameters<T>) {
+    const callNow = immediate && !timeout;
     if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
+    timeout = setTimeout(() => {
+      timeout = null;
+      if (!immediate) func(...args);
+    }, wait);
+    if (callNow) func(...args);
   };
 }

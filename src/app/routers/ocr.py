@@ -1,7 +1,7 @@
 """
 FastAPI router for High-Throughput PDF/OCR Document Ingestion and Live Queue Telemetry.
 """
-
+import json
 import os
 import tempfile
 import asyncio
@@ -68,7 +68,6 @@ async def stream_ingestion_progress():
     Real-time SSE event stream broadcasting PDF/OCR ingestion queue status updates.
     """
     async def event_generator():
-        import json
         while True:
             payload = json.dumps({
                 "type": "queue_telemetry",

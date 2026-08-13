@@ -3,7 +3,6 @@ Domain Chat Intelligence Engine.
 Provides chat session lifecycle helpers, grounded citation parsing,
 and context token length sliding window truncation logic.
 """
-
 import json
 from typing import List, Dict, Any, Tuple, Optional
 

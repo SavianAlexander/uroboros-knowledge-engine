@@ -3,6 +3,7 @@ Knowledge Graph Entity Disambiguation & Alias Resolver.
 Maps entity variations (e.g. 'PostgreSQL', 'Postgres', 'pg_db') to canonical graph nodes.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List, Set, Tuple
 
@@ -24,7 +25,6 @@ def resolve_canonical_entity(entity_name: str, custom_map: Dict[str, str] = None
     """Returns the canonical entity name for a given raw entity or alias string."""
     if not entity_name:
         return ""
-    import unicodedata
     norm_name = unicodedata.normalize("NFC", str(entity_name))
     clean = norm_name.strip().lower()
     mapping = {**DEFAULT_ALIAS_MAP, **(custom_map or {})}

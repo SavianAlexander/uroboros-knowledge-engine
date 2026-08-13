@@ -1,7 +1,6 @@
 """
 Shared pre-compiled regex patterns for parsing and text processing.
 """
-
 import re
 
 RE_NEAR_SYNTAX = re.compile(r'NEAR/(\d+)', re.IGNORECASE)

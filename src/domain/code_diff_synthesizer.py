@@ -3,6 +3,7 @@ Automated Git Diff & Refactoring Patch Synthesizer.
 Generates unified git diff patch strings for 1-click codebase refactoring.
 Zero-dependency, stdlib difflib implementation.
 """
+import unicodedata
 
 import difflib
 from typing import Dict, Any, List, Optional
@@ -16,7 +17,6 @@ def generate_refactoring_patch(
     """
     Generates a unified git diff patch string between original and modified code versions.
     """
-    import unicodedata
     orig_lines = unicodedata.normalize("NFC", str(original_code or "")).splitlines(keepends=True)
     mod_lines = unicodedata.normalize("NFC", str(modified_code or "")).splitlines(keepends=True)
 

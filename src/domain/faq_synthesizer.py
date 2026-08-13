@@ -3,8 +3,8 @@ Continuous Automatic FAQ & Knowledge Base Synthesizer Engine.
 Clusters recurring user queries and automatically synthesizes a living FAQ database.
 Zero-dependency, stdlib implementation.
 """
-
 import unicodedata
+from collections import defaultdict
 from typing import List, Dict, Any
 
 
@@ -17,14 +17,14 @@ def synthesize_faq_from_queries(
     if not query_history or not isinstance(query_history, list):
         return {"faqs": [], "total_queries_analyzed": 0, "status": "empty_input"}
 
-    freq_map: Dict[str, int] = {}
+    freq_map: Dict[str, int] = defaultdict(int)
     display_map: Dict[str, str] = {}
     for q in query_history:
         if not q or not str(q).strip():
             continue
         raw_str = unicodedata.normalize("NFC", str(q)).strip()
         norm_key = raw_str.lower()
-        freq_map[norm_key] = freq_map.get(norm_key, 0) + 1
+        freq_map[norm_key] += 1
         if norm_key not in display_map:
             display_map[norm_key] = raw_str
 

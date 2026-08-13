@@ -3,9 +3,13 @@ Cross-Document Entity Co-Occurrence Matrix Engine.
 Builds entity co-occurrence matrices linking entities across disparate documents.
 Zero-dependency, stdlib implementation.
 """
-
 import re
+import unicodedata
+from collections import defaultdict
 from typing import Dict, Any, List
+
+_STOP_ENTITIES = {"this", "that", "with", "from", "have", "been", "were"}
+_RE_ENTITY_EXTRACT = re.compile(r'\b[A-Z][a-zA-Z0-9_-]{2,}\b')
 
 
 def compute_entity_cooccurrence_matrix(
@@ -19,23 +23,22 @@ def compute_entity_cooccurrence_matrix(
         return {"cooccurrence_pairs": [], "total_documents_analyzed": 0, "status": "success"}
 
     valid_docs = [d for d in documents if isinstance(d, dict)]
-    co_occurrences: Dict[str, int] = {}
-    doc_freqs: Dict[str, int] = {}
+    co_occurrences: Dict[str, int] = defaultdict(int)
+    doc_freqs: Dict[str, int] = defaultdict(int)
 
     for doc in valid_docs:
-        import unicodedata
         text = unicodedata.normalize("NFC", str(doc.get("content", "") or ""))
         # Heuristic entity extraction: proper nouns & uppercase acronyms
-        raw_entities = set(re.findall(r'\b[A-Z][a-zA-Z0-9_-]{2,}\b', text))
-        entities = sorted([e for e in raw_entities if e.lower() not in ("this", "that", "with", "from", "have", "been", "were")])
+        raw_entities = set(_RE_ENTITY_EXTRACT.findall(text))
+        entities = sorted([e for e in raw_entities if e.lower() not in _STOP_ENTITIES])
 
         for e in entities:
-            doc_freqs[e] = doc_freqs.get(e, 0) + 1
+            doc_freqs[e] += 1
 
         for i in range(len(entities)):
             for j in range(i + 1, len(entities)):
                 pair = f"{entities[i]} <-> {entities[j]}"
-                co_occurrences[pair] = co_occurrences.get(pair, 0) + 1
+                co_occurrences[pair] += 1
 
     sorted_pairs = []
     for pair, freq in sorted(co_occurrences.items(), key=lambda x: x[1], reverse=True):

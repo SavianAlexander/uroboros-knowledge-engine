@@ -3,7 +3,7 @@ Semantic Query Intent Classifier & Disambiguator Engine.
 Classifies queries into code_search, factual_lookup, tabular_math, analytical_summary, or comparative_analysis.
 Zero-dependency, stdlib implementation.
 """
-
+import unicodedata
 import re
 from typing import Dict, Any
 
@@ -19,8 +19,6 @@ def classify_query_intent(query: str) -> Dict[str, Any]:
     """
     if not query or not isinstance(query, str):
         return {"intent": "factual_lookup", "confidence": 1.0, "preset": {"top_k": 5, "rerank": True}, "status": "success"}
-
-    import unicodedata
     norm_query = unicodedata.normalize("NFC", query)
     words = set(re.findall(r'\b[\w-]+\b', norm_query.lower()))
 

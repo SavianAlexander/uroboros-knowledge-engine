@@ -3,6 +3,7 @@ Multi-Language AST Code-Flow Graph Parser.
 Parses Abstract Syntax Trees to extract classes, functions, imports, and call-graph dependencies.
 Zero-dependency, stdlib Python ast implementation.
 """
+import unicodedata
 
 import ast
 from typing import Dict, Any, List, Set, Optional
@@ -55,7 +56,6 @@ def parse_python_ast(source_code: str, filename: str = "<unknown>") -> Dict[str,
         return {"status": "empty", "classes": [], "functions": [], "imports": [], "calls": []}
 
     try:
-        import unicodedata
         norm_code = unicodedata.normalize("NFC", source_code)
         tree = ast.parse(norm_code, filename=filename)
         visitor = CodeASTVisitor()

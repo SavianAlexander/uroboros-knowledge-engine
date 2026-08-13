@@ -37,7 +37,7 @@ def extract_text_from_image(filepath: str) -> Dict[str, Any]:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in ocr_engine.py: {e}")
+        import logging; logging.getLogger(__name__).debug(f"WinRT OCR fallback notice in ocr_engine.py: {e}")
 
     # Tier 1b: Attempt pytesseract OCR if WinRT was unavailable or failed
     if not text:
@@ -72,7 +72,7 @@ def extract_text_from_image(filepath: str) -> Dict[str, Any]:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in ocr_engine.py: {e}")
+                import logging; logging.getLogger(__name__).debug(f"pytesseract box extraction notice in ocr_engine.py: {e}")
 
             if not text:
                 text = pytesseract.image_to_string(img).strip()
@@ -82,7 +82,7 @@ def extract_text_from_image(filepath: str) -> Dict[str, Any]:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in ocr_engine.py: {e}")
+            import logging; logging.getLogger(__name__).debug(f"pytesseract fallback notice in ocr_engine.py: {e}")
 
     # Tier 2: Pillow EXIF metadata and image property fallback
     if not text:

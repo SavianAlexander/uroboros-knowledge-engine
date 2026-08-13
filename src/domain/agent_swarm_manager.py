@@ -3,6 +3,7 @@ Multi-Agent Task Decomposition & Sub-Task Swarm Manager Engine.
 Decomposes complex goals into nested sub-agent task dependency graphs and tracks execution state.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List
 
@@ -15,8 +16,6 @@ def decompose_goal_into_agent_swarm(
     """
     if not master_goal or not isinstance(master_goal, str) or not master_goal.strip():
         return {"swarm_tasks": [], "status": "empty_goal"}
-
-    import unicodedata
     norm_goal = unicodedata.normalize("NFC", master_goal)
 
     swarm_tasks = [

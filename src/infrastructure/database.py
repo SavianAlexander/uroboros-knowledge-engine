@@ -1,3 +1,4 @@
+import sys
 import os
 import re
 import time
@@ -15,7 +16,6 @@ import contextlib
 import logging
 from datetime import datetime, timezone
 import queue
-from datetime import datetime, timezone
 from pathlib import Path
 from src.shared.security import get_file_acl
 from src.core.domain.services import (
@@ -54,7 +54,7 @@ class SQLiteConnectionPool:
                     conn.row_factory = sqlite3.Row
                     # Enable WAL mode and lightweight memory-mapped I/O per-connection
                     conn.execute("PRAGMA journal_mode = WAL")
-                    conn.execute("PRAGMA busy_timeout = 5000")
+                    conn.execute("PRAGMA busy_timeout = 30000")
                     conn.execute("PRAGMA synchronous = NORMAL")
                     conn.execute("PRAGMA temp_store = MEMORY")
                     conn.execute("PRAGMA cache_size = -64000")
@@ -164,7 +164,6 @@ _db_version = 0
 def get_active_dir() -> str:
     """Return active sandbox or working directory."""
     try:
-        import sys
         if "main" in sys.modules:
             m_dir = getattr(sys.modules["main"], "ACTIVE_DIR", None)
             if m_dir:
@@ -172,7 +171,7 @@ def get_active_dir() -> str:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in database.py: {e}")
+        logger.warning(f"Swallowed error in database.py: {e}")
     try:
         with get_db() as conn:
             cursor = conn.cursor()
@@ -263,6 +262,12 @@ def backup_db_online(backup_target_path: str) -> bool:
         import logging; logging.getLogger(__name__).exception("Swallowed error in database.py")
         return False
 
+def _ensure_column(cursor, table: str, column: str, type_def: str):
+    cursor.execute(f"PRAGMA table_info({table})")
+    cols = [row[1] for row in cursor.fetchall()]
+    if column not in cols:
+        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {type_def}")
+
 def init_db():
     """Initialize database tables, pragmas, indices, and schema migrations."""
     reset_db_connections()
@@ -299,10 +304,7 @@ def init_db():
             """)
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_file_id ON file_chunks(file_id)')
 
-            cursor.execute("PRAGMA table_info(file_chunks)")
-            fc_cols = [row[1] for row in cursor.fetchall()]
-            if 'chunk_hash' not in fc_cols:
-                cursor.execute("ALTER TABLE file_chunks ADD COLUMN chunk_hash TEXT")
+            _ensure_column(cursor, "file_chunks", "chunk_hash", "TEXT")
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_hash ON file_chunks(chunk_hash)')
 
             cursor.execute("""
@@ -340,16 +342,10 @@ def init_db():
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_sha256 ON files(sha256)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_mime_type ON files(mime_type)')
 
-            cursor.execute("PRAGMA table_info(files)")
-            columns = [row[1] for row in cursor.fetchall()]
-            if 'user_id' not in columns:
-                cursor.execute("ALTER TABLE files ADD COLUMN user_id INTEGER DEFAULT 0")
-            if 'notes' not in columns:
-                cursor.execute("ALTER TABLE files ADD COLUMN notes TEXT")
-            if 'insights' not in columns:
-                cursor.execute("ALTER TABLE files ADD COLUMN insights TEXT")
-            if 'acl_permissions' not in columns:
-                cursor.execute("ALTER TABLE files ADD COLUMN acl_permissions TEXT")
+            _ensure_column(cursor, "files", "user_id", "INTEGER DEFAULT 0")
+            _ensure_column(cursor, "files", "notes", "TEXT")
+            _ensure_column(cursor, "files", "insights", "TEXT")
+            _ensure_column(cursor, "files", "acl_permissions", "TEXT")
 
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id)')
 
@@ -395,10 +391,7 @@ def init_db():
             """)
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_revisions_filepath ON file_revisions(filepath)")
 
-            cursor.execute("PRAGMA table_info(auto_rules)")
-            rule_cols = [row[1] for row in cursor.fetchall()]
-            if 'priority' not in rule_cols:
-                cursor.execute("ALTER TABLE auto_rules ADD COLUMN priority INTEGER DEFAULT 0")
+            _ensure_column(cursor, "auto_rules", "priority", "INTEGER DEFAULT 0")
 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS sync_peers (
@@ -642,7 +635,6 @@ def migrate_folder_path(old_dir: str, new_dir: str):
 def log_audit_event(event_type: str, description: str, metadata: dict = None):
     """Log an audit event entry into system_audit_ledger."""
     try:
-        import json
         init_db()
         metadata_str = json.dumps(metadata) if metadata else "{}"
         with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
@@ -656,25 +648,23 @@ def log_audit_event(event_type: str, description: str, metadata: dict = None):
         import logging; logging.getLogger(__name__).exception(f"Swallowed error logging audit event: {e}")
 
 
+def _parse_audit_metadata(r: sqlite3.Row) -> dict:
+    item = dict(r)
+    try:
+        item["metadata"] = json.loads(item.get("metadata_json") or "{}")
+    except Exception:
+        item["metadata"] = {}
+    return item
+
 def get_audit_ledger(limit: int = 50) -> list:
     """Retrieve recent system audit ledger entries."""
     try:
-        import json
         init_db()
         with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT id, event_type, description, timestamp, metadata_json FROM system_audit_ledger ORDER BY timestamp DESC LIMIT ?", (limit,))
-            rows = cursor.fetchall()
-            results = []
-            for r in rows:
-                item = dict(r)
-                try:
-                    item["metadata"] = json.loads(item.get("metadata_json") or "{}")
-                except Exception:
-                    item["metadata"] = {}
-                results.append(item)
-            return results
+            return [_parse_audit_metadata(r) for r in cursor.fetchall()]
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error getting audit ledger: {e}")
         return []

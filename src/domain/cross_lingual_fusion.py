@@ -3,6 +3,7 @@ Zero-Shot Cross-Lingual RAG Fusion Engine.
 Maps query terms across multi-lingual term dictionaries to enable cross-lingual vault retrieval.
 Zero-dependency, stdlib implementation.
 """
+import unicodedata
 
 from typing import Dict, Any, List, Optional
 from src.domain.rag_engine import extract_advanced_rag_context
@@ -20,8 +21,6 @@ def expand_cross_lingual_query(query: str) -> str:
     """Expands an English query string with multilingual terms."""
     if not query or not isinstance(query, str):
         return ""
-
-    import unicodedata
     norm_query = unicodedata.normalize("NFC", str(query))
     expanded_terms = [norm_query]
     words = [w.strip(".,;:!?\"'()[]{}").lower() for w in norm_query.split() if w.strip(".,;:!?\"'()[]{}")]
@@ -36,7 +35,7 @@ def expand_cross_lingual_query(query: str) -> str:
 def cross_lingual_rag_search(query: str, max_chunks: int = 4) -> Dict[str, Any]:
     """
     Executes cross-lingual RAG search over multi-lingual document vaults.
-    # ponytail: zero-dependency cross-lingual term fusion
+    # ponytail: zero-dependency cross-lingual term fusion; ceiling: static dictionary term mapping; upgrade: connect mUSE or mE5 multilingual vector embeddings if multilingual corpus expands beyond EN/DE/ES
     """
     safe_q = str(query or "")
     expanded_q = expand_cross_lingual_query(safe_q)

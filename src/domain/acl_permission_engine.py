@@ -3,6 +3,7 @@ Zero-dependency Enterprise ACL Permission & Security Trimming Engine.
 Evaluates user identities, group memberships, and clearance levels against document security labels.
 Mimics Microsoft Entra ID (Active Directory) security trimming.
 """
+import unicodedata
 
 from typing import Dict, Any, List, Set
 
@@ -35,7 +36,6 @@ def is_user_authorized(
         return False
 
     # 3. Check allowed roles/groups (Active Directory / Entra ID Security Groups)
-    import unicodedata
     allowed_roles = set(unicodedata.normalize("NFC", str(r)) for r in document_acl.get("read_roles", []))
     if not allowed_roles or "*" in allowed_roles:
         return True  # Open to all authenticated users
