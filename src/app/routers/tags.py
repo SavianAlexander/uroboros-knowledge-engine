@@ -482,6 +482,8 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
 
     if target_peer:
         target_peer_clean = target_peer.rstrip("/")
+        if not target_peer_clean.startswith("http://") and not target_peer_clean.startswith("https://"):
+            target_peer_clean = f"http://{target_peer_clean}"
         try:
             import urllib.request
             import json

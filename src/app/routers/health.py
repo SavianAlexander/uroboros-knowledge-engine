@@ -187,14 +187,9 @@ def get_snapshots_endpoint():
     res = []
     for s in snaps:
         t = s["timestamp"] if isinstance(s, dict) else s
-        try:
-            res.append(int(t))
-        except (KeyboardInterrupt, MemoryError, SystemExit):
-            raise
-        except Exception as e:
-            import logging; logging.warning(f"Swallowed error in health.py: {e}")
+        res.append(t)
         res.append(str(t))
-    return {"snapshots": res}
+    return {"snapshots": list(dict.fromkeys(res))}
 
 @router.delete("/api/snapshots")
 def delete_snapshot_endpoint(timestamp: int):
