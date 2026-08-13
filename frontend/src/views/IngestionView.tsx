@@ -59,6 +59,25 @@ export default function IngestionView() {
     }
   };
 
+  const handleExportDataset = async () => {
+    try {
+      toast('Dataset Synthesis', 'Synthesizing vault instruction dataset...', 'info');
+      const data = await api.exportVaultJSON();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vault_fine_tuning_dataset_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast('Dataset Exported', `Generated ShareGPT/Alpaca dataset (${data.total_generated || 0} items)`, 'success');
+    } catch (e: any) {
+      toast('Export Error', e.message || 'Dataset export failed', 'error');
+    }
+  };
+
   const totalFiles = stats?.total_files || 0;
   const totalChunks = stats?.total_chunks || 0;
   const activeQueue = stats?.queue ?? 0;
@@ -133,6 +152,18 @@ export default function IngestionView() {
                 <div className="text-left">
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-200">Clear Queue</p>
                   <p className="text-xs text-slate-500">Cancel pending items</p>
+                </div>
+              </div>
+            </button>
+
+            <button 
+              onClick={handleExportDataset}
+              className="w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:bg-slate-800/80 border border-slate-300 dark:border-white/10 rounded-xl transition-colors group">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg group-hover:bg-emerald-500/20 transition-colors"><Layers className="w-4 h-4" /></div>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">Export Fine-Tuning Dataset</p>
+                  <p className="text-xs text-slate-500">ShareGPT / Alpaca JSON format</p>
                 </div>
               </div>
             </button>
