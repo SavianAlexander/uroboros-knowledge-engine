@@ -108,7 +108,6 @@ class TestAdversarialUIStress(unittest.TestCase):
                         server_ready = True
                         break
             except Exception:
-                import logging; logging.getLogger(__name__).exception("Swallowed error in test_adversarial_ui_stress.py")
                 threading.Event().wait(0.1)
 
         if not server_ready:
@@ -118,19 +117,25 @@ class TestAdversarialUIStress(unittest.TestCase):
     def tearDownClass(cls):
         cls.server.stop()
         cls.server.join(timeout=5.0)
+        try:
+            from src.infrastructure.database import reset_db_connections
+            reset_db_connections()
+        except Exception: pass
         know.reset_db_connections()
 
         for suffix in ["", "-wal", "-shm"]:
             fpath = str(PROJECT_ROOT / (DB_NAME + suffix))
             if os.path.exists(fpath):
-                try:
+                for _ in range(10):
                     try:
-                        from src.infrastructure.database import reset_db_connections
-                        reset_db_connections()
-                    except Exception: pass
-                    os.remove(fpath)
-                except Exception as e:
-                    import logging; logging.error(f"Swallowed error in test_adversarial_ui_stress.py: {e}")
+                        try:
+                            from src.infrastructure.database import reset_db_connections
+                            reset_db_connections()
+                        except Exception: pass
+                        os.remove(fpath)
+                        break
+                    except Exception:
+                        threading.Event().wait(0.05)
 
         if SANDBOX_DIR.exists():
             shutil.rmtree(SANDBOX_DIR, ignore_errors=True)

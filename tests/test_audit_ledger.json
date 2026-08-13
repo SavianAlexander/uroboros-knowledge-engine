@@ -1,12 +1,12 @@
 {
-  "last_updated": "2026-08-13T02:47:28Z",
-  "total_duration_seconds": 29.1814,
+  "last_updated": "2026-08-13T02:47:36Z",
+  "total_duration_seconds": 27.5115,
   "overall_summary": {
     "total_domains": 33,
-    "passed": 242,
+    "passed": 244,
     "failed": 0,
-    "errors": 1,
-    "skipped": 58
+    "errors": 0,
+    "skipped": 60
   },
   "file_coverage_mapping": {
     "know.py": [
@@ -483,7 +483,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.2997
+      "duration_seconds": 0.3158
     },
     "test_domain_vector": {
       "module": "tests.test_domain_vector",
@@ -492,7 +492,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 1.1218
+      "duration_seconds": 1.2429
     },
     "test_domain_ingestion": {
       "module": "tests.test_domain_ingestion",
@@ -501,7 +501,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.3801
+      "duration_seconds": 0.4057
     },
     "test_domain_api": {
       "module": "tests.test_domain_api",
@@ -510,7 +510,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 1.46
+      "duration_seconds": 1.6194
     },
     "test_domain_llm": {
       "module": "tests.test_domain_llm",
@@ -519,7 +519,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.127
+      "duration_seconds": 0.1221
     },
     "test_domain_security": {
       "module": "tests.test_domain_security",
@@ -528,7 +528,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 1,
-      "duration_seconds": 0.1402
+      "duration_seconds": 0.143
     },
     "test_domain_performance": {
       "module": "tests.test_domain_performance",
@@ -537,7 +537,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.0926
+      "duration_seconds": 0.0994
     },
     "test_domain_architecture": {
       "module": "tests.test_domain_architecture",
@@ -546,7 +546,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 1,
-      "duration_seconds": 0.001
+      "duration_seconds": 0.0015
     },
     "test_domain_chaos": {
       "module": "tests.test_domain_chaos",
@@ -555,7 +555,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.1989
+      "duration_seconds": 0.1851
     },
     "test_domain_soc2": {
       "module": "tests.test_domain_soc2",
@@ -564,7 +564,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 2.6863
+      "duration_seconds": 2.536
     },
     "test_domain_mutation": {
       "module": "tests.test_domain_mutation",
@@ -573,7 +573,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.0353
+      "duration_seconds": 0.0288
     },
     "test_domain_rag": {
       "module": "tests.test_domain_rag",
@@ -582,7 +582,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 2.0407
+      "duration_seconds": 1.9596
     },
     "test_domain_desktop": {
       "module": "tests.test_domain_desktop",
@@ -591,7 +591,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.0725
+      "duration_seconds": 0.0583
     },
     "test_domain_expanded_coverage": {
       "module": "tests.test_domain_expanded_coverage",
@@ -600,7 +600,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.6035
+      "duration_seconds": 0.4993
     },
     "test_fundamental_adversarial_matrix": {
       "module": "tests.test_fundamental_adversarial_matrix",
@@ -609,7 +609,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.7877
+      "duration_seconds": 0.5945
     },
     "test_deep_fuzzing_and_concurrency": {
       "module": "tests.test_deep_fuzzing_and_concurrency",
@@ -618,7 +618,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.6671
+      "duration_seconds": 0.5628
     },
     "test_domain_metamorphic": {
       "module": "tests.test_domain_metamorphic",
@@ -627,7 +627,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.4826
+      "duration_seconds": 0.4704
     },
     "test_domain_accessibility": {
       "module": "tests.test_domain_accessibility",
@@ -636,7 +636,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 5,
-      "duration_seconds": 0.001
+      "duration_seconds": 0.0011
     },
     "test_domain_localization": {
       "module": "tests.test_domain_localization",
@@ -654,7 +654,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 4,
-      "duration_seconds": 0.0992
+      "duration_seconds": 0.1096
     },
     "test_router_micro_units": {
       "module": "tests.test_router_micro_units",
@@ -663,7 +663,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 18,
-      "duration_seconds": 0.0021
+      "duration_seconds": 0.001
     },
     "test_empirical_challenger_final": {
       "module": "tests.test_empirical_challenger_final",
@@ -672,7 +672,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 8,
-      "duration_seconds": 0.078
+      "duration_seconds": 0.0592
     },
     "test_adversarial_ui_stress": {
       "module": "tests.test_adversarial_ui_stress",
@@ -681,7 +681,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 4,
-      "duration_seconds": 0.7413
+      "duration_seconds": 0.7273
     },
     "test_adversarial_challenger_2": {
       "module": "tests.test_adversarial_challenger_2",
@@ -690,16 +690,16 @@
       "failures": 0,
       "errors": 0,
       "skipped": 2,
-      "duration_seconds": 1.5591
+      "duration_seconds": 0.7971
     },
     "test_adversarial_i3": {
       "module": "tests.test_adversarial_i3",
-      "tests_run": 0,
-      "passed": -1,
+      "tests_run": 3,
+      "passed": 1,
       "failures": 0,
-      "errors": 1,
-      "skipped": 0,
-      "duration_seconds": 1.8812
+      "errors": 0,
+      "skipped": 2,
+      "duration_seconds": 1.4933
     },
     "test_domain_chat_intelligence": {
       "module": "tests.test_domain_chat_intelligence",
@@ -708,7 +708,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.4159
+      "duration_seconds": 0.3308
     },
     "test_domain_graph_performance": {
       "module": "tests.test_domain_graph_performance",
@@ -717,7 +717,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.5389
+      "duration_seconds": 0.5513
     },
     "test_domain_analytics_intelligence": {
       "module": "tests.test_domain_analytics_intelligence",
@@ -726,7 +726,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 1,
-      "duration_seconds": 0.115
+      "duration_seconds": 0.1192
     },
     "test_domain_workflow_triggers": {
       "module": "tests.test_domain_workflow_triggers",
@@ -735,7 +735,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 2,
-      "duration_seconds": 0.5398
+      "duration_seconds": 0.5342
     },
     "test_e2e_analytics_graph_workflows": {
       "module": "tests.test_e2e_analytics_graph_workflows",
@@ -744,7 +744,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 5,
-      "duration_seconds": 6.868
+      "duration_seconds": 6.8055
     },
     "test_domain_ocr_transcription": {
       "module": "tests.test_domain_ocr_transcription",
@@ -753,7 +753,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.8442
+      "duration_seconds": 0.8004
     },
     "test_domain_p2p_sync": {
       "module": "tests.test_domain_p2p_sync",
@@ -762,7 +762,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 1,
-      "duration_seconds": 4.2804
+      "duration_seconds": 4.3147
     },
     "test_domain_backup_auth_theme": {
       "module": "tests.test_domain_backup_auth_theme",
@@ -771,7 +771,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 2,
-      "duration_seconds": 0.0179
+      "duration_seconds": 0.0192
     }
   }
 }
