@@ -127,3 +127,43 @@ All multi-step engineering tasks, checklists, and agentic workflows MUST use the
    ```
 4. Commit your changes with executive technical terminology.
 5. Push to your fork and submit a Pull Request targeting `master`.
+
+---
+
+## 8. Pull Request Review Matrix & Verification Checklist
+
+Reviewers and automated CI pipelines evaluate PRs against this verification matrix:
+
+- [ ] **Clean Layer Separation**: No `src/domain/` module imports FastAPI, HTTP engines, or infrastructure databases.
+- [ ] **Thread Connection Reset**: Database test fixtures call `reset_db_connections()` before database teardown.
+- [ ] **Memory & Resource Bound**: Single-instance process limit is maintained (`OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_LOADED_MODELS=1`).
+- [ ] **PII & ZK Data Integrity**: Sensitive strings are passed through [`pii_privacy_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/pii_privacy_guard.py).
+- [ ] **Zero Redundant Dependencies**: No new external PyPI packages are added unless explicitly approved by project leads.
+- [ ] **SOC 2 Audit Ledger Sync**: `docs/soc2_type2_attestation.md` is updated via `scripts/update_test_ledger.py`.
+
+---
+
+## 9. Performance Benchmark SLA Verification
+
+Before merging pull requests that modify search, vector retrieval, or indexing pipelines, developers must run the benchmark suite to verify sub-5ms SLA compliance:
+
+```bash
+# Benchmark retrieval latency across 100 queries
+python scripts/benchmark_engine.py --runs 100
+```
+
+- **Target SLA**: $P_{50} < 5.0\text{ ms}$, $P_{99} < 15.0\text{ ms}$.
+
+---
+
+## 10. Security Vulnerability Disclosure & Dependency Audit
+
+- **Vulnerability Patching**: Prefer updating package resolutions or overrides over forcing incompatible major upgrades that break clean installs (`npm ci`).
+- **Headless Browser Protections**: Wrap browser hardware API promises in a 100ms `Promise.race` timeout to prevent CI deadlocks.
+- **Reporting Vulnerabilities**: Send security disclosures directly to `savianalexander@pm.me`.
+
+---
+
+## 11. Code of Conduct
+
+All contributors are expected to adhere to the project [Code of Conduct](CODE_OF_CONDUCT.md).
