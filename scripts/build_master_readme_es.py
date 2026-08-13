@@ -1,4 +1,7 @@
-# Motor de Base de Datos de Conocimiento Uroboros (Neuro Alexander)
+import sys
+import os
+
+readme_es_content = r"""# Motor de Base de Datos de Conocimiento Uroboros (Neuro Alexander)
 
 <p align="center">
   <img src="https://img.shields.io/github/actions/workflow/status/SavianAlexander/uroboros-knowledge-engine/tests.yml?branch=master&style=flat-square" alt="Estado de Compilacion" />
@@ -93,3 +96,10 @@ $$\text{Score}_{Final}(d) = \text{Score}_{RRF}(d) \cdot e^{-\lambda \cdot \Delta
 ## 32. Licencia
 
 Este proyecto esta protegido bajo la Licencia MIT - consulte el archivo [`LICENSE`](LICENSE) para mas detalles.
+"""
+
+output_path = os.path.join(os.path.dirname(__file__), "..", "README.es.md")
+with open(output_path, "w", encoding="utf-8") as f:
+    f.write(readme_es_content)
+
+print("Generated master README.es.md")
