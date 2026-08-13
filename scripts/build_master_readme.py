@@ -1,4 +1,6 @@
-# Uroboros Knowledge Database Engine (Neuro Alexander)
+import os
+
+readme_content = r"""# Uroboros Knowledge Database Engine (Neuro Alexander)
 
 <p align="center">
   <img src="https://img.shields.io/github/actions/workflow/status/SavianAlexander/uroboros-knowledge-engine/tests.yml?branch=master&style=flat-square" alt="Build Status" />
@@ -1064,3 +1066,10 @@ Uroboros incorporates zero-downtime database snapshot backup and cold-restore ca
 ## 32. License
 
 This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) file for complete details.
+"""
+
+target_path = r'c:\Users\Administrator\Desktop\Neuro Alexander\README.md'
+with open(target_path, 'w', encoding='utf-8') as f:
+    f.write(readme_content)
+
+print("Generated 32-section master README.md")
