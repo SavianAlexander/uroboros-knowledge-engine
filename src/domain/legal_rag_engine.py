@@ -139,3 +139,14 @@ class LegalRegulatoryRAGEngine:
             "sources": grounded_sources,
             "legal_disclaimer": "This RAG response provides statutory citation mapping for regulatory analysis purposes."
         }
+
+    @classmethod
+    def get_legal_rag_capabilities(cls) -> Dict[str, Any]:
+        """Returns compliance framework capabilities and supported citation standards."""
+        return {
+            "engine_name": "Uroboros Legal & Regulatory RAG Engine",
+            "supported_frameworks": list(cls.FRAMEWORKS.keys()),
+            "citation_patterns_count": len(cls.CITATION_PATTERNS),
+            "hierarchical_statutory_chunking": True,
+            "status": "active"
+        }

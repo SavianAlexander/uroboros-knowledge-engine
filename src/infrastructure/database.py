@@ -132,6 +132,15 @@ def get_db_write_connection(db_path: str, timeout: float = DB_TIMEOUT):
         conn = pool.get_connection()
         try:
             yield conn
+            if getattr(conn, "in_transaction", False):
+                conn.commit()
+        except Exception:
+            if getattr(conn, "in_transaction", False):
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+            raise
         finally:
             pool.return_connection(conn)
 
@@ -142,6 +151,15 @@ def get_db_connection(db_path: str, timeout: float = DB_TIMEOUT):
     conn = pool.get_connection()
     try:
         yield conn
+        if getattr(conn, "in_transaction", False):
+            conn.commit()
+    except Exception:
+        if getattr(conn, "in_transaction", False):
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
     finally:
         pool.return_connection(conn)
 
@@ -407,6 +425,7 @@ def init_db():
                     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
                 )
             """)
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_ocr_coords_file_id ON ocr_coords(file_id)')
 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS tag_metadata (
@@ -445,6 +464,7 @@ def init_db():
                     result_count INTEGER
                 )
             """)
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_search_history_executed ON search_history(executed_at DESC)')
 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS query_bookmarks (

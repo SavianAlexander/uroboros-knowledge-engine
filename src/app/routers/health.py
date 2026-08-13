@@ -14,6 +14,8 @@ from src.infrastructure.repositories.snapshots import create_db_snapshot, restor
 router = APIRouter()
 
 
+@router.get("/health")
+@router.post("/api/health")
 @router.get("/api/health")
 def get_health_status():
     """Retrieve system health status, DB size, and file stats."""

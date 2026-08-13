@@ -41,3 +41,26 @@ def generate_refactoring_patch(
         "total_changes": additions + deletions,
         "patch": patch_str
     }
+
+
+def generate_html_diff_view(
+    original_code: str,
+    modified_code: str,
+    filepath: str = "src/module.py"
+) -> str:
+    """
+    Generates side-by-side HTML diff visualization string.
+    Zero-dependency stdlib difflib.HtmlDiff implementation.
+    """
+    orig_lines = str(original_code or "").splitlines()
+    mod_lines = str(modified_code or "").splitlines()
+
+    html_diff = difflib.HtmlDiff(tabsize=4, wrapcolumn=80)
+    return html_diff.make_file(
+        orig_lines,
+        mod_lines,
+        fromdesc=f"Original ({filepath})",
+        todesc=f"Modified ({filepath})",
+        context=True,
+        numlines=3
+    )

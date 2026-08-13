@@ -173,3 +173,15 @@ def execute_sota_rag_search(query: str, top_k: int = 5) -> Dict[str, Any]:
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+def get_sota_rag_capabilities() -> Dict[str, Any]:
+    """Returns capabilities and feature metadata for SOTA RAG search pipeline."""
+    return {
+        "engine_name": "Uroboros SOTA Multi-Query RAG Engine",
+        "sub_query_decomposition": True,
+        "pagerank_boosting": True,
+        "minhash_context_compression": True,
+        "rrf_fusion_alpha": 0.5,
+        "status": "active"
+    }
