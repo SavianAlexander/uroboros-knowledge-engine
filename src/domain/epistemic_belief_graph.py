@@ -14,13 +14,14 @@ def update_epistemic_belief_graph(
     """
     Updates the dynamic belief graph with a new user/document claim, detecting conflicts with prior beliefs.
     """
-    beliefs = existing_beliefs or []
-    norm_claim = new_claim.strip().lower()
+    safe_claim = str(new_claim or "")
+    beliefs = [b for b in (existing_beliefs or []) if isinstance(b, dict)]
+    norm_claim = safe_claim.strip().lower()
 
     conflicts = []
     for b in beliefs:
         # Simple negation conflict heuristic
-        b_norm = b.get("claim", "").lower()
+        b_norm = str(b.get("claim", "") or "").lower()
         if ("not " in norm_claim and norm_claim.replace("not ", "") in b_norm) or \
            ("not " in b_norm and b_norm.replace("not ", "") in norm_claim):
             conflicts.append(b)

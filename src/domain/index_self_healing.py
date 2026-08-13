@@ -18,10 +18,12 @@ def audit_index_health() -> Dict[str, Any]:
         cursor = conn.cursor()
         
         cursor.execute("PRAGMA page_count;")
-        page_count = cursor.fetchone()[0]
+        row_p = cursor.fetchone()
+        page_count = row_p[0] if row_p else 0
         
         cursor.execute("PRAGMA freelist_count;")
-        freelist_count = cursor.fetchone()[0]
+        row_f = cursor.fetchone()
+        freelist_count = row_f[0] if row_f else 0
         
         fragmentation_pct = round((freelist_count / float(page_count)) * 100, 2) if page_count > 0 else 0.0
         needs_healing = fragmentation_pct > 15.0

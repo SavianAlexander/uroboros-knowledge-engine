@@ -24,9 +24,11 @@ def allocate_context_budget(
     # ponytail: proportional context budget allocator
     """
     token_budget = kwargs.get("total_token_budget", max_tokens)
-    vector_snippets = kwargs.get("vector_chunks", vector_snippets) or []
-    graph_pathways = kwargs.get("graph_halos", graph_pathways) or []
-    episodic_memories = episodic_memories or []
+    raw_vec = kwargs.get("vector_chunks", vector_snippets)
+    vector_snippets = raw_vec if isinstance(raw_vec, list) else []
+    raw_graph = kwargs.get("graph_halos", graph_pathways)
+    graph_pathways = raw_graph if isinstance(raw_graph, list) else []
+    episodic_memories = episodic_memories if isinstance(episodic_memories, list) else []
 
     snippet_budget = int(token_budget * 0.50)
     graph_budget = int(token_budget * 0.25)

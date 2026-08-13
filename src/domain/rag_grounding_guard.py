@@ -27,6 +27,9 @@ def split_sentences(text: str) -> List[str]:
 
 def compute_ngram_overlap(claim: str, source_text: str) -> float:
     """Computes word-level overlap ratio between claim sentence and source text."""
+    if not claim or not source_text or not isinstance(claim, str) or not isinstance(source_text, str):
+        return 0.0 if (claim and not source_text) else 1.0
+
     claim_words = set(w.lower() for w in RE_WORD.findall(claim) if w.lower() not in STOP_WORDS)
     if not claim_words:
         return 1.0

@@ -18,10 +18,14 @@ def get_rag_lineage_telemetry(
     """
     Generates real-time execution lineage telemetry including Self-RAG critique tokens.
     """
-    grounding = verify_rag_grounding(answer, source_chunks)
-    is_rel = True if source_chunks else False
-    is_sup = grounding["overall_status"] == "grounded"
-    is_use = len(answer) > 20 and is_sup
+    safe_query = str(query or "")
+    safe_answer = str(answer or "")
+    safe_chunks = [str(c) for c in source_chunks if c] if isinstance(source_chunks, list) else []
+
+    grounding = verify_rag_grounding(safe_answer, safe_chunks)
+    is_rel = True if safe_chunks else False
+    is_sup = grounding.get("overall_status") == "grounded"
+    is_use = len(safe_answer) > 20 and is_sup
 
     return {
         "query": query,
