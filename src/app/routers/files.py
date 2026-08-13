@@ -117,15 +117,15 @@ def get_raw_file(path: str):
 @router.post("/api/file/edit")
 def save_file_endpoint(req: FileSaveRequest):
     """Save updated content to file with revision history tracking."""
-    fp = req.get_path()
-    verify_path_containment(fp)
-    norm_path = os.path.abspath(fp)
-    if not os.path.exists(norm_path):
-        raise HTTPException(status_code=404, detail="File does not exist")
-    if os.path.isdir(norm_path):
-        raise HTTPException(status_code=500, detail="Is a directory")
-
     try:
+        fp = req.get_path()
+        verify_path_containment(fp)
+        norm_path = os.path.abspath(fp)
+        if not os.path.exists(norm_path):
+            raise HTTPException(status_code=404, detail="File does not exist")
+        if os.path.isdir(norm_path):
+            raise HTTPException(status_code=400, detail="Is a directory")
+
         with open(norm_path, "r", encoding="utf-8", errors="ignore") as f:
             old_content = f.read()
         save_file_revision(norm_path, old_content)
@@ -154,11 +154,10 @@ def save_file_endpoint(req: FileSaveRequest):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in files.py: {e}")
+            import logging; logging.warning(f"Swallowed cache invalidate error: {e}")
+
         index_directory(os.path.dirname(norm_path))
         return {"status": "success", "filepath": norm_path, "path": norm_path}
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
