@@ -16,10 +16,10 @@ def compute_graph_pagerank(damping_factor: float = 0.85, max_iterations: int = 2
     """
     try:
         import os
-        from src.infrastructure.database import get_db, init_db
+        from src.infrastructure.database import get_db_connection, DB_FILE, init_db
 
         init_db()
-        with get_db() as conn:
+        with get_db_connection(DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT id, filename, filepath, content FROM files")
             rows = cursor.fetchall()

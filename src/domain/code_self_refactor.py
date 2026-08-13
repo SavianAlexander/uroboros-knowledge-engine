@@ -23,7 +23,7 @@ def analyze_and_propose_refactoring(code_snippet: str) -> Dict[str, Any]:
     proposals = []
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             body_len = len(node.body)
             if body_len > 15:
                 proposals.append({
