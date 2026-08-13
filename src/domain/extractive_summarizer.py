@@ -41,7 +41,9 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
             "status": "empty"
         }
 
-    str_text = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
+    import unicodedata
+    raw_str = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
+    str_text = unicodedata.normalize("NFC", raw_str)
     if not str_text.strip():
         return {
             "summary": "",
