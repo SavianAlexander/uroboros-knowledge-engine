@@ -1,6 +1,7 @@
 # Subagent runtime directories
-.agents/
-.agents*/
+.agents/*
+!.agents/skills/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
