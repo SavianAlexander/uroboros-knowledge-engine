@@ -6,7 +6,7 @@ Zero-dependency, stdlib implementation.
 
 import re
 from typing import Dict, Any, List
-from src.domain.rag_grounding_guard import RE_SENTENCE
+from src.domain.rag_grounding_guard import split_sentences
 
 
 def generate_synthetic_qa_triples(
@@ -19,7 +19,7 @@ def generate_synthetic_qa_triples(
     if not document_text:
         return {"triples": [], "count": 0, "status": "empty_text"}
 
-    sentences = [s.strip() for s in RE_SENTENCE.findall(document_text) if len(s.strip()) > 20]
+    sentences = [s for s in split_sentences(document_text) if len(s) > 20]
     
     triples = []
     for idx, sent in enumerate(sentences[:max_triples]):

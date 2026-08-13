@@ -5,7 +5,7 @@ Zero-dependency, stdlib implementation.
 """
 
 from typing import Dict, Any, List
-from src.domain.rag_grounding_guard import verify_rag_grounding, RE_SENTENCE
+from src.domain.rag_grounding_guard import verify_rag_grounding, split_sentences
 
 
 def rewrite_grounded_answer(
@@ -28,7 +28,7 @@ def rewrite_grounded_answer(
             "status": "grounded"
         }
 
-    sentences = [s.strip() for s in RE_SENTENCE.findall(llm_response) if s.strip()]
+    sentences = split_sentences(llm_response)
     bad_sentences = set(guard_res["hallucination_warnings"])
     
     clean_sentences = [s for s in sentences if s not in bad_sentences]

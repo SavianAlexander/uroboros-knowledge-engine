@@ -8,10 +8,7 @@ import re
 import math
 from typing import List, Dict, Any
 
-RE_SENTENCE = re.compile(r'[^.!?]+[.!?]+')
-RE_WORD = re.compile(r'\b[a-zA-Z0-9_-]{3,}\b')
-
-STOP_WORDS = {"the", "and", "is", "in", "it", "of", "to", "a", "for", "with", "on", "that", "this", "by", "an", "are", "as", "at", "be", "or", "from"}
+from src.domain.rag_grounding_guard import split_sentences, RE_WORD, STOP_WORDS
 
 
 def get_sentence_words(sentence: str) -> set:
@@ -43,9 +40,7 @@ def chunk_by_semantic_entropy(
     if not text or not text.strip():
         return []
 
-    sentences = [s.strip() for s in RE_SENTENCE.findall(text) if s.strip()]
-    if not sentences:
-        sentences = [text.strip()]
+    sentences = split_sentences(text)
 
     chunks = []
     current_sentences = []
