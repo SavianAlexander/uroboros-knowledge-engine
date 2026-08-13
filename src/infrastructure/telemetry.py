@@ -1,8 +1,13 @@
 import time
 import os
-import psutil
 import threading
 from typing import Dict, List, Any
+
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    HAS_PSUTIL = False
 
 class APMTelemetryExporter:
     """
@@ -32,8 +37,13 @@ class APMTelemetryExporter:
             p95 = lats[int(n * 0.95)] if n >= 20 else lats[-1]
             p99 = lats[int(n * 0.99)] if n >= 100 else lats[-1]
 
-            process = psutil.Process(os.getpid()) if hasattr(psutil, "Process") else None
-            mem_rss_mb = process.memory_info().rss / (1024 * 1024) if process else 0.0
+            mem_rss_mb = 0.0
+            if HAS_PSUTIL:
+                try:
+                    process = psutil.Process(os.getpid())
+                    mem_rss_mb = process.memory_info().rss / (1024 * 1024)
+                except Exception:
+                    mem_rss_mb = 0.0
 
             return {
                 "total_requests": self.request_count,
