@@ -87,3 +87,16 @@ def stream_completion(prompt: str, max_tokens: int = 500) -> Generator[str, None
     for chunk in llm(prompt, max_tokens=max_tokens, echo=False, stream=True):
         yield chunk["choices"][0]["text"]
 
+
+def ensure_local_model_directory(models_dir: str = "models") -> Dict[str, Any]:
+    """Ensures models directory exists and scans for available GGUF model files."""
+    abs_dir = os.path.abspath(models_dir)
+    os.makedirs(abs_dir, exist_ok=True)
+    gguf_files = [f for f in os.listdir(abs_dir) if f.endswith(".gguf")]
+    return {
+        "status": "success",
+        "models_dir": abs_dir,
+        "available_models": gguf_files,
+        "active_model": os.environ.get("LLM_MODEL_PATH", "models/llama-2-7b.Q4_K_M.gguf")
+    }
+

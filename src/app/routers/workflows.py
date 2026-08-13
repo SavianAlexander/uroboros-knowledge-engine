@@ -126,3 +126,29 @@ def list_logs_endpoint(
     """Retrieve execution logs for workflow trigger dispatches."""
     logs = list_workflow_logs(trigger_id=trigger_id, limit=limit)
     return logs
+
+
+@router.get("/api/v1/workflows/templates", response_model=List[Dict[str, Any]])
+@router.get("/api/workflows/templates", response_model=List[Dict[str, Any]])
+def list_workflow_templates_endpoint():
+    """Retrieve pre-configured webhook integration template presets."""
+    return [
+        {
+            "name": "GitHub Push Auto-Ingest",
+            "event_type": "github.push",
+            "condition_pattern": "refs/heads/main",
+            "description": "Trigger automatic document re-indexing when code/markdown is pushed to main branch."
+        },
+        {
+            "name": "Slack Alert Notification",
+            "event_type": "document.indexed",
+            "condition_pattern": "tag:important",
+            "description": "Send a Slack webhook notification when high-priority documents are indexed."
+        },
+        {
+            "name": "Generic Ingestion Webhook",
+            "event_type": "file.created",
+            "condition_pattern": "*",
+            "description": "Dispatch HTTP payload to external endpoint whenever a new file is uploaded."
+        }
+    ]
