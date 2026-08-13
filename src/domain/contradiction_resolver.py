@@ -38,8 +38,12 @@ def detect_vault_contradictions(db_path: str = DB_FILE, limit: int = 50) -> Dict
                 content_b = doc_b["content"] or ""
 
                 # Extract shared key terms (3+ chars)
-                words_a = set(w.lower() for w in re.findall(r'\b[a-zA-Z]{4,}\b', content_a))
-                words_b = set(w.lower() for w in re.findall(r'\b[a-zA-Z]{4,}\b', content_b))
+                import unicodedata
+                norm_a = unicodedata.normalize("NFC", content_a)
+                norm_b = unicodedata.normalize("NFC", content_b)
+
+                words_a = set(w.lower() for w in re.findall(r'\b[\w]{4,}\b', norm_a))
+                words_b = set(w.lower() for w in re.findall(r'\b[\w]{4,}\b', norm_b))
                 shared_terms = words_a.intersection(words_b)
 
                 if len(shared_terms) > 5:

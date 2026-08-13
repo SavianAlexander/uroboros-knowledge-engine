@@ -13,8 +13,9 @@ def compute_shingles(text: str, k: int = 3) -> Set[str]:
     """Extracts word k-shingles from text."""
     if not text or not isinstance(text, (str, bytes)):
         return set()
-    str_text = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
-    words = re.findall(r'\b[a-zA-Z0-9_-]+\b', str_text.lower())
+    import unicodedata
+    norm_text = unicodedata.normalize("NFC", str_text)
+    words = re.findall(r'\b[\w-]+\b', norm_text.lower())
     if len(words) < k:
         return {" ".join(words)} if words else set()
     return {" ".join(words[i:i+k]) for i in range(len(words) - k + 1)}

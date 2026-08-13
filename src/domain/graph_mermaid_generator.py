@@ -16,14 +16,13 @@ def generate_mermaid_graph(focus_doc: str = "", max_nodes: int = 15) -> Dict[str
     """
     try:
         import os
-        from src.infrastructure.database import get_db, init_db
+        from src.infrastructure.database import get_db_connection, init_db, DB_FILE
 
         init_db()
-        conn = get_db()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT id, filename, content FROM files LIMIT 50")
-        rows = cursor.fetchall()
+        with get_db_connection(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, filename, content FROM files LIMIT 50")
+            rows = cursor.fetchall()
 
         if not rows:
             return {"mermaid_code": "graph TD;\n  EmptyVault[\"No Documents Found\"]", "status": "success"}

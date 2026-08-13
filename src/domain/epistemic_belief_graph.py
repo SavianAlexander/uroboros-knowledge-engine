@@ -31,7 +31,7 @@ def update_epistemic_belief_graph(
 
     new_entry = {
         "belief_id": f"bel_{len(beliefs)+1}",
-        "claim": new_claim,
+        "claim": safe_claim,
         "confidence": 0.95,
         "has_conflict": len(conflicts) > 0
     }

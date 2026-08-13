@@ -17,16 +17,21 @@ class HyperGraphRouter:
 
     def add_hyper_edge(self, edge_id: str, nodes: Set[str], metadata: Dict[str, Any] = None):
         """Adds an N-way hyper-edge connecting arbitrary sets of entities/nodes."""
-        safe_nodes = set(str(n) for n in nodes if isinstance(n, (str, int))) if nodes else set()
+        if nodes and isinstance(nodes, (set, list, tuple)):
+            safe_nodes = set(str(n) for n in nodes if n is not None)
+        else:
+            safe_nodes = set()
         self.hyper_edges.append({
-            "edge_id": edge_id,
+            "edge_id": str(edge_id or "edge_0"),
             "nodes": safe_nodes,
-            "metadata": metadata or {}
+            "metadata": metadata if isinstance(metadata, dict) else {}
         })
 
     def query_hyper_graph(self, target_nodes: List[str]) -> List[Dict[str, Any]]:
         """Finds all hyper-edges containing the target node subset in O(1) multi-entity match."""
-        targets = set(target_nodes)
+        if not target_nodes or not isinstance(target_nodes, (set, list, tuple)):
+            return []
+        targets = set(str(n) for n in target_nodes if n is not None)
         matches = []
         for edge in self.hyper_edges:
             if targets.issubset(edge["nodes"]):
