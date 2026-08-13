@@ -113,15 +113,6 @@ def reset_db_connections():
         _local.connection = None
     _local.connection_path = None
 
-    # Close ALL other thread-local connections we've tracked globally
-    with _local_connections_lock:
-        for conn in _local_connections:
-            try:
-                conn.close()
-            except Exception:
-                pass
-        _local_connections.clear()
-
 _db_write_lock = threading.Lock()
 
 @contextlib.contextmanager
