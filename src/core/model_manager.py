@@ -77,7 +77,6 @@ class OllamaClient:
             except Exception:
                 continue
         return None
-
     def __call__(self, prompt, **kwargs):
         if not _llm_semaphore.acquire(blocking=False):
             logging.warning("LLM concurrency limit reached; skipping background inference for stability.")
@@ -101,7 +100,15 @@ class OllamaClient:
             return {"choices": [{"text": ""}]}
         finally:
             _llm_semaphore.release()
-            
+
+    def create_completion(self, prompt: str, stream: bool = False, max_tokens: int = 256, temperature: float = 0.3, **kwargs):
+        if stream:
+            res_dict = self(prompt, max_tokens=max_tokens, temperature=temperature, **kwargs)
+            text = res_dict.get("choices", [{}])[0].get("text", "")
+            return [{"choices": [{"text": text}]}]
+        return self(prompt, max_tokens=max_tokens, temperature=temperature, **kwargs)
+
+
     def create_chat_completion(self, messages, **kwargs):
         if not _llm_semaphore.acquire(blocking=False):
             logging.warning("LLM concurrency limit reached; skipping background chat inference for stability.")
