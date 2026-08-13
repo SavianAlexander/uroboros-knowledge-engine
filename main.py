@@ -46,21 +46,15 @@ if __name__ == "__main__":
     import socket
 
     host = os.environ.get("HOST", "127.0.0.1")
-    start_port = int(os.environ.get("PORT", 8085))
-    selected_port = None
+    port = int(os.environ.get("PORT", 8085))
 
-    for p in range(start_port, start_port + 10):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind((host, p))
-                selected_port = p
-                break
-        except OSError:
-            print(f"Port {p} in use, retrying on port {p + 1}...")
-            continue
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((host, port))
+    except OSError:
+        print(f"Error: Port {port} is already in use by another instance of Uroboros Knowledge Engine.")
+        print(f"Please close the existing server process on port {port} before launching a new instance.")
+        sys.exit(1)
 
-    if selected_port is None:
-        selected_port = start_port
-
-    print(f"Starting Uroboros server on http://{host}:{selected_port}")
-    uvicorn.run(app, host=host, port=selected_port)
+    print(f"Starting Uroboros server on http://{host}:{port}")
+    uvicorn.run(app, host=host, port=port)
