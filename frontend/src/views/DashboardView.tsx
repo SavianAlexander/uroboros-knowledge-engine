@@ -76,8 +76,8 @@ export default function DashboardView() {
             </select>
           </div>
           <div className="flex-1 min-h-[300px]">
-            {activity ? (
-              <ResponsiveContainer width="100%" height="100%">
+            {activity && Array.isArray(activity.timeline) ? (
+              <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={activity.timeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorSearches" x1="0" y1="0" x2="0" y2="1">
@@ -111,8 +111,8 @@ export default function DashboardView() {
         <div className={`${glassCardClasses} p-6 col-span-1 flex flex-col`}>
           <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200 mb-6">Storage Analytics</h3>
           <div className="flex-1 min-h-[220px] mb-4">
-            {storage ? (
-              <ResponsiveContainer width="100%" height="100%">
+            {storage && Array.isArray(storage.distribution) ? (
+              <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie data={storage.distribution} dataKey="count" nameKey="mime" cx="50%" cy="50%" innerRadius={70} outerRadius={90} paddingAngle={5} stroke="none">
                     {storage.distribution.map((_: any, i: number) => (

@@ -25,11 +25,11 @@ interface ErrorBoundaryState {
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    (this as any).state = { hasError: false };
+    (this as any).state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
@@ -37,12 +37,33 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   render() {
-    const state = (this as any).state as ErrorBoundaryState;
+    const state = (this as any).state as any;
     if (state?.hasError) {
       return (
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
-          <h2>Something went wrong</h2>
-          <button onClick={() => (this as any).setState({ hasError: false })}>Retry</button>
+        <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 text-slate-100 p-6">
+          <div className="max-w-md w-full p-8 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto text-xl font-bold">
+              !
+            </div>
+            <h2 className="text-xl font-semibold text-slate-100">Application Workspace Error</h2>
+            <p className="text-sm text-slate-400">
+              An unexpected render exception occurred. Click retry below to reload the workspace view.
+            </p>
+            {state.error?.message && (
+              <p className="text-xs font-mono text-slate-500 bg-slate-950/50 p-2.5 rounded-lg border border-white/5 break-all text-left">
+                {state.error.message}
+              </p>
+            )}
+            <button
+              onClick={() => {
+                (this as any).setState({ hasError: false, error: null });
+                window.location.reload();
+              }}
+              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium text-sm transition-colors shadow-lg shadow-indigo-600/20"
+            >
+              Reload Application
+            </button>
+          </div>
         </div>
       );
     }
