@@ -30,11 +30,11 @@ def execute_counterfactual_rag(query: str, max_scenarios: int = 2) -> Dict[str, 
     scenarios = [
         {
             "scenario": "Primary Evidence",
-            "snippets": [s.get("snippet", "") for s in primary_snippets]
+            "snippets": [s.get("snippet", "") if isinstance(s, dict) else str(s) for s in (primary_snippets or []) if s]
         },
         {
             "scenario": "Counterfactual / Exception Scan",
-            "snippets": [s.get("snippet", "") for s in counter_snippets]
+            "snippets": [s.get("snippet", "") if isinstance(s, dict) else str(s) for s in (counter_snippets or []) if s]
         }
     ]
 
