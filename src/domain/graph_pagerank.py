@@ -47,9 +47,10 @@ def compute_graph_pagerank(damping_factor: float = 0.85, max_iterations: int = 2
                         out_edges[u].add(v)
                         in_edges[v].add(u)
 
-        # Power Iteration PageRank Algorithm with Dangling Node Mass Conservation
+        # Pre-compute out-degrees and dangling node set
+        out_degrees = {n: float(len(out_edges[n])) for n in nodes}
+        dangling_nodes = [n for n in nodes if out_degrees[n] == 0.0]
         pagerank = {n: 1.0 / float(N) for n in nodes}
-        dangling_nodes = [n for n in nodes if len(out_edges[n]) == 0]
 
         for iteration in range(max_iterations):
             new_pagerank = {}
@@ -59,9 +60,9 @@ def compute_graph_pagerank(damping_factor: float = 0.85, max_iterations: int = 2
             for u in nodes:
                 rank_sum = 0.0
                 for v in in_edges[u]:
-                    out_deg = len(out_edges[v])
-                    if out_deg > 0:
-                        rank_sum += pagerank[v] / float(out_deg)
+                    out_deg = out_degrees[v]
+                    if out_deg > 0.0:
+                        rank_sum += pagerank[v] / out_deg
 
                 new_val = (1.0 - damping_factor + damping_factor * dangling_mass) / float(N) + damping_factor * rank_sum
                 diff += abs(new_val - pagerank[u])
