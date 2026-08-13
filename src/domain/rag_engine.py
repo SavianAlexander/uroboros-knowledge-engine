@@ -135,23 +135,20 @@ def okapi_bm25_rerank(documents: List[Dict[str, Any]], query: str, k1: float = 1
     doc_tokens = []
     doc_lengths = []
 
+    df = defaultdict(int)
     for doc in documents:
         content = doc.get("content") or doc.get("snippet") or doc.get("text") or ""
         tokens = [w.lower() for w in _RE_WORDS.findall(str(content))]
         doc_tokens.append(tokens)
         doc_lengths.append(len(tokens))
-
-    avgdl = (sum(doc_lengths) / N) if N > 0 else 1.0
-    if avgdl == 0:
-        avgdl = 1.0
-
-    # Calculate Inverse Document Frequency (IDF) for query terms
-    df = defaultdict(int)
-    for tokens in doc_tokens:
         seen = set(tokens)
         for term in query_terms:
             if term in seen:
                 df[term] += 1
+
+    avgdl = (sum(doc_lengths) / N) if N > 0 else 1.0
+    if avgdl == 0:
+        avgdl = 1.0
 
     idf = {}
     for term in query_terms:
