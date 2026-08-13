@@ -19,11 +19,10 @@ def compute_graph_pagerank(damping_factor: float = 0.85, max_iterations: int = 2
         from src.infrastructure.database import get_db, init_db
 
         init_db()
-        conn = get_db()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT id, filename, filepath, content FROM files")
-        rows = cursor.fetchall()
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, filename, filepath, content FROM files")
+            rows = cursor.fetchall()
 
         if not rows:
             return {"rankings": [], "total_documents": 0, "status": "success"}

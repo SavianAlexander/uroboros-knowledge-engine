@@ -15,29 +15,29 @@ def discover_knowledge_gaps() -> Dict[str, Any]:
         if DB_FILE and os.path.dirname(DB_FILE):
             os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
         init_db()
-        conn = get_db()
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        with get_db() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute("SELECT id, filename, filepath, content FROM files")
-        rows = cursor.fetchall()
+            cursor.execute("SELECT id, filename, filepath, content FROM files")
+            rows = cursor.fetchall()
 
-        file_titles = set(r["filename"].lower() for r in rows)
-        unlinked_wikilinks = set()
-        orphan_files = []
+            file_titles = set(r["filename"].lower() for r in rows)
+            unlinked_wikilinks = set()
+            orphan_files = []
 
-        for r in rows:
-            content = r["content"] or ""
-            matches = RE_WIKILINKS.findall(content)
-            for m in matches:
-                target = m.strip().lower()
-                if target and not any(target in ft for ft in file_titles):
-                    unlinked_wikilinks.add(m.strip())
+            for r in rows:
+                content = r["content"] or ""
+                matches = RE_WIKILINKS.findall(content)
+                for m in matches:
+                    target = m.strip().lower()
+                    if target and not any(target in ft for ft in file_titles):
+                        unlinked_wikilinks.add(m.strip())
 
-        # Find orphan files (zero tags and zero wikilinks)
-        cursor.execute("SELECT f.id, f.filename, f.filepath FROM files f WHERE f.id NOT IN (SELECT file_id FROM tags)")
-        orphan_rows = cursor.fetchall()
-        orphan_files = [{"id": r["id"], "filename": r["filename"]} for r in orphan_rows[:5]]
+            # Find orphan files (zero tags and zero wikilinks)
+            cursor.execute("SELECT f.id, f.filename, f.filepath FROM files f WHERE f.id NOT IN (SELECT file_id FROM tags)")
+            orphan_rows = cursor.fetchall()
+            orphan_files = [{"id": r["id"], "filename": r["filename"]} for r in orphan_rows[:5]]
 
         return {
             "missing_concepts": sorted(list(unlinked_wikilinks))[:10],
@@ -61,17 +61,17 @@ def detect_community_clusters() -> Dict[str, Any]:
         if DB_FILE and os.path.dirname(DB_FILE):
             os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
         init_db()
-        conn = get_db()
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        with get_db() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        # Fetch files and tags to build adjacency matrix
-        cursor.execute("SELECT id, filename FROM files")
-        files = cursor.fetchall()
-        node_map = {f["id"]: f["filename"] for f in files}
+            # Fetch files and tags to build adjacency matrix
+            cursor.execute("SELECT id, filename FROM files")
+            files = cursor.fetchall()
+            node_map = {f["id"]: f["filename"] for f in files}
 
-        cursor.execute("SELECT file_id, tag FROM tags")
-        tag_rows = cursor.fetchall()
+            cursor.execute("SELECT file_id, tag FROM tags")
+            tag_rows = cursor.fetchall()
 
         tag_to_files = defaultdict(set)
         for r in tag_rows:
