@@ -72,13 +72,13 @@ export default function IngestionView() {
           <div className="space-y-3">
             <button 
               onClick={() => {
-                api.fetchAPI('/api/file/index', { method: 'POST', body: JSON.stringify({ directory: "" }) })
-                  .then(res => {
+                api.fetchAPI<any>('/api/file/index', { method: 'POST', body: JSON.stringify({ directory: "" }) })
+                  .then((res: any) => {
                     if (res.job_id) {
                       // Start polling
                       const interval = setInterval(() => {
-                        api.fetchAPI(`/api/jobs/${res.job_id}`)
-                          .then(job => {
+                        api.fetchAPI<any>(`/api/jobs/${res.job_id}`)
+                          .then((job: any) => {
                             setRecentJobs(prev => {
                               const exists = prev.find(j => j.id === job.id);
                               if (exists) {

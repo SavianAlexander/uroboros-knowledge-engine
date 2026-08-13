@@ -11,8 +11,8 @@ import contextlib
 from itertools import combinations
 from collections import Counter
 from functools import lru_cache
-from typing import Optional
-from fastapi import APIRouter, HTTPException
+from typing import Optional, List, Dict, Any
+from fastapi import APIRouter, HTTPException, Body
 
 import src.infrastructure.database as _infra_db
 from src.infrastructure.vector_engine import search_files
@@ -33,6 +33,67 @@ def _get_global_cache():
     except Exception:
         import logging; logging.getLogger(__name__).exception("Swallowed error in search.py")
         return None
+
+
+@router.get("/api/search/rrf")
+def rrf_search_endpoint(
+    query: str,
+    limit: int = 10,
+    k: int = 60
+):
+    """RRF Hybrid Search API fusing FTS5 keyword and NomIC dense vector similarity."""
+    start_time = time.time()
+    if not query:
+        return {"query": "", "results": [], "total": 0, "search_time_ms": 0.0, "mode": "rrf_hybrid"}
+    try:
+        from src.infrastructure.vector_engine import MiniVectorEngine
+        engine = MiniVectorEngine()
+        results = engine.search_hybrid_rrf(query=query, top_k=limit, k=k)
+        search_time_ms = round((time.time() - start_time) * 1000, 2)
+        return {
+            "query": query,
+            "results": results,
+            "total": len(results),
+            "search_time_ms": search_time_ms,
+            "mode": "rrf_hybrid"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/vector/metrics")
+def vector_metrics_endpoint():
+    """Retrieve operational telemetry and memory stats for the Vector Engine."""
+    try:
+        from src.infrastructure.vector_engine import MiniVectorEngine
+        return MiniVectorEngine.get_vector_engine_metrics()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/vector/search/unified")
+def unified_vector_search_endpoint(
+    query: str,
+    limit: int = 10,
+    mode: Optional[str] = None
+):
+    """Unified Auto-Routing Vector Search API Endpoint."""
+    start_time = time.time()
+    if not query:
+        return {"query": "", "results": [], "total": 0, "search_time_ms": 0.0, "strategy": "none"}
+    try:
+        from src.infrastructure.vector_engine import MiniVectorEngine
+        results, strategy = MiniVectorEngine.search_unified_autoselect(query=query, top_k=limit, mode=mode)
+        search_time_ms = round((time.time() - start_time) * 1000, 2)
+        return {
+            "query": query,
+            "results": results,
+            "total": len(results),
+            "search_time_ms": search_time_ms,
+            "strategy": strategy
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/api/search")
@@ -403,8 +464,8 @@ def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: b
 
     # 3. Shared tag cluster edges (Inverted Index algorithm)
     if include_clusters and tag_to_docs:
-        # ponytail: cap shared tag cluster document list size to <= 30 to optimize cold graph endpoint latency to < 25ms.
-        cluster_doc_lists = [dl for dl in tag_to_docs.values() if 1 < len(dl) <= 30]
+        # ponytail: cap shared tag cluster document list size to <= 100 to optimize graph endpoint latency while supporting dense clusters.
+        cluster_doc_lists = [dl for dl in tag_to_docs.values() if 1 < len(dl) <= 100]
         if cluster_doc_lists:
             pair_shared_counts = Counter()
             for dl in cluster_doc_lists:
@@ -414,14 +475,16 @@ def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: b
             e_type = "shared_tag_cluster"
             cluster_edges = [
                 {
-                    "source": d_nids[d1],
-                    "target": d_nids[d2],
+                    "source": d_nids[min(d1, d2)],
+                    "target": d_nids[max(d1, d2)],
                     "type": e_type,
                     "relation": e_type,
                     "weight": shared_count
                 }
                 for (d1, d2), shared_count in pair_shared_counts.items()
             ]
+            edges.extend(cluster_edges)
+
     from src.domain.louvain_clustering import apply_louvain_communities
     nodes = apply_louvain_communities(nodes, edges)
 
@@ -443,6 +506,8 @@ def get_graph_data_endpoint(
 ):
     """Knowledge Graph data endpoint returning nodes, edges, wikilinks, and cluster links."""
     try:
+        from src.infrastructure.database import init_db
+        init_db()
         limit = max(1, min(limit, 5000))
         version_key = f"{limit}_{include_wikilinks}_{include_clusters}"
         try:
@@ -528,6 +593,11 @@ def autocomplete_suggest(token: str = "", q: str = "", query: str = ""):
             for t in db_tags:
                 suggestions.append({"text": f"tag:{t}", "type": "tag"})
                 suggestions.append({"text": t, "type": "tag"})
+
+            cursor.execute("SELECT DISTINCT filename FROM files WHERE filename IS NOT NULL LIMIT 30")
+            db_files = [row[0] for row in cursor.fetchall() if row[0]]
+            for fn in db_files:
+                suggestions.append({"text": fn, "type": "filename"})
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
@@ -547,3 +617,436 @@ def get_search_cache_stats():
     if cache_obj is not None:
         return cache_obj.stats()
     return {"hits": 0, "misses": 0, "hit_ratio": 0.0, "cache_size": 0}
+
+
+@router.get("/api/graph/export")
+def export_graph_graphml_endpoint(limit: int = 1000):
+    """Exports Knowledge Graph in standard GraphML XML format for Gephi, Cytoscape, and NetworkX."""
+    from fastapi.responses import Response
+    from src.domain.graph_export import export_graph_to_graphml
+    graph_data = get_graph_data_endpoint(limit=limit)
+    xml_content = export_graph_to_graphml(graph_data)
+    return Response(
+        content=xml_content,
+        media_type="application/xml",
+        headers={"Content-Disposition": "attachment; filename=knowledge_graph.graphml"}
+    )
+
+
+@router.get("/api/search/benchmark")
+def benchmark_search_performance(query: str = "accounting standards"):
+    """Runs a real-time latency benchmark comparing FTS5 BM25, NomIC Vector Cosine, and RRF Hybrid search channels."""
+    import time
+    from src.infrastructure.vector_engine import MiniVectorEngine
+
+    t0 = time.time()
+    rrf_res = MiniVectorEngine.search_hybrid_rrf(query, top_k=5)
+    rrf_ms = round((time.time() - t0) * 1000, 2)
+
+    t1 = time.time()
+    vec_res = MiniVectorEngine.search_semantic(query, top_k=5)
+    vec_ms = round((time.time() - t1) * 1000, 2)
+
+    return {
+        "query": query,
+        "rrf_hybrid_latency_ms": rrf_ms,
+        "vector_cosine_latency_ms": vec_ms,
+        "total_rrf_hits": len(rrf_res),
+        "total_vector_hits": len(vec_res),
+        "top_result": rrf_res[0].get("filename") if rrf_res else None,
+        "top_rrf_score": rrf_res[0].get("rrf_score") if rrf_res else 0.0
+    }
+
+
+from src.core.domain.models import BookmarkRequest
+
+@router.get("/api/search/bookmarks")
+@router.get("/api/bookmarks")
+def get_query_bookmarks_endpoint():
+    """List all saved search query bookmarks."""
+    try:
+        from src.infrastructure.database import init_db
+        init_db()
+        with get_db() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name, query_string, search_mode, created_at FROM query_bookmarks ORDER BY created_at DESC")
+            bookmarks = [dict(r) for r in cursor.fetchall()]
+            return {"bookmarks": bookmarks, "count": len(bookmarks)}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/bookmarks")
+@router.post("/api/bookmarks")
+def create_query_bookmark_endpoint(req: BookmarkRequest):
+    """Save or update a search query bookmark."""
+    name = req.name or req.get_query()
+    q_str = req.get_query()
+    mode = req.search_mode or "rrf"
+    if not name or not q_str:
+        raise HTTPException(status_code=400, detail="Bookmark name and query string are required")
+    try:
+        from src.infrastructure.database import init_db
+        init_db()
+        with get_db() as conn:
+            with conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO query_bookmarks (name, query_string, search_mode, created_at)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(name) DO UPDATE SET query_string=excluded.query_string, search_mode=excluded.search_mode, created_at=excluded.created_at
+                """, (name, q_str, mode, time.time()))
+                return {"status": "success", "bookmark": {"name": name, "query_string": q_str, "search_mode": mode}}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/api/search/bookmarks/{name}")
+@router.delete("/api/bookmarks/{name}")
+@router.delete("/api/search/bookmarks")
+@router.delete("/api/bookmarks")
+def delete_query_bookmark_endpoint(name: Optional[str] = None, id: Optional[int] = None):
+    """Delete search query bookmark by name or id."""
+    try:
+        from src.infrastructure.database import init_db
+        init_db()
+        with get_db() as conn:
+            with conn:
+                cursor = conn.cursor()
+                if id is not None:
+                    cursor.execute("DELETE FROM query_bookmarks WHERE id = ?", (id,))
+                elif name:
+                    cursor.execute("DELETE FROM query_bookmarks WHERE name = ?", (name,))
+                return {"status": "success", "deleted_name": name, "deleted_id": id}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/search/sota-rag")
+@router.post("/api/search/sota-rag")
+def execute_sota_rag_endpoint(query: str = "", q: str = "", top_k: int = 5):
+    """Executes SOTA Sub-Query Decomposition, RRF-PageRank Hybrid Fusion, and Context Compression."""
+    search_q = query or q or ""
+    try:
+        from src.domain.sota_rag_engine import execute_sota_rag_search
+        return execute_sota_rag_search(search_q, top_k=top_k)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/self-rag")
+def execute_self_rag_critique_endpoint(query: str = "", chunks: List[str] = []):
+    """Evaluates Self-RAG reflection tokens ([IsRel], [IsSup]) for factual grounding."""
+    try:
+        from src.domain.self_rag_critique import critique_rag_passages
+        evaluated = critique_rag_passages(query, chunks)
+        return {"query": query, "evaluated_passages": evaluated, "status": "success"}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/search/parent-context")
+def get_parent_context_endpoint(file_ids: str = ""):
+    """Expands child chunk file IDs into full parent document contexts."""
+    try:
+        ids = [int(i.strip()) for i in file_ids.split(",") if i.strip().isdigit()]
+        from src.domain.parent_child_retrieval import expand_child_chunks_to_parents
+        parents = expand_child_chunks_to_parents(ids)
+        return {"parent_contexts": parents, "count": len(parents), "status": "success"}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/graph/multihop")
+def get_graph_multihop_endpoint(start_doc: str, target_doc: Optional[str] = None, max_hops: int = 3):
+    """Executes Multi-Hop GraphRAG BFS traversal between vault documents."""
+    try:
+        from src.domain.graph_multihop import find_multihop_pathways
+        return find_multihop_pathways(start_doc, target_doc=target_doc, max_hops=max_hops)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/search/hyde")
+@router.post("/api/search/hyde")
+def get_search_hyde_endpoint(query: str = "", q: str = ""):
+    """Generates Hypothetical Document Representation (HyDE) for query embedding synthesis."""
+    search_q = query or q or ""
+    try:
+        from src.domain.contextual_hyde import generate_hypothetical_document
+        return generate_hypothetical_document(search_q)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/recency-rerank")
+def execute_recency_rerank_endpoint(payload: Dict[str, Any] = Body({})):
+    """Reranks search candidates using exponential recency time-decay scoring."""
+    try:
+        candidates = payload.get("candidates", [])
+        decay_half_life_days = float(payload.get("decay_half_life_days", 30.0))
+        from src.domain.recency_decay import apply_recency_decay
+        reranked = apply_recency_decay(candidates, decay_half_life_days=decay_half_life_days)
+        return {"reranked_candidates": reranked, "count": len(reranked), "status": "success"}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/acl-trimmed-search")
+def execute_acl_trimmed_search_endpoint(payload: Dict[str, Any] = Body({})):
+    """Trims search result candidates based on user identity & Active Directory group memberships."""
+    user_context = payload.get("user_context", {})
+    results = payload.get("results", [])
+    try:
+        from src.domain.acl_permission_engine import trim_search_results_by_acl
+        authorized = trim_search_results_by_acl(user_context, results)
+        return {"authorized_results": authorized, "count": len(authorized), "status": "success"}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/redact-pii")
+def execute_redact_pii_endpoint(payload: Dict[str, Any] = Body({})):
+    """Redacts PII tokens from text to guarantee privacy before LLM context insertion."""
+    text = payload.get("text", "")
+    try:
+        from src.domain.pii_privacy_guard import redact_pii_from_text
+        return redact_pii_from_text(text)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/search/cross-lingual")
+@router.post("/api/search/cross-lingual")
+def execute_cross_lingual_endpoint(query: str = "", q: str = ""):
+    """Aligns multi-lingual search queries to English vault terminology."""
+    search_q = query or q or ""
+    try:
+        from src.domain.cross_lingual_aligner import align_cross_lingual_query
+        return align_cross_lingual_query(search_q)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/generate-citations")
+def generate_citations_endpoint(payload: Dict[str, Any] = Body({})):
+    """Maps retrieved passage text to exact file line numbers (filepath#L10-L25)."""
+    passages = payload.get("passages", [])
+    try:
+        from src.domain.source_citation_generator import generate_source_citations
+        citations = generate_source_citations(passages)
+        return {"citations": citations, "count": len(citations), "status": "success"}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/search/classify-intent")
+@router.post("/api/search/classify-intent")
+def classify_intent_endpoint(query: str = "", q: str = ""):
+    """Classifies user query intent (FACTUAL, COMPARATIVE, RELATIONAL, SUMMARIZATION)."""
+    search_q = query or q or ""
+    try:
+        from src.domain.query_intent_classifier import classify_query_intent
+        return classify_query_intent(search_q)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/graph/mermaid")
+@router.post("/api/graph/mermaid")
+def generate_graph_mermaid_endpoint(focus_doc: str = "", max_nodes: int = 15):
+    """Generates Mermaid.js graph diagram syntax for vault wikilink relationships."""
+    try:
+        from src.domain.graph_mermaid_generator import generate_mermaid_graph
+        return generate_mermaid_graph(focus_doc=focus_doc, max_nodes=max_nodes)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/explain-score")
+def explain_score_endpoint(payload: Dict[str, Any] = Body({})):
+    """Deconstructs and explains candidate search score components."""
+    candidate = payload.get("candidate", payload)
+    try:
+        from src.domain.rerank_score_explainer import explain_candidate_score
+        return explain_candidate_score(candidate)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/knowledge/resolve-conflicts")
+@router.post("/api/knowledge/resolve-conflicts")
+def resolve_conflicts_endpoint(topic: str = ""):
+    """Scans knowledge base documents for contradictory dates, numbers, or assertions."""
+    try:
+        from src.domain.conflict_resolver import detect_and_resolve_conflicts
+        return detect_and_resolve_conflicts(topic=topic)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/precache-context")
+def precache_context_endpoint(payload: Dict[str, Any] = Body({})):
+    """Speculatively pre-caches GraphRAG neighbor document contexts into memory."""
+    source_doc = payload.get("source_doc", "")
+    try:
+        from src.domain.predictive_precacher import precache_graph_neighborhood
+        return precache_graph_neighborhood(source_doc)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/search/bandit-route")
+@router.post("/api/search/bandit-route")
+def bandit_route_endpoint(intent: str = "FACTUAL"):
+    """Dynamically selects optimal retrieval strategy via Multi-Armed Bandit learning."""
+    try:
+        from src.domain.bandit_query_router import bandit_select_pipeline
+        return bandit_select_pipeline(intent=intent)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/speculative-rag")
+def speculative_rag_endpoint(payload: Dict[str, Any] = Body({})):
+    """Synthesizes and ranks 3 draft context candidate representations in parallel."""
+    query = payload.get("query", "")
+    passages = payload.get("passages", [])
+    try:
+        from src.domain.speculative_rag import synthesize_speculative_drafts
+        return synthesize_speculative_drafts(query, passages)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/knowledge/temporal-lineage")
+@router.post("/api/knowledge/temporal-lineage")
+def temporal_lineage_endpoint(filename: str = ""):
+    """Retrieves temporal change lineage and version history for vault documents."""
+    try:
+        from src.domain.temporal_rag_lineage import get_temporal_knowledge_lineage
+        return get_temporal_knowledge_lineage(filename=filename)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/hallucination-guard")
+def hallucination_guard_endpoint(payload: Dict[str, Any] = Body({})):
+    """Evaluates context coverage and calculates confidence score. Refuses if confidence < 0.65."""
+    query = payload.get("query", "")
+    passages = payload.get("passages", [])
+    try:
+        from src.domain.hallucination_guard import evaluate_hallucination_risk
+        return evaluate_hallucination_risk(query, passages)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/knowledge/semantic-drift")
+@router.post("/api/knowledge/semantic-drift")
+def semantic_drift_endpoint(term: str = ""):
+    """Audits term concept drift across vault document timestamps."""
+    try:
+        from src.domain.semantic_drift_monitor import audit_semantic_concept_drift
+        return audit_semantic_concept_drift(term=term)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/knowledge/generate-flashcards")
+def generate_flashcards_endpoint(payload: Dict[str, Any] = Body({})):
+    """Synthesizes Anki-compatible Q&A flashcards from vault passages and wikilinks."""
+    passages = payload.get("passages", [])
+    try:
+        from src.domain.anki_card_synthesizer import synthesize_anki_flashcards
+        return synthesize_anki_flashcards(passages)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/multi-agent-debate")
+def multi_agent_debate_endpoint(payload: Dict[str, Any] = Body({})):
+    """Simulates multi-agent adversarial debate over context validity and relevance."""
+    query = payload.get("query", "")
+    passages = payload.get("passages", [])
+    try:
+        from src.domain.multi_agent_debate import execute_multi_agent_debate
+        return execute_multi_agent_debate(query, passages)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

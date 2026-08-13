@@ -1,4 +1,4 @@
-import React, { useEffect, useState, lazy, Suspense } from 'react';
+import React, { Component, useEffect, useState, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './store/AppContext';
 import Sidebar from './components/Sidebar';
 import CommandPalette from './components/CommandPalette';
@@ -14,13 +14,39 @@ const ConfigView = lazy(() => import('./views/ConfigView'));
 const SettingsView = lazy(() => import('./views/SettingsView'));
 const LoginView = lazy(() => import('./views/LoginView'));
 
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
-  state = { hasError: false };
-  static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch(error: Error) { console.error('React Error Boundary:', error); }
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    (this as any).state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('React Error Boundary:', error, errorInfo);
+  }
+
   render() {
-    if (this.state.hasError) return <div style={{padding:'2rem',textAlign:'center'}}><h2>Something went wrong</h2><button onClick={() => this.setState({hasError:false})}>Retry</button></div>;
-    return this.props.children;
+    const state = (this as any).state as ErrorBoundaryState;
+    if (state?.hasError) {
+      return (
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <h2>Something went wrong</h2>
+          <button onClick={() => (this as any).setState({ hasError: false })}>Retry</button>
+        </div>
+      );
+    }
+    return (this as any).props.children;
   }
 }
 

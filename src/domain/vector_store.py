@@ -6,6 +6,7 @@ import sqlite3
 import threading
 import contextlib
 from typing import List, Dict, Tuple, Any
+from src.infrastructure.database import get_db_connection
 
 class DenseVectorStore:
     """
@@ -108,6 +109,49 @@ class DenseVectorStore:
                 results.append((doc_id, score, self.metadata.get(doc_id, {})))
 
         # N-log-K optimization conceptually via sort+slice
+        results.sort(key=lambda x: x[1], reverse=True)
+        return results[:top_k]
+
+    def search_nearest_2phase(self, query_vector: List[float], top_k: int = 10, coarse_dim: int = 64, candidate_k: int = 50) -> List[Tuple[str, float, Dict[str, Any]]]:
+        """
+        Two-phase Matryoshka Representation Learning (MRL) retrieval:
+        1. Coarse Pass: Fast cosine similarity on truncated vectors (coarse_dim) to retrieve top candidates.
+        2. Precision Pass: Full-dimension cosine rescoring on the top candidates.
+        # ponytail: 2-phase MRL coarse-to-fine filtering for sub-10ms similarity search
+        """
+        if not self.vectors or not query_vector:
+            return []
+
+        vec_len = len(query_vector)
+        if vec_len > self.dimension:
+            q_full = query_vector[:self.dimension]
+        else:
+            q_full = query_vector + [0.0] * (self.dimension - vec_len)
+
+        full_norm = math.sqrt(sum(v * v for v in q_full)) or 1.0
+        q_full_norm = tuple(v / full_norm for v in q_full)
+
+        actual_coarse = min(coarse_dim, self.dimension)
+        coarse_q = q_full_norm[:actual_coarse]
+        coarse_q_norm_val = math.sqrt(sum(v * v for v in coarse_q)) or 1.0
+        coarse_q_norm = tuple(v / coarse_q_norm_val for v in coarse_q)
+
+        coarse_candidates = []
+        with self._lock:
+            for doc_id, doc_vector in self.vectors.items():
+                coarse_doc = doc_vector[:actual_coarse]
+                coarse_doc_norm_val = math.sqrt(sum(v * v for v in coarse_doc)) or 1.0
+                coarse_score = sum(a * (b / coarse_doc_norm_val) for a, b in zip(coarse_q_norm, coarse_doc))
+                coarse_candidates.append((doc_id, coarse_score, doc_vector))
+
+        coarse_candidates.sort(key=lambda x: x[1], reverse=True)
+        top_candidates = coarse_candidates[:max(candidate_k, top_k * 3)]
+
+        results = []
+        for doc_id, _, doc_vector in top_candidates:
+            score = sum(a * b for a, b in zip(q_full_norm, doc_vector))
+            results.append((doc_id, score, self.metadata.get(doc_id, {})))
+
         results.sort(key=lambda x: x[1], reverse=True)
         return results[:top_k]
 

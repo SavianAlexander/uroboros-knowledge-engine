@@ -56,5 +56,15 @@ class TestAdvancedRAG(unittest.TestCase):
         empty_res = know.fetch_web_context("")
         self.assertEqual(empty_res, [])
 
+    def test_rrf_search_endpoint(self):
+        from fastapi.testclient import TestClient
+        from main import app
+        client = TestClient(app)
+        res = client.get("/api/search/rrf?query=accounting")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["mode"], "rrf_hybrid")
+        self.assertIn("results", data)
+
 if __name__ == "__main__":
     unittest.main()

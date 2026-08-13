@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 DB_TIMEOUT = 30.0
 
 class SQLiteConnectionPool:
-    def __init__(self, db_path: str, max_connections: int = 15, timeout: float = DB_TIMEOUT):
+    def __init__(self, db_path: str, max_connections: int = 8, timeout: float = DB_TIMEOUT):
         self.db_path = db_path
         self.timeout = timeout
         self.max_connections = max_connections
@@ -48,13 +48,15 @@ class SQLiteConnectionPool:
             with self.lock:
                 if self.created < self.max_connections:
                     self.created += 1
+                    if self.db_path and os.path.dirname(self.db_path):
+                        os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
                     conn = sqlite3.connect(self.db_path, timeout=self.timeout, check_same_thread=False)
                     conn.row_factory = sqlite3.Row
-                    # Enable WAL mode and memory-mapped I/O per-connection
+                    # Enable WAL mode and lightweight memory-mapped I/O per-connection
                     conn.execute("PRAGMA journal_mode = WAL")
                     conn.execute("PRAGMA synchronous = NORMAL")
-                    conn.execute("PRAGMA mmap_size = 268435456")
-                    conn.execute("PRAGMA cache_size = -16000")
+                    conn.execute("PRAGMA mmap_size = 67108864")
+                    conn.execute("PRAGMA cache_size = -4000")
                     return conn
             # Block until a connection is available if we are at max
             return self.pool.get()
@@ -211,6 +213,7 @@ def get_db():
         attempts = 0
         while attempts < 5:
             try:
+                os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
                 conn = sqlite3.connect(DB_FILE, check_same_thread=False, timeout=DB_TIMEOUT)
                 conn.row_factory = sqlite3.Row
                 conn.execute("PRAGMA journal_mode = WAL")
@@ -274,10 +277,17 @@ def init_db():
                     chunk_index INTEGER NOT NULL,
                     content TEXT NOT NULL,
                     embedding_json TEXT,
+                    chunk_hash TEXT,
                     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
                 )
             """)
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_file_id ON file_chunks(file_id)')
+
+            cursor.execute("PRAGMA table_info(file_chunks)")
+            fc_cols = [row[1] for row in cursor.fetchall()]
+            if 'chunk_hash' not in fc_cols:
+                cursor.execute("ALTER TABLE file_chunks ADD COLUMN chunk_hash TEXT")
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_hash ON file_chunks(chunk_hash)')
 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS tf_idf_index (
@@ -439,6 +449,18 @@ def init_db():
                 )
             """)
 
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS system_audit_ledger (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_type TEXT,
+                    description TEXT,
+                    timestamp REAL,
+                    metadata_json TEXT
+                )
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_ledger_timestamp ON system_audit_ledger(timestamp DESC)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_ledger_event_type ON system_audit_ledger(event_type)")
+
 
             cursor.execute("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS fts_file_chunks USING fts5(
@@ -550,6 +572,8 @@ def init_db():
 
 def run_maintenance():
     """Execute WAL checkpoint and incremental vacuum maintenance with safe connection management."""
+    if DB_FILE and os.path.dirname(DB_FILE):
+        os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
     with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
         with conn:
             cursor = conn.cursor()
@@ -592,3 +616,44 @@ def migrate_folder_path(old_dir: str, new_dir: str):
             cursor.execute("UPDATE files SET filepath = ? WHERE id = ?", (updated_path, fid))
             cursor.execute("UPDATE fts_files SET filepath = ? WHERE filepath = ?", (updated_path, fpath))
         conn.commit()
+
+
+def log_audit_event(event_type: str, description: str, metadata: dict = None):
+    """Log an audit event entry into system_audit_ledger."""
+    try:
+        import json
+        init_db()
+        metadata_str = json.dumps(metadata) if metadata else "{}"
+        with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
+            with conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO system_audit_ledger (event_type, description, timestamp, metadata_json)
+                    VALUES (?, ?, ?, ?)
+                """, (event_type, description, time.time(), metadata_str))
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error logging audit event: {e}")
+
+
+def get_audit_ledger(limit: int = 50) -> list:
+    """Retrieve recent system audit ledger entries."""
+    try:
+        import json
+        init_db()
+        with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, event_type, description, timestamp, metadata_json FROM system_audit_ledger ORDER BY timestamp DESC LIMIT ?", (limit,))
+            rows = cursor.fetchall()
+            results = []
+            for r in rows:
+                item = dict(r)
+                try:
+                    item["metadata"] = json.loads(item.get("metadata_json") or "{}")
+                except Exception:
+                    item["metadata"] = {}
+                results.append(item)
+            return results
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error getting audit ledger: {e}")
+        return []

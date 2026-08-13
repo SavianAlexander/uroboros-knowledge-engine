@@ -260,8 +260,9 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
     timeline_data: Dict[str, Dict[str, int]] = {}
 
     # Initialize last 7 days
-    from datetime import datetime, timedelta
-    today = datetime.utcnow().date()
+    from datetime import datetime, timedelta, timezone
+    today = datetime.now(timezone.utc).date()
+
     for i in range(6, -1, -1):
         dt_str = (today - timedelta(days=i)).strftime("%Y-%m-%d")
         timeline_data[dt_str] = {"date": dt_str[-5:], "searches": 0, "indexed": 0}

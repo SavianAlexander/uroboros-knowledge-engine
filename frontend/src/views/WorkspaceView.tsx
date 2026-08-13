@@ -101,7 +101,23 @@ function SplitWorkspace({ file, onClose }: any) {
     let cancelled = false;
     setContent(null);
     setInsights(null);
-    api.fileRaw(file.relative_path).then(res => { if (!cancelled) setContent(typeof res === 'string' ? { content: res } : (res || { content: '' })); }).catch(e => { console.error(e); if (!cancelled) setContent({ content: 'Failed to load file content.' }); });
+    api.fileRaw(file.relative_path)
+      .then(res => {
+        if (cancelled) return;
+        if (typeof res === 'string') {
+          setContent({ content: res });
+        } else if (res && typeof res.content === 'string') {
+          setContent({ content: res.content });
+        } else if (res && typeof res === 'object' && 'content' in res) {
+          setContent({ content: String((res as any).content ?? '') });
+        } else {
+          setContent({ content: typeof res === 'object' ? JSON.stringify(res, null, 2) : String(res ?? '') });
+        }
+      })
+      .catch(e => {
+        console.error(e);
+        if (!cancelled) setContent({ content: 'Failed to load file content.' });
+      });
     api.fileInsights(file.relative_path).then(res => { if (!cancelled) setInsights(res); }).catch(e => { console.error(e); if (!cancelled) setInsights({ summary: 'No summary available due to error.' }); });
     return () => { cancelled = true; };
   }, [file]);

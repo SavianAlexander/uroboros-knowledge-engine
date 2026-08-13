@@ -99,7 +99,7 @@ export default function GraphView() {
 
   useEffect(() => {
     return () => {
-      Object.values(materialCache.current).forEach(mat => {
+      Object.values(materialCache.current).forEach((mat: any) => {
         mat.map?.dispose();
         mat.dispose();
       });

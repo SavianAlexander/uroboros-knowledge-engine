@@ -17,17 +17,28 @@ export default function ConfigView() {
 
   const loadData = async () => {
     try {
-      const snaps = await api.snapshots();
-      setSnapshots(snaps.snapshots || []);
-    } catch (e) { console.error(e); setSnapshots([]); }
+      const snaps = await api.snapshots().catch(() => ({ snapshots: [] }));
+      setSnapshots(snaps?.snapshots || []);
+    } catch (e) {
+      console.error('Error loading snapshots:', e);
+      setSnapshots([]);
+    }
+
     try {
-      const peers = await api.syncPeers();
-      setSyncPeers(peers.peers || []);
-    } catch (e) { console.error(e); setSyncPeers([]); }
+      const peers = await api.syncPeers().catch(() => ({ peers: [] }));
+      setSyncPeers(peers?.peers || []);
+    } catch (e) {
+      console.error('Error loading sync peers:', e);
+      setSyncPeers([]);
+    }
+
     try {
-      const logs = await api.syncLogs();
-      setSyncLogs(logs.logs || []);
-    } catch (e) { console.error(e); setSyncLogs([]); }
+      const logs = await api.syncLogs().catch(() => ({ logs: [] }));
+      setSyncLogs(logs?.logs || []);
+    } catch (e) {
+      console.error('Error loading sync logs:', e);
+      setSyncLogs([]);
+    }
   };
 
   const handleCapture = async () => {

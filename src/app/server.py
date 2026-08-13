@@ -5,7 +5,7 @@ FastAPI application server instantiation, middleware, static asset mounts, and r
 import os
 from pathlib import Path
 from fastapi import FastAPI
-from fastapi.responses import UJSONResponse
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
             except Exception as e:
                 import logging; logging.warning(f"Swallowed error in server.py: {e}")
 
-app = FastAPI(title="Uroboros Knowledge Database", default_response_class=UJSONResponse, lifespan=lifespan)
+app = FastAPI(title="Uroboros Knowledge Database", default_response_class=JSONResponse, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 if os.path.exists("frontend/dist/assets"):
@@ -50,7 +50,7 @@ def get_index():
     asset_path = Path("frontend/dist/index.html")
     if not asset_path.exists():
         # Fallback for dev mode
-        return FileResponse("index.html") if os.path.exists("index.html") else UJSONResponse({"error": "UI build not found. Run npm run build in frontend/."})
+        return FileResponse("index.html") if os.path.exists("index.html") else JSONResponse({"error": "UI build not found. Run npm run build in frontend/."})
     return FileResponse(str(asset_path))
 
 from fastapi import Depends

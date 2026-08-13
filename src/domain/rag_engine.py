@@ -391,6 +391,8 @@ def extract_advanced_rag_context(
             "filepath": fpath,
             "confidence_score": score
         })
+        context_blocks.append(f"{citation_str}\n{snippet}")
+
     # 2-Hop GraphRAG Traversal
     graph_context_blocks = []
     try:

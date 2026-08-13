@@ -82,15 +82,19 @@ class QueryCache:
     def invalidate(self):
         with self.lock:
             self.mem_cache.clear()
-            try:
-                with db_conn() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("DELETE FROM query_cache")
-                    conn.commit()
-            except (KeyboardInterrupt, MemoryError, SystemExit):
-                raise
-            except Exception as e:
-                import logging; logging.warning(f"Swallowed error in state.py: {e}")
+            for attempt in range(5):
+                try:
+                    with db_conn() as conn:
+                        cursor = conn.cursor()
+                        cursor.execute("DELETE FROM query_cache")
+                        conn.commit()
+                        break
+                except (KeyboardInterrupt, MemoryError, SystemExit):
+                    raise
+                except Exception as e:
+                    if attempt == 4:
+                        import logging; logging.warning(f"Swallowed error in state.py: {e}")
+                    time.sleep(0.1 * (attempt + 1))
 
     clear = invalidate
 

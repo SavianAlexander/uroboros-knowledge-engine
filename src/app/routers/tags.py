@@ -186,7 +186,7 @@ def add_synonym_endpoint(req: SynonymRequest):
         conn.commit()
     return {"status": "success", "term": req.term}
 
-@router.get("/api/bookmarks")
+@router.get("/api/tags/bookmarks")
 def get_bookmarks_endpoint():
     """List all query bookmarks."""
     with get_db() as conn:
@@ -216,7 +216,6 @@ def get_bookmarks_endpoint():
             bookmarks.append(d)
         return {"bookmarks": bookmarks}
 
-@router.post("/api/bookmarks")
 @router.post("/api/bookmarks/add")
 def add_bookmark_endpoint(req: BookmarkRequest):
     """Add or update a query bookmark."""
@@ -230,9 +229,9 @@ def add_bookmark_endpoint(req: BookmarkRequest):
         conn.commit()
     return {"status": "success", "name": b_name}
 
-@router.delete("/api/bookmarks")
 @router.post("/api/bookmarks/delete")
 def delete_bookmark_endpoint(req: Optional[DeleteBookmarkRequest] = None, name: Optional[str] = None, id: Optional[str] = None):
+
     """Delete a query bookmark by ID or name."""
     b_id = id
     b_name = (req.name if req else None) or name

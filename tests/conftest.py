@@ -26,14 +26,17 @@ def _patched_os_remove(path, *args, **kwargs):
 @functools.wraps(_orig_shutil_rmtree)
 def _patched_shutil_rmtree(path, *args, **kwargs):
     def on_exc(func, p, exc_info):
-        exc_value = exc_info[1]
+        exc_value = exc_info[1] if isinstance(exc_info, tuple) else exc_info
         if isinstance(exc_value, (PermissionError, OSError)) and getattr(exc_value, "winerror", None) == 32:
             reset_db_connections()
             func(p)
         else:
             raise exc_value
     
-    kwargs["onerror"] = on_exc
+    if sys.version_info >= (3, 12):
+        kwargs["onexc"] = on_exc
+    else:
+        kwargs["onerror"] = on_exc
     _orig_shutil_rmtree(path, *args, **kwargs)
 
 @functools.wraps(_orig_os_unlink)

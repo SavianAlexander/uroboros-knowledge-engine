@@ -126,7 +126,9 @@ from src.domain.web_search import (
     fetch_web_context
 )
 
-
+def search_knowledge(query: str, limit: int = 10):
+    """Primary Hybrid RAG search entrypoint combining FTS5 BM25 and Vector Cosine similarity via RRF."""
+    return MiniVectorEngine.search_hybrid_rrf(query, top_k=limit)
 
 
 def main():

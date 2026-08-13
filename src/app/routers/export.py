@@ -109,3 +109,45 @@ def export_pdf_report_endpoint(style_template: str = "compact"):
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in export.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/export/vault/json")
+def export_vault_json_endpoint():
+    """Export comprehensive vault inventory, tags, and vector chunk statistics as structured JSON download."""
+    try:
+        import time
+        import sqlite3
+        import json
+        from fastapi.responses import Response
+        with get_db() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, filename, filepath, file_size, mime_type, modified_at, tags FROM files")
+            files_data = [dict(r) for r in cursor.fetchall()]
+
+            cursor.execute("SELECT file_id, COUNT(*) as chunks, COUNT(CASE WHEN embedding_json IS NOT NULL AND embedding_json != '[]' THEN 1 END) as embedded FROM file_chunks GROUP BY file_id")
+            chunk_stats = {r["file_id"]: {"chunks": r["chunks"], "embedded": r["embedded"]} for r in cursor.fetchall()}
+
+            for f in files_data:
+                fid = f["id"]
+                st = chunk_stats.get(fid, {"chunks": 0, "embedded": 0})
+                f["total_chunks"] = st["chunks"]
+                f["embedded_chunks"] = st["embedded"]
+
+            payload = {
+                "system": "Uroboros Knowledge Engine",
+                "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "total_documents": len(files_data),
+                "documents": files_data
+            }
+
+        return Response(
+            content=json.dumps(payload, indent=2),
+            media_type="application/json",
+            headers={"Content-Disposition": "attachment; filename=vault_inventory.json"}
+        )
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in export.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

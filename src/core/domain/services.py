@@ -180,6 +180,11 @@ def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> List[str
         text = text[:10_000_000]
 
     lines = text.splitlines(keepends=True)
+    if len(lines) == 1 and len(lines[0]) > chunk_size:
+        stride = max(1, chunk_size - overlap)
+        single_line = lines[0]
+        return [single_line[i:i + chunk_size] for i in range(0, len(single_line), stride)]
+
     chunks = []
     curr_chunk = []
     curr_size = 0

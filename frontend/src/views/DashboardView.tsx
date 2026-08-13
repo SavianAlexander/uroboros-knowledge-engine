@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { glassCardClasses } from '../lib/utils';
+import SystemControlsCard from '../components/SystemControlsCard';
 import { Activity, HardDrive, FileText, Zap, Clock, CheckCircle2, XCircle, Search } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 
@@ -62,6 +63,8 @@ export default function DashboardView() {
         <StatCard icon={<FileText className="text-emerald-600 dark:text-emerald-400" />} title="Tags Processed" value={systemStats?.total_tags?.toLocaleString() ?? '...'} sub="Semantic cluster mapped" />
         <StatCard icon={<Zap className="text-amber-600 dark:text-amber-400" />} title="Active Triggers" value={triggers.length.toString()} sub="Workflow automations" />
       </div>
+
+      <SystemControlsCard />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className={`${glassCardClasses} p-6 col-span-1 lg:col-span-2 flex flex-col`}>

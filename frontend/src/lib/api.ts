@@ -14,13 +14,24 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
   const doFetch = async () => {
     let res: Response;
+    const customHeaders: Record<string, string> = {};
+    if (options?.headers) {
+      if (options.headers instanceof Headers) {
+        options.headers.forEach((value, key) => { customHeaders[key] = value; });
+      } else if (Array.isArray(options.headers)) {
+        options.headers.forEach(([key, value]) => { customHeaders[key] = value; });
+      } else {
+        Object.assign(customHeaders, options.headers);
+      }
+    }
+
     try {
       res = await fetch(`${BASE_URL}${endpoint}`, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeaders(),
-          ...(options?.headers || {}),
+          ...customHeaders,
         },
       });
     } catch (e) {
@@ -51,6 +62,7 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
 }
 
 export const api = {
+  fetchAPI: fetchAPI,
   // Health & Stats
   health: () => fetchAPI<any>('/health'),
   stats: () => fetchAPI<any>('/stats'),
@@ -61,6 +73,11 @@ export const api = {
   searchActivity: () => fetchAPI<any>('/analytics/search-activity'),
   recentSearches: () => fetchAPI<any>('/search/history'),
   fileTree: () => fetchAPI<any>('/file/tree'),
+
+  // Vector Engine
+  vectorMetrics: () => fetchAPI<any>('/vector/metrics'),
+  unifiedVectorSearch: (query: string, limit: number = 10, mode?: string) =>
+    fetchAPI<any>(`/vector/search/unified?query=${encodeURIComponent(query)}&limit=${limit}${mode ? `&mode=${mode}` : ''}`),
 
   // Search
   search: (query: string, mode: string, threshold: number) =>
@@ -164,4 +181,12 @@ export const api = {
   getNotes: (filepath: string) => fetchAPI<any>(`/notes?path=${encodeURIComponent(filepath)}`),
   saveNote: (filepath: string, content: string) =>
     fetchAPI<any>('/notes', { method: 'POST', body: JSON.stringify({ filepath, content }) }),
+
+  // System Maintenance, Backup, GraphML Export & Benchmark
+  systemMaintenance: () => fetchAPI<any>('/system/maintenance', { method: 'POST' }),
+  systemBackup: () => fetchAPI<any>('/system/backup', { method: 'POST' }),
+  listBackups: () => fetchAPI<any>('/system/backups'),
+  searchBenchmark: (query: string = 'accounting standards') => fetchAPI<any>(`/search/benchmark?query=${encodeURIComponent(query)}`),
+  exportGraphML: () => fetch(`${BASE_URL}/graph/export`, { headers: { ...getAuthHeaders() } }).then(r => r.blob()),
+  exportVaultJSON: () => fetchAPI<any>('/export/vault/json'),
 };

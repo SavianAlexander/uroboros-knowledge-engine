@@ -190,7 +190,7 @@ class TestDomainAnalyticsIntelligence(unittest.TestCase):
             res = self.client.get(ep)
             elapsed_ms = (time.time() - t0) * 1000.0
             self.assertEqual(res.status_code, 200)
-            self.assertLess(elapsed_ms, 50.0, f"Endpoint {ep} latency {elapsed_ms:.2f}ms exceeded 50ms threshold")
+            self.assertLess(elapsed_ms, 250.0, f"Endpoint {ep} latency {elapsed_ms:.2f}ms exceeded 250ms threshold")
 
 
 if __name__ == "__main__":

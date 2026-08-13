@@ -100,17 +100,46 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
     try:
         if os.path.exists(filepath) and os.path.getsize(filepath) > 50 * 1024 * 1024:
             return f"[File Size Exceeds 50MB - Extraction Skipped: {os.path.basename(filepath)}]", []
+        if suffix == '.epub':
+            try:
+                import zipfile
+                epub_texts = []
+                with zipfile.ZipFile(filepath, 'r') as z:
+                    for name in z.namelist():
+                        if name.endswith(('.html', '.xhtml', '.xml', '.htm')):
+                            raw = z.read(name).decode('utf-8', errors='ignore')
+                            clean_text = re.sub(r'<[^>]+>', ' ', raw)
+                            clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+                            if len(clean_text) > 30:
+                                epub_texts.append(clean_text)
+                return "\n\n".join(epub_texts), []
+            except Exception as e:
+                return f"[EPUB Extraction Error: {str(e)}]", []
         if suffix == '.pdf':
             try:
+                # Primary high-performance engine: PyMuPDF (fitz)
+                try:
+                    import fitz
+                    doc = fitz.open(filepath)
+                    page_texts = [page.get_text() for page in doc]
+                    extracted = "\n".join(page_texts)
+                    doc.close()
+                    if len(extracted.strip()) >= 50:
+                        return extracted, []
+                except Exception:
+                    pass
+
+                # Fallback engine: pypdf
+                import logging
+                logging.getLogger("pypdf").setLevel(logging.ERROR)
                 reader = pypdf.PdfReader(filepath)
                 page_texts = []
                 for page in reader.pages:
-                    txt = ""
                     try:
-                        txt = page.extract_text(extraction_mode="layout") or ""
-                    except Exception:
                         txt = page.extract_text() or ""
-                    page_texts.append(txt)
+                        page_texts.append(txt)
+                    except Exception:
+                        pass
                 extracted = "\n".join(page_texts)
                 if len(extracted.strip()) < 50:
                     ocr_res, ocr_coords = extract_pdf_ocr(filepath)
@@ -118,7 +147,7 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
                         return ocr_res, ocr_coords
                     return f"[Parsing Error: Unreadable PDF content]", []
                 return extracted, []
-            except (KeyboardInterrupt, MemoryError, SystemExit):
+            except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
                 import logging; logging.getLogger(__name__).exception(f"Swallowed error in parsers.py: {e}")

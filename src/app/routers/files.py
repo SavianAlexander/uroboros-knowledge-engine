@@ -6,9 +6,9 @@ import os
 import shutil
 import mimetypes
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Body
 from fastapi.responses import FileResponse
 import logging
 
@@ -353,22 +353,29 @@ def get_job_status(job_id: str):
     return job
 
 @router.get("/api/file/summary")
-def get_file_summary_endpoint(path: str):
-    """Retrieve or generate concise document summary."""
-    verify_path_containment(path)
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="File not found")
-    try:
-        with open(path, "r", encoding="utf-8", errors="ignore") as f:
-            text = f.read()
-        summary = generate_summary(text)
-        takeaways = generate_key_takeaways(text)
-        return {"filepath": path, "summary": summary, "takeaways": takeaways}
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+def get_file_summary_endpoint(filepath: Optional[str] = "", path: Optional[str] = "", max_sentences: int = 3):
+    """Retrieve or generate concise document summary using TF-IDF sentence ranking."""
+    fp = filepath or path or ""
+    verify_path_containment(fp)
+    
+    text = ""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT content FROM files WHERE filepath = ?", (fp,))
+        row = cursor.fetchone()
+        if row:
+            text = row[0] or ""
+        elif fp and os.path.exists(fp):
+            with open(fp, "r", encoding="utf-8", errors="ignore") as f:
+                text = f.read()
+
+    from src.domain.extractive_summarizer import summarize_text
+    result = summarize_text(text, max_sentences=max_sentences)
+    takeaways = generate_key_takeaways(text) if text else []
+    result["filepath"] = fp
+    result["path"] = fp
+    result["takeaways"] = takeaways
+    return result
 
 @router.get("/api/file/revisions")
 def get_file_revisions_endpoint(path: str):
@@ -485,11 +492,133 @@ def open_file_endpoint(req: OpenFileRequest):
     """Open file in native operating system default app."""
     fp = req.get_path()
     verify_path_containment(fp)
-    if not os.path.exists(fp):
-        raise HTTPException(status_code=404, detail="File not found")
     try:
         os.startfile(fp)
         return {"status": "opened", "filepath": fp}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/file/diff")
+def file_diff_endpoint(file_a: str, file_b: str):
+    """Line-by-line comparison diff endpoint between two files or document revisions."""
+    verify_path_containment(file_a)
+    verify_path_containment(file_b)
+    
+    text_a = ""
+    text_b = ""
+    
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT content FROM files WHERE filepath = ?", (file_a,))
+        row_a = cursor.fetchone()
+        if row_a:
+            text_a = row_a[0] or ""
+        elif os.path.exists(file_a):
+            with open(file_a, "r", encoding="utf-8", errors="ignore") as f:
+                text_a = f.read()
+
+        cursor.execute("SELECT content FROM files WHERE filepath = ?", (file_b,))
+        row_b = cursor.fetchone()
+        if row_b:
+            text_b = row_b[0] or ""
+        elif os.path.exists(file_b):
+            with open(file_b, "r", encoding="utf-8", errors="ignore") as f:
+                text_b = f.read()
+
+    from src.domain.file_diff import compare_text_content
+    result = compare_text_content(text_a, text_b, label_a=os.path.basename(file_a), label_b=os.path.basename(file_b))
+    result["file_a"] = file_a
+    result["file_b"] = file_b
+    return result
+
+
+@router.get("/api/file/entities")
+def file_entities_endpoint(filepath: str = "", path: str = "", top_k: int = 10):
+    """Extracts capitalized domain entities and TF-IDF terms from document content."""
+    fp = filepath or path or ""
+    verify_path_containment(fp)
+    
+    content = ""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT content FROM files WHERE filepath = ?", (fp,))
+        row = cursor.fetchone()
+        if row:
+            content = row[0] or ""
+        elif fp and os.path.exists(fp):
+            with open(fp, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+
+    from src.domain.entity_extractor import extract_entities_from_text
+    result = extract_entities_from_text(content, top_k=top_k)
+    result["filepath"] = fp
+    return result
+
+
+@router.get("/api/file/readability")
+def file_readability_endpoint(filepath: str = "", path: str = ""):
+    """Calculates Flesch Reading Ease, Flesch-Kincaid Grade Level, and Sentiment Polarity for a document."""
+    fp = filepath or path or ""
+    verify_path_containment(fp)
+    
+    content = ""
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT content FROM files WHERE filepath = ?", (fp,))
+            row = cursor.fetchone()
+            if row:
+                content = row[0] or ""
+    except Exception:
+        pass
+
+    if not content and fp and os.path.exists(fp):
+        with open(fp, "r", encoding="utf-8", errors="ignore") as f:
+            content = f.read()
+
+    from src.domain.readability_analyzer import analyze_readability
+    result = analyze_readability(content)
+    result["filepath"] = fp
+    return result
+
+
+@router.get("/api/vault/duplicates")
+def get_vault_duplicates_endpoint(threshold: float = 0.80):
+    """Scans vault documents for near-duplicate content using MinHash Jaccard similarity."""
+    try:
+        from src.domain.near_duplicate_detector import detect_near_duplicates
+        return detect_near_duplicates(similarity_threshold=threshold)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/graph/pagerank")
+def get_graph_pagerank_endpoint():
+    """Computes global PageRank centrality scores across vault document wikilinks."""
+    try:
+        from src.domain.graph_pagerank import compute_graph_pagerank
+        return compute_graph_pagerank()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/file/parse-multimodal")
+def parse_multimodal_document_endpoint(payload: Dict[str, Any] = Body({})):
+    """Extracts structured tables, key-value form fields, and checkboxes from document text."""
+    text = payload.get("text", "")
+    try:
+        from src.domain.multimodal_ocr_parser import parse_multimodal_document_layout
+        return parse_multimodal_document_layout(text)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:

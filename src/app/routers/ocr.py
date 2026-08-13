@@ -7,7 +7,7 @@ import tempfile
 import asyncio
 from typing import Dict, Any, List
 from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException
-from fastapi.responses import StreamingResponse, UJSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from src.domain.ocr_pipeline import HybridPDFIngestionEngine
 
 router = APIRouter(prefix="/api/ingest", tags=["Ingestion & OCR"])
@@ -16,7 +16,7 @@ engine = HybridPDFIngestionEngine()
 _ingestion_queue: List[Dict[str, Any]] = []
 
 
-@router.post("/pdf", response_class=UJSONResponse)
+@router.post("/pdf", response_class=JSONResponse)
 async def ingest_pdf_file(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     """
     Ingest a PDF document, extract layout/text, calculate OCR confidence, and enqueue for RAG indexing.
@@ -44,19 +44,19 @@ async def ingest_pdf_file(background_tasks: BackgroundTasks, file: UploadFile = 
     }
     _ingestion_queue.append(queue_item)
 
-    return UJSONResponse(content={
+    return JSONResponse(content={
         "status": "success",
         "data": result,
         "queue_item": queue_item
     })
 
 
-@router.get("/queue", response_class=UJSONResponse)
+@router.get("/queue", response_class=JSONResponse)
 def get_ingestion_queue():
     """
     Retrieve live in-memory PDF/OCR ingestion queue items.
     """
-    return UJSONResponse(content={
+    return JSONResponse(content={
         "total_queued": len(_ingestion_queue),
         "queue": _ingestion_queue
     })

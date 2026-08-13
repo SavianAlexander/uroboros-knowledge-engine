@@ -55,5 +55,21 @@ services:
         max-file: "3"
     restart: unless-stopped
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: uroboros_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    devices:
+      - "/dev/kfd:/dev/kfd"
+      - "/dev/dri:/dev/dri"
+    environment:
+      - HSA_OVERRIDE_GFX_VERSION=10.3.0
+    restart: unless-stopped
+
 volumes:
   uroboros_data:
+  ollama_data:
+

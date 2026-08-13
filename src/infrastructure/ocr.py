@@ -57,10 +57,11 @@ def extract_ocr_text_structured(filepath):
     if HAS_WINRT:
         try:
             try:
-                loop = asyncio.get_event_loop()
+                loop = asyncio.get_running_loop()
             except RuntimeError:
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
+
 
             if loop.is_running():
                 import concurrent.futures

@@ -1,0 +1,40 @@
+"""
+Zero-dependency Rerank Search Score Deconstruction Explainer Engine.
+Provides human-readable breakdowns explaining WHY candidate documents ranked at specific positions.
+"""
+
+from typing import Dict, Any, List
+
+
+def explain_candidate_score(candidate: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Deconstructs candidate search score into component weights and explanations.
+    Zero-dependency stdlib implementation.
+    """
+    filename = candidate.get("filename", "document.md")
+    fts_rank = candidate.get("fts_rank", 1)
+    pagerank_score = candidate.get("pagerank_score", 0.001)
+    recency_multiplier = candidate.get("recency_multiplier", 1.0)
+    final_score = candidate.get("final_score") or candidate.get("rrf_score") or 0.05
+
+    bm25_weight = round(1.0 / (60.0 + fts_rank), 6)
+    pr_boost = round(pagerank_score * 10.0, 6)
+
+    explanation = (
+        f"Document '{filename}' achieved a Final Score of {final_score:.6f}.\n"
+        f"• Keyword FTS5 BM25 Rank #{fts_rank} contributed {bm25_weight:.6f} points.\n"
+        f"• Knowledge Graph PageRank Centrality ({pagerank_score:.6f}) contributed a boost of {pr_boost:.6f} points.\n"
+        f"• Recency Time-Decay Multiplier applied: {recency_multiplier:.4f}x."
+    )
+
+    return {
+        "filename": filename,
+        "final_score": final_score,
+        "score_components": {
+            "bm25_weight": bm25_weight,
+            "pagerank_boost": pr_boost,
+            "recency_multiplier": recency_multiplier
+        },
+        "explanation": explanation,
+        "status": "success"
+    }

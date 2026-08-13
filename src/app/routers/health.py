@@ -216,3 +216,106 @@ def restore_snapshot_endpoint(timestamp: int):
     if not success:
         raise HTTPException(status_code=404, detail="Snapshot not found or invalid")
     return {"status": "success", "restored_timestamp": timestamp}
+
+
+@router.post("/api/system/maintenance")
+def execute_system_maintenance_endpoint():
+    """Trigger WAL checkpointing, incremental page vacuuming, and DB optimization."""
+    try:
+        from src.infrastructure.database import init_db
+        init_db()
+        run_maintenance()
+        stats = db_status()
+        return {
+            "status": "success",
+            "message": "WAL maintenance, page defragmentation, and query optimization completed.",
+            "database": stats
+        }
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/system/backup")
+def execute_system_backup_endpoint():
+    """Triggers an online atomic database snapshot backup."""
+    try:
+        from src.infrastructure.database import init_db
+        init_db()
+        from src.infrastructure.backup_scheduler import create_database_backup
+        result = create_database_backup(_infra_db.DB_FILE)
+        return result
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/system/backups")
+def list_system_backups_endpoint():
+    """Lists available snapshot database backup files."""
+    try:
+        from src.infrastructure.backup_scheduler import list_backups
+        backups = list_backups()
+        return {"backups": backups, "count": len(backups)}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/system/audit-ledger")
+def get_audit_ledger_endpoint(limit: int = 50):
+    """Retrieve system audit ledger event history."""
+    try:
+        from src.infrastructure.database import get_audit_ledger
+        events = get_audit_ledger(limit=limit)
+        return {"events": events, "count": len(events)}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/system/telemetry")
+def get_system_telemetry_endpoint():
+    """Retrieve live OS, Python runtime, and SQLite telemetry stats."""
+    try:
+        from src.domain.system_telemetry import gather_system_telemetry
+        return gather_system_telemetry()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/system/vector-health")
+def get_vector_health_endpoint():
+    """Retrieve vector embedding coverage and index health metrics."""
+    try:
+        from src.domain.vector_health_monitor import audit_vector_health
+        return audit_vector_health()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/system/knowledge-healing")
+def get_knowledge_healing_endpoint():
+    """Retrieve autonomous knowledge base self-healing and orphan audit metrics."""
+    try:
+        from src.domain.knowledge_self_healing import audit_knowledge_self_healing
+        return audit_knowledge_self_healing()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
