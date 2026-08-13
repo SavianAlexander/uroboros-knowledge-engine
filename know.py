@@ -66,7 +66,6 @@ from src.core.domain.services import (
     chunk_text_hierarchical,
     expand_synonyms,
     extract_ai_tags,
-    generate_hyde_expansion,
     generate_key_takeaways,
     generate_summary,
     lookup_document_metadata_category,

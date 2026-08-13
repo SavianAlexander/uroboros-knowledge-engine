@@ -15,8 +15,8 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.infrastructure.parsers import extract_content
-from src.infrastructure.database import get_db, DB_FILE
-from src.core.embeddings import generate_embedding
+from src.infrastructure.database import get_db, DB_FILE, run_maintenance
+from src.core.embeddings import generate_embedding, generate_embeddings_batch
 from src.core.domain.services import chunk_text
 from src.infrastructure.vector_engine import extract_ai_tags, get_file_acl
 
