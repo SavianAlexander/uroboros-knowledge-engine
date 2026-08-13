@@ -111,6 +111,13 @@ def rrf_rerank(fts_results: List[Dict[str, Any]], vector_results: List[Dict[str,
         if key not in item_map:
             item_map[key] = dict(item)
 
+    reranked = []
+    for key, score in sorted(scores.items(), key=lambda x: x[1], reverse=True):
+        item = item_map[key]
+        item["rrf_score"] = round(score, 6)
+        reranked.append(item)
+    return reranked
+
 def okapi_bm25_rerank(documents: List[Dict[str, Any]], query: str, k1: float = 1.5, b: float = 0.75, decay_lambda: float = 0.0001) -> List[Dict[str, Any]]:
     """
     Heavy Upgrade: Native Zero-Dependency Okapi BM25 search ranking engine with term saturation (k1=1.5),
@@ -483,16 +490,27 @@ def extract_advanced_rag_context(
     try:
         conn = get_db()
         cursor = conn.cursor()
-        for hit in deduped_hits[:3]:
-            fpath = hit.get("filepath", "")
-            if not fpath:
-                continue
-            cursor.execute("SELECT tag FROM tags WHERE file_id = (SELECT id FROM files WHERE filepath = ?)", (fpath,))
-            file_tags = [r[0] for r in cursor.fetchall()]
-            if file_tags:
-                placeholders = ",".join(["?"] * len(file_tags))
-                cursor.execute(f"SELECT DISTINCT f.filename FROM files f JOIN tags t ON f.id = t.file_id WHERE t.tag IN ({placeholders}) AND f.filepath != ? LIMIT 3", (*file_tags, fpath))
-                neighbors = [r[0] for r in cursor.fetchall()]
+        
+        fpaths = [hit.get("filepath") for hit in deduped_hits[:3] if hit.get("filepath")]
+        if fpaths:
+            placeholders = ",".join(["?"] * len(fpaths))
+            # O(1) Bipartite Graph Traversal: Files -> Tags -> Files
+            cursor.execute(f"""
+                SELECT DISTINCT f1.filepath, f2.filename 
+                FROM files f1 
+                JOIN tags t1 ON f1.id = t1.file_id 
+                JOIN tags t2 ON t1.tag = t2.tag 
+                JOIN files f2 ON t2.file_id = f2.id 
+                WHERE f1.filepath IN ({placeholders}) AND f1.id != f2.id
+            """, tuple(fpaths))
+            
+            neighbors_map = {}
+            for row in cursor.fetchall():
+                neighbors_map.setdefault(row[0], []).append(row[1])
+                
+            for hit in deduped_hits[:3]:
+                fpath = hit.get("filepath", "")
+                neighbors = neighbors_map.get(fpath, [])[:3]  # Enforce LIMIT 3 per node
                 if neighbors:
                     graph_context_blocks.append(f"[Graph Context: '{hit.get('filename')}' connected to: {', '.join(neighbors)}]")
     except Exception:
