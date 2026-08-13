@@ -17,7 +17,14 @@ def build_raptor_tree(doc_chunks: List[Dict[str, str]]) -> Dict[str, Any]:
     if not doc_chunks:
         return {"status": "empty", "tree_depth": 0, "level_0": [], "level_1": []}
 
-    level_0 = [{"chunk_id": f"l0_{i}", "text": c.get("text", ""), "source": c.get("source", "")} for i, c in enumerate(doc_chunks)]
+    level_0 = [
+        {
+            "chunk_id": f"l0_{i}",
+            "text": c.get("text", "") if isinstance(c, dict) else str(c),
+            "source": c.get("source", "") if isinstance(c, dict) else ""
+        }
+        for i, c in enumerate(doc_chunks)
+    ]
     
     # Aggregate level 0 chunks into level 1 summary nodes (groups of 3)
     level_1 = []

@@ -17,9 +17,10 @@ class HyperGraphRouter:
 
     def add_hyper_edge(self, edge_id: str, nodes: Set[str], metadata: Dict[str, Any] = None):
         """Adds an N-way hyper-edge connecting arbitrary sets of entities/nodes."""
+        safe_nodes = set(str(n) for n in nodes if isinstance(n, (str, int))) if nodes else set()
         self.hyper_edges.append({
             "edge_id": edge_id,
-            "nodes": set(nodes),
+            "nodes": safe_nodes,
             "metadata": metadata or {}
         })
 

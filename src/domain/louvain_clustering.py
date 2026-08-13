@@ -40,8 +40,9 @@ def apply_louvain_communities(nodes: List[Dict[str, Any]], edges: List[Dict[str,
 
     # Enrich node dictionaries
     for n in nodes:
-        cid = node_community.get(n["id"], 0)
-        n["community_id"] = cid
-        n["community_color"] = PALETTE[cid % len(PALETTE)]
+        if isinstance(n, dict) and "id" in n:
+            cid = node_community.get(n["id"], 0)
+            n["community_id"] = cid
+            n["community_color"] = PALETTE[cid % len(PALETTE)]
 
     return nodes
