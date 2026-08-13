@@ -26,11 +26,18 @@ def generate_refactoring_patch(
         tofile=f"b/{filepath}",
         n=3
     )
-    patch_str = "".join(diff)
+    diff_list = list(diff)
+    patch_str = "".join(diff_list)
+
+    additions = sum(1 for line in diff_list if line.startswith("+") and not line.startswith("+++"))
+    deletions = sum(1 for line in diff_list if line.startswith("-") and not line.startswith("---"))
 
     return {
         "status": "success",
         "filepath": filepath,
         "has_changes": len(patch_str.strip()) > 0,
+        "additions_count": additions,
+        "deletions_count": deletions,
+        "total_changes": additions + deletions,
         "patch": patch_str
     }
