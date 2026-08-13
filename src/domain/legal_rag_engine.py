@@ -36,7 +36,7 @@ class LegalRegulatoryRAGEngine:
     @classmethod
     def extract_legal_citations(cls, text: str) -> List[str]:
         """Extract explicit statutory & regulatory clause citations from text with zero recompilation overhead."""
-        if not text:
+        if not text or not isinstance(text, str):
             return []
         
         nfc_text = unicodedata.normalize("NFC", text)
@@ -54,7 +54,7 @@ class LegalRegulatoryRAGEngine:
         Hierarchical Regulatory Structure Chunking.
         Splits legal texts at Title, Section (§), and Article boundaries to preserve statutory context.
         """
-        if not text:
+        if not text or not isinstance(text, str):
             return []
 
         nfc_text = unicodedata.normalize("NFC", text)
@@ -77,7 +77,7 @@ class LegalRegulatoryRAGEngine:
 
             chunks.append({
                 "chunk_index": idx,
-                "file_path": file_path,
+                "file_path": str(file_path or ""),
                 "section_header": section_header,
                 "content": sec_text,
                 "citations": cites,
@@ -90,7 +90,7 @@ class LegalRegulatoryRAGEngine:
     @classmethod
     def classify_regulatory_frameworks(cls, text: str) -> List[str]:
         """Classify text against major compliance frameworks (GDPR, HIPAA, SOC 2, FAR, EU AI Act)."""
-        if not text:
+        if not text or not isinstance(text, str):
             return []
         detected = []
         for name, compiled_re in cls.COMPILED_FRAMEWORKS.items():
