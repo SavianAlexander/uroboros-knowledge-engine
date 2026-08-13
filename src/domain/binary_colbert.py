@@ -21,7 +21,9 @@ def _quantize_to_binary_bitpack(vector: List[float]) -> int:
 
 def hamming_distance(bitpack_a: int, bitpack_b: int) -> int:
     """Computes Hamming distance between two 64-bit integer bitpacks via XOR bit count."""
-    return bin(bitpack_a ^ bitpack_b).count('1')
+    a = int(bitpack_a) if isinstance(bitpack_a, (int, float)) else 0
+    b = int(bitpack_b) if isinstance(bitpack_b, (int, float)) else 0
+    return bin(a ^ b).count('1')
 
 
 def binary_colbert_maxsim(query_token_vecs: List[List[float]], doc_token_vecs: List[List[float]]) -> float:
