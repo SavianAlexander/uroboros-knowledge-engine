@@ -45,7 +45,7 @@ if __name__ == "__main__":
     import uvicorn
     import socket
 
-    host = os.environ.get("HOST", "127.0.0.1")
+    host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", 8085))
 
     try:
@@ -56,5 +56,5 @@ if __name__ == "__main__":
         print(f"Please close the existing server process on port {port} before launching a new instance.")
         sys.exit(1)
 
-    print(f"Starting Uroboros server on http://{host}:{port}")
+    print(f"Starting Uroboros server on http://127.0.0.1:{port}")
     uvicorn.run(app, host=host, port=port)
