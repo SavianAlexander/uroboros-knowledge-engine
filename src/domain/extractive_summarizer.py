@@ -82,7 +82,8 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
 
     # Pick top N sentences maintaining original narrative order
     sentence_scores.sort(key=lambda x: x[0], reverse=True)
-    top_ranked = sentence_scores[:max_sentences]
+    safe_max = max(1, int(max_sentences)) if max_sentences is not None and isinstance(max_sentences, (int, float)) else 3
+    top_ranked = sentence_scores[:safe_max]
     top_ranked.sort(key=lambda x: x[1])  # Re-sort by original index
 
     extracted_sentences = [s[2] for s in top_ranked]
