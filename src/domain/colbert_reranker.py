@@ -4,9 +4,7 @@ Computes token-level MaxSim similarity matrices between query and document token
 Zero-dependency, stdlib-first math implementation.
 """
 import math
-from typing import List, Dict, Any
-
-
+import functools
 def dot_product(v1: List[float], v2: List[float]) -> float:
     """Calculates dot product of two equal-length float vectors."""
     min_len = min(len(v1), len(v2))
@@ -15,14 +13,19 @@ def dot_product(v1: List[float], v2: List[float]) -> float:
     return sum(v1[i] * v2[i] for i in range(min_len))
 
 
+@functools.lru_cache(maxsize=4096)
+def _normalize_vector_cached(v_tuple: Tuple[float, ...]) -> Tuple[float, ...]:
+    norm = math.sqrt(sum(x * x for x in v_tuple if isinstance(x, (int, float))))
+    if norm == 0.0:
+        return tuple(0.0 for x in v_tuple if isinstance(x, (int, float)))
+    return tuple(round(x / norm, 6) for x in v_tuple if isinstance(x, (int, float)))
+
+
 def normalize_vector(v: List[float]) -> List[float]:
     """Applies L2 normalization to a vector."""
     if not v or not isinstance(v, (list, tuple)):
         return []
-    norm = math.sqrt(sum(x * x for x in v if isinstance(x, (int, float))))
-    if norm == 0.0:
-        return [0.0 for x in v if isinstance(x, (int, float))]
-    return [round(x / norm, 6) for x in v if isinstance(x, (int, float))]
+    return list(_normalize_vector_cached(tuple(v)))
 
 
 def colbert_maxsim_score(query_token_embeddings: List[List[float]], doc_token_embeddings: List[List[float]]) -> float:

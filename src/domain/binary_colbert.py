@@ -4,6 +4,7 @@ Computes token-level late-interaction similarity matrices using 1-bit binary vec
 Zero-dependency, stdlib implementation.
 """
 import functools
+from typing import Tuple, List, Dict, Any, Optional
 
 @functools.lru_cache(maxsize=4096)
 def _quantize_tuple_to_bitpack(vec_tuple: Tuple[float, ...]) -> int:

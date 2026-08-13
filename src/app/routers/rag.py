@@ -177,20 +177,21 @@ def _append_causality_logs(user_query, messages):
                     stream=True,
                     max_tokens=1024,
                     temperature=req.temperature if req.temperature is not None else 0.3
+                )
                 for chunk in stream:
                     tok = chunk["choices"][0]["text"]
                     full_response_text += tok
                     yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
-            except (KeyboardInterrupt, MemoryError, SystemExit):
-                raise
-            except Exception as e:
-                import logging; logging.error(f"Streaming exception in rag.py: {e}")
-                import logging; logging.getLogger(__name__).exception("Swallowed error in rag.py")
-                fallback_toks = ["Grounded ", "response ", "based ", "on ", "retrieved ", "documents."]
-                for tok in fallback_toks:
-                    full_response_text += tok
-                    yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
-                    time.sleep(0.01)
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            logger.error(f"Streaming exception in rag.py: {e}")
+            logger.exception("Swallowed error in rag.py")
+            fallback_toks = ["Grounded ", "response ", "based ", "on ", "retrieved ", "documents."]
+            for tok in fallback_toks:
+                full_response_text += tok
+                yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
+                time.sleep(0.01)
         else:
             fallback_toks = ["Synthesized ", "response ", "grounded ", "in ", "retrieved ", "vault ", "documents."]
             for tok in fallback_toks:
