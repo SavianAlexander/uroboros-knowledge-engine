@@ -5,6 +5,7 @@ Zero-dependency, stdlib implementation.
 """
 
 import math
+import unicodedata
 from typing import Dict, Any, List
 
 
@@ -18,7 +19,6 @@ def project_multilingual_vector(
     if not text:
         return {"latent_vector": [], "status": "empty_input"}
 
-    import unicodedata
     norm_text = unicodedata.normalize("NFC", str(text))
     # Generate language-invariant hash projection vector (dim 64)
     dim = 64

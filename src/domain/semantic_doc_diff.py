@@ -10,7 +10,7 @@ from typing import Dict, Any, List
 
 def _extract_sentences(text: str) -> List[str]:
     """Extracts non-empty sentences from text, falling back to line/sentence split."""
-    if not text.strip():
+    if not text or not isinstance(text, str) or not text.strip():
         return []
     sents = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
     if not sents:

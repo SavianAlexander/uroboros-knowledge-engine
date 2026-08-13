@@ -13,8 +13,10 @@ def evaluate_relevance(query: str, context_chunk: str) -> Dict[str, Any]:
     """
     Evaluates [IsRel] reflection token: Is context chunk relevant to query?
     """
-    q_words = set(RE_WORD.findall(query.lower()))
-    c_words = set(RE_WORD.findall(context_chunk.lower()))
+    safe_q = str(query or "")
+    safe_c = str(context_chunk or "")
+    q_words = set(RE_WORD.findall(safe_q.lower()))
+    c_words = set(RE_WORD.findall(safe_c.lower()))
 
     if not q_words or not c_words:
         return {"token": "[IsRel:No]", "score": 0.0, "relevant": False}
@@ -34,8 +36,10 @@ def evaluate_support(answer: str, context_chunk: str) -> Dict[str, Any]:
     """
     Evaluates [IsSup] reflection token: Is generated answer factually grounded in context?
     """
-    a_words = set(RE_WORD.findall(answer.lower()))
-    c_words = set(RE_WORD.findall(context_chunk.lower()))
+    safe_a = str(answer or "")
+    safe_c = str(context_chunk or "")
+    a_words = set(RE_WORD.findall(safe_a.lower()))
+    c_words = set(RE_WORD.findall(safe_c.lower()))
 
     if not a_words or not c_words:
         return {"token": "[IsSup:No]", "score": 0.0, "supported": False}
@@ -56,8 +60,13 @@ def critique_rag_passages(query: str, chunks: List[str]) -> List[Dict[str, Any]]
     Critiques and filters candidate chunks using Self-RAG reflection tokens.
     Retains only factually relevant & supported passages.
     """
+    if not chunks or not isinstance(chunks, list):
+        return []
+
+    valid_chunks = [str(c) for c in chunks if c is not None]
+
     evaluated = []
-    for idx, chunk in enumerate(chunks):
+    for idx, chunk in enumerate(valid_chunks):
         rel_res = evaluate_relevance(query, chunk)
         if rel_res["relevant"]:
             evaluated.append({

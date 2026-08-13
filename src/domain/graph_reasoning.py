@@ -11,11 +11,11 @@ def discover_knowledge_gaps() -> Dict[str, Any]:
     """
     try:
         import os
-        from src.infrastructure.database import get_db, init_db, DB_FILE
+        from src.infrastructure.database import get_db_connection, init_db, DB_FILE
         if DB_FILE and os.path.dirname(DB_FILE):
             os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
         init_db()
-        with get_db() as conn:
+        with get_db_connection(DB_FILE) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
@@ -57,11 +57,11 @@ def detect_community_clusters() -> Dict[str, Any]:
     try:
         import os
         from collections import defaultdict
-        from src.infrastructure.database import get_db, init_db, DB_FILE
+        from src.infrastructure.database import get_db_connection, init_db, DB_FILE
         if DB_FILE and os.path.dirname(DB_FILE):
             os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
         init_db()
-        with get_db() as conn:
+        with get_db_connection(DB_FILE) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
