@@ -47,6 +47,15 @@ def colbert_maxsim_score(query_token_embeddings: List[List[float]], doc_token_em
     return round(total_score / len(query_token_embeddings), 4)
 
 
+def _safe_float(val, default=0.0):
+    if val is None:
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
+
 def rerank_documents_colbert(
     query_tokens: List[List[float]],
     candidates: List[Dict[str, Any]]
@@ -55,11 +64,16 @@ def rerank_documents_colbert(
     Reranks document candidates using token-level ColBERT MaxSim scores.
     Each candidate dictionary should contain 'token_embeddings' and 'content' / 'filepath'.
     """
+    if not candidates or not isinstance(candidates, list):
+        return []
+
+    valid_candidates = [c for c in candidates if isinstance(c, dict)]
+
     reranked = []
-    for cand in candidates:
+    for cand in valid_candidates:
         doc_tokens = cand.get("token_embeddings", [])
         if not doc_tokens:
-            score = cand.get("score", 0.0)
+            score = _safe_float(cand.get("score"), 0.0)
         else:
             score = colbert_maxsim_score(query_tokens, doc_tokens)
         

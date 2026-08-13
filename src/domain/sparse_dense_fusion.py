@@ -40,9 +40,17 @@ def rerank_sparse_dense_fusion(
         d_raw = chunk.get("dense_score")
         c_raw = chunk.get("colbert_score")
         
-        sparse_score = float(s_raw) if s_raw is not None and isinstance(s_raw, (int, float)) else 0.5
-        dense_score = float(d_raw) if d_raw is not None and isinstance(d_raw, (int, float)) else 0.6
-        colbert_score = float(c_raw) if c_raw is not None and isinstance(c_raw, (int, float)) else 0.7
+        def _safe_float(val, default=0.5):
+            if val is None:
+                return default
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return default
+
+        sparse_score = _safe_float(s_raw, 0.5)
+        dense_score = _safe_float(d_raw, 0.6)
+        colbert_score = _safe_float(c_raw, 0.7)
 
         fused_score = (alpha * sparse_score) + (beta * dense_score) + (gamma * colbert_score)
         reranked.append({

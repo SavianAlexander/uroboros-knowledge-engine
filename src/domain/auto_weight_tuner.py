@@ -23,7 +23,16 @@ def optimize_search_parameters(
     if not valid_feedback:
         return {"optimized_weights": weights, "status": "no_feedback_data", "adjustment_applied": False}
 
-    avg_satisfaction = sum(f.get("score", 0.5) for f in valid_feedback) / float(len(valid_feedback))
+    def _safe_score(f):
+        s = f.get("score")
+        if s is None:
+            return 0.5
+        try:
+            return float(s)
+        except (ValueError, TypeError):
+            return 0.5
+
+    avg_satisfaction = sum(_safe_score(f) for f in valid_feedback) / float(len(valid_feedback))
 
     if avg_satisfaction < 0.60:
         # Boost ColBERT rerank and decrease chunk size for higher precision
