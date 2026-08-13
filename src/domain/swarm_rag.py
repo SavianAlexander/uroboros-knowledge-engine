@@ -50,9 +50,11 @@ def _run_critic_agent(query: str, context: str) -> Dict[str, Any]:
     if not context or len(context.strip()) < 20:
         critique_points.append("Insufficient context retrieved for high confidence.")
     
-    safe_query = str(query or "")
+    import unicodedata
+    safe_query = unicodedata.normalize("NFC", str(query or ""))
+    safe_context = unicodedata.normalize("NFC", str(context or ""))
     query_terms = [w.lower() for w in safe_query.split() if len(w) > 3]
-    missing_terms = [w for w in query_terms if w not in context.lower()]
+    missing_terms = [w for w in query_terms if w not in safe_context.lower()]
     if missing_terms:
         critique_points.append(f"Query terms missing from retrieved context: {', '.join(missing_terms[:3])}")
 

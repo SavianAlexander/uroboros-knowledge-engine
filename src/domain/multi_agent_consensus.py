@@ -14,7 +14,10 @@ def orchestrate_multi_agent_consensus(
     """
     Orchestrates persona perspectives (Developer, Legal, Executive) and synthesizes a unified consensus.
     """
-    ctx_summary = " ".join(retrieved_contexts[:2]) if retrieved_contexts else "No context available."
+    import unicodedata
+    norm_query = unicodedata.normalize("NFC", str(query or ""))
+    norm_ctxs = [unicodedata.normalize("NFC", str(c)) for c in (retrieved_contexts or []) if c]
+    ctx_summary = " ".join(norm_ctxs[:2]) if norm_ctxs else "No context available."
 
     dev_perspective = f"[DEVELOPER]: Technical feasibility is high for '{query}'. Context supports implementation: {ctx_summary[:60]}..."
     legal_perspective = f"[LEGAL]: Compliance risk is low for '{query}' assuming standard data protection terms."
