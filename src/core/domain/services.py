@@ -2,10 +2,11 @@
 Pure domain services: RAG hybrid ranking math, wikilinks parsing, tag rules, term normalization, vector engine, summarization.
 Zero dependencies on SQLite connection instances or FastAPI request objects.
 """
-
+import unicodedata
 import re
 import math
-from collections import Counter
+import logging
+from collections import Counter, defaultdict
 from functools import lru_cache
 from typing import List, Dict, Tuple, Any, Optional
 
@@ -19,21 +20,23 @@ from src.shared.regex import (
 
 RE_VECTOR_TOKEN = re.compile(r'\b[a-zA-Z0-9]{2,}\b')
 RE_SENTENCE_SPLIT = re.compile(r'(?<=[.!?])\s+')
+RE_TAKEAWAY_WORDS = re.compile(r'\b[a-z]{4,15}\b')
+RE_REDOS_NESTED_QUANTIFIERS = re.compile(r'(\+|\*|\{[\d,]+\})\s*(\+|\*|\{[\d,]+\})|\([^)]*(\+|\*|\{[\d,]+\})[^)]*\)\s*(\+|\*|\{[\d,]+\})')
 
 def reciprocal_rank_fusion(fts_results: List[Dict[str, Any]], vector_results: List[Dict[str, Any]], k: int = 60, limit: int = 10) -> List[Dict[str, Any]]:
     """RRF formula score(d) = sum(1 / (k + rank)) across ranking channels."""
-    scores: Dict[str, float] = {}
+    scores: Dict[str, float] = defaultdict(float)
     item_map: Dict[str, Dict[str, Any]] = {}
 
     for rank, item in enumerate(fts_results, start=1):
         key = item.get("filepath") or item.get("id") or str(item)
-        scores[key] = scores.get(key, 0.0) + (1.0 / (k + rank))
+        scores[key] += 1.0 / (k + rank)
         if key not in item_map:
             item_map[key] = dict(item)
 
     for rank, item in enumerate(vector_results, start=1):
         key = item.get("filepath") or item.get("id") or str(item)
-        scores[key] = scores.get(key, 0.0) + (1.0 / (k + rank))
+        scores[key] += 1.0 / (k + rank)
         if key not in item_map:
             item_map[key] = dict(item)
 
@@ -77,19 +80,22 @@ def generate_hyde_expansion(query: str) -> str:
 
 def generate_key_takeaways(text: str, num_bullets: int = 3) -> List[str]:
     """Generate key takeaways from text using sentence scoring."""
-    if not text:
+    if not text or not text.strip():
         return []
-    sentences = RE_SENTENCE_SPLIT.split(text.strip())
+    clean_text = text.strip()
+    if '.' not in clean_text and '!' not in clean_text and '?' not in clean_text:
+        return [f"• {clean_text}"]
+    sentences = RE_SENTENCE_SPLIT.split(clean_text)
     if not sentences:
         return []
     if len(sentences) <= num_bullets:
         return [f"• {s}" for s in sentences if s.strip()]
     
-    words = re.findall(r"\b[a-z]{4,15}\b", text.lower())
+    words = RE_TAKEAWAY_WORDS.findall(clean_text.lower())
     word_freq = Counter(words)
     scored_sentences = []
     for idx, s in enumerate(sentences):
-        s_words = re.findall(r"\b[a-z]{4,15}\b", s.lower())
+        s_words = RE_TAKEAWAY_WORDS.findall(s.lower())
         score = sum(word_freq.get(w, 0) for w in s_words) / (len(s_words) or 1)
         scored_sentences.append((score, idx, s.strip()))
     
@@ -99,13 +105,17 @@ def generate_key_takeaways(text: str, num_bullets: int = 3) -> List[str]:
 
 RE_REDOS_NESTED_QUANTIFIERS = re.compile(r'(\+|\*|\{[\d,]+\})\s*\)')
 
+@lru_cache(maxsize=512)
+def _get_compiled_regex(pat: str):
+    return re.compile(pat, re.IGNORECASE)
+
 def _safe_match(pat: str, text: str) -> bool:
     if not pat or not text:
         return False
     if "(" in pat and RE_REDOS_NESTED_QUANTIFIERS.search(pat):
         return pat.lower() in text.lower()
     try:
-        return bool(re.search(pat, text, re.IGNORECASE))
+        return bool(_get_compiled_regex(pat).search(text))
     except re.error:
         import fnmatch
         try:
@@ -333,7 +343,6 @@ def sanitise_fts_query(query: str) -> str:
     """Sanitize search query for FTS5 syntax safety, HTML injection, and control characters."""
     if not query:
         return ""
-    import unicodedata
     query = unicodedata.normalize("NFC", query)
     # Strip standalone or leading asterisks to prevent SQLite FTS5 unknown special query errors
     query = re.sub(r'(^|\s)\*+', ' ', query)
@@ -497,6 +506,7 @@ def stem_word(word: str) -> str:
         return w[:-1]
     return w
 
+@lru_cache(maxsize=1024)
 def expand_synonyms(query: str) -> str:
     """
     Expands query with technical domain synonyms and acronym equivalents.
