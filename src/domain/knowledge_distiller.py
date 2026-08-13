@@ -57,7 +57,7 @@ def export_knowledge_distillation_dataset(
     jsonl_output = "\n".join(json.dumps(r) for r in export_records)
 
     return {
-        "format": format_type,
+        "format": fmt,
         "exported_records_count": len(export_records),
         "jsonl_payload": jsonl_output,
         "status": "success"

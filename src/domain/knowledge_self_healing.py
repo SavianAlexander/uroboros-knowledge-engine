@@ -19,11 +19,10 @@ def audit_knowledge_self_healing() -> Dict[str, Any]:
         from src.infrastructure.database import get_db, init_db
 
         init_db()
-        conn = get_db()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT id, filename, filepath, content FROM files")
-        rows = cursor.fetchall()
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, filename, filepath, content FROM files")
+            rows = cursor.fetchall()
 
         if not rows:
             return {"orphaned_nodes": [], "broken_links": [], "health_score": 100.0, "status": "success"}

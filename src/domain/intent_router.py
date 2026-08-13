@@ -9,6 +9,9 @@ from typing import Dict, Any, List
 
 def classify_query_intent(query: str) -> str:
     """Classifies query intent into canonical RAG pipeline categories."""
+    if not query or not isinstance(query, str):
+        return "hybrid_fact_retrieval"
+
     q_lower = query.lower()
 
     if any(k in q_lower for k in ["def ", "class ", "import ", "function", "error", "bug", "traceback"]):

@@ -4,6 +4,7 @@ Calculates mathematical Context Confidence Scores (0.00 - 1.00) and refuses low-
 """
 
 import re
+import unicodedata
 from typing import Dict, Any, List
 
 MIN_CONFIDENCE_THRESHOLD = 0.65
@@ -26,7 +27,6 @@ def evaluate_hallucination_risk(query: str, passages: List[Dict[str, Any]]) -> D
             "status": "refused"
         }
 
-    import unicodedata
     norm_query = unicodedata.normalize("NFC", str_query)
     query_words = set(re.findall(r'\b[\w-]{3,}\b', norm_query.lower()))
     if not query_words:
