@@ -412,6 +412,9 @@ def get_sync_delta_endpoint(req: SyncDeltaRequest):
     active_dir = get_active_dir()
 
     payloads = []
+    db_needed = []
+    
+    # Pass 1: Disk lookups
     for fn in requested:
         info = local_hashes.get(fn, {})
         fp = info.get("filepath", "") or os.path.join(active_dir, fn)
@@ -428,30 +431,51 @@ def get_sync_delta_endpoint(req: SyncDeltaRequest):
                 raise
             except Exception as e:
                 import logging; logging.warning(f"Swallowed error in tags.py: {e}")
+            
+            if not sha256_val and content:
+                sha256_val = hashlib.sha256(content.encode("utf-8")).hexdigest()
+                size = len(content.encode("utf-8"))
+
+            payloads.append({
+                "filename": fn,
+                "content": content,
+                "file_size": size,
+                "modified_at": mod_at,
+                "sha256": sha256_val
+            })
         else:
-            try:
-                with get_db() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT content FROM files WHERE filename = ? OR filepath = ?", (fn, fp))
-                    row = cursor.fetchone()
-                    if row and row[0]:
-                        content = row[0]
-            except (KeyboardInterrupt, MemoryError, SystemExit):
-                raise
-            except Exception as e:
-                import logging; logging.warning(f"Swallowed error in tags.py: {e}")
+            db_needed.append((fn, fp, sha256_val, size, mod_at))
 
-        if not sha256_val and content:
-            sha256_val = hashlib.sha256(content.encode("utf-8")).hexdigest()
-            size = len(content.encode("utf-8"))
+    # Pass 2: Batched DB fallback
+    if db_needed:
+        try:
+            with get_db() as conn:
+                cursor = conn.cursor()
+                filenames = [item[0] for item in db_needed]
+                filepaths = [item[1] for item in db_needed]
+                placeholders = ",".join(["?"] * len(filenames))
+                
+                cursor.execute(f"SELECT filename, filepath, content FROM files WHERE filename IN ({placeholders}) OR filepath IN ({placeholders})", tuple(filenames) + tuple(filepaths))
+                db_results = { (r[0] or "", r[1] or ""): r[2] for r in cursor.fetchall() }
+                
+                for fn, fp, sha256_val, size, mod_at in db_needed:
+                    content = db_results.get((fn, fp)) or db_results.get((fn, "")) or db_results.get(("", fp)) or ""
+                    
+                    if not sha256_val and content:
+                        sha256_val = hashlib.sha256(content.encode("utf-8")).hexdigest()
+                        size = len(content.encode("utf-8"))
 
-        payloads.append({
-            "filename": fn,
-            "content": content,
-            "file_size": size,
-            "modified_at": mod_at,
-            "sha256": sha256_val
-        })
+                    payloads.append({
+                        "filename": fn,
+                        "content": content,
+                        "file_size": size,
+                        "modified_at": mod_at,
+                        "sha256": sha256_val
+                    })
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.warning(f"Swallowed error in tags.py: {e}")
 
     return {"status": "success", "files": payloads}
 

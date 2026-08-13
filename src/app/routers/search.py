@@ -37,41 +37,6 @@ from src.domain.rerank_score_explainer import explain_candidate_score
 
 router = APIRouter()
 
-def _filter_by_excluded_tags(results, exc_val):
-    exc_tags = [t.lower() for t in (exc_val if isinstance(exc_val, list) else [exc_val])]
-    filtered = []
-    with get_db() as conn:
-        cursor = conn.cursor()
-        for r in results:
-            fid = r.get("id")
-            if fid:
-                cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (fid,))
-                f_tags = [t[0].lower() for t in cursor.fetchall()]
-                if not any(t in f_tags for t in exc_tags):
-                    filtered.append(r)
-            else:
-                filtered.append(r)
-    return filtered
-
-def _filter_by_excluded_words(results, exc_val):
-    words_exc = exc_val if isinstance(exc_val, list) else [exc_val]
-    for w_exc in words_exc:
-        w_lower = str(w_exc).lower()
-        filtered = []
-        for r in results:
-            c_text = r.get("content")
-            if not c_text and r.get("filepath") and os.path.exists(r["filepath"]):
-                try:
-                    with open(r["filepath"], "r", encoding="utf-8", errors="ignore") as f:
-                        c_text = f.read()
-                except Exception:
-                    c_text = ""
-            c_text = (c_text or "").lower()
-            fn = r.get("filename", "").lower()
-            if w_lower not in c_text and w_lower not in fn:
-                filtered.append(r)
-        results = filtered
-    return results
 
 
 def _get_global_cache():
@@ -87,18 +52,18 @@ def _get_global_cache():
 
 def _filter_by_excluded_tags(results, exc_val):
     exc_tags = [t.lower() for t in (exc_val if isinstance(exc_val, list) else [exc_val])]
+    file_ids = [r.get("id") for r in results if r.get("id")]
+    tags_map = _batch_fetch_tags(file_ids)
+    
     filtered = []
-    with get_db() as conn:
-        cursor = conn.cursor()
-        for r in results:
-            fid = r.get("id")
-            if fid:
-                cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (fid,))
-                f_tags = [t[0].lower() for t in cursor.fetchall()]
-                if not any(t in f_tags for t in exc_tags):
-                    filtered.append(r)
-            else:
+    for r in results:
+        fid = r.get("id")
+        if fid:
+            f_tags = tags_map.get(fid, [])
+            if not any(t in f_tags for t in exc_tags):
                 filtered.append(r)
+        else:
+            filtered.append(r)
     return filtered
 
 
@@ -331,28 +296,33 @@ def search_endpoint(
         if "tag" in operators:
             target_tags = [t.strip() for t in str(operators["tag"]).split(",") if t.strip()]
             if target_tags:
+                missing_id_filepaths = [r.get("filepath") for r in results if not r.get("id") and r.get("filepath")]
+                filepath_to_id = {}
+                if missing_id_filepaths:
+                    with get_db() as conn:
+                        cursor = conn.cursor()
+                        placeholders = ",".join(["?"] * len(missing_id_filepaths))
+                        cursor.execute(f"SELECT filepath, id FROM files WHERE filepath IN ({placeholders})", tuple(missing_id_filepaths))
+                        filepath_to_id = {row[0]: row[1] for row in cursor.fetchall()}
+                
+                for r in results:
+                    if not r.get("id") and r.get("filepath") in filepath_to_id:
+                        r["id"] = filepath_to_id[r["filepath"]]
+
+                file_ids = [r.get("id") for r in results if r.get("id")]
+                tags_map = _batch_fetch_tags(file_ids)
+                
                 filtered_results = []
-                with get_db() as conn:
-                    cursor = conn.cursor()
-                    for r in results:
-                        file_id = r.get("id")
-                        if not file_id and r.get("filepath"):
-                            cursor.execute("SELECT id FROM files WHERE filepath = ?", (r["filepath"],))
-                            row = cursor.fetchone()
-                            file_id = row[0] if row else None
-                        
-                        if file_id:
-                            cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (file_id,))
-                            file_tags = set(row[0] for row in cursor.fetchall())
-                        else:
-                            file_tags = set()
-                        
-                        if tag_mode.upper() == "AND":
-                            if all(t in file_tags for t in target_tags):
-                                filtered_results.append(r)
-                        else:
-                            if any(t in file_tags for t in target_tags):
-                                filtered_results.append(r)
+                for r in results:
+                    file_id = r.get("id")
+                    file_tags = tags_map.get(file_id, []) if file_id else []
+                    
+                    if tag_mode.upper() == "AND":
+                        if all(t in file_tags for t in target_tags):
+                            filtered_results.append(r)
+                    else:
+                        if any(t in file_tags for t in target_tags):
+                            filtered_results.append(r)
                 results = filtered_results
 
         try:
