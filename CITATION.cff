@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: "Uroboros Knowledge Engine: Single-Node Air-Gapped Semantic Retrieval and Vector Database Engine"
+message: "If you use or reference Uroboros Knowledge Engine in academic or technical work, please cite it as below."
+type: software
+authors:
+  - family-names: "Alexander"
+    given-names: "Savian"
+    email: "savianalexander@pm.me"
+repository-code: "https://github.com/SavianAlexander/uroboros-knowledge-engine"
+abstract: "Uroboros Knowledge Engine (Neuro Alexander) is an enterprise-grade, zero-dependency, single-node knowledge management, semantic retrieval, and document intelligence platform featuring 21 RAG innovation pillars, 134 domain intelligence modules, SQLite FTS5 vector storage, and an air-gapped React 19 single-page application."
+keywords:
+  - RAG
+  - Vector Retrieval
+  - SQLite FTS5
+  - Okapi BM25
+  - Binary ColBERT
+  - Speculative RAG
+  - Zero-Cloud AI
+  - FastAPIs
+version: "2.5.0"
+date-released: "2026-08-12"
+license: "MIT"
