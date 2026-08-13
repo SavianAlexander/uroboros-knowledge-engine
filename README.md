@@ -52,7 +52,9 @@ With **32 State-of-the-Art Architectural Engines**, **13 Incomparable Frontier R
 - [23. Troubleshooting Matrix & Diagnostic Workflows](#23-troubleshooting-matrix--diagnostic-workflows)
 - [24. Security, PII Redaction, Zero-Knowledge & SOC 2 Compliance](#24-security-pii-redaction-zero-knowledge--soc-2-compliance)
 - [25. Quality Assurance, Testing & Compliance Framework](#25-quality-assurance-testing--compliance-framework)
-- [26. License](#26-license)
+- [26. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol](#26-disaster-recovery-snapshot-migration--cold-restore-protocol)
+- [27. Hardware Sizing, GPU Allocation & VRAM Tuning Matrix](#27-hardware-sizing-gpu-allocation--vram-tuning-matrix)
+- [28. License](#28-license)
 
 ---
 
@@ -732,15 +734,46 @@ graph TD
 ```
 
 ### UI View Showcase
-1. **Dashboard View**: Real-time database status metrics, ingestion velocity, storage distribution, tag breakdowns, and system health telemetry.
-2. **Workspace View**: File browser interface for managing local directories, inspecting corpus metadata, and triggering manual re-indexing.
-3. **Search & Exploration View**: Hybrid search with real-time similarity threshold sliders, document content previews, tag filtering, and syntax highlighting.
-4. **Ingestion Pipeline View**: Monitors background document extraction, web URL scraping, and SSE progress tracking for active batch jobs.
-5. **3D Interactive Knowledge Graph**: Interactive 3D graph view (`react-force-graph-3d`) rendering connections between document nodes, extracted entities, and wikilinks.
-6. **Conversational RAG Assistant**: AI chat interface supporting source citation deep-linking, context budget allocation controls, and multi-turn dialog memory.
-7. **Process Configuration View**: Manages auto-tagging rules, custom FTS synonyms, P2P network sync parameters, and database snapshot schedules.
-8. **System Settings View**: System diagnostic controls, API key management, database WAL optimization tools, and logs inspection.
-9. **Spotlight Command Palette (`Ctrl+K`)**: Keyboard-driven modal providing quick navigation across all application views, instant search execution, and ingestion actions.
+
+#### 1. Dashboard View
+Real-time database status metrics, ingestion velocity, storage distribution, tag breakdowns, and system health telemetry.
+![Main Dashboard](docs/ux_journey/01_dashboard.png)
+
+#### 2. Workspace View
+Provides a file browser interface for managing local directories, inspecting corpus metadata, and triggering manual re-indexing.
+![Workspace](docs/ux_journey/02_workspace.png)
+
+#### 3. Search & Exploration View
+Offers hybrid search with real-time similarity threshold sliders, document content previews, tag filtering, and syntax highlighting.
+![Explorer](docs/ux_journey/03_search.png)
+
+#### 4. Ingestion Pipeline View
+Monitors background document extraction, web URL scraping, and SSE progress tracking for active batch jobs.
+![Ingestion Pipeline](docs/ux_journey/04_ingestion.png)
+
+#### 5. 3D Interactive Knowledge Graph
+Interactive 3D graph view (`react-force-graph-3d`) rendering connections between document nodes, extracted entities, and wikilinks.
+![Knowledge Graph](docs/ux_journey/05_graph.png)
+
+#### 6. Conversational RAG Assistant
+AI chat interface supporting source citation deep-linking, context budget allocation controls, and multi-turn dialog memory.
+![Conversational Assistant](docs/ux_journey/06_chat.png)
+
+#### 7. Process Configuration View
+Manages auto-tagging rules, custom FTS synonyms, P2P network sync parameters, and database snapshot schedules.
+![Process Config](docs/ux_journey/07_config.png)
+
+#### 8. System Settings View
+Provides system diagnostic controls, API key management, database WAL optimization tools, and logs inspection.
+![System Settings](docs/ux_journey/08_settings.png)
+
+#### 9. Spotlight Command Palette (`Ctrl+K`)
+Keyboard-driven modal providing quick navigation across all application views, instant search execution, and ingestion actions.
+![Command Palette](docs/ux_journey/09_command_palette.png)
+
+#### 10. WCAG AA Glassmorphism Themes
+High-contrast glassmorphic dark and light themes with responsive UI elements complying with WCAG AA accessibility standards.
+![Light Mode UI](docs/ux_journey/10_light_mode.png)
 
 ---
 
