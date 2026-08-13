@@ -118,6 +118,30 @@ sequenceDiagram
     end
 ```
 
+### 2.3 Hardware Single-Instance Process Memory Guard
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as FastAPI / Model Manager
+    participant OS as Windows Task Manager (PS)
+    participant Llama as Llama Server Process
+    participant RAM as System RAM / VRAM Pool
+
+    App->>OS: Query Running Processes (`llama-server.exe`)
+    OS-->>App: Return Active Process List & PIDs
+    alt Multiple Duplicate Instances Detected
+        App->>OS: Force Terminate Older PID (`taskkill /F /PID`)
+        OS-->>RAM: Free Duplicate VRAM Allocation (~1.58 GB)
+        App->>App: Enforce Single-Instance Process Lock
+    else Single Instance Running
+        App->>App: Proceed to Model Inference
+    end
+    App->>Llama: Execute Inference Request
+    Llama-->>RAM: Cap Allocation at ~490 MB
+    Note over Llama,RAM: Auto-Unload Model Weights after 5m Inactivity (`OLLAMA_KEEP_ALIVE=5m`)
+```
+
 ---
 
 ## 3. System Benchmarks & Performance Metrics
@@ -241,6 +265,44 @@ c:\Users\Administrator\Desktop\Neuro Alexander
 | **Code Diff Synthesizer** | [`code_diff_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_diff_synthesizer.py) | Git diff analysis & structural code change synthesis |
 | **Code Doc Aligner** | [`code_doc_aligner.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_doc_aligner.py) | Automated mapping between code functions and docstrings |
 | **Code Self Refactor** | [`code_self_refactor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_self_refactor.py) | AST-driven code simplification & refactoring helper |
+
+### 5.5 Governance, Security & Compliance
+| Module Name | File Path | Functional Description & Output Contract |
+| :--- | :--- | :--- |
+| **PII Privacy Guard** | [`pii_privacy_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/pii_privacy_guard.py) | Redaction of SSNs, emails, credit cards, & API keys |
+| **ZK Data Masker** | [`zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py) | Zero-Knowledge data masking preserving searchability |
+| **Prompt Injection Guard** | [`prompt_injection_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/prompt_injection_guard.py) | Security filter against prompt overrides & malicious code |
+| **Grounding Guard** | [`rag_grounding_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/rag_grounding_guard.py) | Real-time verification of model output against source facts |
+| **Hallucination Guard** | [`hallucination_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/hallucination_guard.py) | N-gram overlap & factual consistency evaluator |
+| **Crypto Audit Ledger** | [`crypto_audit_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/crypto_audit_ledger.py) | SHA-256 cryptographic append-only audit trail ledger |
+
+### 5.6 Multi-Agent & Swarm Execution
+| Module Name | File Path | Functional Description & Output Contract |
+| :--- | :--- | :--- |
+| **Multi-Agent Debate** | [`multi_agent_debate.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/multi_agent_debate.py) | Multi-persona dialectical debate engine |
+| **Multi-Agent Consensus** | [`multi_agent_consensus.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/multi_agent_consensus.py) | Multi-agent voting & agreement synthesis protocol |
+| **Swarm RAG** | [`swarm_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/swarm_rag.py) | Distributed swarm query retrieval |
+| **Agent Memory** | [`agent_memory.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/agent_memory.py) | Episodic long-term memory for autonomous agents |
+
+### 5.7 Telemetry, Self-Healing & Hardware Guard
+| Module Name | File Path | Functional Description & Output Contract |
+| :--- | :--- | :--- |
+| **Index Self Healing** | [`index_self_healing.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/index_self_healing.py) | Automated SQLite FTS5 index integrity repair |
+| **Knowledge Self Healing** | [`knowledge_self_healing.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/knowledge_self_healing.py) | Stale document detection & auto-reindexing trigger |
+| **Vector Health Monitor** | [`vector_health_monitor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/vector_health_monitor.py) | Vector fragment, null check, & corrupt BLOB audit |
+| **Stability Guard** | [`system_stability_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/system_stability_guard.py) | Memory allocation limit guard & process panic recovery |
+| **SLA Circuit Breaker** | [`sla_circuit_breaker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/sla_circuit_breaker.py) | SLA latency circuit breaker & fallback guard |
+| **Vector Drift Agent** | [`vector_drift_agent.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/vector_drift_agent.py) | Vector distribution drift tracking |
+
+### 5.8 Audio, Visual Perception & Synthesis
+| Module Name | File Path | Functional Description & Output Contract |
+| :--- | :--- | :--- |
+| **Multimodal OCR Parser** | [`multimodal_ocr_parser.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/multimodal_ocr_parser.py) | Image & PDF layout-aware OCR extraction |
+| **Audio Briefing** | [`audio_briefing.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/audio_briefing.py) | Conversational podcast script synthesis from documents |
+| **Extractive Summarizer** | [`extractive_summarizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/extractive_summarizer.py) | PageRank sentence extraction & key takeaway builder |
+| **Executive Briefing** | [`executive_briefing.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/executive_briefing.py) | Executive TL;DR & KPI briefing generator |
+| **Anki Synthesizer** | [`anki_card_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/anki_card_synthesizer.py) | Anki flashcard extraction from indexed knowledge |
+| **Voice RAG** | [`voice_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/voice_rag.py) | Voice search query processing & speech interface |
 
 ---
 
@@ -381,6 +443,22 @@ CREATE TABLE IF NOT EXISTS ocr_coords (
   ],
   "groundedness_score": 0.98,
   "eval_status": "PASSED"
+}
+```
+
+### 8.3 Daily Executive Briefing (`GET /api/briefing/daily`)
+- **Response 200 OK**:
+```json
+{
+  "status": "success",
+  "generated_at": "2026-08-12T22:11:45Z",
+  "total_documents": 1420,
+  "active_tags_count": 86,
+  "executive_summary": "Active corpus contains 1,420 indexed documents across Finance, Architecture, and Compliance domains. 42 documents updated in the last 24 hours.",
+  "top_key_takeaways": [
+    "GAAP accounting standards documents represent 35% of total indexed volume.",
+    "System vector drift monitor reports 0.02% drift across Nomic embedding spaces."
+  ]
 }
 ```
 
