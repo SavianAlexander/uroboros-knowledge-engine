@@ -23,7 +23,8 @@ def compute_entity_cooccurrence_matrix(
     doc_freqs: Dict[str, int] = {}
 
     for doc in valid_docs:
-        text = str(doc.get("content", "") or "")
+        import unicodedata
+        text = unicodedata.normalize("NFC", str(doc.get("content", "") or ""))
         # Heuristic entity extraction: proper nouns & uppercase acronyms
         raw_entities = set(re.findall(r'\b[A-Z][a-zA-Z0-9_-]{2,}\b', text))
         entities = sorted([e for e in raw_entities if e.lower() not in ("this", "that", "with", "from", "have", "been", "were")])

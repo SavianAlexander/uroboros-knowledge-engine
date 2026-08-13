@@ -24,12 +24,13 @@ def synthesize_anki_flashcards(passages: List[Dict[str, Any]]) -> Dict[str, Any]
         content = str(p.get("content") or p.get("text") or "")
 
         wikilinks = RE_WIKILINKS.findall(content)
+        safe_tag = re.sub(r'[^\w_-]', '_', filename)
         for wl in wikilinks:
             cards.append({
                 "id": len(cards) + 1,
                 "front": f"What is the relational connection between {filename} and [[{wl}]]?",
                 "back": f"Document '{filename}' references concept [[{wl}]].\nContext: {content[:200]}...",
-                "tags": ["vault", "auto_generated", filename.replace(".", "_")]
+                "tags": ["vault", "auto_generated", safe_tag]
             })
 
     if not cards:

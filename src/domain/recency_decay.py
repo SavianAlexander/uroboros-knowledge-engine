@@ -29,6 +29,15 @@ def apply_recency_decay(candidates: List[Dict[str, Any]], decay_half_life_days: 
         mtime = cand.get("mtime") or cand.get("updated_at") or now
         if isinstance(mtime, (int, float)):
             delta_sec = max(0.0, now - float(mtime))
+        elif isinstance(mtime, str):
+            try:
+                from datetime import datetime, timezone
+                clean_str = mtime.replace("Z", "+00:00")
+                dt = datetime.fromisoformat(clean_str)
+                ts = dt.timestamp()
+                delta_sec = max(0.0, now - ts)
+            except Exception:
+                delta_sec = 0.0
         else:
             delta_sec = 0.0
 

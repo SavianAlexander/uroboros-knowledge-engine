@@ -14,7 +14,9 @@ def explain_candidate_score(candidate: Dict[str, Any]) -> Dict[str, Any]:
     if not candidate or not isinstance(candidate, dict):
         candidate = {}
 
-    filename = str(candidate.get("filename") or "document.md")
+    import unicodedata
+    raw_name = str(candidate.get("filename") or "document.md")
+    filename = unicodedata.normalize("NFC", raw_name)
     try:
         fts_rank = int(candidate.get("fts_rank", 1))
     except (ValueError, TypeError):

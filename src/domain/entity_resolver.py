@@ -24,9 +24,11 @@ def resolve_canonical_entity(entity_name: str, custom_map: Dict[str, str] = None
     """Returns the canonical entity name for a given raw entity or alias string."""
     if not entity_name:
         return ""
-    clean = entity_name.strip().lower()
+    import unicodedata
+    norm_name = unicodedata.normalize("NFC", str(entity_name))
+    clean = norm_name.strip().lower()
     mapping = {**DEFAULT_ALIAS_MAP, **(custom_map or {})}
-    return mapping.get(clean, entity_name.strip())
+    return mapping.get(clean, norm_name.strip())
 
 
 def batch_resolve_entities(entities: List[str]) -> Dict[str, Any]:
