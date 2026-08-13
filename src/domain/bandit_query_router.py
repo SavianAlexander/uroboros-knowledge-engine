@@ -23,7 +23,8 @@ def bandit_select_pipeline(intent: str = "FACTUAL") -> Dict[str, Any]:
     Selects the optimal retrieval pipeline using Thompson Sampling / Epsilon-Greedy bandit learning.
     Zero-dependency stdlib implementation.
     """
-    safe_intent = str(intent) if intent and isinstance(intent, str) else "FACTUAL"
+    import unicodedata
+    safe_intent = unicodedata.normalize("NFC", str(intent)) if intent and isinstance(intent, str) else "FACTUAL"
     global _BANDIT_ARMS
 
     best_arm = None
