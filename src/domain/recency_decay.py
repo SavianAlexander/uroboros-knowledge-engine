@@ -8,7 +8,18 @@ import time
 from datetime import datetime
 from typing import Dict, Any, List
 
+from functools import lru_cache
+
 _LN_2 = 0.6931471805599453
+
+@lru_cache(maxsize=2048)
+def _parse_iso_timestamp(mtime_str: str) -> float:
+    try:
+        clean_str = mtime_str.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(clean_str)
+        return dt.timestamp()
+    except Exception:
+        return 0.0
 
 
 def apply_recency_decay(candidates: List[Dict[str, Any]], decay_half_life_days: float = 30.0) -> List[Dict[str, Any]]:
@@ -32,13 +43,8 @@ def apply_recency_decay(candidates: List[Dict[str, Any]], decay_half_life_days: 
         if isinstance(mtime, (int, float)):
             delta_sec = max(0.0, now - float(mtime))
         elif isinstance(mtime, str):
-            try:
-                clean_str = mtime.replace("Z", "+00:00")
-                dt = datetime.fromisoformat(clean_str)
-                ts = dt.timestamp()
-                delta_sec = max(0.0, now - ts)
-            except Exception:
-                delta_sec = 0.0
+            ts = _parse_iso_timestamp(mtime)
+            delta_sec = max(0.0, now - ts) if ts > 0 else 0.0
         else:
             delta_sec = 0.0
 

@@ -4,7 +4,7 @@ Zero-dependency TF-IDF term frequency & capitalized domain entity extraction eng
 import re
 import math
 from collections import Counter
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 # Standard English stop words list (pure stdlib, zero dependencies)
 STOP_WORDS = {
@@ -28,6 +28,30 @@ RE_PROPER_NOUN = re.compile(r'\b[A-Z][a-zA-Z0-9_-]{2,}\b')
 RE_WORD = re.compile(r'\b[a-zA-Z0-9_-]{3,}\b')
 
 
+from functools import lru_cache
+
+@lru_cache(maxsize=1024)
+def _extract_entities_cached(text: str, k: int) -> Tuple[Tuple[Tuple[str, int], ...], Tuple[Tuple[str, int, float], ...], int, int]:
+    words = RE_WORD.findall(text)
+    total_words = len(words)
+
+    # 1. Capitalized Entity Recognition (Proper Nouns & Acronyms)
+    capitalized = RE_PROPER_NOUN.findall(text)
+    entity_counts = Counter(w for w in capitalized if w.lower() not in STOP_WORDS)
+    top_entities = tuple(entity_counts.most_common(k))
+
+    # 2. Term Frequency Analysis (excluding stop words)
+    filtered_words = [w.lower() for w in words if w.lower() not in STOP_WORDS]
+    word_counts = Counter(filtered_words)
+
+    top_keywords = []
+    for term, count in word_counts.most_common(k):
+        tf = round(count / float(total_words), 4) if total_words > 0 else 0.0
+        top_keywords.append((term, count, tf))
+
+    return top_entities, tuple(top_keywords), total_words, len(word_counts)
+
+
 def extract_entities_from_text(text: str, top_k: int = 10) -> Dict[str, Any]:
     """
     Extracts key domain entities, technical terms, and TF-IDF word frequencies.
@@ -42,35 +66,12 @@ def extract_entities_from_text(text: str, top_k: int = 10) -> Dict[str, Any]:
         }
 
     k = max(1, int(top_k)) if top_k is not None and isinstance(top_k, (int, float)) else 10
-
-    words = RE_WORD.findall(text)
-    total_words = len(words)
-
-    # 1. Capitalized Entity Recognition (Proper Nouns & Acronyms)
-    capitalized = RE_PROPER_NOUN.findall(text)
-    entity_counts = Counter(w for w in capitalized if w.lower() not in STOP_WORDS)
-    top_entities = [
-        {"entity": term, "count": count}
-        for term, count in entity_counts.most_common(k)
-    ]
-
-    # 2. Term Frequency Analysis (excluding stop words)
-    filtered_words = [w.lower() for w in words if w.lower() not in STOP_WORDS]
-    word_counts = Counter(filtered_words)
-
-    top_keywords = []
-    for term, count in word_counts.most_common(top_k):
-        tf = round(count / float(total_words), 4) if total_words > 0 else 0.0
-        top_keywords.append({
-            "term": term,
-            "count": count,
-            "tf_score": tf
-        })
+    top_entities, top_keywords, total_words, unique_count = _extract_entities_cached(text, k)
 
     return {
-        "entities": top_entities,
-        "keywords": top_keywords,
+        "entities": [{"entity": term, "count": count} for term, count in top_entities],
+        "keywords": [{"term": term, "count": count, "tf_score": tf} for term, count, tf in top_keywords],
         "total_words": total_words,
-        "unique_keywords": len(word_counts),
+        "unique_keywords": unique_count,
         "status": "success"
     }
