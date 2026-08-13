@@ -25,10 +25,11 @@ def parse_codebase_ast(code_snippet: str) -> Dict[str, Any]:
     imports = []
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             functions.append({
                 "name": node.name,
                 "lineno": node.lineno,
+                "is_async": isinstance(node, ast.AsyncFunctionDef),
                 "args": [arg.arg for arg in node.args.args]
             })
         elif isinstance(node, ast.ClassDef):
