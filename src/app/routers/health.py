@@ -34,8 +34,7 @@ def get_health_status():
         try:
             req = urllib.request.Request("http://127.0.0.1:11434/api/tags", headers={"User-Agent": "Uroboros"})
             with urllib.request.urlopen(req, timeout=0.8) as resp:
-                if resp.status == 200:
-                    ollama_status = "online"
+                ollama_status = "online" if resp.status == 200 else "offline"
         except Exception:
             pass
 

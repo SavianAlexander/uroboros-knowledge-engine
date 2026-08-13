@@ -29,45 +29,51 @@ async def make_request(method: str, endpoint: str, **kwargs):
         response.raise_for_status()
         return response.json()
 
+SEARCH_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "query": {"type": "string", "description": "The search query"},
+        "limit": {"type": "integer", "description": "Max results to return", "default": 5},
+        "search_type": {"type": "string", "enum": ["hybrid", "vector", "fts"], "default": "hybrid"},
+    },
+    "required": ["query"],
+}
+
+INGEST_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "url": {"type": "string", "description": "URL or local file path to ingest"},
+    },
+    "required": ["url"],
+}
+
+TRIGGER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "event_type": {"type": "string", "description": "Event type (e.g., 'system_start', 'manual_trigger')"},
+        "payload": {"type": "object", "description": "Optional payload for the trigger"},
+    },
+    "required": ["event_type"],
+}
+
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     return [
         types.Tool(
             name="neuro_search",
             description="Perform a semantic search against the Uroboros Knowledge Engine.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "The search query"},
-                    "limit": {"type": "integer", "description": "Max results to return", "default": 5},
-                    "search_type": {"type": "string", "enum": ["hybrid", "vector", "fts"], "default": "hybrid"}
-                },
-                "required": ["query"],
-            },
+            inputSchema=SEARCH_SCHEMA,
         ),
         types.Tool(
             name="neuro_ingest",
             description="Ingest a URL or file path into the Knowledge Engine.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "url": {"type": "string", "description": "URL or local file path to ingest"}
-                },
-                "required": ["url"],
-            },
+            inputSchema=INGEST_SCHEMA,
         ),
         types.Tool(
             name="neuro_trigger_workflow",
             description="Trigger a workflow rule in the Knowledge Engine.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "event_type": {"type": "string", "description": "Event type (e.g., 'system_start', 'manual_trigger')"},
-                    "payload": {"type": "object", "description": "Optional payload for the trigger"}
-                },
-                "required": ["event_type"],
-            },
-        )
+            inputSchema=TRIGGER_SCHEMA,
+        ),
     ]
 
 @server.call_tool()
@@ -126,19 +132,17 @@ async def main():
     if not HAS_MCP:
         print("MCP library (mcp) is not installed on this system.")
         return
+    capabilities = server.get_capabilities(
+        notification_options=NotificationOptions(),
+        experimental_capabilities={},
+    )
+    init_options = InitializationOptions(
+        server_name="neuro-mcp",
+        server_version="0.1.0",
+        capabilities=capabilities,
+    )
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="neuro-mcp",
-                server_version="0.1.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            ),
-        )
+        await server.run(read_stream, write_stream, init_options)
 
 if __name__ == "__main__":
     asyncio.run(main())

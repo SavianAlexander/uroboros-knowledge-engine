@@ -105,6 +105,22 @@ def rag_stream_endpoint(req: RAGStreamRequest):
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
+
+def _stream_llm_chunks(llm, messages: list, req):
+    """Yield streamed tokens from Ollama or Llama LLM instance."""
+    if hasattr(llm, "stream_chat"):
+        model_choice = getattr(req, "model_config", None) or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+        temp_val = req.temperature if req.temperature is not None else 0.3
+        for tok in llm.stream_chat(messages=messages, model_name=model_choice, temperature=temp_val):
+            yield tok
+    else:
+        full_prompt = "\n\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages])
+        temp_val = req.temperature if req.temperature is not None else 0.3
+        stream = llm.create_completion(prompt=full_prompt, stream=True, max_tokens=1024, temperature=temp_val)
+        for chunk in stream:
+            yield chunk["choices"][0]["text"]
+
+
 @router.post("/api/chat/stream")
 def chat_stream_endpoint(req: ChatRequest):
     """
@@ -221,24 +237,9 @@ def chat_stream_endpoint(req: ChatRequest):
 
         if llm:
             try:
-                if hasattr(llm, "stream_chat"):
-                    model_choice = getattr(req, "model_config", None) or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
-                    temp_val = req.temperature if req.temperature is not None else 0.3
-                    for tok in llm.stream_chat(messages=messages, model_name=model_choice, temperature=temp_val):
-                        full_response_text += tok
-                        yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
-                else:
-                    full_prompt = "\n\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in messages])
-                    stream = llm.create_completion(
-                        prompt=full_prompt,
-                        stream=True,
-                        max_tokens=1024,
-                        temperature=req.temperature if req.temperature is not None else 0.3
-                    )
-                    for chunk in stream:
-                        tok = chunk["choices"][0]["text"]
-                        full_response_text += tok
-                        yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
+                for tok in _stream_llm_chunks(llm, messages, req):
+                    full_response_text += tok
+                    yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:

@@ -68,7 +68,12 @@ def run_audit(target_dir, quiet=False):
         "test_adversarial_traversal.db", "test_adversarial_traversal.db-wal", "test_adversarial_traversal.db-shm",
         "test_challenger_leakage.db", "test_challenger_leakage.db-wal", "test_challenger_leakage.db-shm",
         "playwright_debug.log", "peer_file.txt", "TEST_INFRA.md", "TEST_READY.md", "Progress Reports",
-        "ORIGINAL_REQUEST.md", "run_e2e_ui_tests.py"
+        "ORIGINAL_REQUEST.md", "run_e2e_ui_tests.py", ".dockerignore", "Dockerfile",
+        "Dockerfile.frontend", "Dockerfile.test", "docker-compose.yml", "docker-compose.test.yml",
+        "AGENTS.md", "ARCHITECTURE.md", "CHANGELOG.md", "CITATION.cff", "nginx.conf",
+        "pytest.ini", "ROADMAP.md", "SECURITY.md", "SUPPORT.md", "setup.ps1",
+        "uroboros_engine.spec", "build_desktop_app.py", "batch_index.py", "test_single_book.py",
+        "vectors.db"
     }
     excess_root = [
         f.name for f in all_files

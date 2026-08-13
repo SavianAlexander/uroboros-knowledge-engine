@@ -166,6 +166,25 @@ def save_file_endpoint(req: FileSaveRequest):
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+def _populate_db_tree_nodes(base: str, seen: set, tree: list):
+    """Populate file tree with additional indexed database files not on disk."""
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT filepath, filename, file_size FROM files")
+            for row in cursor.fetchall():
+                fp = row[0]
+                if not fp or os.path.abspath(fp) in seen:
+                    continue
+                abs_p = os.path.abspath(fp)
+                rel = os.path.relpath(fp, base) if abs_p.startswith(os.path.abspath(base)) else (row[1] or os.path.basename(fp))
+                sz = row[2] if row[2] is not None else (os.path.getsize(fp) if os.path.exists(fp) else 0)
+                tree.append({"filepath": fp, "relative_path": rel, "size": sz})
+                seen.add(abs_p)
+    except Exception:
+        pass
+
+
 @router.get("/api/file/tree")
 @router.get("/api/tree")
 def get_file_tree():
@@ -184,22 +203,7 @@ def get_file_tree():
             tree.append({"filepath": fp, "relative_path": rel, "size": os.path.getsize(fp)})
             seen.add(abs_p)
 
-    try:
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT filepath, filename, file_size FROM files")
-            for row in cursor.fetchall():
-                fp = row[0]
-                if fp:
-                    abs_p = os.path.abspath(fp)
-                    if abs_p not in seen:
-                        rel = os.path.relpath(fp, base) if abs_p.startswith(os.path.abspath(base)) else (row[1] or os.path.basename(fp))
-                        sz = row[2] if row[2] is not None else (os.path.getsize(fp) if os.path.exists(fp) else 0)
-                        tree.append({"filepath": fp, "relative_path": rel, "size": sz})
-                        seen.add(abs_p)
-    except Exception:
-        pass
-
+    _populate_db_tree_nodes(base, seen, tree)
     return {"base": base, "tree": tree}
 
 @router.post("/api/file/delete")
@@ -450,8 +454,7 @@ def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: 
                 cursor = conn.cursor()
                 cursor.execute("SELECT content FROM files WHERE filepath = ?", (fp,))
                 row = cursor.fetchone()
-                if row:
-                    db_content = row[0]
+                db_content = row[0] if row else None
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
@@ -500,14 +503,15 @@ def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: 
             truncated_text = content
 
         prompt = f"Document Content:\n{truncated_text}\n\nProvide the summary and 3 key insights."
+        chat_messages = [
+            {"role": "system", "content": "You are a document analyzer."},
+            {"role": "user", "content": prompt},
+        ]
         if llm:
             completion = llm.create_chat_completion(
-                messages=[
-                    {"role": "system", "content": "You are a document analyzer."},
-                    {"role": "user", "content": prompt}
-                ],
+                messages=chat_messages,
                 max_tokens=250,
-                temperature=0.3
+                temperature=0.3,
             )
             insights = completion["choices"][0]["message"]["content"]
         else:

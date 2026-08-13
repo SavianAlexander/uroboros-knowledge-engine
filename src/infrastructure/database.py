@@ -594,17 +594,17 @@ def init_db():
     _initialized_dbs.add(DB_FILE)
     print("Database initialized successfully.")
 
-def run_maintenance():
-    """Execute WAL checkpoint and incremental vacuum maintenance with safe connection management."""
+def run_maintenance(truncate_wal: bool = False):
+    """Execute WAL checkpoint (PASSIVE or TRUNCATE) and incremental vacuum maintenance."""
     if DB_FILE and os.path.dirname(DB_FILE):
         os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
     with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
         with conn:
             cursor = conn.cursor()
-        cursor.execute("PRAGMA wal_checkpoint(PASSIVE)")
-        cursor.execute("PRAGMA incremental_vacuum(100)")
-        cursor.execute("PRAGMA optimize")
-        conn.commit()
+            mode = "TRUNCATE" if truncate_wal else "PASSIVE"
+            cursor.execute(f"PRAGMA wal_checkpoint({mode})")
+            cursor.execute("PRAGMA incremental_vacuum(100)")
+            cursor.execute("PRAGMA optimize")
 
 def db_status() -> Dict[str, Any]:
     """Retrieve database metrics, page count, freelist, and table stats."""
