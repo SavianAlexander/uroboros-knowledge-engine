@@ -26,8 +26,9 @@ def audit_file_architecture(filepath: str) -> Dict[str, Any]:
         if len(lines) > 400:
             warnings.append(f"File is large ({len(lines)} lines). Consider modularizing.")
 
-        if len(ast_data.get("functions", [])) > 15:
-            warnings.append(f"High function count ({len(ast_data['functions'])} functions). High complexity risk.")
+        funcs = ast_data.get("functions", [])
+        if len(funcs) > 15:
+            warnings.append(f"High function count ({len(funcs)} functions). High complexity risk.")
 
         return {
             "status": "success",
