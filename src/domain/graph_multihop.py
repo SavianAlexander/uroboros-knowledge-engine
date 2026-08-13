@@ -16,17 +16,16 @@ def find_multihop_pathways(start_doc: str, target_doc: Optional[str] = None, max
     """
     try:
         import os
-        from src.infrastructure.database import get_db, init_db, DB_FILE
+        from src.infrastructure.database import get_db_connection, init_db, DB_FILE
 
         if DB_FILE and os.path.dirname(DB_FILE):
             os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
         init_db()
-        conn = get_db()
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT id, filename, filepath, content FROM files")
-        rows = cursor.fetchall()
+        with get_db_connection(DB_FILE) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, filename, filepath, content FROM files")
+            rows = cursor.fetchall()
 
         if not rows:
             return {"pathways": [], "status": "success"}
