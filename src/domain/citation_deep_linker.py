@@ -26,6 +26,9 @@ def create_deep_citation_link(
         return {"citation_id": citation_id, "start_char": 0, "end_char": 0, "found": False}
 
     start_pos = source_document_text.find(clean_target)
+    if start_pos == -1:
+        start_pos = source_document_text.lower().find(clean_target.lower())
+
     if start_pos != -1:
         end_pos = start_pos + len(clean_target)
         return {

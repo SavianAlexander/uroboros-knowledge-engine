@@ -12,6 +12,8 @@ def parse_markdown_tables(text: str) -> List[Dict[str, Any]]:
     Parses Markdown tables into structured JSON schemas.
     Zero-dependency stdlib implementation.
     """
+    if not text or not isinstance(text, str):
+        return []
     lines = text.strip().split("\n")
     tables = []
     current_table_lines = []

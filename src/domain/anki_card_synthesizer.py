@@ -40,9 +40,10 @@ def synthesize_anki_flashcards(passages: List[Dict[str, Any]]) -> Dict[str, Any]
             "tags": ["architecture", "default"]
         })
 
+    flashcards = cards[:15]
     return {
-        "cards_generated": len(cards),
-        "flashcards": cards[:15],
+        "cards_generated": len(flashcards),
+        "flashcards": flashcards,
         "anki_export_format": "CSV_TSV_COMPATIBLE",
         "status": "success"
     }

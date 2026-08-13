@@ -23,7 +23,8 @@ def allocate_context_budget(
     - System Instructions: 10%
     # ponytail: proportional context budget allocator
     """
-    token_budget = kwargs.get("total_token_budget", max_tokens)
+    raw_budget = kwargs.get("total_token_budget", max_tokens)
+    token_budget = int(raw_budget) if raw_budget is not None and isinstance(raw_budget, (int, float)) and raw_budget > 0 else 8192
     raw_vec = kwargs.get("vector_chunks", vector_snippets)
     vector_snippets = raw_vec if isinstance(raw_vec, list) else []
     raw_graph = kwargs.get("graph_halos", graph_pathways)
