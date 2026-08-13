@@ -411,12 +411,19 @@ def get_file_revisions_endpoint(path: str):
 @router.post("/api/file/revert")
 def revert_file_revision_endpoint(req: RevertRequest):
     """Revert a file to a specific revision ID."""
-    fp = req.get_path()
-    verify_path_containment(fp)
-    success = revert_file_revision(fp, req.revision_id)
-    if not success:
-        raise HTTPException(status_code=400, detail="Revision ID not found or path mismatch")
-    return {"status": "success", "reverted_to": req.revision_id}
+    try:
+        fp = req.get_path()
+        verify_path_containment(fp)
+        success = revert_file_revision(fp, req.revision_id)
+        if not success:
+            print(f"[REVERT_FAILED]: path='{fp}', revision_id={req.revision_id}", flush=True)
+            raise HTTPException(status_code=400, detail="Revision ID not found or path mismatch")
+        return {"status": "success", "reverted_to": req.revision_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/file/insights")
 @router.post("/api/file/insights")
