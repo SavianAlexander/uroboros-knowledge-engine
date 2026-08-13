@@ -15,11 +15,18 @@ def optimize_rag_prompt_density(
     Optimizes prompt context density by trimming low-relevance boilerplate while enforcing token budget limits.
     # ponytail: lightweight character/word-based token density budgeting
     """
-    char_budget = token_budget * 4  # Approx 4 chars per token
-    query_terms = set(w.lower() for w in query.split() if len(w) > 3)
+    safe_query = str(query or "")
+    safe_budget = max(100, int(token_budget)) if token_budget is not None and isinstance(token_budget, (int, float)) else 1000
+    char_budget = safe_budget * 4  # Approx 4 chars per token
+    query_terms = set(w.lower() for w in safe_query.split() if len(w) > 3)
+
+    if not context_chunks or not isinstance(context_chunks, list):
+        context_chunks = []
+
+    valid_chunks = [str(c) for c in context_chunks if c is not None]
 
     scored_chunks = []
-    for chunk in context_chunks:
+    for chunk in valid_chunks:
         words = set(w.lower() for w in chunk.split() if len(w) > 3)
         overlap = len(query_terms.intersection(words))
         scored_chunks.append((chunk, overlap, len(chunk)))

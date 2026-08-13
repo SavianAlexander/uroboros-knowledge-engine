@@ -12,8 +12,10 @@ def expand_child_chunks_to_parents(file_ids: List[int], max_chars_per_parent: in
     Expands matched child file IDs into full parent document contexts.
     Zero-dependency stdlib implementation.
     """
-    if not file_ids:
+    if not file_ids or not isinstance(file_ids, list):
         return []
+
+    safe_max_chars = max(100, int(max_chars_per_parent)) if max_chars_per_parent is not None and isinstance(max_chars_per_parent, (int, float)) else 1500
 
     try:
         import os
