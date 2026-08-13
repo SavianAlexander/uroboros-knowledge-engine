@@ -21,7 +21,7 @@ def mask_low_entropy_noise(text_chunk: str) -> Dict[str, Any]:
     """
     Evaluates lines/tokens for low information entropy and strips repetitive boilerplate.
     """
-    if not text_chunk:
+    if not text_chunk or not isinstance(text_chunk, str) or not text_chunk.strip():
         return {"clean_text": "", "token_reduction_pct": 0.0, "status": "empty_input"}
 
     lines = text_chunk.split("\n")

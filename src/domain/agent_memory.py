@@ -10,8 +10,13 @@ from typing import Dict, Any, List, Optional
 from src.infrastructure.database import get_db_connection, DB_FILE
 
 
+_initialized_dbs = set()
+
+
 def init_memory_db(db_path: str = DB_FILE):
     """Initializes agent_memory schema."""
+    if db_path in _initialized_dbs:
+        return
     with get_db_connection(db_path) as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS agent_memory (
@@ -25,6 +30,7 @@ def init_memory_db(db_path: str = DB_FILE):
             )
         """)
         conn.commit()
+    _initialized_dbs.add(db_path)
 
 
 def remember(key: str, value: Any, category: str = "preference", confidence: float = 1.0, db_path: str = DB_FILE) -> Dict[str, Any]:

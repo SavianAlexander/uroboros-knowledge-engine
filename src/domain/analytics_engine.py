@@ -14,8 +14,11 @@ from src.core.domain.models import (
     SearchActivityResponse
 )
 
+import threading
+
 # Global TTL cache dictionary: key -> (result, timestamp)
 _analytics_cache: Dict[tuple, tuple] = {}
+_cache_lock = threading.Lock()
 CACHE_TTL_SECONDS = 3.0
 from src.infrastructure.database import get_db_connection, DB_FILE
 
@@ -26,7 +29,8 @@ def _connect(db_path: Optional[str] = None):
 
 def clear_analytics_cache() -> None:
     """Clear the process-local analytics cache."""
-    _analytics_cache.clear()
+    with _cache_lock:
+        _analytics_cache.clear()
 
 
 def get_indexing_overview(db_path: Optional[str] = None) -> AnalyticsOverviewResponse:
@@ -35,10 +39,11 @@ def get_indexing_overview(db_path: Optional[str] = None) -> AnalyticsOverviewRes
     cache_key = ("indexing_overview", target_path, db_ver)
     now = time.time()
 
-    if cache_key in _analytics_cache:
-        res, ts = _analytics_cache[cache_key]
-        if now - ts < CACHE_TTL_SECONDS:
-            return res
+    with _cache_lock:
+        if cache_key in _analytics_cache:
+            res, ts = _analytics_cache[cache_key]
+            if now - ts < CACHE_TTL_SECONDS:
+                return res
 
     total_docs = 0
     total_chunks = 0

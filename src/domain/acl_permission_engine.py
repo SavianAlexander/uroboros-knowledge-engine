@@ -15,7 +15,9 @@ def is_user_authorized(
     Evaluates if user_context (user_id, roles/groups, clearance_level) is authorized to access document_acl.
     Zero-dependency stdlib implementation.
     """
-    if not document_acl:
+    if not user_context or not isinstance(user_context, dict):
+        return False
+    if not document_acl or not isinstance(document_acl, dict):
         return True  # Public document
 
     # 1. Check direct owner access
@@ -25,8 +27,10 @@ def is_user_authorized(
         return True
 
     # 2. Check clearance level requirement
-    req_clearance = document_acl.get("clearance_level", 0)
-    user_clearance = user_context.get("clearance_level", 0)
+    raw_req = document_acl.get("clearance_level", 0)
+    raw_user = user_context.get("clearance_level", 0)
+    req_clearance = int(raw_req) if raw_req is not None and isinstance(raw_req, (int, float, str)) and str(raw_req).isdigit() else 0
+    user_clearance = int(raw_user) if raw_user is not None and isinstance(raw_user, (int, float, str)) and str(raw_user).isdigit() else 0
     if user_clearance < req_clearance:
         return False
 

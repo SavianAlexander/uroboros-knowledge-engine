@@ -5,6 +5,7 @@ Zero-dependency, stdlib implementation.
 """
 
 import re
+import unicodedata
 from typing import Dict, Any, List
 
 
@@ -24,7 +25,6 @@ def compress_context_entropy(context_chunks: List[str], target_reduction: float 
     total_orig = sum(len(c) for c in valid_chunks)
 
     for chunk in valid_chunks:
-        import unicodedata
         norm_chunk = unicodedata.normalize("NFC", chunk)
         sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', norm_chunk) if s.strip()]
         if not sentences:
