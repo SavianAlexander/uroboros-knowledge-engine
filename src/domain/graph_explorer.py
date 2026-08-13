@@ -30,9 +30,11 @@ def generate_graph_topology(
             {"source": "doc_1", "target": "doc_3", "weight": 0.65}
         ]
     else:
+        import unicodedata
         for idx, doc in enumerate(valid_docs):
             doc_id = doc.get("id") or f"doc_{idx}"
-            label = doc.get("filename") or doc.get("title") or doc_id
+            raw_label = doc.get("filename") or doc.get("title") or doc_id
+            label = unicodedata.normalize("NFC", str(raw_label))
             nodes.append({
                 "id": doc_id,
                 "label": label,

@@ -33,6 +33,8 @@ def colbert_maxsim_score(query_token_embeddings: List[List[float]], doc_token_em
     """
     if not query_token_embeddings or not doc_token_embeddings:
         return 0.0
+    if not isinstance(query_token_embeddings, (list, tuple)) or not isinstance(doc_token_embeddings, (list, tuple)):
+        return 0.0
 
     normalized_docs = [normalize_vector(d) for d in doc_token_embeddings if d and isinstance(d, (list, tuple))]
     if not normalized_docs:

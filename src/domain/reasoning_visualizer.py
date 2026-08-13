@@ -17,11 +17,14 @@ def generate_mermaid_reasoning_diagram(pathways: List[Dict[str, Any]]) -> Dict[s
     lines = ["graph LR"]
     seen_edges = set()
 
+    import unicodedata
     for idx, path in enumerate(pathways):
         filenames = path.get("path_filenames", [])
         for i in range(len(filenames) - 1):
-            src = filenames[i].replace(" ", "_").replace(".", "_")
-            tgt = filenames[i+1].replace(" ", "_").replace(".", "_")
+            src_norm = unicodedata.normalize("NFC", str(filenames[i]))
+            tgt_norm = unicodedata.normalize("NFC", str(filenames[i+1]))
+            src = src_norm.replace(" ", "_").replace(".", "_")
+            tgt = tgt_norm.replace(" ", "_").replace(".", "_")
             edge = f"  {src} -->|Hop {i+1}| {tgt}"
             if edge not in seen_edges:
                 seen_edges.add(edge)

@@ -29,8 +29,10 @@ def truncate_context_window(
     - Applies a sliding window to retain the most recent user/assistant turns.
     - Maintains strict chronological sequence order.
     """
-    if not messages and not system_prompt:
-        return []
+    if not messages or not isinstance(messages, list):
+        if not system_prompt:
+            return []
+        messages = []
 
     result_messages: List[Dict[str, Any]] = []
 
