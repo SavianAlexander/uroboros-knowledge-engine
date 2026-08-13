@@ -11,7 +11,15 @@ def save_file_revision(filepath: str, content: str):
     content_hash = hashlib.sha256(content.encode("utf-8", errors="ignore")).hexdigest()
     with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
         cursor = conn.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS file_revisions (id INTEGER PRIMARY KEY AUTOINCREMENT, filepath TEXT, content TEXT, sha256 TEXT, created_at REAL)")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS file_revisions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filepath TEXT,
+                content TEXT,
+                sha256 TEXT,
+                saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
         cursor.execute("""
             INSERT INTO file_revisions (filepath, content, sha256)
             VALUES (?, ?, ?)
@@ -32,6 +40,15 @@ def get_file_revisions(filepath: str) -> List[Dict[str, Any]]:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS file_revisions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filepath TEXT,
+                content TEXT,
+                sha256 TEXT,
+                saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("""
             SELECT id, filepath, sha256, saved_at, LENGTH(content) as content_length
             FROM file_revisions
             WHERE filepath = ?
@@ -40,11 +57,10 @@ def get_file_revisions(filepath: str) -> List[Dict[str, Any]]:
         return [dict(row) for row in cursor.fetchall()]
 
 def revert_file_revision(filepath: str, revision_id: int) -> bool:
-    """Revert a file to a specific revision ID with correct column name (modified_at)."""
+    """Revert a file to a specific revision ID with correct column name."""
     norm_path = os.path.abspath(filepath)
     with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
-        with conn:
-            conn.row_factory = sqlite3.Row
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("SELECT content FROM file_revisions WHERE id = ? AND filepath = ?", (revision_id, norm_path))
         row = cursor.fetchone()
@@ -56,8 +72,11 @@ def revert_file_revision(filepath: str, revision_id: int) -> bool:
             f.write(rev_content)
         
         sha256 = hashlib.sha256(rev_content.encode("utf-8")).hexdigest()
-        cursor.execute("UPDATE files SET content = ?, sha256 = ?, modified_at = ? WHERE filepath = ?", (rev_content, sha256, os.path.getmtime(norm_path), norm_path))
-        cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (norm_path,))
-        cursor.execute("INSERT INTO fts_files (filepath, filename, content) VALUES (?, ?, ?)", (norm_path, os.path.basename(norm_path), rev_content))
+        cursor.execute("UPDATE files SET content = ?, file_size = ?, modified_at = ? WHERE filepath = ?", (rev_content, len(rev_content), os.path.getmtime(norm_path), norm_path))
+        try:
+            cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (norm_path,))
+            cursor.execute("INSERT INTO fts_files (filepath, filename, content) VALUES (?, ?, ?)", (norm_path, os.path.basename(norm_path), rev_content))
+        except Exception:
+            pass
         conn.commit()
         return True
