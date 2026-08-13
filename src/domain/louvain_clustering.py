@@ -7,19 +7,26 @@ def apply_louvain_communities(nodes: List[Dict[str, Any]], edges: List[Dict[str,
     Louvain modularity community detection algorithm for graph node partitioning.
     Assigns community_id and community_color to each graph node.
     """
-    if not nodes:
+    if not nodes or not isinstance(nodes, list):
+        return []
+
+    valid_nodes = [n for n in nodes if isinstance(n, dict) and "id" in n]
+    if not valid_nodes:
         return nodes
 
+    safe_edges = edges if isinstance(edges, list) else []
+
     # Map node id to initial community (each node in its own community)
-    node_community = {n["id"]: idx % len(PALETTE) for idx, n in enumerate(nodes)}
+    node_community = {n["id"]: idx % len(PALETTE) for idx, n in enumerate(valid_nodes)}
 
     # Group nodes by connected components / edge adjacency
-    adj: Dict[str, List[str]] = {n["id"]: [] for n in nodes}
-    for e in edges:
-        s, t = e.get("source"), e.get("target")
-        if s in adj and t in adj:
-            adj[s].append(t)
-            adj[t].append(s)
+    adj: Dict[str, List[str]] = {n["id"]: [] for n in valid_nodes}
+    for e in safe_edges:
+        if isinstance(e, dict):
+            s, t = e.get("source"), e.get("target")
+            if s in adj and t in adj:
+                adj[s].append(t)
+                adj[t].append(s)
 
     # Single-pass modularity label propagation
     for n_id, neighbors in adj.items():

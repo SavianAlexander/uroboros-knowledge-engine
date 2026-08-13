@@ -37,7 +37,7 @@ def chunk_by_semantic_entropy(
     Chunks text by calculating semantic entropy distance between adjacent sentences.
     Creates a new chunk whenever distance spikes above distance_threshold or max_chunk_size is exceeded.
     """
-    if not text or not text.strip():
+    if not text or not isinstance(text, str) or not text.strip():
         return []
 
     sentences = split_sentences(text)
