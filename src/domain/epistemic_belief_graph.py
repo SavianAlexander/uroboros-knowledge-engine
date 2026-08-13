@@ -14,7 +14,8 @@ def update_epistemic_belief_graph(
     """
     Updates the dynamic belief graph with a new user/document claim, detecting conflicts with prior beliefs.
     """
-    safe_claim = str(new_claim or "")
+    import unicodedata
+    safe_claim = unicodedata.normalize("NFC", str(new_claim or ""))
     beliefs = [b for b in (existing_beliefs or []) if isinstance(b, dict)]
     norm_claim = safe_claim.strip().lower()
 

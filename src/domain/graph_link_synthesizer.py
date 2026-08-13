@@ -16,7 +16,8 @@ def auto_synthesize_wikilinks(text_content: str, known_doc_titles: List[str]) ->
     if not text_content or not known_doc_titles:
         return {"status": "clean", "synthesized_text": text_content, "links_added": 0}
 
-    synthesized = text_content
+    import unicodedata
+    synthesized = unicodedata.normalize("NFC", text_content)
     links_added = 0
     added_titles = []
 

@@ -31,7 +31,8 @@ class HyperGraphRouter:
         """Finds all hyper-edges containing the target node subset in O(1) multi-entity match."""
         if not target_nodes or not isinstance(target_nodes, (set, list, tuple)):
             return []
-        targets = set(str(n).lower() for n in target_nodes if n is not None)
+        import unicodedata
+        targets = set(unicodedata.normalize("NFC", str(n)).lower() for n in target_nodes if n is not None)
         matches = []
         for edge in self.hyper_edges:
             edge_nodes_lower = set(n.lower() for n in edge["nodes"])

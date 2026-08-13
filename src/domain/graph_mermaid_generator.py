@@ -27,7 +27,8 @@ def generate_mermaid_graph(focus_doc: str = "", max_nodes: int = 15) -> Dict[str
         if not rows:
             return {"mermaid_code": "graph TD;\n  EmptyVault[\"No Documents Found\"]", "status": "success"}
 
-        node_map = {str(r[1]).lower(): str(r[1]) for r in rows}
+        import unicodedata
+        node_map = {unicodedata.normalize("NFC", str(r[1])).lower(): unicodedata.normalize("NFC", str(r[1])) for r in rows}
         edges = []
 
         for r in rows:
