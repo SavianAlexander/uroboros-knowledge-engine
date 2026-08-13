@@ -11,7 +11,10 @@ from typing import Dict, Any, List, Set, Tuple
 
 def compute_shingles(text: str, k: int = 3) -> Set[str]:
     """Extracts word k-shingles from text."""
-    words = re.findall(r'\b[a-zA-Z0-9_-]+\b', text.lower())
+    if not text or not isinstance(text, (str, bytes)):
+        return set()
+    str_text = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
+    words = re.findall(r'\b[a-zA-Z0-9_-]+\b', str_text.lower())
     if len(words) < k:
         return {" ".join(words)} if words else set()
     return {" ".join(words[i:i+k]) for i in range(len(words) - k + 1)}
@@ -33,14 +36,13 @@ def detect_near_duplicates(similarity_threshold: float = 0.80) -> Dict[str, Any]
     """
     try:
         import os
-        from src.infrastructure.database import get_db, init_db
+        from src.infrastructure.database import get_db_connection, init_db
 
         init_db()
-        conn = get_db()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL LIMIT 50")
-        rows = cursor.fetchall()
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL LIMIT 50")
+            rows = cursor.fetchall()
 
         shingles_by_file = {}
         for r in rows:
