@@ -1006,6 +1006,42 @@ Uroboros incorporates zero-downtime database snapshot backup and cold-restore ca
 
 ---
 
-## 29. License
+## 29. Multilingual Tokenization & CJK Search Processing
+
+Uroboros features native Unicode NFC normalization and multi-language tokenization ([`unicodedata.normalize("NFC", text)`]):
+
+- **Diacritic & Accent Equivalence**: Character strings are normalized to Unicode NFC form before querying SQLite FTS5 indexes, ensuring accent-agnostic match parity (e.g., `canción` $\equiv$ `cancion`).
+- **CJK Sub-word Segmentation**: Chinese, Japanese, and Korean text tokenization utilizes `porter unicode61` character boundaries to enable substring matching without external C-extensions.
+
+---
+
+## 30. Containerized Multi-Service Topology & Docker Orchestration
+
+Production deployment is orchestrated via `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+services:
+  uroboros-backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_FILE=/app/data/knowledge.db
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    volumes:
+      - ./data:/app/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+```
+
+---
+
+## 31. License
 
 This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) file for complete details.
+
