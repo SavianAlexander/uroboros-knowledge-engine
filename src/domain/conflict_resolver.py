@@ -95,6 +95,3 @@ def detect_and_resolve_conflicts(topic: str = "") -> Dict[str, Any]:
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
-    finally:
-        if conn:
-            conn.close()

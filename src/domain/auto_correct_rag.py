@@ -16,11 +16,13 @@ def auto_correct_grounding(
     Audits response claims and automatically patches ungrounded claims with targeted micro-retrievals.
     # ponytail: real-time grounding audit and patch loop
     """
-    audit = verify_rag_grounding(llm_response, source_chunks)
+    import unicodedata
+    norm_resp = unicodedata.normalize("NFC", str(llm_response or ""))
+    norm_chunks = [unicodedata.normalize("NFC", str(c)) for c in source_chunks if c]
+    audit = verify_rag_grounding(norm_resp, norm_chunks)
     warnings = audit.get("hallucination_warnings", [])
 
-    safe_response = str(llm_response or "")
-    patched_response = safe_response
+    patched_response = norm_resp
     patches_applied = []
 
     for ungrounded_claim in warnings:
