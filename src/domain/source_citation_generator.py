@@ -18,7 +18,8 @@ def locate_text_in_file(filepath: str, snippet: str) -> Optional[Dict[str, int]]
     if not snippet or not isinstance(snippet, str):
         return None
 
-    clean_snippet = snippet.strip()
+    import unicodedata
+    clean_snippet = unicodedata.normalize("NFC", snippet.strip())
     if not clean_snippet:
         return None
 
@@ -26,7 +27,7 @@ def locate_text_in_file(filepath: str, snippet: str) -> Optional[Dict[str, int]]
 
     try:
         with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
-            lines = f.readlines()
+            lines = [unicodedata.normalize("NFC", line) for line in f.readlines()]
 
         for idx, line in enumerate(lines):
             if snippet_first_line in line:

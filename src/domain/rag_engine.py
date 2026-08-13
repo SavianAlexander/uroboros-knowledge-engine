@@ -419,3 +419,15 @@ def extract_advanced_rag_context(
         context_text = "\n".join(graph_context_blocks) + "\n\n" + context_text
     return context_text, citations
 
+
+def get_rag_engine_capabilities() -> Dict[str, Any]:
+    """Returns capabilities and configuration defaults for the zero-dependency RAG engine."""
+    return {
+        "engine_name": "Uroboros SOTA RAG Engine",
+        "search_modes": ["fts5_bm25", "matryoshka_dense", "binary_colbert_maxsim", "graphrag_2hop"],
+        "minhash_deduplication_threshold": 0.65,
+        "rrf_k_constant": 60.0,
+        "default_context_window_chars": 16384,
+        "status": "active"
+    }
+
