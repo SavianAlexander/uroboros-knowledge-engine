@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability Reporting
+    url: https://github.com/SavianAlexander/uroboros-knowledge-engine/blob/master/SECURITY.md
+    about: Please report security vulnerabilities privately via email to savianalexander@pm.me.
+  - name: Project Support & Troubleshooting Guide
+    url: https://github.com/SavianAlexander/uroboros-knowledge-engine/blob/master/SUPPORT.md
+    about: Consult our troubleshooting matrix and diagnostic guide before opening an issue.
