@@ -8,6 +8,15 @@ import unicodedata
 from typing import Dict, Any, List
 
 
+def _safe_float(val, default=0.5):
+    if val is None:
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
+
 def rerank_sparse_dense_fusion(
     query: str,
     candidate_chunks: List[Dict[str, Any]]
@@ -41,14 +50,6 @@ def rerank_sparse_dense_fusion(
         s_raw = chunk.get("sparse_score")
         d_raw = chunk.get("dense_score")
         c_raw = chunk.get("colbert_score")
-        
-        def _safe_float(val, default=0.5):
-            if val is None:
-                return default
-            try:
-                return float(val)
-            except (ValueError, TypeError):
-                return default
 
         sparse_score = _safe_float(s_raw, 0.5)
         dense_score = _safe_float(d_raw, 0.6)
