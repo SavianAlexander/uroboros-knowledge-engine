@@ -35,7 +35,7 @@ def compress_context_entropy(context_chunks: List[str], target_reduction: float 
             has_code = bool(re.search(r'[`_(){}\[\]=:]', sent))
             words = sent.split()
             middle_words = words[1:] if len(words) > 1 else []
-            has_entities = any(bool(re.match(r'^[A-Z][a-zA-Z0-9_-]+$', w)) for w in middle_words)
+            has_entities = any(bool(re.match(r'^[A-Z][a-zA-Z0-9_-]*$', w.strip(".,;:!?\"'()[]{}"))) for w in middle_words)
 
             if has_numbers or has_code or has_entities or len(words) < 8:
                 keep_sentences.append(sent)

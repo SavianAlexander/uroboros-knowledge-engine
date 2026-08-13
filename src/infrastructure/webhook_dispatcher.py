@@ -10,9 +10,45 @@ import asyncio
 import threading
 import urllib.request
 import urllib.error
+import socket
+import ipaddress
+import urllib.parse
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 from src.infrastructure.repositories.workflows import log_workflow_execution
+
+
+def is_ssrf_safe_url(url: str) -> bool:
+    """
+    Validates target URL against Server-Side Request Forgery (SSRF) risks.
+    Blocks loopback (127.0.0.1/8), private RFC1918 (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16),
+    link-local metadata (169.254.169.254), and multicast/reserved IP ranges.
+    """
+    if not url or not isinstance(url, str):
+        return False
+    try:
+        parsed = urllib.parse.urlparse(url.strip())
+        if parsed.scheme not in ("http", "https"):
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        # In test environments, allow localhost testing
+        from src.core.config import is_testing
+        if is_testing and hostname.lower() in ("localhost", "127.0.0.1", "testserver"):
+            return True
+
+        # Resolve IP addresses
+        ip_list = socket.getaddrinfo(hostname, None)
+        for item in ip_list:
+            ip_str = item[4][0]
+            ip_obj = ipaddress.ip_address(ip_str)
+            if ip_obj.is_loopback or ip_obj.is_private or ip_obj.is_link_local or ip_obj.is_multicast or ip_obj.is_reserved:
+                return False
+        return True
+    except Exception:
+        return False
 
 
 def compute_hmac_signature(secret: str, payload_bytes: bytes) -> str:
@@ -55,6 +91,28 @@ def dispatch_webhook_sync(
     last_response_body = ""
     success = False
     retry_count = 0
+
+    if not is_ssrf_safe_url(webhook_url):
+        log_id = log_workflow_execution(
+            trigger_id=trigger_id,
+            event_type=event_type,
+            payload_json=payload_str,
+            status="blocked_ssrf",
+            response_status_code=403,
+            response_body="Blocked: SSRF protection policy rejected target host IP/subnet",
+            execution_time_ms=0.0,
+            retry_count=0
+        )
+        return {
+            "log_id": log_id,
+            "trigger_id": trigger_id,
+            "event_type": event_type,
+            "status": "blocked_ssrf",
+            "response_status_code": 403,
+            "response_body": "Blocked: SSRF protection policy rejected target host IP/subnet",
+            "execution_time_ms": 0.0,
+            "retry_count": 0
+        }
 
     for attempt in range(max_retries):
         retry_count = attempt

@@ -153,20 +153,33 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
                 import logging; logging.getLogger(__name__).exception(f"Swallowed error in parsers.py: {e}")
                 return f"[Parsing Error: {str(e)}]", []
         elif suffix == '.docx':
-            doc = docx.Document(filepath)
-            return "\n".join([para.text for para in doc.paragraphs]), []
+            try:
+                doc = docx.Document(filepath)
+                return "\n".join([para.text for para in doc.paragraphs]), []
+            except Exception as e:
+                return f"[DOCX Parsing Error: {str(e)}]", []
         elif suffix == '.rtf':
-            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                return rtf_to_text(f.read()), []
+            try:
+                with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                    return rtf_to_text(f.read()), []
+            except Exception as e:
+                return f"[RTF Parsing Error: {str(e)}]", []
         elif suffix == '.xlsx':
-            wb = openpyxl.load_workbook(filepath, read_only=True, data_only=True)
-            text_lines = []
-            for sheet in wb.worksheets:
-                for row in sheet.iter_rows(values_only=True):
-                    row_str = " ".join([str(v) for v in row if v is not None])
-                    if row_str.strip():
-                        text_lines.append(row_str)
-            return "\n".join(text_lines), []
+            try:
+                wb = openpyxl.load_workbook(filepath, read_only=True, data_only=True)
+                text_lines = []
+                for sheet in wb.worksheets:
+                    for row in sheet.iter_rows(values_only=True):
+                        row_str = " ".join([str(v) for v in row if v is not None])
+                        if row_str.strip():
+                            text_lines.append(row_str)
+                try:
+                    wb.close()
+                except Exception:
+                    pass
+                return "\n".join(text_lines), []
+            except Exception as e:
+                return f"[XLSX Parsing Error: {str(e)}]", []
         elif suffix in ['.png', '.jpg', '.jpeg', '.bmp']:
             return extract_ocr_text_structured(filepath)
         elif suffix in ['.mp3', '.wav', '.m4a', '.flac', '.ogg']:
