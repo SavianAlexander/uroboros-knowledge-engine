@@ -299,6 +299,14 @@ def run_single_module(mod_name):
     if suite and suite.countTestCases() > 0:
         runner = unittest.TextTestRunner(stream=open(os.devnull, 'w'))
         res = runner.run(suite)
+        if res.failures:
+            print(f"\n[FAILURES IN {mod_name}]:")
+            for test_case, tb in res.failures:
+                print(f"  FAILED: {test_case}\n{tb}")
+        if res.errors:
+            print(f"\n[ERRORS IN {mod_name}]:")
+            for test_case, tb in res.errors:
+                print(f"  ERROR: {test_case}\n{tb}")
         mod_t1 = time.time()
         passed = max(0, res.testsRun - len(res.failures) - len(res.errors) - len(res.skipped))
         failures_cnt = len(res.failures)
