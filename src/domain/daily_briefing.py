@@ -17,7 +17,8 @@ def generate_daily_briefing() -> Dict[str, Any]:
 
         # Document Metrics
         cursor.execute("SELECT COUNT(*) as cnt FROM files")
-        total_files = cursor.fetchone()["cnt"]
+        row_files = cursor.fetchone()
+        total_files = row_files["cnt"] if row_files else 0
 
         cursor.execute("SELECT tag, COUNT(*) as cnt FROM tags GROUP BY tag ORDER BY cnt DESC LIMIT 5")
         top_tags = [{"tag": r["tag"], "count": r["cnt"]} for r in cursor.fetchall()]
@@ -27,10 +28,12 @@ def generate_daily_briefing() -> Dict[str, Any]:
 
         # Vector & Chunk Metrics
         cursor.execute("SELECT COUNT(*) as cnt FROM file_chunks")
-        total_chunks = cursor.fetchone()["cnt"]
+        row_chunks = cursor.fetchone()
+        total_chunks = row_chunks["cnt"] if row_chunks else 0
 
         cursor.execute("SELECT COUNT(*) as cnt FROM file_chunks WHERE embedding_json IS NOT NULL AND embedding_json != '[]'")
-        total_embedded = cursor.fetchone()["cnt"]
+        row_emb = cursor.fetchone()
+        total_embedded = row_emb["cnt"] if row_emb else 0
 
         coverage_pct = round((total_embedded / total_chunks * 100), 1) if total_chunks > 0 else 0.0
 
