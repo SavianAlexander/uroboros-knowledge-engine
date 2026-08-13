@@ -9,9 +9,15 @@ $env:PYTHONOPTIMIZE = "1"
 $env:PYTHONPYCACHEPREFIX = "$env:LOCALAPPDATA\pycache"
 $env:FORCE_CMAKE = "1"
 $env:CMAKE_ARGS = "-DGGML_VULKAN=on"
+if (-not $env:PORT) { $env:PORT = "8085" }
+
+$pyCmd = if (Test-Path ".venv\Scripts\python.exe") { ".venv\Scripts\python.exe" } else { "python" }
+
+Write-Host "Launching backend at http://127.0.0.1:$($env:PORT)..." -ForegroundColor Yellow
+Start-Process "http://127.0.0.1:$($env:PORT)"
 
 try {
-    python main.py
+    & $pyCmd main.py
 } catch {
     Write-Host "`nFailed to launch Python engine: $_" -ForegroundColor Red
     $global:LASTEXITCODE = 1
