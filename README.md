@@ -1061,6 +1061,19 @@ Uroboros incorporates zero-downtime database snapshot backup and cold-restore ca
 
 ---
 
-## 32. License
+## 32. Code of Conduct & Technical Governance Framework
+
+Uroboros Knowledge Engine enforces strict standards for community interaction, technical ethics, air-gapped data privacy, and autonomous AI agent governance. See [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for full guidelines.
+
+### Summary of Governance Standards
+- **100% Zero-Cloud Data Sovereignty**: All model inference, vector embeddings, and search indexing execute strictly on local hardware (Ollama / GGUF) without third-party API tracking.
+- **Deterministic Security & Cryptographic Integrity**: Enforces automated PII redaction ([`pii_privacy_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/pii_privacy_guard.py)), Zero-Knowledge verification proofs ([`zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py)), and SHA-256 audit ledger logging.
+- **Ponytail Minimalist Engineering**: Standard library first, zero speculative abstractions, and shortest working diffs.
+- **Autonomous Agent Interaction**: AI assistants must log all multi-step execution plans to Tududi Task Master (`tududi`) and inspect un-truncated logs before diagnosing errors.
+
+---
+
+## 33. License
 
 This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) file for complete details.
+
