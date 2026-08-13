@@ -44,7 +44,12 @@ def apply_recency_decay(candidates: List[Dict[str, Any]], decay_half_life_days: 
         delta_days = delta_sec / 86400.0
         recency_multiplier = round(math.exp(-decay_lambda * delta_days), 6)
 
-        initial_score = cand.get("rrf_score") or cand.get("score") or 1.0
+        raw_score = cand.get("rrf_score") if cand.get("rrf_score") is not None else cand.get("score")
+        try:
+            initial_score = float(raw_score) if raw_score is not None else 1.0
+        except (ValueError, TypeError):
+            initial_score = 1.0
+
         final_score = round(initial_score * recency_multiplier, 6)
 
         cand_copy = dict(cand)

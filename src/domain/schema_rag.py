@@ -11,8 +11,8 @@ def extract_tabular_schema_chunks(table_text: str) -> List[Dict[str, Any]]:
     """
     Extracts tabular chunks from a Markdown table string, injecting header schema into each row.
     """
-    if not table_text or "|" not in table_text:
-        return [{"row_index": 0, "content": table_text, "headers": []}]
+    if not table_text or not isinstance(table_text, str) or "|" not in table_text:
+        return [{"row_index": 0, "content": str(table_text or ""), "headers": []}]
 
     lines = [line.strip() for line in table_text.strip().split("\n") if line.strip()]
     table_lines = [l for l in lines if l.startswith("|") and l.endswith("|")]

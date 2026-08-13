@@ -14,7 +14,7 @@ def build_raptor_tree(doc_chunks: List[Dict[str, str]]) -> Dict[str, Any]:
     Level 1: Aggregated cluster summaries.
     # ponytail: zero-dependency hierarchical RAPTOR summary tree
     """
-    if not doc_chunks:
+    if not doc_chunks or not isinstance(doc_chunks, list):
         return {"status": "empty", "tree_depth": 0, "level_0": [], "level_1": []}
 
     level_0 = [

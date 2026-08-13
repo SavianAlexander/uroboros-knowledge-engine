@@ -41,7 +41,8 @@ def align_cross_lingual_query(query: str, source_lang: str = "auto") -> Dict[str
     if not query:
         return {"original_query": "", "aligned_query": "", "translations_applied": 0, "status": "success"}
 
-    query_lower = query.lower()
+    import unicodedata
+    query_lower = unicodedata.normalize("NFC", str(query)).lower()
     aligned = query_lower
     translations_applied = 0
 

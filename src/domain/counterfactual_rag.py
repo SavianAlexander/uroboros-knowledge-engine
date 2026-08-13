@@ -58,10 +58,6 @@ def simulate_counterfactual_scenario(
     res = execute_counterfactual_rag(query)
     total_ctx = len(retrieved_contexts) if isinstance(retrieved_contexts, (list, tuple, set)) else 0
     excluded_cnt = len(counterfactual_indices) if isinstance(counterfactual_indices, (list, tuple, set)) else 0
-    return {
-        "status": "success",
-        "query": str(query or ""),
-        "total_contexts": total_ctx,
-        "excluded_count": excluded_cnt,
-        "base_execution": res
-    }
+    res["provided_contexts_count"] = total_ctx
+    res["active_context_count"] = max(0, total_ctx - excluded_cnt)
+    return res

@@ -21,8 +21,10 @@ def expand_cross_lingual_query(query: str) -> str:
     if not query or not isinstance(query, str):
         return ""
 
-    expanded_terms = [query]
-    words = [w.strip(".,;:!?\"'()[]{}").lower() for w in query.split() if w.strip(".,;:!?\"'()[]{}")]
+    import unicodedata
+    norm_query = unicodedata.normalize("NFC", str(query))
+    expanded_terms = [norm_query]
+    words = [w.strip(".,;:!?\"'()[]{}").lower() for w in norm_query.split() if w.strip(".,;:!?\"'()[]{}")]
 
     for w in words:
         if w in CROSS_LINGUAL_DICT:

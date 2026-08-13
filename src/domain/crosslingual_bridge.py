@@ -18,10 +18,12 @@ def project_multilingual_vector(
     if not text:
         return {"latent_vector": [], "status": "empty_input"}
 
+    import unicodedata
+    norm_text = unicodedata.normalize("NFC", str(text))
     # Generate language-invariant hash projection vector (dim 64)
     dim = 64
     vec = [0.0] * dim
-    for i, char in enumerate(text):
+    for i, char in enumerate(norm_text):
         idx = (ord(char) * (i + 1)) % dim
         vec[idx] += 1.0
 

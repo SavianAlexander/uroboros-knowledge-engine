@@ -23,8 +23,9 @@ def align_cross_lingual_query(query: str) -> Dict[str, Any]:
     Normalizes accents/diacritics (NFC/NFD) and aligns non-English terms to English vault equivalents.
     Zero-dependency stdlib implementation.
     """
-    # Unicode NFC normalization
-    norm_query = unicodedata.normalize("NFD", query)
+    # Unicode NFC & NFD normalization
+    norm_nfc = unicodedata.normalize("NFC", str(query))
+    norm_query = unicodedata.normalize("NFD", norm_nfc)
     stripped_query = "".join(c for c in norm_query if unicodedata.category(c) != "Mn").lower()
 
     tokens = re.findall(r'\b[a-z0-9_-]{3,}\b', stripped_query)
