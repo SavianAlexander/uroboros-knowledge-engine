@@ -12,6 +12,31 @@ from fastapi.responses import StreamingResponse
 
 logger = logging.getLogger(__name__)
 
+def _smart_extract_context(context: str, query: str, max_chars: int = 6000) -> str:
+    if len(context) <= max_chars:
+        return context
+    import re
+    keywords = set([kw for kw in re.findall(r'\w+', query.lower()) if len(kw) > 3])
+    if not keywords:
+        return context[:max_chars]
+    sentences = re.split(r'(?<=[.!?])\s+', context)
+    scored = []
+    for idx, s in enumerate(sentences):
+        s_lower = s.lower()
+        score = sum(1 for kw in keywords if kw in s_lower)
+        scored.append((score, idx, s))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    selected_indices = []
+    current_len = 0
+    for score, idx, s in scored:
+        if current_len + len(s) > max_chars:
+            continue
+        selected_indices.append(idx)
+        current_len += len(s)
+    selected_indices.sort()
+    selected_text = " ... ".join([sentences[i] for i in selected_indices])
+    return selected_text if selected_text else context[:max_chars]
+
 from src.core.domain.models import (
     RAGStreamRequest, ChatRequest, ChatResponse, ContemplateRequest, ContemplateResponse,
     CreateSessionRequest, UpdateSessionRequest, AddMessageRequest
@@ -21,8 +46,34 @@ from src.domain.web_search import fetch_web_context
 from src.infrastructure.repositories.workflows import list_workflow_logs
 from src.infrastructure.vector_engine import extract_rag_context
 from src.infrastructure.repositories.chat import create_chat_session, list_chat_sessions, get_chat_session, update_chat_session, delete_chat_session, add_chat_message, get_chat_messages
-from src.infrastructure.llm import is_llm_available
-from src.core.model_manager import get_fallback_llm, expand_query_with_llm
+import re
+
+RE_WORD_BOUNDARIES = re.compile(r'\w+')
+RE_SENTENCE_BOUNDARIES = re.compile(r'(?<=[.!?])\s+')
+
+def _smart_extract_context(context: str, query: str, max_chars: int = 6000) -> str:
+    if len(context) <= max_chars:
+        return context
+    keywords = set([kw for kw in RE_WORD_BOUNDARIES.findall(query.lower()) if len(kw) > 3])
+    if not keywords:
+        return context[:max_chars]
+    sentences = RE_SENTENCE_BOUNDARIES.split(context)
+    scored = []
+    for idx, s in enumerate(sentences):
+        s_lower = s.lower()
+        score = sum(1 for kw in keywords if kw in s_lower)
+        scored.append((score, idx, s))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    selected_indices = []
+    current_len = 0
+    for score, idx, s in scored:
+        if current_len + len(s) > max_chars:
+            continue
+        selected_indices.append(idx)
+        current_len += len(s)
+    selected_indices.sort()
+    selected_text = " ... ".join([sentences[i] for i in selected_indices])
+    return selected_text if selected_text else context[:max_chars]
 
 router = APIRouter()
 
@@ -157,32 +208,6 @@ def chat_stream_endpoint(req: ChatRequest):
         except Exception:
             pass
 
-def _smart_extract_context(context: str, query: str, max_chars: int = 6000) -> str:
-    if len(context) <= max_chars:
-        return context
-    import re
-    keywords = set([kw for kw in re.findall(r'\w+', query.lower()) if len(kw) > 3])
-    if not keywords:
-        return context[:max_chars]
-    sentences = re.split(r'(?<=[.!?])\s+', context)
-    scored = []
-    for idx, s in enumerate(sentences):
-        s_lower = s.lower()
-        score = sum(1 for kw in keywords if kw in s_lower)
-        scored.append((score, idx, s))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    selected_indices = []
-    current_len = 0
-    for score, idx, s in scored:
-        if current_len + len(s) > max_chars:
-            continue
-        selected_indices.append(idx)
-        current_len += len(s)
-    selected_indices.sort()
-    selected_text = " ... ".join([sentences[i] for i in selected_indices])
-    return selected_text if selected_text else context[:max_chars]
-
-        # Inside _generate_stream
         if local_context:
             truncated_local = _smart_extract_context(local_context, user_query, 6000)
             messages.append({"role": "system", "content": f"Document Vault Context:\n{truncated_local}"})
