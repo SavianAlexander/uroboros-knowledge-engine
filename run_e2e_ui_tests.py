@@ -91,12 +91,25 @@ def main_runner():
     # 2. Ephemeral Port Socket Binding
     host = "127.0.0.1"
 
-    # 3. Start Background Server
     server_thread = ServerThread(host, 0)
     server_thread.start()
-    time.sleep(1.5)
-    
-    port = server_thread.server.servers[0].sockets[0].getsockname()[1]
+
+    # Poll until uvicorn server socket is bound
+    start_time = time.time()
+    port = None
+    while time.time() - start_time < 10.0:
+        if hasattr(server_thread.server, "servers") and server_thread.server.servers:
+            sockets = getattr(server_thread.server.servers[0], "sockets", None)
+            if sockets:
+                port = sockets[0].getsockname()[1]
+                break
+        time.sleep(0.1)
+
+    if not port:
+        print("[E2E Runner] ERROR: Dynamic socket failed to bind within timeout.")
+        server_thread.stop()
+        sys.exit(1)
+
     os.environ["FRONTEND_URL"] = f"http://{host}:{port}"
     print(f"[E2E Runner] Dynamic Ephemeral Socket Bound to http://{host}:{port}")
 
