@@ -34,18 +34,14 @@ def get_all_tags_endpoint():
     """List all unique tags with custom colors."""
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT tag, color FROM tag_metadata")
-        color_map = {row["tag"]: row["color"] for row in cursor.fetchall()}
-        cursor.execute("SELECT DISTINCT tag FROM tags ORDER BY tag ASC")
-        tags = []
-        for row in cursor.fetchall():
-            t_name = row[0]
-            tags.append({"tag": t_name, "color": color_map.get(t_name, "#3b82f6")})
-        existing = set(t["tag"] for t in tags)
-        for t_name, col in color_map.items():
-            if t_name not in existing:
-                tags.append({"tag": t_name, "color": col})
-        return {"tags": tags}
+        cursor.execute("""
+            SELECT tag, COALESCE(color, '#3b82f6') as color FROM (
+                SELECT t.tag as tag, tm.color as color FROM tags t LEFT JOIN tag_metadata tm ON t.tag = tm.tag
+                UNION
+                SELECT tm.tag as tag, tm.color as color FROM tag_metadata tm
+            ) ORDER BY tag ASC
+        """)
+        return {"tags": [{"tag": r[0], "color": r[1]} for r in cursor.fetchall()]}
 
 @router.get("/api/suggested_tags")
 @router.get("/api/file/suggested-tags")

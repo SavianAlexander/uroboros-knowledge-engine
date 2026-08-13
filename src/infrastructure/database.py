@@ -588,6 +588,8 @@ def init_db():
 
             conn.commit()
             cursor.execute("PRAGMA wal_checkpoint(PASSIVE)")
+    
+    _initialized_dbs.add(DB_FILE)
     print("Database initialized successfully.")
 
 def run_maintenance():
