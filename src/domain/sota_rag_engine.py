@@ -8,7 +8,7 @@ Integrates:
 import os
 import re
 import sqlite3
-from typing import Dict, Any, List, Set
+from typing import Dict, Any, List, Set, Tuple
 from src.domain.near_duplicate_detector import compute_shingles, jaccard_similarity
 from src.domain.graph_pagerank import compute_graph_pagerank
 
