@@ -27,6 +27,41 @@ STOP_WORDS = {
 }
 
 
+from functools import lru_cache
+from typing import Dict, Any, List, Tuple
+
+@lru_cache(maxsize=1024)
+def _summarize_text_cached(clean_str: str, safe_max: int) -> Tuple[Tuple[str, ...], int]:
+    # Split into sentences
+    raw_sentences = RE_SENTENCE.split(clean_str)
+    sentences = [s.strip() for s in raw_sentences if len(s.strip()) > 15]
+
+    if not sentences:
+        return (clean_str[:200],), 1
+
+    # Calculate word frequency scores across document
+    all_words = RE_WORD.findall(clean_str.lower())
+    content_words = [w for w in all_words if w not in STOP_WORDS]
+    word_counts = Counter(content_words)
+
+    # Rank sentences based on accumulated word frequency weights
+    sentence_scores = []
+    for idx, sentence in enumerate(sentences):
+        words = RE_WORD.findall(sentence.lower())
+        if not words:
+            continue
+        score = sum(word_counts[w] for w in words if w not in STOP_WORDS) / float(len(words))
+        sentence_scores.append((score, idx, sentence))
+
+    # Pick top N sentences maintaining original narrative order
+    sentence_scores.sort(key=lambda x: x[0], reverse=True)
+    top_ranked = sentence_scores[:safe_max]
+    top_ranked.sort(key=lambda x: x[1])  # Re-sort by original index
+
+    extracted_sentences = tuple(s[2] for s in top_ranked)
+    return extracted_sentences, len(sentences)
+
+
 def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
     """
     Ranks sentences by TF-IDF keyword density to generate a high-density extractive summary.
@@ -43,7 +78,8 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
 
     raw_str = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
     str_text = unicodedata.normalize("NFC", raw_str)
-    if not str_text.strip():
+    clean_str = str_text.strip()
+    if not clean_str:
         return {
             "summary": "",
             "key_sentences": [],
@@ -52,7 +88,6 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
             "status": "empty"
         }
 
-    clean_str = str_text.strip()
     if '.' not in clean_str and '!' not in clean_str and '?' not in clean_str:
         return {
             "summary": clean_str,
@@ -63,47 +98,16 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
             "status": "success"
         }
 
-    # Split into sentences
-    raw_sentences = RE_SENTENCE.split(clean_str)
-    sentences = [s.strip() for s in raw_sentences if len(s.strip()) > 15]
-
-    if not sentences:
-        return {
-            "summary": str_text[:200],
-            "key_sentences": [str_text[:200]],
-            "total_sentences": 1,
-            "compression_ratio": 1.0,
-            "status": "success"
-        }
-
-    # Calculate word frequency scores across document
-    all_words = RE_WORD.findall(str_text.lower())
-    content_words = [w for w in all_words if w not in STOP_WORDS]
-    word_counts = Counter(content_words)
-
-    # Rank sentences based on accumulated word frequency weights
-    sentence_scores = []
-    for idx, sentence in enumerate(sentences):
-        words = RE_WORD.findall(sentence.lower())
-        if not words:
-            continue
-        score = sum(word_counts[w] for w in words if w not in STOP_WORDS) / float(len(words))
-        sentence_scores.append((score, idx, sentence))
-
-    # Pick top N sentences maintaining original narrative order
-    sentence_scores.sort(key=lambda x: x[0], reverse=True)
     safe_max = max(1, int(max_sentences)) if max_sentences is not None and isinstance(max_sentences, (int, float)) else 3
-    top_ranked = sentence_scores[:safe_max]
-    top_ranked.sort(key=lambda x: x[1])  # Re-sort by original index
+    extracted_sentences, total_sentences = _summarize_text_cached(clean_str, safe_max)
 
-    extracted_sentences = [s[2] for s in top_ranked]
     summary = " ".join(extracted_sentences)
-    ratio = round(len(summary) / float(max(1, len(str_text))), 4)
+    ratio = round(len(summary) / float(len(clean_str)), 4) if len(clean_str) > 0 else 0.0
 
     return {
         "summary": summary,
-        "key_sentences": extracted_sentences,
-        "total_sentences": len(sentences),
+        "key_sentences": list(extracted_sentences),
+        "total_sentences": total_sentences,
         "extracted_sentences_count": len(extracted_sentences),
         "compression_ratio": ratio,
         "status": "success"
