@@ -80,10 +80,10 @@ coll = COLLECT(
         f.write(spec_content)
     
     build_dir = os.path.join(root_dir, "build")
-    if os.path.exists(build_dir):
-        build_spec_path = os.path.join(build_dir, "UroborosKnowledgeHub.spec")
-        with open(build_spec_path, "w", encoding="utf-8") as f:
-            f.write(spec_content)
+    os.makedirs(build_dir, exist_ok=True)
+    build_spec_path = os.path.join(build_dir, "UroborosKnowledgeHub.spec")
+    with open(build_spec_path, "w", encoding="utf-8") as f:
+        f.write(spec_content)
 
     print(f"Generated spec file: {spec_path}")
     return spec_path
