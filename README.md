@@ -54,311 +54,234 @@ $$MaxSim(Q, D) = \sum_{i \in Q} \max_{j \in D} \text{PopCount}(q_i \oplus d_j)$$
 
 ---
 
-## 2. System Architecture & Complete Codebase Layout
+## 2. Full Directory & Module Map
 
 ```
 c:\Users\Administrator\Desktop\Neuro Alexander
 ├── src/
 │   ├── app/
-│   │   ├── routers/                   # Modular FastAPI REST API Endpoints
-│   │   │   ├── analytics.py           # System metrics, tag distributions, & telemetry endpoints
-│   │   │   ├── briefing.py            # Autonomous executive daily briefing synthesis
-│   │   │   ├── export.py               # Document & database snapshot exports
-│   │   │   ├── files.py                # Workspace file CRUD, revision history, & rename operations
-│   │   │   ├── health.py               # Liveness, readiness, & hardware health endpoints
-│   │   │   ├── ocr.py                  # OCR extraction & coordinate mapping
-│   │   │   ├── rag.py                  # Conversational RAG, stream queries, & citation handling
+│   │   ├── routers/                   # FastAPI REST API Route Modules (11 Routers)
+│   │   │   ├── analytics.py           # Corpus analytics, storage breakdown, & tag distribution
+│   │   │   ├── briefing.py            # Automated daily & executive briefing APIs
+│   │   │   ├── export.py               # Database snapshot, JSON, & CSV exports
+│   │   │   ├── files.py                # Workspace file CRUD, revision history, & rename ops
+│   │   │   ├── health.py               # Telemetry, pool health, & system uptime
+│   │   │   ├── ocr.py                  # Image/PDF OCR parsing & word coordinates
+│   │   │   ├── rag.py                  # Conversational RAG, SSE streaming, & grounding eval
 │   │   │   ├── search.py               # Lexical FTS5, hybrid BM25, & vector search API
-│   │   │   ├── tags.py                 # Automated AI tag management & alias routing
-│   │   │   └── workflows.py            # System workflow triggers & background task execution
-│   │   └── server.py                  # FastAPI application initialization & middleware stack
-│   ├── core/                          # Core Runtime Services & Model Routing
-│   │   ├── auth_jwt.py                # JWT authentication & multi-tenant token validation
-│   │   ├── config.py                  # Centralized system configuration & environment defaults
-│   │   ├── context.py                 # Request context propagation & session management
-│   │   ├── embeddings.py              # Ollama / Nomic embedding generation with LRU caching
-│   │   ├── jobs.py                    # Background job worker queue & task scheduling
-│   │   ├── model_manager.py           # Local LLM model routing, fallback & health checks
-│   │   ├── model_router.py            # Dynamic query-type model router (Qwen 7B / Qwen 14B)
-│   │   └── state.py                   # In-memory vector cache & thread-safe state registry
-│   ├── domain/                        # Specialized Mechanical RAG & Domain Intelligence (130+ Modules)
-│   └── infrastructure/                # System Infrastructure & Storage Lifecycles
+│   │   │   ├── tags.py                 # Tag management, auto-rules, & tag aliases
+│   │   │   └── workflows.py            # Workflow trigger creation, logging, & execution
+│   │   └── server.py                  # FastAPI application initialization & CORS middleware
+│   ├── core/                          # Core Runtime Services & Models
+│   │   ├── auth_jwt.py                # JWT authentication & permission evaluation
+│   │   ├── config.py                  # Central system configuration defaults
+│   │   ├── context.py                 # Request context propagation & session tracking
+│   │   ├── embeddings.py              # Ollama / Nomic embedding generation with LRU cache
+│   │   ├── jobs.py                    # Background job queue runner & task lifecycle
+│   │   ├── model_manager.py           # Local LLM model health check & fallback routing
+│   │   ├── model_router.py            # Query-type model router (Qwen 7B / Qwen 14B)
+│   │   └── state.py                   # Thread-safe in-memory vector cache & state registry
+│   ├── domain/                        # Mechanical RAG & Domain Intelligence Engine (130+ Modules)
+│   └── infrastructure/                # System Infrastructure & Storage Providers
 │       ├── backup_scheduler.py        # Non-blocking SQLite online WAL backup task
 │       ├── database.py                # Thread-local SQLite connection pool & maintenance
-│       ├── llm.py                     # Local LLM HTTP interface & Ollama integration
-│       ├── ocr.py                     # Layout-aware Tesseract OCR implementation
-│       ├── p2p_sync.py                # UDP Multicast peer discovery & HTTP delta sync
-│       ├── parsers.py                 # Multi-format document parsers (PDF, EPUB, DOCX, Audio, ZIP)
-│       ├── system_stability_guard.py  # Process memory limit enforcement & panic recovery
-│       ├── telemetry.py               # Prometheus/JSON system telemetry logger
-│       ├── vector_engine.py           # Vector similarity calculation & tag extraction
-│       ├── watcher.py                 # File system watcher & real-time auto-indexer
-│       └── webhook_dispatcher.py      # Event webhook dispatcher for external integrations
-├── frontend/                          # React 18 + Vite + Tailwind CSS SPA Application
+│       ├── llm.py                     # Ollama HTTP API integration
+│       ├── ocr.py                     # Layout-aware Tesseract OCR engine
+│       ├── p2p_sync.py                # UDP Multicast peer discovery & HTTP sync
+│       ├── parsers.py                 # Multi-format document extraction (PDF, DOCX, EPUB, Audio)
+│       ├── system_stability_guard.py  # Process memory limit guard & panic recovery
+│       ├── telemetry.py               # Prometheus/JSON telemetry recorder
+│       ├── vector_engine.py           # Vector matrix math & AI tag extractors
+│       ├── watcher.py                 # Real-time directory file system watcher
+│       └── webhook_dispatcher.py      # Event webhook dispatcher
+├── frontend/                          # React 18 + Vite SPA Frontend
 │   ├── src/
-│   │   ├── components/                # Modular React UI Components
-│   │   │   ├── CommandPalette.tsx     # Keyboard spotlight modal (`Ctrl+K`)
-│   │   │   ├── Header.tsx             # Global navigation & status header
-│   │   │   ├── Layout.tsx             # Responsive layout container
-│   │   │   └── SystemControlsCard.tsx # Quick actions & hardware health status card
-│   │   ├── views/                     # Main Application Views
-│   │   │   ├── ChatView.tsx           # Conversational AI assistant & RAG interface
-│   │   │   ├── ConfigView.tsx         # Auto-tag rules, synonyms, & snapshot settings
-│   │   │   ├── DashboardView.tsx      # System health, telemetry metrics, & storage summary
-│   │   │   ├── GraphView.tsx          # 3D interactive knowledge graph (`react-force-graph-3d`)
-│   │   │   ├── IngestionView.tsx      # Batch ingestion queue & SSE job progress tracker
-│   │   │   ├── LoginView.tsx          # Multi-tenant JWT authentication screen
-│   │   │   ├── SearchView.tsx         # Hybrid lexical-semantic search & file preview
-│   │   │   ├── SettingsView.tsx       # System parameters, API keys, & maintenance controls
-│   │   │   └── WorkspaceView.tsx      # Directory corpus explorer & file management
-│   │   ├── lib/                       # Frontend Utility Libraries
-│   │   │   ├── api.ts                 # Axios API HTTP client wrapper
-│   │   │   └── utils.ts               # Class name merging & zero-dependency helpers
-│   │   ├── App.tsx                    # React application routing & root component
-│   │   └── main.tsx                   # React entry point
+│   │   ├── components/                # React UI Components (CommandPalette, Header, Layout)
+│   │   ├── views/                     # SPA Views (Chat, Config, Dashboard, Graph, Ingestion, Search, etc.)
+│   │   ├── lib/                       # API HTTP Client & Class Utilities
+│   │   ├── App.tsx                    # React SPA Router Component
+│   │   └── main.tsx                   # React Entrypoint
 │   ├── package.json
 │   └── vite.config.ts
-├── scripts/                           # Utility, Maintenance, & Audit Scripts
-│   ├── architecture_cli.py            # Clean Architecture compliance auditor
-│   ├── audit_ui_playwright.py         # End-to-End Playwright UI audit runner
-│   ├── backup_db.py                   # Automated SQLite WAL database backup script
-│   ├── benchmark_engine.py            # Retrieval speed & precision benchmarking tool
-│   ├── capture_showcase.py            # Automated UI showcase screenshot recorder
-│   ├── capture_ux_journey.mjs         # Node.js Playwright user journey snapshot tool
-│   ├── chaos_monkey.py                # Fault injection & database stress testing utility
-│   ├── parse_pytest_log.py            # Pytest log parser & automated test status report
-│   ├── stress_test_domain.py          # Multithreaded domain stress test runner
-│   └── update_test_ledger.py          # Test audit ledger & SOC 2 attestation generator
-├── tests/                             # 670+ Unit, Integration, & Fuzzing Test Suites
-├── know.py                            # SQLite database schema, FTS5 indexer, & CLI interface
-├── batch_index.py                     # Job-based resumable per-file batch indexer
-├── docker-compose.yml                 # Container deployment configuration
-├── pytest.ini                         # Pytest configuration & test markers
-├── requirements.txt                   # Backend Python package dependencies
-└── README.md
+├── scripts/                           # Maintenance & Verification Scripts (18 Scripts)
+├── tests/                             # 670+ Automated Domain & Integration Test Suites
+├── know.py                            # SQLite Schema DDL, Indexer, & Root CLI Shim
+├── batch_index.py                     # Multi-threaded job-based per-file batch indexer
+├── docker-compose.yml                 # Container orchestration specification
+├── pytest.ini                         # Pytest test markers & environment setup
+└── requirements.txt                   # Backend Python package requirements
 ```
 
 ---
 
-## 3. Exhaustive Domain Module Taxonomy (`src/domain/`)
+## 3. Comprehensive Domain Module Index (`src/domain/`)
 
-The 130+ domain intelligence modules in `src/domain/` are grouped below by core subsystem:
+Below is the catalog of all 130+ domain intelligence modules in `src/domain/`:
 
-### 3.1 Retrieval & Vector Search Intelligence
-| Module Name | File Path | Primary Function & Contract |
+### 3.1 Retrieval, Search & Vector Processing
+| Module Name | File Path | Functional Description & Output Contract |
 | :--- | :--- | :--- |
-| **Binary ColBERT** | [`binary_colbert.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/binary_colbert.py) | Sub-millisecond MaxSim token-level binary quantization vector scoring |
-| **RAPTOR Indexer** | [`raptor_tree_indexer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/raptor_tree_indexer.py) | Recursive hierarchical document summarization & tree construction |
-| **MRL Compressor** | [`mrl_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/mrl_compressor.py) | Matryoshka Representation Learning vector dimensionality reduction |
-| **Sublinear ANN** | [`sublinear_ann_index.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/sublinear_ann_index.py) | Sublinear approximate nearest neighbor vector indexing |
-| **Sparse Dense Fusion** | [`sparse_dense_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/sparse_dense_fusion.py) | Reciprocal Rank Fusion (RRF) combining sparse BM25 + dense vectors |
+| **Binary ColBERT** | [`binary_colbert.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/binary_colbert.py) | Sub-millisecond MaxSim binary quantization vector scoring |
+| **RAPTOR Indexer** | [`raptor_tree_indexer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/raptor_tree_indexer.py) | Recursive hierarchical document summary tree indexer |
+| **MRL Compressor** | [`mrl_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/mrl_compressor.py) | Matryoshka Representation Learning vector compression |
+| **Sublinear ANN** | [`sublinear_ann_index.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/sublinear_ann_index.py) | Sublinear approximate nearest neighbor vector indexer |
+| **Sparse Dense Fusion** | [`sparse_dense_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/sparse_dense_fusion.py) | Reciprocal Rank Fusion (RRF) sparse + dense ranker |
 | **HyDE Expansion** | [`contextual_hyde.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/contextual_hyde.py) | Hypothetical Document Embeddings query expansion |
-| **Parent-Child Retrieval** | [`parent_child_retrieval.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/parent_child_retrieval.py) | Small-chunk search returning expanded parent document contexts |
-| **Bandit Router** | [`bandit_query_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/bandit_query_router.py) | Multi-armed bandit strategy for optimal retrieval channel selection |
-| **ColBERT Reranker** | [`colbert_reranker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/colbert_reranker.py) | Cross-encoder multi-vector late interaction re-ranking |
-| **Near Duplicate Detector**| [`near_duplicate_detector.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/near_duplicate_detector.py)| MinHash & SimHash near-duplicate document detection |
+| **Parent-Child Retrieval** | [`parent_child_retrieval.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/parent_child_retrieval.py) | Chunk search returning expanded parent document scope |
+| **Bandit Router** | [`bandit_query_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/bandit_query_router.py) | Multi-armed bandit retrieval route optimization |
+| **ColBERT Reranker** | [`colbert_reranker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/colbert_reranker.py) | Multi-vector late interaction re-ranking engine |
+| **Near Duplicate Detector**| [`near_duplicate_detector.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/near_duplicate_detector.py)| MinHash & SimHash near-duplicate document detector |
+| **Rerank Score Explainer** | [`rerank_score_explainer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/rerank_score_explainer.py) | Detailed score component breakdown generator |
+| **Retrieval Benchmark** | [`retrieval_benchmark.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval_benchmark.py) | Retrieval speed & precision benchmarking runner |
+| **Retrieval Feedback Refiner** | [`retrieval_feedback_refiner.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval_feedback_refiner.py) | User feedback query refinement engine |
 
 ### 3.2 Context & Prompt Engineering
-| Module Name | File Path | Primary Function & Contract |
+| Module Name | File Path | Functional Description & Output Contract |
 | :--- | :--- | :--- |
 | **Context Compressor** | [`adaptive_context_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/adaptive_context_compressor.py) | Entropy-based token context budgeting & compression |
 | **Budget Allocator** | [`context_budget_allocator.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/context_budget_allocator.py) | Proportional token density budgeting across prompt sections |
-| **Distractor Filter** | [`distractor_filter.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/distractor_filter.py) | Irrelevant negative chunk elimination prior to model context assembly |
-| **Entropy Chunker** | [`entropy_chunker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/entropy_chunker.py) | Dynamic text chunking at natural information entropy boundaries |
-| **Prompt Optimizer** | [`prompt_optimizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/prompt_optimizer.py) | Automated prompt compression & token budget optimization |
-| **Noise Masker** | [`contextual_noise_mask.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/contextual_noise_mask.py) | Contextual masking of boilerplate text prior to embedding |
+| **Distractor Filter** | [`distractor_filter.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/distractor_filter.py) | Irrelevant negative chunk elimination |
+| **Entropy Chunker** | [`entropy_chunker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/entropy_chunker.py) | Information-entropy text chunking at topic transitions |
+| **Prompt Optimizer** | [`prompt_optimizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/prompt_optimizer.py) | Automated prompt compression & density tuning |
+| **Noise Masker** | [`contextual_noise_mask.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/contextual_noise_mask.py) | Contextual masking of boilerplate headers/footers |
+| **Memory Compressor** | [`context_memory_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/context_memory_compressor.py) | Summarization of extended chat session context |
 
 ### 3.3 Graph & Reasoning Intelligence
-| Module Name | File Path | Primary Function & Contract |
+| Module Name | File Path | Functional Description & Output Contract |
 | :--- | :--- | :--- |
-| **Epistemic Belief Graph** | [`epistemic_belief_graph.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/epistemic_belief_graph.py) | Probabilistic knowledge graph belief updating & claim network |
-| **Hypergraph Router** | [`hypergraph_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/hypergraph_router.py) | Higher-order multi-entity connection routing |
+| **Epistemic Belief Graph** | [`epistemic_belief_graph.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/epistemic_belief_graph.py) | Probabilistic belief network & claim updating |
+| **Hypergraph Router** | [`hypergraph_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/hypergraph_router.py) | Higher-order multi-entity connection router |
 | **Graph Reasoning** | [`graph_reasoning.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_reasoning.py) | Unlinked entity detection & knowledge graph gap analysis |
-| **Louvain Clustering** | [`louvain_clustering.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/louvain_clustering.py) | Modularity-based Louvain community detection for graph nodes |
-| **PageRank Centrality** | [`graph_pagerank.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_pagerank.py) | Document node PageRank centrality scoring |
-| **Wikilink Synthesizer** | [`graph_link_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_link_synthesizer.py) | Automated wikilink (`[[concept]]`) cross-referencing |
-| **Entity Extractor** | [`entity_extractor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/entity_extractor.py) | Named entity extraction (NER) & alias normalization |
+| **Louvain Clustering** | [`louvain_clustering.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/louvain_clustering.py) | Modularity-based Louvain community detection for nodes |
+| **PageRank Centrality** | [`graph_pagerank.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_pagerank.py) | Document node PageRank centrality calculation |
+| **Wikilink Synthesizer** | [`graph_link_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_link_synthesizer.py) | Automated wikilink (`[[concept]]`) auto-linker |
+| **Entity Extractor** | [`entity_extractor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/entity_extractor.py) | Named entity extraction (NER) engine |
+| **Entity Resolver** | [`entity_resolver.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/entity_resolver.py) | Entity canonicalization & alias resolver |
+| **Entity Cooccurrence** | [`entity_cooccurrence.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/entity_cooccurrence.py) | Entity co-occurrence matrix builder |
+| **Graph Explorer** | [`graph_explorer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_explorer.py) | Graph traversal & adjacency query interface |
+| **Graph Exporter** | [`graph_export.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_export.py) | GraphML, JSON, and CSV graph exporter |
+| **Mermaid Generator** | [`graph_mermaid_generator.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_mermaid_generator.py) | Mermaid.js graph markup generator |
+| **Graph Multihop** | [`graph_multihop.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_multihop.py) | Multi-hop reasoning path traverser across nodes |
 
 ### 3.4 Code & AST Intelligence
-| Module Name | File Path | Primary Function & Contract |
+| Module Name | File Path | Functional Description & Output Contract |
 | :--- | :--- | :--- |
 | **AST Code RAG** | [`ast_code_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/ast_code_rag.py) | AST-level symbol extraction & code snippet RAG |
 | **AST Parser** | [`ast_parser.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/ast_parser.py) | Universal code AST token parser |
 | **Code Diff Synthesizer** | [`code_diff_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_diff_synthesizer.py) | Git diff analysis & structural code change synthesis |
 | **Code Doc Aligner** | [`code_doc_aligner.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_doc_aligner.py) | Automated mapping between code functions and docstrings |
-| **Code Self Refactor** | [`code_self_refactor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_self_refactor.py) | AST-driven code simplification & refactoring recommendations |
+| **Code Self Refactor** | [`code_self_refactor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_self_refactor.py) | AST-driven code simplification & refactoring helper |
 
 ### 3.5 Governance, Security & Compliance
-| Module Name | File Path | Primary Function & Contract |
+| Module Name | File Path | Functional Description & Output Contract |
 | :--- | :--- | :--- |
-| **PII Privacy Guard** | [`pii_privacy_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/pii_privacy_guard.py) | Regex & NER masking of SSNs, emails, credit cards, & API keys |
+| **PII Privacy Guard** | [`pii_privacy_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/pii_privacy_guard.py) | Masking of SSNs, emails, credit cards, & API keys |
 | **ZK Data Masker** | [`zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py) | Zero-Knowledge data masking preserving searchability |
-| **Prompt Injection Guard** | [`prompt_injection_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/prompt_injection_guard.py) | Security filter against prompt overrides & malicious code injection |
+| **Prompt Injection Guard** | [`prompt_injection_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/prompt_injection_guard.py) | Security filter against prompt overrides & malicious code |
 | **Grounding Guard** | [`rag_grounding_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/rag_grounding_guard.py) | Real-time verification of model output against source facts |
 | **Hallucination Guard** | [`hallucination_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/hallucination_guard.py) | N-gram overlap & factual consistency evaluator |
 | **Crypto Audit Ledger** | [`crypto_audit_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/crypto_audit_ledger.py) | SHA-256 cryptographic append-only audit trail ledger |
+| **ACL Permission Engine** | [`acl_permission_engine.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/acl_permission_engine.py) | Multi-tenant ACL permission evaluator |
+| **ACL Vector Guard** | [`acl_vector_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/acl_vector_guard.py) | Vector search query filtering by user ACL bitmasks |
+| **Compliance Inspector** | [`compliance_inspector.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/compliance_inspector.py) | Enterprise compliance rule auditor |
+| **Data Provenance Tracker**| [`data_provenance_tracker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/data_provenance_tracker.py)| Document lineage & data origin tracker |
 
 ### 3.6 Multi-Agent & Swarm Execution
-| Module Name | File Path | Primary Function & Contract |
+| Module Name | File Path | Functional Description & Output Contract |
 | :--- | :--- | :--- |
-| **Multi-Agent Debate** | [`multi_agent_debate.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/multi_agent_debate.py) | Multi-persona dialectical debate for complex problem solving |
+| **Multi-Agent Debate** | [`multi_agent_debate.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/multi_agent_debate.py) | Multi-persona dialectical debate engine |
 | **Multi-Agent Consensus** | [`multi_agent_consensus.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/multi_agent_consensus.py) | Multi-agent voting & agreement synthesis protocol |
 | **Swarm RAG** | [`swarm_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/swarm_rag.py) | Distributed swarm query retrieval |
-| **Agent Memory** | [`agent_memory.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/agent_memory.py) | Episodic long-term memory for autonomous agent sessions |
+| **Agent Memory** | [`agent_memory.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/agent_memory.py) | Episodic long-term memory for autonomous agents |
 | **Swarm Manager** | [`agent_swarm_manager.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/agent_swarm_manager.py) | Concurrent agent task allocation & queue lifecycle |
 
-### 3.7 System Telemetry, Self-Healing & Health
-| Module Name | File Path | Primary Function & Contract |
+### 3.7 System Telemetry, Self-Healing & Maintenance
+| Module Name | File Path | Functional Description & Output Contract |
 | :--- | :--- | :--- |
 | **Index Self-Healing** | [`index_self_healing.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/index_self_healing.py) | Automated SQLite FTS5 index integrity repair & re-indexing |
+| **Knowledge Self Healing** | [`knowledge_self_healing.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/knowledge_self_healing.py) | Stale document detection & auto re-indexing trigger |
 | **Vector Health Monitor** | [`vector_health_monitor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/vector_health_monitor.py) | Vector fragment, missing embedding, & corrupt BLOB audit |
 | **SLA Circuit Breaker** | [`sla_circuit_breaker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/sla_circuit_breaker.py) | Real-time SLA latency monitoring & fallback circuit breaker |
 | **System Telemetry** | [`system_health_telemetry.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/system_health_telemetry.py) | Hardware CPU, RAM, & VRAM telemetry collector |
 | **Vector Drift Agent** | [`vector_drift_agent.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/vector_drift_agent.py) | Vector space distribution drift monitoring over time |
+| **System Scoreboard** | [`system_scoreboard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/system_scoreboard.py) | System performance & retrieval precision scoreboard |
 
 ---
 
-## 4. SQLite Database DDL & Storage Schema Specification
+## 4. REST API Endpoint Specification
 
-The core database engine ([`src/infrastructure/database.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/database.py)) enforces normalized relational storage with SQLite FTS5 virtual tables and WAL journal mode.
-
-```sql
--- 1. Document Files Registry
-CREATE TABLE IF NOT EXISTS files (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER DEFAULT 0,
-    filepath TEXT UNIQUE NOT NULL,
-    filename TEXT NOT NULL,
-    file_size INTEGER NOT NULL,
-    mime_type TEXT NOT NULL,
-    sha256 TEXT NOT NULL,
-    modified_at REAL NOT NULL,
-    content TEXT,
-    acl_permissions TEXT DEFAULT 'user:read',
-    notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 2. Document Chunks & Vector Embeddings
-CREATE TABLE IF NOT EXISTS file_chunks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    file_id INTEGER NOT NULL,
-    chunk_index INTEGER NOT NULL,
-    content TEXT NOT NULL,
-    embedding_json TEXT,  -- 768-dim float JSON array
-    chunk_hash TEXT,      -- SHA-256 for duplicate skipping
-    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
-);
-
--- 3. Lexical Full-Text Search Virtual Tables (FTS5)
-CREATE VIRTUAL TABLE IF NOT EXISTS fts_files USING fts5(
-    filepath UNINDEXED,
-    filename,
-    content,
-    notes,
-    tokenize = 'porter unicode61'
-);
-
-CREATE VIRTUAL TABLE IF NOT EXISTS fts_file_chunks USING fts5(
-    chunk_id UNINDEXED,
-    file_id UNINDEXED,
-    content,
-    tokenize = 'porter unicode61'
-);
-
--- 4. Categorical AI Tags
-CREATE TABLE IF NOT EXISTS tags (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    file_id INTEGER NOT NULL,
-    tag TEXT NOT NULL,
-    UNIQUE(file_id, tag),
-    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
-);
-
--- 5. OCR Spatial Bounding Coordinates
-CREATE TABLE IF NOT EXISTS ocr_coords (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    file_id INTEGER NOT NULL,
-    word TEXT NOT NULL,
-    x INTEGER NOT NULL,
-    y INTEGER NOT NULL,
-    w INTEGER NOT NULL,
-    h INTEGER NOT NULL,
-    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
-);
-```
+| Group | Method | Endpoint | Description |
+| :--- | :--- | :--- | :--- |
+| **Search** | `GET` | `/api/search` | Execute hybrid lexical (FTS5) and vector search |
+| **Search** | `POST` | `/api/search/validate` | Validate natural language query parameters |
+| **Search** | `POST` | `/api/search/bookmark` | Save query bookmark to user session |
+| **RAG** | `POST` | `/api/rag/query` | Conversational RAG assistant query |
+| **RAG** | `GET` | `/api/rag/stream` | Server-Sent Events (SSE) token stream |
+| **RAG** | `POST` | `/api/rag/eval` | Evaluate RAG answer relevance and groundedness |
+| **Files** | `GET` | `/api/files` | List workspace files with pagination & tag filters |
+| **Files** | `POST` | `/api/files/index` | Index or update document file |
+| **Files** | `DELETE`| `/api/files/{file_id}` | Delete document file record and vector chunks |
+| **Files** | `POST` | `/api/files/rename` | Rename file path and update DB index |
+| **Files** | `GET` | `/api/files/history` | Retrieve document revision history |
+| **Files** | `POST` | `/api/files/revert` | Revert document to previous snapshot |
+| **Analytics**| `GET` | `/api/analytics` | Overview metrics (file count, total chunks, storage) |
+| **Analytics**| `GET` | `/api/analytics/storage`| Detailed storage breakdown by MIME type |
+| **Analytics**| `GET` | `/api/analytics/activity`| Historical search activity logs |
+| **Briefing** | `GET` | `/api/briefing/daily` | Executive daily briefing synthesis |
+| **Briefing** | `GET` | `/api/briefing/executive`| High-level KPI summary report |
+| **OCR** | `POST` | `/api/ocr/parse` | Extract OCR text and word bounding boxes |
+| **Tags** | `GET` | `/api/tags` | List all unique tags and tag distribution |
+| **Tags** | `POST` | `/api/tags/rule` | Create automated tag rule |
+| **Tags** | `POST` | `/api/tags/alias` | Map tag alias to canonical tag |
+| **Health** | `GET` | `/api/health` | System health status, database pool, & telemetry |
+| **Export** | `GET` | `/api/export/db` | Download SQLite database snapshot |
+| **Workflows**| `POST` | `/api/workflows/trigger`| Trigger background workflow event |
 
 ---
 
-## 5. API Specification & JSON Schemas
+## 5. Complete Environment Configuration Parameters
 
-### 5.1 Hybrid Search Endpoint (`GET /api/search`)
-
-#### Request Query Parameters:
-```http
-GET /api/search?q=revenue%20recognition%20ext:pdf&limit=10&threshold=0.65 HTTP/1.1
-Host: 127.0.0.1:8000
-Authorization: Bearer <jwt_token>
-```
-
-#### Response Payload (JSON):
-```json
-{
-  "query": "revenue recognition ext:pdf",
-  "total_hits": 14,
-  "elapsed_ms": 12.4,
-  "results": [
-    {
-      "file_id": 42,
-      "filepath": "C:\\docs\\GAAP_Accounting_2026.pdf",
-      "filename": "GAAP_Accounting_2026.pdf",
-      "mime_type": "application/pdf",
-      "rrf_score": 0.032258,
-      "bm25_rank": 1,
-      "vector_sim": 0.8421,
-      "snippet": "...Revenue recognition under GAAP requires identifying contracts with customers...",
-      "tags": ["Finance", "Accounting", "GAAP"],
-      "modified_at": 1770854400.0
-    }
-  ]
-}
-```
-
-### 5.2 Conversational RAG Query Endpoint (`POST /api/rag/query`)
-
-#### Request Body (JSON):
-```json
-{
-  "prompt": "What are the rules for straight-line depreciation?",
-  "model": "qwen2.5-coder:14b",
-  "temperature": 0.2,
-  "top_k_chunks": 5,
-  "enable_grounding_guard": true
-}
-```
-
-#### Response Body (JSON):
-```json
-{
-  "answer": "Under straight-line depreciation, asset cost minus salvage value is divided equally across useful life...",
-  "citations": [
-    {
-      "source_id": 42,
-      "filename": "GAAP_Accounting_2026.pdf",
-      "chunk_index": 3,
-      "snippet": "Depreciation expense = (Cost - Salvage Value) / Useful Life"
-    }
-  ],
-  "groundedness_score": 0.98,
-  "eval_status": "PASSED"
-}
-```
+| Parameter Name | Default Value | Description |
+| :--- | :--- | :--- |
+| `DB_FILE` | `data/knowledge.db` | Absolute or relative path to primary SQLite database file |
+| `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama service base URL |
+| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Embedding model identifier for 768-dim vector generation |
+| `OLLAMA_CHAT_MODEL` | `qwen2.5:7b` | Primary conversational LLM model identifier |
+| `OLLAMA_CODER_MODEL` | `qwen2.5-coder:14b` | Specialized coding LLM model identifier |
+| `JWT_SECRET_KEY` | `uroboros-secret-key` | Secret key for JWT multi-tenant authentication token signature |
+| `JWT_ALGORITHM` | `HS256` | Cryptographic algorithm for JWT signatures |
+| `P2P_MULTICAST_PORT` | `5353` | UDP Multicast port for LAN peer discovery |
+| `MAX_FILE_SIZE_MB` | `50` | Maximum file size cap in MB for text extraction |
+| `RRF_K_PARAM` | `60` | Reciprocal Rank Fusion smoothing constant |
+| `BM25_K1` | `1.5` | BM25 term frequency saturation parameter |
+| `BM25_B` | `0.75` | BM25 document length normalization parameter |
 
 ---
 
-## 6. Production Deployment & Troubleshooting Guide
+## 6. Comprehensive Test Suite Map (`tests/`)
 
-### 6.1 Containerized Deployment (Docker Compose)
+The 670+ domain tests are organized into isolated test files:
+
+| Test File Path | Target Domain / Subsystem Under Test |
+| :--- | :--- |
+| [`tests/test_domain_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_domain_rag.py) | Primary RAG pipeline, context retrieval, & citations |
+| [`tests/test_domain_vector.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_domain_vector.py) | Cosine similarity, vector store BLOB math, & caching |
+| [`tests/test_domain_analytics_intelligence.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_domain_analytics_intelligence.py) | Analytics Engine, tag distributions, & storage stats |
+| [`tests/test_deep_fuzzing_and_concurrency.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_deep_fuzzing_and_concurrency.py) | FTS5 fuzzing, binary garbage extraction, & race conditions |
+| [`tests/test_advanced_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_advanced_rag.py) | Multi-hop RAG, HyDE, & RAPTOR tree indexer |
+| [`tests/test_audit_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_audit_ledger.py) | SHA-256 cryptographic audit ledger verification |
+| [`tests/test_backup_scheduler.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_backup_scheduler.py) | Online SQLite WAL backup task execution |
+| [`tests/test_entity_extractor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_entity_extractor.py) | Named entity extraction & wikilink synthesis |
+| [`tests/test_file_diff.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_file_diff.py) | Text & document side-by-side diff generator |
+| [`tests/test_graph_export.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_graph_export.py) | GraphML, JSON, and CSV knowledge graph export |
+| [`tests/test_healing_pii.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_healing_pii.py) | PII redaction & self-healing index repair |
+| [`tests/test_search_benchmark.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/tests/test_search_benchmark.py) | Latency benchmark execution & recall verification |
+
+---
+
+## 7. Production Deployment & Troubleshooting Guide
+
+### 7.1 Containerized Deployment (Docker Compose)
 Uroboros is configured for multi-container orchestration via `docker-compose.yml`:
 
 ```yaml
@@ -383,7 +306,7 @@ To deploy:
 docker-compose up -d --build
 ```
 
-### 6.2 Common Troubleshooting Scenarios
+### 7.2 Common Troubleshooting Scenarios
 
 #### Scenario A: `WinError 32` (Windows SQLite File Lock during Test Teardown)
 - **Cause**: Background Uvicorn threads keep thread-local SQLite connections open on `.db-shm` and `.db-wal` files during pytest cleanup.
@@ -399,9 +322,9 @@ docker-compose up -d --build
 
 ---
 
-## 7. Command Line Interface (CLI) Master Reference
+## 8. Command Line Interface (CLI) Master Reference
 
-### 7.1 Root Entrypoint CLI (`know.py`)
+### 8.1 Root Entrypoint CLI (`know.py`)
 ```bash
 # Initialize SQLite database schema & FTS5 tables
 python know.py init
@@ -419,13 +342,13 @@ python know.py stats
 python know.py reset
 ```
 
-### 7.2 Resumable Job Batch Indexer (`batch_index.py`)
+### 8.2 Resumable Job Batch Indexer (`batch_index.py`)
 ```bash
 # Index a directory with 4 parallel worker threads and a 50-file job limit
 python batch_index.py "C:\Users\Admin\Documents" -n 50 -w 4
 ```
 
-### 7.3 Developer Operations & Audit CLI Scripts
+### 8.3 Developer Operations & Audit CLI Scripts
 ```bash
 # Audit clean architecture compliance across all python modules
 python scripts/architecture_cli.py audit .
@@ -445,7 +368,7 @@ python scripts/chaos_monkey.py --duration 30
 
 ---
 
-## 8. Frontend Views & User Experience
+## 9. Frontend Views & UI Showcase
 
 ```mermaid
 graph TD
@@ -502,29 +425,6 @@ Keyboard-driven modal providing quick navigation across all application views, i
 #### 10. WCAG AA Glassmorphism Themes
 High-contrast glassmorphic dark and light themes with responsive UI elements complying with WCAG AA accessibility standards.
 ![Light Mode UI](docs/ux_journey/10_light_mode.png)
-
----
-
-## 9. Quality Assurance, Testing & Compliance Framework
-
-Uroboros maintains an automated test suite featuring **672 passed unit, integration, and fuzzing tests**:
-
-```bash
-# Run fast non-E2E unit test suite
-python -m pytest -q --tb=short -m "not e2e and not slow"
-
-# Run deep fuzzing & concurrency verification
-python -m pytest tests/test_deep_fuzzing_and_concurrency.py -v
-
-# Run full domain test suite across all 31 domains
-python run_domain_tests.py
-```
-
-### 9.1 Engineering Test Protocols
-- **Dynamic Ephemeral Socket Isolation**: Test servers bind to `socket.bind(('127.0.0.1', 0))` to prevent port collisions during parallel test execution.
-- **Thread Connection Teardown**: Database thread pools are forcefully reset via [`reset_db_connections()`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/database.py) before pytest teardown to prevent Windows `WinError 32` file lock errors.
-- **Clean Architecture Certification**: Certified **100.0%** compliance via [`scripts/architecture_cli.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/architecture_cli.py).
-- **SOC 2 Type II Compliance Attestation**: Generated via [`scripts/update_test_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/update_test_ledger.py) -> [`docs/soc2_type2_attestation.md`](docs/soc2_type2_attestation.md).
 
 ---
 
