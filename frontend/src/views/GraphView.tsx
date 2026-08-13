@@ -4,8 +4,10 @@ import * as THREE from 'three';
 import { glassCardClasses, debounce } from '../lib/utils';
 import { Filter, Maximize, RotateCcw } from 'lucide-react';
 import { api } from '../lib/api';
+import { useToast } from '../components/Toast';
 
 export default function GraphView() {
+  const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<any>();
   const [nodes, setNodes] = useState<any[]>([]);
@@ -236,14 +238,18 @@ export default function GraphView() {
         </div>
 
         <div className="flex items-center gap-2 pointer-events-auto">
-           <button onClick={() => fgRef.current?.zoomToFit(400)} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg p-2 text-slate-400 hover:text-white transition-colors" title="Zoom to Fit">
-              <Maximize className="w-4 h-4" />
-           </button>
-           <button onClick={() => {
-              fgRef.current?.cameraPosition({ x: 0, y: 0, z: 200 }, { x: 0, y: 0, z: 0 }, 1000);
-           }} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg p-2 text-slate-400 hover:text-white transition-colors" title="Reset Camera">
-              <RotateCcw className="w-4 h-4" />
-           </button>
+            <button onClick={() => {
+              fgRef.current?.zoomToFit(400);
+              toast('Graph Reset', 'Zoomed to fit node boundaries', 'info');
+            }} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg p-2 text-slate-400 hover:text-white transition-colors" title="Zoom to Fit">
+               <Maximize className="w-4 h-4" />
+            </button>
+            <button onClick={() => {
+               fgRef.current?.cameraPosition({ x: 0, y: 0, z: 200 }, { x: 0, y: 0, z: 0 }, 1000);
+               toast('Camera Reset', 'Camera centered at origin', 'info');
+            }} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg p-2 text-slate-400 hover:text-white transition-colors" title="Reset Camera">
+               <RotateCcw className="w-4 h-4" />
+            </button>
         </div>
       </div>
 

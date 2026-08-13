@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { glassCardClasses } from '../lib/utils';
 import { DatabaseZap, FileText, UploadCloud, RefreshCw, Layers, CheckCircle2, XCircle, Clock, Workflow } from 'lucide-react';
 import { api } from '../lib/api';
+import { useToast } from '../components/Toast';
 
 export default function IngestionView() {
+  const { toast } = useToast();
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
 
@@ -22,6 +24,17 @@ export default function IngestionView() {
       }
     }).catch(console.error);
   }, []);
+
+  const triggerReindex = () => {
+    toast('Re-index Triggered', 'Scanning vault directories for modified documents', 'info');
+    api.fetchAPI<any>('/api/file/index', { method: 'POST', body: JSON.stringify({ directory: "" }) })
+      .then((res: any) => {
+        if (res.job_id) {
+          toast('Indexing Job Started', `Job ID #${res.job_id}`, 'success');
+        }
+      })
+      .catch(() => toast('Re-index Error', 'Failed to trigger re-index job', 'error'));
+  };
 
   return (
     <div className="p-8 h-full overflow-y-auto space-y-6 max-w-[1600px] mx-auto">
@@ -71,31 +84,8 @@ export default function IngestionView() {
           
           <div className="space-y-3">
             <button 
-              onClick={() => {
-                api.fetchAPI<any>('/api/file/index', { method: 'POST', body: JSON.stringify({ directory: "" }) })
-                  .then((res: any) => {
-                    if (res.job_id) {
-                      // Start polling
-                      const interval = setInterval(() => {
-                        api.fetchAPI<any>(`/api/jobs/${res.job_id}`)
-                          .then((job: any) => {
-                            setRecentJobs(prev => {
-                              const exists = prev.find(j => j.id === job.id);
-                              if (exists) {
-                                return prev.map(j => j.id === job.id ? { ...j, status: job.status, progress: job.progress } : j);
-                              }
-                              return [{ id: job.id, source: "Full Re-index", status: job.status, progress: job.progress, time: new Date().toLocaleTimeString(), chunks: 0 }, ...prev];
-                            });
-                            if (job.status === 'completed' || job.status === 'failed') {
-                              clearInterval(interval);
-                            }
-                          })
-                          .catch(() => clearInterval(interval));
-                      }, 1000);
-                    }
-                  }).catch(console.error);
-              }}
-              className="w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:bg-slate-800/80 border border-slate-300 dark:border-white/10 rounded-xl transition-colors group">
+              onClick={triggerReindex}
+              className="w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-slate-300 dark:border-white/10 rounded-xl transition-colors group">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:bg-indigo-500/20 transition-colors"><RefreshCw className="w-4 h-4" /></div>
                 <div className="text-left">

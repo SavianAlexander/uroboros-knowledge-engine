@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 import { ChatSession, ChatMessage } from '../types';
 import { glassCardClasses } from '../lib/utils';
-import { Bot, Send, User, Settings, Search, FileText } from 'lucide-react';
+import { Bot, Send, User, Settings, Search, FileText, Copy, Check, Sparkles } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 export default function ChatView() {
+  const { toast } = useToast();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -12,12 +14,12 @@ export default function ChatView() {
 
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [modelConfig, setModelConfig] = useState('Llama-3-8B-Instruct.gguf');
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    // ponytail: using simple abort flag since api might not take signal
     api.chatSessions().then(data => {
       if (controller.signal.aborted) return;
       setSessions(data || []);
@@ -35,9 +37,22 @@ export default function ChatView() {
       setSessions(prev => [s, ...prev]);
       setActiveSession(s.id);
       setMessages([]);
+      toast('Session Created', 'New RAG chat session initialized', 'success');
     } catch (e) {
       console.error('Failed to create session:', e);
+      toast('Session Error', 'Could not create session', 'error');
     }
+  };
+
+  const sendPromptText = (promptText: string) => {
+    setInput(promptText);
+  };
+
+  const copyMessageText = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMsgId(id);
+    toast('Copied Message', 'Copied text to clipboard', 'info');
+    setTimeout(() => setCopiedMsgId(null), 2000);
   };
 
   const handleSelectSession = (s: ChatSession) => {

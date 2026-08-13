@@ -4,14 +4,18 @@ import { SearchResult } from '../types';
 import { glassCardClasses } from '../lib/utils';
 import { Search, UploadCloud, Mic, Filter, FileText, Settings, Download, X, Play, Hash } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useToast } from '../components/Toast';
+import { Bookmark, Copy, Check } from 'lucide-react';
 
 export default function SearchView() {
+  const { toast } = useToast();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<SearchResult | null>(null);
   const [fileNote, setFileNote] = useState('');
   const [newTag, setNewTag] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -27,8 +31,29 @@ export default function SearchView() {
     if (!selectedFile) return;
     try {
       await api.saveNote(selectedFile.path, fileNote);
-      alert('Note saved');
-    } catch (e) { console.error(e); }
+      toast('Note Saved', `Saved note for ${selectedFile.filename}`, 'success');
+    } catch (e) {
+      console.error(e);
+      toast('Failed to Save Note', 'An error occurred while saving', 'error');
+    }
+  };
+
+  const handleBookmarkQuery = async () => {
+    if (!query.trim()) return;
+    try {
+      await api.addBookmark(query, query);
+      toast('Query Bookmarked', `Saved "${query}" to bookmarks`, 'success');
+    } catch (e) {
+      toast('Bookmark Error', 'Could not save bookmark', 'error');
+    }
+  };
+
+  const copySnippet = (res: SearchResult, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(res.snippet);
+    setCopiedId(res.id);
+    toast('Snippet Copied', `Copied text from ${res.filename}`, 'info');
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleAddTag = async (e: React.KeyboardEvent) => {
@@ -40,6 +65,7 @@ export default function SearchView() {
         await api.addTag(selectedFile.path, trimmed);
         setSelectedFile({ ...selectedFile, tags: [...currentTags, trimmed] });
         setNewTag('');
+        toast('Tag Added', `#${trimmed}`, 'success');
       } catch (err) { console.error(err); }
     }
   };
@@ -50,6 +76,7 @@ export default function SearchView() {
       const currentTags = Array.isArray(selectedFile.tags) ? selectedFile.tags : [];
       await api.removeTag(selectedFile.path, tag);
       setSelectedFile({ ...selectedFile, tags: currentTags.filter(t => t !== tag) });
+      toast('Tag Removed', `#${tag}`, 'info');
     } catch (err) { console.error(err); }
   };
 
@@ -68,9 +95,11 @@ export default function SearchView() {
       setResults(res.results || []);
       setActiveStrategy(res.strategy || searchMode);
       setSearchTimeMs(res.search_time_ms || 0);
+      toast('Search Completed', `Found ${res.results?.length || 0} matches (${res.search_time_ms || 0}ms)`, 'info');
     } catch (err) {
       console.error(err);
       setResults([]);
+      toast('Search Failed', 'Could not query vector engine', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -87,17 +116,24 @@ export default function SearchView() {
             </span>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={handleBookmarkQuery}
+              disabled={!query.trim()}
+              className="p-2 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 transition-colors border border-amber-500/20 flex items-center gap-1.5 text-xs font-medium disabled:opacity-40"
+            >
+              <Bookmark className="w-3.5 h-3.5" /> Bookmark Query
+            </button>
             <button 
               onClick={() => setShowLineageDrawer(true)}
-              className="p-2 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/20 flex items-center gap-2 text-sm font-medium"
+              className="p-2 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/20 flex items-center gap-2 text-xs font-medium"
             >
-              <Filter className="w-4 h-4" /> Inspect RAG Lineage
+              <Filter className="w-3.5 h-3.5" /> Inspect RAG Lineage
             </button>
-            <button className="p-2 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/30 transition-colors border border-indigo-500/20 flex items-center gap-2 text-sm font-medium">
-              <Mic className="w-4 h-4" /> Voice Memo
+            <button className="p-2 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/30 transition-colors border border-indigo-500/20 flex items-center gap-2 text-xs font-medium">
+              <Mic className="w-3.5 h-3.5" /> Voice Memo
             </button>
-            <button className="p-2 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:bg-white/10 transition-colors border border-slate-300 dark:border-white/10 flex items-center gap-2 text-sm font-medium">
-              <UploadCloud className="w-4 h-4" /> Upload
+            <button className="p-2 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors border border-slate-300 dark:border-white/10 flex items-center gap-2 text-xs font-medium">
+              <UploadCloud className="w-3.5 h-3.5" /> Upload
             </button>
           </div>
         </div>
@@ -144,36 +180,55 @@ export default function SearchView() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <button className="hover:text-slate-900 dark:text-slate-200 transition-colors"><Download className="w-4 h-4" /></button>
+            <button onClick={() => api.exportCSV().then(blob => {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; a.download = 'search_export.csv'; a.click();
+              toast('Exported CSV', 'Search results exported', 'info');
+            })} className="hover:text-slate-900 dark:text-slate-200 transition-colors flex items-center gap-1 text-xs font-medium">
+              <Download className="w-3.5 h-3.5" /> Export Results
+            </button>
           </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading ? (
-          <div className="flex justify-center items-center h-32 text-slate-500">Searching...</div>
+          <div className="flex justify-center items-center h-32 text-slate-500 text-sm font-medium">Querying vector engine...</div>
         ) : results.length > 0 ? (
           <div className="space-y-4 max-w-4xl mx-auto">
             {results.map((res) => (
-              <div key={res.id} onClick={() => setSelectedFile(res)} className={`${glassCardClasses} p-5 flex flex-col gap-3 group hover:border-indigo-500/30 transition-colors cursor-pointer`}>
+              <div key={res.id} onClick={() => setSelectedFile(res)} className={`${glassCardClasses} p-5 flex flex-col gap-3 group hover:border-indigo-500/30 transition-colors cursor-pointer relative`}>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-600 dark:text-indigo-400">
                       <FileText className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-slate-900 dark:text-slate-200 font-medium">{res.filename}</h4>
-                      <p className="text-xs text-slate-500">{res.path} • {(res.size / 1024).toFixed(1)} KB</p>
+                      <h4 className="text-slate-900 dark:text-slate-200 font-medium text-sm flex items-center gap-2">
+                        {res.filename}
+                      </h4>
+                      <p className="text-xs text-slate-500 font-mono mt-0.5">{res.path} • {(res.size / 1024).toFixed(1)} KB</p>
                     </div>
                   </div>
-                  <div className="px-2 py-1 bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                    Match {(res.score * 100).toFixed(0)}%
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => copySnippet(res, e)}
+                      className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"
+                      title="Copy Snippet"
+                    >
+                      {copiedId === res.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                    <div className="px-2 py-1 bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      Match {(res.score * 100).toFixed(0)}%
+                    </div>
                   </div>
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 italic">"{res.snippet}"</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 italic bg-black/20 p-3 rounded-lg border border-white/5 leading-relaxed font-mono">
+                  "{res.snippet}"
+                </p>
                 <div className="flex items-center gap-2 mt-1">
                   {res?.tags?.map((tag) => (
-                    <span key={tag} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-white/5">{tag}</span>
+                    <span key={tag} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-white/5">#{tag}</span>
                   ))}
                 </div>
               </div>
@@ -182,7 +237,7 @@ export default function SearchView() {
         ) : (
           <div className="flex flex-col justify-center items-center h-64 text-slate-500">
             <Search className="w-12 h-12 mb-4 opacity-20" />
-            <p>Enter a query to explore the knowledge base.</p>
+            <p className="text-sm">Enter a search query above to explore your knowledge base.</p>
           </div>
         )}
       </div>

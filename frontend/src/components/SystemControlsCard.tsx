@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { api } from '../lib/api';
 import { glassCardClasses } from '../lib/utils';
 import { Wrench, Database, Download, Gauge, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useToast } from './Toast';
 
 export default function SystemControlsCard() {
+  const { toast } = useToast();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [benchmarkResult, setBenchmarkResult] = useState<any>(null);
@@ -14,8 +16,10 @@ export default function SystemControlsCard() {
     try {
       const res = await api.systemMaintenance();
       setMessage({ text: res.message || 'Database maintenance completed successfully.', type: 'success' });
+      toast('Defrag & Clean Complete', res.message || 'WAL checkpointed successfully', 'success');
     } catch (e: any) {
       setMessage({ text: e.message || 'Maintenance failed.', type: 'error' });
+      toast('Maintenance Error', e.message || 'Operation failed', 'error');
     } finally {
       setLoadingAction(null);
     }
@@ -27,12 +31,16 @@ export default function SystemControlsCard() {
     try {
       const res = await api.systemBackup();
       if (res.status === 'success') {
-        setMessage({ text: `Backup snapshot created: ${res.backup_file} (${(res.size_bytes / 1024).toFixed(1)} KB)`, type: 'success' });
+        const msg = `Backup snapshot created: ${res.backup_file} (${(res.size_bytes / 1024).toFixed(1)} KB)`;
+        setMessage({ text: msg, type: 'success' });
+        toast('Snapshot Backup Created', res.backup_file, 'success');
       } else {
         setMessage({ text: res.message || 'Backup failed.', type: 'error' });
+        toast('Backup Failed', res.message || 'Snapshot error', 'error');
       }
     } catch (e: any) {
       setMessage({ text: e.message || 'Backup failed.', type: 'error' });
+      toast('Backup Failed', e.message || 'Error occurred', 'error');
     } finally {
       setLoadingAction(null);
     }
@@ -51,8 +59,10 @@ export default function SystemControlsCard() {
       a.remove();
       window.URL.revokeObjectURL(url);
       setMessage({ text: 'GraphML XML exported successfully.', type: 'success' });
+      toast('GraphML Exported', 'Downloaded knowledge_graph.graphml', 'info');
     } catch (e: any) {
       setMessage({ text: e.message || 'Export failed.', type: 'error' });
+      toast('Export Error', e.message || 'Could not export GraphML', 'error');
     } finally {
       setLoadingAction(null);
     }
@@ -64,9 +74,12 @@ export default function SystemControlsCard() {
     try {
       const res = await api.searchBenchmark('accounting standards');
       setBenchmarkResult(res);
-      setMessage({ text: `Benchmark Complete: RRF Hybrid ${res.rrf_hybrid_latency_ms}ms | Vector ${res.vector_cosine_latency_ms}ms`, type: 'success' });
+      const msg = `Benchmark Complete: RRF Hybrid ${res.rrf_hybrid_latency_ms}ms | Vector ${res.vector_cosine_latency_ms}ms`;
+      setMessage({ text: msg, type: 'success' });
+      toast('Benchmark Complete', `RRF Hybrid ${res.rrf_hybrid_latency_ms}ms`, 'success');
     } catch (e: any) {
       setMessage({ text: e.message || 'Benchmark failed.', type: 'error' });
+      toast('Benchmark Error', e.message || 'Execution error', 'error');
     } finally {
       setLoadingAction(null);
     }

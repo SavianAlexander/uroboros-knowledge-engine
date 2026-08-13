@@ -1,5 +1,6 @@
 import React, { Component, useEffect, useState, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './store/AppContext';
+import { ToastProvider } from './components/Toast';
 import Sidebar from './components/Sidebar';
 import CommandPalette from './components/CommandPalette';
 import DashboardView from './views/DashboardView';
@@ -141,9 +142,11 @@ function AppLayout() {
 export default function App() {
   return (
     <AppProvider>
-      <ErrorBoundary>
-        <AppLayout />
-      </ErrorBoundary>
+      <ToastProvider>
+        <ErrorBoundary>
+          <AppLayout />
+        </ErrorBoundary>
+      </ToastProvider>
     </AppProvider>
   );
 }
