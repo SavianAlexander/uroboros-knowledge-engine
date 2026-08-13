@@ -24,7 +24,7 @@ def compress_context_entropy(context_chunks: List[str], target_reduction: float 
     total_orig = sum(len(c) for c in valid_chunks)
 
     for chunk in valid_chunks:
-        sentences = [s.strip() for s in re.split(r'[^.!?]+[.!?]+', chunk) if s.strip()]
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', chunk) if s.strip()]
         if not sentences:
             sentences = [chunk]
 
@@ -33,9 +33,11 @@ def compress_context_entropy(context_chunks: List[str], target_reduction: float 
             # High-entropy indicators: numbers, code symbols, uppercase entities
             has_numbers = bool(re.search(r'\d+', sent))
             has_code = bool(re.search(r'[`_(){}\[\]=:]', sent))
-            has_entities = bool(re.search(r'\b[A-Z][a-zA-Z0-9_-]+\b', sent))
+            words = sent.split()
+            middle_words = words[1:] if len(words) > 1 else []
+            has_entities = any(bool(re.match(r'^[A-Z][a-zA-Z0-9_-]+$', w)) for w in middle_words)
 
-            if has_numbers or has_code or has_entities or len(sent.split()) < 8:
+            if has_numbers or has_code or has_entities or len(words) < 8:
                 keep_sentences.append(sent)
 
         compressed_text = " ".join(keep_sentences) if keep_sentences else chunk

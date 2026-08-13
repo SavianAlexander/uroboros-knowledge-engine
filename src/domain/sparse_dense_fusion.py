@@ -36,9 +36,13 @@ def rerank_sparse_dense_fusion(
     reranked = []
     for chunk in valid_chunks:
         text = chunk.get("text", "")
-        sparse_score = chunk.get("sparse_score", 0.5)
-        dense_score = chunk.get("dense_score", 0.6)
-        colbert_score = chunk.get("colbert_score", 0.7)
+        s_raw = chunk.get("sparse_score")
+        d_raw = chunk.get("dense_score")
+        c_raw = chunk.get("colbert_score")
+        
+        sparse_score = float(s_raw) if s_raw is not None and isinstance(s_raw, (int, float)) else 0.5
+        dense_score = float(d_raw) if d_raw is not None and isinstance(d_raw, (int, float)) else 0.6
+        colbert_score = float(c_raw) if c_raw is not None and isinstance(c_raw, (int, float)) else 0.7
 
         fused_score = (alpha * sparse_score) + (beta * dense_score) + (gamma * colbert_score)
         reranked.append({

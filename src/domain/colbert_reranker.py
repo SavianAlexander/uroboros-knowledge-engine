@@ -22,7 +22,7 @@ def normalize_vector(v: List[float]) -> List[float]:
         return []
     norm = math.sqrt(sum(x * x for x in v if isinstance(x, (int, float))))
     if norm == 0.0:
-        return list(v)
+        return [0.0 for x in v if isinstance(x, (int, float))]
     return [round(x / norm, 6) for x in v if isinstance(x, (int, float))]
 
 
