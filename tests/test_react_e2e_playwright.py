@@ -35,7 +35,7 @@ class TestReactE2EPlaywright(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.base_url = os.environ.get("FRONTEND_URL", "http://localhost:8000")
+        cls.base_url = os.environ.get("FRONTEND_URL", "http://127.0.0.1:8085")
         cls.playwright = None
         cls.browser = None
         try:

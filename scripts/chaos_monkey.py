@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 
 # Configuration
 DB_FILE = "knowledge.db"
-NEURO_DIR = r"C:\Users\Administrator\Desktop\Neuro Alexander"
-DESKTOP_DIR = r"C:\Users\Administrator\Desktop"
-API_URL = "http://localhost:8000/api/contemplate"
+NEURO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DESKTOP_DIR = os.path.expanduser("~/Desktop")
+API_URL = os.environ.get("NEURO_API_URL", f"http://127.0.0.1:{os.environ.get('PORT', 8085)}/api/contemplate")
 INTERVAL_SECONDS = 24 * 60 * 60  # 24 hours
 
 def get_latest_files(limit=3):

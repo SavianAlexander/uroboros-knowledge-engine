@@ -27,12 +27,12 @@ class TestDomainDesktop(unittest.TestCase):
 
         Preconditions: desktop_app module loaded.
         Invariants: Main entry functions and default port constant are present in module.
-        Expected Outcomes: Attributes main_desktop, launch_server, open_ui exist and DEFAULT_PORT == 8000.
+        Expected Outcomes: Attributes main_desktop, launch_server, open_ui exist and DEFAULT_PORT == 8085.
         """
         self.assertTrue(hasattr(desktop_app, "main_desktop"))
         self.assertTrue(hasattr(desktop_app, "launch_server"))
         self.assertTrue(hasattr(desktop_app, "open_ui"))
-        self.assertEqual(desktop_app.DEFAULT_PORT, 8000)
+        self.assertEqual(desktop_app.DEFAULT_PORT, 8085)
 
     def test_02_build_desktop_spec_generation(self):
         """Verify build_desktop generates valid PyInstaller spec file with required assets.

@@ -24,7 +24,7 @@ if root_dir not in sys.path:
 import uvicorn
 import main
 
-DEFAULT_PORT = 8000
+DEFAULT_PORT = int(os.environ.get("PORT", 8085))
 
 def launch_server(port=DEFAULT_PORT):
     """Run FastAPI uvicorn server in background thread."""

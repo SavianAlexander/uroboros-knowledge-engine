@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     try:
         import uuid
         from src.infrastructure.p2p_sync import P2PPeerBeacon
-        port = int(os.environ.get("PORT", 8000))
+        port = int(os.environ.get("PORT", 8085))
         beacon = P2PPeerBeacon(node_id=str(uuid.uuid4())[:8], http_port=port)
         beacon.start()
     except (KeyboardInterrupt, MemoryError, SystemExit):
