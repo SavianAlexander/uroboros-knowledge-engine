@@ -3,7 +3,14 @@ Dynamic RAG Prompt Density Optimizer & Token Budget Allocator.
 Optimizes context token density and dynamically injects few-shot domain examples.
 """
 
-from typing import Dict, Any, List, Optional
+from functools import lru_cache
+from typing import Dict, Any, List, Optional, Set
+
+@lru_cache(maxsize=2048)
+def _get_word_set(text: str) -> Set[str]:
+    if not text:
+        return set()
+    return set(w.lower() for w in text.split() if len(w) > 3)
 
 
 def optimize_rag_prompt_density(
@@ -18,7 +25,7 @@ def optimize_rag_prompt_density(
     safe_query = str(query or "")
     safe_budget = max(100, int(token_budget)) if token_budget is not None and isinstance(token_budget, (int, float)) else 1000
     char_budget = safe_budget * 4  # Approx 4 chars per token
-    query_terms = set(w.lower() for w in safe_query.split() if len(w) > 3)
+    query_terms = _get_word_set(safe_query)
 
     if not context_chunks or not isinstance(context_chunks, list):
         context_chunks = []
@@ -27,7 +34,7 @@ def optimize_rag_prompt_density(
 
     scored_chunks = []
     for chunk in valid_chunks:
-        words = set(w.lower() for w in chunk.split() if len(w) > 3)
+        words = _get_word_set(chunk)
         overlap = len(query_terms.intersection(words))
         scored_chunks.append((chunk, overlap, len(chunk)))
 
