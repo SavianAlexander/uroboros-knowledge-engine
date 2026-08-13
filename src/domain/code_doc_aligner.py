@@ -30,6 +30,10 @@ def check_code_docstring_alignment(code_snippet: str) -> Dict[str, Any]:
                 getattr(node.args, "kwonlyargs", [])
             )
             func_args = [a.arg for a in all_args if a.arg not in ("self", "cls")]
+            if node.args.vararg:
+                func_args.append(node.args.vararg.arg)
+            if node.args.kwarg:
+                func_args.append(node.args.kwarg.arg)
             
             if not doc:
                 issues.append({"function": node.name, "issue": "missing_docstring"})

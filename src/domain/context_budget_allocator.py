@@ -4,6 +4,7 @@ Dynamically calculates context token budget allocation across vector snippets, g
 Zero-dependency, stdlib implementation.
 """
 
+import unicodedata
 from typing import Dict, Any, List, Optional
 
 
@@ -36,7 +37,6 @@ def allocate_context_budget(
     memory_budget = int(token_budget * 0.15)
     system_budget = int(token_budget * 0.10)
 
-    import unicodedata
     fitted_snippets = [unicodedata.normalize("NFC", str(s))[:500] for s in vector_snippets][:5]
     fitted_graph = [unicodedata.normalize("NFC", str(g))[:300] for g in graph_pathways][:3]
     fitted_memories = [unicodedata.normalize("NFC", str(m))[:200] for m in episodic_memories][:3]

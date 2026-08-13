@@ -20,8 +20,9 @@ def synthesize_anki_flashcards(passages: List[Dict[str, Any]]) -> Dict[str, Any]
 
     cards = []
     for idx, p in enumerate(valid_passages):
-        filename = str(p.get("filename") or f"card_{idx}.md")
-        content = str(p.get("content") or p.get("text") or "")
+        import unicodedata
+        filename = unicodedata.normalize("NFC", str(p.get("filename") or f"card_{idx}.md"))
+        content = unicodedata.normalize("NFC", str(p.get("content") or p.get("text") or ""))
 
         wikilinks = RE_WIKILINKS.findall(content)
         safe_tag = re.sub(r'[^\w_-]', '_', filename)

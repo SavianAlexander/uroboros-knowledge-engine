@@ -21,7 +21,8 @@ def synthesize_faq_from_queries(
     for q in query_history:
         if not q or not str(q).strip():
             continue
-        raw_str = str(q).strip()
+        import unicodedata
+        raw_str = unicodedata.normalize("NFC", str(q)).strip()
         norm_key = raw_str.lower()
         freq_map[norm_key] = freq_map.get(norm_key, 0) + 1
         if norm_key not in display_map:

@@ -6,6 +6,7 @@ Zero-dependency, stdlib implementation.
 
 import re
 import sqlite3
+import unicodedata
 from typing import Dict, Any, List, Tuple, Optional
 from src.infrastructure.database import get_db_connection, DB_FILE
 
@@ -38,7 +39,6 @@ def detect_vault_contradictions(db_path: str = DB_FILE, limit: int = 50) -> Dict
                 content_b = doc_b["content"] or ""
 
                 # Extract shared key terms (3+ chars)
-                import unicodedata
                 norm_a = unicodedata.normalize("NFC", content_a)
                 norm_b = unicodedata.normalize("NFC", content_b)
 

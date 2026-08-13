@@ -36,8 +36,10 @@ def generate_vault_instruction_dataset(
                     rows = []
 
         for r in rows:
-            filename = r["filename"] if "filename" in r.keys() else f"doc_{r['id']}.md"
-            content = r["content"] or ""
+            import unicodedata
+            raw_filename = r["filename"] if "filename" in r.keys() else f"doc_{r['id']}.md"
+            filename = unicodedata.normalize("NFC", str(raw_filename))
+            content = unicodedata.normalize("NFC", str(r["content"] or ""))
             snippet = content[:600].strip()
 
             instruction = f"Summarize key technical architecture details from document '{filename}'."

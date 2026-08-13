@@ -33,10 +33,18 @@ def parse_codebase_ast(code_snippet: str) -> Dict[str, Any]:
                 "args": [arg.arg for arg in node.args.args]
             })
         elif isinstance(node, ast.ClassDef):
+            base_names = []
+            for b in node.bases:
+                if isinstance(b, ast.Name):
+                    base_names.append(b.id)
+                elif isinstance(b, ast.Attribute):
+                    base_names.append(b.attr)
+                elif hasattr(b, "id"):
+                    base_names.append(str(getattr(b, "id")))
             classes.append({
                 "name": node.name,
                 "lineno": node.lineno,
-                "bases": [b.id for b in node.bases if isinstance(b, ast.Name)]
+                "bases": base_names
             })
         elif isinstance(node, ast.Import):
             for alias in node.names:

@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import List, Dict, Any
 
 PALETTE = ["#6366f1", "#06b6d4", "#10b981", "#f59e0b", "#ec4899"]
@@ -34,7 +35,6 @@ def apply_louvain_communities(nodes: List[Dict[str, Any]], edges: List[Dict[str,
             # Pick majority community among neighbors
             neighbor_communities = [node_community[nbr] for nbr in neighbors if nbr in node_community]
             if neighbor_communities:
-                from collections import Counter
                 most_common = Counter(neighbor_communities).most_common(1)[0][0]
                 node_community[n_id] = most_common
 
