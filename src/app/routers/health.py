@@ -397,3 +397,30 @@ def get_knowledge_healing_endpoint():
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/system/live-telemetry")
+@router.get("/api/system/apm")
+def get_live_telemetry_endpoint():
+    """Retrieve real-time application performance monitoring (APM) and runtime telemetry."""
+    try:
+        return gather_system_telemetry()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/vault/indexes/status")
+@router.post("/api/vault/indexes/repair")
+def repair_vault_indexes_endpoint():
+    """Validate and auto-repair core SQLite B-Tree performance indices."""
+    try:
+        from src.infrastructure.database import validate_and_repair_indexes
+        return validate_and_repair_indexes()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

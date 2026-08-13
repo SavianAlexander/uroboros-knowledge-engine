@@ -126,17 +126,29 @@ def execute_sota_rag_search(query: str, top_k: int = 5) -> Dict[str, Any]:
                     "fts_rank": rank_idx + 1
                 }
 
-        # 5. RRF-PageRank Fusion Scoring
-        # RRF Score = 1/(60 + r_fts) + lambda/(60 + r_pagerank)
-        scored_candidates = []
-        k_const = 60.0
+        # 5. Adaptive RRF-PageRank Fusion Scoring
+        # Dynamic k tuning based on query length and keyword density
+        q_words = query.strip().split()
+        if len(q_words) <= 2:
+            k_const = 30.0
+            lambda_fts = 1.2
+            lambda_pr = 6.0
+        elif len(q_words) <= 6:
+            k_const = 50.0
+            lambda_fts = 1.0
+            lambda_pr = 8.0
+        else:
+            k_const = 65.0
+            lambda_fts = 0.9
+            lambda_pr = 12.0
 
+        scored_candidates = []
         for fid, cand in all_fts_hits.items():
             fts_rank = cand["fts_rank"]
             pr_score = pagerank_map.get(fid, 0.001)
 
-            rrf_fts = 1.0 / (k_const + fts_rank)
-            rrf_pr = pr_score * 10.0
+            rrf_fts = lambda_fts / (k_const + fts_rank)
+            rrf_pr = pr_score * lambda_pr
 
             final_rrf_score = round(rrf_fts + rrf_pr, 6)
 

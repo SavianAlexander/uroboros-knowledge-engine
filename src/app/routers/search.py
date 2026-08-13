@@ -648,6 +648,28 @@ def get_graph_edges_endpoint(limit: int = 1000):
     return {"edges": data["edges"], "count": len(data["edges"])}
 
 
+@router.get("/api/graph/clusters/summaries")
+def get_graph_cluster_summaries_endpoint(
+    limit: int = 1000,
+    include_wikilinks: bool = True,
+    include_clusters: bool = True
+):
+    """
+    Synthesizes automated executive topical summaries and key concept terms for each Louvain cluster.
+    """
+    try:
+        from src.domain.louvain_clustering import synthesize_community_summaries
+        graph = get_graph_data_endpoint(
+            limit=limit,
+            include_wikilinks=include_wikilinks,
+            include_clusters=include_clusters
+        )
+        nodes = graph.get("nodes", [])
+        return synthesize_community_summaries(nodes)
+    except Exception as e:
+        return {"status": "error", "message": str(e), "communities": []}
+
+
 @router.get("/api/graph/wikilinks")
 def get_graph_wikilinks_endpoint(limit: int = 1000):
     data = get_graph_data_endpoint(limit=limit, include_wikilinks=True)

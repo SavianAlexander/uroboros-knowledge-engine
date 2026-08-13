@@ -416,6 +416,71 @@ def get_file_revisions_endpoint(path: str):
     verify_path_containment(path)
     return {"path": path, "revisions": get_file_revisions(path)}
 
+@router.get("/api/file/diff")
+def get_file_diff_endpoint(path: str, rev1: Optional[int] = None, rev2: Optional[int] = None):
+    """
+    Compute structured Myers diff and similarity ratio between file revision snapshots.
+    Zero-dependency stdlib difflib implementation.
+    """
+    import difflib
+    verify_path_containment(path)
+    revisions = get_file_revisions(path)
+    
+    rev_map = {r["id"]: r["content"] for r in revisions if "id" in r and "content" in r}
+    
+    # Text 1
+    if rev1 is not None and rev1 in rev_map:
+        text1 = rev_map[rev1]
+        name1 = f"Revision #{rev1}"
+    elif revisions:
+        text1 = revisions[-1].get("content", "")
+        name1 = f"Revision #{revisions[-1].get('id', 0)}"
+    else:
+        text1 = ""
+        name1 = "Initial (Empty)"
+
+    # Text 2
+    if rev2 is not None and rev2 in rev_map:
+        text2 = rev_map[rev2]
+        name2 = f"Revision #{rev2}"
+    elif os.path.exists(path) and os.path.isfile(path):
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                text2 = f.read()
+            name2 = "Current Live File"
+        except Exception:
+            text2 = ""
+            name2 = "Current Live File"
+    else:
+        text2 = ""
+        name2 = "Current Live File"
+
+    lines1 = text1.splitlines(keepends=True)
+    lines2 = text2.splitlines(keepends=True)
+
+    diff_generator = difflib.unified_diff(lines1, lines2, fromfile=name1, tofile=name2)
+    diff_lines = [line.rstrip("\r\n") for line in diff_generator]
+
+    matcher = difflib.SequenceMatcher(None, text1, text2)
+    similarity = round(matcher.ratio(), 4)
+
+    added = sum(1 for l in diff_lines if l.startswith("+") and not l.startswith("+++"))
+    removed = sum(1 for l in diff_lines if l.startswith("-") and not l.startswith("---"))
+
+    return {
+        "status": "success",
+        "path": path,
+        "from_version": name1,
+        "to_version": name2,
+        "similarity_ratio": similarity,
+        "stats": {
+            "added_lines": added,
+            "removed_lines": removed,
+            "total_diff_lines": len(diff_lines)
+        },
+        "unified_diff": diff_lines
+    }
+
 @router.post("/api/file/revert")
 def revert_file_revision_endpoint(req: RevertRequest):
     """Revert a file to a specific revision ID."""

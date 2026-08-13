@@ -66,17 +66,32 @@ def gather_system_telemetry() -> Dict[str, Any]:
         cache_epoch = int(time.time() // 15)
         files_count, chunks_count, tags_count = _get_cached_db_counts(cache_epoch)
 
+        # 4. Engine & State Telemetry
+        import threading
+        active_threads = threading.active_count()
+        cache_stats = {}
+        try:
+            from src.core.state import GLOBAL_QUERY_CACHE
+            cache_stats = {
+                "exact_cache_entries": len(GLOBAL_QUERY_CACHE.cache),
+                "semantic_cache_entries": len(GLOBAL_QUERY_CACHE.semantic_cache)
+            }
+        except Exception:
+            pass
+
         return {
             "runtime": {
                 "python_version": sys.version.split()[0],
                 "platform": sys.platform,
                 "uptime_timestamp": time.time(),
-                "allocated_memory_blocks": allocated_blocks
+                "allocated_memory_blocks": allocated_blocks,
+                "active_threads": active_threads
             },
             "garbage_collector": {
                 "generation_counts": gc_counts,
                 "collections_stats": gc_stats
             },
+            "cache": cache_stats,
             "database": {
                 "db_file": DB_FILE,
                 "db_size_bytes": db_size_bytes,

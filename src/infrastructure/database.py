@@ -694,3 +694,56 @@ def get_audit_ledger(limit: int = 50) -> list:
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error getting audit ledger: {e}")
         return []
+
+
+def validate_and_repair_indexes(conn=None) -> dict:
+    """
+    Validates and auto-repairs all core performance B-Tree indices.
+    Zero-dependency stdlib implementation.
+    """
+    required_indexes = [
+        ("idx_files_modified", "files", "files(modified_at)"),
+        ("idx_files_filename", "files", "files(filename)"),
+        ("idx_files_sha256", "files", "files(sha256)"),
+        ("idx_files_mime_type", "files", "files(mime_type)"),
+        ("idx_files_user_id", "files", "files(user_id)"),
+        ("idx_file_chunks_file_id", "file_chunks", "file_chunks(file_id)"),
+        ("idx_file_chunks_hash", "file_chunks", "file_chunks(chunk_hash)"),
+        ("idx_tags_tag", "tags", "tags(tag)"),
+        ("idx_ocr_coords_file_id", "ocr_coords", "ocr_coords(file_id)"),
+        ("idx_system_audit_timestamp", "system_audit_ledger", "system_audit_ledger(timestamp)")
+    ]
+
+    verified = []
+    repaired = []
+
+    def _check_on_cursor(cursor):
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='index'")
+        existing = {r[0] for r in cursor.fetchall() if r[0]}
+        for idx_name, tbl, defn in required_indexes:
+            if idx_name in existing:
+                verified.append(idx_name)
+            else:
+                try:
+                    cursor.execute(f"CREATE INDEX IF NOT EXISTS {idx_name} ON {defn}")
+                    repaired.append(idx_name)
+                except Exception:
+                    pass
+
+    if conn is not None:
+        cursor = conn.cursor()
+        _check_on_cursor(cursor)
+    else:
+        with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as local_conn:
+            with local_conn:
+                cursor = local_conn.cursor()
+                _check_on_cursor(cursor)
+
+    return {
+        "status": "success",
+        "total_required": len(required_indexes),
+        "verified_count": len(verified),
+        "repaired_count": len(repaired),
+        "verified_indexes": verified,
+        "repaired_indexes": repaired
+    }

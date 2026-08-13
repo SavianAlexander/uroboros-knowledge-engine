@@ -151,6 +151,52 @@ class TestAdvancedFeatures(unittest.TestCase):
         self.assertEqual(res_heal.status_code, 200)
         self.assertEqual(res_heal.json()["status"], "success")
 
+    def test_10_adaptive_rrf_scoring(self):
+        """Verify Adaptive RRF auto-tuning calculation across short and long queries."""
+        from src.domain.sota_rag_engine import execute_sota_rag_search
+        short_res = execute_sota_rag_search("quantum")
+        self.assertEqual(short_res["status"], "success")
+        self.assertIn("top_candidates", short_res)
+
+        long_res = execute_sota_rag_search("what are the latest advancements in quantum error correction and topology")
+        self.assertEqual(long_res["status"], "success")
+        self.assertIn("top_candidates", long_res)
+
+    def test_11_revision_diff_visualizer(self):
+        """Verify Myers diff computation endpoint /api/file/diff."""
+        res = self.client.get("/api/file/diff", params={"path": "dumps/notes.txt"})
+        self.assertIn(res.status_code, [200, 404])
+        if res.status_code == 200:
+            data = res.json()
+            self.assertEqual(data["status"], "success")
+            self.assertIn("similarity_ratio", data)
+            self.assertIn("unified_diff", data)
+
+    def test_12_graph_community_summarizer(self):
+        """Verify /api/graph/clusters/summaries auto-topical synthesis."""
+        res = self.client.get("/api/graph/clusters/summaries")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertIn("communities", data)
+
+    def test_13_live_apm_telemetry(self):
+        """Verify live APM telemetry endpoint /api/system/live-telemetry."""
+        res = self.client.get("/api/system/live-telemetry")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "healthy")
+        self.assertIn("runtime", data)
+        self.assertIn("database", data)
+
+    def test_14_hot_index_validator(self):
+        """Verify B-Tree index validation and hot repair endpoint."""
+        res = self.client.post("/api/vault/indexes/repair")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertGreaterEqual(data["total_required"], 5)
+
 
 if __name__ == "__main__":
     unittest.main()
