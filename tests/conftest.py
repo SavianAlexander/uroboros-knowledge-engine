@@ -1,6 +1,7 @@
 
 # --- Patch for WinError 32 File Locks ---
 import os
+import sys
 import shutil
 import functools
 from src.infrastructure.database import reset_db_connections

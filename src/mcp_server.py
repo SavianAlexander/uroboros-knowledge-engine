@@ -1,13 +1,19 @@
 import os
 import asyncio
 import httpx
-from mcp.server.models import InitializationOptions
-import mcp.types as types
-from mcp.server import NotificationOptions, Server
-from pydantic import AnyUrl
-import mcp.server.stdio
+try:
+    from mcp.server.models import InitializationOptions
+    import mcp.types as types
+    from mcp.server import NotificationOptions, Server
+    import mcp.server.stdio
+    HAS_MCP = True
+except ImportError:
+    HAS_MCP = False
 
-server = Server("neuro-mcp")
+if HAS_MCP:
+    server = Server("neuro-mcp")
+else:
+    server = None
 
 NEURO_API_URL = os.environ.get("NEURO_API_URL", "http://127.0.0.1:8085")
 API_KEY = os.environ.get("NEURO_API_KEY", "")
@@ -117,6 +123,9 @@ async def handle_call_tool(
         return [types.TextContent(type="text", text=f"Error: {str(e)}")]
 
 async def main():
+    if not HAS_MCP:
+        print("MCP library (mcp) is not installed on this system.")
+        return
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,
