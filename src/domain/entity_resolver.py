@@ -33,6 +33,8 @@ def resolve_canonical_entity(entity_name: str, custom_map: Dict[str, str] = None
 
 def batch_resolve_entities(entities: List[str]) -> Dict[str, Any]:
     """Batch resolves entity aliases into canonical node clusters."""
+    if not entities or not isinstance(entities, list):
+        entities = []
     resolved_map = {}
     canonical_clusters: Dict[str, List[str]] = {}
 
