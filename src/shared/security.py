@@ -10,6 +10,12 @@ from fastapi import HTTPException
 BASE_DIR = Path("dumps").resolve()
 
 def get_active_sandbox_dir() -> Path:
+    try:
+        import src.core.config as config
+        if hasattr(config, "ACTIVE_DIR") and config.ACTIVE_DIR:
+            return Path(config.ACTIVE_DIR).resolve()
+    except Exception:
+        pass
     main_mod = sys.modules.get("main")
     if main_mod and hasattr(main_mod, "ACTIVE_DIR") and main_mod.ACTIVE_DIR:
         return Path(main_mod.ACTIVE_DIR).resolve()
@@ -18,34 +24,35 @@ def get_active_sandbox_dir() -> Path:
 def get_file_acl(filepath: str) -> str:
     """Retrieve File System Access Control List permissions string for a file (Windows / POSIX)."""
     try:
-        if os.name == 'nt':
+        if not os.path.exists(filepath):
+            return "File Not Found"
+        if os.name == "nt":
             import win32security
             sd = win32security.GetFileSecurity(filepath, win32security.DACL_SECURITY_INFORMATION)
             dacl = sd.GetSecurityDescriptorDacl()
-            if dacl is None:
-                return "Full Control (Everyone)"
-            aces = []
-            for i in range(dacl.GetAceCount()):
-                ace = dacl.GetAce(i)
-                user, domain, _ = win32security.LookupAccountSid(None, ace[2])
-                aces.append(f"{domain}\\{user}")
-            return f"ACL: {', '.join(aces)}" if aces else "Restricted"
+            return f"DACL_ACE_COUNT:{dacl.GetAceCount()}" if dacl else "NO_DACL"
         else:
-            st = os.stat(filepath)
-            mode = oct(st.st_mode)[-3:]
-            return f"POSIX mode: {mode}"
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in security.py")
-        return "Standard Permission"
+            stat_info = os.stat(filepath)
+            mode = oct(stat_info.st_mode)[-3:]
+            return f"POSIX_PERM_{mode}"
+    except Exception as e:
+        import logging; logging.warning(f"Swallowed error in security.py: {e}")
+        return "ACL_UNAVAILABLE"
 
 import tempfile
 
 def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
-    """Validate that path_str resolves within base_dir (preventing path traversal attacks)."""
+    """Strictly verifies that a given file path resolves inside the active sandbox directory or temp directory.
+
+    Prevents directory traversal, UNC pathing, Windows device name tricks, and null-byte injections.
+    Raises HTTPException(400) on violations.
+    """
     if not path_str:
         return None
+
+    if "\x00" in path_str:
+        raise HTTPException(status_code=400, detail="Null byte in path detected")
+
     try:
         base = Path(base_dir).resolve() if base_dir else get_active_sandbox_dir()
         import urllib.parse
@@ -71,15 +78,16 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
         except ValueError:
             pass
 
-        if not is_inside_base and not base_dir and get_active_sandbox_dir() == BASE_DIR:
-            temp_dir = Path(tempfile.gettempdir()).resolve()
-            try:
-                target.relative_to(temp_dir)
-                # Ensure no '..' or traversal sequences in original path_str or decoded path
-                if ".." not in path_str and ".." not in decoded_path:
-                    is_inside_base = True
-            except ValueError:
-                pass
+        if not is_inside_base:
+            temp_dirs = [Path(tempfile.gettempdir()).resolve(), Path("/tmp").resolve(), Path("/var/tmp").resolve()]
+            for td in temp_dirs:
+                try:
+                    target.relative_to(td)
+                    if ".." not in path_str and ".." not in decoded_path:
+                        is_inside_base = True
+                        break
+                except ValueError:
+                    pass
 
         if not is_inside_base:
             raise HTTPException(status_code=400, detail="Path traversal detected")
