@@ -4,6 +4,26 @@ Thank you for your interest in contributing to **Uroboros Knowledge Engine (Neur
 
 ---
 
+## Table of Contents
+
+- [1. Core Engineering Principles (Ponytail)](#1-core-engineering-principles-ponytail)
+- [2. Codebase Architecture & Layer Boundaries](#2-codebase-architecture--layer-boundaries)
+- [3. Commit Message & Naming Conventions](#3-commit-message--naming-conventions)
+- [4. Local Development & Setup](#4-local-development--setup)
+- [5. Testing & Quality Assurance Protocols](#5-testing--quality-assurance-protocols)
+- [6. Task Master Orchestration Rules (Tududi)](#6-task-master-orchestration-rules-tududi)
+- [7. Submitting a Pull Request (PR)](#7-submitting-a-pull-request-pr)
+- [8. Pull Request Review Matrix & Verification Checklist](#8-pull-request-review-matrix--verification-checklist)
+- [9. Performance Benchmark SLA Verification](#9-performance-benchmark-sla-verification)
+- [10. Security Vulnerability Disclosure & Dependency Audit](#10-security-vulnerability-disclosure--dependency-audit)
+- [11. Automated UI Asset Synchronization Protocol](#11-automated-ui-asset-synchronization-protocol)
+- [12. Subagent & Parallel Task Execution Standard](#12-subagent--parallel-task-execution-standard)
+- [13. Disaster Recovery & Snapshot Migration Testing](#13-disaster-recovery--snapshot-migration-testing)
+- [14. Multilingual & Unicode NFC Test Matrix](#14-multilingual--unicode-nfc-test-matrix)
+- [15. Code of Conduct](#15-code-of-conduct)
+
+---
+
 ## 1. Core Engineering Principles (Ponytail)
 
 Uroboros follows the **Ponytail (lazy developer)** engineering philosophy. Lazy means **efficient**, not careless:
@@ -164,6 +184,42 @@ python scripts/benchmark_engine.py --runs 100
 
 ---
 
-## 11. Code of Conduct
+## 11. Automated UI Asset Synchronization Protocol
+
+Whenever making changes to the React frontend in `frontend/src/`:
+1. Execute `npm run build` inside `frontend/` to generate production static assets.
+2. Verify that output files in `src/assets/` mirror the built React bundles to prevent UI state drift across deployments.
+
+---
+
+## 12. Subagent & Parallel Task Execution Standard
+
+When invoking parallel worker tasks or subagents:
+- Do NOT poll background task status in tight loops.
+- Rely on reactive system notifications when background tasks complete.
+- Ensure isolated worker threads release database connections immediately upon job completion.
+
+---
+
+## 13. Disaster Recovery & Snapshot Migration Testing
+
+Verify zero-downtime database snapshot creation before submitting database schema changes:
+
+```bash
+# Test online WAL database snapshot creation
+python scripts/backup_db.py --snapshot
+```
+
+---
+
+## 14. Multilingual & Unicode NFC Test Matrix
+
+Ensure all search and retrieval PRs validate diacritic equivalence:
+- Unicode NFC normalization must convert accented search terms (`canción` $\to$ `cancion`) automatically.
+- CJK tokenization test cases must be included in `tests/test_domain_multilingual.py`.
+
+---
+
+## 15. Code of Conduct
 
 All contributors are expected to adhere to the project [Code of Conduct](CODE_OF_CONDUCT.md).
