@@ -18,9 +18,10 @@ def get_rag_lineage_telemetry(
     """
     Generates real-time execution lineage telemetry including Self-RAG critique tokens.
     """
-    safe_query = str(query or "")
-    safe_answer = str(answer or "")
-    safe_chunks = [str(c) for c in source_chunks if c] if isinstance(source_chunks, list) else []
+    import unicodedata
+    safe_query = unicodedata.normalize("NFC", str(query or ""))
+    safe_answer = unicodedata.normalize("NFC", str(answer or ""))
+    safe_chunks = [unicodedata.normalize("NFC", str(c)) for c in source_chunks if c] if isinstance(source_chunks, list) else []
 
     grounding = verify_rag_grounding(safe_answer, safe_chunks)
     is_rel = True if safe_chunks else False

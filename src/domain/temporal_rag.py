@@ -30,7 +30,10 @@ def apply_temporal_decay_scoring(
 
     scored_results = []
     for cand in valid_candidates:
+        import unicodedata
         cand_copy = dict(cand)
+        if "filename" in cand_copy:
+            cand_copy["filename"] = unicodedata.normalize("NFC", str(cand_copy["filename"]))
         try:
             base_score = float(cand.get("score", 0.5))
         except (ValueError, TypeError):
