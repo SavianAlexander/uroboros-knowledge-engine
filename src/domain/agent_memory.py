@@ -36,6 +36,9 @@ def init_memory_db(db_path: str = DB_FILE):
 def remember(key: str, value: Any, category: str = "preference", confidence: float = 1.0, db_path: str = DB_FILE) -> Dict[str, Any]:
     """Stores or updates a memory key in the persistent SQLite database."""
     init_memory_db(db_path)
+    import unicodedata
+    norm_key = unicodedata.normalize("NFC", str(key))
+    norm_cat = unicodedata.normalize("NFC", str(category or "preference"))
     now = datetime.now(timezone.utc).isoformat()
     str_val = json.dumps(value) if not isinstance(value, str) else value
 

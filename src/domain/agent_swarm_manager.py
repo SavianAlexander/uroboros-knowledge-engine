@@ -16,6 +16,9 @@ def decompose_goal_into_agent_swarm(
     if not master_goal or not isinstance(master_goal, str) or not master_goal.strip():
         return {"swarm_tasks": [], "status": "empty_goal"}
 
+    import unicodedata
+    norm_goal = unicodedata.normalize("NFC", master_goal)
+
     swarm_tasks = [
         {"task_id": "swarm_1_research", "role": "Researcher", "description": f"Research background specs for '{master_goal}'", "dependencies": []},
         {"task_id": "swarm_2_build", "role": "Engineer", "description": f"Implement core logic for '{master_goal}'", "dependencies": ["swarm_1_research"]},
