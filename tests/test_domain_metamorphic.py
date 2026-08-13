@@ -148,7 +148,7 @@ class TestDomainMetamorphic(unittest.TestCase):
             fts_matches = set(r[0] for r in cursor.fetchall())
 
             cursor.execute("SELECT filepath, content FROM files")
-            ref_matches = set(row[0] for row in cursor.fetchall() if search_term in row[1])
+            ref_matches = set(row[0] for row in cursor.fetchall() if search_term in (row[1] or ""))
 
             self.assertEqual(fts_matches, ref_matches, "Differential Search Engine Parity Violated!")
 

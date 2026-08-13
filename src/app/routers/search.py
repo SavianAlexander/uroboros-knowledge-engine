@@ -223,6 +223,8 @@ def search_endpoint(
             operators["tag"] = tag
 
         target_q = cleaned_q.strip()
+        if target_q and len(target_q) > 1000:
+            target_q = target_q[:1000]
         if target_q:
             results = search_files(target_q)
         else:
