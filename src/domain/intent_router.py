@@ -4,9 +4,12 @@ Classifies query intent and dynamically routes execution to the optimal RAG pipe
 Zero-dependency, stdlib implementation.
 """
 import unicodedata
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 
+from functools import lru_cache
+
+@lru_cache(maxsize=1024)
 def classify_query_intent(query: str) -> str:
     """Classifies query intent into canonical RAG pipeline categories."""
     if not query or not isinstance(query, str):
@@ -24,19 +27,24 @@ def classify_query_intent(query: str) -> str:
         return "hybrid_fact_retrieval"
 
 
-def route_query_intent(query: str) -> Dict[str, Any]:
-    """
-    Classifies query intent in sub-1ms and recommends the optimal RAG pipeline handler.
-    # ponytail: sub-1ms speculative query intent router; ceiling: keyword/pattern rule classification; upgrade: use zero-shot intent classifier if dynamic multi-domain intent routing is added
-    """
+@lru_cache(maxsize=1024)
+def _route_query_intent_cached(query: str) -> Tuple[str, str]:
     intent = classify_query_intent(query)
-
     recommended_pipeline = {
         "code_search": "src.domain.ast_parser.parse_python_ast",
         "executive_summary": "src.domain.raptor_tree_indexer.build_raptor_tree",
         "counterfactual_audit": "src.domain.counterfactual_rag.execute_counterfactual_rag",
         "hybrid_fact_retrieval": "src.domain.swarm_rag.execute_swarm_rag"
     }.get(intent, "src.domain.rag_engine.extract_advanced_rag_context")
+    return intent, recommended_pipeline
+
+
+def route_query_intent(query: str) -> Dict[str, Any]:
+    """
+    Classifies query intent in sub-1ms and recommends the optimal RAG pipeline handler.
+    # ponytail: sub-1ms speculative query intent router; ceiling: keyword/pattern rule classification; upgrade: use zero-shot intent classifier if dynamic multi-domain intent routing is added
+    """
+    intent, recommended_pipeline = _route_query_intent_cached(query)
 
     return {
         "status": "success",
