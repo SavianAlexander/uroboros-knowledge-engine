@@ -3,6 +3,13 @@ import json
 import os
 from typing import Dict, Any, List
 from src.domain.rag_grounding_guard import compute_ngram_overlap
+from functools import lru_cache
+
+@lru_cache(maxsize=4096)
+def _normalize_nfc(text: str) -> str:
+    if not text:
+        return ""
+    return unicodedata.normalize("NFC", text)
 
 
 def evaluate_rag_triad(
@@ -18,9 +25,9 @@ def evaluate_rag_triad(
     3. Context Precision: Signal-to-noise ratio of top contexts vs query.
     4. Context Recall: Overlap of retrieved contexts against golden answer (if provided).
     """
-    norm_query = unicodedata.normalize("NFC", str(query or ""))
-    norm_answer = unicodedata.normalize("NFC", str(answer or ""))
-    safe_contexts = [unicodedata.normalize("NFC", str(c)) for c in (retrieved_contexts or []) if c and isinstance(c, str)]
+    norm_query = _normalize_nfc(str(query or ""))
+    norm_answer = _normalize_nfc(str(answer or ""))
+    safe_contexts = [_normalize_nfc(str(c)) for c in (retrieved_contexts or []) if c and isinstance(c, str)]
     combined_context = " ".join(safe_contexts) if safe_contexts else ""
 
     # 1. Faithfulness
