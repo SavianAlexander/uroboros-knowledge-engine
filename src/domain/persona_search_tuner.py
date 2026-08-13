@@ -39,11 +39,17 @@ def tune_search_by_persona(
     """
     Reranks candidate search results based on active user persona weighting.
     """
-    persona_config = PERSONA_WEIGHTS.get(persona.lower(), PERSONA_WEIGHTS["developer"])
+    persona_str = str(persona or "developer").lower()
+    persona_config = PERSONA_WEIGHTS.get(persona_str, PERSONA_WEIGHTS["developer"])
     boost_terms = set(persona_config["boost_terms"])
 
+    if not candidates or not isinstance(candidates, list):
+        candidates = []
+
+    valid_candidates = [c for c in candidates if isinstance(c, dict)]
+
     tuned_candidates = []
-    for cand in candidates:
+    for cand in valid_candidates:
         cand_copy = dict(cand)
         content_lower = (cand.get("content") or "").lower()
         

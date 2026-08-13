@@ -58,6 +58,8 @@ def extract_key_value_pairs(text: str) -> Dict[str, str]:
     """
     Extracts key-value form fields (e.g., 'Invoice #: 12345', 'Total: $500.00').
     """
+    if not text or not isinstance(text, str):
+        return {}
     matches = re.findall(r'^([A-Za-z0-9_\s#.\-]{2,30})\s*:\s*(.+)$', text, flags=re.MULTILINE)
     kv_dict = {}
     for k, v in matches:
@@ -69,6 +71,8 @@ def parse_checkbox_states(text: str) -> Dict[str, List[str]]:
     """
     Extracts checked '[x]' and unchecked '[ ]' task list items.
     """
+    if not text or not isinstance(text, str):
+        return {"checked": [], "unchecked": []}
     checked = re.findall(r'^\s*[-*]\s*\[[xX]\]\s*(.+)$', text, flags=re.MULTILINE)
     unchecked = re.findall(r'^\s*[-*]\s*\[\s*\]\s*(.+)$', text, flags=re.MULTILINE)
     return {

@@ -25,6 +25,7 @@ def export_knowledge_distillation_dataset(
 
     export_records = []
 
+    fmt = str(format_type or "alpaca").lower()
     for log in rag_interaction_logs:
         if not isinstance(log, dict):
             continue
@@ -36,7 +37,7 @@ def export_knowledge_distillation_dataset(
         else:
             context = str(raw_contexts or "")
 
-        if format_type.lower() == "alpaca":
+        if fmt == "alpaca":
             export_records.append({
                 "instruction": query,
                 "input": context,
