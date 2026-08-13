@@ -54,31 +54,33 @@ export default function ConfigView() {
     try {
       await api.captureSnapshot();
       await loadData();
+      toast('Snapshot Captured', 'Database state saved', 'success');
     } catch (e) {
       console.error(e);
+      toast('Snapshot Error', 'Failed to capture database state', 'error');
     } finally {
       setIsCapturing(false);
     }
   };
 
   const handleRestore = async (timestamp: string) => {
-    if (!confirm('Are you sure you want to restore this snapshot? Current data will be overwritten.')) return;
     try {
       await api.restoreSnapshot(timestamp);
-      alert('Snapshot restored successfully.');
+      toast('Snapshot Restored', `Restored database snapshot: ${timestamp}`, 'success');
     } catch (e) {
       console.error(e);
-      alert('Failed to restore snapshot.');
+      toast('Restore Failed', 'Could not restore snapshot', 'error');
     }
   };
 
   const handleDeleteSnapshot = async (timestamp: string) => {
-    if (!confirm('Delete this snapshot?')) return;
     try {
       await api.deleteSnapshot(timestamp);
       await loadData();
+      toast('Snapshot Removed', `Deleted snapshot: ${timestamp}`, 'info');
     } catch (e) {
       console.error(e);
+      toast('Delete Error', 'Failed to remove snapshot', 'error');
     }
   };
 
@@ -87,22 +89,25 @@ export default function ConfigView() {
     try {
       await api.syncExchange(peer_url);
       await loadData();
+      toast('P2P Sync Completed', `Exchanged vector delta with ${peer_url}`, 'success');
     } catch (e) {
       console.error(e);
-      alert('Sync failed. Check peer connection.');
+      toast('Sync Error', 'Peer unreachable or network connection failed', 'error');
     } finally {
       setIsSyncing(false);
     }
   };
 
   const handleAddPeer = async () => {
-    if (!newPeer) return;
+    if (!newPeer.trim()) return;
     try {
-      await api.addSyncPeer(newPeer, newPeer);
+      await api.addSyncPeer(newPeer.trim(), newPeer.trim());
+      toast('Peer Added', `Registered peer node: ${newPeer.trim()}`, 'success');
       setNewPeer('');
       await loadData();
     } catch (e) {
       console.error(e);
+      toast('Peer Error', 'Could not add peer node', 'error');
     }
   };
 
