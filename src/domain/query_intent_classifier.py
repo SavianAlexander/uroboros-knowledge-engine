@@ -17,7 +17,7 @@ def classify_query_intent(query: str) -> Dict[str, Any]:
     """
     Classifies user query intent and provides recommended search parameter presets.
     """
-    if not query:
+    if not query or not isinstance(query, str):
         return {"intent": "factual_lookup", "confidence": 1.0, "preset": {"top_k": 5, "rerank": True}, "status": "success"}
 
     import unicodedata
