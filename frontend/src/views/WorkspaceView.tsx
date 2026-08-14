@@ -383,6 +383,15 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     }
   };
 
+  const handleQueryDynamicData = async () => {
+    try {
+      const res = await api.queryClientData('list all records');
+      toast('Data Query', `Retrieved ${(res?.results || []).length} structured records`, 'info');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
     setContent(null);

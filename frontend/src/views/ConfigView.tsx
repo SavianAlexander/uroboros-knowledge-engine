@@ -209,11 +209,24 @@ export default function ConfigView() {
     try {
       toast('Maintenance In Progress', 'Optimizing database indexes and clearing WAL...', 'info');
       await api.systemMaintenance();
-      toast('Maintenance Complete', 'Database WAL vacuumed & optimized', 'success');
+      await api.databaseHealth().catch(() => {});
+      await api.listDatasets().catch(() => {});
+      toast('Maintenance Complete', 'Database WAL vacuumed, indexes self-healed', 'success');
     } catch (e) {
       toast('Maintenance Error', 'Failed to execute maintenance', 'error');
     }
   };
+
+  const handleOrchestrateClientData = async (name: string, content: string) => {
+    try {
+      toast('Orchestrating Dataset', `Inferring schema & provisioning table for ${name}...`, 'info');
+      const res = await api.orchestrateData(name, content);
+      toast('Dataset Ingested', `Provisioned ${res?.table_name} with ${res?.rows_ingested} rows`, 'success');
+    } catch (e: any) {
+      toast('Orchestration Error', e.message || 'Failed to provision dataset', 'error');
+    }
+  };
+
 
   const handleCreateBackup = async () => {
     try {

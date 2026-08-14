@@ -225,4 +225,13 @@ export const api = {
     fetchAPI<any>('/file/synthesize-wikilinks', { method: 'POST', body: JSON.stringify({ text, known_titles: knownTitles }) }),
   sessionEpisodicMemory: (sessionId: string, query: string = '') =>
     fetchAPI<any>(`/chat/sessions/${sessionId}/episodic?query=${encodeURIComponent(query)}`),
+
+  // Autonomous Data Orchestration & Self-Healing
+  orchestrateData: (datasetName: string, rawContent: string, formatHint?: string) =>
+    fetchAPI<any>('/data/orchestrate', { method: 'POST', body: JSON.stringify({ dataset_name: datasetName, raw_content: rawContent, format_hint: formatHint }) }),
+  listDatasets: () => fetchAPI<any>('/data/datasets'),
+  queryClientData: (query: string) =>
+    fetchAPI<any>('/data/query', { method: 'POST', body: JSON.stringify({ query }) }),
+  databaseHealth: () => fetchAPI<any>('/data/health'),
 };
+

@@ -1057,3 +1057,64 @@ def zk_mask_endpoint(payload: Dict[str, Any] = Body({})):
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in zk_mask: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/data/orchestrate")
+def orchestrate_data_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Autonomously ingests polymorphic client data, infers schema, and provisions dynamic SQLite tables."""
+    name = payload.get("dataset_name", "client_dataset")
+    content = payload.get("raw_content", "")
+    format_hint = payload.get("format_hint")
+    if not content:
+        raise HTTPException(status_code=400, detail="raw_content is required")
+    try:
+        from src.domain.polymorphic_data_orchestrator import provision_dynamic_dataset
+        return provision_dynamic_dataset(name, content, format_hint)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in orchestrate_data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/data/datasets")
+def list_datasets_endpoint():
+    """Lists all dynamically orchestrated client datasets with discovered schemas."""
+    try:
+        from src.domain.polymorphic_data_orchestrator import list_orchestrated_datasets
+        return {"datasets": list_orchestrated_datasets()}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in list_datasets: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/data/query")
+def query_data_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Autonomously routes natural language questions to dynamic client tables via Text-to-SQL."""
+    query = payload.get("query", "")
+    if not query:
+        raise HTTPException(status_code=400, detail="query is required")
+    try:
+        from src.domain.autonomous_sql_router import execute_autonomous_sql_query
+        return execute_autonomous_sql_query(query)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in query_data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/data/health")
+def database_health_endpoint():
+    """Runs autonomous database index optimization, anomaly detection, and WAL self-healing."""
+    try:
+        from src.domain.database_self_healer import execute_database_self_healing
+        return execute_database_self_healing()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in database_health: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
