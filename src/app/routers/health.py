@@ -522,3 +522,37 @@ def delete_agent_memory_endpoint(key: str):
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error deleting memory: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/vault/merkle-root")
+def get_vault_merkle_root_endpoint():
+    """Generates deterministic binary Merkle Tree root digest over all vault documents."""
+    try:
+        from src.domain.vault_merkle_tree import build_vault_merkle_tree
+        return build_vault_merkle_tree()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error generating merkle root: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/vault/merkle-proof")
+def get_vault_merkle_proof_endpoint(path: str = "", filepath: str = "", filename: str = ""):
+    """Generates logarithmic cryptographic audit proof of inclusion for a document."""
+    target = path or filepath or filename or ""
+    if not target:
+        raise HTTPException(status_code=400, detail="Target document path or filename is required")
+    try:
+        from src.domain.vault_merkle_tree import generate_merkle_proof
+        res = generate_merkle_proof(target)
+        if res.get("status") == "not_found":
+            raise HTTPException(status_code=404, detail=res.get("message", "Document not found"))
+        return res
+    except HTTPException:
+        raise
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error generating merkle proof: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -7,7 +7,7 @@ import asyncio
 import logging
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from fastapi.responses import StreamingResponse
 
 logger = logging.getLogger(__name__)
@@ -1238,6 +1238,77 @@ def api_feedback_refine(req: Dict[str, Any]):
     chunk_id = req.get("chunk_id", "chk_0")
     signal = req.get("feedback_signal", "click")
     return log_feedback_and_refine(chunk_id, feedback_signal=signal)
+
+
+@router.get("/api/stream/rag")
+async def stream_rag_pipeline_endpoint(q: str = "", query: str = "", top_k: int = 5):
+    """Progressive SSE streaming RAG endpoint emitting retrieval pipeline stages."""
+    search_q = q or query or ""
+
+    async def event_generator():
+        t0 = time.time()
+        # 1. Intent Classification
+        try:
+            from src.domain.query_intent_classifier import classify_query_intent
+            intent_data = classify_query_intent(search_q)
+            yield f"event: intent_classified\ndata: {json.dumps(intent_data)}\n\n"
+        except Exception:
+            pass
+        await asyncio.sleep(0.01)
+
+        # 2. Sub-Query Decomposition
+        try:
+            from src.domain.sota_rag_engine import decompose_query
+            sub_queries = decompose_query(search_q)
+        except Exception:
+            sub_queries = [search_q]
+
+        yield f"event: query_decomposed\ndata: {json.dumps({'sub_queries': sub_queries})}\n\n"
+        await asyncio.sleep(0.01)
+
+        # 3. Retrieve & Compress Candidates
+        try:
+            rag_res = execute_sota_rag_search(search_q, top_k=top_k)
+        except Exception:
+            rag_res = {"top_candidates": [], "compressed_context": "", "compression_ratio_pct": 0}
+
+        candidates = rag_res.get("top_candidates", [])
+        yield f"event: passages_retrieved\ndata: {json.dumps({'candidates_count': len(candidates), 'top_candidates': candidates[:3]})}\n\n"
+        await asyncio.sleep(0.01)
+
+        # 4. Context Compression Metrics
+        yield f"event: context_compressed\ndata: {json.dumps({'compression_ratio_pct': rag_res.get('compression_ratio_pct', 0), 'compressed_char_count': rag_res.get('compressed_char_count', 0)})}\n\n"
+        await asyncio.sleep(0.01)
+
+        # 5. Token Answer Simulation / Streaming
+        compressed = rag_res.get("compressed_context", "")
+        summary_tokens = (compressed[:200] if compressed else f"Synthesized findings for query '{search_q}'.").split()
+        for token in summary_tokens:
+            yield f"event: answer_chunk\ndata: {json.dumps({'token': token + ' '})}\n\n"
+            await asyncio.sleep(0.002)
+
+        # 6. Citations
+        try:
+            from src.domain.source_citation_generator import generate_source_citations
+            citations = generate_source_citations(search_q, [c.get("content", "") for c in candidates])
+            yield f"event: citations\ndata: {json.dumps(citations)}\n\n"
+        except Exception:
+            pass
+
+        # 7. Complete
+        duration_ms = round((time.time() - t0) * 1000, 2)
+        yield f"event: done\ndata: {json.dumps({'status': 'completed', 'duration_ms': duration_ms})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.post("/api/chat/reformulate")
+def reformulate_query_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Reformulates multi-turn conversational queries with antecedent and entity carry-over."""
+    history = payload.get("history", [])
+    query_str = payload.get("query", "")
+    from src.domain.conversation_rag_rewriter import reformulate_conversational_query
+    return reformulate_conversational_query(history, query_str)
 
 
 

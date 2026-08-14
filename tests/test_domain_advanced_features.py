@@ -272,6 +272,82 @@ class TestAdvancedFeatures(unittest.TestCase):
         self.assertEqual(res_bad_regex.status_code, 400)
         self.assertIn("Invalid regex pattern", res_bad_regex.json().get("detail", ""))
 
+    def test_22_sse_streaming_rag(self):
+        """Verify SSE progressive streaming RAG endpoint /api/stream/rag."""
+        res = self.client.get("/api/stream/rag", params={"q": "architecture guidelines"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.headers.get("content-type"), "text/event-stream; charset=utf-8")
+        body = res.text
+        self.assertIn("event: intent_classified", body)
+        self.assertIn("event: query_decomposed", body)
+        self.assertIn("event: done", body)
+
+    def test_23_temporal_timeline(self):
+        """Verify chronological knowledge timeline generator /api/vault/timeline."""
+        res = self.client.get("/api/vault/timeline")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertIn("timeline", data)
+
+    def test_24_conversational_query_reformulator(self):
+        """Verify multi-turn query reformulation and antecedent injection."""
+        history = [
+            {"user": "Explain SQLite WAL mode locking", "assistant": "SQLite WAL mode uses shared memory for concurrency."}
+        ]
+        res = self.client.post("/api/chat/reformulate", json={"history": history, "query": "Why does it prevent blocking?"})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertTrue(data["has_pronouns"])
+        self.assertIn("SQLite", data["reformulated_query"])
+
+    def test_25_code_ast_callgraph_complexity(self):
+        """Verify zero-dependency code AST call graph and cyclomatic complexity."""
+        sample_code = """
+import os
+
+class DatabaseWorker:
+    def execute_query(self, query: str):
+        if not query:
+            return None
+        for i in range(3):
+            print(query)
+        return True
+"""
+        res = self.client.post("/api/code/analyze", json={"code": sample_code, "filename": "worker.py"})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertEqual(data["language"], "python")
+        self.assertEqual(len(data["classes"]), 1)
+        self.assertEqual(data["classes"][0]["name"], "DatabaseWorker")
+        self.assertGreaterEqual(data["cyclomatic_complexity"], 3)
+
+    def test_26_vault_merkle_tree_attestation(self):
+        """Verify deterministic binary Merkle Tree root and cryptographic audit inclusion proof."""
+        res_root = self.client.get("/api/vault/merkle-root")
+        self.assertEqual(res_root.status_code, 200)
+        root_data = res_root.json()
+        self.assertEqual(root_data["status"], "success")
+        self.assertIn("merkle_root", root_data)
+        self.assertGreater(len(root_data["merkle_root"]), 10)
+
+        # Proof generation for top file if leaves exist
+        leaves = root_data.get("leaves", [])
+        if leaves:
+            sample_target = leaves[0]["filename"]
+            res_proof = self.client.get("/api/vault/merkle-proof", params={"filename": sample_target})
+            self.assertEqual(res_proof.status_code, 200)
+            proof_data = res_proof.json()
+            self.assertEqual(proof_data["status"], "success")
+            self.assertIn("audit_proof", proof_data)
+
+            # Mathematical verification
+            from src.domain.vault_merkle_tree import verify_merkle_proof
+            valid = verify_merkle_proof(proof_data["leaf_hash"], proof_data["audit_proof"], root_data["merkle_root"])
+            self.assertTrue(valid)
+
 
 if __name__ == "__main__":
     unittest.main()

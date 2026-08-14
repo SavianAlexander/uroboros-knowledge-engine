@@ -776,3 +776,38 @@ def parse_multimodal_document_endpoint(payload: Dict[str, Any] = Body({})):
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/code/callgraph")
+def get_code_callgraph_endpoint(filepath: str = ""):
+    """Extracts classes, functions, calls, and cyclomatic complexity from a code file."""
+    if not filepath:
+        raise HTTPException(status_code=400, detail="Filepath is required")
+    try:
+        from src.domain.code_ast_extractor import analyze_file_callgraph
+        res = analyze_file_callgraph(filepath)
+        if res.get("status") == "error":
+            raise HTTPException(status_code=404, detail=res.get("message", "Error analyzing code"))
+        return res
+    except HTTPException:
+        raise
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in callgraph: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/code/analyze")
+def analyze_code_snippet_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Extracts AST structure, function calls, and cyclomatic complexity from code string."""
+    code = payload.get("code", "")
+    filename = payload.get("filename", "snippet.py")
+    try:
+        from src.domain.code_ast_extractor import extract_code_structure
+        return extract_code_structure(code, filename=filename)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in code analyze: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

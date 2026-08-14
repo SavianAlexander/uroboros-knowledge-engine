@@ -1175,3 +1175,16 @@ def multi_agent_debate_endpoint(payload: Dict[str, Any] = Body({})):
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/vault/timeline")
+def get_vault_timeline_endpoint(topic: str = "", limit: int = 25):
+    """Generates a chronological knowledge milestone timeline and topic evolution trajectory."""
+    try:
+        from src.domain.temporal_timeline import generate_vault_timeline
+        return generate_vault_timeline(topic=topic, limit=limit)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py timeline: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
