@@ -30,3 +30,9 @@ frontend/dist/
 dist/
 *.zip
 scripts/
+.coverage
+coverage.xml
+htmlcov/
+*.tmp
+*.swp
+*.bak
