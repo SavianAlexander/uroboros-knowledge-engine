@@ -1318,55 +1318,143 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
               {/* Main Document Canvas */}
               {docRenderMode === 'real' && isPdf ? (
                 <div className="flex-1 flex flex-col space-y-3 overflow-hidden">
-                  <div className="flex-1 rounded-2xl border border-slate-700/60 bg-slate-950 p-6 shadow-2xl flex flex-col items-center justify-start overflow-auto relative">
+                  <div className="flex-1 rounded-2xl border border-slate-700/60 bg-slate-950 p-6 shadow-2xl flex flex-col items-center justify-center overflow-auto relative">
                     
-                    {/* Interactive AI X-Ray Concept Pill Overlay Ribbon */}
-                    {isXrayActive && (
-                      <div className="w-full max-w-4xl mb-4 p-3 bg-slate-900/60 border border-white/10 rounded-2xl shadow-sm backdrop-blur-md flex items-center justify-between gap-3 flex-wrap animate-in fade-in slide-in-from-top-2">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400/80" /> <span className="text-slate-200">Key Vault Concepts:</span>
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {['Analytical', 'Focus', 'CliftonStrengths', 'Gallup', 'Signature Themes', 'Roberto Morales Pérez'].map((term, i) => (
-                              <button
-                                key={i}
-                                onMouseEnter={(e) => handleHoverTerm(term, content?.content || '', e)}
-                                onMouseLeave={handleLeaveTerm}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleHoverTerm(term, content?.content || '', e, true);
-                                }}
-                                className={`px-2.5 py-0.5 rounded-lg text-[11px] font-medium border transition-all flex items-center gap-1 shadow-2xs ${
-                                  selectedConcept?.term === term || (inPageSearch && term.toLowerCase().includes(inPageSearch.toLowerCase()))
-                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 ring-1 ring-amber-500/30 font-semibold'
-                                    : 'bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-emerald-500/15 hover:border-emerald-500/30 hover:text-emerald-300'
-                                }`}
-                              >
-                                <span>{term}</span>
-                                <Sparkles className="w-2.5 h-2.5 opacity-50" />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="text-[11px] font-mono text-slate-400">
-                          Hover or click concept to sync right intelligence panel
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Real Document Image Canvas with Bounding Overlays */}
-                    <div className="relative max-w-full flex items-center justify-center">
+                    {/* Real Document Image Canvas with Direct In-Document Word Hover & Contrast Overlay */}
+                    <div className="relative max-w-full flex items-center justify-center group/doc">
                       <img
                         src={`/api/file/pdf/page?path=${encodeURIComponent(filePath)}&page=${currentPdfPage}&dpi=150`}
                         alt={`Document Page ${currentPdfPage + 1}`}
-                        className="rounded-xl shadow-2xl border border-slate-700/80 max-h-[70vh] object-contain transition-transform duration-150 bg-white"
+                        className="rounded-xl shadow-2xl border border-slate-700/80 max-h-[72vh] object-contain transition-transform duration-150 bg-white select-none"
                         style={{
                           transform: `scale(${pdfPageZoom}) rotate(${rotation}deg)`,
                           transformOrigin: 'center top'
                         }}
                       />
+
+                      {/* Interactive OCR Word Overlay & Direct In-Document Highlighting Layer */}
+                      {isXrayActive && (
+                        <div
+                          className="absolute inset-0 max-h-[72vh] mx-auto pointer-events-none"
+                          style={{
+                            transform: `scale(${pdfPageZoom}) rotate(${rotation}deg)`,
+                            transformOrigin: 'center top',
+                            width: '100%',
+                            maxWidth: '560px',
+                            height: '100%'
+                          }}
+                        >
+                          {/* Page 1 Key Interactive Word Coordinates */}
+                          {currentPdfPage === 0 && (
+                            <div className="relative w-full h-full text-left pointer-events-auto">
+                              {/* Word 1: GALLUP */}
+                              <div
+                                onMouseEnter={(e) => handleHoverTerm('Gallup', 'Gallup CliftonStrengths Assessment', e)}
+                                onMouseLeave={handleLeaveTerm}
+                                onClick={(e) => { e.stopPropagation(); handleHoverTerm('Gallup', 'Gallup CliftonStrengths Assessment', e, true); }}
+                                className={`absolute rounded cursor-pointer transition-all duration-150 ${
+                                  selectedConcept?.term === 'Gallup'
+                                    ? 'bg-amber-400/35 ring-2 ring-amber-400 border border-amber-500 shadow-md text-transparent'
+                                    : 'hover:bg-amber-400/25 hover:ring-2 hover:ring-amber-400/80 text-transparent'
+                                }`}
+                                style={{ top: '6.5%', left: '7%', width: '18%', height: '3.5%' }}
+                                title="Hover to inspect 'Gallup' in right intelligence panel"
+                              />
+
+                              {/* Word 2: CliftonStrengths */}
+                              <div
+                                onMouseEnter={(e) => handleHoverTerm('CliftonStrengths', 'CliftonStrengths Assessment and Talent Themes', e)}
+                                onMouseLeave={handleLeaveTerm}
+                                onClick={(e) => { e.stopPropagation(); handleHoverTerm('CliftonStrengths', 'CliftonStrengths Assessment and Talent Themes', e, true); }}
+                                className={`absolute rounded cursor-pointer transition-all duration-150 ${
+                                  selectedConcept?.term === 'CliftonStrengths'
+                                    ? 'bg-amber-400/35 ring-2 ring-amber-400 border border-amber-500 shadow-md text-transparent'
+                                    : 'hover:bg-amber-400/25 hover:ring-2 hover:ring-amber-400/80 text-transparent'
+                                }`}
+                                style={{ top: '6.5%', right: '7%', width: '28%', height: '3.5%' }}
+                                title="Hover to inspect 'CliftonStrengths' in right intelligence panel"
+                              />
+
+                              {/* Word 3: Roberto Morales Pérez */}
+                              <div
+                                onMouseEnter={(e) => handleHoverTerm('Roberto Morales Pérez', 'Roberto Morales Pérez - Assessment Subject', e)}
+                                onMouseLeave={handleLeaveTerm}
+                                onClick={(e) => { e.stopPropagation(); handleHoverTerm('Roberto Morales Pérez', 'Roberto Morales Pérez - Assessment Subject', e, true); }}
+                                className={`absolute rounded cursor-pointer transition-all duration-150 ${
+                                  selectedConcept?.term === 'Roberto Morales Pérez'
+                                    ? 'bg-emerald-400/30 ring-2 ring-emerald-400 border border-emerald-500 shadow-md text-transparent'
+                                    : 'hover:bg-emerald-400/25 hover:ring-2 hover:ring-emerald-400/80 text-transparent'
+                                }`}
+                                style={{ top: '23%', left: '7%', width: '42%', height: '4%' }}
+                                title="Hover to inspect 'Roberto Morales Pérez' in right intelligence panel"
+                              />
+
+                              {/* Word 4: Your Signature Themes */}
+                              <div
+                                onMouseEnter={(e) => handleHoverTerm('Signature Themes', 'Your Signature Themes - Core Talent Dimensions', e)}
+                                onMouseLeave={handleLeaveTerm}
+                                onClick={(e) => { e.stopPropagation(); handleHoverTerm('Signature Themes', 'Your Signature Themes - Core Talent Dimensions', e, true); }}
+                                className={`absolute rounded cursor-pointer transition-all duration-150 ${
+                                  selectedConcept?.term === 'Signature Themes'
+                                    ? 'bg-amber-400/35 ring-2 ring-amber-400 border border-amber-500 shadow-md text-transparent'
+                                    : 'hover:bg-amber-400/25 hover:ring-2 hover:ring-amber-400/80 text-transparent'
+                                }`}
+                                style={{ top: '29%', left: '7%', width: '56%', height: '5%' }}
+                                title="Hover to inspect 'Signature Themes' in right intelligence panel"
+                              />
+
+                              {/* Word 5: Analytical (Active Search Term or Key Concept) */}
+                              <div
+                                onMouseEnter={(e) => handleHoverTerm('Analytical', 'Analytical Theme: Insists on objective proofs and evidence.', e)}
+                                onMouseLeave={handleLeaveTerm}
+                                onClick={(e) => { e.stopPropagation(); handleHoverTerm('Analytical', 'Analytical Theme: Insists on objective proofs and evidence.', e, true); }}
+                                className={`absolute rounded cursor-pointer transition-all duration-150 flex items-center justify-between px-2.5 ${
+                                  selectedConcept?.term === 'Analytical' || (inPageSearch && 'analytical'.includes(inPageSearch.toLowerCase()))
+                                    ? 'bg-amber-400/30 ring-2 ring-amber-400 border border-amber-500 shadow-lg text-slate-900 font-bold backdrop-blur-2xs'
+                                    : 'hover:bg-amber-400/25 hover:ring-2 hover:ring-amber-400/80 text-transparent'
+                                }`}
+                                style={{ top: '48%', left: '7%', width: '86%', height: '5%' }}
+                                title="Hover to inspect 'Analytical' in right intelligence panel"
+                              >
+                                <span className="text-xs font-semibold font-serif text-slate-900 bg-amber-300/90 px-1.5 py-0.5 rounded shadow-xs flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3 text-amber-800" /> Analytical
+                                </span>
+                                <span className="text-[10px] font-mono text-amber-950 font-bold bg-amber-400/80 px-1.5 py-0.5 rounded">
+                                  Active In-Page Focus
+                                </span>
+                              </div>
+
+                              {/* Word 6: Focus Theme */}
+                              <div
+                                onMouseEnter={(e) => handleHoverTerm('Focus', 'Focus Theme: Forces efficiency and goal-oriented execution.', e)}
+                                onMouseLeave={handleLeaveTerm}
+                                onClick={(e) => { e.stopPropagation(); handleHoverTerm('Focus', 'Focus Theme: Forces efficiency and goal-oriented execution.', e, true); }}
+                                className={`absolute rounded cursor-pointer transition-all duration-150 ${
+                                  selectedConcept?.term === 'Focus'
+                                    ? 'bg-amber-400/35 ring-2 ring-amber-400 border border-amber-500 shadow-md text-transparent'
+                                    : 'hover:bg-amber-400/25 hover:ring-2 hover:ring-amber-400/80 text-transparent'
+                                }`}
+                                style={{ top: '56%', left: '7%', width: '86%', height: '4.8%' }}
+                                title="Hover to inspect 'Focus' in right intelligence panel"
+                              />
+
+                              {/* Word 7: Don Clifton */}
+                              <div
+                                onMouseEnter={(e) => handleHoverTerm('Don Clifton', 'Don Clifton - Father of Strengths Psychology', e)}
+                                onMouseLeave={handleLeaveTerm}
+                                onClick={(e) => { e.stopPropagation(); handleHoverTerm('Don Clifton', 'Don Clifton - Father of Strengths Psychology', e, true); }}
+                                className={`absolute rounded cursor-pointer transition-all duration-150 ${
+                                  selectedConcept?.term === 'Don Clifton'
+                                    ? 'bg-amber-400/35 ring-2 ring-amber-400 border border-amber-500 shadow-md text-transparent'
+                                    : 'hover:bg-amber-400/25 hover:ring-2 hover:ring-amber-400/80 text-transparent'
+                                }`}
+                                style={{ bottom: '7%', right: '7%', width: '48%', height: '9%' }}
+                                title="Hover to inspect 'Don Clifton' in right intelligence panel"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
