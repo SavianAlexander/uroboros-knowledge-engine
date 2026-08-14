@@ -42,6 +42,8 @@ services:
       - LLM_API_KEY=ollama
       - OPENAI_API_BASE=http://host.docker.internal:11434/v1
       - OLLAMA_HOST=http://host.docker.internal:11434
+      - TTS_ENGINE_URL=http://uroboros_voice:5500/api/tts
+      - VOICE_ENGINE_HOST=http://host.docker.internal:5500
       - MAX_WORKERS=2
     deploy:
       resources:
@@ -113,7 +115,39 @@ services:
       - backend_net
 
   # ----------------------------------------------------------------------------
-  # 3. Optional Containerized Ollama Instance (NVIDIA GPU Profile)
+  # 3. High-Performance Neural Voice Engine & Multi-Model TTS Microservice
+  # ----------------------------------------------------------------------------
+  uroboros_voice:
+    image: synesthesiam/opentts:latest
+    container_name: uroboros_voice
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "${VOICE_HOST_PORT:-5500}:5500"
+    volumes:
+      - voice_data:/data
+    command: ["--piper-voices-dir", "/data/piper", "--cache-dir", "/data/cache"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+          pids: 100
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - ai_net
+      - backend_net
+
+  # ----------------------------------------------------------------------------
+  # 4. Optional Containerized Ollama Instance (NVIDIA GPU Profile)
   # ----------------------------------------------------------------------------
   ollama_nvidia:
     image: ollama/ollama:latest
@@ -135,7 +169,7 @@ services:
     restart: unless-stopped
 
   # ----------------------------------------------------------------------------
-  # 4. Optional Containerized Ollama Instance (AMD ROCm Profile)
+  # 5. Optional Containerized Ollama Instance (AMD ROCm Profile)
   # ----------------------------------------------------------------------------
   ollama_amd:
     image: ollama/ollama:latest
@@ -168,6 +202,8 @@ volumes:
     name: uroboros_backups
   ollama_data:
     name: ollama_data
+  voice_data:
+    name: uroboros_voice_data
 
 networks:
   frontend_net:
