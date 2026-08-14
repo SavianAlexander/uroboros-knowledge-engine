@@ -78,7 +78,6 @@ function DirectoryTreeSidebar({ onSelectFile, selectedFile }: any) {
   const [searchFilter, setSearchFilter] = useState('');
   
   useEffect(() => {
-    onSelectFile(null);
     api.fileTree().then(data => {
        if (data?.tree) {
           const root: any = { name: 'root', isDir: true, children: {}, path: '' };
@@ -94,6 +93,10 @@ function DirectoryTreeSidebar({ onSelectFile, selectedFile }: any) {
              current.children[parts[parts.length - 1]] = { name: parts[parts.length - 1], isDir: false, raw: node };
           });
           setTreeData(Object.values(root.children));
+          if (!selectedFile && data.tree.length > 0) {
+            const preferred = data.tree.find((n: any) => n.relative_path.endsWith('.pdf')) || data.tree[0];
+            onSelectFile(preferred);
+          }
        }
     }).catch(console.error);
   }, [activeWorkspace]);

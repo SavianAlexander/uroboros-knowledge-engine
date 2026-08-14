@@ -301,12 +301,15 @@ export default function ConfigView() {
 
             <div className="space-y-2">
               {syncPeers.length > 0 ? (
-                syncPeers.map((p, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-3 rounded-xl bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/5 text-xs font-mono">
-                    <span className="text-slate-700 dark:text-slate-300">{p.url || p}</span>
-                    <span className="text-emerald-500 font-semibold">Online</span>
-                  </div>
-                ))
+                syncPeers.map((p, idx) => {
+                  const peerText = typeof p === 'object' ? (p.address || p.url || p.name || JSON.stringify(p)) : String(p);
+                  return (
+                    <div key={idx} className="flex justify-between items-center p-3 rounded-xl bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/5 text-xs font-mono">
+                      <span className="text-slate-700 dark:text-slate-300">{peerText}</span>
+                      <span className="text-emerald-500 font-semibold">Online</span>
+                    </div>
+                  );
+                })
               ) : (
                 <div className="p-4 text-center text-xs text-slate-400 bg-slate-100/40 dark:bg-slate-950/40 rounded-xl border border-slate-200/60 dark:border-white/5">No remote peers registered. Operating in standalone mode.</div>
               )}
@@ -317,9 +320,12 @@ export default function ConfigView() {
             <h4 className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Recent Peer Sync Logs</h4>
             <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-400 space-y-1.5 h-36 overflow-y-auto">
               {syncLogs.length > 0 ? (
-                syncLogs.map((log, idx) => (
-                  <div key={idx} className="border-b border-white/5 pb-1 text-emerald-400/90">{log}</div>
-                ))
+                syncLogs.map((log, idx) => {
+                  const logText = typeof log === 'object' ? (log.message || log.text || JSON.stringify(log)) : String(log);
+                  return (
+                    <div key={idx} className="border-b border-white/5 pb-1 text-emerald-400/90">{logText}</div>
+                  );
+                })
               ) : (
                 <div className="text-slate-600 italic">No sync events logged in this session.</div>
               )}

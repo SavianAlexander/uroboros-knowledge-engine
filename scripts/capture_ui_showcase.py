@@ -39,12 +39,6 @@ def main():
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
 
-        page.on("pageerror", lambda err: print(f"[PAGE ERROR] {err}"))
-        page.on("console", lambda msg: print(f"[CONSOLE] {msg.text}") if msg.type in ("error", "warning") else None)
-
-        page.goto(f"http://127.0.0.1:{port}/")
-        time.sleep(2)
-
         views = [
             ("01_dashboard", "dashboard"),
             ("02_chat_studio", "chat"),
@@ -58,16 +52,33 @@ def main():
 
         for prefix, view_id in views:
             print(f"Opening view: {view_id}...")
-            # Use sidebar click
-            sidebar_btn = page.locator(f"button[data-tab='{view_id}']").first
-            if sidebar_btn.count() > 0:
-                sidebar_btn.click()
-            else:
-                page.evaluate(f"() => window.location.hash = '#/{view_id}'")
-            
+            page.goto(f"http://127.0.0.1:{port}/#/{view_id}")
             time.sleep(2)
-            page.screenshot(path=os.path.join(docs_dir, f"{prefix}.png"))
-            page.screenshot(path=os.path.join(artifact_dir, f"{prefix}.png"))
+
+            if view_id == "chat":
+                textarea = page.locator("textarea").first
+                if textarea.count() > 0:
+                    textarea.fill("Explain SQLite Write-Ahead Logging (WAL) mode with architecture trade-offs.")
+                    time.sleep(0.5)
+
+            elif view_id == "workspace":
+                time.sleep(2.5)
+
+            elif view_id == "search":
+                search_input = page.locator("input[placeholder*='Search']").first
+                if search_input.count() > 0:
+                    search_input.fill("analytical")
+                    page.keyboard.press("Enter")
+                    time.sleep(2)
+
+            elif view_id == "graph":
+                time.sleep(5)  # Wait for WebGL 3D graph cluster physics simulation
+
+            target_docs = os.path.join(docs_dir, f"{prefix}.png")
+            target_artifact = os.path.join(artifact_dir, f"{prefix}.png")
+            
+            page.screenshot(path=target_docs)
+            page.screenshot(path=target_artifact)
             print(f"Captured {prefix}.png")
 
         browser.close()
