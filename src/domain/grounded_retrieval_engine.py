@@ -33,6 +33,26 @@ from src.domain.dense_propositions import (
     expand_propositions_to_parent_context,
     format_breadcrumb_scope
 )
+from src.domain.consensus_matrix import (
+    evaluate_cross_document_consensus,
+    extract_document_assertions,
+    compute_consensus_boost,
+    resolve_contradiction_hierarchy,
+    HIGH_CONSENSUS,
+    MODERATE_CONSENSUS,
+    NEUTRAL,
+    SINGLE_SOURCE,
+    MINOR_DISCREPANCY,
+    CONTRADICTION_DETECTED,
+    CONTRADICTION_UNRESOLVED,
+    CONFLICT_NUMERICAL_DISCREPANCY,
+    CONFLICT_POLARITY_INVERSION,
+    CONFLICT_STATUS_COLLISION,
+    TIER_1_EPISTEMIC_DOMINANCE,
+    TIER_2_TEMPORAL_DOMINANCE,
+    TIER_3_CONDITION_SCOPE,
+    TIER_4_UNRESOLVABLE
+)
 
 # Re-export for backward compatibility
 __all__ = [
@@ -44,6 +64,9 @@ __all__ = [
     "expand_propositions_to_parent_context",
     "format_breadcrumb_scope",
     "evaluate_cross_document_consensus",
+    "extract_document_assertions",
+    "compute_consensus_boost",
+    "resolve_contradiction_hierarchy",
     "check_optical_latency_invariant",
     "check_usl_scalability_invariant",
     "check_carnot_efficiency_invariant",
@@ -64,61 +87,15 @@ __all__ = [
     "TIER_3_SECONDARY",
     "TIER_4_COMMENTARY",
     "DOMAIN_HALF_LIVES",
-    "STATUS_PENALTY_CAPS"
+    "STATUS_PENALTY_CAPS",
+    "HIGH_CONSENSUS",
+    "MODERATE_CONSENSUS",
+    "NEUTRAL",
+    "SINGLE_SOURCE",
+    "MINOR_DISCREPANCY",
+    "CONTRADICTION_DETECTED",
+    "CONTRADICTION_UNRESOLVED"
 ]
-
-
-# --- 4. Cross-Document Consensus & Contradiction Resolver ---
-def evaluate_cross_document_consensus(passages: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Evaluates cross-passage consensus and isolates factual/numerical contradictions."""
-    if len(passages) < 2:
-        return {"consensus_level": "SINGLE_SOURCE", "contradictions": [], "consensus_score": 0.70, "agreements_count": 0, "contradictions_count": 0}
-
-    contradictions = []
-    agreements = 0
-
-    # Numerical & status assertion extraction
-    claims = []
-    for p in passages:
-        text = p.get("content", "")
-        # Extract numerical quantities with context
-        nums = re.findall(r'(\b\d+(?:\.\d+)?\s*(?:%|mb|gb|ms|s|usd|\$|users|nodes|tps|mhz|ghz)?\b)', text, re.I)
-        claims.append({"source": p.get("filename", "unknown"), "nums": nums, "text": text})
-
-    for i in range(len(claims)):
-        for j in range(i + 1, len(claims)):
-            c1, c2 = claims[i], claims[j]
-            # Check for direct numerical contradiction in similar sentences
-            overlap = set(c1["nums"]).intersection(set(c2["nums"]))
-            if overlap:
-                agreements += 1
-            elif c1["nums"] and c2["nums"]:
-                contradictions.append({
-                    "source_a": c1["source"],
-                    "source_b": c2["source"],
-                    "conflict_type": "NUMERICAL_DISCREPANCY",
-                    "values_a": c1["nums"],
-                    "values_b": c2["nums"]
-                })
-
-    # Majority consensus determination
-    if agreements >= 1 and (agreements >= len(contradictions) or agreements >= len(claims) // 2):
-        consensus_level = "HIGH_CONSENSUS"
-        score = 0.95
-    elif contradictions:
-        consensus_level = "CONTRADICTION_DETECTED"
-        score = 0.45
-    else:
-        consensus_level = "NEUTRAL"
-        score = 0.70
-
-    return {
-        "consensus_level": consensus_level,
-        "consensus_score": score,
-        "agreements_count": agreements,
-        "contradictions_count": len(contradictions),
-        "contradictions": contradictions
-    }
 
 
 # --- 5. Physical & Computational Boundary Invariant Guards ---
