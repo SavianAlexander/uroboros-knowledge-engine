@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master, main ]
 
+concurrency:
+  group: neuro-copilot-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     name: Run Domain Test Suite & Tri-Engine Audit

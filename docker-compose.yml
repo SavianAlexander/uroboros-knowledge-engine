@@ -29,6 +29,8 @@ services:
         max-size: "10m"
         max-file: "3"
     restart: unless-stopped
+    stop_signal: SIGINT
+    stop_grace_period: 15s
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
