@@ -32,13 +32,13 @@ Decoupled Clean Architecture in Python (stdlib-first, zero unneeded dependencies
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Epistemic Tiering, Temporal Validity & Grounded RRF | F1, F2, F3, F4 | none | IN_PROGRESS |
-| M2 | Dense Propositional Decomposition & Breadcrumb Scoping | F5 | M1 | IN_PROGRESS |
-| M3 | Cross-Document Consensus & Contradiction Resolution Matrix | F6 | M1 | IN_PROGRESS |
-| M4 | Physical, Mathematical & Computational Boundary Invariant Guards | F7, F8, F9, F10, F11 | none | IN_PROGRESS |
-| M5 | Grounding Scorecard, Refusal Gate & Engine Integration | F12, Full Engine Integration | M1, M2, M3, M4 | IN_PROGRESS |
-| M-E2E | Opaque-Box E2E Test Suite Creation | Test infra & Tiers 1-4 tests covering all 12 features | none | IN_PROGRESS |
-| M6 | Final Verification & Adversarial Coverage Hardening | 100% E2E Pass + Tier 5 Adversarial Hardening | M5, M-E2E | PLANNED |
+| M1 | Epistemic Tiering, Temporal Validity & Grounded RRF | F1, F2, F3, F4 | none | DONE |
+| M2 | Dense Propositional Decomposition & Breadcrumb Scoping | F5 | M1 | DONE |
+| M3 | Cross-Document Consensus & Contradiction Resolution Matrix | F6 | M1 | DONE |
+| M4 | Physical, Mathematical & Computational Boundary Invariant Guards | F7, F8, F9, F10, F11 | none | DONE |
+| M5 | Grounding Scorecard, Refusal Gate & Engine Integration | F12, Full Engine Integration | M1, M2, M3, M4 | DONE |
+| M-E2E | Opaque-Box E2E Test Suite Creation | Test infra & Tiers 1-4 tests covering all 12 features | none | DONE |
+| M6 | Final Verification & Adversarial Coverage Hardening | 100% E2E Pass + Tier 5 Adversarial Hardening | M5, M-E2E | IN_PROGRESS |
 
 ## Interface Contracts
 
