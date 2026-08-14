@@ -1140,7 +1140,7 @@ This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) fi
 
 ## 📸 Comprehensive Visual Showcase & Client Journey
 
-> 💡 **Client Showcase**: Launch the interactive presentation deck at [`docs/ux_journey/client_showcase.html`](file:///docs/ux_journey/client_showcase.html) for live search, category filtering, and theme comparison sliders.
+> 💡 **Client Showcase**: Launch [`docs/ux_journey/client_showcase.html`](file:///docs/ux_journey/client_showcase.html) for the interactive presentation deck.
 
 | **Dashboard** | **Chat Studio** |
 | :---: | :---: |
