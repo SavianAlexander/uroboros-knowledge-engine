@@ -1,98 +1,117 @@
-# Project: Adversarial AI Debate Auditor & Counter-Argument Engine
+# Project: Empirically True, Real-World Grounded Retrieval & Epistemic Invariant Engine
 
 ## Architecture
-The Adversarial AI Debate Auditor & Counter-Argument Engine (`tools/ai_debate_auditor`) is a zero-dependency, stdlib-first verification system designed to ingest AI-generated arguments, detect structural fallacies and sycophancy biases, verify empirical claims against first-principles boundaries and indexed literature, and synthesize empirical counter-proofs with primary citations.
-
-```
-[ Input Text / Debate Transcript ]
-               │
-               ▼
-   [ deconstructor.py (R1) ]  <───> [ patterns.py (10 Patterns) ]
-       - Proposition & Claim Segmentation
-       - Sycophancy & Framing Bias Detection
-       - Bare Assertion Isolation
-               │
-               ▼
-     [ verifier.py (R2) ]     <───> [ know.py / Local Vault / Physical Laws ]
-       - Citation & Phantom DOI Cross-Check
-       - First-Principles & Boundary Invariants
-       - Empirical Grounding Verification
-               │
-               ▼
-   [ synthesizer.py (R3) ]
-       - Mechanism Failure Breakdown
-       - Friction & Bottleneck Injection
-       - First-Principles Counter-Proof Generation
-       - Socratic Falsification Questions
-               │
-               ▼
-     [ reporter.py ]          <───> [ models.py ]
-       - Confidence & Severity Scoring (FSI, SPS, GCS, HRS)
-       - Structured Markdown & JSON Report Generation
-               │
-               ▼
-    [ cli.py / engine.py ] ──> Output Artifact / Terminal Display
-```
+Decoupled Clean Architecture in Python (stdlib-first, zero unneeded dependencies):
+- `src/domain/grounded_retrieval_engine.py`: Primary domain coordinator & modular sub-components for R1-R6.
+- `src/domain/`:
+  - `epistemic_tiering.py`: Tier classification & authority weighting.
+  - `temporal_validity.py`: Date parsing, superseding/amendment detection & exponential staleness decay.
+  - `dense_propositions.py`: Atomic proposition deconstruction with breadcrumb scopes (`Document > Section > Subsection > Scope`).
+  - `consensus_matrix.py`: Cross-document NLI entailment, consensus boosting, and contradiction resolution hierarchy.
+  - `boundary_invariants.py`: First-principles physical and mathematical boundary guards (Speed of Light, USL, CAP/PACELC, Carnot/Landauer, Shannon).
+  - `grounding_scorecard.py`: Composite grounding confidence scoring, invariant veto, and >= 0.65 refusal gate with diagnostic reporting.
+- `src/app/routers/grounded_retrieval.py`: FastAPI endpoint integration.
+- `tests/`: Unit, integration, and E2E verification suites (`tests/test_grounded_retrieval.py`, `tests/test_grounded_retrieval_e2e.py`).
 
 ## Feature Inventory
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
-| F01 | Data Models & Contracts | Strongly-typed dataclasses for Claims, Findings, Checks, Reports in `models.py` | M1 | Survey |
-| F02 | 10 Hallucination & Sycophancy Patterns | Formal taxonomy and regex/heuristic rules for P01-P10 in `patterns.py` | M1 | Survey |
-| F03 | Argument AST & Claim Parser | Proposition segmentation, claim classification, and syntax extraction in `deconstructor.py` | M1 | R1 |
-| F04 | Sycophancy & Acquiescence Detector | Detection of leading prompt echo, flattering qualifiers, and subservient consensus | M1 | R1 |
-| F05 | Framing Bias & Bare Assertion Extractor | Isolation of presuppositional framing, forced dichotomies, and unsubstantiated claims | M1 | R1 |
-| F06 | Citation & Phantom DOI Verifier | Regex extraction, DOI/arXiv format validation, and phantom citation detection | M2 | R2 |
-| F07 | First-Principles & Physical Bounds Verifier | Hard invariant checking (Thermodynamics, Carnot, Landauer, Relativity, Complexity) | M2 | R2 |
-| F08 | Local Knowledge Vault Cross-Examiner | Integration with `know.get_db()` and SQLite FTS5 for empirical claim verification | M2 | R2 |
-| F09 | Empirical Grounding & Evidence Scoring | Quantitative calculation of Grounding Confidence Score (GCS) and Hallucination Risk | M2 | R2 |
-| F10 | Mechanism Failure Analyzer | Step-by-step causal chain failure isolation in `synthesizer.py` | M3 | R3 |
-| F11 | Friction & Real-World Bottleneck Injector | Identification of omitted friction, entropy, transaction costs, and latency | M3 | R3 |
-| F12 | First-Principles Counter-Proof Generator | Synthesis of deductive refutations anchored in empirical constants and invariants | M3 | R3 |
-| F13 | Socratic Falsification Question Synthesizer | Generation of sharp counter-questions exposing mechanism collapse | M3 | R3 |
-| F14 | Executive Markdown Report Generator | Structured Markdown report synthesis with severity badges and citation audits in `reporter.py` | M3 | Acceptance Criteria |
-| F15 | Mathematical Confidence Scorer | Computation of FSI, SPS, GCS, and HRS metrics in `reporter.py` | M3 | Acceptance Criteria |
-| F16 | Interactive CLI & Engine API | Full CLI with file input, inline debate audit, and JSON/MD export in `cli.py` & `engine.py` | M3 | R1, R2, R3 |
-| F17 | 4-Tier E2E Test Suite | Comprehensive unit/integration/E2E test suite covering 10 patterns in `tests/test_ai_debate_auditor.py` | E2E-Track | Acceptance Criteria |
+| 1 | F1: Epistemic Evidentiary Tier Classifier | Authority coefficients: Tier 1 (1.00), Tier 2 (0.85), Tier 3 (0.70), Tier 4 (0.35) | M1 | ORIGINAL_REQUEST §R1 |
+| 2 | F2: Authority-Weighted Hybrid RRF Fusion | Mathematical RRF score weighting across lexical FTS5 & dense vector search with temporal scalars | M1 | ORIGINAL_REQUEST §R1 |
+| 3 | F3: Temporal Validity & Superseding Detection | Effective date range extraction & superseding/amendment marker detection with status tagging | M1 | ORIGINAL_REQUEST §R2 |
+| 4 | F4: Exponential Staleness Decay | Domain half-life exponential decay curves and hard caps for superseded documents | M1 | ORIGINAL_REQUEST §R2 |
+| 5 | F5: Dense Propositional Decomposition | Atomic proposition extraction preserving hierarchical breadcrumb scopes | M2 | ORIGINAL_REQUEST §R3 |
+| 6 | F6: Cross-Document Consensus & Contradiction Matrix | Pairwise NLI entailment, consensus confidence boost, and 4-tier contradiction resolution hierarchy | M3 | ORIGINAL_REQUEST §R4 |
+| 7 | F7: Optical Fiber Latency Invariant Guard | Speed of light propagation lower bounds ($c_{\text{fiber}} = c/n$, Haversine geodesic check) | M4 | ORIGINAL_REQUEST §R5 |
+| 8 | F8: Universal Scalability Law (USL) Guard | Gunther USL concurrency contention ($\alpha$), coherency ($\beta$), retrograde peak & superlinear veto | M4 | ORIGINAL_REQUEST §R5 |
+| 9 | F9: CAP & PACELC Invariant Guard | Impossibility of strong consistency + zero-latency availability under partition, quorum bounds | M4 | ORIGINAL_REQUEST §R5 |
+| 10 | F10: Carnot & Landauer Thermodynamic Guard | Carnot efficiency upper bound ($\eta \le 1 - T_c/T_h$) & Landauer erasure minimum energy ($E \ge k_B T \ln 2$) | M4 | ORIGINAL_REQUEST §R5 |
+| 11 | F11: Shannon Channel Capacity Guard | Shannon-Hartley capacity ceiling ($C = B \log_2(1+\text{SNR})$) & spectral efficiency limits | M4 | ORIGINAL_REQUEST §R5 |
+| 12 | F12: Grounding Scorecard & Refusal Gate | Composite confidence score, binary invariant veto multiplier, and $\ge 0.65$ threshold refusal gate | M5 | ORIGINAL_REQUEST §R6 |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Core Models, Taxonomy & Argument Deconstruction | `models.py`, `patterns.py`, `deconstructor.py` (F01-F05) | None | DONE |
-| M2 | Empirical Evidence, Boundary Invariants & Citation Verifier | `verifier.py` (F06-F09) | M1 | DONE |
-| M3 | Counter-Argument Synthesis, Reporting & CLI Engine | `synthesizer.py`, `reporter.py`, `engine.py`, `cli.py` (F10-F16) | M1, M2 | DONE |
-| E2E | 4-Tier Opaque-Box E2E Test Suite | `tests/test_ai_debate_auditor.py` + stress harnesses (75 tests) | M1, M2, M3 | DONE |
-| M_FINAL | Full E2E Pass, Stress Hardening & Forensic Integrity Audit | 100% Pass Rate across all test tiers, Reviewer Approval, Challenger Stress Pass, Clean Forensic Audit | M1, M2, M3, E2E | DONE |
+| M1 | Epistemic Tiering, Temporal Validity & Grounded RRF | F1, F2, F3, F4 | none | IN_PROGRESS |
+| M2 | Dense Propositional Decomposition & Breadcrumb Scoping | F5 | M1 | IN_PROGRESS |
+| M3 | Cross-Document Consensus & Contradiction Resolution Matrix | F6 | M1 | IN_PROGRESS |
+| M4 | Physical, Mathematical & Computational Boundary Invariant Guards | F7, F8, F9, F10, F11 | none | IN_PROGRESS |
+| M5 | Grounding Scorecard, Refusal Gate & Engine Integration | F12, Full Engine Integration | M1, M2, M3, M4 | IN_PROGRESS |
+| M-E2E | Opaque-Box E2E Test Suite Creation | Test infra & Tiers 1-4 tests covering all 12 features | none | IN_PROGRESS |
+| M6 | Final Verification & Adversarial Coverage Hardening | 100% E2E Pass + Tier 5 Adversarial Hardening | M5, M-E2E | PLANNED |
 
 ## Interface Contracts
-### `deconstructor.py` ↔ `verifier.py`
-- `DeconstructionResult`: Dataclass containing `claims: List[Claim]`, `sycophancy_findings: List[Finding]`, `fallacy_findings: List[Finding]`, `unsubstantiated_assertions: List[str]`, `raw_text: str`.
-- `Claim`: `id: str`, `text: str`, `category: ClaimCategory` (EMPIRICAL, PHYSICAL, MATHEMATICAL, DEFINITIONAL, POLICY), `citations: List[Citation]`, `confidence: float`.
 
-### `verifier.py` ↔ `synthesizer.py`
-- `VerificationResult`: Dataclass containing `verified_claims: List[ClaimVerification]`, `phantom_citations: List[CitationCheck]`, `boundary_violations: List[BoundaryViolation]`, `grounding_confidence_score: float`, `hallucination_risk_score: float`.
+### `src/domain/epistemic_tiering.py`
+```python
+def classify_source_epistemic_tier(source_metadata: dict | str) -> tuple[int, float]:
+    """Returns (tier_int, authority_weight: float) where tier in 1..4."""
+    ...
 
-### `synthesizer.py` ↔ `reporter.py`
-- `SynthesisResult`: Dataclass containing `counter_proofs: List[CounterProof]`, `mechanism_failures: List[MechanismFailure]`, `socratic_questions: List[str]`, `remediation_steps: List[str]`.
-- `AuditReport`: Complete aggregated report object exportable to `.to_markdown()` and `.to_dict()`.
+def compute_authority_weighted_rrf(
+    lexical_ranks: list[dict],
+    dense_ranks: list[dict],
+    k: int = 60,
+    intent_weights: dict | None = None
+) -> list[dict]:
+    """Computes RRF scores weighted by epistemic authority and temporal validity."""
+    ...
+```
 
-### `engine.py` / `cli.py` Public Interface
-- `audit_text(text: str, context: Optional[str] = None, db_conn: Optional[Any] = None) -> AuditReport`
-- `audit_file(file_path: str, output_path: Optional[str] = None) -> AuditReport`
+### `src/domain/temporal_validity.py`
+```python
+def extract_temporal_metadata(text: str, metadata: dict | None = None) -> dict:
+    """Extracts creation date, effective date range, and superseding markers."""
+    ...
+
+def compute_temporal_decay(
+    document_date: datetime | str | None,
+    domain: str = "general",
+    status: str = "ACTIVE",
+    half_life_days: float | None = None
+) -> float:
+    """Returns decay multiplier in (0.0, 1.0]. Hard cap <= 0.35 if superseded."""
+    ...
+```
+
+### `src/domain/dense_propositions.py`
+```python
+def decompose_into_propositions(text: str, document_title: str = "") -> list[dict]:
+    """Decomposes text into atomic factual propositions with breadcrumb scope:
+    [{'id': ..., 'proposition': ..., 'breadcrumb': 'Doc > Sec > Sub > Scope', ...}]"""
+    ...
+```
+
+### `src/domain/consensus_matrix.py`
+```python
+def evaluate_cross_document_consensus(passages: list[dict]) -> dict:
+    """Evaluates NLI entailment, calculates consensus boost, detects contradictions,
+    and applies 4-tier resolution hierarchy.
+    Returns: {'consensus_score': float, 'contradictions': list, 'resolved_claims': list}"""
+    ...
+```
+
+### `src/domain/boundary_invariants.py`
+```python
+def verify_optical_latency_invariant(distance_km: float, claimed_latency_ms: float, n_refractive: float = 1.4682) -> tuple[bool, str]: ...
+def verify_usl_invariant(concurrency: int, throughput: float, gamma: float, alpha: float, beta: float) -> tuple[bool, str]: ...
+def verify_cap_pacelc_invariant(claim: dict) -> tuple[bool, str]: ...
+def verify_carnot_landauer_invariant(claim: dict) -> tuple[bool, str]: ...
+def verify_shannon_capacity_invariant(bandwidth_hz: float, snr_linear: float, claimed_bps: float) -> tuple[bool, str]: ...
+def evaluate_all_boundary_invariants(claims_or_text: str | list[dict]) -> dict:
+    """Evaluates all physical invariants. Returns {'valid': bool, 'violations': list[dict], 'multiplier': 1.0 or 0.0}"""
+    ...
+```
+
+### `src/domain/grounded_retrieval_engine.py`
+```python
+class GroundedRetrievalEngine:
+    def evaluate_grounding(self, query: str, candidate_passages: list[dict], generated_claim: str = "") -> dict:
+        """Calculates composite Grounding Confidence Score (0-100%) and returns refusal verdict
+        if score < 0.65 with structured missing knowledge gap diagnostics."""
+        ...
+```
 
 ## Code Layout
-```
-tools/ai_debate_auditor/
-├── __init__.py           # Package exports and public API
-├── models.py             # Strongly-typed data models & dataclasses
-├── patterns.py           # Formal 10-pattern hallucination & sycophancy registry
-├── deconstructor.py      # R1: Argument parsing, sycophancy and framing deconstruction
-├── verifier.py           # R2: Empirical verification, citation and boundary checking
-├── synthesizer.py        # R3: Mechanism failure, friction, and counter-argument synthesis
-├── reporter.py           # Executive Markdown & JSON report generator
-├── engine.py             # Main pipeline orchestrator
-└── cli.py                # Standalone command-line interface
-
-tests/
-└── test_ai_debate_auditor.py  # 4-tier comprehensive E2E test suite (36+ tests)
-```
+- Clean Architecture: stdlib-first, modular sub-components in `src/domain/`, unified in `src/domain/grounded_retrieval_engine.py`.
+- Tests: `tests/test_grounded_retrieval.py`, `tests/test_grounded_retrieval_e2e.py`.

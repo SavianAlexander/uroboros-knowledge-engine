@@ -11,76 +11,52 @@ import json
 import sqlite3
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple, Set
+
 from src.infrastructure.database import get_db
+from src.domain.epistemic_tiering import (
+    classify_source_epistemic_tier,
+    compute_authority_weighted_rrf,
+    TIER_WEIGHTS,
+    TIER_1_PRIMARY,
+    TIER_2_TECH_SPEC,
+    TIER_3_SECONDARY,
+    TIER_4_COMMENTARY
+)
+from src.domain.temporal_validity import (
+    detect_temporal_validity,
+    compute_temporal_decay,
+    DOMAIN_HALF_LIVES,
+    STATUS_PENALTY_CAPS
+)
 
-
-# --- 1. Evidentiary Source Authority Hierarchy ---
-TIER_WEIGHTS = {
-    "TIER_1_PRIMARY": 1.00,       # Statutory law, ISO/RFC specs, SEC 10-K, Git Merkle provenance
-    "TIER_2_TECH_SPEC": 0.85,     # Official API specs, vendor whitepapers, peer-reviewed engineering
-    "TIER_3_SECONDARY": 0.70,     # Textbooks, curriculum guides, academic case studies
-    "TIER_4_COMMENTARY": 0.35     # Informal notes, forum blurbs, unverified blog posts
-}
-
-TIER_PATTERNS = [
-    (re.compile(r'\b(rfc|iso|iec|sec|10-k|statute|law|uscode|cfr|ieee|ansi)\b', re.I), "TIER_1_PRIMARY"),
-    (re.compile(r'\b(spec|api|documentation|whitepaper|datasheet|protocol)\b', re.I), "TIER_2_TECH_SPEC"),
-    (re.compile(r'\b(textbook|guide|handbook|edition|accounting|management|course)\b', re.I), "TIER_3_SECONDARY"),
+# Re-export for backward compatibility
+__all__ = [
+    "classify_source_epistemic_tier",
+    "compute_authority_weighted_rrf",
+    "detect_temporal_validity",
+    "compute_temporal_decay",
+    "decompose_into_propositions",
+    "evaluate_cross_document_consensus",
+    "check_optical_latency_invariant",
+    "check_usl_scalability_invariant",
+    "check_carnot_efficiency_invariant",
+    "execute_grounded_retrieval",
+    "TIER_WEIGHTS",
+    "TIER_1_PRIMARY",
+    "TIER_2_TECH_SPEC",
+    "TIER_3_SECONDARY",
+    "TIER_4_COMMENTARY",
+    "DOMAIN_HALF_LIVES",
+    "STATUS_PENALTY_CAPS"
 ]
 
 
-def classify_source_epistemic_tier(filename: str, content_snippet: str = "") -> Tuple[str, float]:
-    """Classifies the epistemic evidentiary tier and weight of a document source."""
-    combined = f"{filename} {content_snippet[:300]}".lower()
-
-    # Check file extensions
-    if filename.endswith(('.py', '.sql', '.json', '.c', '.rs', '.go', '.ts')):
-        return "TIER_1_PRIMARY", TIER_WEIGHTS["TIER_1_PRIMARY"]
-
-    for pattern, tier in TIER_PATTERNS:
-        if pattern.search(combined):
-            return tier, TIER_WEIGHTS[tier]
-
-    return "TIER_4_COMMENTARY", TIER_WEIGHTS["TIER_4_COMMENTARY"]
-
-
-# --- 2. Temporal Validity & Superseding Detection ---
-SUPERSEDED_REGEX = re.compile(
-    r'\b(?:superseded\s+by|obsoleted\s+by|replaced\s+by|deprecated\s+in|amended\s+as\s+of)\s+([A-Za-z0-9_.\- ]+)',
-    re.I
-)
-
-
-def detect_temporal_validity(content: str, publication_year: Optional[int] = None) -> Dict[str, Any]:
-    """Detects if a document is superseded or carries a temporal staleness penalty."""
-    current_year = datetime.now().year
-    is_superseded = False
-    superseded_by = None
-
-    match = SUPERSEDED_REGEX.search(content[:2000])
-    if match:
-        is_superseded = True
-        superseded_by = match.group(1).strip()
-
-    # Calculate staleness decay
-    staleness_penalty = 1.0
-    if publication_year:
-        delta_years = max(0, current_year - publication_year)
-        staleness_penalty = round(math.exp(-0.03 * delta_years), 3)
-
-    if is_superseded:
-        staleness_penalty = min(staleness_penalty, 0.40)
-
-    return {
-        "is_superseded": is_superseded,
-        "superseded_by": superseded_by,
-        "publication_year": publication_year,
-        "staleness_coefficient": staleness_penalty
-    }
-
-
 # --- 3. Atomic Propositional Decomposition & Breadcrumbs ---
-def decompose_into_propositions(text: str, document_title: str, section_hierarchy: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+def decompose_into_propositions(
+    text: str,
+    document_title: str,
+    section_hierarchy: Optional[List[str]] = None
+) -> List[Dict[str, Any]]:
     """Deconstructs complex document text into atomic self-contained factual propositions with breadcrumb scope."""
     breadcrumb = " > ".join([document_title] + (section_hierarchy or []))
     sentences = re.split(r'(?<=[.!?])\s+', text.strip())
@@ -236,32 +212,32 @@ def execute_grounded_retrieval(query: str, top_k: int = 5) -> Dict[str, Any]:
             "passages": []
         }
 
-    scored_passages = []
+    # Format lexical ranks for authority-weighted RRF
+    lexical_candidates = []
     for rank_idx, r in enumerate(raw_rows):
         fname = r.get("filename", "")
         content = r.get("content", "")
-
-        tier, tier_weight = classify_source_epistemic_tier(fname, content)
         temporal_info = detect_temporal_validity(content)
 
-        # Base RRF score
-        rrf_score = 1.0 / (60.0 + (rank_idx + 1))
-        # Grounded Score = RRF * Epistemic Weight * Staleness Coefficient
-        grounded_score = rrf_score * tier_weight * temporal_info["staleness_coefficient"]
-
-        scored_passages.append({
-            "filename": fname,
+        lexical_candidates.append({
+            "id": r.get("id"),
             "filepath": r.get("filepath", ""),
-            "epistemic_tier": tier,
-            "epistemic_weight": tier_weight,
+            "filename": fname,
+            "content": content[:500],
+            "rank": rank_idx + 1,
             "temporal_validity": temporal_info,
-            "grounded_score": round(grounded_score, 6),
-            "content": content[:500]
+            "staleness_coefficient": temporal_info["staleness_coefficient"]
         })
 
-    # Sort by grounded score descending
-    scored_passages.sort(key=lambda x: x["grounded_score"], reverse=True)
-    top_passages = scored_passages[:top_k]
+    # Compute authority-weighted RRF across retrieved candidates
+    fused_passages = compute_authority_weighted_rrf(
+        lexical_ranks=lexical_candidates,
+        dense_ranks=[],
+        k=60,
+        intent_weights={"lexical": 1.0, "dense": 0.0}
+    )
+
+    top_passages = fused_passages[:top_k]
 
     # Evaluate consensus across top passages
     consensus = evaluate_cross_document_consensus(top_passages)
