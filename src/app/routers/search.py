@@ -1308,3 +1308,21 @@ def parse_smart_filter_endpoint(query: str = ""):
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in smart_filter: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/grounded")
+def grounded_search_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Executes empirically grounded search with source authority tiering, temporal validity, and consensus resolution."""
+    query = payload.get("query", "") or payload.get("q", "")
+    top_k = payload.get("top_k", 5)
+    if not query:
+        raise HTTPException(status_code=400, detail="query is required")
+    try:
+        from src.domain.grounded_retrieval_engine import execute_grounded_retrieval
+        return execute_grounded_retrieval(query, top_k=top_k)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in grounded_search: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+

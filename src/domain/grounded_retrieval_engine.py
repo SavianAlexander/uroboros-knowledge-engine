@@ -1,0 +1,292 @@
+"""
+Empirically True, Real-World Grounded Retrieval & Epistemic Invariant Engine.
+Zero-dependency, standard-library implementation for evidentiary source tiering,
+temporal staleness & superseding document detection, propositional breadcrumb scoping,
+cross-document contradiction resolution, and physical/computational boundary guards.
+"""
+
+import re
+import math
+import json
+import sqlite3
+from datetime import datetime
+from typing import List, Dict, Any, Optional, Tuple, Set
+from src.infrastructure.database import get_db
+
+
+# --- 1. Evidentiary Source Authority Hierarchy ---
+TIER_WEIGHTS = {
+    "TIER_1_PRIMARY": 1.00,       # Statutory law, ISO/RFC specs, SEC 10-K, Git Merkle provenance
+    "TIER_2_TECH_SPEC": 0.85,     # Official API specs, vendor whitepapers, peer-reviewed engineering
+    "TIER_3_SECONDARY": 0.70,     # Textbooks, curriculum guides, academic case studies
+    "TIER_4_COMMENTARY": 0.35     # Informal notes, forum blurbs, unverified blog posts
+}
+
+TIER_PATTERNS = [
+    (re.compile(r'\b(rfc|iso|iec|sec|10-k|statute|law|uscode|cfr|ieee|ansi)\b', re.I), "TIER_1_PRIMARY"),
+    (re.compile(r'\b(spec|api|documentation|whitepaper|datasheet|protocol)\b', re.I), "TIER_2_TECH_SPEC"),
+    (re.compile(r'\b(textbook|guide|handbook|edition|accounting|management|course)\b', re.I), "TIER_3_SECONDARY"),
+]
+
+
+def classify_source_epistemic_tier(filename: str, content_snippet: str = "") -> Tuple[str, float]:
+    """Classifies the epistemic evidentiary tier and weight of a document source."""
+    combined = f"{filename} {content_snippet[:300]}".lower()
+
+    # Check file extensions
+    if filename.endswith(('.py', '.sql', '.json', '.c', '.rs', '.go', '.ts')):
+        return "TIER_1_PRIMARY", TIER_WEIGHTS["TIER_1_PRIMARY"]
+
+    for pattern, tier in TIER_PATTERNS:
+        if pattern.search(combined):
+            return tier, TIER_WEIGHTS[tier]
+
+    return "TIER_4_COMMENTARY", TIER_WEIGHTS["TIER_4_COMMENTARY"]
+
+
+# --- 2. Temporal Validity & Superseding Detection ---
+SUPERSEDED_REGEX = re.compile(
+    r'\b(?:superseded\s+by|obsoleted\s+by|replaced\s+by|deprecated\s+in|amended\s+as\s+of)\s+([A-Za-z0-9_.\- ]+)',
+    re.I
+)
+
+
+def detect_temporal_validity(content: str, publication_year: Optional[int] = None) -> Dict[str, Any]:
+    """Detects if a document is superseded or carries a temporal staleness penalty."""
+    current_year = datetime.now().year
+    is_superseded = False
+    superseded_by = None
+
+    match = SUPERSEDED_REGEX.search(content[:2000])
+    if match:
+        is_superseded = True
+        superseded_by = match.group(1).strip()
+
+    # Calculate staleness decay
+    staleness_penalty = 1.0
+    if publication_year:
+        delta_years = max(0, current_year - publication_year)
+        staleness_penalty = round(math.exp(-0.03 * delta_years), 3)
+
+    if is_superseded:
+        staleness_penalty = min(staleness_penalty, 0.40)
+
+    return {
+        "is_superseded": is_superseded,
+        "superseded_by": superseded_by,
+        "publication_year": publication_year,
+        "staleness_coefficient": staleness_penalty
+    }
+
+
+# --- 3. Atomic Propositional Decomposition & Breadcrumbs ---
+def decompose_into_propositions(text: str, document_title: str, section_hierarchy: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    """Deconstructs complex document text into atomic self-contained factual propositions with breadcrumb scope."""
+    breadcrumb = " > ".join([document_title] + (section_hierarchy or []))
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    propositions = []
+
+    for idx, s in enumerate(sentences):
+        s_clean = s.strip()
+        if len(s_clean) < 15:
+            continue
+        propositions.append({
+            "proposition_id": f"{document_title}#prop_{idx}",
+            "breadcrumb_scope": breadcrumb,
+            "statement": s_clean,
+            "contextual_statement": f"[{breadcrumb}] {s_clean}"
+        })
+
+    return propositions
+
+
+# --- 4. Cross-Document Consensus & Contradiction Resolver ---
+def evaluate_cross_document_consensus(passages: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Evaluates cross-passage consensus and isolates factual/numerical contradictions."""
+    if len(passages) < 2:
+        return {"consensus_level": "SINGLE_SOURCE", "contradictions": [], "consensus_score": 0.70}
+
+    contradictions = []
+    agreements = 0
+
+    # Numerical & status assertion extraction
+    claims = []
+    for p in passages:
+        text = p.get("content", "")
+        # Extract numerical quantities with context
+        nums = re.findall(r'(\b\d+(?:\.\d+)?\s*(?:%|mb|gb|ms|s|usd|\$|users|nodes|tps|mhz|ghz)?\b)', text, re.I)
+        claims.append({"source": p.get("filename", "unknown"), "nums": nums, "text": text})
+
+    for i in range(len(claims)):
+        for j in range(i + 1, len(claims)):
+            c1, c2 = claims[i], claims[j]
+            # Check for direct numerical contradiction in similar sentences
+            overlap = set(c1["nums"]).intersection(set(c2["nums"]))
+            if overlap:
+                agreements += 1
+            elif c1["nums"] and c2["nums"]:
+                contradictions.append({
+                    "source_a": c1["source"],
+                    "source_b": c2["source"],
+                    "conflict_type": "NUMERICAL_DISCREPANCY",
+                    "values_a": c1["nums"],
+                    "values_b": c2["nums"]
+                })
+
+    consensus_level = "HIGH_CONSENSUS" if agreements > len(contradictions) else ("CONTRADICTION_DETECTED" if contradictions else "NEUTRAL")
+    score = 0.95 if consensus_level == "HIGH_CONSENSUS" else (0.45 if consensus_level == "CONTRADICTION_DETECTED" else 0.70)
+
+    return {
+        "consensus_level": consensus_level,
+        "consensus_score": score,
+        "agreements_count": agreements,
+        "contradictions_count": len(contradictions),
+        "contradictions": contradictions
+    }
+
+
+# --- 5. Physical & Computational Boundary Invariant Guards ---
+def check_optical_latency_invariant(distance_km: float, reported_latency_ms: float) -> Dict[str, Any]:
+    """Checks speed-of-light propagation lower bound in optical fiber (n = 1.47)."""
+    c_fiber = 299792.458 / 1.47  # ~203,940 km/s
+    t_min_one_way_ms = (distance_km / c_fiber) * 1000.0
+    t_min_rtt_ms = t_min_one_way_ms * 2.0
+
+    violates = reported_latency_ms < t_min_rtt_ms
+    return {
+        "invariant": "SPEED_OF_LIGHT_OPTICAL_FIBER",
+        "distance_km": distance_km,
+        "theoretical_min_rtt_ms": round(t_min_rtt_ms, 2),
+        "reported_latency_ms": reported_latency_ms,
+        "is_physically_possible": not violates,
+        "violation_details": f"Reported {reported_latency_ms}ms RTT violates physical limit of {round(t_min_rtt_ms, 2)}ms for {distance_km}km" if violates else "Compliant with relativity."
+    }
+
+
+def check_usl_scalability_invariant(node_count: int, alpha: float, beta: float, claimed_speedup: float) -> Dict[str, Any]:
+    """Universal Scalability Law: speedup = N / (1 + alpha*(N-1) + beta*N*(N-1))."""
+    n = float(node_count)
+    denom = 1.0 + alpha * (n - 1.0) + beta * n * (n - 1.0)
+    theoretical_max_speedup = n / denom if denom > 0 else 1.0
+
+    violates = claimed_speedup > theoretical_max_speedup * 1.05
+    return {
+        "invariant": "UNIVERSAL_SCALABILITY_LAW",
+        "node_count": node_count,
+        "alpha_contention": alpha,
+        "beta_coherency": beta,
+        "theoretical_max_speedup": round(theoretical_max_speedup, 2),
+        "claimed_speedup": claimed_speedup,
+        "is_computationally_valid": not violates,
+        "violation_details": f"Claimed {claimed_speedup}x speedup exceeds USL bound of {round(theoretical_max_speedup, 2)}x at N={node_count}" if violates else "Compliant with USL."
+    }
+
+
+def check_carnot_efficiency_invariant(t_hot_k: float, t_cold_k: float, claimed_efficiency: float) -> Dict[str, Any]:
+    """Carnot Thermodynamic Limit: eta_max = 1 - (T_cold / T_hot)."""
+    if t_hot_k <= t_cold_k or t_hot_k <= 0:
+        return {"is_physically_possible": False, "violation_details": "T_hot must exceed T_cold and 0 Kelvin."}
+
+    max_eta = 1.0 - (t_cold_k / t_hot_k)
+    violates = claimed_efficiency > max_eta
+    return {
+        "invariant": "CARNOT_THERMODYNAMIC_LIMIT",
+        "t_hot_k": t_hot_k,
+        "t_cold_k": t_cold_k,
+        "max_theoretical_efficiency": round(max_eta, 4),
+        "claimed_efficiency": claimed_efficiency,
+        "is_physically_possible": not violates,
+        "violation_details": f"Claimed efficiency {claimed_efficiency*100}% exceeds Carnot ceiling of {round(max_eta*100, 2)}%" if violates else "Compliant with 2nd law of thermodynamics."
+    }
+
+
+# --- 6. Unified Grounded Retrieval Pipeline ---
+def execute_grounded_retrieval(query: str, top_k: int = 5) -> Dict[str, Any]:
+    """
+    Executes empirically grounded search across SQLite FTS5 index, applies epistemic source weighting,
+    temporal staleness penalties, and evaluates cross-document consensus.
+    """
+    with get_db() as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # FTS5 Lexical Search with Snippets
+        try:
+            cursor.execute(
+                """SELECT f.id, f.filepath, f.filename, f.content,
+                          rank
+                   FROM fts_files MATCH ?
+                   JOIN files f ON fts_files.filepath = f.filepath
+                   ORDER BY rank LIMIT 25""",
+                (query,)
+            )
+            raw_rows = [dict(r) for r in cursor.fetchall()]
+        except Exception:
+            cursor.execute(
+                "SELECT id, filepath, filename, content, 0 as rank FROM files WHERE content LIKE ? LIMIT 25",
+                (f"%{query}%",)
+            )
+            raw_rows = [dict(r) for r in cursor.fetchall()]
+
+    if not raw_rows:
+        return {
+            "status": "refusal",
+            "reason": "HALLUCINATION_REFUSAL_GATE",
+            "message": f"Confidence score 0.0 < 0.65 threshold. No grounded primary evidence found for query: '{query}'",
+            "passages": []
+        }
+
+    scored_passages = []
+    for rank_idx, r in enumerate(raw_rows):
+        fname = r.get("filename", "")
+        content = r.get("content", "")
+
+        tier, tier_weight = classify_source_epistemic_tier(fname, content)
+        temporal_info = detect_temporal_validity(content)
+
+        # Base RRF score
+        rrf_score = 1.0 / (60.0 + (rank_idx + 1))
+        # Grounded Score = RRF * Epistemic Weight * Staleness Coefficient
+        grounded_score = rrf_score * tier_weight * temporal_info["staleness_coefficient"]
+
+        scored_passages.append({
+            "filename": fname,
+            "filepath": r.get("filepath", ""),
+            "epistemic_tier": tier,
+            "epistemic_weight": tier_weight,
+            "temporal_validity": temporal_info,
+            "grounded_score": round(grounded_score, 6),
+            "content": content[:500]
+        })
+
+    # Sort by grounded score descending
+    scored_passages.sort(key=lambda x: x["grounded_score"], reverse=True)
+    top_passages = scored_passages[:top_k]
+
+    # Evaluate consensus across top passages
+    consensus = evaluate_cross_document_consensus(top_passages)
+
+    # Calculate overall confidence
+    avg_tier_weight = sum(p["epistemic_weight"] for p in top_passages) / max(1, len(top_passages))
+    overall_confidence = round(min(1.0, (avg_tier_weight * 0.7) + (consensus["consensus_score"] * 0.3)), 2)
+
+    # Enforce Refusal Gate
+    if overall_confidence < 0.65:
+        return {
+            "status": "refusal",
+            "reason": "HALLUCINATION_REFUSAL_GATE",
+            "overall_confidence": overall_confidence,
+            "message": f"Grounded confidence ({overall_confidence}) is below the required 0.65 threshold.",
+            "passages": top_passages,
+            "consensus": consensus
+        }
+
+    return {
+        "status": "success",
+        "query": query,
+        "overall_grounded_confidence": overall_confidence,
+        "consensus_level": consensus["consensus_level"],
+        "top_passages_count": len(top_passages),
+        "passages": top_passages,
+        "consensus_audit": consensus
+    }

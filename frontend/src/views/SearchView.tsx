@@ -186,6 +186,33 @@ export default function SearchView() {
     }
   };
 
+  const handleGroundedSearch = async () => {
+    if (!query.trim()) return;
+    setIsLoading(true);
+    try {
+      toast('Grounded Retrieval', 'Evaluating evidentiary tiers & consensus...', 'info');
+      const res = await api.groundedSearch(query);
+      if (res?.status === 'refusal') {
+        toast('Hallucination Refusal Gate', res.message || 'Confidence below 0.65 threshold', 'warning');
+      } else {
+        const list = res?.passages || [];
+        setResults(list.map((p: any) => ({
+          filename: p.filename,
+          filepath: p.filepath,
+          content: p.content,
+          score: p.grounded_score,
+          epistemic_tier: p.epistemic_tier
+        })));
+        toast('Grounded Search', `Grounded Confidence: ${res?.overall_grounded_confidence * 100}% (${res?.consensus_level})`, 'success');
+      }
+    } catch (e: any) {
+      toast('Search Error', e.message || 'Grounded search failed', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   return (
     <div className="flex flex-col h-full bg-white/30 dark:bg-slate-950/30 overflow-hidden relative">
       {/* Top Search Controls Bar */}

@@ -240,6 +240,11 @@ export const api = {
     fetchAPI<any>('/data/clean', { method: 'POST', body: JSON.stringify({ dataset_name: datasetName }) }),
   profileClientData: (datasetName: string) =>
     fetchAPI<any>('/data/profile', { method: 'POST', body: JSON.stringify({ dataset_name: datasetName }) }),
+
+  // Empirically Grounded Retrieval & Epistemic Verification
+  groundedSearch: (query: string, topK: number = 5) =>
+    fetchAPI<any>('/search/grounded', { method: 'POST', body: JSON.stringify({ query, top_k: topK }) }),
 };
+
 
 
