@@ -144,6 +144,22 @@ Whenever executing multi-step work or in planning mode:
    - Never declare work complete or mark Tududi milestones done until 100% of remote workflows conclude with `SUCCESS (Green)`.
    - If any workflow fails, immediately execute `github_bridge.py diagnose_ci --run-id <id>`, apply root-cause fixes, re-verify locally, push, and confirm all pipelines pass green.
 
+### VII. Branching, Pull Request & Semantic Release Protocol
+1. **Semantic Branch Naming Hierarchy**:
+   - `feat/<name>`: New capabilities or architectural expansions (e.g. `feat/graph-physics`).
+   - `fix/<name>`: Bug fixes, vulnerability patches, or lock resolutions (e.g. `fix/sqlite-timeout`).
+   - `perf/<name>`: Zero-dependency algorithmic speedups (e.g. `perf/fts5-bm25-cache`).
+   - `chore/<name>`: Maintenance, CI, and tooling upgrades (e.g. `chore/bump-deps`).
+2. **Autonomous Ghost Loop Flywheel**:
+   - For rapid end-to-end feature delivery: `python .../github_bridge.py ghost_loop --prompt "..." --pr`.
+   - Automatically creates branch, implements minimal diff, verifies domain tests, commits with SHA-256 Merkle root, and opens a linked Pull Request.
+3. **Pre-Merge PR Security & Diff Audit**:
+   - Execute `python .../github_bridge.py audit_pr_diff` before merging any PR to ensure zero API key leaks or anti-patterns.
+4. **Master Branch Protection Invariant**:
+   - `master` is strictly protected: All 5 CI workflows (`CI Pipeline`, `Crucible Security Matrix`, `Neuro CI Suite`, `Build & Package`, `GitHub Pages`) must be 100% Green before merging.
+5. **Semantic Release Publishing (`vX.Y.Z`)**:
+   - Publish tagged production milestones: `python .../github_bridge.py generate_release_notes --tag <vX.Y.Z> --publish`.
+
 ---
 
 ## Tri-Engine Unified Command Matrix (43 Operations)

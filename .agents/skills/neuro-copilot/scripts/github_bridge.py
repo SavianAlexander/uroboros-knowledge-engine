@@ -890,11 +890,17 @@ def run_full_pipeline():
 
 def generate_release_notes(tag=None, publish=False):
     """Parse git commits since last tag, format Markdown release notes, & optionally create gh release."""
-    range_spec = f"{tag}..HEAD" if tag else "-n 15"
+    prev_tag_out, _, prev_code = run_cmd("git describe --tags --abbrev=0")
+    prev_tag = prev_tag_out.strip() if prev_code == 0 and prev_tag_out else None
+
+    range_spec = f"{prev_tag}..HEAD" if prev_tag else "-n 25"
     cmd = f'git log {range_spec} --pretty=format:"%h %s"'
     out, _, code = run_cmd(cmd)
-    
+
     if code != 0 or not out:
+        out, _, code = run_cmd('git log -n 25 --pretty=format:"%h %s"')
+        
+    if not out:
         print(json.dumps({"status": "error", "message": "No commits found for release notes."}))
         return 1
         
@@ -1736,10 +1742,14 @@ def main():
     brain_parser = subparsers.add_parser("query_local_brain", help="Query local Uroboros Knowledge Engine & RAG brain")
     brain_parser.add_argument("--query", required=True, help="Search query string for local RAG brain")
     ingest_parser = subparsers.add_parser("neuro_ingest_cli", help="Ingest a file or directory into local Neuro Knowledge Engine")
-    ingest_parser.add_argument("--filepath", required=True, help="Target file or folder path to index")
     vci_p = subparsers.add_parser("verify_ci", help="Verify GitHub Actions remote CI workflow execution & 100% green health")
     vci_p.add_argument("--wait", action="store_true", help="Wait and poll until all workflows complete")
     vci_p.add_argument("--timeout", type=int, default=300, help="Max wait duration in seconds")
+
+    rel_p = subparsers.add_parser("generate_release_notes", help="Generate Markdown release notes, certificates, and optionally publish GitHub release")
+    rel_p.add_argument("--tag", default="v1.0.0", help="Target git release tag")
+    rel_p.add_argument("--publish", action="store_true", help="Publish release directly to GitHub via gh release")
+
     subparsers.add_parser("self_test", help="Run built-in assertion self-tests")
 
     args = parser.parse_args()
