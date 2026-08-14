@@ -43,6 +43,7 @@ def run_cmd(cmd, cwd=None):
             text=True,
             encoding="utf-8",
             errors="replace",
+            stdin=subprocess.DEVNULL,
             cwd=cwd or os.getcwd()
         )
         return res.stdout.strip(), res.stderr.strip(), res.returncode
