@@ -226,12 +226,20 @@ export const api = {
   sessionEpisodicMemory: (sessionId: string, query: string = '') =>
     fetchAPI<any>(`/chat/sessions/${sessionId}/episodic?query=${encodeURIComponent(query)}`),
 
-  // Autonomous Data Orchestration & Self-Healing
+  // Autonomous Data Orchestration, Relational Studio & Self-Healing
   orchestrateData: (datasetName: string, rawContent: string, formatHint?: string) =>
     fetchAPI<any>('/data/orchestrate', { method: 'POST', body: JSON.stringify({ dataset_name: datasetName, raw_content: rawContent, format_hint: formatHint }) }),
   listDatasets: () => fetchAPI<any>('/data/datasets'),
   queryClientData: (query: string) =>
     fetchAPI<any>('/data/query', { method: 'POST', body: JSON.stringify({ query }) }),
   databaseHealth: () => fetchAPI<any>('/data/health'),
+  dataRelationships: () => fetchAPI<any>('/data/relationships'),
+  joinClientData: (query: string, datasetNames?: string[]) =>
+    fetchAPI<any>('/data/join', { method: 'POST', body: JSON.stringify({ query, dataset_names: datasetNames }) }),
+  cleanClientData: (datasetName: string) =>
+    fetchAPI<any>('/data/clean', { method: 'POST', body: JSON.stringify({ dataset_name: datasetName }) }),
+  profileClientData: (datasetName: string) =>
+    fetchAPI<any>('/data/profile', { method: 'POST', body: JSON.stringify({ dataset_name: datasetName }) }),
 };
+
 

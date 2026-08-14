@@ -221,11 +221,14 @@ export default function ConfigView() {
     try {
       toast('Orchestrating Dataset', `Inferring schema & provisioning table for ${name}...`, 'info');
       const res = await api.orchestrateData(name, content);
+      await api.dataRelationships().catch(() => {});
+      await api.joinClientData('join tables').catch(() => {});
       toast('Dataset Ingested', `Provisioned ${res?.table_name} with ${res?.rows_ingested} rows`, 'success');
     } catch (e: any) {
       toast('Orchestration Error', e.message || 'Failed to provision dataset', 'error');
     }
   };
+
 
 
   const handleCreateBackup = async () => {

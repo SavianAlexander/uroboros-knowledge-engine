@@ -392,6 +392,27 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     }
   };
 
+  const handleCleanData = async (dsName: string) => {
+    try {
+      toast('Cleaning Dataset', `Imputing nulls & deduplicating ${dsName}...`, 'info');
+      const res = await api.cleanClientData(dsName);
+      toast('Cleanse Complete', `Cleaned ${res?.cleaned_rows} rows | Removed ${res?.duplicates_removed} duplicates`, 'success');
+    } catch (e: any) {
+      toast('Cleanse Error', e.message || 'Failed to clean dataset', 'error');
+    }
+  };
+
+  const handleProfileData = async (dsName: string) => {
+    try {
+      toast('Profiling Dataset', `Generating statistical summary for ${dsName}...`, 'info');
+      const res = await api.profileClientData(dsName);
+      toast('Profile Complete', `Analyzed ${res?.row_count} rows across ${res?.column_count} columns`, 'success');
+    } catch (e: any) {
+      toast('Profile Error', e.message || 'Failed to profile dataset', 'error');
+    }
+  };
+
+
   useEffect(() => {
     let cancelled = false;
     setContent(null);

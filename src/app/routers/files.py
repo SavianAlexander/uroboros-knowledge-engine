@@ -1118,3 +1118,67 @@ def database_health_endpoint():
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in database_health: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/api/data/relationships")
+def data_relationships_endpoint():
+    """Discovers foreign keys and relational linkages across dynamically provisioned client datasets."""
+    try:
+        from src.domain.relational_schema_linker import discover_foreign_key_relationships, generate_mermaid_er_diagram
+        return {
+            "relationships": discover_foreign_key_relationships(),
+            "er_diagram": generate_mermaid_er_diagram()
+        }
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in data_relationships: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/data/join")
+def data_join_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Synthesizes and executes multi-table SQL JOIN queries across related client datasets."""
+    query = payload.get("query", "")
+    dataset_names = payload.get("dataset_names")
+    try:
+        from src.domain.relational_schema_linker import synthesize_multi_table_join
+        return synthesize_multi_table_join(query, dataset_names)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in data_join: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/data/clean")
+def data_clean_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Executes automated missing value imputation, date normalization, and deduplication on a client dataset."""
+    dataset_name = payload.get("dataset_name", "")
+    if not dataset_name:
+        raise HTTPException(status_code=400, detail="dataset_name is required")
+    try:
+        from src.domain.client_data_cleaner import cleanse_client_dataset
+        return cleanse_client_dataset(dataset_name)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in data_clean: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/data/profile")
+def data_profile_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Computes automated exploratory data analysis, Pearson correlations, and statistical summaries."""
+    dataset_name = payload.get("dataset_name", "")
+    if not dataset_name:
+        raise HTTPException(status_code=400, detail="dataset_name is required")
+    try:
+        from src.domain.statistical_data_profiler import profile_client_dataset
+        return profile_client_dataset(dataset_name)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in data_profile: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
