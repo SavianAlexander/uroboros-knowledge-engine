@@ -116,8 +116,8 @@ CONDITION_SCOPE_PATTERNS = [
     re.compile(r'\b(?:in|for|under|on)\s+(production|development|testing|staging|debug|release|linux|windows|macos|darwin|arm64|x86_64|docker|kubernetes|standalone|cluster)\s*(?:mode|environment|os|platform)?\b', re.IGNORECASE),
     # Operational switches (e.g. with caching enabled, without compression)
     re.compile(r'\b(with|without)\s+([a-zA-Z_-]+)\s*(?:enabled|disabled|on|off)?\b', re.IGNORECASE),
-    # Workload types (e.g. for read operations, for write workloads)
-    re.compile(r'\b(?:for|during)\s+(read|write|read-only|write-only|batch|streaming|oltp|olap)\s*(?:operations|workloads|queries|traffic)?\b', re.IGNORECASE)
+    # Workload types (e.g. for read operations, for write workloads, under read operations)
+    re.compile(r'\b(?:for|during|under)\s+(read|write|read-only|write-only|batch|streaming|oltp|olap)\s*(?:operations|workloads|queries|traffic)?\b', re.IGNORECASE)
 ]
 
 

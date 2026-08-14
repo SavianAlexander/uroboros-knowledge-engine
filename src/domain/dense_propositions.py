@@ -51,11 +51,11 @@ def _split_into_atomic_clauses(raw_text: str) -> List[str]:
     # 1. Protect numeric decimals (e.g. 3.14, 1.5, 1024.0)
     text = re.sub(r'(\d+)\.(\d+)', r'\g<1>' + DOT_PLACEHOLDER + r'\g<2>', text)
 
-    # 2. Protect multi-dot abbreviations (e.g. e.g., i.e., a.m., p.m., U.S.)
-    text = re.sub(r'\b([A-Za-z])\.([A-Za-z])\.', r'\g<1>' + DOT_PLACEHOLDER + r'\g<2>' + DOT_PLACEHOLDER, text)
+    # 2. Protect multi-dot abbreviations (e.g. e.g., i.e., a.m., p.m., U.S., U.S.C.)
+    text = re.sub(r'\b((?:[A-Za-z]\.){2,})', lambda m: m.group(1).replace('.', DOT_PLACEHOLDER), text)
 
     # 3. Protect common Latin & English abbreviations
-    abbr_pattern = r'\b(etc|vs|al|fig|ref|dr|mr|mrs|ms|inc|ltd|corp|dept|sec|no|appx|vol|prof|gen|gov|sgt|capt|st|jr|sr|eq)\.'
+    abbr_pattern = r'\b(etc|vs|al|fig|ref|doc|dr|mr|mrs|ms|inc|ltd|corp|dept|sec|no|appx|vol|prof|gen|gov|sgt|capt|st|jr|sr|eq)\.'
     text = re.sub(abbr_pattern, r'\g<1>' + DOT_PLACEHOLDER, text, flags=re.IGNORECASE)
 
     # 4. Protect ellipsis (...) and interrobang (?!)
@@ -228,7 +228,7 @@ def expand_propositions_to_parent_context(
                         if row:
                             content = row[0] if isinstance(row, (tuple, list)) else row["content"]
                     
-                    if not content and doc_id_key:
+                    if not content and doc_id_key and file_id is None and isinstance(doc_id_key, str) and not str(doc_id_key).isdigit():
                         cursor.execute("SELECT content FROM files WHERE filename = ? OR filepath = ?", (str(doc_id_key), str(doc_id_key)))
                         row = cursor.fetchone()
                         if not row:

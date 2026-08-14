@@ -95,7 +95,7 @@ def compute_temporal_decay(
     delta_years = 0.0
     if document_year_or_date is not None:
         if isinstance(document_year_or_date, (datetime, date)):
-            doc_date = document_year_or_date if isinstance(document_year_or_date, date) else document_year_or_date.date()
+            doc_date = document_year_or_date.date() if isinstance(document_year_or_date, datetime) else document_year_or_date
             delta_days = (now.date() - doc_date).days
             delta_years = max(0.0, delta_days / 365.25)
         elif isinstance(document_year_or_date, int):
