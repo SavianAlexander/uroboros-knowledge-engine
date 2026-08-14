@@ -159,24 +159,24 @@ def search_hybrid(q: str, limit: int = 5):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/optimizer/remap")
-def get_fleet_remaps():
-    """Calculate optimal neural attribute remaps for all active fleet pilots."""
-    import json
-    from src.infrastructure.eve_optimizer import AUDIT_JSON_PATH
+@router.get("/hud/state")
+def get_hud_state_endpoint():
+    """Retrieve unified tactical HUD state for all active fleet pilots."""
     try:
-        if not os.path.exists(AUDIT_JSON_PATH):
-            return {"error": "Audit data not found. Run harvest first."}
-        with open(AUDIT_JSON_PATH, "r", encoding="utf-8") as f:
-            fleet_data = json.load(f)
-        results = {}
-        for name, p in fleet_data.items():
-            results[name] = calculate_optimal_remap(p.get("queue", []))
-        return {
-            "status": "success",
-            "fleet_remaps": results
-        }
+        from src.infrastructure.eve_hud_server import get_hud_state
+        return get_hud_state()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/routes/cyno")
+def get_cyno_route(origin: str = "1DQ1-A (Delve)", destination: str = "Jita (The Forge)"):
+    """Calculate multi-jump capital cyno route avoiding choke points."""
+    try:
+        from src.infrastructure.eve_route_navigator import plan_cyno_route
+        return plan_cyno_route(origin_system=origin, destination_system=destination)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
