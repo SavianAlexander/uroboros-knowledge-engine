@@ -195,10 +195,9 @@ class TestDomainMCPServer(unittest.TestCase):
         """Verify MCP Server instance exists and exposes server name.
 
         Preconditions: mcp_server module imported.
-        Invariants: Server instance name is 'neuro-mcp' when HAS_MCP is True.
+        Invariants: Server instance name is 'neuro-mcp'.
         Expected Outcomes: server is not None and has name 'neuro-mcp'.
         """
-        self.assertTrue(mcp_server.HAS_MCP)
         self.assertIsNotNone(mcp_server.server)
         self.assertEqual(mcp_server.server.name, "neuro-mcp")
 

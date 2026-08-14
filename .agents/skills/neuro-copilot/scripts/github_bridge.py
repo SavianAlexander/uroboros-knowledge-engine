@@ -1629,13 +1629,13 @@ def main():
     copilot_p.add_argument("--execute", action="store_true", help="Automatically branch git and initialize flight plan")
 
     blast_p = subparsers.add_parser("blast_radius", help="AST-level cognitive dependency & blast radius mapping")
-    blast_p.add_argument("--file", required=True, help="Target Python file path")
+    blast_p.add_argument("--file", "--target", dest="file", default="know.py", help="Target Python file path")
 
     cruc_p = subparsers.add_parser("crucible", help="Red Team vs Blue Team adversarial fuzzing & exploit arena")
-    cruc_p.add_argument("--file", help="Optional target file to audit")
+    cruc_p.add_argument("--file", "--target", dest="file", default="know.py", help="Optional target file to audit")
 
     darw_p = subparsers.add_parser("darwin_optimize", help="Zero-dependency AST algorithmic complexity evolver")
-    darw_p.add_argument("--path", default=".", help="Target codebase path to inspect")
+    darw_p.add_argument("--path", "--target", dest="path", default=".", help="Target codebase path to inspect")
 
     exp_p = subparsers.add_parser("explain_line", help="Cryptographic Merkle causal chain line provenance inspector")
     exp_p.add_argument("--file", required=True, help="Target file path")

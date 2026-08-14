@@ -1,8 +1,8 @@
 {
   "certificate_type": "SOC 2 Type II Cryptographic Provenance Attestation",
   "version": "1.0.0",
-  "merkle_root_sha256": "5cbe9f74be82344ee81c4c79be8351abddec68d41c02a7168ca4c357317d7487",
-  "timestamp_utc": "2026-08-14T05:11:12.762899+00:00",
+  "merkle_root_sha256": "f8ccbf2d6cfe03bc7a937101bf3684f1f57f18ae84289813348d9f977367af6a",
+  "timestamp_utc": "2026-08-14T14:11:08.156995+00:00",
   "issuer": "Uroboros Tri-Engine Knowledge Singularity Suite",
   "verified_domains": [
     "Neuro ColBERT Hybrid Vector Vault",
@@ -11,6 +11,6 @@
     "The Crucible Adversarial Arena (100% Trust)"
   ],
   "domain_tests_passed": 394,
-  "total_files_audited": 30777,
+  "total_files_audited": 30824,
   "soc2_trust_status": "COMPLIANT_AND_CERTIFIED"
 }
