@@ -24,7 +24,13 @@ class ServerThread(threading.Thread):
         self.server = uvicorn.Server(uv_config)
 
     def run(self):
-        self.server.run()
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(self.server.serve())
+        except Exception:
+            pass
 
     def stop(self):
         self.server.should_exit = True
@@ -44,7 +50,10 @@ class TestReactE2EPlaywright(unittest.TestCase):
                 headless=True,
                 args=[
                     "--disable-dev-shm-usage",
-                    "--no-sandbox"
+                    "--no-sandbox",
+                    "--disable-gpu",
+                    "--disable-webgl",
+                    "--disable-software-rasterizer"
                 ]
             )
         except Exception as e:
@@ -66,9 +75,9 @@ class TestReactE2EPlaywright(unittest.TestCase):
             self.skipTest("Playwright browser engine unavailable")
         page = self.browser.new_page()
         try:
-            page.goto(self.base_url, wait_until="domcontentloaded", timeout=5000)
+            page.goto(self.base_url, wait_until="domcontentloaded", timeout=3000)
             page.evaluate("() => localStorage.setItem('uroboros_api_key', 'test_auth_token')")
-            page.reload(wait_until="domcontentloaded", timeout=5000)
+            page.reload(wait_until="domcontentloaded", timeout=3000)
         except Exception:
             pass
         return page

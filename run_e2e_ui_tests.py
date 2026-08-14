@@ -35,7 +35,13 @@ class ServerThread(threading.Thread):
         self.server = uvicorn.Server(config)
 
     def run(self):
-        self.server.run()
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(self.server.serve())
+        except Exception:
+            pass
 
     def stop(self):
         self.server.should_exit = True
