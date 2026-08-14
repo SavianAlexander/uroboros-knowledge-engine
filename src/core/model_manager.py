@@ -121,6 +121,7 @@ class OllamaClient:
         data_bytes = json.dumps(payload).encode("utf-8")
         urls = ["http://127.0.0.1:11434/api/chat", "http://localhost:11434/api/chat"]
         
+        tokens_yielded = 0
         for u in urls:
             try:
                 req = urllib.request.Request(u, data=data_bytes, headers={"Content-Type": "application/json"})
@@ -132,15 +133,20 @@ class OllamaClient:
                             item = json.loads(line.decode("utf-8"))
                             tok = item.get("message", {}).get("content", "")
                             if tok:
+                                tokens_yielded += 1
                                 yield tok
                             if item.get("done"):
                                 return
                         except Exception:
                             continue
-                return
+                if tokens_yielded > 0:
+                    return
             except Exception as e:
                 logging.warning(f"Ollama stream_chat fallback on {u}: {e}")
                 continue
+
+        if tokens_yielded == 0:
+            raise ConnectionError("Ollama daemon unreachable on local endpoints")
 
     def __call__(self, prompt, **kwargs):
         if not _llm_semaphore.acquire(blocking=False):
