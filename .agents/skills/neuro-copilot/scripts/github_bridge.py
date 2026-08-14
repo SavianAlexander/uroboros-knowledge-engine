@@ -217,6 +217,76 @@ def diagnose_ci(run_id=None):
     print(json.dumps(diagnosis, indent=2))
     return 0
 
+def verify_ci(wait=False, timeout_seconds=300):
+    """Query GitHub Actions workflow runs for the active commit/branch, optionally watching until completion.
+    
+    Verifies that all triggered CI workflows (CI Pipeline, Neuro CI Suite, Crucible Security, Build & Package)
+    reach 100% SUCCESS (Green) status.
+    """
+    head_sha, _, _ = run_cmd("git rev-parse HEAD")
+    head_sha = head_sha.strip() if head_sha else ""
+
+    start_time = time.time()
+    while True:
+        out, err, code = run_cmd("gh run list --limit 10 --json databaseId,status,conclusion,workflowName,headSha,createdAt,url")
+        if code != 0 or not out:
+            res = {"status": "error", "message": f"Failed to query gh run list: {err}"}
+            print(json.dumps(res, indent=2))
+            return 1
+
+        try:
+            runs = json.loads(out)
+        except Exception as e:
+            res = {"status": "error", "message": f"Failed to parse gh run JSON: {e}"}
+            print(json.dumps(res, indent=2))
+            return 1
+
+        matching_runs = [r for r in runs if r.get("headSha", "").startswith(head_sha[:7])] if head_sha else runs[:4]
+        if not matching_runs:
+            matching_runs = runs[:4]
+
+        in_progress_runs = [r for r in matching_runs if r.get("status") != "completed"]
+        failed_runs = [r for r in matching_runs if r.get("status") == "completed" and r.get("conclusion") != "success"]
+        successful_runs = [r for r in matching_runs if r.get("status") == "completed" and r.get("conclusion") == "success"]
+
+        if not wait or not in_progress_runs:
+            all_passed = len(failed_runs) == 0 and len(matching_runs) > 0 and len(in_progress_runs) == 0
+            summary = {
+                "status": "success" if all_passed else ("in_progress" if in_progress_runs else "failure"),
+                "all_passed": all_passed,
+                "head_sha": head_sha[:8],
+                "total_runs_checked": len(matching_runs),
+                "successful_count": len(successful_runs),
+                "in_progress_count": len(in_progress_runs),
+                "failed_count": len(failed_runs),
+                "runs": [
+                    {
+                        "id": r.get("databaseId"),
+                        "workflow": r.get("workflowName"),
+                        "status": r.get("status"),
+                        "conclusion": r.get("conclusion") or "pending",
+                        "url": r.get("url")
+                    } for r in matching_runs
+                ]
+            }
+            if failed_runs:
+                summary["failed_run_ids"] = [r.get("databaseId") for r in failed_runs]
+                summary["recommended_action"] = f"Run 'python .agents/skills/neuro-copilot/scripts/github_bridge.py diagnose_ci --run-id {failed_runs[0].get('databaseId')}'"
+            print(json.dumps(summary, indent=2))
+            return 0 if all_passed else 1
+
+        elapsed = time.time() - start_time
+        if elapsed > timeout_seconds:
+            res = {
+                "status": "timeout",
+                "message": f"Timed out after {timeout_seconds}s waiting for CI workflows to finish.",
+                "pending_runs": [r.get("workflowName") for r in in_progress_runs]
+            }
+            print(json.dumps(res, indent=2))
+            return 1
+
+        time.sleep(10)
+
 def provenance_tag_data(scope="feat", desc="update codebase", tududi_id=None):
     """Calculate SHA-256 hash of staged/modified files and return dict payload."""
     staged, _, _ = run_cmd("git diff --cached --name-only")
@@ -1667,7 +1737,9 @@ def main():
     brain_parser.add_argument("--query", required=True, help="Search query string for local RAG brain")
     ingest_parser = subparsers.add_parser("neuro_ingest_cli", help="Ingest a file or directory into local Neuro Knowledge Engine")
     ingest_parser.add_argument("--filepath", required=True, help="Target file or folder path to index")
-    subparsers.add_parser("tududi_sync_cli", help="Fetch active Tududi tasks directly from local SQLite database or API bridge")
+    vci_p = subparsers.add_parser("verify_ci", help="Verify GitHub Actions remote CI workflow execution & 100% green health")
+    vci_p.add_argument("--wait", action="store_true", help="Wait and poll until all workflows complete")
+    vci_p.add_argument("--timeout", type=int, default=300, help="Max wait duration in seconds")
     subparsers.add_parser("self_test", help="Run built-in assertion self-tests")
 
     args = parser.parse_args()
@@ -1676,6 +1748,8 @@ def main():
         sys.exit(check_health())
     elif args.command == "copilot":
         sys.exit(copilot_intent(args.prompt, getattr(args, "execute", False)))
+    elif args.command == "verify_ci":
+        sys.exit(verify_ci(getattr(args, "wait", False), getattr(args, "timeout", 300)))
     elif args.command == "blast_radius":
         print(blast_radius(args.file))
         sys.exit(0)

@@ -128,9 +128,25 @@ Whenever executing multi-step work or in planning mode:
    - **Stage 2 (Context-Informed Parallel Execution)**: Snapshot Showcase (consuming architecture routes and sprint burndown) and Neuro Vault (consuming git commit hashes) execute concurrently.
    - **Stage 3 (Ledger Compilation)**: Persistent audit trail written to `docs/bridge_contracts/execution_ledger.json` and `docs/bridge_contracts/contract_audit_ledger.md`.
 
+### VI. Continuous Integration & Remote CI Health Verification Protocol
+1. **Pre-Push Local Gate**:
+   - Run domain tests: `python run_domain_tests.py` (Must report `0 failed, 0 errors`).
+   - Run architecture doctor: `python scripts/architecture_cli.py doctor .`.
+   - Run security fuzzing: `python .agents/skills/neuro-copilot/scripts/github_bridge.py crucible`.
+2. **Post-Push Remote Monitoring & Confirmation**:
+   - Immediately after `git push`, invoke `python .agents/skills/neuro-copilot/scripts/github_bridge.py verify_ci --wait`.
+   - Actively watch all 4 remote GitHub Actions workflows:
+     - `CI Pipeline` (Matrix Test Python 3.11 & 3.12)
+     - `Neuro Co-Pilot Tri-Engine CI Suite` (Domain Test Suite & Tri-Engine Health)
+     - `Crucible Security Matrix & Merkle Provenance Audit` (Fuzzing & Blast Radius)
+     - `Build & Package` (Desktop Artifacts, Web Dist & GHCR Container Image)
+3. **Zero-Failure Completion Guarantee**:
+   - Never declare work complete or mark Tududi milestones done until 100% of remote workflows conclude with `SUCCESS (Green)`.
+   - If any workflow fails, immediately execute `github_bridge.py diagnose_ci --run-id <id>`, apply root-cause fixes, re-verify locally, push, and confirm all pipelines pass green.
+
 ---
 
-## Tri-Engine Unified Command Matrix (42 Operations)
+## Tri-Engine Unified Command Matrix (43 Operations)
 
 | # | Command | Engine / Bridge | Purpose |
 | :-: | :--- | :--- | :--- |
@@ -140,42 +156,43 @@ Whenever executing multi-step work or in planning mode:
 | **4** | `create_pr` | `github_bridge.py` | Auto-generate GitHub PR with Tududi links |
 | **5** | `sync_issues` | `github_bridge.py` | Bidirectional Issue & Task Sync |
 | **6** | `diagnose_ci` | `github_bridge.py` | Download & Diagnose CI Failure Logs |
-| **7** | `install_hooks` | `github_bridge.py` | Install `commit-msg` Merkle Verification Hook |
-| **8** | `install_ci_workflow` | `github_bridge.py` | Install GitHub Actions CI Workflow |
-| **9** | `audit_pr_diff` | `github_bridge.py` | Security & Anti-Pattern Diff Audit |
-| **10** | `repo_map` | `github_bridge.py` | Generate Clean ASCII Codebase Tree |
-| **11** | `resolve_conflicts` | `github_bridge.py` | Scan & Resolve Merge Conflicts |
-| **12** | `format_history` | `github_bridge.py` | Format Git History as Markdown Audit Table |
-| **13** | `export_architecture_mermaid`| `github_bridge.py` | Generate Mermaid JS Dependency Graph |
-| **14** | `benchmark_audit` | `github_bridge.py` | Benchmark Test Suite Execution Duration |
-| **15** | `audit_skills` | `github_bridge.py` | Validate All Active Skills Frontmatter & Health |
-| **16** | `audit_security_dependencies`| `github_bridge.py`| Scan `requirements.txt` & `package.json` for Unpinned Deps |
-| **17** | `detect_bloat` | `github_bridge.py` | Audit Codebase for Overly Nested Functions & Bloat |
-| **18** | `visual_showcase_audit` | `github_bridge.py` | Audit Screenshot Assets, README Links & Orphans |
-| **19** | `dashboard` | `github_bridge.py` | Executive Terminal Dashboard with Live Burndown |
-| **20** | `generate_release_notes` | `github_bridge.py` | Generate Markdown Release Notes & Tag Release |
-| **21** | `query --text "..."` | `neuro_bridge.py` | Semantic Query Local Vector Brain |
-| **22** | `ingest --path "..."` | `neuro_bridge.py` | Ingest Documents / Code into Vault |
-| **23** | `ingest_git_history` | `neuro_bridge.py` | Index Git Commit Provenance into Vault |
-| **24** | `ingest_tududi_roadmap`| `neuro_bridge.py` | Index Live Tududi Roadmap into Vector Vault |
-| **25** | `export_note` | `neuro_bridge.py` | Save Architecture Markdown Note into Vault |
-| **26** | `stats` | `neuro_bridge.py` | Vault Size, Chunks & Embedding Statistics |
-| **27** | `list` | `tududi_bridge.py` | Fetch Active Tasks for Project #13 |
-| **28** | `metrics` | `tududi_bridge.py` | Query Project Completion Stats |
-| **29** | `burndown` | `tududi_bridge.py` | Render ASCII Sprint Burndown Meter |
-| **30** | `export_roadmap` | `tududi_bridge.py` | Export Structured Markdown Roadmap |
-| **31** | `scan` | `snapshot_bridge.py` | Full AST & Route Discovery Sweep |
-| **32** | `generate_script` | `snapshot_bridge.py` | Generate Playwright Capture Engine |
-| **33** | `render_deck` | `snapshot_bridge.py` | Render Glassmorphic Client Showcase Deck |
-| **34** | `sync_readme` | `snapshot_bridge.py` | Sync README Visual Tables |
-| **35** | `export_package` | `snapshot_bridge.py` | Package Client Distribution Bundle (ZIP) |
-| **36** | `serve` | `snapshot_bridge.py` | Launch Local Preview Server |
-| **37** | `full_showcase` | `snapshot_bridge.py` | 1-Click End-to-End Client Showcase Suite |
-| **38** | `audit` (PDF QA) | `visual_audit_bridge.py`| Automated PDF Page Rendering & Layout QA |
-| **39** | `audit` (Clean Arch) | `architecture_bridge.py`| Universal Polyglot Clean Architecture Audit |
-| **40** | `run` (Pipeline) | `workflow_hub_bridge.py`| Master Multi-Phase Pipeline Execution |
-| **41** | `run --parallel` | `workflow_hub_bridge.py`| Parallel Asynchronous Inter-Bridge Execution |
-| **42** | `run_parallel` | `contract_bus.py` | Low-Level Parallel Inter-Bridge DAG Runner |
+| **7** | `verify_ci [--wait]` | `github_bridge.py` | Verify Remote CI Workflows & 100% Green Health |
+| **8** | `install_hooks` | `github_bridge.py` | Install `commit-msg` Merkle Verification Hook |
+| **9** | `install_ci_workflow` | `github_bridge.py` | Install GitHub Actions CI Workflow |
+| **10** | `audit_pr_diff` | `github_bridge.py` | Security & Anti-Pattern Diff Audit |
+| **11** | `repo_map` | `github_bridge.py` | Generate Clean ASCII Codebase Tree |
+| **12** | `resolve_conflicts` | `github_bridge.py` | Scan & Resolve Merge Conflicts |
+| **13** | `format_history` | `github_bridge.py` | Format Git History as Markdown Audit Table |
+| **14** | `export_architecture_mermaid`| `github_bridge.py` | Generate Mermaid JS Dependency Graph |
+| **15** | `benchmark_audit` | `github_bridge.py` | Benchmark Test Suite Execution Duration |
+| **16** | `audit_skills` | `github_bridge.py` | Validate All Active Skills Frontmatter & Health |
+| **17** | `audit_security_dependencies`| `github_bridge.py`| Scan `requirements.txt` & `package.json` for Unpinned Deps |
+| **18** | `detect_bloat` | `github_bridge.py` | Audit Codebase for Overly Nested Functions & Bloat |
+| **19** | `visual_showcase_audit` | `github_bridge.py` | Audit Screenshot Assets, README Links & Orphans |
+| **20** | `dashboard` | `github_bridge.py` | Executive Terminal Dashboard with Live Burndown |
+| **21** | `generate_release_notes` | `github_bridge.py` | Generate Markdown Release Notes & Tag Release |
+| **22** | `query --text "..."` | `neuro_bridge.py` | Semantic Query Local Vector Brain |
+| **23** | `ingest --path "..."` | `neuro_bridge.py` | Ingest Documents / Code into Vault |
+| **24** | `ingest_git_history` | `neuro_bridge.py` | Index Git Commit Provenance into Vault |
+| **25** | `ingest_tududi_roadmap`| `neuro_bridge.py` | Index Live Tududi Roadmap into Vector Vault |
+| **26** | `export_note` | `neuro_bridge.py` | Save Architecture Markdown Note into Vault |
+| **27** | `stats` | `neuro_bridge.py` | Vault Size, Chunks & Embedding Statistics |
+| **28** | `list` | `tududi_bridge.py` | Fetch Active Tasks for Project #13 |
+| **29** | `metrics` | `tududi_bridge.py` | Query Project Completion Stats |
+| **30** | `burndown` | `tududi_bridge.py` | Render ASCII Sprint Burndown Meter |
+| **31** | `export_roadmap` | `tududi_bridge.py` | Export Structured Markdown Roadmap |
+| **32** | `scan` | `snapshot_bridge.py` | Full AST & Route Discovery Sweep |
+| **33** | `generate_script` | `snapshot_bridge.py` | Generate Playwright Capture Engine |
+| **34** | `render_deck` | `snapshot_bridge.py` | Render Glassmorphic Client Showcase Deck |
+| **35** | `sync_readme` | `snapshot_bridge.py` | Sync README Visual Tables |
+| **36** | `export_package` | `snapshot_bridge.py` | Package Client Distribution Bundle (ZIP) |
+| **37** | `serve` | `snapshot_bridge.py` | Launch Local Preview Server |
+| **38** | `full_showcase` | `snapshot_bridge.py` | 1-Click End-to-End Client Showcase Suite |
+| **39** | `audit` (PDF QA) | `visual_audit_bridge.py`| Automated PDF Page Rendering & Layout QA |
+| **40** | `audit` (Clean Arch) | `architecture_bridge.py`| Universal Polyglot Clean Architecture Audit |
+| **41** | `run` (Pipeline) | `workflow_hub_bridge.py`| Master Multi-Phase Pipeline Execution |
+| **42** | `run --parallel` | `workflow_hub_bridge.py`| Parallel Asynchronous Inter-Bridge Execution |
+| **43** | `run_parallel` | `contract_bus.py` | Low-Level Parallel Inter-Bridge DAG Runner |
 
 ---
 
