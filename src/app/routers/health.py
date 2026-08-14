@@ -34,7 +34,8 @@ def get_health_status():
         stats = db_status()
         ollama_status = "offline"
         try:
-            req = urllib.request.Request("http://127.0.0.1:11434/api/tags", headers={"User-Agent": "Uroboros"})
+            ollama_host = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
+            req = urllib.request.Request(f"{ollama_host}/api/tags", headers={"User-Agent": "Uroboros"})
             with urllib.request.urlopen(req, timeout=0.8) as resp:
                 ollama_status = "online" if resp.status == 200 else "offline"
         except Exception:
