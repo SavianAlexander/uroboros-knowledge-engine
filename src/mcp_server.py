@@ -336,13 +336,19 @@ async def handle_call_tool(
 
         if name == "neuro_speak":
             from src.core.voice_bridge import VoiceBridge
+            raw_text = args.get("text", "")
+            try:
+                from src.core.voice_normalizer import VoiceNormalizer
+                clean_text = VoiceNormalizer.normalize_for_speech(raw_text)
+            except Exception:
+                clean_text = raw_text
             res = VoiceBridge.speak(
-                text=args.get("text", ""),
+                text=clean_text,
                 domain=args.get("domain", "GENERAL"),
                 priority=args.get("priority", "NORMAL"),
                 voice=args.get("voice")
             )
-            return [types.TextContent(type="text", text=f"Spoken via VoiceBridge ({res.get('engine')}): '{res.get('text')}' [Dispatched: {res.get('dispatched')}]")]
+            return [types.TextContent(type="text", text=f"Spoken via VoiceBridge ({res.get('engine')}): '{clean_text}' [Dispatched: {res.get('dispatched')}]")]
 
         if name == "neuro_play_sfx":
             from src.core.voice_bridge import VoiceBridge

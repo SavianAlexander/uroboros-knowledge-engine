@@ -93,8 +93,13 @@ class VoiceBridge:
         selected_dsp = dsp_preset or profile["dsp_preset"]
 
         # If sfx_intro requested, play SFX first
-        if sfx_intro and sfx_intro in SFX_LIBRARY:
-            copilot.speak(f"[{sfx_intro}]", priority="INFO", force_sapi=True)
+        if sfx_intro:
+            try:
+                from src.infrastructure.eve_voice_soundboard import SFX_LIBRARY
+                if sfx_intro in SFX_LIBRARY:
+                    copilot.speak(f"[{sfx_intro}]", priority="INFO", force_sapi=True)
+            except Exception:
+                pass
 
         rec = copilot.speak(
             text=text,
@@ -120,7 +125,11 @@ class VoiceBridge:
     @classmethod
     def play_sfx(cls, sfx_name: str) -> Optional[bytes]:
         """Synthesize and return procedural SFX audio bytes."""
-        return render_sfx_to_wav_bytes(sfx_name)
+        try:
+            from src.infrastructure.eve_voice_soundboard import render_sfx_to_wav_bytes
+            return render_sfx_to_wav_bytes(sfx_name)
+        except Exception:
+            return None
 
     @classmethod
     def announce_ci_pipeline_status(cls, workflow_name: str, passed: bool = True) -> Dict[str, Any]:

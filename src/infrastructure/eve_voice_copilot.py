@@ -176,14 +176,24 @@ class KokoroVoiceCopilot:
         if self._local_kokoro_instance is not None:
             try:
                 import soundfile as sf
+                try:
+                    from src.core.voice_normalizer import VoiceNormalizer
+                    text = VoiceNormalizer.normalize_for_speech(text)
+                except Exception:
+                    pass
                 samples, sample_rate = self._local_kokoro_instance.create(
                     text,
                     voice=voice,
                     speed=speed,
                     lang=selected_lang
                 )
+                try:
+                    from src.core.voice_normalizer import VoiceNormalizer
+                    samples = VoiceNormalizer.master_audio_buffer(samples, sample_rate=sample_rate)
+                except Exception:
+                    pass
                 buf = io.BytesIO()
-                sf.write(buf, samples, sample_rate, format="WAV")
+                sf.write(buf, samples, sample_rate, format="WAV", subtype="PCM_16")
                 audio_bytes = buf.getvalue()
                 self.audio_cache[text] = audio_bytes
                 return audio_bytes

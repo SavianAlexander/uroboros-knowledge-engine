@@ -166,6 +166,7 @@ Automated verification report asserting complete alignment between live CCP ESI 
     print(f"🎉 ZERO-ASSUMPTION AUDIT COMPLETE: {passed_checks}/{total_checks} ASSERTIONS PASSED (100%)")
     print(f"Certificate written to: {cert_path}")
     print("=================================================================")
+    return passed_checks == total_checks
 
 
 if __name__ == "__main__":
