@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
-import { glassCardClasses, debounce } from '../lib/utils';
-import { Filter, Maximize, RotateCcw, Download } from 'lucide-react';
+import { glassCardClasses, debounce, emeraldBadgeClasses, goldBadgeClasses, wineBadgeClasses } from '../lib/utils';
+import { Filter, Maximize, RotateCcw, Download, Sparkles, Share2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../components/Toast';
 import { useApp } from '../store/AppContext';
@@ -28,6 +28,7 @@ export default function GraphView() {
       toast('Export Failed', e.message || 'Could not export GraphML', 'error');
     }
   };
+
   const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<any>();
   const [nodes, setNodes] = useState<any[]>([]);
@@ -41,7 +42,6 @@ export default function GraphView() {
   });
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
-  // ponytail: debounce graph physics recalculation; ceiling: 150ms text filter debounce; upgrade: use Web Worker for O(N log N) graph physics layout if node count exceeds 5,000 nodes
   const debouncedSetFilter = useCallback(debounce((val: string) => setFilter(val), 150), []);
 
   useEffect(() => {
@@ -74,7 +74,6 @@ export default function GraphView() {
   useEffect(() => {
     if (!containerRef.current) return;
     
-    // ponytail: debounce resize events to prevent webgl thrashing; ceiling: 150ms debounce window; upgrade: use RequestAnimationFrame throttling if sub-16ms fluid canvas resize is needed
     const handleResize = debounce((entries: ResizeObserverEntry[]) => {
       if (entries[0]) {
         setDimensions({
@@ -87,7 +86,6 @@ export default function GraphView() {
     const observer = new ResizeObserver(handleResize);
     observer.observe(containerRef.current);
     
-    // Initial size setup
     setDimensions({
        width: containerRef.current.clientWidth,
        height: containerRef.current.clientHeight
@@ -117,7 +115,6 @@ export default function GraphView() {
     return { nodes: filteredNodes, links: filteredEdges };
   }, [filteredNodes, filteredEdges]);
 
-  // ponytail: cache materials to avoid webgl memory leak; ceiling: in-memory sprite material map; upgrade: add material disposal pipeline if dynamic node color palette switching is added
   const materialCache = useRef<Record<string, THREE.SpriteMaterial>>({});
 
   useEffect(() => {
@@ -142,21 +139,20 @@ export default function GraphView() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return false;
 
-      let color = '#64748b';
+      let color = '#059669'; // Emerald
       let icon = '📄';
       
       if (type === 'document') {
-        color = '#818CF8';
+        color = '#059669'; // Emerald
         icon = '📄';
       } else if (type === 'tag') {
-        color = '#34D399';
+        color = '#9F1239'; // Wine Red
         icon = '🏷️';
       } else if (type === 'concept') {
-        color = '#FBBF24';
+        color = '#D97706'; // Mustard Gold
         icon = '💡';
       }
 
-      // Draw background circle
       ctx.beginPath();
       ctx.arc(size / 2, size / 2, size / 2 - 4, 0, 2 * Math.PI);
       ctx.fillStyle = color;
@@ -168,12 +164,11 @@ export default function GraphView() {
         ctx.stroke();
       } else {
         ctx.lineWidth = 4;
-        ctx.strokeStyle = '#0f172a';
+        ctx.strokeStyle = '#020617';
         ctx.stroke();
       }
 
-      // Draw icon
-      ctx.font = '64px Arial';
+      ctx.font = '60px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(icon, size / 2, size / 2 + 6);
@@ -185,8 +180,6 @@ export default function GraphView() {
     }
 
     const sprite = new THREE.Sprite(materialCache.current[cacheKey]);
-    
-    // Set scale relative to node importance or standard size
     const scale = type === 'document' ? 14 : 10;
     sprite.scale.set(scale, scale, 1);
     
@@ -195,17 +188,15 @@ export default function GraphView() {
 
   const linkColor = useCallback((link: any) => {
     const type = link.type || link.relation || link.name;
-    if (type === 'tagged_with') return '#818CF880';
-    if (type === 'wikilink_to') return '#A78BFA80';
-    if (type === 'shared_tag_cluster') return '#FBBF2480';
-    if (type === 'mentions') return '#22D3EE80';
-    return '#47556980';
+    if (type === 'tagged_with') return '#10B98170'; // Emerald
+    if (type === 'wikilink_to') return '#0D948870'; // Teal
+    if (type === 'shared_tag_cluster') return '#F59E0B70'; // Gold
+    if (type === 'mentions') return '#BE123C70'; // Wine Red
+    return '#47556960';
   }, []);
 
   const handleNodeClick = useCallback((node: any) => {
     setSelectedNode(node);
-    
-    // Aim at node from outside it
     const distance = 80;
     const distRatio = 1 + distance / (Math.hypot(node.x, node.y, node.z) || 1);
     
@@ -218,38 +209,39 @@ export default function GraphView() {
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="h-full flex items-center justify-center gap-2 text-slate-400 text-sm">
+        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <span>Initializing 3D Vector Knowledge Graph...</span>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full relative" ref={containerRef}>
-      {/* Toolbar */}
+    <div className="flex flex-col h-full relative font-sans" ref={containerRef}>
+      {/* Floating Top Controls */}
       <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
-        <div className="flex items-center gap-2 pointer-events-auto">
+        <div className="flex items-center gap-2.5 pointer-events-auto">
           <input
             type="text"
-            placeholder="Filter nodes..."
+            placeholder="Filter knowledge graph..."
             value={searchInput}
             onChange={(e) => {
               setSearchInput(e.target.value);
               debouncedSetFilter(e.target.value);
             }}
-            className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 w-52"
+            className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500/60 shadow-lg w-56"
           />
-          <div className="flex gap-1 bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg p-1">
+          <div className="flex gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl p-1 shadow-lg">
             {(['document', 'tag', 'concept'] as const).map(cat => (
               <button
                 key={cat}
                 onClick={() => setCategoryFilters(prev => ({ ...prev, [cat]: !prev[cat] }))}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all ${
                   categoryFilters[cat]
-                    ? cat === 'document' ? 'bg-indigo-500/20 text-indigo-400'
-                      : cat === 'tag' ? 'bg-emerald-500/20 text-emerald-400'
-                      : 'bg-amber-500/20 text-amber-400'
-                    : 'text-slate-500 hover:text-slate-300'
+                    ? cat === 'document' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                      : cat === 'tag' ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+                      : 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 {cat}
@@ -262,23 +254,23 @@ export default function GraphView() {
             <button onClick={() => {
               fgRef.current?.zoomToFit(400);
               toast('Graph Reset', 'Zoomed to fit node boundaries', 'info');
-            }} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg p-2 text-slate-400 hover:text-white transition-colors" title="Zoom to Fit">
+            }} className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-slate-600 dark:text-slate-400 hover:text-emerald-500 transition-colors shadow-lg" title="Zoom to Fit">
                <Maximize className="w-4 h-4" />
             </button>
             <button onClick={() => {
                fgRef.current?.cameraPosition({ x: 0, y: 0, z: 200 }, { x: 0, y: 0, z: 0 }, 1000);
                toast('Camera Reset', 'Camera centered at origin', 'info');
-            }} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg p-2 text-slate-400 hover:text-white transition-colors" title="Reset Camera">
+            }} className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-slate-600 dark:text-slate-400 hover:text-emerald-500 transition-colors shadow-lg" title="Reset Camera">
                <RotateCcw className="w-4 h-4" />
             </button>
-            <button onClick={handleExportGraphML} className="bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 text-slate-300 hover:text-white transition-colors text-xs flex items-center gap-1.5" title="Export GraphML XML">
-               <Download className="w-3.5 h-3.5 text-indigo-400" />
+            <button onClick={handleExportGraphML} className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 text-slate-700 dark:text-slate-200 hover:text-emerald-500 transition-colors text-xs font-medium flex items-center gap-1.5 shadow-lg" title="Export GraphML XML">
+               <Download className="w-3.5 h-3.5 text-emerald-500" />
                <span>GraphML</span>
             </button>
         </div>
       </div>
 
-      {/* Canvas */}
+      {/* 3D Force Canvas */}
       <div className="flex-1 bg-transparent overflow-hidden cursor-move">
          <ForceGraph3D
             ref={fgRef}
@@ -297,33 +289,47 @@ export default function GraphView() {
          />
       </div>
 
-      {/* Stats bar */}
-      <div className="absolute bottom-4 left-4 flex gap-3 text-xs text-slate-500 bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-lg px-3 py-2 pointer-events-none z-20">
+      {/* Bottom Counter Bar */}
+      <div className="absolute bottom-4 left-4 flex gap-3 text-xs text-slate-400 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 pointer-events-none z-20 shadow-lg font-mono">
         <span>{filteredNodes.length} nodes</span>
         <span>•</span>
-        <span>{filteredEdges.length} edges</span>
+        <span>{filteredEdges.length} semantic edges</span>
         <span>•</span>
-        <span>3D Engine</span>
+        <span className="text-emerald-500 font-semibold">WebGL 3D</span>
       </div>
 
       {/* Selected Node Panel */}
       {selectedNode && (
-        <div className="absolute bottom-4 right-4 w-72 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl z-20 pointer-events-auto">
+        <div className="absolute bottom-4 right-4 w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-2xl z-20 pointer-events-auto font-sans">
           <div className="flex justify-between items-start mb-3">
-            <h4 className="text-sm font-semibold text-slate-100 truncate max-w-[200px]">{selectedNode.name || selectedNode.label}</h4>
-            <button onClick={() => setSelectedNode(null)} className="text-slate-500 hover:text-slate-300 text-xs">✕</button>
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[220px] font-serif-claude">
+              {selectedNode.name || selectedNode.label}
+            </h4>
+            <button onClick={() => setSelectedNode(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs">✕</button>
           </div>
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between"><span className="text-slate-500">Type</span><span className={`font-medium ${
-              selectedNode.type === 'document' ? 'text-indigo-400' : selectedNode.type === 'tag' ? 'text-emerald-400' : 'text-amber-400'
-            }`}>{selectedNode.type}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">ID</span><span className="text-slate-300 font-mono">{selectedNode.id}</span></div>
+          <div className="space-y-2 text-xs font-mono">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Category:</span>
+              <span className={`font-semibold uppercase tracking-wider ${
+                selectedNode.type === 'document' ? 'text-emerald-500' : selectedNode.type === 'tag' ? 'text-rose-500' : 'text-amber-500'
+              }`}>{selectedNode.type}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Node ID:</span>
+              <span className="text-slate-400 truncate max-w-[140px]">{selectedNode.id}</span>
+            </div>
             {selectedNode.filepath && (
-              <div className="flex justify-between"><span className="text-slate-500">Path</span><span className="text-slate-300 truncate ml-2">{selectedNode.filepath}</span></div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">File:</span>
+                <span className="text-slate-400 truncate ml-2 max-w-[150px]">{selectedNode.filepath}</span>
+              </div>
             )}
-            <div className="flex justify-between"><span className="text-slate-500">Connections</span><span className="text-slate-300">{
-              filteredEdges.filter(e => e.source.id === selectedNode.id || e.target.id === selectedNode.id).length
-            }</span></div>
+            <div className="flex justify-between pt-1 border-t border-slate-200 dark:border-white/5">
+              <span className="text-slate-500">Linked Nodes:</span>
+              <span className="text-emerald-500 font-bold">{
+                filteredEdges.filter(e => e.source.id === selectedNode.id || e.target.id === selectedNode.id).length
+              }</span>
+            </div>
           </div>
         </div>
       )}

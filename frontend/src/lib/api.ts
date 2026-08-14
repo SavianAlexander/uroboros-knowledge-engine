@@ -128,6 +128,9 @@ export const api = {
   fileRaw: (path: string) => fetchAPI<any>(`/file/raw?path=${encodeURIComponent(path)}`),
   fileInsights: (path: string) => fetchAPI<any>(`/file/insights?path=${encodeURIComponent(path)}`),
   pdfInfo: (path: string) => fetchAPI<any>(`/file/pdf/info?path=${encodeURIComponent(path)}`),
+  fileEntities: (path: string) => fetchAPI<any>(`/file/entities?path=${encodeURIComponent(path)}`),
+  termInsight: (term: string, context?: string, path?: string) =>
+    fetchAPI<any>('/intelligence/term-insight', { method: 'POST', body: JSON.stringify({ term, context, path }) }),
   upload: (file: File) => {
     const fd = new FormData();
     fd.append('file', file);

@@ -45,7 +45,41 @@ FILE_DOMAIN_MAPPING = {
     "tests/test_domain_backup_auth_theme.py": ["DomainBackupAuthTheme"],
     "src/core/state.py": ["DomainAdvancedFeatures"],
     "scripts/benchmark_engine.py": ["DomainAdvancedFeatures"],
-    "tests/test_domain_advanced_features.py": ["DomainAdvancedFeatures"]
+    "tests/test_domain_advanced_features.py": ["DomainAdvancedFeatures"],
+    "src/domain/code_ast_extractor.py": ["DomainCodeAST"],
+    "src/domain/ast_parser.py": ["DomainCodeAST"],
+    "src/domain/code_diff_synthesizer.py": ["DomainCodeAST"],
+    "src/domain/code_self_refactor.py": ["DomainCodeAST"],
+    "tests/test_domain_code_ast.py": ["DomainCodeAST"],
+    "src/domain/vault_merkle_tree.py": ["DomainMerkleVault"],
+    "src/domain/zk_data_masker.py": ["DomainMerkleVault"],
+    "src/domain/prompt_injection_guard.py": ["DomainMerkleVault"],
+    "src/domain/pii_privacy_guard.py": ["DomainMerkleVault"],
+    "src/domain/acl_permission_engine.py": ["DomainMerkleVault"],
+    "src/domain/crypto_audit_ledger.py": ["DomainMerkleVault"],
+    "tests/test_domain_merkle_vault.py": ["DomainMerkleVault"],
+    "src/domain/sla_circuit_breaker.py": ["DomainSLACaching"],
+    "src/domain/cache_guard.py": ["DomainSLACaching"],
+    "src/domain/streaming_token_compressor.py": ["DomainSLACaching"],
+    "src/domain/adaptive_context_compressor.py": ["DomainSLACaching"],
+    "src/domain/context_budget_allocator.py": ["DomainSLACaching"],
+    "src/domain/speculative_warmer.py": ["DomainSLACaching"],
+    "src/domain/predictive_precacher.py": ["DomainSLACaching"],
+    "tests/test_domain_sla_caching.py": ["DomainSLACaching"],
+    "src/domain/multi_agent_consensus.py": ["DomainAgentConsensus"],
+    "src/domain/multi_agent_debate.py": ["DomainAgentConsensus"],
+    "src/domain/agent_memory.py": ["DomainAgentConsensus"],
+    "src/domain/bandit_query_router.py": ["DomainAgentConsensus"],
+    "src/domain/intent_router.py": ["DomainAgentConsensus"],
+    "tests/test_domain_agent_consensus.py": ["DomainAgentConsensus"],
+    "src/domain/entropy_chunker.py": ["DomainSOTARAG"],
+    "src/domain/temporal_rag.py": ["DomainSOTARAG"],
+    "src/domain/cross_lingual_aligner.py": ["DomainSOTARAG"],
+    "src/domain/self_rag_critique.py": ["DomainSOTARAG"],
+    "src/domain/legal_accuracy_engine.py": ["DomainSOTARAG"],
+    "tests/test_domain_sota_rag.py": ["DomainSOTARAG"],
+    "src/mcp_server.py": ["DomainMCPServer"],
+    "tests/test_domain_mcp_server.py": ["DomainMCPServer"]
 }
 
 DOMAIN_TEST_MODULES = [
@@ -82,10 +116,58 @@ DOMAIN_TEST_MODULES = [
     "tests.test_domain_ocr_transcription",
     "tests.test_domain_p2p_sync",
     "tests.test_domain_backup_auth_theme",
-    "tests.test_domain_advanced_features"
+    "tests.test_domain_advanced_features",
+    "tests.test_domain_code_ast",
+    "tests.test_domain_merkle_vault",
+    "tests.test_domain_sla_caching",
+    "tests.test_domain_agent_consensus",
+    "tests.test_domain_sota_rag",
+    "tests.test_domain_mcp_server"
 ]
 
 BUG_RELATION_TAXONOMY = {
+    "DomainCodeAST": [
+        {"test": "test_01_ast_extract_classes_and_functions", "component": "src/domain/code_ast_extractor.py", "prevents": "AST extraction failure on class/function definitions"},
+        {"test": "test_02_ast_cyclomatic_complexity_calculation", "component": "src/domain/code_ast_extractor.py", "prevents": "Incorrect cyclomatic complexity scoring"},
+        {"test": "test_03_ast_call_graph_dependency_extraction", "component": "src/domain/ast_parser.py", "prevents": "Missing caller-callee call graph edges"},
+        {"test": "test_04_angle_corrupt_syntax_payload_handling", "component": "src/domain/code_ast_extractor.py", "prevents": "Parser crash on corrupt or invalid syntax payloads"},
+        {"test": "test_08_code_diff_synthesizer_and_refactor", "component": "src/domain/code_diff_synthesizer.py", "prevents": "Malformed git diff patch or HTML view generation"}
+    ],
+    "DomainMerkleVault": [
+        {"test": "test_01_merkle_tree_root_generation", "component": "src/domain/vault_merkle_tree.py", "prevents": "Non-deterministic Merkle root computation across documents"},
+        {"test": "test_02_merkle_inclusion_proof_and_verification", "component": "src/domain/vault_merkle_tree.py", "prevents": "Cryptographic audit proof verification failure"},
+        {"test": "test_03_merkle_tamper_detection", "component": "src/domain/vault_merkle_tree.py", "prevents": "Silent undetected vault document tampering"},
+        {"test": "test_04_zk_data_masker_and_pii_sanitization", "component": "src/domain/zk_data_masker.py", "prevents": "PII token leakage (SSN, credit card, email, API key)"},
+        {"test": "test_05_prompt_injection_defense_matrix", "component": "src/domain/prompt_injection_guard.py", "prevents": "Adversarial prompt injection and system override attacks"}
+    ],
+    "DomainSLACaching": [
+        {"test": "test_01_sla_circuit_breaker_normal_execution", "component": "src/domain/sla_circuit_breaker.py", "prevents": "Primary SLA execution regression"},
+        {"test": "test_02_sla_circuit_breaker_tripping_and_fallback", "component": "src/domain/sla_circuit_breaker.py", "prevents": "SLA timeout violation without automatic fallback"},
+        {"test": "test_04_cache_guard_lru_invalidation_and_hashes", "component": "src/domain/cache_guard.py", "prevents": "Stale vector embedding cache persistence"},
+        {"test": "test_05_streaming_token_compressor_budget", "component": "src/domain/streaming_token_compressor.py", "prevents": "LLM token throughput degradation from filler words"},
+        {"test": "test_07_context_budget_allocation_ratios", "component": "src/domain/context_budget_allocator.py", "prevents": "Context window token budget overflow"}
+    ],
+    "DomainAgentConsensus": [
+        {"test": "test_01_orchestrate_multi_agent_consensus", "component": "src/domain/multi_agent_consensus.py", "prevents": "Multi-agent persona consensus synthesis failure"},
+        {"test": "test_02_multi_agent_debate_synthesis", "component": "src/domain/multi_agent_debate.py", "prevents": "Adversarial context debate failure"},
+        {"test": "test_03_agent_memory_crud_and_episodic_search", "component": "src/domain/agent_memory.py", "prevents": "Agent episodic memory persistence and recall loss"},
+        {"test": "test_04_bandit_query_router_thompson_sampling", "component": "src/domain/bandit_query_router.py", "prevents": "Sub-optimal retrieval pipeline exploration routing"},
+        {"test": "test_05_intent_router_classification_and_pipeline", "component": "src/domain/intent_router.py", "prevents": "Query intent misclassification and routing errors"}
+    ],
+    "DomainSOTARAG": [
+        {"test": "test_01_entropy_semantic_boundary_chunking", "component": "src/domain/entropy_chunker.py", "prevents": "Chunking boundaries splitting cohesive topic sentences"},
+        {"test": "test_03_temporal_exponential_decay_scoring", "component": "src/domain/temporal_rag.py", "prevents": "Obsolete documents outranking fresh authoritative versions"},
+        {"test": "test_04_cross_lingual_query_alignment", "component": "src/domain/cross_lingual_aligner.py", "prevents": "Multilingual search term mismatch against English vault"},
+        {"test": "test_05_self_rag_critique_rubric_scoring", "component": "src/domain/self_rag_critique.py", "prevents": "Unhallucinated grounding failure in Self-RAG"},
+        {"test": "test_06_legal_accuracy_engine_sanitization_and_nfc", "component": "src/domain/legal_accuracy_engine.py", "prevents": "FTS5 syntax injection in legal queries"}
+    ],
+    "DomainMCPServer": [
+        {"test": "test_01_mcp_list_tools_schema_contracts", "component": "src/mcp_server.py", "prevents": "MCP tool schema contract drift or missing required parameters"},
+        {"test": "test_02_mcp_call_tool_neuro_search_success", "component": "src/mcp_server.py", "prevents": "MCP neuro_search tool execution failure"},
+        {"test": "test_04_mcp_call_tool_unknown_tool_error", "component": "src/mcp_server.py", "prevents": "Server crash on unregistered MCP tool call"},
+        {"test": "test_06_mcp_list_resources_and_read_resource", "component": "src/mcp_server.py", "prevents": "MCP vault stats and recent doc resource retrieval failure"},
+        {"test": "test_09_mcp_http_error_handling", "component": "src/mcp_server.py", "prevents": "Unhandled backend HTTP exception crash in MCP server"}
+    ],
     "DomainAdvancedFeatures": [
         {"test": "test_01_cosine_similarity_edge_cases", "component": "src/core/state.py", "prevents": "Vector cosine similarity math anomalies or zero division"},
         {"test": "test_02_semantic_query_cache", "component": "src/core/state.py", "prevents": "Semantic query cache hit / threshold retrieval failure"},

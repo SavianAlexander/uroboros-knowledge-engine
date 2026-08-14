@@ -2,7 +2,7 @@
 """
 Neuro Knowledge Engine CLI Bridge (Enterprise Tri-Engine Dominance Suite)
 Dedicated zero-dependency CLI bridge for querying local RAG brain, ingesting documents,
-executing HyDE query expansion, and auditing vault stats.
+executing HyDE query expansion, auditing vault stats, and syncing Tududi task roadmaps.
 
 Standard Library only (Ponytail principle).
 """
@@ -11,7 +11,15 @@ import sys
 import os
 import json
 import hashlib
+import re
 import argparse
+
+# Ensure UTF-8 output encoding resilience across Windows consoles
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # Add project root directory to sys.path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
@@ -158,16 +166,62 @@ def ingest_git_history(limit: int = 20):
             f.write(summary_md)
 
         from know import index_directory
-        index_directory(vault_git_dir)
+        count = index_directory(vault_git_dir)
 
         return json.dumps({
             "status": "success",
             "commits_ingested": len(commits),
+            "indexed_chunks": count,
             "vault_file": target_file
         }, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
 
+def ingest_tududi_roadmap():
+    """Export Tududi task ledger and ingest into local Neuro Knowledge Engine."""
+    try:
+        scripts_dir = os.path.dirname(__file__)
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        import tududi_bridge
+        exp_res = json.loads(tududi_bridge.export_roadmap_markdown())
+        roadmap_file = exp_res.get("file_path")
+        
+        from know import index_directory
+        vault_roadmap_dir = os.path.dirname(roadmap_file)
+        indexed_count = index_directory(vault_roadmap_dir)
+        
+        return json.dumps({
+            "status": "success",
+            "roadmap_file": roadmap_file,
+            "indexed_count": indexed_count,
+            "message": "Tududi roadmap indexed into local Neuro vector brain."
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+def export_plan_to_note(title: str, content: str):
+    """Save an engineering flight plan or architecture report into vault notes."""
+    try:
+        slug = re.sub(r'[^a-zA-Z0-9]+', '_', title.lower()).strip('_')[:40]
+        notes_dir = os.path.join(project_root, "vault", "notes")
+        os.makedirs(notes_dir, exist_ok=True)
+        note_file = os.path.join(notes_dir, f"{slug}.md")
+        
+        with open(note_file, "w", encoding="utf-8") as f:
+            f.write(f"# {title}\n\n{content}\n")
+            
+        from know import index_directory
+        index_directory(notes_dir)
+        
+        return json.dumps({
+            "status": "success",
+            "title": title,
+            "note_path": note_file,
+            "message": "Note indexed into Neuro Knowledge Engine."
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
 
 def self_test():
     """Run assert-based self-test suite for neuro_bridge.py."""
@@ -204,6 +258,14 @@ def self_test():
     assert res_git.get("status") in ["success", "notice"], "ingest_git_history failed"
     print("  [Pass] ingest_git_history assertion clean")
 
+    res_road = json.loads(ingest_tududi_roadmap())
+    assert res_road.get("status") == "success", f"ingest_tududi_roadmap failed: {res_road}"
+    print("  [Pass] ingest_tududi_roadmap assertion clean")
+
+    res_note = json.loads(export_plan_to_note("Self Test Note", "Sample engineering note content"))
+    assert res_note.get("status") == "success", f"export_plan_to_note failed: {res_note}"
+    print("  [Pass] export_plan_to_note assertion clean")
+
     print("Self-Test Complete: ALL ASSERTIONS PASSED (100% Success)")
     return 0
 
@@ -231,6 +293,12 @@ def main():
     git_parser = subparsers.add_parser("ingest_git_history", help="Extract and index recent git commits into vault")
     git_parser.add_argument("--limit", type=int, default=20, help="Number of recent commits to index")
 
+    subparsers.add_parser("ingest_tududi_roadmap", help="Export and index Tududi roadmap into Neuro vector brain")
+    
+    note_parser = subparsers.add_parser("export_note", help="Save engineering note into vault")
+    note_parser.add_argument("--title", required=True, help="Note title")
+    note_parser.add_argument("--content", required=True, help="Note markdown content")
+
     subparsers.add_parser("stats", help="Get vault statistics")
     subparsers.add_parser("self_test", help="Run assertion self-tests")
 
@@ -254,6 +322,10 @@ def main():
         print(vacuum_db_cli())
     elif args.command == "ingest_git_history":
         print(ingest_git_history(args.limit))
+    elif args.command == "ingest_tududi_roadmap":
+        print(ingest_tududi_roadmap())
+    elif args.command == "export_note":
+        print(export_plan_to_note(args.title, args.content))
     elif args.command == "self_test":
         sys.exit(self_test())
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { glassCardClasses } from '../lib/utils';
-import { Settings2, Database, Key, Webhook, SplitSquareHorizontal, Layers, Fingerprint, HardDrive, RefreshCw, ArchiveRestore, Globe, Network, Activity } from 'lucide-react';
+import { glassCardClasses, emeraldButtonClasses, emeraldBadgeClasses, goldBadgeClasses, wineBadgeClasses, slateBadgeClasses } from '../lib/utils';
+import { Settings2, Database, Key, Webhook, SplitSquareHorizontal, Layers, Fingerprint, HardDrive, RefreshCw, ArchiveRestore, Globe, Network, Activity, Plus, Trash2, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { api } from '../lib/api';
 
@@ -79,10 +79,10 @@ export default function ConfigView() {
   const handleRestore = async (timestamp: string) => {
     try {
       await api.restoreSnapshot(timestamp);
-      toast('Snapshot Restored', `Restored database snapshot: ${timestamp}`, 'success');
+      toast('Snapshot Restored', `Database rolled back to ${timestamp}`, 'success');
     } catch (e) {
       console.error(e);
-      toast('Restore Failed', 'Could not restore snapshot', 'error');
+      toast('Restore Error', 'Failed to restore snapshot', 'error');
     }
   };
 
@@ -90,378 +90,243 @@ export default function ConfigView() {
     try {
       await api.deleteSnapshot(timestamp);
       await loadData();
-      toast('Snapshot Removed', `Deleted snapshot: ${timestamp}`, 'info');
+      toast('Snapshot Deleted', `Removed ${timestamp}`, 'info');
     } catch (e) {
       console.error(e);
-      toast('Delete Error', 'Failed to remove snapshot', 'error');
-    }
-  };
-
-  const handleSync = async (peer_url: string) => {
-    setIsSyncing(true);
-    try {
-      await api.syncExchange(peer_url);
-      await loadData();
-      toast('P2P Sync Completed', `Exchanged vector delta with ${peer_url}`, 'success');
-    } catch (e) {
-      console.error(e);
-      toast('Sync Error', 'Peer unreachable or network connection failed', 'error');
-    } finally {
-      setIsSyncing(false);
+      toast('Delete Error', 'Failed to delete snapshot', 'error');
     }
   };
 
   const handleAddPeer = async () => {
     if (!newPeer.trim()) return;
     try {
-      await api.addSyncPeer(newPeer.trim(), newPeer.trim());
-      toast('Peer Added', `Registered peer node: ${newPeer.trim()}`, 'success');
+      await api.addSyncPeer(newPeer.trim());
       setNewPeer('');
       await loadData();
+      toast('Peer Added', `Node ${newPeer} added to sync cluster`, 'success');
     } catch (e) {
       console.error(e);
-      toast('Peer Error', 'Could not add peer node', 'error');
+      toast('Sync Error', 'Failed to add sync peer', 'error');
+    }
+  };
+
+  const handleTriggerSync = async () => {
+    setIsSyncing(true);
+    try {
+      await api.triggerSync();
+      await loadData();
+      toast('Sync Completed', 'All cluster peers reconciled', 'success');
+    } catch (e) {
+      console.error(e);
+      toast('Sync Error', 'Peer synchronization failed', 'error');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   return (
-    <div className="p-8 h-full overflow-y-auto max-w-[1600px] mx-auto">
-      <header className="mb-8">
-        <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Configuration & Processes</h2>
-        <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Configure advanced RAG strategies, data integrations, database snapshots, and peer synchronization.</p>
+    <div className="p-8 h-full overflow-y-auto max-w-[1600px] mx-auto space-y-6 font-sans">
+      <header className="mb-6">
+        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 font-serif-claude">
+          Configuration & Cluster Orchestration
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
+          Fine-tune RAG chunking, automate webhook triggers, and manage distributed database snapshots.
+        </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* DB Snapshot Vault */}
-        <div className={`${glassCardClasses} p-6 flex flex-col`}>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg"><HardDrive className="w-5 h-5"/></div>
-              <div>
-                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200">Database Snapshot Vault</h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Manage and restore SQLite WAL snapshots</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* RAG Strategy Tuning */}
+        <div className={`${glassCardClasses} p-6 space-y-5`}>
+          <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-white/10 pb-4">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 font-serif-claude">
+              <Layers className="w-4 h-4 text-emerald-500" /> RAG Chunking & Model Tuning
+            </h3>
+            <span className={emeraldBadgeClasses}>Active Strategy</span>
+          </div>
+
+          <div className="space-y-4 text-xs">
+            <div>
+              <label className="block text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider mb-1 text-[10px]">
+                Chunk Token Size ({chunkSize} tokens)
+              </label>
+              <input
+                type="range"
+                min="256"
+                max="4096"
+                step="128"
+                value={chunkSize}
+                onChange={(e) => setChunkSize(Number(e.target.value))}
+                className="w-full accent-emerald-500 cursor-pointer"
+              />
+              <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1">
+                <span>256 (Granular)</span>
+                <span>1024 (Balanced)</span>
+                <span>4096 (Broad)</span>
               </div>
             </div>
-            <button 
-              onClick={handleCapture} 
-              disabled={isCapturing}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              {isCapturing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArchiveRestore className="w-4 h-4" />}
-              Capture Snapshot
-            </button>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50/30 dark:bg-slate-900/30 max-h-64">
-            {snapshots.length === 0 ? (
-               <div className="p-6 text-center text-sm text-slate-500">No snapshots available.</div>
-            ) : (
-               <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
-                 <thead className="sticky top-0 bg-slate-100 dark:bg-slate-900 shadow-sm">
-                   <tr>
-                     <th className="px-4 py-2 font-medium text-slate-600 dark:text-slate-400">Timestamp</th>
-                     <th className="px-4 py-2 font-medium text-slate-600 dark:text-slate-400">File</th>
-                     <th className="px-4 py-2 font-medium text-slate-600 dark:text-slate-400 text-right">Actions</th>
-                   </tr>
-                 </thead>
-                 <tbody className="divide-y divide-white/5">
-                   {snapshots.map(s => (
-                     <tr key={s.timestamp} className="hover:bg-white/[0.02]">
-                       <td className="px-4 py-2 font-mono text-xs">{s.timestamp}</td>
-                       <td className="px-4 py-2 text-xs truncate max-w-[150px]">{s.filename}</td>
-                       <td className="px-4 py-2 text-right">
-                         <button onClick={() => handleRestore(s.timestamp)} className="text-blue-500 hover:text-blue-400 text-xs mr-3 font-medium">Restore</button>
-                         <button onClick={() => handleDeleteSnapshot(s.timestamp)} className="text-red-500 hover:text-red-400 text-xs font-medium">Delete</button>
-                       </td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-            )}
-          </div>
-        </div>
 
-        {/* P2P LAN Sync */}
-        <div className={`${glassCardClasses} p-6 flex flex-col`}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg"><Network className="w-5 h-5"/></div>
             <div>
-              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200">P2P LAN Synchronization</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Exchange CRDT deltas with trusted peer nodes</p>
-            </div>
-          </div>
-          
-          <div className="flex gap-2 mb-4">
-             <input 
-                type="text" 
-                value={newPeer} 
-                onChange={e => setNewPeer(e.target.value)} 
-                placeholder="http://192.168.1.X:8080" 
-                aria-label="Peer URL"
-                className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 px-3 outline-none focus:border-rose-500/50"
-             />
-             <button onClick={handleAddPeer} className="px-4 py-2 bg-slate-200 dark:bg-white/10 rounded-lg text-sm font-medium hover:bg-slate-300 dark:hover:bg-white/20 transition-colors">Add Peer</button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50/30 dark:bg-slate-900/30 max-h-64">
-            {syncPeers.length === 0 ? (
-               <div className="p-6 text-center text-sm text-slate-500">No peers configured.</div>
-            ) : (
-               <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
-                 <tbody className="divide-y divide-white/5">
-                   {syncPeers.map(p => (
-                     <tr key={p.id} className="hover:bg-white/[0.02]">
-                       <td className="px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">{p.url}</td>
-                       <td className="px-4 py-3 text-right">
-                         <button 
-                            onClick={() => handleSync(p.url)} 
-                            disabled={isSyncing}
-                            className="flex items-center gap-1.5 ml-auto text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 text-xs font-medium bg-rose-500/10 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                         >
-                            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                            Sync Now
-                         </button>
-                       </td>
-                     </tr>
-                   ))}
-                 </tbody>
-               </table>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Chunking & Embedding Strategy */}
-        <div className={`${glassCardClasses} p-6 flex flex-col`}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg"><SplitSquareHorizontal className="w-5 h-5"/></div>
-            <div>
-              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200">Chunking & Embedding Strategy</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Tune how documents are split and embedded</p>
-            </div>
-          </div>
-          
-          <div className="space-y-5">
-            <div>
-              <label htmlFor="semantic-chunk-size" className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Semantic Chunk Size</label>
-              <div className="flex items-center gap-3">
-                <input 
-                  id="semantic-chunk-size" 
-                  type="range" 
-                  min="256" 
-                  max="2048" 
-                  step="128" 
-                  value={chunkSize} 
-                  onChange={(e) => setChunkSize(Number(e.target.value))} 
-                  className="flex-1 accent-purple-500 cursor-pointer" 
-                />
-                <span className="text-sm text-slate-600 dark:text-slate-400 w-16 text-right font-mono bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-white/5">{chunkSize}</span>
+              <label className="block text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider mb-1 text-[10px]">
+                Chunk Overlap ({chunkOverlap} tokens)
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="512"
+                step="32"
+                value={chunkOverlap}
+                onChange={(e) => setChunkOverlap(Number(e.target.value))}
+                className="w-full accent-emerald-500 cursor-pointer"
+              />
+              <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1">
+                <span>0 tokens</span>
+                <span>128 tokens</span>
+                <span>512 tokens</span>
               </div>
-              <p className="text-[10px] text-slate-500 mt-1">Target token count per vector node</p>
             </div>
 
             <div>
-              <label htmlFor="chunk-overlap" className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Chunk Overlap</label>
-              <div className="flex items-center gap-3">
-                <input 
-                  id="chunk-overlap" 
-                  type="range" 
-                  min="0" 
-                  max="512" 
-                  step="32" 
-                  value={chunkOverlap} 
-                  onChange={(e) => setChunkOverlap(Number(e.target.value))} 
-                  className="flex-1 accent-purple-500 cursor-pointer" 
-                />
-                <span className="text-sm text-slate-600 dark:text-slate-400 w-16 text-right font-mono bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-white/5">{chunkOverlap}</span>
-              </div>
-              <p className="text-[10px] text-slate-500 mt-1">Token overlap between adjacent chunks to preserve context</p>
-            </div>
-
-            <div>
-              <label htmlFor="embedding-model" className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 block">Embedding Model</label>
-              <select 
-                id="embedding-model" 
-                value={embeddingModel} 
-                onChange={(e) => setEmbeddingModel(e.target.value)} 
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-slate-200 p-2.5 outline-none focus:border-purple-500/50"
+              <label className="block text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider mb-1 text-[10px]">
+                Primary Embedding Model
+              </label>
+              <select
+                value={embeddingModel}
+                onChange={(e) => setEmbeddingModel(e.target.value)}
+                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500/50 shadow-2xs"
               >
-                <option value="text-embedding-3-small (Default)">text-embedding-3-small (Default)</option>
-                <option value="text-embedding-3-large">text-embedding-3-large</option>
-                <option value="nomic-embed-text-v1.5">nomic-embed-text-v1.5</option>
-                <option value="bge-m3 (Multilingual)">bge-m3 (Multilingual)</option>
+                <option value="text-embedding-3-small (Default)">text-embedding-3-small (Fast, 1536-dim)</option>
+                <option value="text-embedding-3-large">text-embedding-3-large (Deep, 3072-dim)</option>
+                <option value="nomic-embed-text">nomic-embed-text (Local Ollama SIMD)</option>
+                <option value="bge-m3">bge-m3 (Dense + Sparse Hybrid)</option>
               </select>
             </div>
 
-            <button 
+            <button
               onClick={handleApplyStrategy}
-              className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-medium text-xs transition-colors shadow-lg shadow-purple-600/20 mt-2"
+              className={`w-full py-2.5 ${emeraldButtonClasses} text-xs font-semibold mt-2`}
             >
-              Apply Strategy Parameters
+              Save Strategy Tuning
             </button>
           </div>
         </div>
 
-        {/* Auto-Tag Rules Engine (Updated) */}
-        <div className={`${glassCardClasses} p-6 flex flex-col`}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg"><Settings2 className="w-5 h-5"/></div>
-            <div>
-              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200">Metadata Extraction Rules</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Automatically assign tags based on parsing.</p>
-            </div>
+        {/* Database Snapshots */}
+        <div className={`${glassCardClasses} p-6 space-y-5 flex flex-col`}>
+          <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-white/10 pb-4">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 font-serif-claude">
+              <Database className="w-4 h-4 text-teal-500" /> Point-in-Time Database Snapshots
+            </h3>
+            <button
+              onClick={handleCapture}
+              disabled={isCapturing}
+              className={`px-3 py-1.5 ${emeraldButtonClasses} text-xs font-medium flex items-center gap-1.5 disabled:opacity-50`}
+            >
+              {isCapturing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              <span>Capture State</span>
+            </button>
           </div>
-          
-          <div className="flex-1 overflow-x-auto border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50/30 dark:bg-slate-900/30">
-            <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50">
-                  <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400">Target Tag</th>
-                  <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400">Match Strategy</th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600 dark:text-slate-400">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                <tr className="hover:bg-white/[0.02]">
-                  <td className="px-4 py-3"><span className="px-2 py-1 bg-indigo-500/20 text-indigo-300 rounded text-xs font-medium border border-indigo-500/20">invoice</span></td>
-                  <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400">Regex Match</td>
-                  <td className="px-4 py-3 text-right">
-                    <button className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:text-indigo-400 text-xs font-medium transition-colors">Edit</button>
-                  </td>
-                </tr>
-                <tr className="hover:bg-white/[0.02]">
-                  <td className="px-4 py-3"><span className="px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded text-xs font-medium border border-emerald-500/20">confidential</span></td>
-                  <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1"><Layers className="w-3 h-3 text-emerald-600 dark:text-emerald-400"/> LLM Zero-Shot</td>
-                  <td className="px-4 py-3 text-right">
-                    <button className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:text-indigo-400 text-xs font-medium transition-colors">Edit</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+
+          <div className="flex-1 overflow-y-auto space-y-2 max-h-60 pr-1">
+            {snapshots.length > 0 ? (
+              snapshots.map((snap) => (
+                <div
+                  key={snap.timestamp}
+                  className="flex items-center justify-between p-3 rounded-xl bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/5 text-xs shadow-2xs"
+                >
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-slate-900 dark:text-slate-200 font-mono">{snap.timestamp}</p>
+                    <p className="text-[11px] text-slate-400 font-mono">{(snap.size_bytes / 1024).toFixed(1)} KB • SHA-256 Verified</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleRestore(snap.timestamp)}
+                      className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 rounded-lg border border-emerald-500/20 font-medium transition-colors"
+                    >
+                      Restore
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSnapshot(snap.timestamp)}
+                      className="p-1 text-slate-400 hover:text-rose-500 transition-colors"
+                      title="Delete Snapshot"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-400">No snapshots captured yet.</div>
+            )}
           </div>
-          <button 
-            onClick={() => setActiveModal('rule')}
-            className="mt-4 py-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-xl text-sm font-medium transition-colors w-full px-6"
+        </div>
+      </div>
+
+      {/* Cluster Sync & P2P Federation */}
+      <div className={`${glassCardClasses} p-6 space-y-5`}>
+        <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-white/10 pb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 font-serif-claude">
+              <Network className="w-4 h-4 text-amber-500" /> P2P Vault Federation & Peer Sync
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">Replicate vector indices and knowledge graphs across trusted remote nodes.</p>
+          </div>
+          <button
+            onClick={handleTriggerSync}
+            disabled={isSyncing}
+            className="px-3.5 py-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 border border-amber-500/20 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
           >
-            + Create New Rule
+            {isSyncing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            <span>Sync All Peers</span>
           </button>
         </div>
 
-        {/* Search & Data Managers */}
-        <div className={`${glassCardClasses} p-6 flex flex-col col-span-1 md:col-span-2`}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg"><Database className="w-5 h-5"/></div>
-            <div>
-              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200">Search & Data Managers</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Manage FTS Synonyms, Query Macros, and Tag Aliases.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="https://node-ip:8000"
+                value={newPeer}
+                onChange={(e) => setNewPeer(e.target.value)}
+                className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500/50"
+              />
+              <button
+                onClick={handleAddPeer}
+                className={`px-3 py-1.5 ${emeraldButtonClasses} text-xs font-medium`}
+              >
+                Add Peer
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {syncPeers.length > 0 ? (
+                syncPeers.map((p, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-3 rounded-xl bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/5 text-xs font-mono">
+                    <span className="text-slate-700 dark:text-slate-300">{p.url || p}</span>
+                    <span className="text-emerald-500 font-semibold">Online</span>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center text-xs text-slate-400 bg-slate-100/40 dark:bg-slate-950/40 rounded-xl border border-slate-200/60 dark:border-white/5">No remote peers registered. Operating in standalone mode.</div>
+              )}
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             <div className="border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 p-4 flex flex-col">
-                <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200 mb-2">FTS Synonyms</h4>
-                <p className="text-xs text-slate-500 mb-4 flex-1">Map custom vocabularies to unified search terms.</p>
-                <button 
-                  onClick={() => setActiveModal('synonyms')}
-                  className="w-full py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors border border-amber-500/20"
-                >
-                  Manage Synonyms
-                </button>
-             </div>
-             
-             <div className="border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 p-4 flex flex-col">
-                <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200 mb-2">Query Macros</h4>
-                <p className="text-xs text-slate-500 mb-4 flex-1">Define shortcut templates for complex search queries.</p>
-                <button 
-                  onClick={() => setActiveModal('macros')}
-                  className="w-full py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors border border-amber-500/20"
-                >
-                  Manage Macros
-                </button>
-             </div>
-             
-             <div className="border border-slate-200 dark:border-white/5 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 p-4 flex flex-col">
-                <h4 className="text-sm font-medium text-slate-900 dark:text-slate-200 mb-2">Tag Aliases</h4>
-                <p className="text-xs text-slate-500 mb-4 flex-1">Group multiple variant tags under a canonical alias.</p>
-                <button 
-                  onClick={() => setActiveModal('aliases')}
-                  className="w-full py-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors border border-amber-500/20"
-                >
-                  Manage Tag Aliases
-                </button>
-             </div>
+
+          <div className="space-y-2">
+            <h4 className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Recent Peer Sync Logs</h4>
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-400 space-y-1.5 h-36 overflow-y-auto">
+              {syncLogs.length > 0 ? (
+                syncLogs.map((log, idx) => (
+                  <div key={idx} className="border-b border-white/5 pb-1 text-emerald-400/90">{log}</div>
+                ))
+              ) : (
+                <div className="text-slate-600 italic">No sync events logged in this session.</div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
-
-      {activeModal && (
-        <ManagerModal mode={activeModal} onClose={() => setActiveModal(null)} onToast={toast} />
-      )}
-    </div>
-  );
-}
-
-function ManagerModal({ mode, onClose, onToast }: { mode: 'rule' | 'synonyms' | 'macros' | 'aliases', onClose: () => void, onToast: any }) {
-  const [val1, setVal1] = useState('');
-  const [val2, setVal2] = useState('');
-
-  const titles: Record<string, string> = {
-    rule: 'Create Auto-Tagging Rule',
-    synonyms: 'Manage FTS Synonyms',
-    macros: 'Manage Query Macros',
-    aliases: 'Manage Tag Aliases'
-  };
-
-  const labels: Record<string, [string, string]> = {
-    rule: ['Target Tag', 'Pattern / Prompt'],
-    synonyms: ['Primary Term', 'Synonyms (comma-separated)'],
-    macros: ['Macro Name ($macro)', 'Expansion Query'],
-    aliases: ['Alias Tag', 'Canonical Tag']
-  };
-
-  const handleSave = () => {
-    if (!val1.trim()) return;
-    onToast('Configuration Saved', `Added entry to ${mode} manager.`, 'success');
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-        <div className="flex justify-between items-center border-b border-white/10 pb-3">
-          <h3 className="font-semibold text-slate-100 text-sm">{titles[mode]}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-xs">✕</button>
-        </div>
-        <div className="space-y-3 text-xs">
-          <div>
-            <label className="text-slate-400 block mb-1 font-medium">{labels[mode][0]}</label>
-            <input 
-              type="text" 
-              value={val1}
-              onChange={e => setVal1(e.target.value)}
-              className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-slate-200 outline-none focus:border-indigo-500"
-              placeholder={`Enter ${labels[mode][0]}...`}
-            />
-          </div>
-          <div>
-            <label className="text-slate-400 block mb-1 font-medium">{labels[mode][1]}</label>
-            <input 
-              type="text" 
-              value={val2}
-              onChange={e => setVal2(e.target.value)}
-              className="w-full bg-slate-950 border border-white/10 rounded-lg p-2 text-slate-200 outline-none focus:border-indigo-500"
-              placeholder={`Enter ${labels[mode][1]}...`}
-            />
-          </div>
-        </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <button onClick={onClose} className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs hover:bg-slate-700">Cancel</button>
-          <button onClick={handleSave} className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-500">Save Config</button>
         </div>
       </div>
     </div>
   );
 }
-

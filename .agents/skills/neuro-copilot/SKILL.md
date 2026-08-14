@@ -34,49 +34,59 @@ The skill uses 3 modular, zero-dependency Python CLI bridge scripts located in `
    - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py query --text "..."`: Query local RAG brain with HyDE expansion.
    - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py ingest --path "..."`: Ingest document or directory into vault.
    - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py ingest_git_history --limit 20`: Index recent git commit provenance into vault.
+   - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py ingest_tududi_roadmap`: Export and index live Tududi roadmap into vector vault.
+   - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py export_note --title "..." --content "..."`: Save architecture note into vault.
    - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py stats`: Audit knowledge vault size & chunk metrics.
    - `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py self_test`: Run Neuro bridge self-tests.
 
 2. **Tududi Task Master Bridge (`scripts/tududi_bridge.py`)**:
    - `python .agents/skills/neuro-copilot/scripts/tududi_bridge.py list`: Fetch active Tududi tasks for Project #13.
    - `python .agents/skills/neuro-copilot/scripts/tududi_bridge.py metrics`: Query project completion stats & audit metrics.
+   - `python .agents/skills/neuro-copilot/scripts/tududi_bridge.py burndown`: Render ASCII burndown meter and task velocity.
+   - `python .agents/skills/neuro-copilot/scripts/tududi_bridge.py export_roadmap`: Generate structured Markdown roadmap for vault indexing.
    - `python .agents/skills/neuro-copilot/scripts/tududi_bridge.py self_test`: Run Tududi bridge self-tests.
 
 3. **GitHub & Git Provenance Bridge (`scripts/github_bridge.py`)**:
-   - `python .agents/skills/neuro-copilot/scripts/github_bridge.py copilot --prompt "..."`: Synthesize full Engineering Flight Plan.
+   - `python .agents/skills/neuro-copilot/scripts/github_bridge.py copilot --prompt "..." [--execute]`: Synthesize and optionally 1-click initialize Engineering Flight Plan.
    - `python .agents/skills/neuro-copilot/scripts/github_bridge.py tri_engine_health`: Run 4-engine unified health scorecard.
    - `python .agents/skills/neuro-copilot/scripts/github_bridge.py auto_commit --scope feat --desc "..."`: Staged-files SHA-256 commit with provenance.
-   - `python .agents/skills/neuro-copilot/scripts/github_bridge.py dashboard`: Render executive terminal dashboard.
+   - `python .agents/skills/neuro-copilot/scripts/github_bridge.py dashboard`: Render executive terminal dashboard with live Tududi burndown meter.
    - `python .agents/skills/neuro-copilot/scripts/github_bridge.py run_full_pipeline`: 1-click full Tri-Engine pipeline pass.
 
 ### Comprehensive Tri-Engine Command Matrix
 
 | Command | Subcommand | Purpose |
 | :--- | :--- | :--- |
-| **1. Flight Plan Generator** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py copilot --prompt "..."` | Synthesize developer intent into structured engineering plan using local brain. |
+| **1. Flight Plan Generator** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py copilot --prompt "..." [--execute]` | Synthesize developer intent into structured engineering plan and 1-click initialize branch. |
 | **2. Tri-Engine Health** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py tri_engine_health` | Unified diagnostic across Neuro, Tududi, GitHub, and Architecture Doctor. |
-| **3. Auto Commit Provenance** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py auto_commit --scope S --desc D` | Staged-files Merkle tree digest calculation and auto-commit with task tag. |
-| **4. Subagent Prompt Builder** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py format_agent_prompt --task T` | Format standardized system prompt for autonomous subagent delegation. |
-| **5. Executive Dashboard** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py dashboard` | Render ASCII terminal dashboard summarizing git state, `gh` auth, hooks, & CI workflows. |
-| **6. Full Pipeline Pass** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py run_full_pipeline` | Execute 1-click full Tri-Engine pipeline (dashboard -> health -> diff audit -> bloat -> sec -> conflict -> self test -> domain test). |
-| **7. Health Check** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py check_health` | Audit git status, `gh` auth, active PRs, issues, git hooks, CI workflows, and CI runs. |
-| **8. Issue Sync** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py sync_issues` | Fetch open GitHub Issues formatted as Tududi Task import JSON. |
-| **9. CI Diagnosis** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py diagnose_ci [--run-id ID]` | Auto-detect failed Actions runs, extract tracebacks, & build `neuro_search` query. |
-| **10. Provenance Tag** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py provenance_tag --scope S --desc D --task T` | Compute SHA-256 hash of staged files & format executive commit string. |
-| **11. PR Automation** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py create_pr --title T --task T --hash H` | Generate & open a Pull Request with embedded Tududi checklists. |
-| **12. Hook Guard** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py install_hooks` | Install `.git/hooks/commit-msg` guard enforcing Tududi/Neuro provenance tags. |
-| **13. CI Workflow Setup** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py install_ci_workflow` | Generate `.github/workflows/neuro_copilot_ci.yml` for GitHub Actions. |
-| **14. PR Diff Security Audit** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py audit_pr_diff [--pr PR_NUM]` | Scan diffs for leaked secrets, anti-patterns, & `AGENTS.md` compliance. |
-| **15. Repo Topology Map** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py repo_map` | Discover workspace git remotes and submodules. |
-| **16. Conflict Analyzer** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py resolve_conflicts` | Scan working tree for git conflict markers (`<<<<<<<`) and extract RAG context. |
-| **17. History Formatter** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py format_history [--base B]` | Aggregate unpushed commits into a single provenance-tagged commit message. |
-| **18. Architecture Mermaid** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py export_architecture_mermaid` | Generate Mermaid JS codebase architecture diagram (`graph TD`). |
-| **19. Benchmark Audit** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py benchmark_audit` | Measure domain test duration and performance metrics. |
-| **20. Skill Health Audit** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py audit_skills` | Validate YAML frontmatter & SKILL.md integrity across all skills. |
-| **21. Dependency Security** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py audit_security_dependencies` | Scan `requirements.txt` and `package.json` for unpinned dependencies or risks. |
-| **22. Bloat Detector** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py detect_bloat` | Audit Python codebase for deep nesting (>=5 levels) & over-engineering. |
-| **23. Release Synthesizer** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py generate_release_notes [--tag T] [--publish]` | Format Markdown release notes & optionally publish GitHub Release (`gh release create`). |
-| **24. Bridge Self-Test** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py self_test` | Run zero-dependency assert-based unit tests for all CLI bridge functions. |
+| **3. Live Burndown Dashboard** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py dashboard` | Render ASCII terminal dashboard with live Tududi progress bar, git state, and CI workflows. |
+| **4. Tududi Burndown Meter** | `python .agents/skills/neuro-copilot/scripts/tududi_bridge.py burndown` | Render real-time ASCII completion meter and task ratio. |
+| **5. Roadmap RAG Ingestion** | `python .agents/skills/neuro-copilot/scripts/neuro_bridge.py ingest_tududi_roadmap` | Ingest Tududi sprint backlog and roadmaps into local vector brain. |
+| **6. Auto Commit Provenance** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py auto_commit --scope S --desc D` | Staged-files Merkle tree digest calculation and auto-commit with task tag. |
+| **7. Subagent Prompt Builder** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py format_agent_prompt --task T` | Format standardized system prompt for autonomous subagent delegation. |
+| **8. Full Pipeline Pass** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py run_full_pipeline` | Execute 1-click full Tri-Engine pipeline (dashboard -> health -> diff audit -> bloat -> sec -> conflict -> self test -> domain test). |
+| **9. Health Check** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py check_health` | Audit git status, `gh` auth, active PRs, issues, git hooks, CI workflows, and CI runs. |
+| **10. Issue Sync** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py sync_issues` | Fetch open GitHub Issues formatted as Tududi Task import JSON. |
+| **11. CI Diagnosis** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py diagnose_ci [--run-id ID]` | Auto-detect failed Actions runs, extract tracebacks, & build `neuro_search` query. |
+| **12. Provenance Tag** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py provenance_tag --scope S --desc D --task T` | Compute SHA-256 hash of staged files & format executive commit string. |
+| **13. PR Automation** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py create_pr --title T --task T --hash H` | Generate & open a Pull Request with embedded Tududi checklists. |
+| **14. Hook Guard** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py install_hooks` | Install `.git/hooks/commit-msg` guard enforcing Tududi/Neuro provenance tags. |
+| **15. CI Workflow Setup** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py install_ci_workflow` | Generate `.github/workflows/neuro_copilot_ci.yml` for GitHub Actions. |
+| **16. PR Diff Security Audit** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py audit_pr_diff [--pr PR_NUM]` | Scan diffs for leaked secrets, anti-patterns, & `AGENTS.md` compliance. |
+| **17. Repo Topology Map** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py repo_map` | Discover workspace git remotes and submodules. |
+| **18. Conflict Analyzer** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py resolve_conflicts` | Scan working tree for git conflict markers (`<<<<<<<`) and extract RAG context. |
+| **19. History Formatter** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py format_history [--base B]` | Aggregate unpushed commits into a single provenance-tagged commit message. |
+| **20. Architecture Mermaid** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py export_architecture_mermaid` | Generate Mermaid JS codebase architecture diagram (`graph TD`). |
+| **21. Benchmark Audit** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py benchmark_audit` | Measure domain test duration and performance metrics. |
+| **22. Skill Health Audit** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py audit_skills` | Validate YAML frontmatter & SKILL.md integrity across all skills. |
+| **23. Dependency Security** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py audit_security_dependencies` | Scan `requirements.txt` and `package.json` for unpinned dependencies or risks. |
+| **24. Bloat Detector** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py detect_bloat` | Audit Python codebase for deep nesting (>=5 levels) & over-engineering. |
+| **26. Bridge Self-Test** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py self_test` | Run zero-dependency assert-based unit tests for all CLI bridge functions. |
+| **27. Blast Radius Analyzer** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py blast_radius --file F` | AST-level cognitive dependency & ripple-effect mapping across modules & SQLite tables. |
+| **28. Adversarial Crucible** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py crucible` | Red Team vs Blue Team automated fuzzing & injection exploit arena. |
+| **29. Darwin Auto-Optimizer** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py darwin_optimize` | Zero-dependency AST algorithmic complexity evolver and O(N^2) loop detector. |
+| **30. Merkle Causal Inspector** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py explain_line --file F --line L` | Cryptographic Merkle causal chain line provenance proof and zero-hallucination audit. |
+| **31. The Ghost Loop** | `python .agents/skills/neuro-copilot/scripts/github_bridge.py ghost_loop --prompt P [--pr]` | Autonomous 1-click spec-to-PR self-healing flywheel. |
 
 ---
 

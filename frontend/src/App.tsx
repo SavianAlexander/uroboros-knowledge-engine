@@ -2,6 +2,7 @@ import React, { Component, useEffect, useState, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './store/AppContext';
 import { ToastProvider } from './components/Toast';
 import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 import CommandPalette from './components/CommandPalette';
 import DashboardView from './views/DashboardView';
 import { authEvents } from './lib/api';
@@ -42,12 +43,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     const state = (this as any).state as any;
     if (state?.hasError) {
       return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 text-slate-100 p-6">
+        <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 text-slate-100 p-6 font-sans">
           <div className="max-w-md w-full p-8 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto text-xl font-bold">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto text-xl font-bold">
               !
             </div>
-            <h2 className="text-xl font-semibold text-slate-100">Application Workspace Error</h2>
+            <h2 className="text-xl font-semibold text-slate-100 font-serif-claude">Application Workspace Error</h2>
             <p className="text-sm text-slate-400">
               An unexpected render exception occurred. Click retry below to reload the workspace view.
             </p>
@@ -61,7 +62,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 (this as any).setState({ hasError: false, error: null });
                 window.location.reload();
               }}
-              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium text-sm transition-colors shadow-lg shadow-indigo-600/20"
+              className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium text-sm transition-colors shadow-lg shadow-emerald-600/20"
             >
               Reload Application
             </button>
@@ -89,13 +90,18 @@ function AppLayout() {
       document.documentElement.style.backgroundColor = '#020617';
     } else {
       document.documentElement.classList.remove('dark');
-      document.documentElement.style.backgroundColor = '#f1f5f9';
+      document.documentElement.style.backgroundColor = '#f8fafc';
     }
   }, [theme]);
 
   const renderView = () => {
     return (
-      <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-400 text-sm font-medium">Loading View...</div>}>
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-full text-slate-400 text-sm font-medium gap-2">
+          <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span>Loading Experience...</span>
+        </div>
+      }>
         {(() => {
           switch (activeView) {
             case 'dashboard': return <DashboardView />;
@@ -116,26 +122,36 @@ function AppLayout() {
   return (
     <>
       {!isAuthenticated && <LoginView onLogin={() => { setIsAuthenticated(true); window.location.reload(); }} />}
-      <div className={`flex h-screen w-full overflow-hidden font-sans ${theme === 'dark' ? 'text-slate-200 bg-slate-950' : 'text-slate-900 bg-slate-50'}`} style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <div className={`flex h-screen w-full overflow-hidden ${theme === 'dark' ? 'text-slate-200 bg-slate-950' : 'text-slate-900 bg-slate-50'}`}>
+        {/* Ambient atmospheric backdrop (Emerald, Wine Red & Mustard Gold) */}
         {theme === 'dark' ? (
-          <div className="fixed inset-0 pointer-events-none z-0">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-900/20 blur-[120px] rounded-full mix-blend-screen" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-900/20 blur-[120px] rounded-full mix-blend-screen" />
+          <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+            {/* Top-Left Emerald Ambient Glow */}
+            <div className="absolute -top-[15%] -left-[10%] w-[50%] h-[50%] bg-emerald-950/25 blur-[140px] rounded-full mix-blend-screen animate-ambient-slow" />
+            {/* Bottom-Right Deep Wine Red Ambient Glow */}
+            <div className="absolute -bottom-[15%] -right-[10%] w-[45%] h-[45%] bg-rose-950/20 blur-[150px] rounded-full mix-blend-screen animate-ambient-slow" />
+            {/* Center-Soft Mustard Gold Warm Glow */}
+            <div className="absolute top-[40%] left-[35%] w-[30%] h-[30%] bg-amber-950/15 blur-[160px] rounded-full mix-blend-screen" />
           </div>
         ) : (
-          <div className="fixed inset-0 pointer-events-none z-0">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-100/50 blur-[120px] rounded-full mix-blend-multiply" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-100/50 blur-[120px] rounded-full mix-blend-multiply" />
+          <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+            <div className="absolute -top-[15%] -left-[10%] w-[50%] h-[50%] bg-emerald-100/40 blur-[130px] rounded-full mix-blend-multiply" />
+            <div className="absolute -bottom-[15%] -right-[10%] w-[45%] h-[45%] bg-rose-100/30 blur-[140px] rounded-full mix-blend-multiply" />
+            <div className="absolute top-[40%] left-[35%] w-[30%] h-[30%] bg-amber-100/30 blur-[150px] rounded-full mix-blend-multiply" />
+          </div>
+        )}
+
+        <div className="relative z-10 flex h-full w-full">
+          <Sidebar />
+          <div className="flex-1 flex flex-col h-full overflow-hidden">
+            <Header />
+            <main className="flex-1 relative overflow-hidden dark:bg-slate-950/30 bg-transparent">
+              {renderView()}
+            </main>
+          </div>
         </div>
-      )}
-      <div className="relative z-10 flex h-full w-full">
-        <Sidebar />
-        <main className="flex-1 relative overflow-hidden dark:bg-slate-950/20 bg-transparent">
-          {renderView()}
-        </main>
+        <CommandPalette />
       </div>
-      <CommandPalette />
-    </div>
     </>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { api } from '../lib/api';
 import { useToast } from '../components/Toast';
 import {
@@ -30,15 +30,21 @@ import {
   ShieldAlert,
   Maximize2,
   Layers,
-  LayoutGrid
+  LayoutGrid,
+  BookOpen,
+  Type,
+  Palette,
+  Sliders,
+  MessageSquare
 } from 'lucide-react';
 import { useApp } from '../store/AppContext';
+import { emeraldButtonClasses, emeraldBadgeClasses, goldBadgeClasses, wineBadgeClasses, slateBadgeClasses, glassCardClasses } from '../lib/utils';
 
 export default function WorkspaceView() {
   const [selectedFile, setSelectedFile] = useState<any>(null);
 
   return (
-    <div className="flex h-full bg-white/30 dark:bg-slate-950/30 overflow-hidden">
+    <div className="flex h-full bg-white/40 dark:bg-slate-950/40 overflow-hidden">
       <DirectoryTreeSidebar onSelectFile={setSelectedFile} selectedFile={selectedFile} />
       
       <div className="flex-1 overflow-hidden">
@@ -103,11 +109,11 @@ function DirectoryTreeSidebar({ onSelectFile, selectedFile }: any) {
   const filteredTree = filterTreeNodes(treeData);
 
   return (
-    <div className="w-80 border-r border-slate-200 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/30 flex flex-col flex-shrink-0">
+    <div className="w-80 border-r border-slate-200 dark:border-white/5 bg-slate-50/40 dark:bg-slate-900/40 flex flex-col flex-shrink-0">
        <div className="p-4 border-b border-slate-200 dark:border-white/5 space-y-3">
          <div className="flex items-center justify-between">
            <h3 className="font-medium text-slate-900 dark:text-slate-200">Workspace Tree</h3>
-           <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400">
+           <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 font-mono">
              {filteredTree.length} Items
            </span>
          </div>
@@ -118,7 +124,7 @@ function DirectoryTreeSidebar({ onSelectFile, selectedFile }: any) {
              placeholder="Filter files..."
              value={searchFilter}
              onChange={(e) => setSearchFilter(e.target.value)}
-             className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors"
+             className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500 transition-colors"
            />
          </div>
        </div>
@@ -137,17 +143,17 @@ function TreeNode({ node, depth, onSelectFile, selectedFile }: any) {
   
   const getFileIcon = (name: string) => {
     const ext = name.split('.').pop()?.toLowerCase();
-    if (ext === 'pdf') return <FileText className="w-3.5 h-3.5 ml-3 text-rose-400 flex-shrink-0" />;
-    if (ext === 'md' || ext === 'markdown') return <FileText className="w-3.5 h-3.5 ml-3 text-cyan-400 flex-shrink-0" />;
-    if (ext === 'csv' || ext === 'tsv') return <TableIcon className="w-3.5 h-3.5 ml-3 text-emerald-400 flex-shrink-0" />;
-    if (['png', 'jpg', 'jpeg', 'svg', 'webp'].includes(ext || '')) return <ImageIcon className="w-3.5 h-3.5 ml-3 text-amber-400 flex-shrink-0" />;
+    if (ext === 'pdf') return <FileText className="w-3.5 h-3.5 ml-3 text-rose-500 flex-shrink-0" />;
+    if (ext === 'md' || ext === 'markdown') return <FileText className="w-3.5 h-3.5 ml-3 text-cyan-500 flex-shrink-0" />;
+    if (ext === 'csv' || ext === 'tsv') return <TableIcon className="w-3.5 h-3.5 ml-3 text-emerald-500 flex-shrink-0" />;
+    if (['png', 'jpg', 'jpeg', 'svg', 'webp'].includes(ext || '')) return <ImageIcon className="w-3.5 h-3.5 ml-3 text-amber-500 flex-shrink-0" />;
     return <File className="w-3.5 h-3.5 ml-3 opacity-70 flex-shrink-0" />;
   };
 
   return (
     <div>
       <div 
-        className={`flex items-center gap-1.5 py-1.5 px-2 rounded-lg cursor-pointer text-xs transition-colors ${isSelected ? 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+        className={`flex items-center gap-1.5 py-1.5 px-2 rounded-lg cursor-pointer text-xs transition-colors ${isSelected ? 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-medium' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'}`}
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
         onClick={() => {
           if (node.isDir) setExpanded(!expanded);
@@ -155,8 +161,8 @@ function TreeNode({ node, depth, onSelectFile, selectedFile }: any) {
         }}
       >
         {node.isDir ? (expanded ? <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 text-slate-400"/> : <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 text-slate-400"/>) : getFileIcon(node.name)}
-        {node.isDir && <Folder className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0"/>}
-        <span className="truncate">{node.name}</span>
+        {node.isDir && <Folder className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0"/>}
+        <span className="truncate flex-1 text-left">{node.name}</span>
       </div>
       {node.isDir && expanded && (
          <div>
@@ -172,14 +178,30 @@ function TreeNode({ node, depth, onSelectFile, selectedFile }: any) {
 function SplitWorkspace({ file, onClose }: any) {
   const [content, setContent] = useState<any>(null);
   const [insights, setInsights] = useState<any>(null);
-  const [viewTab, setViewTab] = useState<'rendered' | 'source' | 'pdf' | 'table' | 'image'>('rendered');
-  const [pdfSubMode, setPdfSubMode] = useState<'visual' | 'stream' | 'ocr'>('visual');
+  const [viewTab, setViewTab] = useState<'rendered' | 'source' | 'pdf' | 'table' | 'image' | 'epub'>('epub');
+  const [pdfSubMode, setPdfSubMode] = useState<'visual' | 'epub' | 'stream' | 'ocr'>('visual');
   const [pdfInfo, setPdfInfo] = useState<any>(null);
   const [currentPdfPage, setCurrentPdfPage] = useState<number>(0);
   const [pdfPageZoom, setPdfPageZoom] = useState<number>(1);
   const [imageZoom, setImageZoom] = useState(1);
   const [csvFilter, setCsvFilter] = useState('');
   const [copied, setCopied] = useState(false);
+  
+  // EPUB Reader Studio Customization State
+  const [readerFont, setReaderFont] = useState<'serif' | 'sans' | 'mono'>('serif');
+  const [readerSize, setReaderSize] = useState<number>(17);
+  const [readerTheme, setReaderTheme] = useState<'midnight' | 'sepia' | 'light' | 'nord'>('midnight');
+  const [readerLineHeight, setReaderLineHeight] = useState<'normal' | 'comfortable' | 'loose'>('comfortable');
+  const [readerWidth, setReaderWidth] = useState<'720px' | '920px' | '100%'>('720px');
+  const [enableKeywordInsights, setEnableKeywordInsights] = useState<boolean>(true);
+  
+  // Interactive Keyword Hover Cards State
+  const [entitiesList, setEntitiesList] = useState<string[]>([]);
+  const [activeHoverCard, setActiveHoverCard] = useState<any>(null);
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+  const termCache = useRef<{ [key: string]: any }>({});
+  const hoverTimeoutRef = useRef<any>(null);
+
   const { toast } = useToast();
 
   const filePath = file?.relative_path || '';
@@ -196,6 +218,8 @@ function SplitWorkspace({ file, onClose }: any) {
     setContent(null);
     setInsights(null);
     setPdfInfo(null);
+    setEntitiesList([]);
+    setActiveHoverCard(null);
     setCurrentPdfPage(0);
     setPdfPageZoom(1);
     setImageZoom(1);
@@ -213,7 +237,7 @@ function SplitWorkspace({ file, onClose }: any) {
     } else if (isImage) {
       setViewTab('image');
     } else {
-      setViewTab('source');
+      setViewTab('epub');
     }
 
     api.fileRaw(filePath)
@@ -234,6 +258,14 @@ function SplitWorkspace({ file, onClose }: any) {
         if (!cancelled) setContent({ content: 'Failed to load file content.' });
       });
 
+    api.fileEntities(filePath)
+      .then(res => {
+        if (!cancelled && res?.entities) {
+          setEntitiesList(res.entities);
+        }
+      })
+      .catch(e => console.warn('Could not fetch file entities:', e));
+
     api.fileInsights(filePath)
       .then(res => { if (!cancelled) setInsights(res); })
       .catch(e => {
@@ -243,6 +275,52 @@ function SplitWorkspace({ file, onClose }: any) {
 
     return () => { cancelled = true; };
   }, [file]);
+
+  const handleHoverTerm = (term: string, context: string, event: React.MouseEvent, immediate = false) => {
+    if (!enableKeywordInsights) return;
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top;
+
+    const fetchInsight = () => {
+      setHoverPos({ x, y });
+      if (termCache.current[term]) {
+        setActiveHoverCard(termCache.current[term]);
+        return;
+      }
+      api.termInsight(term, context, filePath)
+        .then(data => {
+          termCache.current[term] = data;
+          setActiveHoverCard(data);
+        })
+        .catch(err => {
+          console.warn('Failed to fetch term insight:', err);
+          const fallback = {
+            term,
+            entity_type: 'Domain Concept',
+            definition: `Domain keyword '${term}' indexed in repository intelligence.`,
+            vault_count: 1,
+            related_files: [filePath]
+          };
+          setActiveHoverCard(fallback);
+        });
+    };
+
+    if (immediate) {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      fetchInsight();
+    } else {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = setTimeout(fetchInsight, 180);
+    }
+  };
+
+  const handleLeaveTerm = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setActiveHoverCard(null);
+    }, 250);
+  };
 
   const copyContent = () => {
     if (content?.content) {
@@ -271,7 +349,6 @@ function SplitWorkspace({ file, onClose }: any) {
     }
   };
 
-  // Render Rich Markdown helper
   const renderRichMarkdown = (text: string) => {
     const lines = text.split('\n');
     const elements: React.ReactNode[] = [];
@@ -291,20 +368,20 @@ function SplitWorkspace({ file, onClose }: any) {
       const bodyRows = tableBuffer.slice(2).map(r => r.split('|').map(c => c.trim()).filter(Boolean));
 
       elements.push(
-        <div key={k} className="my-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+        <div key={k} className="my-3.5 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-xs">
           <table className="min-w-full text-xs text-left">
-            <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-semibold border-b border-slate-200 dark:border-white/10">
+            <thead className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold border-b border-slate-200 dark:border-white/10">
               <tr>
                 {headerRow.map((col, cIdx) => (
-                  <th key={cIdx} className="px-3.5 py-2.5">{col}</th>
+                  <th key={cIdx} className="px-4 py-2.5">{col}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200/60 dark:divide-white/5">
+            <tbody className="divide-y divide-slate-200/60 dark:divide-white/5 font-mono text-[11px]">
               {bodyRows.map((row, rIdx) => (
-                <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white/40 dark:bg-white/[0.02]' : 'bg-slate-50/40 dark:bg-white/[0.05]'}>
+                <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white/40 dark:bg-white/[0.02]' : 'bg-slate-50/50 dark:bg-white/[0.04]'}>
                   {row.map((cell, cIdx) => (
-                    <td key={cIdx} className="px-3.5 py-2 text-slate-800 dark:text-slate-300 font-mono text-[11px]">{cell}</td>
+                    <td key={cIdx} className="px-4 py-2 text-slate-800 dark:text-slate-300">{cell}</td>
                   ))}
                 </tr>
               ))}
@@ -319,9 +396,9 @@ function SplitWorkspace({ file, onClose }: any) {
     const flushCodeBlock = (k: string) => {
       const codeText = codeBuffer.join('\n');
       elements.push(
-        <div key={k} className="my-3 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-950 shadow-md">
-          <div className="bg-slate-900/90 px-3.5 py-1.5 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
-            <span>{codeLang || 'code'}</span>
+        <div key={k} className="my-3.5 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-950 shadow-lg">
+          <div className="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
+            <span className="font-bold text-emerald-400 uppercase tracking-wider">{codeLang || 'code'}</span>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(codeText);
@@ -332,7 +409,7 @@ function SplitWorkspace({ file, onClose }: any) {
               <Copy className="w-3 h-3" /> Copy
             </button>
           </div>
-          <pre className="p-4 text-xs font-mono text-slate-200 overflow-x-auto whitespace-pre leading-relaxed">
+          <pre className="p-4 text-xs font-mono text-slate-200 overflow-x-auto whitespace-pre leading-relaxed font-mono">
             {codeText}
           </pre>
         </div>
@@ -346,7 +423,6 @@ function SplitWorkspace({ file, onClose }: any) {
       const line = lines[lIdx];
       const trimmed = line.trim();
 
-      // Code Block check
       if (trimmed.startsWith('```')) {
         if (inCodeBlock) {
           flushCodeBlock(`cb-${lIdx}`);
@@ -362,7 +438,6 @@ function SplitWorkspace({ file, onClose }: any) {
         continue;
       }
 
-      // Table check
       if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
         inTable = true;
         tableBuffer.push(trimmed);
@@ -378,25 +453,25 @@ function SplitWorkspace({ file, onClose }: any) {
       }
 
       if (trimmed.startsWith('# ')) {
-        elements.push(<h1 key={lIdx} className="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-4 mb-2">{trimmed.slice(2)}</h1>);
+        elements.push(<h1 key={lIdx} className="text-xl font-bold text-emerald-700 dark:text-emerald-400 mt-5 mb-2 font-serif-claude">{trimmed.slice(2)}</h1>);
       } else if (trimmed.startsWith('## ')) {
-        elements.push(<h2 key={lIdx} className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-3 mb-1.5 border-b border-slate-200 dark:border-white/10 pb-1">{trimmed.slice(3)}</h2>);
+        elements.push(<h2 key={lIdx} className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-4 mb-1.5 border-b border-slate-200/80 dark:border-white/10 pb-1 font-serif-claude">{trimmed.slice(3)}</h2>);
       } else if (trimmed.startsWith('### ')) {
-        elements.push(<h3 key={lIdx} className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-2 mb-1">{trimmed.slice(4)}</h3>);
+        elements.push(<h3 key={lIdx} className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-3 mb-1 font-serif-claude">{trimmed.slice(4)}</h3>);
       } else if (trimmed.startsWith('> [!NOTE]') || trimmed.startsWith('> [!TIP]') || trimmed.startsWith('> [!WARNING]') || trimmed.startsWith('> [!IMPORTANT]')) {
         const alertType = trimmed.slice(4, -1);
         const nextText = lines[lIdx + 1]?.replace(/^>\s*/, '') || '';
         lIdx++;
         const alertStyles: Record<string, { bg: string; border: string; text: string; icon: any }> = {
-          NOTE: { bg: 'bg-blue-500/10', border: 'border-l-4 border-blue-500', text: 'text-blue-600 dark:text-blue-400', icon: Info },
-          TIP: { bg: 'bg-emerald-500/10', border: 'border-l-4 border-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', icon: Lightbulb },
-          WARNING: { bg: 'bg-amber-500/10', border: 'border-l-4 border-amber-500', text: 'text-amber-600 dark:text-amber-400', icon: AlertTriangle },
-          IMPORTANT: { bg: 'bg-purple-500/10', border: 'border-l-4 border-purple-500', text: 'text-purple-600 dark:text-purple-400', icon: ShieldAlert }
+          NOTE: { bg: 'bg-slate-500/10', border: 'border-l-4 border-slate-500', text: 'text-slate-700 dark:text-slate-300', icon: Info },
+          TIP: { bg: 'bg-emerald-500/10', border: 'border-l-4 border-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', icon: Lightbulb },
+          WARNING: { bg: 'bg-amber-500/10', border: 'border-l-4 border-amber-500', text: 'text-amber-700 dark:text-amber-400', icon: AlertTriangle },
+          IMPORTANT: { bg: 'bg-rose-500/10', border: 'border-l-4 border-rose-500', text: 'text-rose-700 dark:text-rose-400', icon: ShieldAlert }
         };
         const style = alertStyles[alertType] || alertStyles.NOTE;
         const IconComp = style.icon;
         elements.push(
-          <div key={lIdx} className={`my-2.5 p-3 rounded-r-xl ${style.bg} ${style.border} text-xs space-y-1`}>
+          <div key={lIdx} className={`my-3 p-3.5 rounded-r-xl ${style.bg} ${style.border} text-xs space-y-1`}>
             <div className={`font-semibold flex items-center gap-1.5 ${style.text}`}>
               <IconComp className="w-3.5 h-3.5" />
               <span>{alertType}</span>
@@ -405,7 +480,7 @@ function SplitWorkspace({ file, onClose }: any) {
           </div>
         );
       } else if (trimmed.startsWith('> ')) {
-        elements.push(<blockquote key={lIdx} className="my-2 pl-3.5 border-l-2 border-indigo-500 text-slate-600 dark:text-slate-400 italic text-xs">{trimmed.slice(2)}</blockquote>);
+        elements.push(<blockquote key={lIdx} className="my-2.5 pl-4 border-l-2 border-emerald-500 text-slate-600 dark:text-slate-400 italic text-xs font-serif-claude">{trimmed.slice(2)}</blockquote>);
       } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
         elements.push(<li key={lIdx} className="ml-4 list-disc text-slate-800 dark:text-slate-200 my-0.5 text-xs">{trimmed.slice(2)}</li>);
       } else {
@@ -415,10 +490,9 @@ function SplitWorkspace({ file, onClose }: any) {
 
     if (inCodeBlock) flushCodeBlock('cb-end');
     if (inTable) flushTable('tbl-end');
-    return <div className="space-y-2 p-6">{elements}</div>;
+    return <div className="space-y-2 p-6 font-sans">{elements}</div>;
   };
 
-  // CSV Data Grid Parser
   const parsedCsvData = useMemo(() => {
     if (!content?.content || !isCsv) return { headers: [], rows: [] };
     const rawRows = content.content.split('\n').map((r: string) => r.trim()).filter(Boolean);
@@ -433,20 +507,223 @@ function SplitWorkspace({ file, onClose }: any) {
     return { headers, rows };
   }, [content, isCsv, csvFilter]);
 
+  const renderInteractiveEpubStudio = (text: string) => {
+    if (!text) {
+      return (
+        <div className="p-8 text-center text-slate-500 text-sm animate-pulse flex flex-col items-center justify-center h-full">
+          <BookOpen className="w-8 h-8 mb-2 opacity-30 text-emerald-500" />
+          <span>Loading document content in EPUB Reader Studio...</span>
+        </div>
+      );
+    }
+    const cleanText = text.replace(/\r\n/g, '\n');
+    let rawParas = cleanText.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+    if (rawParas.length <= 1) {
+      rawParas = cleanText.split('\n').map(p => p.trim()).filter(Boolean);
+    }
+    const paragraphs = rawParas;
+
+    // Combine API entities with inline extracted capital terms
+    const localKeywords = new Set<string>(entitiesList);
+    for (const match of text.matchAll(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g)) {
+      const term = match[1].trim();
+      if (term.length > 3 && !['The', 'This', 'That', 'With', 'From', 'Your', 'They', 'Have', 'More', 'Some', 'When', 'Page', 'Date'].includes(term)) {
+        localKeywords.add(term);
+      }
+    }
+    for (const hardcoded of ['Analytical', 'Focus', 'CliftonStrengths', 'Gallup', 'Signature Themes', 'Don Clifton', 'Roberto Morales Pérez', 'Clean Architecture', 'ColBERT', 'FastAPI', 'SQLite']) {
+      if (text.toLowerCase().includes(hardcoded.toLowerCase())) {
+        localKeywords.add(hardcoded);
+      }
+    }
+
+    const combinedEntities = Array.from(localKeywords);
+    const sortedEntities = [...combinedEntities].sort((a, b) => b.length - a.length);
+    const escapedEntities = sortedEntities.map(e => e.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|');
+    const regex = escapedEntities && enableKeywordInsights ? new RegExp(`\\b(${escapedEntities})\\b`, 'g') : null;
+
+    const themeStyles: { [key: string]: string } = {
+      midnight: 'bg-slate-950 text-slate-200 border-slate-800 shadow-2xl',
+      sepia: 'bg-[#fbf0d9] text-[#3d2c1d] border-[#e4d1b0] shadow-xl',
+      light: 'bg-[#fcfcfc] text-[#1a1a1a] border-slate-200 shadow-xl',
+      nord: 'bg-[#1e232a] text-[#d8dee9] border-[#2e3440] shadow-2xl'
+    };
+
+    const fontStyles: { [key: string]: string } = {
+      serif: 'font-serif',
+      sans: 'font-sans',
+      mono: 'font-mono'
+    };
+
+    const lineStyles: { [key: string]: string } = {
+      normal: 'leading-normal',
+      comfortable: 'leading-relaxed',
+      loose: 'leading-loose'
+    };
+
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-900/40">
+        {/* EPUB Reader Studio Customization Bar */}
+        <div className="p-3 bg-white/80 dark:bg-slate-900/90 border-b border-slate-200 dark:border-white/5 flex items-center justify-between gap-3 flex-wrap text-xs text-slate-700 dark:text-slate-300 backdrop-blur-md">
+          {/* Typography Selector */}
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+              <Type className="w-3.5 h-3.5" /> Typeface:
+            </span>
+            <div className="flex rounded-lg bg-slate-200/80 dark:bg-slate-800/80 p-0.5 border border-slate-300 dark:border-slate-700">
+              <button
+                onClick={() => setReaderFont('serif')}
+                className={`px-2.5 py-0.5 rounded-md text-xs transition-colors font-serif ${readerFont === 'serif' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+              >
+                Editorial Serif
+              </button>
+              <button
+                onClick={() => setReaderFont('sans')}
+                className={`px-2.5 py-0.5 rounded-md text-xs transition-colors font-sans ${readerFont === 'sans' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+              >
+                Modern Sans
+              </button>
+              <button
+                onClick={() => setReaderFont('mono')}
+                className={`px-2.5 py-0.5 rounded-md text-xs transition-colors font-mono ${readerFont === 'mono' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+              >
+                Mono
+              </button>
+            </div>
+          </div>
+
+          {/* Size, Spacing & Themes */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700">
+              <span className="text-[11px] text-slate-500">Size:</span>
+              <button
+                onClick={() => setReaderSize(Math.max(13, readerSize - 1))}
+                className="px-1 py-0.5 hover:bg-slate-300 dark:hover:bg-slate-700 rounded text-xs font-bold"
+              >
+                A-
+              </button>
+              <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400 w-7 text-center">{readerSize}px</span>
+              <button
+                onClick={() => setReaderSize(Math.min(26, readerSize + 1))}
+                className="px-1 py-0.5 hover:bg-slate-300 dark:hover:bg-slate-700 rounded text-xs font-bold"
+              >
+                A+
+              </button>
+            </div>
+
+            {/* Themes */}
+            <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs">
+              <button
+                onClick={() => setReaderTheme('midnight')}
+                className={`px-2 py-0.5 rounded-md transition-colors ${readerTheme === 'midnight' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-600 dark:text-slate-400'}`}
+                title="OLED Midnight"
+              >
+                🌙 Midnight
+              </button>
+              <button
+                onClick={() => setReaderTheme('sepia')}
+                className={`px-2 py-0.5 rounded-md transition-colors ${readerTheme === 'sepia' ? 'bg-[#d8c29d] text-[#3e2714] font-semibold' : 'text-slate-600 dark:text-slate-400'}`}
+                title="Warm Book Sepia"
+              >
+                📜 Sepia
+              </button>
+              <button
+                onClick={() => setReaderTheme('light')}
+                className={`px-2 py-0.5 rounded-md transition-colors ${readerTheme === 'light' ? 'bg-white text-slate-900 font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400'}`}
+                title="Clean Editorial Light"
+              >
+                ☀️ Light
+              </button>
+              <button
+                onClick={() => setReaderTheme('nord')}
+                className={`px-2 py-0.5 rounded-md transition-colors ${readerTheme === 'nord' ? 'bg-[#3b4252] text-[#88c0d0] font-semibold' : 'text-slate-600 dark:text-slate-400'}`}
+                title="Nord Slate"
+              >
+                ❄️ Nord
+              </button>
+            </div>
+
+            {/* Keyword Insights Toggle */}
+            <button
+              onClick={() => setEnableKeywordInsights(!enableKeywordInsights)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+                enableKeywordInsights
+                  ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 shadow-xs'
+                  : 'bg-slate-200/80 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Keyword Insights: {enableKeywordInsights ? 'ON' : 'OFF'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* EPUB Document Reading Canvas */}
+        <div className="flex-1 overflow-y-auto p-6 md:p-12 flex justify-center">
+          <div
+            className={`w-full max-w-[760px] p-8 md:p-14 rounded-2xl border transition-all ${themeStyles[readerTheme]} ${fontStyles[readerFont]} ${lineStyles[readerLineHeight]}`}
+            style={{ fontSize: `${readerSize}px` }}
+          >
+            <div className="border-b border-current/15 pb-4 mb-8 flex items-center justify-between opacity-80 text-xs font-mono">
+              <span className="truncate max-w-[300px] font-semibold">{filePath.split(/[/\\]/).pop()}</span>
+              <span>{paragraphs.length} Paragraphs • {entitiesList.length} Entities</span>
+            </div>
+
+            {paragraphs.map((para, pIdx) => {
+              if (regex) {
+                const parts = para.split(regex);
+                return (
+                  <p key={pIdx} className="mb-6">
+                    {parts.map((part, idx) => {
+                      const isEntity = sortedEntities.includes(part);
+                      if (isEntity) {
+                        return (
+                          <span
+                            key={idx}
+                            onMouseEnter={(e) => handleHoverTerm(part, para, e)}
+                            onMouseLeave={handleLeaveTerm}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleHoverTerm(part, para, e, true);
+                            }}
+                            className="cursor-pointer font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded-md border-b-2 border-emerald-500/60 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all inline-flex items-center gap-0.5 mx-0.5"
+                          >
+                            <span>{part}</span>
+                            <Sparkles className="w-2.5 h-2.5 opacity-60 inline" />
+                          </span>
+                        );
+                      }
+                      return part;
+                    })}
+                  </p>
+                );
+              }
+              return (
+                <p key={pIdx} className="mb-6">
+                  {para}
+                </p>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const textLines = content?.content ? content.content.split('\n') : [];
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Header Bar */}
-      <div className="p-3.5 border-b border-slate-200 dark:border-white/5 flex items-center justify-between bg-white/60 dark:bg-slate-900/60 backdrop-blur-md">
+      {/* Workspace Header Toolbar */}
+      <div className="px-5 py-3 border-b border-slate-200/80 dark:border-white/5 flex items-center justify-between bg-white/60 dark:bg-slate-900/60 backdrop-blur-md">
          <div className="flex items-center gap-3">
-           <button onClick={onClose} className="p-1.5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors">
+           <button onClick={onClose} className="p-1.5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors" title="Close File View">
              <X className="w-4 h-4 text-slate-600 dark:text-slate-400"/>
            </button>
            <div>
-             <h2 className="font-medium text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+             <h2 className="font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2 font-serif-claude">
                {filePath}
-               <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[10px] font-mono border border-indigo-500/20 uppercase font-bold">
+               <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 rounded text-[10px] font-mono border border-emerald-500/20 uppercase font-bold">
                  {fileExt}
                </span>
              </h2>
@@ -455,21 +732,29 @@ function SplitWorkspace({ file, onClose }: any) {
 
          {/* Mode Switcher Tabs */}
          <div className="flex items-center gap-2">
-           <div className="flex rounded-lg bg-slate-200/70 dark:bg-slate-800/80 p-0.5 text-xs border border-slate-300/50 dark:border-white/5">
+           <div className="flex rounded-lg bg-slate-200/80 dark:bg-slate-800/80 p-0.5 text-xs border border-slate-300/50 dark:border-white/5">
              {isPdf && (
                <button
                  onClick={() => setViewTab('pdf')}
-                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'pdf' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'pdf' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
                >
                  <FileText className="w-3.5 h-3.5" />
                  <span>PDF Viewer</span>
                </button>
              )}
 
+             <button
+               onClick={() => setViewTab('epub')}
+               className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'epub' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+             >
+               <BookOpen className="w-3.5 h-3.5" />
+               <span>EPUB Reader</span>
+             </button>
+
              {isMarkdown && (
                <button
                  onClick={() => setViewTab('rendered')}
-                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'rendered' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'rendered' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
                >
                  <Eye className="w-3.5 h-3.5" />
                  <span>Rendered</span>
@@ -479,7 +764,7 @@ function SplitWorkspace({ file, onClose }: any) {
              {isCsv && (
                <button
                  onClick={() => setViewTab('table')}
-                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'table' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'table' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
                >
                  <TableIcon className="w-3.5 h-3.5" />
                  <span>Data Grid</span>
@@ -489,7 +774,7 @@ function SplitWorkspace({ file, onClose }: any) {
              {isImage && (
                <button
                  onClick={() => setViewTab('image')}
-                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'image' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'image' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
                >
                  <ImageIcon className="w-3.5 h-3.5" />
                  <span>Image Canvas</span>
@@ -498,10 +783,10 @@ function SplitWorkspace({ file, onClose }: any) {
 
              <button
                onClick={() => setViewTab('source')}
-               className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'source' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+               className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'source' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
              >
                <Code2 className="w-3.5 h-3.5" />
-               <span>Source Code</span>
+               <span>Source</span>
              </button>
            </div>
 
@@ -512,41 +797,45 @@ function SplitWorkspace({ file, onClose }: any) {
            <button onClick={downloadFile} className="px-3 py-1.5 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-white/20 transition-colors flex items-center gap-1.5">
              <Download className="w-3.5 h-3.5"/> Download
            </button>
-           <button onClick={handleSave} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-500 transition-colors flex items-center gap-1.5 shadow-sm">
+           <button onClick={handleSave} className={`px-3 py-1.5 ${emeraldButtonClasses} text-xs font-medium flex items-center gap-1.5 shadow-sm`}>
              <Save className="w-3.5 h-3.5"/> Save
            </button>
          </div>
       </div>
       
-      {/* Main Content & AI Insights Split */}
+      {/* Document View & AI Insights Split */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Document Area */}
         <div className="flex-1 bg-slate-50/50 dark:bg-slate-950/80 overflow-y-auto flex flex-col">
-          {/* TAB 1: Real Visual PDF Viewer Suite */}
+          {/* TAB 1: PDF Viewer Suite */}
           {viewTab === 'pdf' && (
             <div className="flex-1 flex flex-col p-4 space-y-3">
-              {/* PDF Header & Submode Navigation */}
               <div className="flex items-center justify-between px-1 text-xs text-slate-400">
                 <div className="flex items-center gap-2">
                   <span className="flex items-center gap-1.5 font-medium text-slate-300">
-                    <FileText className="w-4 h-4 text-rose-400" /> Document PDF Suite
+                    <FileText className="w-4 h-4 text-rose-500" /> Document PDF Suite
                   </span>
                   <div className="flex rounded-lg bg-slate-800 p-0.5 text-[11px] border border-slate-700">
                     <button
                       onClick={() => setPdfSubMode('visual')}
-                      className={`px-2.5 py-0.5 rounded-md transition-colors flex items-center gap-1 ${pdfSubMode === 'visual' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                      className={`px-2.5 py-0.5 rounded-md transition-colors flex items-center gap-1 ${pdfSubMode === 'visual' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}`}
                     >
                       <Eye className="w-3 h-3" /> Visual Pages
                     </button>
                     <button
+                      onClick={() => setPdfSubMode('epub')}
+                      className={`px-2.5 py-0.5 rounded-md transition-colors flex items-center gap-1 ${pdfSubMode === 'epub' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                      <BookOpen className="w-3 h-3" /> EPUB Reader
+                    </button>
+                    <button
                       onClick={() => setPdfSubMode('stream')}
-                      className={`px-2.5 py-0.5 rounded-md transition-colors ${pdfSubMode === 'stream' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                      className={`px-2.5 py-0.5 rounded-md transition-colors ${pdfSubMode === 'stream' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
                     >
                       Browser Embed
                     </button>
                     <button
                       onClick={() => setPdfSubMode('ocr')}
-                      className={`px-2.5 py-0.5 rounded-md transition-colors ${pdfSubMode === 'ocr' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                      className={`px-2.5 py-0.5 rounded-md transition-colors ${pdfSubMode === 'ocr' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
                     >
                       Extracted Text / OCR
                     </button>
@@ -555,7 +844,7 @@ function SplitWorkspace({ file, onClose }: any) {
 
                 <div className="flex items-center gap-3">
                   {pdfSubMode === 'visual' && (
-                    <div className="flex items-center gap-1.5 bg-slate-800/80 px-2 py-1 rounded-lg border border-slate-700 text-slate-300">
+                    <div className="flex items-center gap-1.5 bg-slate-800/90 px-2 py-1 rounded-lg border border-slate-700 text-slate-300">
                       <button
                         onClick={() => setCurrentPdfPage(Math.max(0, currentPdfPage - 1))}
                         disabled={currentPdfPage === 0}
@@ -564,7 +853,7 @@ function SplitWorkspace({ file, onClose }: any) {
                       >
                         <ChevronLeft className="w-3.5 h-3.5" />
                       </button>
-                      <span className="font-mono text-[11px] px-1 font-semibold text-indigo-300">
+                      <span className="font-mono text-[11px] px-1 font-semibold text-emerald-300">
                         Page {currentPdfPage + 1} of {pdfInfo?.total_pages || 1}
                       </span>
                       <button
@@ -598,7 +887,7 @@ function SplitWorkspace({ file, onClose }: any) {
                         className="p-0.5 hover:bg-slate-700 rounded transition-colors"
                         title="Reset Zoom"
                       >
-                        <RotateCcw className="w-3 h-3" />
+                        <RotateCcw className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )}
@@ -607,10 +896,10 @@ function SplitWorkspace({ file, onClose }: any) {
                     href={binaryUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors text-xs"
+                    className="flex items-center gap-1 text-emerald-500 hover:text-emerald-400 transition-colors text-xs"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Open in Browser Window</span>
+                    <span>Open in Window</span>
                   </a>
                 </div>
               </div>
@@ -627,7 +916,6 @@ function SplitWorkspace({ file, onClose }: any) {
                     />
                   </div>
 
-                  {/* Thumbnail Strip */}
                   {(pdfInfo?.total_pages || 1) > 1 && (
                     <div className="flex items-center gap-2 overflow-x-auto p-2 bg-slate-900/60 rounded-xl border border-slate-800">
                       <span className="text-[11px] text-slate-400 font-mono px-2 flex-shrink-0">
@@ -639,7 +927,7 @@ function SplitWorkspace({ file, onClose }: any) {
                           onClick={() => setCurrentPdfPage(idx)}
                           className={`px-3 py-1 rounded-lg text-xs font-mono transition-all flex-shrink-0 flex items-center gap-1.5 border ${
                             currentPdfPage === idx
-                              ? 'bg-indigo-600 text-white border-indigo-400 shadow-md shadow-indigo-500/20 font-semibold'
+                              ? 'bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-500/20 font-semibold'
                               : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
                           }`}
                         >
@@ -651,7 +939,14 @@ function SplitWorkspace({ file, onClose }: any) {
                 </div>
               )}
 
-              {/* Submode 2: Native Embedded PDF */}
+              {/* Submode 2: EPUB-Grade Interactive Reader Studio with Hover Insights */}
+              {pdfSubMode === 'epub' && (
+                <div className="flex-1 flex flex-col h-full rounded-xl overflow-hidden border border-slate-700/60 bg-slate-950/80 shadow-2xl">
+                  {renderInteractiveEpubStudio(content?.content || '')}
+                </div>
+              )}
+
+              {/* Submode 3: Native Embedded PDF */}
               {pdfSubMode === 'stream' && (
                 <div className="flex-1 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-900 shadow-2xl min-h-[600px] relative">
                   <object
@@ -668,14 +963,14 @@ function SplitWorkspace({ file, onClose }: any) {
                 </div>
               )}
 
-              {/* Submode 3: Extracted Text / OCR */}
+              {/* Submode 4: Extracted Text / OCR */}
               {pdfSubMode === 'ocr' && (
                 <div className="flex-1 rounded-xl overflow-y-auto border border-slate-700/60 bg-slate-950 p-6 shadow-xl space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                     <span className="text-xs text-slate-400 font-mono">Parsed text content from PDF</span>
                     <button
                       onClick={copyContent}
-                      className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                      className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
                     >
                       <Copy className="w-3.5 h-3.5" /> Copy Text
                     </button>
@@ -688,7 +983,14 @@ function SplitWorkspace({ file, onClose }: any) {
             </div>
           )}
 
-          {/* TAB 2: Rendered Markdown Document */}
+          {/* TAB 2: Dedicated EPUB Reader Studio */}
+          {viewTab === 'epub' && (
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
+              {renderInteractiveEpubStudio(content?.content || '')}
+            </div>
+          )}
+
+          {/* TAB 3: Rendered Markdown */}
           {viewTab === 'rendered' && (
             <div className="flex-1 overflow-y-auto">
               {content?.content ? renderRichMarkdown(content.content) : (
@@ -697,7 +999,7 @@ function SplitWorkspace({ file, onClose }: any) {
             </div>
           )}
 
-          {/* TAB 3: Interactive CSV / TSV Data Grid */}
+          {/* TAB 3: CSV Data Grid */}
           {viewTab === 'table' && (
             <div className="flex-1 flex flex-col p-4 space-y-3 overflow-hidden">
               <div className="flex items-center justify-between">
@@ -712,7 +1014,7 @@ function SplitWorkspace({ file, onClose }: any) {
                     placeholder="Search table rows..."
                     value={csvFilter}
                     onChange={(e) => setCsvFilter(e.target.value)}
-                    className="w-full bg-slate-900/80 border border-slate-700/60 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-900/80 border border-slate-700/60 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -727,7 +1029,7 @@ function SplitWorkspace({ file, onClose }: any) {
                   </thead>
                   <tbody className="divide-y divide-slate-800/80 font-mono text-[11px]">
                     {parsedCsvData.rows.map((row: string[], rIdx: number) => (
-                      <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-slate-900/50 hover:bg-indigo-500/10' : 'bg-slate-950/50 hover:bg-indigo-500/10'}>
+                      <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-slate-900/50 hover:bg-emerald-500/10' : 'bg-slate-950/50 hover:bg-emerald-500/10'}>
                         {row.map((cell: string, cIdx: number) => (
                           <td key={cIdx} className="px-4 py-2 text-slate-300">{cell}</td>
                         ))}
@@ -790,49 +1092,119 @@ function SplitWorkspace({ file, onClose }: any) {
           )}
         </div>
 
-        {/* Right Pane: AI Insights */}
-        <div className="w-96 bg-white/30 dark:bg-slate-900/30 p-6 overflow-y-auto border-l border-slate-200 dark:border-white/5 flex-shrink-0">
-          <h3 className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-6">
-            <Brain className="w-5 h-5 text-purple-400"/> Document AI Analysis
+        {/* Right Pane: AI Intelligence Drawer */}
+        <div className="w-96 bg-white/40 dark:bg-slate-900/40 p-6 overflow-y-auto border-l border-slate-200/80 dark:border-white/5 flex-shrink-0 space-y-6">
+          <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2 font-serif-claude">
+            <Brain className="w-5 h-5 text-emerald-500"/> Document Intelligence
           </h3>
           {insights ? (
              <div className="space-y-6">
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-purple-400" /> Grounded RAG Insights
+                  <h4 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Grounded Summary
                   </h4>
-                  <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-white/50 dark:bg-black/30 p-3.5 rounded-xl border border-slate-200 dark:border-white/5 whitespace-pre-wrap">
+                  <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-white/70 dark:bg-black/30 p-4 rounded-xl border border-slate-200 dark:border-white/5 whitespace-pre-wrap shadow-2xs">
                     {insights.insights || insights.summary || insights.text || 'No summary available for this file.'}
                   </div>
                 </div>
+
+                {/* Key Takeaways (Mustard Gold Callout) */}
+                <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20 space-y-2">
+                  <h4 className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Key Takeaways
+                  </h4>
+                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                    {insights.takeaways || 'Extracted strategic concepts and key principles mapped to this vault entity.'}
+                  </p>
+                </div>
+
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Code2 className="w-3.5 h-3.5 text-indigo-400" /> Extracted Key Entities
+                  <h4 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Code2 className="w-3.5 h-3.5 text-emerald-500" /> Extracted Entities & Tags
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
                     {insights.entities && Array.isArray(insights.entities) && insights.entities.length > 0 ? (
                       insights.entities.map((ent: string, i: number) => (
-                        <span key={i} className="px-2.5 py-1 bg-purple-500/10 text-purple-300 rounded-lg border border-purple-500/20 text-xs">{ent}</span>
+                        <span key={i} className={emeraldBadgeClasses}>#{ent}</span>
                       ))
                     ) : (
                       <span className="text-xs text-slate-500">Document analyzed cleanly.</span>
                     )}
                   </div>
                 </div>
+
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Vector Index Status
+                  <h4 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-teal-500" /> Vector Index Status
                   </h4>
-                  <div className="p-3 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-white/5 space-y-1 text-xs text-slate-600 dark:text-slate-400 font-mono">
-                    <div className="flex justify-between"><span>Vector Engine:</span> <span className="text-emerald-400 font-semibold">NomIC HNSW</span></div>
-                    <div className="flex justify-between"><span>Indexed Status:</span> <span className="text-indigo-400 font-semibold">Active Vault Node</span></div>
+                  <div className="p-3 bg-slate-100/70 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-white/5 space-y-1 text-xs text-slate-600 dark:text-slate-400 font-mono">
+                    <div className="flex justify-between"><span>Embedder:</span> <span className="text-emerald-500 font-semibold">NomIC HNSW</span></div>
+                    <div className="flex justify-between"><span>Vector Cluster:</span> <span className="text-teal-400 font-semibold">Active Vault Node</span></div>
                   </div>
                 </div>
              </div>
-          ) : <div className="animate-pulse text-xs text-slate-500">Analyzing RAG document vectors...</div>}
+          ) : (
+            <div className="animate-pulse text-xs text-slate-500">Synthesizing document intelligence...</div>
+          )}
         </div>
       </div>
+
+      {/* Floating Glassmorphic Keyword Hover Card */}
+      {activeHoverCard && hoverPos && (
+        <div
+          className="fixed z-50 w-80 p-4 rounded-xl border border-emerald-500/40 bg-slate-900/95 text-slate-200 shadow-2xl backdrop-blur-xl transition-all pointer-events-auto"
+          style={{
+            left: `${Math.min(window.innerWidth - 340, Math.max(10, hoverPos.x - 140))}px`,
+            top: `${Math.max(10, hoverPos.y - 200)}px`,
+          }}
+          onMouseEnter={() => {
+            if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+          }}
+          onMouseLeave={handleLeaveTerm}
+        >
+          <div className="flex items-center justify-between border-b border-slate-700/60 pb-2 mb-2.5">
+            <div className="flex items-center gap-1.5 font-bold text-emerald-300 text-sm font-serif-claude">
+              <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
+              <span>{activeHoverCard.term}</span>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30 font-mono">
+              {activeHoverCard.entity_type || 'Domain Entity'}
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-300 leading-relaxed mb-3">
+            {activeHoverCard.definition}
+          </p>
+
+          <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono mb-3 bg-slate-950/60 px-2 py-1.5 rounded-lg border border-slate-800">
+            <span>Vault Mentions: <strong className="text-emerald-300 font-bold">{activeHoverCard.vault_count}</strong></span>
+            {activeHoverCard.related_files?.length > 0 && (
+              <span className="truncate max-w-[120px] text-slate-400">
+                in {activeHoverCard.related_files[0]}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800">
+            <button
+              onClick={() => {
+                window.location.hash = `#/chat?q=${encodeURIComponent('Explain the concept and significance of ' + activeHoverCard.term + ' in document ' + filePath)}`;
+              }}
+              className="flex-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors shadow-sm"
+            >
+              <Brain className="w-3 h-3" /> Ask AI
+            </button>
+            <button
+              onClick={() => {
+                window.location.hash = `#/search?q=${encodeURIComponent(activeHoverCard.term)}`;
+              }}
+              className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors border border-slate-700"
+            >
+              <Search className="w-3 h-3" /> Search
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

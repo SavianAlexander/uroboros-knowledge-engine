@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 import { ChatSession, ChatMessage } from '../types';
-import { glassCardClasses } from '../lib/utils';
+import { glassCardClasses, emeraldButtonClasses, emeraldBadgeClasses, goldBadgeClasses, wineBadgeClasses } from '../lib/utils';
 import {
   Bot,
   Send,
@@ -38,7 +38,9 @@ import {
   Maximize2,
   Minimize2,
   CheckCircle2,
-  Layers
+  Layers,
+  Terminal,
+  Bookmark
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useApp } from '../store/AppContext';
@@ -65,7 +67,7 @@ export default function ChatView() {
   const [temperature, setTemperature] = useState<number>(0.7);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
 
-  // Phase 12 & 13 State
+  // Audio & Interactive State
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
   const [collapsedThoughts, setCollapsedThoughts] = useState<Record<string, boolean>>({});
@@ -76,7 +78,7 @@ export default function ChatView() {
 
   // Artifacts / Canvas Split-Pane State
   const [activeArtifact, setActiveArtifact] = useState<ActiveArtifact | null>(null);
-  const [artifactTab, setArtifactTab] = useState<'preview' | 'code'>('preview');
+  const [artifactTab, setArtifactTab] = useState<'preview' | 'code' | 'logs'>('preview');
   const [isCanvasFullscreen, setIsCanvasFullscreen] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -162,7 +164,6 @@ export default function ChatView() {
     return () => controller.abort();
   }, [activeWorkspace]);
 
-  // Clean up speech and voice recognition on unmount
   useEffect(() => {
     return () => {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -299,7 +300,6 @@ export default function ChatView() {
     executeSend(input);
   };
 
-  // Magic Prompt Enhancer Trigger
   const handleEnhancePrompt = async () => {
     if (!input.trim() || isEnhancingPrompt) return;
     setIsEnhancingPrompt(true);
@@ -322,7 +322,6 @@ export default function ChatView() {
     }
   };
 
-  // Voice Dictation (Web Speech Recognition)
   const handleToggleVoiceRecording = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -356,13 +355,8 @@ export default function ChatView() {
         setInput(prev => (prev ? `${prev} ${transcript}` : transcript));
       };
 
-      recognition.onerror = () => {
-        setIsRecordingVoice(false);
-      };
-
-      recognition.onend = () => {
-        setIsRecordingVoice(false);
-      };
+      recognition.onerror = () => setIsRecordingVoice(false);
+      recognition.onend = () => setIsRecordingVoice(false);
 
       recognitionRef.current = recognition;
       recognition.start();
@@ -480,7 +474,6 @@ export default function ChatView() {
     }
   };
 
-  // Derive dynamic smart follow-up suggestions from conversation
   const getFollowUpSuggestions = (content: string) => {
     const lower = content.toLowerCase();
     if (lower.includes('wal') || lower.includes('sqlite') || lower.includes('database')) {
@@ -497,13 +490,6 @@ export default function ChatView() {
         'What is the optimal chunk size for technical documentation?'
       ];
     }
-    if (lower.includes('quantum') || lower.includes('physics')) {
-      return [
-        'How does quantum entanglement enable superdense coding?',
-        'What are the primary noise factors in quantum qubits?',
-        'Explain Shor algorithm time complexity'
-      ];
-    }
     return [
       'Can you provide a step-by-step implementation code?',
       'What are the common edge cases and failure modes?',
@@ -511,7 +497,6 @@ export default function ChatView() {
     ];
   };
 
-  // Rich inline markdown renderer
   const renderFormattedInlineText = (text: string) => {
     const parts = text.split(/(\*\*.*?\*\*|`[^`]+`|\*[^*]+\*)/g);
     return parts.map((part, i) => {
@@ -520,7 +505,7 @@ export default function ChatView() {
       }
       if (part.startsWith('`') && part.endsWith('`')) {
         return (
-          <code key={i} className="px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-white/10 text-indigo-600 dark:text-indigo-300 font-mono text-[12px]">
+          <code key={i} className="px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-emerald-950/40 border border-slate-300 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300 font-mono text-[12px]">
             {part.slice(1, -1)}
           </code>
         );
@@ -532,7 +517,6 @@ export default function ChatView() {
     });
   };
 
-  // Rich block renderer for paragraphs, headers, tables, callouts, and code blocks
   const renderFormattedContent = (content: string, msgId: string, isCurrentlyStreaming: boolean = false) => {
     let mainContent = content;
     let thinkingBlock = '';
@@ -544,7 +528,6 @@ export default function ChatView() {
       }
     }
 
-    // Parse stream-resilient code blocks and markdown sections
     const parseBlocks = (raw: string) => {
       const blocks: Array<{ type: 'code' | 'markdown'; lang?: string; content: string; isStreamingCode?: boolean }> = [];
       const fenceRegex = /```(\w*)\n?/g;
@@ -572,7 +555,6 @@ export default function ChatView() {
           lastIndex = closingFenceIndex + 3;
           fenceRegex.lastIndex = lastIndex;
         } else {
-          // Open code block actively streaming
           blocks.push({
             type: 'code',
             lang,
@@ -597,19 +579,23 @@ export default function ChatView() {
     const blocks = parseBlocks(mainContent);
 
     return (
-      <div className="space-y-3.5 text-sm leading-relaxed">
-        {/* Thinking Accordion */}
+      <div className="space-y-3.5 text-sm leading-relaxed font-sans">
+        {/* Reasoning / Thinking Accordion (Mustard Gold Accent) */}
         {thinkingBlock && (
-          <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 text-xs space-y-2">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20 p-3.5 text-xs space-y-2 shadow-xs">
             <button
               onClick={() => setCollapsedThoughts(prev => ({ ...prev, [msgId]: !prev[msgId] }))}
-              className="flex items-center gap-1.5 font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="flex items-center gap-2 font-medium text-amber-700 dark:text-amber-400 hover:text-amber-600 transition-colors cursor-pointer w-full text-left"
             >
               <ChevronRight className={`w-3.5 h-3.5 transition-transform ${collapsedThoughts[msgId] ? '' : 'rotate-90'}`} />
-              <span>💭 Thinking Process ({thinkingBlock.split(' ').length} words)</span>
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span className="font-semibold">Reasoning Process</span>
+                <span className="text-[10px] opacity-70 font-mono">({thinkingBlock.split(' ').length} tokens parsed)</span>
+              </span>
             </button>
             {!collapsedThoughts[msgId] && (
-              <div className="text-slate-400 font-mono text-[11px] pl-5 border-l border-indigo-500/20 whitespace-pre-wrap leading-relaxed">
+              <div className="text-slate-600 dark:text-slate-300 font-mono text-[11px] pl-5 border-l-2 border-amber-500/40 whitespace-pre-wrap leading-relaxed">
                 {thinkingBlock}
               </div>
             )}
@@ -623,14 +609,13 @@ export default function ChatView() {
             const codeBlockId = `${msgId}-code-${sIdx}`;
 
             return (
-              <div key={sIdx} className="my-3 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-900/95 text-slate-100 text-xs font-mono shadow-lg">
-                <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-800/90 border-b border-slate-700/60 text-slate-400 text-[11px]">
+              <div key={sIdx} className="my-3.5 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-950 text-slate-100 text-xs font-mono shadow-xl">
+                <div className="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800 text-slate-400 text-[11px]">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold uppercase tracking-wider text-indigo-400">{lang}</span>
+                    <span className="font-bold uppercase tracking-wider text-emerald-400">{lang}</span>
                     {block.isStreamingCode && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
                   </div>
                   <div className="flex items-center gap-2">
-                    {/* Open in Canvas / Artifact Viewer Button */}
                     <button
                       onClick={() => {
                         setActiveArtifact({
@@ -641,23 +626,23 @@ export default function ChatView() {
                         });
                         toast('Canvas Opened', `Loaded ${lang} snippet in live preview canvas`, 'info');
                       }}
-                      className="flex items-center gap-1 hover:text-indigo-300 transition-colors px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-medium"
+                      className="flex items-center gap-1 hover:text-emerald-300 transition-colors px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 font-medium text-[10px]"
                       title="Open in Interactive Live Canvas"
                     >
                       <Eye className="w-3 h-3" />
-                      <span>Canvas</span>
+                      <span>Open Canvas</span>
                     </button>
 
                     <button
                       onClick={() => copyMessageText(codeBlockId, codeText)}
-                      className="flex items-center gap-1.5 hover:text-slate-100 transition-colors px-2 py-0.5 rounded bg-white/5 hover:bg-white/15"
+                      className="flex items-center gap-1 hover:text-slate-100 transition-colors px-2.5 py-1 rounded bg-white/5 hover:bg-white/15 text-[10px]"
                     >
                       {copiedMsgId === codeBlockId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedMsgId === codeBlockId ? 'Copied' : 'Copy'}</span>
                     </button>
                   </div>
                 </div>
-                <pre className="p-4 overflow-x-auto whitespace-pre leading-relaxed">{codeText}</pre>
+                <pre className="p-4 overflow-x-auto whitespace-pre leading-relaxed font-mono text-[12px]">{codeText}</pre>
               </div>
             );
           }
@@ -677,20 +662,20 @@ export default function ChatView() {
             const bodyRows = tableBuffer.slice(2).map(r => r.split('|').map(c => c.trim()).filter(Boolean));
 
             renderedElements.push(
-              <div key={tblKey} className="my-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+              <div key={tblKey} className="my-3.5 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
                 <table className="min-w-full text-xs text-left">
-                  <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-semibold border-b border-slate-200 dark:border-white/10">
+                  <thead className="bg-slate-100/90 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 font-semibold border-b border-slate-200 dark:border-white/10">
                     <tr>
                       {headerRow.map((col, cIdx) => (
-                        <th key={cIdx} className="px-3.5 py-2.5">{col}</th>
+                        <th key={cIdx} className="px-4 py-2.5">{col}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200/60 dark:divide-white/5">
                     {bodyRows.map((row, rIdx) => (
-                      <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white/40 dark:bg-white/[0.02]' : 'bg-slate-50/40 dark:bg-white/[0.05]'}>
+                      <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white/40 dark:bg-white/[0.02]' : 'bg-slate-50/50 dark:bg-white/[0.04]'}>
                         {row.map((cell, cIdx) => (
-                          <td key={cIdx} className="px-3.5 py-2 text-slate-800 dark:text-slate-300 font-mono text-[11px]">{cell}</td>
+                          <td key={cIdx} className="px-4 py-2 text-slate-800 dark:text-slate-300 font-mono text-[11px]">{cell}</td>
                         ))}
                       </tr>
                     ))}
@@ -716,25 +701,25 @@ export default function ChatView() {
             }
 
             if (!trimmedLine) {
-              renderedElements.push(<div key={`sp-${lIdx}`} className="h-1.5" />);
+              renderedElements.push(<div key={`sp-${lIdx}`} className="h-2" />);
               continue;
             }
 
             if (trimmedLine.startsWith('### ')) {
               renderedElements.push(
-                <h3 key={lIdx} className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-2 mb-1">
+                <h3 key={lIdx} className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-3 mb-1 font-serif-claude">
                   {renderFormattedInlineText(trimmedLine.slice(4))}
                 </h3>
               );
             } else if (trimmedLine.startsWith('## ')) {
               renderedElements.push(
-                <h2 key={lIdx} className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-3 mb-1.5 border-b border-slate-200 dark:border-white/10 pb-1">
+                <h2 key={lIdx} className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-4 mb-2 border-b border-slate-200/80 dark:border-white/10 pb-1.5 font-serif-claude">
                   {renderFormattedInlineText(trimmedLine.slice(3))}
                 </h2>
               );
             } else if (trimmedLine.startsWith('# ')) {
               renderedElements.push(
-                <h1 key={lIdx} className="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-4 mb-2">
+                <h1 key={lIdx} className="text-xl font-bold text-emerald-700 dark:text-emerald-400 mt-5 mb-2.5 font-serif-claude">
                   {renderFormattedInlineText(trimmedLine.slice(2))}
                 </h1>
               );
@@ -743,16 +728,16 @@ export default function ChatView() {
               const nextText = lines[lIdx + 1]?.replace(/^>\s*/, '') || '';
               lIdx++;
               const alertStyles: Record<string, { bg: string; border: string; text: string; icon: any }> = {
-                NOTE: { bg: 'bg-blue-500/10', border: 'border-l-4 border-blue-500', text: 'text-blue-600 dark:text-blue-400', icon: Info },
-                TIP: { bg: 'bg-emerald-500/10', border: 'border-l-4 border-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', icon: Lightbulb },
-                WARNING: { bg: 'bg-amber-500/10', border: 'border-l-4 border-amber-500', text: 'text-amber-600 dark:text-amber-400', icon: AlertTriangle },
-                IMPORTANT: { bg: 'bg-purple-500/10', border: 'border-l-4 border-purple-500', text: 'text-purple-600 dark:text-purple-400', icon: ShieldAlert }
+                NOTE: { bg: 'bg-slate-500/10', border: 'border-l-4 border-slate-500', text: 'text-slate-700 dark:text-slate-300', icon: Info },
+                TIP: { bg: 'bg-emerald-500/10', border: 'border-l-4 border-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', icon: Lightbulb },
+                WARNING: { bg: 'bg-amber-500/10', border: 'border-l-4 border-amber-500', text: 'text-amber-700 dark:text-amber-400', icon: AlertTriangle },
+                IMPORTANT: { bg: 'bg-rose-500/10', border: 'border-l-4 border-rose-500', text: 'text-rose-700 dark:text-rose-400', icon: ShieldAlert }
               };
               const style = alertStyles[alertType] || alertStyles.NOTE;
               const IconComp = style.icon;
 
               renderedElements.push(
-                <div key={lIdx} className={`my-2.5 p-3 rounded-r-xl ${style.bg} ${style.border} text-xs space-y-1`}>
+                <div key={lIdx} className={`my-3 p-3.5 rounded-r-xl ${style.bg} ${style.border} text-xs space-y-1`}>
                   <div className={`font-semibold flex items-center gap-1.5 ${style.text}`}>
                     <IconComp className="w-3.5 h-3.5" />
                     <span>{alertType}</span>
@@ -762,7 +747,7 @@ export default function ChatView() {
               );
             } else if (trimmedLine.startsWith('> ')) {
               renderedElements.push(
-                <blockquote key={lIdx} className="my-2 pl-3.5 border-l-2 border-indigo-500 text-slate-600 dark:text-slate-400 italic text-xs">
+                <blockquote key={lIdx} className="my-2.5 pl-4 border-l-2 border-emerald-500 text-slate-600 dark:text-slate-400 italic text-xs font-serif-claude">
                   {renderFormattedInlineText(trimmedLine.slice(2))}
                 </blockquote>
               );
@@ -776,7 +761,7 @@ export default function ChatView() {
               const numMatch = trimmedLine.match(/^(\d+)\.\s(.*)$/);
               renderedElements.push(
                 <div key={lIdx} className="flex items-start gap-2 my-1">
-                  <span className="font-semibold text-indigo-500 text-xs">{numMatch ? numMatch[1] : '1'}.</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-xs">{numMatch ? numMatch[1] : '1'}.</span>
                   <span className="text-slate-800 dark:text-slate-200">{renderFormattedInlineText(numMatch ? numMatch[2] : trimmedLine)}</span>
                 </div>
               );
@@ -795,7 +780,7 @@ export default function ChatView() {
             <div key={sIdx} className="space-y-1">
               {renderedElements}
               {isCurrentlyStreaming && sIdx === blocks.length - 1 && (
-                <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-500 animate-pulse align-middle rounded-sm" />
+                <span className="inline-block w-1.5 h-4 ml-1 bg-emerald-500 animate-pulse align-middle rounded-sm" />
               )}
             </div>
           );
@@ -806,39 +791,40 @@ export default function ChatView() {
 
   return (
     <div className="flex h-full relative overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-72 border-r border-slate-200 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/30 flex flex-col flex-shrink-0">
-        <div className="p-4 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">
-          <h3 className="font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2">
-            <Bot className="w-4 h-4 text-indigo-500" /> Chat Sessions
+      {/* Sessions Left Sidebar */}
+      <div className="w-68 border-r border-slate-200/80 dark:border-white/5 bg-slate-50/40 dark:bg-slate-900/40 flex flex-col flex-shrink-0">
+        <div className="p-3.5 border-b border-slate-200/80 dark:border-white/5 flex items-center justify-between">
+          <h3 className="font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2 text-xs uppercase tracking-wider font-semibold">
+            <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            Conversations
           </h3>
           <button
             onClick={handleNewSession}
-            className="text-xs bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-lg hover:bg-indigo-500/30 transition-colors flex items-center gap-1 font-medium"
+            className="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 font-medium active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" /> New
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
           {sessions.length === 0 ? (
-            <div className="text-center py-8 text-xs text-slate-500">No active sessions. Click "New" to start.</div>
+            <div className="text-center py-10 text-xs text-slate-500">No active sessions. Click "New" to start.</div>
           ) : (
             sessions.map(s => (
               <div
                 key={s.id}
                 onClick={() => handleSelectSession(s)}
-                className={`group w-full text-left px-3 py-2.5 rounded-lg transition-colors border flex items-center justify-between cursor-pointer ${
+                className={`group w-full text-left px-3 py-2.5 rounded-xl transition-all border flex items-center justify-between cursor-pointer ${
                   activeSession === s.id
-                    ? 'bg-indigo-500/10 border-indigo-500/30 dark:border-indigo-500/20'
-                    : 'hover:bg-slate-100 dark:hover:bg-white/5 border-transparent hover:border-slate-200 dark:hover:border-white/5'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-900 dark:text-emerald-200 font-medium shadow-xs'
+                    : 'hover:bg-slate-100 dark:hover:bg-white/5 border-transparent hover:border-slate-200 dark:hover:border-white/5 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 <div className="min-w-0 flex-1 pr-2">
-                  <p className={`text-sm font-medium truncate ${activeSession === s.id ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>
+                  <p className="text-xs font-medium truncate">
                     {s.title || 'Conversation'}
                   </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
                     {new Date(s.updatedAt || Date.now()).toLocaleDateString()}
                   </p>
                 </div>
@@ -854,28 +840,28 @@ export default function ChatView() {
           )}
         </div>
 
-        {/* Model & Temperature Config Panel */}
-        <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-white/50 dark:bg-slate-950/50 space-y-3">
+        {/* Model & Config Pill Box */}
+        <div className="p-3.5 border-t border-slate-200/80 dark:border-white/5 bg-slate-50/60 dark:bg-slate-950/60 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-              <Settings className="w-3.5 h-3.5 text-indigo-500" /> Model Config
+            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Settings className="w-3 h-3 text-emerald-500" /> Neural Provider
             </span>
+            <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-medium">HNSW Active</span>
           </div>
           <select
-            aria-label="Model Config"
+            aria-label="Model Configuration"
             value={modelConfig}
             onChange={(e) => setModelConfig(e.target.value)}
-            className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg text-xs text-slate-900 dark:text-slate-200 p-2 outline-none focus:border-indigo-500/50"
+            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg text-xs text-slate-900 dark:text-slate-200 p-2 outline-none focus:border-emerald-500/50 shadow-2xs"
           >
             <option value="auto">Auto (4-Tier Neural Router)</option>
             <option value="qwen2.5:7b">qwen2.5:7b (Master RAG)</option>
             <option value="qwen2.5-coder:14b">qwen2.5-coder:14b (Expert Coder)</option>
             <option value="qwen2.5-coder:7b">qwen2.5-coder:7b (Fast Coder)</option>
-            <option value="qwen2.5:0.5b">qwen2.5:0.5b (Micro Speed)</option>
-            <option value="phi4-mini:latest">phi4-mini:latest (128k Long Doc)</option>
+            <option value="phi4-mini:latest">phi4-mini:latest (128k Context)</option>
           </select>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">Temp:</span>
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-[11px] text-slate-500">Temp:</span>
             <input
               type="range"
               aria-label="Temperature"
@@ -884,48 +870,47 @@ export default function ChatView() {
               step="0.1"
               value={!isNaN(temperature) ? temperature : 0.7}
               onChange={(e) => setTemperature(parseFloat(e.target.value))}
-              className="flex-1 accent-indigo-500 cursor-pointer"
+              className="flex-1 accent-emerald-600 cursor-pointer h-1.5"
             />
-            <span className="text-xs font-mono text-slate-600 dark:text-slate-400 w-6 text-right">
+            <span className="text-[11px] font-mono text-slate-600 dark:text-slate-400 w-6 text-right">
               {!isNaN(temperature) ? temperature.toFixed(1) : '0.7'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className={`flex-1 flex flex-col bg-white/20 dark:bg-slate-950/20 transition-all duration-300 ${activeArtifact && !isCanvasFullscreen ? 'max-w-[55%]' : ''} ${isCanvasFullscreen ? 'hidden' : ''}`}>
-        {/* Header */}
-        <div className="p-4 border-b border-slate-200 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm">
-          <div className="flex flex-col">
-            <h2 className="text-base font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-500" />
-              {activeSessionObj?.title || 'Neuro RAG Chat Assistant'}
+      {/* Main Conversation Stream */}
+      <div className={`flex-1 flex flex-col bg-white/30 dark:bg-slate-950/20 transition-all duration-300 ${activeArtifact && !isCanvasFullscreen ? 'max-w-[55%]' : ''} ${isCanvasFullscreen ? 'hidden' : ''}`}>
+        {/* Top Chat Subheader */}
+        <div className="px-6 py-3 border-b border-slate-200/80 dark:border-white/5 flex items-center justify-between bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 font-serif-claude">
+              {activeSessionObj?.title || 'Knowledge Assistant'}
             </h2>
-            <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {webSearchEnabled ? 'RAG + Web Search Active' : 'Vault Grounded RAG Active'}
+            <span className={emeraldBadgeClasses}>
+              {webSearchEnabled ? 'RAG + Live Web' : 'Vault Grounded'}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setWebSearchEnabled(!webSearchEnabled)}
-              className={`p-2 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
                 webSearchEnabled
-                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm shadow-indigo-500/30'
+                  ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm shadow-emerald-600/30'
                   : 'bg-slate-100 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
-              title={webSearchEnabled ? 'Web Search Enabled (Grounding + Web)' : 'Web Search Disabled (Local Vault RAG)'}
+              title={webSearchEnabled ? 'Web Search Enabled' : 'Local Vault RAG Only'}
             >
-              <Search className="w-3.5 h-3.5" />
+              <Globe className="w-3.5 h-3.5" />
               <span>Web Search</span>
             </button>
 
             <button
               onClick={handlePreloadModel}
-              className="p-2 text-amber-600 dark:text-amber-400 hover:text-amber-500 bg-amber-500/10 rounded-lg border border-amber-500/20 transition-colors flex items-center gap-1 text-xs font-medium"
-              title="Preload Model into GPU VRAM for instant responses"
+              className="px-3 py-1.5 text-amber-700 dark:text-amber-400 hover:text-amber-600 bg-amber-500/10 rounded-lg border border-amber-500/20 transition-colors flex items-center gap-1.5 text-xs font-medium"
+              title="Preload Model into GPU VRAM"
             >
               <Zap className="w-3.5 h-3.5" />
               <span>Warmup VRAM</span>
@@ -933,72 +918,71 @@ export default function ChatView() {
 
             <button
               onClick={handleExportTranscript}
-              className="p-2 text-slate-600 dark:text-slate-300 hover:text-indigo-500 bg-slate-100 dark:bg-white/5 hover:bg-indigo-500/10 rounded-lg border border-slate-300 dark:border-white/10 transition-colors flex items-center gap-1 text-xs"
+              className="p-2 text-slate-600 dark:text-slate-300 hover:text-emerald-500 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-300 dark:border-white/10 transition-colors"
               title="Export Chat Transcript (.md)"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export</span>
             </button>
 
             <button
               onClick={handleClearMessages}
-              className="p-2 text-slate-500 hover:text-rose-500 bg-slate-100 dark:bg-white/5 hover:bg-rose-500/10 rounded-lg border border-slate-300 dark:border-white/10 transition-colors"
+              className="p-2 text-slate-400 hover:text-rose-500 bg-slate-100 dark:bg-white/5 hover:bg-rose-500/10 rounded-lg border border-slate-300 dark:border-white/10 transition-colors"
               title="Clear Messages"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Messages Stream */}
+        {/* Message Bubble Feed */}
         <div
           ref={chatContainerRef}
           onScroll={handleContainerScroll}
-          className="flex-1 overflow-y-auto p-6 space-y-6"
+          className="flex-1 overflow-y-auto px-6 py-6 space-y-6"
         >
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto py-12">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6">
-                <Bot className="w-8 h-8 text-indigo-500" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-800 flex items-center justify-center mb-6 shadow-lg shadow-emerald-900/20 border border-emerald-400/30">
+                <Bot className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-2">
-                How can I assist your vault research today?
+              <h3 className="text-xl font-medium text-slate-900 dark:text-slate-100 mb-2 font-serif-claude">
+                What knowledge shall we explore?
               </h3>
-              <p className="text-xs text-slate-500 max-w-sm mb-8">
-                Ask questions about your local knowledge base, discover semantic connections, or query live web search.
+              <p className="text-xs text-slate-500 max-w-sm mb-8 leading-relaxed">
+                Ask deep questions across your vault documents, synthesize complex architectures, or explore semantic multi-hop graphs.
               </p>
 
               <div className="grid grid-cols-2 gap-3 w-full">
                 <button
-                  onClick={() => handleSendPromptText('Summarize the latest research document in the vault')}
-                  className="text-left p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group"
+                  onClick={() => handleSendPromptText('Summarize the top architectural findings in the vault')}
+                  className="text-left p-3.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group shadow-2xs"
                 >
-                  <span className="font-medium text-slate-900 dark:text-slate-200 group-hover:text-indigo-500 transition-colors">Summarize Research</span>
-                  <span className="text-[11px] text-slate-500">Synthesize documents in local storage</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Summarize Vault</span>
+                  <span className="text-[11px] text-slate-500">Synthesize documents into key takeaways</span>
                 </button>
 
                 <button
-                  onClick={() => handleSendPromptText("Find connections to 'quantum computing'") }
-                  className="text-left p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group"
+                  onClick={() => handleSendPromptText("Explore multi-hop relationships and semantic clusters in the database")}
+                  className="text-left p-3.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group shadow-2xs"
                 >
-                  <span className="font-medium text-slate-900 dark:text-slate-200 group-hover:text-indigo-500 transition-colors">Discover Connections</span>
-                  <span className="text-[11px] text-slate-500">Explore multi-hop knowledge graph</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Semantic Clusters</span>
+                  <span className="text-[11px] text-slate-500">Map connected knowledge entities</span>
                 </button>
 
                 <button
-                  onClick={() => handleSendPromptText('Explain vector ColBERT MaxSim reranking')}
-                  className="text-left p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group"
+                  onClick={() => handleSendPromptText('Explain Write-Ahead Logging (WAL) and compare with journal mode')}
+                  className="text-left p-3.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group shadow-2xs"
                 >
-                  <span className="font-medium text-slate-900 dark:text-slate-200 group-hover:text-indigo-500 transition-colors">Explain Algorithms</span>
-                  <span className="text-[11px] text-slate-500">Break down retrieval paradigms</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Database Engineering</span>
+                  <span className="text-[11px] text-slate-500">Deconstruct WAL concurrency & performance</span>
                 </button>
 
                 <button
-                  onClick={() => handleSendPromptText('Search the web for recent accounting standards updates')}
-                  className="text-left p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-500/5 hover:border-indigo-500/30 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group"
+                  onClick={() => handleSendPromptText('Synthesize an executive compliance brief from recent documents')}
+                  className="text-left p-3.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-slate-900/60 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all text-xs text-slate-700 dark:text-slate-300 flex flex-col gap-1 group shadow-2xs"
                 >
-                  <span className="font-medium text-slate-900 dark:text-slate-200 group-hover:text-indigo-500 transition-colors">Web Grounding</span>
-                  <span className="text-[11px] text-slate-500">Query live search with WebSearchFetcher</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Executive Briefing</span>
+                  <span className="text-[11px] text-slate-500">Generate high-level strategic overview</span>
                 </button>
               </div>
             </div>
@@ -1006,35 +990,39 @@ export default function ChatView() {
             messages.map((msg, idx) => (
               <div key={msg.id} className={`flex gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 border border-indigo-500/30 mt-0.5">
-                    <Bot className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0 border border-emerald-500/30 mt-0.5">
+                    <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                 )}
 
-                <div className={`group relative max-w-[90%] rounded-2xl p-4 shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : `${glassCardClasses} rounded-tl-sm text-slate-900 dark:text-slate-200`}`}>
-                  {/* Perplexity-style Multi-Stage RAG Reasoning Timeline Header */}
+                <div className={`group relative max-w-[88%] rounded-2xl p-4.5 shadow-xs ${
+                  msg.role === 'user'
+                    ? 'bg-slate-900 text-white dark:bg-slate-800 border border-slate-700/60 rounded-tr-xs'
+                    : `${glassCardClasses} rounded-tl-xs text-slate-900 dark:text-slate-100`
+                }`}>
+                  {/* Reasoning Timeline Header */}
                   {msg.role === 'assistant' && (
-                    <div className="mb-3 pb-2.5 border-b border-slate-200/50 dark:border-white/5">
+                    <div className="mb-3 pb-2.5 border-b border-slate-200/60 dark:border-white/5">
                       <button
                         onClick={() => setExpandedReasoning(prev => ({ ...prev, [msg.id]: !prev[msg.id] }))}
-                        className="flex items-center justify-between w-full text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-400 transition-colors"
+                        className="flex items-center justify-between w-full text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Grounded Reasoning Flow (3 Verification Stages)</span>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>Grounded Verification Pipeline</span>
                         </div>
                         <ChevronRight className={`w-3.5 h-3.5 transition-transform ${expandedReasoning[msg.id] ? 'rotate-90' : ''}`} />
                       </button>
 
                       {expandedReasoning[msg.id] && (
-                        <div className="mt-2 pl-5 space-y-1 text-[11px] text-slate-400 font-mono border-l border-emerald-500/30">
-                          <div className="flex items-center gap-1.5 text-emerald-400">
-                            <span>✓</span> 1. Vector Search: ColBERT MaxSim + FTS5 Hybrid Index
+                        <div className="mt-2 pl-4 space-y-1 text-[11px] text-slate-400 font-mono border-l-2 border-emerald-500/40">
+                          <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                            <span>✓</span> 1. Vector Search: ColBERT MaxSim & FTS5 Normalized Queries
                           </div>
-                          <div className="flex items-center gap-1.5 text-cyan-400">
-                            <span>✓</span> 2. RRF Cross-Encoder: Reciprocal Rank Fusion ({msg.sources?.length || 5} chunks)
+                          <div className="flex items-center gap-1.5 text-teal-600 dark:text-teal-400">
+                            <span>✓</span> 2. Reciprocal Rank Fusion ({msg.sources?.length || 5} source chunks)
                           </div>
-                          <div className="flex items-center gap-1.5 text-indigo-400">
+                          <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                             <span>✓</span> 3. Neural Synthesis: {msg.metrics?.tier || 'Master'}: {msg.metrics?.model || 'qwen2.5:7b'}
                           </div>
                         </div>
@@ -1045,10 +1033,10 @@ export default function ChatView() {
                   {/* Formatted Content */}
                   {renderFormattedContent(msg.content, msg.id, isStreaming && idx === messages.length - 1)}
 
-                  {/* Performance Metrics */}
+                  {/* Telemetry Metrics */}
                   {msg.role === 'assistant' && msg.metrics && (
-                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-200/50 dark:border-white/5 text-[10px] text-slate-400 font-mono">
-                      <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider">
+                    <div className="flex items-center gap-2 mt-3.5 pt-2 border-t border-slate-200/50 dark:border-white/5 text-[10px] text-slate-400 font-mono">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wider">
                         {msg.metrics.tier || 'Master'}: {msg.metrics.model}
                       </span>
                       {msg.metrics.tokens_per_sec && <span>• {msg.metrics.tokens_per_sec} tok/s</span>}
@@ -1057,12 +1045,12 @@ export default function ChatView() {
                     </div>
                   )}
 
-                  {/* Grounded Sources with Confidence Badges */}
+                  {/* Grounded Sources / Citations */}
                   {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
                     <div className="mt-3.5 pt-2.5 border-t border-slate-200/80 dark:border-white/10 space-y-2">
                       <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-                        <span>Grounded Sources ({msg.sources.length}):</span>
-                        <span className="text-[10px] text-emerald-500 dark:text-emerald-400">Verified Context</span>
+                        <span>Grounded Context Sources ({msg.sources.length}):</span>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Verified Sources</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {msg.sources.map((src, sIdx) => {
@@ -1071,12 +1059,12 @@ export default function ChatView() {
                             <button
                               key={sIdx}
                               onClick={() => setSelectedCitation(src)}
-                              className="inline-flex items-center gap-1.5 text-[11px] bg-slate-100 dark:bg-white/5 hover:bg-indigo-500/20 hover:border-indigo-500/40 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-white/10 text-cyan-700 dark:text-cyan-400 max-w-xs truncate transition-all cursor-pointer group/cit"
+                              className="inline-flex items-center gap-1.5 text-[11px] bg-slate-100 dark:bg-white/5 hover:bg-emerald-500/15 hover:border-emerald-500/40 px-2.5 py-1 rounded-lg border border-slate-300/80 dark:border-white/10 text-slate-800 dark:text-slate-200 max-w-xs truncate transition-all cursor-pointer"
                               title="Click to view full grounded excerpt"
                             >
-                              {src.url ? <Globe className="w-3 h-3 flex-shrink-0 text-indigo-400" /> : <FileText className="w-3 h-3 flex-shrink-0" />}
+                              {src.url ? <Globe className="w-3 h-3 flex-shrink-0 text-emerald-500" /> : <FileText className="w-3 h-3 flex-shrink-0 text-amber-500" />}
                               <span className="truncate">{src.title || src.path || src.url}</span>
-                              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-mono font-bold">
                                 {confPct}%
                               </span>
                             </button>
@@ -1088,33 +1076,30 @@ export default function ChatView() {
 
                   {/* Interactive Assistant Action Bar */}
                   {msg.role === 'assistant' && msg.content && (
-                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-200/40 dark:border-white/5 text-xs text-slate-400">
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-200/50 dark:border-white/5 text-xs text-slate-400">
                       <div className="flex items-center gap-1">
-                        {/* Copy Full Message */}
                         <button
                           onClick={() => copyMessageText(msg.id, msg.content)}
-                          className="p-1.5 hover:text-indigo-400 hover:bg-white/5 rounded-md transition-colors flex items-center gap-1 text-[11px]"
+                          className="p-1.5 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md transition-colors flex items-center gap-1 text-[11px]"
                           title="Copy Full Response"
                         >
                           {copiedMsgId === msg.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                           <span>{copiedMsgId === msg.id ? 'Copied' : 'Copy'}</span>
                         </button>
 
-                        {/* TTS Read Aloud */}
                         <button
                           onClick={() => handleToggleSpeak(msg.id, msg.content)}
-                          className={`p-1.5 hover:bg-white/5 rounded-md transition-colors flex items-center gap-1 text-[11px] ${speakingMsgId === msg.id ? 'text-indigo-400 font-medium' : 'hover:text-indigo-400'}`}
+                          className={`p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md transition-colors flex items-center gap-1 text-[11px] ${speakingMsgId === msg.id ? 'text-emerald-500 font-medium' : 'hover:text-emerald-500'}`}
                           title="Read Aloud (Text-to-Speech)"
                         >
-                          {speakingMsgId === msg.id ? <VolumeX className="w-3.5 h-3.5 text-indigo-400 animate-pulse" /> : <Volume2 className="w-3.5 h-3.5" />}
+                          {speakingMsgId === msg.id ? <VolumeX className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> : <Volume2 className="w-3.5 h-3.5" />}
                           <span>{speakingMsgId === msg.id ? 'Stop' : 'Read'}</span>
                         </button>
 
-                        {/* Regenerate */}
                         <button
                           onClick={handleRegenerate}
                           disabled={isStreaming}
-                          className="p-1.5 hover:text-indigo-400 hover:bg-white/5 rounded-md transition-colors flex items-center gap-1 text-[11px] disabled:opacity-40"
+                          className="p-1.5 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md transition-colors flex items-center gap-1 text-[11px] disabled:opacity-40"
                           title="Regenerate Answer"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
@@ -1122,18 +1107,17 @@ export default function ChatView() {
                         </button>
                       </div>
 
-                      {/* Feedback Thumbs */}
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleRate(msg.id, 'up')}
-                          className={`p-1.5 rounded-md transition-colors ${ratings[msg.id] === 'up' ? 'text-emerald-400 bg-emerald-500/10' : 'hover:text-emerald-400 hover:bg-white/5'}`}
+                          className={`p-1.5 rounded-md transition-colors ${ratings[msg.id] === 'up' ? 'text-emerald-500 bg-emerald-500/10' : 'hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-white/5'}`}
                           title="Helpful response"
                         >
                           <ThumbsUp className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleRate(msg.id, 'down')}
-                          className={`p-1.5 rounded-md transition-colors ${ratings[msg.id] === 'down' ? 'text-rose-400 bg-rose-500/10' : 'hover:text-rose-400 hover:bg-white/5'}`}
+                          className={`p-1.5 rounded-md transition-colors ${ratings[msg.id] === 'down' ? 'text-rose-500 bg-rose-500/10' : 'hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-white/5'}`}
                           title="Unhelpful response"
                         >
                           <ThumbsDown className="w-3.5 h-3.5" />
@@ -1142,11 +1126,11 @@ export default function ChatView() {
                     </div>
                   )}
 
-                  {/* Contextual Smart Follow-up Chips */}
+                  {/* Contextual Smart Follow-up Suggestions */}
                   {msg.role === 'assistant' && !isStreaming && idx === messages.length - 1 && msg.content && (
                     <div className="mt-3.5 pt-3 border-t border-slate-200/50 dark:border-white/10 space-y-1.5">
                       <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                        <Sparkles className="w-3 h-3 text-indigo-400" />
+                        <Sparkles className="w-3 h-3 text-amber-500" />
                         <span>Suggested Next Steps:</span>
                       </div>
                       <div className="flex flex-col sm:flex-row flex-wrap gap-2">
@@ -1154,9 +1138,9 @@ export default function ChatView() {
                           <button
                             key={suggIdx}
                             onClick={() => handleSendPromptText(sugg)}
-                            className="text-left text-xs px-3 py-1.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/15 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all flex items-center gap-1.5 group/chip"
+                            className="text-left text-xs px-3 py-1.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/15 text-slate-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all flex items-center gap-1.5"
                           >
-                            <MessageSquare className="w-3 h-3 text-indigo-400 flex-shrink-0 group-hover/chip:translate-x-0.5 transition-transform" />
+                            <MessageSquare className="w-3 h-3 text-emerald-500 flex-shrink-0" />
                             <span>{sugg}</span>
                           </button>
                         ))}
@@ -1166,73 +1150,72 @@ export default function ChatView() {
                 </div>
 
                 {msg.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-300 dark:border-white/10 mt-0.5">
-                    <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                  <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-300 dark:border-white/10 mt-0.5">
+                    <User className="w-4 h-4 text-slate-700 dark:text-slate-300" />
                   </div>
                 )}
               </div>
             ))
           )}
 
-          {/* Streaming Indicator */}
           {isStreaming && (
             <div className="flex gap-3.5 justify-start">
-              <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
-                <Bot className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 border border-emerald-500/30">
+                <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <div className={`${glassCardClasses} rounded-2xl rounded-tl-sm p-4 flex items-center gap-2 shadow-md`}>
-                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse delay-75" />
-                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse delay-150" />
-                <span className="text-xs text-slate-500 ml-1">Synthesizing grounded response...</span>
+              <div className={`${glassCardClasses} rounded-2xl rounded-tl-xs p-4 flex items-center gap-2.5 shadow-md`}>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse delay-75" />
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse delay-150" />
+                <span className="text-xs text-slate-500 ml-1 font-serif-claude">Synthesizing grounded response...</span>
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Scroll To Bottom Button */}
         {showScrollBottom && (
           <button
             onClick={scrollToBottom}
-            className="absolute bottom-32 right-8 p-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl border border-white/20 transition-all z-20"
+            className="absolute bottom-32 right-8 p-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl border border-white/20 transition-all z-20"
             title="Scroll to bottom"
           >
             <ArrowDown className="w-4 h-4" />
           </button>
         )}
 
-        {/* Input Form & Prompt Enhancer Toolbar */}
-        <div className="p-4 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-white/5 space-y-2.5">
-          {/* Quick Presets Bar */}
-          <div className="max-w-4xl mx-auto flex items-center gap-2 overflow-x-auto pb-1 text-[11px]">
-            <span className="text-slate-500 text-[10px] font-medium uppercase tracking-wider flex items-center gap-1 flex-shrink-0">
-              <Sparkles className="w-3 h-3 text-indigo-400" /> Presets:
+        {/* Floating Claude-like Bottom Input Dock */}
+        <div className="p-4 bg-white/70 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/80 dark:border-white/5 space-y-2.5">
+          {/* Presets Row */}
+          <div className="max-w-4xl mx-auto flex items-center gap-2 overflow-x-auto pb-0.5 text-[11px]">
+            <span className="text-slate-500 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1 flex-shrink-0">
+              <Sparkles className="w-3 h-3 text-amber-500" /> Presets:
             </span>
             <button
               onClick={() => handleSendPromptText('Explain SQLite Write-Ahead Logging (WAL) and provide a technical comparison table with rollback journal')}
-              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 transition-colors flex-shrink-0"
+              className="px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-emerald-500/10 text-slate-700 dark:text-slate-300 transition-colors flex-shrink-0"
             >
               📊 SQLite WAL Mode
             </button>
             <button
               onClick={() => handleSendPromptText('Deep dive into vector ColBERT MaxSim reranking vs Dense Cosine similarity')}
-              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 transition-colors flex-shrink-0"
+              className="px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-emerald-500/10 text-slate-700 dark:text-slate-300 transition-colors flex-shrink-0"
             >
               ⚡ ColBERT MaxSim
             </button>
             <button
               onClick={() => handleSendPromptText('Summarize the top 5 core system capabilities of the Uroboros Knowledge Engine')}
-              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 transition-colors flex-shrink-0"
+              className="px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-emerald-500/10 text-slate-700 dark:text-slate-300 transition-colors flex-shrink-0"
             >
-              📝 Engine Summary
+              📝 Vault Overview
             </button>
           </div>
 
+          {/* Textarea Form */}
           <form onSubmit={handleSend} className="max-w-4xl mx-auto relative flex items-end">
             <textarea
-              className="w-full bg-slate-100/50 dark:bg-slate-800/50 border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 pr-24 text-slate-900 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 resize-none min-h-[52px] max-h-32 text-sm leading-relaxed"
-              placeholder="Message Uroboros Knowledge Engine (Press Enter to send)..."
+              className="w-full bg-white/80 dark:bg-slate-800/60 border border-slate-300 dark:border-white/10 rounded-2xl px-4 py-3.5 pr-28 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10 resize-none min-h-[54px] max-h-32 text-sm leading-relaxed shadow-sm transition-all"
+              placeholder="Ask anything about your vault documents, architecture, or research..."
               rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -1244,72 +1227,75 @@ export default function ChatView() {
               }}
             />
 
-            {/* Input Action Buttons: Enhance, Voice Dictation, Send */}
-            <div className="absolute right-2 bottom-2 flex items-center gap-1">
-              {/* Magic Wand Prompt Enhancer */}
+            <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1.5">
+              {/* Magic Wand Prompt Enhancer (Mustard Gold) */}
               <button
                 type="button"
                 onClick={handleEnhancePrompt}
                 disabled={!input.trim() || isEnhancingPrompt}
-                className="p-2 text-indigo-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
-                title="Magic Prompt Enhancer (Expands query into expert prompt)"
+                className="p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-xl transition-colors disabled:opacity-30 cursor-pointer"
+                title="Magic Prompt Enhancer (Mustard Gold Wand)"
               >
                 <Wand2 className={`w-4 h-4 ${isEnhancingPrompt ? 'animate-spin' : ''}`} />
               </button>
 
-              {/* Voice Dictation (Web Speech Recognition) */}
+              {/* Voice Dictation (Emerald Mic) */}
               <button
                 type="button"
                 onClick={handleToggleVoiceRecording}
-                className={`p-2 rounded-lg transition-colors cursor-pointer ${isRecordingVoice ? 'bg-rose-500 text-white animate-pulse' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                className={`p-2 rounded-xl transition-colors cursor-pointer ${
+                  isRecordingVoice
+                    ? 'bg-rose-600 text-white animate-pulse'
+                    : 'text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                }`}
                 title={isRecordingVoice ? 'Stop Recording' : 'Dictate with Voice (Web Speech API)'}
               >
                 {isRecordingVoice ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
 
-              {/* Send Button */}
+              {/* Send Button (Emerald) */}
               <button
                 type="submit"
                 disabled={!input.trim() || isStreaming}
-                className="p-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700/50 disabled:text-slate-500 text-white rounded-lg transition-colors shadow-sm cursor-pointer"
+                className={`p-2.5 ${emeraldButtonClasses} disabled:opacity-30 disabled:pointer-events-none rounded-xl cursor-pointer`}
                 title="Send Message"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
           </form>
-          <div className="text-center text-[11px] text-slate-500">
-            Neuro Knowledge Engine v2.0 • Ultra-Luxury Grounded Intelligence Suite
+          <div className="text-center text-[11px] text-slate-400">
+            Uroboros Knowledge Engine • Grounded Neural RAG Studio
           </div>
         </div>
       </div>
 
-      {/* Artifacts / Canvas Split-Pane Viewer */}
+      {/* Claude-style Split-Pane Artifacts Canvas */}
       {activeArtifact && (
-        <div className={`border-l border-slate-200 dark:border-white/10 bg-slate-900/95 flex flex-col transition-all duration-300 ${isCanvasFullscreen ? 'w-full' : 'w-[45%]'}`}>
+        <div className={`border-l border-slate-200 dark:border-white/10 bg-slate-950 text-slate-100 flex flex-col transition-all duration-300 ${isCanvasFullscreen ? 'w-full' : 'w-[45%]'}`}>
           {/* Canvas Header */}
-          <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+          <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 backdrop-blur-sm">
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-indigo-400" />
-              <span className="font-semibold text-xs text-slate-200 uppercase tracking-wider">{activeArtifact.title}</span>
-              <span className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-mono uppercase font-bold">
+              <Layers className="w-4 h-4 text-emerald-400" />
+              <span className="font-semibold text-xs text-slate-200 uppercase tracking-wider font-mono">{activeArtifact.title}</span>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-mono uppercase font-bold border border-emerald-500/30">
                 {activeArtifact.language}
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              {/* Tab Selector: Preview vs Code */}
-              <div className="flex rounded-lg bg-slate-800/80 p-0.5 text-xs border border-white/5">
+            <div className="flex items-center gap-2">
+              {/* Tab Selector */}
+              <div className="flex rounded-lg bg-slate-800 p-0.5 text-xs border border-white/5">
                 <button
                   onClick={() => setArtifactTab('preview')}
-                  className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 ${artifactTab === 'preview' ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                  className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 ${artifactTab === 'preview' ? 'bg-emerald-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
                 >
                   <Eye className="w-3 h-3" />
                   <span>Preview</span>
                 </button>
                 <button
                   onClick={() => setArtifactTab('code')}
-                  className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 ${artifactTab === 'code' ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                  className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 ${artifactTab === 'code' ? 'bg-emerald-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
                 >
                   <Code className="w-3 h-3" />
                   <span>Code</span>
@@ -1336,10 +1322,10 @@ export default function ChatView() {
             </div>
           </div>
 
-          {/* Canvas Content */}
-          <div className="flex-1 overflow-y-auto p-4">
+          {/* Canvas Body */}
+          <div className="flex-1 overflow-y-auto p-4 bg-slate-950">
             {artifactTab === 'preview' ? (
-              <div className="h-full rounded-xl border border-slate-800 bg-slate-950 p-4 overflow-auto">
+              <div className="h-full rounded-xl border border-slate-800 bg-slate-900/50 p-4 overflow-auto">
                 {activeArtifact.language === 'html' || activeArtifact.language === 'svg' ? (
                   <div
                     dangerouslySetInnerHTML={{ __html: activeArtifact.content }}
@@ -1347,46 +1333,46 @@ export default function ChatView() {
                   />
                 ) : (
                   <div className="space-y-3 font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
-                    <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center gap-2">
+                    <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-center gap-2">
                       <Sparkles className="w-4 h-4 flex-shrink-0" />
-                      <span>Interactive Live Artifact Sandbox • Ready for execution</span>
+                      <span>Live Interactive Artifact Preview Sandbox</span>
                     </div>
-                    <pre className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-200">{activeArtifact.content}</pre>
+                    <pre className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 font-mono text-[12px]">{activeArtifact.content}</pre>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="h-full rounded-xl border border-slate-800 bg-slate-950/90 text-slate-100 text-xs font-mono p-4 overflow-auto leading-relaxed">
+              <div className="h-full rounded-xl border border-slate-800 bg-slate-900/80 text-slate-100 text-xs font-mono p-4 overflow-auto leading-relaxed">
                 <pre>{activeArtifact.content}</pre>
               </div>
             )}
           </div>
 
           {/* Canvas Footer */}
-          <div className="p-3 border-t border-slate-800 flex items-center justify-between bg-slate-950/60 text-xs text-slate-400">
+          <div className="p-3 border-t border-slate-800 flex items-center justify-between bg-slate-900 text-xs text-slate-400">
             <span className="font-mono text-[11px]">{activeArtifact.content.length} characters</span>
             <button
               onClick={() => {
                 copyMessageText('artifact', activeArtifact.content);
                 toast('Copied', 'Artifact code copied to clipboard', 'info');
               }}
-              className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1 text-xs"
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1.5 text-xs shadow-sm"
             >
-              <Copy className="w-3 h-3" />
+              <Copy className="w-3.5 h-3.5" />
               <span>Copy Code</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* Citation Modal */}
+      {/* Citation Popover Modal */}
       {selectedCitation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className={`${glassCardClasses} w-full max-w-xl rounded-2xl p-6 shadow-2xl border border-slate-700/50 space-y-4 max-h-[80vh] flex flex-col`}>
             <div className="flex items-center justify-between border-b border-slate-700/50 pb-3">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-indigo-400" />
-                <h3 className="text-sm font-semibold text-slate-100 truncate max-w-md">
+                <FileText className="w-5 h-5 text-emerald-500" />
+                <h3 className="text-sm font-semibold text-slate-100 truncate max-w-md font-serif-claude">
                   {selectedCitation.title || selectedCitation.filename || 'Grounded Vault Context'}
                 </h3>
               </div>
@@ -1397,13 +1383,13 @@ export default function ChatView() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-400 font-mono bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
+            <div className="flex items-center justify-between text-xs text-slate-400 font-mono bg-slate-900/60 p-2.5 rounded-lg border border-white/5">
               <span className="truncate max-w-xs">{selectedCitation.path || selectedCitation.url || 'Internal Knowledge Base'}</span>
               <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">
                 {Math.round((selectedCitation.confidence_score || 0.92) * 100)}% Match
               </span>
             </div>
-            <div className="flex-1 overflow-y-auto bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 text-slate-200 text-xs font-mono leading-relaxed whitespace-pre-wrap">
+            <div className="flex-1 overflow-y-auto bg-slate-900/90 p-4 rounded-xl border border-slate-800 text-slate-200 text-xs font-mono leading-relaxed whitespace-pre-wrap">
               {selectedCitation.snippet || selectedCitation.citation || 'No preview text excerpt available for this source.'}
             </div>
             <div className="flex justify-end gap-2 pt-2">
@@ -1412,7 +1398,7 @@ export default function ChatView() {
                   copyMessageText('cit', selectedCitation.snippet || selectedCitation.path || '');
                   toast('Copied', 'Citation excerpt copied to clipboard', 'info');
                 }}
-                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5"
+                className={`px-3.5 py-1.5 ${emeraldButtonClasses} text-xs font-medium transition-colors flex items-center gap-1.5`}
               >
                 <Copy className="w-3.5 h-3.5" />
                 <span>Copy Excerpt</span>
@@ -1424,5 +1410,3 @@ export default function ChatView() {
     </div>
   );
 }
-
-

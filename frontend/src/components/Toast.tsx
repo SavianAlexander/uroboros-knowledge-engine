@@ -37,7 +37,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none font-sans">
         <AnimatePresence>
           {toasts.map((t) => (
             <motion.div
@@ -46,21 +46,23 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="pointer-events-auto relative overflow-hidden flex items-start gap-3 p-4 rounded-xl bg-slate-900/95 backdrop-blur-xl border border-slate-800 shadow-2xl text-slate-100"
+              className="pointer-events-auto relative overflow-hidden flex items-start gap-3 p-4 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 shadow-2xl text-slate-100"
             >
               {t.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />}
-              {t.type === 'error' && <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />}
-              {t.type === 'info' && <Info className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />}
+              {t.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />}
+              {t.type === 'info' && <Info className="w-5 h-5 text-teal-400 flex-shrink-0 mt-0.5" />}
               {t.type === 'warning' && <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />}
+              
               <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-medium text-slate-100">{t.title}</h4>
-                {t.description && <p className="text-xs text-slate-400 mt-0.5 truncate">{t.description}</p>}
+                <h4 className="text-xs font-semibold text-slate-100 font-serif-claude">{t.title}</h4>
+                {t.description && <p className="text-[11px] text-slate-400 mt-0.5 truncate font-mono">{t.description}</p>}
               </div>
+              
               <button
                 onClick={() => removeToast(t.id)}
                 className="p-1 hover:bg-white/10 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
 
               {/* Animated Progress Bar */}
@@ -71,8 +73,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 style={{ originX: 0 }}
                 className={`absolute bottom-0 left-0 right-0 h-0.5 ${
                   t.type === 'success' ? 'bg-emerald-400' :
-                  t.type === 'error' ? 'bg-red-400' :
-                  t.type === 'warning' ? 'bg-amber-400' : 'bg-indigo-400'
+                  t.type === 'error' ? 'bg-rose-500' :
+                  t.type === 'warning' ? 'bg-amber-400' : 'bg-teal-400'
                 }`}
               />
             </motion.div>

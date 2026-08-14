@@ -1,22 +1,22 @@
 # Codebase Git Commit History & Provenance
 
-## Commit `e619461415` (2026-08-13)
+## Commit `449ab3afb0` (2026-08-13)
 - **Author**: Lazy Dev
-- **Message**: ci(matrix): target stable python 3.11 and 3.12 enterprise runtimes [Tududi #910]
+- **Message**: ui: implement interactive Live Artifacts Canvas split pane multi-stage reasoning timeline voice dictation and magic prompt enhancer [Tududi #946 | Neuro Hash: 1ff99903]
 
-## Commit `90643dd11f` (2026-08-13)
+## Commit `c01ef7de6b` (2026-08-13)
 - **Author**: Lazy Dev
-- **Message**: ci(docker): optimize 3-stage dockerfile with non-root appuser, gha cache, matrix testing and concurrency groups [Tududi #910]
+- **Message**: ui: implement rich Markdown parser action bar TTS ratings dynamic follow-up chips and citation meters [Tududi #940 | Neuro Hash: 708024b6]
 
-## Commit `46499ef041` (2026-08-13)
+## Commit `499eff909b` (2026-08-13)
 - **Author**: Lazy Dev
-- **Message**: fix(lifecycle): harden process manager, prevent zombies, hook win32 ctrl_close, failover ports and health-poll browser [Tududi #904]
+- **Message**: llm: ensure stream_chat signals offline fallback via ConnectionError in headless CI environments [Tududi #934 | Neuro Hash: f1d2ff17]
 
-## Commit `d6940d570d` (2026-08-13)
+## Commit `624c8283ed` (2026-08-13)
 - **Author**: Lazy Dev
-- **Message**: feat(frontiers): complete Phase 5 frontiers (sse streaming rag, temporal timeline, conversational reformulator, code ast callgraph, merkle attestation) [Tududi #898]
+- **Message**: ci: harden test suites with resilient DB initialization unified SSE done schema and merged diff routes [Tududi #934 | Neuro Hash: ea2a434e]
 
-## Commit `07b1270ee8` (2026-08-13)
+## Commit `6f1b64baaa` (2026-08-13)
 - **Author**: Lazy Dev
-- **Message**: fix(core): harden agent memory, isolate p2p socket timeouts, guard ocr handles, clean regex rules, and purge snapshot wal frames [Tududi #892]
+- **Message**: audit: refresh master SOC 2 Type II audit ledger and test heatmaps (294/294 passed) [Tududi #934 | Neuro Hash: 4c1d9185]
 

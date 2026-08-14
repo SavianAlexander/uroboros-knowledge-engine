@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { glassCardClasses } from '../lib/utils';
-import { DatabaseZap, FileText, UploadCloud, RefreshCw, Layers, CheckCircle2, XCircle, Clock, Workflow } from 'lucide-react';
+import { glassCardClasses, emeraldButtonClasses, emeraldBadgeClasses, goldBadgeClasses, wineBadgeClasses } from '../lib/utils';
+import { DatabaseZap, FileText, UploadCloud, RefreshCw, Layers, CheckCircle2, XCircle, Clock, Workflow, Sparkles, Terminal } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../components/Toast';
 import { useApp } from '../store/AppContext';
@@ -86,99 +86,102 @@ export default function IngestionView() {
   const activeParsing = stats?.parsing ?? 0;
 
   return (
-    <div className="p-8 h-full overflow-y-auto space-y-6 max-w-[1600px] mx-auto relative">
-      <header className="mb-8">
-        <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Ingestion & RAG Pipeline</h2>
-        <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">Monitor document parsing, chunking, and vector embedding processes in real time.</p>
+    <div className="p-8 h-full overflow-y-auto space-y-6 max-w-[1600px] mx-auto relative font-sans">
+      <header className="mb-6">
+        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 font-serif-claude">
+          Ingestion & Neural RAG Pipeline
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
+          Real-time document extraction, semantic chunking, and HNSW vector embedding streams.
+        </p>
       </header>
 
       {/* Pipeline Status Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard icon={<UploadCloud className="text-blue-600 dark:text-blue-400" />} title="Queue" value={String(activeQueue)} sub="Files waiting in queue" active={activeQueue > 0} />
-        <StatCard icon={<FileText className="text-indigo-600 dark:text-indigo-400" />} title="Parsing" value={String(activeParsing)} sub="Active text extractors" active={activeParsing > 0} />
-        <StatCard icon={<Layers className="text-purple-600 dark:text-purple-400" />} title="Total Chunks" value={totalChunks.toLocaleString()} sub="Token nodes indexed" />
-        <StatCard icon={<DatabaseZap className="text-cyan-600 dark:text-cyan-400" />} title="Vector Vault" value={totalFiles.toLocaleString()} sub="Indexed documents" />
+        <StatCard icon={<UploadCloud className="text-teal-600 dark:text-teal-400" />} title="Queue" value={String(activeQueue)} sub="Documents waiting" active={activeQueue > 0} />
+        <StatCard icon={<FileText className="text-emerald-600 dark:text-emerald-400" />} title="Parsing" value={String(activeParsing)} sub="Active text extractors" active={activeParsing > 0} />
+        <StatCard icon={<Layers className="text-amber-600 dark:text-amber-400" />} title="Total Chunks" value={totalChunks.toLocaleString()} sub="Token nodes indexed" />
+        <StatCard icon={<DatabaseZap className="text-rose-600 dark:text-rose-400" />} title="Vector Vault" value={totalFiles.toLocaleString()} sub="Grounded files" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* Active Pipeline Flow Visualizer */}
         <div className={`${glassCardClasses} p-6 col-span-1 lg:col-span-2 flex flex-col`}>
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2">
-              <Workflow className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Pipeline Architecture
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 font-serif-claude">
+              <Workflow className="w-4 h-4 text-emerald-500" /> Pipeline Flow Visualizer
             </h3>
-            <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium rounded-lg flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Operational
+            <span className="px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-full flex items-center gap-1.5 font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Operational
             </span>
           </div>
           
-          <div className="flex-1 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-white/5 p-8 flex items-center justify-between relative">
-            {/* Connecting Line */}
-            <div className="absolute left-10 right-10 top-1/2 h-0.5 bg-slate-100 dark:bg-slate-800 -z-10" />
-            <div className="absolute left-10 right-10 top-1/2 h-0.5 bg-gradient-to-r from-blue-500/50 via-purple-500/50 to-cyan-500/50 -z-10 animate-pulse" />
+          <div className="flex-1 bg-slate-100/50 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-white/5 p-8 flex items-center justify-between relative">
+            <div className="absolute left-10 right-10 top-1/2 h-0.5 bg-slate-200 dark:bg-slate-800 -z-10" />
+            <div className="absolute left-10 right-10 top-1/2 h-0.5 bg-gradient-to-r from-emerald-500/50 via-teal-500/50 to-amber-500/50 -z-10 animate-pulse" />
 
-            {/* Nodes */}
-            <PipelineNode icon={<UploadCloud />} title="Ingest" desc="Webhooks & Uploads" color="blue" />
-            <PipelineNode icon={<FileText />} title="Parse" desc="OCR & Text Ext" color="indigo" active />
-            <PipelineNode icon={<Layers />} title="Chunk" desc="Semantic Splitter" color="purple" />
-            <PipelineNode icon={<DatabaseZap />} title="Embed" desc="Vectorization" color="cyan" />
+            <PipelineNode icon={<UploadCloud />} title="Ingest" desc="Webhooks & Vault" color="teal" />
+            <PipelineNode icon={<FileText />} title="Parse" desc="OCR & Text Ext" color="emerald" active />
+            <PipelineNode icon={<Layers />} title="Chunk" desc="Semantic Split" color="amber" />
+            <PipelineNode icon={<DatabaseZap />} title="Embed" desc="HNSW Vector" color="rose" />
           </div>
         </div>
 
-        {/* Quick Actions & Status */}
+        {/* Pipeline Controls */}
         <div className={`${glassCardClasses} p-6 col-span-1 flex flex-col`}>
-          <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200 mb-6">Pipeline Controls</h3>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-5 font-serif-claude">
+            Pipeline Controls
+          </h3>
           
           <div className="space-y-3">
             <button 
               onClick={triggerReindex}
-              className="w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-slate-300 dark:border-white/10 rounded-xl transition-colors group">
+              className="w-full flex items-center justify-between p-3.5 bg-slate-100/70 dark:bg-slate-900/60 hover:bg-emerald-500/10 hover:border-emerald-500/40 border border-slate-200/80 dark:border-white/10 rounded-xl transition-all group shadow-2xs">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:bg-indigo-500/20 transition-colors"><RefreshCw className="w-4 h-4" /></div>
+                <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg group-hover:scale-110 transition-transform"><RefreshCw className="w-4 h-4" /></div>
                 <div className="text-left">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">Force Re-index</p>
-                  <p className="text-xs text-slate-500">Rebuild vectors for all files</p>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Force Re-index</p>
+                  <p className="text-[11px] text-slate-400">Rebuild HNSW vectors</p>
                 </div>
               </div>
             </button>
 
             <button 
               onClick={() => {
-                toast('Queue Cleared', 'Ingestion queue reset successfully', 'info');
+                handleClearQueue();
                 setRecentJobs([]);
               }}
-              className="w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:bg-slate-800/80 border border-slate-300 dark:border-white/10 rounded-xl transition-colors group">
+              className="w-full flex items-center justify-between p-3.5 bg-slate-100/70 dark:bg-slate-900/60 hover:bg-rose-500/10 hover:border-rose-500/40 border border-slate-200/80 dark:border-white/10 rounded-xl transition-all group shadow-2xs">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg group-hover:bg-red-500/20 transition-colors"><XCircle className="w-4 h-4" /></div>
+                <div className="p-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg group-hover:scale-110 transition-transform"><XCircle className="w-4 h-4" /></div>
                 <div className="text-left">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">Clear Queue</p>
-                  <p className="text-xs text-slate-500">Cancel pending items</p>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Clear Queue</p>
+                  <p className="text-[11px] text-slate-400">Reset pending jobs</p>
                 </div>
               </div>
             </button>
 
             <button 
               onClick={handleExportDataset}
-              className="w-full flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100/80 dark:bg-slate-800/80 border border-slate-300 dark:border-white/10 rounded-xl transition-colors group">
+              className="w-full flex items-center justify-between p-3.5 bg-slate-100/70 dark:bg-slate-900/60 hover:bg-amber-500/10 hover:border-amber-500/40 border border-slate-200/80 dark:border-white/10 rounded-xl transition-all group shadow-2xs">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg group-hover:bg-emerald-500/20 transition-colors"><Layers className="w-4 h-4" /></div>
+                <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg group-hover:scale-110 transition-transform"><Layers className="w-4 h-4" /></div>
                 <div className="text-left">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">Export Fine-Tuning Dataset</p>
-                  <p className="text-xs text-slate-500">ShareGPT / Alpaca JSON format</p>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">Export Fine-Tuning Dataset</p>
+                  <p className="text-[11px] text-slate-400">ShareGPT / Alpaca JSON format</p>
                 </div>
               </div>
             </button>
           </div>
 
-          <div className="mt-auto pt-6 border-t border-slate-200 dark:border-white/5">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-slate-600 dark:text-slate-400">Embedding Model</span>
-              <span className="text-slate-900 dark:text-slate-200 font-medium">text-embedding-3-small</span>
+          <div className="mt-auto pt-5 border-t border-slate-200/80 dark:border-white/5 space-y-1.5 text-xs text-slate-500 font-mono">
+            <div className="flex justify-between">
+              <span>Embedding Model:</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">NomIC HNSW</span>
             </div>
-            <div className="flex justify-between items-center text-sm mt-2">
-              <span className="text-slate-600 dark:text-slate-400">Chunk Size</span>
-              <span className="text-slate-900 dark:text-slate-200 font-medium">1024 tokens</span>
+            <div className="flex justify-between">
+              <span>Chunk Size:</span>
+              <span className="text-slate-700 dark:text-slate-300 font-semibold">1024 tokens (128 ovlp)</span>
             </div>
           </div>
         </div>
@@ -186,70 +189,56 @@ export default function IngestionView() {
 
       {/* Recent Jobs Table */}
       <div className={`${glassCardClasses} p-6`}>
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Recent Ingestion Jobs
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 font-serif-claude">
+            <Clock className="w-4 h-4 text-emerald-500" /> Recent Ingestion Jobs
           </h3>
           <button 
             onClick={() => setShowLogsDrawer(true)} 
-            className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-300 font-medium"
+            className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
           >
-            View All Logs
+            Open Console Stream
           </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
+          <table className="w-full text-left text-xs whitespace-nowrap">
             <thead>
-              <tr className="text-slate-500 border-b border-slate-200 dark:border-white/5">
-                <th className="pb-3 font-medium">Job ID</th>
-                <th className="pb-3 font-medium">Source Document</th>
-                <th className="pb-3 font-medium">Time</th>
-                <th className="pb-3 font-medium">Chunks</th>
-                <th className="pb-3 font-medium text-right">Status</th>
+              <tr className="text-slate-400 border-b border-slate-200 dark:border-white/5 font-semibold">
+                <th className="pb-3">Job ID</th>
+                <th className="pb-3">Source Document</th>
+                <th className="pb-3">Time</th>
+                <th className="pb-3">Chunks</th>
+                <th className="pb-3 text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-slate-200/60 dark:divide-white/5">
               {recentJobs.map((job) => (
                 <tr key={job.id} className="text-slate-700 dark:text-slate-300 hover:bg-white/[0.02] transition-colors">
-                  <td className="py-3 font-mono text-xs text-slate-500">{job.id}</td>
-                  <td className="py-3 font-medium text-slate-900 dark:text-slate-200">{job.source}</td>
-                  <td className="py-3 text-slate-500">{job.time}</td>
-                  <td className="py-3">{job.chunks}</td>
+                  <td className="py-3 font-mono text-[11px] text-slate-400">{job.id}</td>
+                  <td className="py-3 font-medium text-slate-900 dark:text-slate-100 font-serif-claude">{job.source}</td>
+                  <td className="py-3 text-slate-400 font-mono text-[11px]">{job.time}</td>
+                  <td className="py-3 font-mono text-[11px]">{job.chunks}</td>
                   <td className="py-3 text-right">
-                    {job.status === 'completed' && (
-                      <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 text-xs font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Success
-                      </span>
-                    )}
-                    {(job.status === 'processing' || job.status === 'running') && (
-                      <div className="flex items-center justify-end gap-2">
-                         <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                           <div className="h-full bg-indigo-500" style={{ width: `${job.progress || 0}%` }}></div>
-                         </div>
-                         <span className="inline-flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20 text-xs font-medium">
-                           <RefreshCw className="w-3.5 h-3.5 animate-spin" /> {Math.round(job.progress || 0)}%
-                         </span>
-                      </div>
-                    )}
-                    {job.status === 'failed' && (
-                      <span className="inline-flex items-center gap-1.5 text-red-600 dark:text-red-400 bg-red-500/10 px-2.5 py-1 rounded-lg border border-red-500/20 text-xs font-medium">
-                        <XCircle className="w-3.5 h-3.5" /> Failed
-                      </span>
-                    )}
+                    <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Success
+                    </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {recentJobs.length === 0 && (
+            <div className="py-6 text-center text-slate-400 text-xs">No active or historical ingestion jobs.</div>
+          )}
         </div>
       </div>
 
       {showLogsDrawer && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
-          <div className="w-full max-w-md bg-slate-900 border-l border-white/10 h-full p-6 flex flex-col space-y-4 shadow-2xl">
+          <div className="w-full max-w-md bg-slate-950 border-l border-white/10 h-full p-6 flex flex-col space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <h3 className="font-semibold text-slate-100 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-indigo-400" /> Pipeline Console Stream
+              <h3 className="font-semibold text-slate-100 flex items-center gap-2 font-serif-claude text-sm">
+                <Terminal className="w-4 h-4 text-emerald-400" /> Pipeline Console Stream
               </h3>
               <button 
                 onClick={() => setShowLogsDrawer(false)}
@@ -258,9 +247,9 @@ export default function IngestionView() {
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-1 bg-slate-950 p-4 rounded-xl font-mono text-xs text-slate-300 space-y-2 overflow-y-auto border border-white/5">
+            <div className="flex-1 bg-slate-900/90 p-4 rounded-xl font-mono text-[11px] text-slate-300 space-y-2 overflow-y-auto border border-white/5 leading-relaxed">
               {pipelineLogs.map((log, idx) => (
-                <div key={idx} className="leading-relaxed border-b border-white/5 pb-1 text-emerald-400/90">
+                <div key={idx} className="border-b border-white/5 pb-1 text-emerald-400/90">
                   {log}
                 </div>
               ))}
@@ -280,15 +269,15 @@ export default function IngestionView() {
 
 function StatCard({ icon, title, value, sub, active = false }: { icon: React.ReactNode, title: string, value: string, sub: string, active?: boolean }) {
   return (
-    <div className={`${glassCardClasses} p-5 flex items-start space-x-4 border ${active ? 'border-indigo-500/30' : 'border-slate-200 dark:border-white/5'}`}>
+    <div className={`${glassCardClasses} p-5 flex items-start space-x-4 border ${active ? 'border-emerald-500/40' : 'border-slate-200 dark:border-white/5'} shadow-2xs`}>
       <div className="p-3 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-300 dark:border-white/10 relative">
         {icon}
-        {active && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse border-2 border-slate-900" />}
+        {active && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse border-2 border-slate-900" />}
       </div>
       <div>
-        <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">{title}</p>
-        <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5">{value}</p>
-        <p className="text-xs text-slate-500 mt-1">{sub}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">{title}</p>
+        <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5 font-serif-claude">{value}</p>
+        <p className="text-[11px] text-slate-400 mt-1">{sub}</p>
       </div>
     </div>
   );
@@ -296,19 +285,19 @@ function StatCard({ icon, title, value, sub, active = false }: { icon: React.Rea
 
 function PipelineNode({ icon, title, desc, color, active = false }: { icon: React.ReactNode, title: string, desc: string, color: string, active?: boolean }) {
   const colorMap: Record<string, string> = {
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
-    indigo: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
-    purple: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30',
-    cyan: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
+    teal: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30',
+    emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+    amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+    rose: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30',
   };
 
   return (
-    <div className={`flex flex-col items-center bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border shadow-xl z-10 w-32 ${active ? colorMap[color] : 'border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-400'}`}>
-      <div className={`mb-3 ${active ? 'animate-bounce' : ''}`}>
+    <div className={`flex flex-col items-center bg-white dark:bg-slate-900 p-4 rounded-xl border shadow-xl z-10 w-32 ${active ? colorMap[color] : 'border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-400'}`}>
+      <div className={`mb-2.5 ${active ? 'animate-bounce' : ''}`}>
         {icon}
       </div>
-      <p className={`font-semibold text-sm ${active ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>{title}</p>
-      <p className="text-[10px] text-center mt-1 opacity-70 leading-tight">{desc}</p>
+      <p className={`font-semibold text-xs font-serif-claude ${active ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>{title}</p>
+      <p className="text-[10px] text-center mt-0.5 opacity-70 leading-tight">{desc}</p>
     </div>
   );
 }
