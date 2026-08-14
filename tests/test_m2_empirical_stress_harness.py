@@ -29,6 +29,8 @@ import main
 from src.domain.rag_engine import rrf_rerank, extract_advanced_rag_context, jaccard_deduplicate, sanitize_fts_query
 
 
+from unittest.mock import patch
+
 class TestM2EmpiricalStressHarness(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -49,8 +51,21 @@ class TestM2EmpiricalStressHarness(unittest.TestCase):
         know.index_directory(cls.test_dir)
         cls.client = TestClient(main.app)
 
+        # Mock heavy LLM streaming generation and HyDE to prevent host CPU/GPU stutter
+        def mock_stream_chunks(llm, messages, req):
+            tokens = ["Quantum ", "superposition ", "and ", "entanglement ", "are ", "grounded ", "in ", "physics."]
+            for tok in tokens:
+                yield tok
+
+        cls.patcher_stream = patch("src.app.routers.rag._stream_llm_chunks", side_effect=mock_stream_chunks)
+        cls.patcher_hyde = patch("src.app.routers.rag.expand_query_with_llm", side_effect=lambda q: q)
+        cls.patcher_stream.start()
+        cls.patcher_hyde.start()
+
     @classmethod
     def tearDownClass(cls):
+        cls.patcher_stream.stop()
+        cls.patcher_hyde.stop()
         know.reset_db_connections()
         db.DB_FILE = cls.db_backup
         config.ACTIVE_DIR = cls.active_backup

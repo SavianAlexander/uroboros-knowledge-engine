@@ -186,7 +186,7 @@ if HAS_MCP:
                     res = await make_request("POST", "/api/file/ingest-url", json={"url": url})
                     return [types.TextContent(type="text", text=f"Successfully ingested: {url}\nResponse: {res}")]
                 res = await make_request("POST", "/api/file/index", json={"directory": url})
-                return [types.TextContent(type="text", text=f"Indexed directory {url}:\nResponse: {res}")]
+                return [types.TextContent(type="text", text=f"Local file ingestion / Indexed directory {url}:\nResponse: {res}")]
                 
             if name == "neuro_trigger_workflow":
                 res = await make_request("POST", "/api/workflows/trigger", json={
@@ -262,6 +262,66 @@ if HAS_MCP:
             res = await make_request("GET", "/api/file/tree")
             return json.dumps(res, indent=2)
         raise ValueError(f"Unknown resource URI: {uri}")
+
+    @server.list_prompts()
+    async def handle_list_prompts() -> list[types.Prompt]:
+        return [
+            types.Prompt(
+                name="analyze_document",
+                description="Deep technical analysis and summarization of a vault document.",
+                arguments=[
+                    types.PromptArgument(
+                        name="filepath",
+                        description="Target file path to analyze",
+                        required=True,
+                    )
+                ],
+            ),
+            types.Prompt(
+                name="search_and_synthesize",
+                description="Search across vault and synthesize a cohesive research brief.",
+                arguments=[
+                    types.PromptArgument(
+                        name="topic",
+                        description="Research topic to search and synthesize",
+                        required=True,
+                    )
+                ],
+            ),
+        ]
+
+    @server.get_prompt()
+    async def handle_get_prompt(name: str, arguments: dict[str, str] | None = None) -> types.GetPromptResult:
+        arguments = arguments or {}
+        if name == "analyze_document":
+            fp = arguments.get("filepath", "")
+            return types.GetPromptResult(
+                description=f"Analyze document {fp}",
+                messages=[
+                    types.PromptMessage(
+                        role="user",
+                        content=types.TextContent(
+                            type="text",
+                            text=f"Please analyze the following document thoroughly: {fp}"
+                        ),
+                    )
+                ],
+            )
+        if name == "search_and_synthesize":
+            topic = arguments.get("topic", "")
+            return types.GetPromptResult(
+                description=f"Search and synthesize research brief on {topic}",
+                messages=[
+                    types.PromptMessage(
+                        role="user",
+                        content=types.TextContent(
+                            type="text",
+                            text=f"Please search the knowledge vault and synthesize a comprehensive research brief on: {topic}"
+                        ),
+                    )
+                ],
+            )
+        raise ValueError(f"Unknown prompt: {name}")
 
 async def main():
     if not HAS_MCP:
