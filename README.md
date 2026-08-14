@@ -980,64 +980,64 @@ Uroboros enforces strict enterprise trust controls validated by automated audit 
 
 ---
 
-## 26. Frontend Architecture & React SPA View Showcase
+## 26. Claude-Inspired Frontend Architecture & UI View Showcase
 
-Built in `frontend/` using React 19, Vite 6, and Tailwind CSS v4:
+Built in `frontend/` using **React 19**, **Vite 6**, and **Tailwind CSS v4**, the user interface features a Claude-inspired editorial aesthetic engineered around an ocular-comfort palette: **Emerald Green** (Primary Luxury Accent), **Slate Grey / Obsidian Charcoal** (Foundation Neutrals `#0B0F17`), **Wine Red** (Deep Action Accent), and **Mustard Gold** (Warm Humanist / AI Reasoning Accent).
 
 ```mermaid
 graph TD
-    App[App.tsx Router] --> Dash[DashboardView.tsx]
-    App --> Workspace[WorkspaceView.tsx]
-    App --> Search[SearchView.tsx]
-    App --> Ingest[IngestionView.tsx]
-    App --> Graph[GraphView.tsx - 3D Force Graph]
-    App --> Chat[ChatView.tsx - RAG Assistant]
-    App --> Config[ConfigView.tsx]
-    App --> Settings[SettingsView.tsx]
-    App --> Login[LoginView.tsx]
-    App --> Cmd[CommandPalette.tsx - Ctrl+K Modal]
+    App[App.tsx Hash Router] --> Dash[DashboardView.tsx - Analytics & Telemetry]
+    App --> Workspace[WorkspaceView.tsx - Workstation & Document Intelligence]
+    App --> Search[SearchView.tsx - Hybrid RRF Omnibar & Lineage]
+    App --> Ingest[IngestionView.tsx - Pipeline Visualizer & Console]
+    App --> Graph[GraphView.tsx - 3D Force-Directed WebGL Graph]
+    App --> Chat[ChatView.tsx - AI Studio & Split Artifacts Canvas]
+    App --> Config[ConfigView.tsx - P2P Mesh & Chunk Orchestration]
+    App --> Settings[SettingsView.tsx - Provider Keys & WAL Tools]
+    App --> Login[LoginView.tsx - Authentication Modal]
+    App --> Cmd[CommandPalette.tsx - Spotlight Modal ⌘K]
 ```
 
-### UI View Showcase
+### Complete UI View Showcase
 
-#### 1. Dashboard View
-Real-time database status metrics, ingestion velocity, storage distribution, tag breakdowns, and system health telemetry.
+#### 1. System Analytics & Telemetry Dashboard
+Real-time database status metrics, ingestion velocity area charts with emerald/teal gradients, luxury storage donut distribution, tag breakdowns, and 1-click WAL maintenance.
 ![Main Dashboard](docs/ux_journey/01_dashboard.png)
 
-#### 2. Workspace View
-Provides a file browser interface for managing local directories, inspecting corpus metadata, and triggering manual re-indexing.
-![Workspace](docs/ux_journey/02_workspace.png)
+#### 2. Claude AI Chat Studio & Side-by-Side Artifacts Canvas
+Conversational split-pane studio with mustard gold reasoning process trace accordion, verified citation badges with excerpt popovers, side-by-side live artifacts canvas (code, markdown, HTML previews), and floating prompt enhancer dock.
+![Chat Studio](docs/ux_journey/02_chat_studio.png)
 
-#### 3. Search & Exploration View
-Offers hybrid search with real-time similarity threshold sliders, document content previews, tag filtering, and syntax highlighting.
-![Explorer](docs/ux_journey/03_search.png)
+#### 3. Workspace Explorer & Absorbed Document Intelligence Workstation
+Hierarchical vault tree, Acrobat/Foxit tool dock (pointer, highlighter, sticky notes, rotate), multi-page PDF canvas with in-document OCR word highlight layer, and live synced Document Intelligence panel with grounded takeaways and interactive Q&A assistant.
+![Workspace Studio](docs/ux_journey/03_workspace_studio.png)
 
-#### 4. Ingestion Pipeline View
-Monitors background document extraction, web URL scraping, and SSE progress tracking for active batch jobs.
-![Ingestion Pipeline](docs/ux_journey/04_ingestion.png)
+#### 4. Semantic Search & Discovery Omnibar
+Unified search omnibar with auto-routing vector chips (NomIC HNSW + FTS5 RRF), circular match percentage rings, live tag filters, and RAG Lineage drawer.
+![Search Explorer](docs/ux_journey/04_search_explorer.png)
 
-#### 5. 3D Interactive Knowledge Graph
-Interactive 3D graph view (`react-force-graph-3d`) rendering connections between document nodes, extracted entities, and wikilinks.
-![Knowledge Graph](docs/ux_journey/05_graph.png)
+#### 5. Ingestion Pipeline & Live Stream
+Monitors document extraction (Ingest ➔ Parse ➔ Chunk ➔ Embed), ShareGPT fine-tuning dataset exporter, and real-time SSE progress console.
+![Ingestion Pipeline](docs/ux_journey/05_ingestion_pipeline.png)
 
-#### 6. Conversational RAG Assistant
-AI chat interface supporting source citation deep-linking, context budget allocation controls, and multi-turn dialog memory.
-![Conversational Assistant](docs/ux_journey/06_chat.png)
+#### 6. 3D Force-Directed Vector Knowledge Graph
+Interactive 3D graph view (`react-force-graph-3d`) rendering force-directed cluster topologies connecting emerald document nodes, mustard gold concept nodes, and wine red tag nodes.
+![Knowledge Graph](docs/ux_journey/06_knowledge_graph.png)
 
-#### 7. Process Configuration View
-Manages auto-tagging rules, custom FTS synonyms, P2P network sync parameters, and database snapshot schedules.
-![Process Config](docs/ux_journey/07_config.png)
+#### 7. Process Configuration & Cluster Orchestration
+Manages RAG chunk sizes and overlap sliders, point-in-time database snapshot backups, and P2P LAN mesh synchronization.
+![Config Orchestration](docs/ux_journey/07_config_orchestration.png)
 
-#### 8. System Settings View
-Provides system diagnostic controls, API key management, database WAL optimization tools, and logs inspection.
-![System Settings](docs/ux_journey/08_settings.png)
+#### 8. System Settings & Database Integrity
+Provides provider API key management (Claude Sonnet/Opus, OpenAI, Ollama), SQLite WAL optimization tools, vacuuming, and re-indexing utilities.
+![System Settings](docs/ux_journey/08_settings_maintenance.png)
 
-#### 9. Spotlight Command Palette (`Ctrl+K`)
-Keyboard-driven modal providing quick navigation across all application views, instant search execution, and ingestion actions.
+#### 9. Spotlight Command Palette (`⌘K`)
+Keyboard-driven modal providing instant navigation across all application views, quick actions, and deep search shortcuts.
 ![Command Palette](docs/ux_journey/09_command_palette.png)
 
-#### 10. WCAG AA Glassmorphism Themes
-High-contrast glassmorphic dark and light themes with responsive UI elements complying with WCAG AA accessibility standards.
+#### 10. WCAG AA Ocular-Comfort Light & Dark Themes
+High-contrast glassmorphic dark (`#0B0F17`) and light themes with responsive UI elements complying with WCAG AA accessibility standards.
 ![Light Mode UI](docs/ux_journey/10_light_mode.png)
 
 ---
@@ -1140,40 +1140,24 @@ This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) fi
 
 ## 📸 Comprehensive Visual Showcase & Client Journey
 
-> 💡 **Client Showcase**: Launch [`docs/ux_journey/client_showcase.html`](file:///docs/ux_journey/client_showcase.html) for the interactive presentation deck.
+> 💡 **Client Showcase**: Launch [`docs/ux_journey/client_showcase.html`](docs/ux_journey/client_showcase.html) for the interactive presentation deck.
 
-| **Dashboard** | **Chat Studio** |
+| **1. System Analytics & Telemetry** | **2. Claude AI Chat Studio & Canvas** |
 | :---: | :---: |
 | ![Dashboard](docs/ux_journey/01_dashboard.png) | ![Chat Studio](docs/ux_journey/02_chat_studio.png) |
 
-| **Workspace** | **Search** |
+| **3. Workspace Studio & OCR Highlights** | **4. Semantic Search & Discovery** |
 | :---: | :---: |
-| ![Workspace](docs/ux_journey/02_workspace.png) | ![Search](docs/ux_journey/03_search.png) |
+| ![Workspace Studio](docs/ux_journey/03_workspace_studio.png) | ![Search Explorer](docs/ux_journey/04_search_explorer.png) |
 
-| **Workspace Studio** | **Ingestion** |
+| **5. Ingestion Pipeline & Live Stream** | **6. 3D Force-Directed Knowledge Graph** |
 | :---: | :---: |
-| ![Workspace Studio](docs/ux_journey/03_workspace_studio.png) | ![Ingestion](docs/ux_journey/04_ingestion.png) |
+| ![Ingestion Pipeline](docs/ux_journey/05_ingestion_pipeline.png) | ![Knowledge Graph](docs/ux_journey/06_knowledge_graph.png) |
 
-| **Search Explorer** | **Graph** |
+| **7. Process Configuration & P2P Mesh** | **8. Platform Settings & Database Tools** |
 | :---: | :---: |
-| ![Search Explorer](docs/ux_journey/04_search_explorer.png) | ![Graph](docs/ux_journey/05_graph.png) |
+| ![Config Orchestration](docs/ux_journey/07_config_orchestration.png) | ![Settings Maintenance](docs/ux_journey/08_settings_maintenance.png) |
 
-| **Ingestion Pipeline** | **Chat** |
+| **9. Spotlight Command Palette (`⌘K`)** | **10. Ocular-Comfort Light Theme** |
 | :---: | :---: |
-| ![Ingestion Pipeline](docs/ux_journey/05_ingestion_pipeline.png) | ![Chat](docs/ux_journey/06_chat.png) |
-
-| **Knowledge Graph** | **Config** |
-| :---: | :---: |
-| ![Knowledge Graph](docs/ux_journey/06_knowledge_graph.png) | ![Config](docs/ux_journey/07_config.png) |
-
-| **Config Orchestration** | **Settings** |
-| :---: | :---: |
-| ![Config Orchestration](docs/ux_journey/07_config_orchestration.png) | ![Settings](docs/ux_journey/08_settings.png) |
-
-| **Settings Maintenance** | **Command Palette** |
-| :---: | :---: |
-| ![Settings Maintenance](docs/ux_journey/08_settings_maintenance.png) | ![Command Palette](docs/ux_journey/09_command_palette.png) |
-
-| **Light Mode** |
-| :---: |
-| ![Light Mode](docs/ux_journey/10_light_mode.png) |
+| ![Command Palette](docs/ux_journey/09_command_palette.png) | ![Light Mode](docs/ux_journey/10_light_mode.png) |

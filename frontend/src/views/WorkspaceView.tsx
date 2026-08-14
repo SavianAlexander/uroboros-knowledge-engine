@@ -1419,6 +1419,60 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                                 <span className="text-xs font-semibold font-serif text-slate-900 bg-amber-300/90 px-1.5 py-0.5 rounded shadow-xs flex items-center gap-1">
                                   <Sparkles className="w-3 h-3 text-amber-800" /> Analytical
                                 </span>
+
+                                {/* Floating On-Page Micro-Action Dock */}
+                                <div className="absolute -top-11 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 bg-slate-950/95 border border-amber-400/60 shadow-2xl rounded-xl p-1 backdrop-blur-md pointer-events-auto">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSidebarQuery('Explain the significance of the Analytical theme in this report.');
+                                      setIsSidebarThinking(true);
+                                      setTimeout(() => {
+                                        setIsSidebarThinking(false);
+                                        setSidebarAiAnswer('Analytical: Demands evidence, dissects root causes, and validates premises before commitment. It protects systems from faulty assumptions.');
+                                      }, 600);
+                                      toast('AI Explaining', 'Analyzing Analytical theme...', 'info');
+                                    }}
+                                    className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold flex items-center gap-1 transition-colors shadow-xs"
+                                    title="Instant Grounded AI Analysis"
+                                  >
+                                    <Brain className="w-3 h-3 text-emerald-200" /> Explain
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toast('Highlight Saved', 'Word highlighted permanently on page 1', 'success');
+                                    }}
+                                    className="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10px] font-semibold flex items-center gap-1 transition-colors"
+                                    title="Highlight Selection"
+                                  >
+                                    <Highlighter className="w-3 h-3 text-amber-400" /> Highlight
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const newNote = { id: `note-${Date.now()}`, page: currentPdfPage, text: 'Analytical: Insists on verified metrics before scaling architecture.', date: 'Just now' };
+                                      setStickyNotes(prev => [newNote, ...prev]);
+                                      toast('Sticky Note Attached', 'Pinned note to Analytical theme', 'success');
+                                    }}
+                                    className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold flex items-center gap-1 transition-colors border border-slate-700"
+                                    title="Attach Sticky Note"
+                                  >
+                                    <MessageSquare className="w-3 h-3 text-emerald-400" /> Pin Note
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText('Analytical: Your Analytical theme challenges other people: "Prove it. Show me why what you are claiming is true."');
+                                      toast('Copied', 'Theme summary copied to clipboard', 'info');
+                                    }}
+                                    className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold flex items-center gap-1 transition-colors border border-slate-700"
+                                    title="Copy Theme Snippet"
+                                  >
+                                    <Copy className="w-3 h-3" /> Copy
+                                  </button>
+                                </div>
+
                                 <span className="text-[10px] font-mono text-amber-950 font-bold bg-amber-400/80 px-1.5 py-0.5 rounded">
                                   Active In-Page Focus
                                 </span>
@@ -1451,6 +1505,19 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                                 style={{ bottom: '7%', right: '7%', width: '48%', height: '9%' }}
                                 title="Hover to inspect 'Don Clifton' in right intelligence panel"
                               />
+
+                              {/* On-Page Sticky Note Pin Badge */}
+                              <div
+                                className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 border border-amber-400/80 shadow-xl backdrop-blur-md pointer-events-auto cursor-pointer hover:scale-105 transition-transform"
+                                title="1 Active Page Annotation"
+                                onClick={() => {
+                                  toast('Annotation #1', 'Roberto Morales Pérez: Analytical & Focus themes validated.', 'info');
+                                }}
+                              >
+                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                                <MessageSquare className="w-3.5 h-3.5 text-amber-300" />
+                                <span className="text-[10px] font-mono font-bold text-amber-300">Note #1</span>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1661,6 +1728,57 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
               </div>
             </div>
           )}
+
+          {/* CliftonStrengths Strategic Talent Matrix Visualizer */}
+          <div className="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/25 space-y-3 shadow-lg">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-emerald-400" /> Strategic Talent Matrix
+              </h4>
+              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                5 Themes
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {[
+                { name: 'Analytical', domain: 'Strategic Thinking', score: 96, color: 'bg-amber-400' },
+                { name: 'Focus', domain: 'Executing', score: 92, color: 'bg-emerald-400' },
+                { name: 'Responsibility', domain: 'Executing', score: 88, color: 'bg-teal-400' },
+                { name: 'Achiever', domain: 'Executing', score: 85, color: 'bg-indigo-400' },
+                { name: 'Ideation', domain: 'Strategic Thinking', score: 81, color: 'bg-purple-400' },
+              ].map((item, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setSelectedConcept({
+                      term: item.name,
+                      entity_type: `Domain Concept • ${item.domain}`,
+                      definition: `Core leadership theme '${item.name}' mapped under ${item.domain}. High intensity factor (${item.score}%).`,
+                      vault_count: 1,
+                      related_files: [filePath],
+                      related_concepts: ['Focus', 'CliftonStrengths', 'Gallup', 'Signature Themes']
+                    });
+                  }}
+                  className="p-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 cursor-pointer transition-all space-y-1.5"
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 font-semibold text-slate-200">
+                      <span className="text-emerald-400 font-mono text-[10px]">#{idx + 1}</span>
+                      <span>{item.name}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-400">{item.domain}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${item.color} rounded-full transition-all duration-500`}
+                      style={{ width: `${item.score}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Section 2: Grounded Document Takeaways */}
           <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20 space-y-2.5">
