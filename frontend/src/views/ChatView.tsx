@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 import { ChatSession, ChatMessage } from '../types';
 import { glassCardClasses } from '../lib/utils';
-import { Bot, Send, User, Settings, Search, FileText, Copy, Check, Sparkles, Trash2, Globe, Plus, RefreshCw, Download } from 'lucide-react';
+import { Bot, Send, User, Settings, Search, FileText, Copy, Check, Sparkles, Trash2, Globe, Plus, RefreshCw, Download, Zap } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
 import { useApp } from '../store/AppContext';
@@ -17,7 +17,7 @@ export default function ChatView() {
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
 
   const [activeSession, setActiveSession] = useState<string | null>(null);
-  const [modelConfig, setModelConfig] = useState('qwen2.5:7b');
+  const [modelConfig, setModelConfig] = useState('auto');
   const [temperature, setTemperature] = useState<number>(0.7);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
 
@@ -28,15 +28,15 @@ export default function ChatView() {
 
   const handlePreloadModel = async () => {
     try {
-      toast('Model Warmup', `Warming up ${selectedModel} in VRAM...`, 'info');
+      toast('Model Warmup', `Warming up ${modelConfig} in VRAM...`, 'info');
       const res = await fetch('/api/system/preload-model', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: selectedModel })
+        body: JSON.stringify({ model: modelConfig === 'auto' ? 'qwen2.5:7b' : modelConfig })
       });
       const data = await res.json();
       if (data.status === 'success') {
-        toast('Model Warmup', `${selectedModel} loaded into VRAM! Ready for instant responses.`, 'success');
+        toast('Model Warmup', `${modelConfig} loaded into VRAM! Ready for instant responses.`, 'success');
       } else {
         toast('Model Warmup', data.message || 'Failed to preload model.', 'warning');
       }
@@ -74,9 +74,9 @@ export default function ChatView() {
     fetch('/api/system/preload-model', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: selectedModel })
+      body: JSON.stringify({ model: modelConfig === 'auto' ? 'qwen2.5:7b' : modelConfig })
     }).catch(() => {});
-  }, [selectedModel]);
+  }, [modelConfig]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -346,9 +346,12 @@ export default function ChatView() {
             onChange={(e) => setModelConfig(e.target.value)}
             className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg text-xs text-slate-900 dark:text-slate-200 p-2 outline-none focus:border-indigo-500/50"
           >
-            <option value="Llama-3-8B-Instruct.gguf">Llama-3-8B-Instruct.gguf</option>
-            <option value="Mistral-7B-v0.2.gguf">Mistral-7B-v0.2.gguf</option>
-            <option value="Ollama / Local LLM">Ollama / Local LLM</option>
+            <option value="auto">Auto (4-Tier Neural Router)</option>
+            <option value="qwen2.5:7b">qwen2.5:7b (Master RAG)</option>
+            <option value="qwen2.5-coder:14b">qwen2.5-coder:14b (Expert Coder)</option>
+            <option value="qwen2.5-coder:7b">qwen2.5-coder:7b (Fast Coder)</option>
+            <option value="qwen2.5:0.5b">qwen2.5:0.5b (Micro Speed)</option>
+            <option value="phi4-mini:latest">phi4-mini:latest (128k Long Doc)</option>
           </select>
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500">Temp:</span>
