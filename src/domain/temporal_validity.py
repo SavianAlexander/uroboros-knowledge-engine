@@ -38,14 +38,14 @@ STATUS_PENALTY_CAPS: Dict[str, float] = {
 # --- Superseding & Amendment Marker Patterns ---
 SUPERSEDING_PATTERNS = [
     # Explicit forward superseding (Document A is replaced by B)
-    (re.compile(r'\b(?:superseded\s+by|obsoleted\s+by|replaced\s+by|rendered\s+obsolete\s+by)\s+([A-Za-z0-9_.\- /#]+)', re.IGNORECASE), "SUPERSEDED"),
+    (re.compile(r'\b(?:superseded\s+by|obsoleted\s+by|replaced\s+by|rendered\s+obsolete\s+by)\s+([A-Za-z0-9_.\- /#:]+)', re.IGNORECASE), "SUPERSEDED"),
     # Explicit deprecation markers
-    (re.compile(r'\b(?:deprecated\s+in|deprecated\s+as\s+of|withdrawn\s+by)\s+([A-Za-z0-9_.\- /#]+)', re.IGNORECASE), "DEPRECATED"),
+    (re.compile(r'\b(?:deprecated\s+in|deprecated\s+as\s+of|withdrawn\s+by)\s+([A-Za-z0-9_.\- /#:]+)', re.IGNORECASE), "DEPRECATED"),
     # Explicit amendment / update markers
-    (re.compile(r'\b(?:amended\s+as\s+of|amended\s+by|revised\s+by|modified\s+by)\s+([A-Za-z0-9_.\- /#]+)', re.IGNORECASE), "AMENDED"),
+    (re.compile(r'\b(?:amended\s+as\s+of|amended\s+by|revised\s+by|modified\s+by)\s+([A-Za-z0-9_.\- /#:]+)', re.IGNORECASE), "AMENDED"),
     # Standards Track header formats (RFC / ISO)
-    (re.compile(r'\bObsoletes:\s*([0-9,\sA-Za-z_\-]+)', re.IGNORECASE), "SUPERSEDED"),
-    (re.compile(r'\bUpdates:\s*([0-9,\sA-Za-z_\-]+)', re.IGNORECASE), "AMENDED")
+    (re.compile(r'\bObsoletes:\s*([0-9,\sA-Za-z_\-:]+)', re.IGNORECASE), "SUPERSEDED"),
+    (re.compile(r'\bUpdates:\s*([0-9,\sA-Za-z_\-:]+)', re.IGNORECASE), "AMENDED")
 ]
 
 # Date Parsing Patterns

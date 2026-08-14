@@ -24,7 +24,7 @@ TIER_WEIGHTS: Dict[str, float] = {
 # Precompiled Regex Patterns for Epistemic Classification
 # Uses lookaround delimiters (?<![a-zA-Z0-9]) and (?![a-zA-Z0-9]) to match across underscores, hyphens, and dots
 TIER_1_REGEX = re.compile(
-    r'(?<![a-zA-Z0-9])(rfc\d*|iso\d*|iec\d*|ieee\d*|sec|10-k|10-q|statute|statutory|law|uscode|cfr|ansi|merkle|nist)(?![a-zA-Z0-9])',
+    r'(?<![a-zA-Z0-9])(rfc\d*|iso\d*|iec\d*|ieee\d*|sec|10-k|10-q|statute|statutory|law|uscode|cfr|ansi|merkle|nist)\d*(?![a-zA-Z0-9])',
     re.IGNORECASE
 )
 STATUTORY_CITATION_REGEX = re.compile(
@@ -33,17 +33,17 @@ STATUTORY_CITATION_REGEX = re.compile(
 )
 
 TIER_2_REGEX = re.compile(
-    r'(?<![a-zA-Z0-9])(spec|specification|specs|api|documentation|whitepaper|datasheet|protocol|architecture|manual|rfc-draft|reference|schema|rfc\s*draft)(?![a-zA-Z0-9])',
+    r'(?<![a-zA-Z0-9])(spec|specification|specs|api|documentation|whitepaper|datasheet|protocol|architecture|manual|rfc-draft|reference|schema|rfc\s*draft)\d*(?![a-zA-Z0-9])',
     re.IGNORECASE
 )
 
 TIER_3_REGEX = re.compile(
-    r'(?<![a-zA-Z0-9])(textbook|guide|handbook|edition|accounting|management|course|journal|curriculum|syllabus|dissertation|monograph|peer-reviewed|academic)(?![a-zA-Z0-9])',
+    r'(?<![a-zA-Z0-9])(textbook|guide|handbook|edition|accounting|management|course|journal|curriculum|syllabus|dissertation|monograph|peer-reviewed|academic)\d*(?![a-zA-Z0-9])',
     re.IGNORECASE
 )
 
 COMMENTARY_REGEX = re.compile(
-    r'(?<![a-zA-Z0-9])(scratch|notes|note|memo|chat|blog|forum|commentary|draft|temp|todo|discussion|meeting|transcript|opinion|unverified)(?![a-zA-Z0-9])',
+    r'(?<![a-zA-Z0-9])(scratch|notes|note|memo|chat|blog|forum|commentary|draft|temp|todo|discussion|meeting|transcript|opinion|unverified)\d*(?![a-zA-Z0-9])',
     re.IGNORECASE
 )
 

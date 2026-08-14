@@ -119,8 +119,16 @@ def evaluate_cross_document_consensus(passages: List[Dict[str, Any]]) -> Dict[st
                     "values_b": c2["nums"]
                 })
 
-    consensus_level = "HIGH_CONSENSUS" if agreements > len(contradictions) else ("CONTRADICTION_DETECTED" if contradictions else "NEUTRAL")
-    score = 0.95 if consensus_level == "HIGH_CONSENSUS" else (0.45 if consensus_level == "CONTRADICTION_DETECTED" else 0.70)
+    # Majority consensus determination
+    if agreements >= 1 and (agreements >= len(contradictions) or agreements >= len(claims) // 2):
+        consensus_level = "HIGH_CONSENSUS"
+        score = 0.95
+    elif contradictions:
+        consensus_level = "CONTRADICTION_DETECTED"
+        score = 0.45
+    else:
+        consensus_level = "NEUTRAL"
+        score = 0.70
 
     return {
         "consensus_level": consensus_level,
@@ -403,7 +411,7 @@ def evaluate_all_boundary_invariants(claims_or_text: Union[str, List[Dict[str, A
             res = check_shannon_capacity_invariant(float(claims_or_text["bandwidth_hz"]), float(claims_or_text.get("snr_linear", 1.0)), float(claims_or_text["claimed_bps"]))
             if not res["is_physically_possible"]:
                 violations.append(res)
-        elif "CAP" in inv_type or "PACELC" in inv_type or "partition_active" in claims_or_text or "r_quorum" in claims_or_text:
+        elif "CAP" in inv_type or "PACELC" in inv_type or "partition_active" in claims_or_text or "r_quorum" in claims_or_text or "multi_region" in claims_or_text:
             res = check_cap_pacelc_invariant(claims_or_text)
             if not res["is_computationally_valid"]:
                 violations.append(res)
