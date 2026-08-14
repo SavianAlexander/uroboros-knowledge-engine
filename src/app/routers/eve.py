@@ -4,7 +4,7 @@ FastAPI Router for EVE Online SSO Authentication, Character Management, and ESI 
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 import time
 import os
 import json
@@ -220,6 +220,47 @@ def get_sde_types_endpoint():
     try:
         from src.infrastructure.eve_empirical_telemetry import CANONICAL_SDE_TYPES
         return CANONICAL_SDE_TYPES
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/wormholes/mass")
+def get_wormhole_mass_endpoint(total_gg: float = 3000.0, max_jump_gg: float = 300.0, jumped_gg: float = 1650.0):
+    """Calculate wormhole mass state and collapse risk."""
+    try:
+        from src.infrastructure.eve_celestial_exotic import calculate_wormhole_mass_state
+        return calculate_wormhole_mass_state(total_capacity_gg=total_gg, max_jump_mass_gg=max_jump_gg, mass_jumped_gg=jumped_gg)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/market/arbitrage")
+def get_market_arbitrage_endpoint(item: str = "Tritanium (Packaged 100k)", buy_p: float = 3.85, sell_p: float = 4.45, qty: int = 10000000):
+    """Calculate inter-hub market arbitrage ROI and profit spread."""
+    try:
+        from src.infrastructure.eve_industry_arbitrage import calculate_interhub_arbitrage_spread
+        return calculate_interhub_arbitrage_spread(item_name=item, buy_price_isk=buy_p, sell_price_isk=sell_p, quantity=qty)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/ewar/jamming")
+def get_ewar_jamming_endpoint(jammer: float = 12.5, sensor: float = 24.0):
+    """Calculate ECM jamming probability."""
+    try:
+        from src.infrastructure.eve_combat_ewar_incursions import calculate_ecm_jam_probability
+        return calculate_ecm_jam_probability(jammer_strength=jammer, target_sensor_strength=sensor)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/eft/parse")
+def parse_eft_endpoint(payload: Dict[str, str]):
+    """Parse standard EFT/Pyfa text fitting block."""
+    try:
+        from src.infrastructure.eve_eft_parser import parse_eft_fitting_block
+        eft_text = payload.get("eft_text", "")
+        return parse_eft_fitting_block(eft_text)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
