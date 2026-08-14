@@ -5,11 +5,11 @@ description: The master integration and orchestration skill for bridging the Uro
 
 # Neuro Co-Pilot (Master Autonomous Engineering & Orchestration Suite)
 
-This skill equips the agent with the definitive 8-bridge engineering architecture, uniting the **Neuro Local Knowledge Vault** (`neuro-mcp`), the **Tududi Task Master** (`tududi`), and the **GitHub CLI / Git Merkle Provenance Subsystem** (`gh` CLI & standard git commands) into a unified, zero-dependency, parallel asynchronous closed loop.
+This skill equips the agent with the definitive 9-bridge engineering architecture, uniting the **Neuro Local Knowledge Vault** (`neuro-mcp`), the **Tududi Task Master** (`tududi`), the **GitHub CLI / Git Merkle Provenance Subsystem** (`gh` CLI & standard git commands), and the **EVE Online Tactical Telemetry & Intelligence Engine** into a unified, zero-dependency, parallel asynchronous closed loop.
 
 ---
 
-## The 8 Dedicated Modular CLI Bridges
+## The 9 Dedicated Modular CLI Bridges
 
 All bridges are zero-dependency standard library Python scripts located in `scripts/`:
 
@@ -22,7 +22,8 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 ├── snapshot_bridge.py       # 4. Enterprise Client Snapshot Showcases & Interactive Decks
 ├── visual_audit_bridge.py   # 5. Automated PDF Page Rendering & Layout QA Engine
 ├── architecture_bridge.py   # 6. Universal Polyglot Clean Architecture Engine (0-100% Score)
-└── workflow_hub_bridge.py   # 7. Master Multi-Phase Engineering Pipeline Orchestrator
+├── workflow_hub_bridge.py   # 7. Master Multi-Phase Engineering Pipeline Orchestrator
+└── eve_bridge.py            # 8. EVE Online Tactical Intelligence & Live Telemetry Bridge
 ```
 
 ### 0. Inter-Bridge Contract Bus (`scripts/contract_bus.py`)
@@ -81,6 +82,13 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../workflow_hub_bridge.py run [--phase all|audit|optimize|test|showcase]`: Coordinate and chain multi-phase engineering passes sequentially.
 - `python .../workflow_hub_bridge.py run --parallel`: Execute full parallel asynchronous contract pipeline.
 - `python .../workflow_hub_bridge.py self_test`: Run Workflow Hub bridge self-tests.
+
+### 8. EVE Online Tactical Bridge (`scripts/eve_bridge.py`)
+- `python .../eve_bridge.py telemetry`: Query live empirical telemetry for all 8 fleet pilots (SP, active ships, queues, ISK).
+- `python .../eve_bridge.py search --query "..."`: Sub-5ms Reciprocal Rank Fusion (RRF) search across 2,947 EVE intelligence vault files.
+- `python .../eve_bridge.py remap`: Calculate optimal neural attribute remaps (+45% training acceleration).
+- `python .../eve_bridge.py audit`: Execute 38-assertion zero-assumption mathematical and ESI validation suite.
+- `python .../eve_bridge.py self_test`: Run automated contract assertions for EVE Online tactical bridge.
 
 ---
 

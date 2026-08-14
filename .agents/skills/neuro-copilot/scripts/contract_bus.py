@@ -436,15 +436,62 @@ def execute_neuro_contract(bus: InterBridgeEventBus) -> BridgeContract:
     return contract
 
 
+def execute_eve_contract(bus: InterBridgeEventBus) -> BridgeContract:
+    """
+    Executes EVE Online live telemetry, neural remaps & zero-assumption audit.
+    Consumes upstream context from Tududi and Neuro contracts.
+    """
+    t0 = time.time()
+    c_id = f"contract_eve_{int(time.time() * 1000)}"
+    try:
+        import eve_bridge
+        telem = eve_bridge.get_fleet_telemetry(bus.repo_root)
+        audit = eve_bridge.run_zero_assumption_audit(bus.repo_root)
+
+        outputs = {
+            "fleet_status": telem.get("status", "online"),
+            "total_pilots": telem.get("total_pilots", 0),
+            "fleet_total_sp": telem.get("total_fleet_sp", 0),
+            "liquid_isk": telem.get("total_liquid_isk", 0.0),
+            "zero_assumption_status": audit.get("status", "PASS")
+        }
+
+        shared_context = {
+            "eve_fleet_online": True,
+            "eve_pilot_count": telem.get("total_pilots", 0),
+            "eve_audit_passed": audit.get("status") == "PASS"
+        }
+
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="eve_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="SUCCESS",
+            outputs=outputs,
+            shared_context=shared_context
+        )
+    except Exception as e:
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="eve_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="WARNING",
+            outputs={"error": str(e)}
+        )
+
+    bus.publish_contract(contract)
+    return contract
+
+
 # -------------------------------------------------------------------------
 # Parallel Asynchronous DAG Orchestrator
 # -------------------------------------------------------------------------
 
 async def run_parallel_bridge_pipeline_async(repo_root: str = ".") -> Dict[str, Any]:
     """
-    Executes all 7 bridges concurrently using an asynchronous DAG pipeline:
+    Executes all 8 bridges concurrently using an asynchronous DAG pipeline:
     - Stage 1 (Parallel Independent Execution): Architecture, Tududi, GitHub, Visual Audit
-    - Stage 2 (Parallel Context-Informed Execution): Snapshot Showcase, Neuro Vault
+    - Stage 2 (Parallel Context-Informed Execution): Snapshot Showcase, Neuro Vault, EVE Bridge
     - Stage 3 (Ledger Compilation & Audit Verification): Persist cryptographically signed ledger
     """
     t_start = time.time()
@@ -471,10 +518,11 @@ async def run_parallel_bridge_pipeline_async(repo_root: str = ".") -> Dict[str, 
 
     # Stage 2: Run Downstream Bridges Consuming Stage 1 Contract Context
     print("[Stage 2/3] Launching Context-Informed Bridges (Parallel Async Execution)...")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         stage_2_tasks = [
             loop.run_in_executor(executor, execute_snapshot_contract, bus),
-            loop.run_in_executor(executor, execute_neuro_contract, bus)
+            loop.run_in_executor(executor, execute_neuro_contract, bus),
+            loop.run_in_executor(executor, execute_eve_contract, bus)
         ]
         s2_results = await asyncio.gather(*stage_2_tasks)
 

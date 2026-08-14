@@ -47,6 +47,12 @@ def run_phase_audit(repo_root="."):
     except Exception as e:
         results["git_provenance"] = {"status": "skipped", "message": str(e)}
 
+    try:
+        import eve_bridge
+        results["eve_empirical_audit"] = eve_bridge.run_zero_assumption_audit(repo_root)
+    except Exception as e:
+        results["eve_empirical_audit"] = {"status": "skipped", "message": str(e)}
+
     return results
 
 
