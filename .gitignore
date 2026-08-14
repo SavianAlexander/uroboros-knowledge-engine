@@ -14,6 +14,8 @@ __pycache__/
 *.db-shm
 *.db-wal
 *.db.snapshot-*
+*.sqlite3*
+backups/
 # ponytail: ignored !knowledge.db since instruction explicitly states knowledge.db should be gitignored
 knowledge.db*
 
