@@ -147,10 +147,7 @@ class TestDomainSecurity(unittest.TestCase):
         Invariants: Path containment check resolves real symlink target path before validation.
         Expected Outcomes: verify_path_containment raises HTTPException for symlink pointing outside ACTIVE_DIR.
         """
-        outside_target = os.path.abspath(os.path.join(self.test_dir, "..", "outside_sym_target.txt"))
-        with open(outside_target, "w", encoding="utf-8") as f:
-            f.write("Secret")
-
+        outside_target = "/etc/passwd" if os.name != "nt" else "C:\\Windows\\System32\\drivers\\etc\\hosts"
         symlink_path = os.path.join(self.test_dir, "sym_link.txt")
         try:
             os.symlink(outside_target, symlink_path)
@@ -158,9 +155,6 @@ class TestDomainSecurity(unittest.TestCase):
                 main.verify_path_containment(symlink_path)
         except (AttributeError, OSError):
             pass
-        finally:
-            if os.path.exists(outside_target):
-                os.remove(outside_target)
 
     def test_09_simulation_xss_script_injection_sanitization(self):
         """Verify FTS query sanitizer strips HTML and XSS script tag injection payload syntax.
