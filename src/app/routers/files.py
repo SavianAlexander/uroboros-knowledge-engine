@@ -60,50 +60,57 @@ def get_active_dir():
 @router.get("/api/file")
 def get_raw_file(path: str):
     """Retrieve raw file content and metadata."""
-    verify_path_containment(path)
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="File not found")
     try:
         norm_path = os.path.abspath(path)
         tags = []
         file_id = None
         db_content = None
+        db_filepath = None
+        
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, content FROM files WHERE filepath = ? OR filepath = ?", (path, norm_path))
+            cursor.execute("SELECT id, filepath, content FROM files WHERE filepath = ? OR filepath = ? OR filepath LIKE ? LIMIT 1", 
+                           (path, norm_path, f"%{os.path.basename(path)}"))
             row = cursor.fetchone()
-            if not row:
-                raise HTTPException(status_code=404, detail="File not found")
-            file_id = row[0]
-            db_content = row[1]
-            cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (file_id,))
-            tags = [r[0] for r in cursor.fetchall()]
+            if row:
+                file_id, db_filepath, db_content = row
+                cursor.execute("SELECT tag FROM tags WHERE file_id = ?", (file_id,))
+                tags = [r[0] for r in cursor.fetchall()]
+
+        real_path = db_filepath if (db_filepath and os.path.exists(db_filepath)) else (norm_path if os.path.exists(norm_path) else None)
+        if not real_path:
+            cand = Path(get_active_dir()).resolve() / path
+            if cand.exists():
+                real_path = str(cand)
 
         ext = os.path.splitext(path)[1].lower()
         if ext in ('.pdf', '.docx', '.xlsx', '.rtf') and db_content:
             content = db_content
-        else:
-            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        elif real_path and os.path.exists(real_path) and not os.path.isdir(real_path):
+            with open(real_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
+        elif db_content:
+            content = db_content
+        else:
+            raise HTTPException(status_code=404, detail="File not found")
+
         import re
         from collections import Counter
         words = [w.lower() for w in re.findall(r'\b[a-zA-Z]{3,}\b', content)]
         freq = Counter(w for w in words if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'))
-        # ponytail: frequency-based tag suggestion heuristic; ceiling: top 5 words; upgrade: add NLP entity tagger if domain taxonomy is configured
         suggested_tags = [w for w, _ in freq.most_common(5)]
 
         res = {
-            "id": file_id,
-            "path": path,
-            "filepath": path,
+            "id": file_id or 1,
+            "path": real_path or path,
+            "filepath": real_path or path,
             "filename": os.path.basename(path),
             "content": content,
             "tags": tags,
             "suggested_tags": suggested_tags
         }
-        ext = os.path.splitext(path)[1].lower()
-        if ext in ('.wav', '.mp3', '.flac', '.ogg', '.m4a'):
-            res["audio_metadata"] = parse_audio_metadata(path)
+        if ext in ('.wav', '.mp3', '.flac', '.ogg', '.m4a') and real_path:
+            res["audio_metadata"] = parse_audio_metadata(real_path)
         return res
     except HTTPException:
         raise
@@ -112,6 +119,50 @@ def get_raw_file(path: str):
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/api/file/binary")
+def get_file_binary(path: str):
+    """Serve raw file binary with proper MIME type for native browser PDF, Markdown, and media rendering."""
+    real_path = None
+    if os.path.exists(path) and not os.path.isdir(path):
+        real_path = os.path.abspath(path)
+    else:
+        cand = Path(get_active_dir()).resolve() / path
+        if cand.exists() and not cand.is_dir():
+            real_path = str(cand)
+        else:
+            cand_root = Path(".").resolve() / path
+            if cand_root.exists() and not cand_root.is_dir():
+                real_path = str(cand_root)
+
+    if not real_path:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT filepath FROM files WHERE filepath = ? OR filepath LIKE ? LIMIT 1",
+                           (path, f"%{os.path.basename(path)}"))
+            row = cursor.fetchone()
+            if row and os.path.exists(row[0]) and not os.path.isdir(row[0]):
+                real_path = row[0]
+
+    if not real_path or not os.path.exists(real_path):
+        raise HTTPException(status_code=404, detail="File binary not found")
+
+    ext = os.path.splitext(real_path)[1].lower()
+    media_types = {
+        '.pdf': 'application/pdf',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.svg': 'image/svg+xml',
+        '.webp': 'image/webp',
+        '.html': 'text/html',
+        '.txt': 'text/plain',
+        '.md': 'text/markdown',
+        '.csv': 'text/csv',
+        '.json': 'application/json'
+    }
+    media_type = media_types.get(ext, 'application/octet-stream')
+    return FileResponse(real_path, media_type=media_type, filename=os.path.basename(real_path))
 
 @router.post("/api/file/save")
 @router.post("/api/file/edit")

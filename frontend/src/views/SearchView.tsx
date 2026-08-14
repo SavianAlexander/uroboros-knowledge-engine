@@ -368,6 +368,17 @@ export default function SearchView() {
                 <button onClick={handleSaveNote} className="mt-2 w-full py-2 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg transition-colors border border-slate-200 dark:border-white/5">Save Note</button>
               </div>
 
+              {/* Open in Workspace Viewer */}
+              <button
+                onClick={() => {
+                  setActiveView('workspace');
+                }}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition-all shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Open in Full Document & PDF Viewer</span>
+              </button>
+
               {selectedFile.mime.includes('audio') || selectedFile.mime.includes('video') ? (
                 <div className="p-4 bg-white/50 dark:bg-slate-950/50 rounded-xl border border-slate-200 dark:border-white/5 flex flex-col items-center justify-center">
                   <button className="w-12 h-12 rounded-full bg-indigo-500 flex items-center justify-center text-white mb-2 shadow-lg shadow-indigo-500/20 hover:scale-105 transition-transform"><Play className="w-5 h-5 ml-1"/></button>
