@@ -1,20 +1,27 @@
 # Motor de Base de Datos de Conocimiento Uroboros (Neuro Alexander)
 
 <p align="center">
-  <img src="https://img.shields.io/github/actions/workflow/status/SavianAlexander/uroboros-knowledge-engine/tests.yml?branch=master&style=flat-square" alt="Estado de Compilacion" />
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v1.0.1-blue.svg?style=flat-square" alt="Release v1.0.1" /></a>
+  <a href="https://savianalexander.github.io/uroboros-knowledge-engine/"><img src="https://img.shields.io/badge/Showcase%20en%20Vivo-GitHub%20Pages-blueviolet?style=flat-square&logo=github" alt="Showcase en Vivo" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml/badge.svg" alt="CI Pipeline" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml/badge.svg" alt="Neuro Co-Pilot Tri-Engine CI Suite" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml/badge.svg" alt="Crucible Security Matrix" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml/badge.svg" alt="Build & Package" /></a>
+  <img src="https://img.shields.io/badge/Seguridad%20Crucible-100%25%20Confianza-emerald?style=flat-square" alt="Crucible 100% Confianza" />
+  <img src="https://img.shields.io/badge/Tududi%20Task%20Master-Conectado%20Proyecto%20%2313-blue?style=flat-square" alt="Tududi Proyecto #13" />
+  <a href="docs/soc2_type2_attestation.md"><img src="https://img.shields.io/badge/SOC%202%20Type%20II-Verificado-green.svg?style=flat-square" alt="SOC 2 Type II" /></a>
   <img src="https://img.shields.io/github/license/SavianAlexander/uroboros-knowledge-engine?style=flat-square" alt="Licencia" />
   <img src="https://img.shields.io/badge/python-3.12-blue.svg?style=flat-square" alt="Version de Python" />
-  <img src="https://img.shields.io/badge/FastAPI-0.111.0-teal.svg?style=flat-square" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/React-19.0.1-61dafb.svg?style=flat-square" alt="React" />
+  <img src="https://img.shields.io/badge/FastAPI-0.141.1-teal.svg?style=flat-square" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-19.2.8-61dafb.svg?style=flat-square" alt="React" />
   <img src="https://img.shields.io/badge/SQLite-FTS5-orange.svg?style=flat-square" alt="SQLite" />
-  <img src="https://img.shields.io/badge/Motores%20SOTA-32-purple.svg?style=flat-square" alt="32 Motores SOTA" />
-  <img src="https://img.shields.io/badge/Paradigmas%20Frontera-13-magenta.svg?style=flat-square" alt="13 Paradigmas Frontera" />
-  <img src="https://img.shields.io/badge/Innovaciones%20RAG-21-indigo.svg?style=flat-square" alt="21 Innovaciones RAG" />
-  <img src="https://img.shields.io/badge/Modulos%20de%20Dominio-135-blue.svg?style=flat-square" alt="135 Modulos de Dominio" />
   <img src="https://img.shields.io/badge/Suites%20de%20Prueba-98-emerald.svg?style=flat-square" alt="98 Suites de Prueba" />
   <img src="https://img.shields.io/badge/Tasa%20de%20Aprobacion-100%25-brightgreen.svg?style=flat-square" alt="Tasa de Aprobacion 100%" />
   <img src="https://img.shields.io/badge/Estilo%20de%20Codigo-ponytail-indigo?style=flat-square" alt="Estilo Ponytail" />
 </p>
+
+> [!TIP]
+> 🌐 **Showcase Interactivo y Guía Visual de UX**: Explore la demostración interactiva en vivo con capturas de pantalla de alta resolución y diagramas de flujo arquitectónico en **[savianalexander.github.io/uroboros-knowledge-engine](https://savianalexander.github.io/uroboros-knowledge-engine/)**.
 
 ---
 

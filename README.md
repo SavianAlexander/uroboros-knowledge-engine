@@ -1,7 +1,7 @@
 # Uroboros Knowledge Database Engine (Neuro Alexander)
 
 <p align="center">
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v1.0.0-blue.svg?style=flat-square" alt="Release v1.0.0" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v1.0.1-blue.svg?style=flat-square" alt="Release v1.0.1" /></a>
   <a href="https://savianalexander.github.io/uroboros-knowledge-engine/"><img src="https://img.shields.io/badge/Live%20Showcase-GitHub%20Pages-blueviolet?style=flat-square&logo=github" alt="Live Client Showcase" /></a>
   <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml/badge.svg" alt="CI Pipeline" /></a>
   <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml/badge.svg" alt="Neuro Co-Pilot Tri-Engine CI Suite" /></a>
@@ -35,38 +35,40 @@ With **32 State-of-the-Art Architectural Engines**, **13 Incomparable Frontier R
 
 ## Table of Contents
 
-- [1. Mathematical Foundations, Formal Proofs & Retrieval Algorithms](#1-mathematical-foundations-formal-proofs--retrieval-algorithms)
+- [1. Mathematical Foundations, Formal Proofs & Retrieval Algorithms](#1-mathematical-foundations-formal-proofs-retrieval-algorithms)
 - [2. The 32 State-of-the-Art (SOTA) Architectural Engines](#2-the-32-state-of-the-art-sota-architectural-engines)
 - [3. The 13 Incomparable Frontier RAG Paradigms](#3-the-13-incomparable-frontier-rag-paradigms)
 - [4. The 21 Single-Node RAG Innovations Matrix](#4-the-21-single-node-rag-innovations-matrix)
 - [5. Hardware Single-Instance Process Memory Guard](#5-hardware-single-instance-process-memory-guard)
-- [6. End-to-End System Pipeline & Sequence Architecture](#6-end-to-end-system-pipeline--sequence-architecture)
+- [6. End-to-End System Pipeline & Sequence Architecture](#6-end-to-end-system-pipeline-sequence-architecture)
 - [7. Complete Codebase Directory Layout](#7-complete-codebase-directory-layout)
-- [8. API Router Architecture & Specifications (`src/app/routers/`)](#8-api-router-architecture--specifications-srcapprouters)
-- [9. Complete REST API Specifications & Curl Reference](#9-complete-rest-api-specifications--curl-reference)
+- [8. API Router Architecture & Specifications (`src/app/routers/`)](#8-api-router-architecture-specifications-srcapprouters)
+- [9. Complete REST API Specifications & Curl Reference](#9-complete-rest-api-specifications-curl-reference)
 - [10. Complete Taxonomy of All 135 Domain Modules (`src/domain/`)](#10-complete-taxonomy-of-all-135-domain-modules-srcdomain)
-- [11. Operations & Benchmark Utility Scripts Reference (`scripts/`)](#11-operations--benchmark-utility-scripts-reference-scripts)
-- [12. Document File Format Parsers & Extraction Pipeline](#12-document-file-format-parsers--extraction-pipeline)
-- [13. Complete SQLite Database DDL & Storage Schema](#13-complete-sqlite-database-ddl--storage-schema)
+- [11. Operations & Benchmark Utility Scripts Reference (`scripts/`)](#11-operations-benchmark-utility-scripts-reference-scripts)
+- [12. Document File Format Parsers & Extraction Pipeline](#12-document-file-format-parsers-extraction-pipeline)
+- [13. Complete SQLite Database DDL & Storage Schema](#13-complete-sqlite-database-ddl-storage-schema)
 - [14. Infrastructure Core Subsystems](#14-infrastructure-core-subsystems)
-- [15. Multi-Tenancy & Access Control (ACL) Security Architecture](#15-multi-tenancy--access-control-acl-security-architecture)
-- [16. Peer-to-Peer (P2P) LAN Mesh & Synchronization Protocol](#16-peer-to-peer-p2p-lan-mesh--synchronization-protocol)
-- [17. Performance SLA & Microsecond Latency Benchmarks](#17-performance-sla--microsecond-latency-benchmarks)
-- [18. RAG Triad Evaluation & Accuracy Benchmarking](#18-rag-triad-evaluation--accuracy-benchmarking)
-- [19. Advanced Query Filter & Operator Syntax Guide](#19-advanced-query-filter--operator-syntax-guide)
-- [20. Configuration Parameters & Environment Variables Reference](#20-configuration-parameters--environment-variables-reference)
+- [15. Multi-Tenancy & Access Control (ACL) Security Architecture](#15-multi-tenancy-access-control-acl-security-architecture)
+- [16. Peer-to-Peer (P2P) LAN Mesh & Synchronization Protocol](#16-peer-to-peer-p2p-lan-mesh-synchronization-protocol)
+- [17. Performance SLA & Microsecond Latency Benchmarks](#17-performance-sla-microsecond-latency-benchmarks)
+- [18. RAG Triad Evaluation & Accuracy Benchmarking](#18-rag-triad-evaluation-accuracy-benchmarking)
+- [19. Advanced Query Filter & Operator Syntax Guide](#19-advanced-query-filter-operator-syntax-guide)
+- [20. Configuration Parameters & Environment Variables Reference](#20-configuration-parameters-environment-variables-reference)
 - [21. Command Line Interface (CLI) Master Reference](#21-command-line-interface-cli-master-reference)
-- [22. Autonomous Co-Pilot & Task Master Integration (Tududi)](#22-autonomous-co-pilot--task-master-integration-tududi)
-- [23. Multilingual Tokenization & CJK Search Processing](#23-multilingual-tokenization--cjk-search-processing)
-- [24. Containerized Multi-Service Topology & Docker Orchestration](#24-containerized-multi-service-topology--docker-orchestration)
-- [25. Executive Trust & SOC 2 Type II Controls Matrix](#25-executive-trust--soc-2-type-ii-controls-matrix)
-- [26. Frontend Architecture & React SPA View Showcase](#26-frontend-architecture--react-spa-view-showcase)
-- [27. Troubleshooting Matrix & Diagnostic Workflows](#27-troubleshooting-matrix--diagnostic-workflows)
-- [28. Security, PII Redaction, Zero-Knowledge & SOC 2 Compliance](#28-security-pii-redaction-zero-knowledge--soc-2-compliance)
-- [29. Quality Assurance, Testing & Compliance Framework](#29-quality-assurance-testing--compliance-framework)
-- [30. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol](#30-disaster-recovery-snapshot-migration--cold-restore-protocol)
-- [31. Hardware Sizing, GPU Allocation & VRAM Tuning Matrix](#31-hardware-sizing-gpu-allocation--vram-tuning-matrix)
-- [32. License](#32-license)
+- [22. Autonomous Co-Pilot & Task Master Integration (Tududi)](#22-autonomous-co-pilot-task-master-integration-tududi)
+- [23. Multilingual Tokenization & CJK Search Processing](#23-multilingual-tokenization-cjk-search-processing)
+- [24. Containerized Multi-Service Topology & Docker Orchestration](#24-containerized-multi-service-topology-docker-orchestration)
+- [25. Executive Trust & SOC 2 Type II Controls Matrix](#25-executive-trust-soc-2-type-ii-controls-matrix)
+- [26. Claude-Inspired Frontend Architecture & UI View Showcase](#26-claude-inspired-frontend-architecture-ui-view-showcase)
+- [27. Troubleshooting Matrix & Diagnostic Workflows](#27-troubleshooting-matrix-diagnostic-workflows)
+- [28. Security, PII Redaction, Zero-Knowledge & SOC 2 Compliance](#28-security-pii-redaction-zero-knowledge-soc-2-compliance)
+- [29. Quality Assurance, Testing & Compliance Framework](#29-quality-assurance-testing-compliance-framework)
+- [30. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol](#30-disaster-recovery-snapshot-migration-cold-restore-protocol)
+- [31. Hardware Sizing, GPU Allocation & VRAM Tuning Matrix](#31-hardware-sizing-gpu-allocation-vram-tuning-matrix)
+- [32. Code of Conduct & Technical Governance Framework](#32-code-of-conduct-technical-governance-framework)
+- [33. License](#33-license)
+- [📸 Comprehensive Visual Showcase & Client Journey](#-comprehensive-visual-showcase-client-journey)
 
 ---
 
@@ -898,34 +900,66 @@ graph LR
     end
 ```
 
-### Tri-Engine 24-Command CLI Command Matrix
+### The 8 Dedicated Modular Bridges (`.agents/skills/neuro-copilot/scripts/`)
 
-| Command | Subcommand | Purpose |
-| :--- | :--- | :--- |
-| **1. Flight Plan Generator** | `python .../github_bridge.py copilot --prompt "..."` | Synthesize developer intent into structured engineering flight plan using local brain. |
-| **2. Tri-Engine Health** | `python .../github_bridge.py tri_engine_health` | Unified diagnostic across Neuro, Tududi, GitHub, and Architecture Doctor. |
-| **3. Auto Commit Provenance** | `python .../github_bridge.py auto_commit --scope S --desc D` | Staged-files Merkle tree digest calculation and auto-commit with task tag. |
-| **4. Subagent Prompt Builder** | `python .../github_bridge.py format_agent_prompt --task T` | Format standardized system prompt for autonomous subagent delegation. |
-| **5. Executive Dashboard** | `python .../github_bridge.py dashboard` | Render ASCII terminal dashboard summarizing git state, `gh` auth, hooks, & CI. |
-| **6. Full Pipeline Pass** | `python .../github_bridge.py run_full_pipeline` | Execute 1-click full Tri-Engine pipeline pass. |
-| **7. Health Check** | `python .../github_bridge.py check_health` | Audit git status, `gh` auth, active PRs, issues, git hooks, CI workflows. |
-| **8. Issue Sync** | `python .../github_bridge.py sync_issues` | Fetch open GitHub Issues formatted as Tududi Task import JSON. |
-| **9. CI Diagnosis** | `python .../github_bridge.py diagnose_ci [--run-id ID]` | Auto-detect failed Actions runs, extract tracebacks, & build query. |
-| **10. Provenance Tag** | `python .../github_bridge.py provenance_tag --scope S --desc D` | Compute SHA-256 hash of staged files & format executive commit string. |
-| **11. PR Automation** | `python .../github_bridge.py create_pr --title T` | Generate & open a Pull Request with embedded Tududi checklists. |
-| **12. Hook Guard** | `python .../github_bridge.py install_hooks` | Install `.git/hooks/commit-msg` guard enforcing Tududi/Neuro tags. |
-| **13. CI Workflow Setup** | `python .../github_bridge.py install_ci_workflow` | Generate `.github/workflows/neuro_copilot_ci.yml` for GitHub Actions. |
-| **14. PR Diff Security Audit** | `python .../github_bridge.py audit_pr_diff` | Scan diffs for leaked secrets, anti-patterns, & `AGENTS.md` compliance. |
-| **15. Repo Topology Map** | `python .../github_bridge.py repo_map` | Discover workspace git remotes and submodules. |
-| **16. Conflict Analyzer** | `python .../github_bridge.py resolve_conflicts` | Scan working tree for git conflict markers (`<<<<<<<`). |
-| **17. History Formatter** | `python .../github_bridge.py format_history` | Aggregate unpushed commits into a single provenance-tagged commit message. |
-| **18. Architecture Mermaid** | `python .../github_bridge.py export_architecture_mermaid` | Generate Mermaid JS codebase architecture diagram (`graph TD`). |
-| **19. Benchmark Audit** | `python .../github_bridge.py benchmark_audit` | Measure domain test duration and performance metrics. |
-| **20. Skill Health Audit** | `python .../github_bridge.py audit_skills` | Validate YAML frontmatter & SKILL.md integrity across all skills. |
-| **21. Dependency Security** | `python .../github_bridge.py audit_security_dependencies` | Scan `requirements.txt` and `package.json` for unpinned packages. |
-| **22. Bloat Detector** | `python .../github_bridge.py detect_bloat` | Audit Python codebase for deep nesting (>=5 levels) & over-engineering. |
-| **23. Release Synthesizer** | `python .../github_bridge.py generate_release_notes` | Format Markdown release notes & optionally publish GitHub Release. |
-| **24. Bridge Self-Test** | `python .../github_bridge.py self_test` | Run zero-dependency assert-based unit tests for all CLI bridge functions. |
+| # | Bridge Script | Domain & Responsibility |
+| :-: | :--- | :--- |
+| **0** | [`contract_bus.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/contract_bus.py) | Inter-Bridge Contract Bus & Asynchronous Parallel Orchestrator (SHA-256 Merkle contracts) |
+| **1** | [`neuro_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/neuro_bridge.py) | Local Vector Vault, Knowledge Ingestion & Ollama HyDE RAG |
+| **2** | [`tududi_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/tududi_bridge.py) | Tududi Task Master Tracking, Burndown & 4-Tier Auditing (Project #13) |
+| **3** | [`github_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/github_bridge.py) | GitHub CLI, Git Merkle Root Provenance, Remote CI Verification & Ghost Loop |
+| **4** | [`snapshot_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/snapshot_bridge.py) | Enterprise Client Snapshot Showcases & Interactive Decks |
+| **5** | [`visual_audit_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/visual_audit_bridge.py) | Automated PDF Page Rendering & Layout QA Engine |
+| **6** | [`architecture_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/architecture_bridge.py) | Universal Polyglot Clean Architecture Engine (0–100% Score) |
+| **7** | [`workflow_hub_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/workflow_hub_bridge.py) | Master Multi-Phase Engineering Pipeline Orchestrator |
+
+### Tri-Engine 43-Operation Enterprise Command Matrix
+
+| # | Command | Engine / Bridge | Purpose |
+| :-: | :--- | :--- | :--- |
+| **1** | `copilot --prompt "..."` | `github_bridge.py` | Generate Tri-Engine Flight Plan |
+| **2** | `tri_engine_health` | `github_bridge.py` | 4-Engine Health Scorecard |
+| **3** | `auto_commit` | `github_bridge.py` | SHA-256 Provenance Commit |
+| **4** | `create_pr` | `github_bridge.py` | Auto-generate GitHub PR with Tududi links |
+| **5** | `sync_issues` | `github_bridge.py` | Bidirectional Issue & Task Sync |
+| **6** | `diagnose_ci` | `github_bridge.py` | Download & Diagnose CI Failure Logs |
+| **7** | `verify_ci [--wait]` | `github_bridge.py` | Verify Remote CI Workflows & 100% Green Health |
+| **8** | `install_hooks` | `github_bridge.py` | Install `commit-msg` Merkle Verification Hook |
+| **9** | `install_ci_workflow` | `github_bridge.py` | Install GitHub Actions CI Workflow |
+| **10** | `audit_pr_diff` | `github_bridge.py` | Security & Anti-Pattern Diff Audit |
+| **11** | `repo_map` | `github_bridge.py` | Generate Clean ASCII Codebase Tree |
+| **12** | `resolve_conflicts` | `github_bridge.py` | Scan & Resolve Merge Conflicts |
+| **13** | `format_history` | `github_bridge.py` | Format Git History as Markdown Audit Table |
+| **14** | `export_architecture_mermaid`| `github_bridge.py` | Generate Mermaid JS Dependency Graph |
+| **15** | `benchmark_audit` | `github_bridge.py` | Benchmark Test Suite Execution Duration |
+| **16** | `audit_skills` | `github_bridge.py` | Validate All Active Skills Frontmatter & Health |
+| **17** | `audit_security_dependencies`| `github_bridge.py`| Scan `requirements.txt` & `package.json` for Unpinned Deps |
+| **18** | `detect_bloat` | `github_bridge.py` | Audit Codebase for Overly Nested Functions & Bloat |
+| **19** | `visual_showcase_audit` | `github_bridge.py` | Audit Screenshot Assets, README Links & Orphans |
+| **20** | `dashboard` | `github_bridge.py` | Executive Terminal Dashboard with Live Burndown |
+| **21** | `generate_release_notes` | `github_bridge.py` | Generate Markdown Release Notes & Tag Release |
+| **22** | `query --text "..."` | `neuro_bridge.py` | Semantic Query Local Vector Brain |
+| **23** | `ingest --path "..."` | `neuro_bridge.py` | Ingest Documents / Code into Vault |
+| **24** | `ingest_git_history` | `neuro_bridge.py` | Index Git Commit Provenance into Vault |
+| **25** | `ingest_tududi_roadmap`| `neuro_bridge.py` | Index Live Tududi Roadmap into Vector Vault |
+| **26** | `export_note` | `neuro_bridge.py` | Save Architecture Markdown Note into Vault |
+| **27** | `stats` | `neuro_bridge.py` | Vault Size, Chunks & Embedding Statistics |
+| **28** | `list` | `tududi_bridge.py` | Fetch Active Tasks for Project #13 |
+| **29** | `metrics` | `tududi_bridge.py` | Query Project Completion Stats |
+| **30** | `burndown` | `tududi_bridge.py` | Render ASCII Sprint Burndown Meter |
+| **31** | `export_roadmap` | `tududi_bridge.py` | Export Structured Markdown Roadmap |
+| **32** | `scan` | `snapshot_bridge.py` | Full AST & Route Discovery Sweep |
+| **33** | `generate_script` | `snapshot_bridge.py` | Generate Playwright Capture Engine |
+| **34** | `render_deck` | `snapshot_bridge.py` | Render Glassmorphic Client Showcase Deck |
+| **35** | `sync_readme` | `snapshot_bridge.py` | Sync README Visual Tables |
+| **36** | `export_package` | `snapshot_bridge.py` | Package Client Distribution Bundle (ZIP) |
+| **37** | `serve` | `snapshot_bridge.py` | Launch Local Preview Server |
+| **38** | `full_showcase` | `snapshot_bridge.py` | 1-Click End-to-End Client Showcase Suite |
+| **39** | `audit` (PDF QA) | `visual_audit_bridge.py`| Automated PDF Page Rendering & Layout QA |
+| **40** | `audit` (Clean Arch) | `architecture_bridge.py`| Universal Polyglot Clean Architecture Audit |
+| **41** | `run` (Pipeline) | `workflow_hub_bridge.py`| Master Multi-Phase Pipeline Execution |
+| **42** | `run --parallel` | `workflow_hub_bridge.py`| Parallel Asynchronous Inter-Bridge Execution |
+| **43** | `run_parallel` | `contract_bus.py` | Low-Level Parallel Inter-Bridge DAG Runner |
 
 ---
 
@@ -1097,22 +1131,27 @@ python run_domain_tests.py
 
 ## 30. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol
 
-Uroboros incorporates zero-downtime database snapshot backup and cold-restore capabilities:
+Uroboros incorporates zero-downtime database snapshot backup and cold-restore capabilities across both the Neuro Vector Vault (`knowledge.db`) and the Tududi Task Master (`production.sqlite3`):
 
-1. **Non-Blocking WAL Snapshot**:
+1. **Live Dual-Database Non-Blocking Backup with Auto-Rotation**:
+   Executes `PRAGMA wal_checkpoint(TRUNCATE);` before streaming online snapshots and automatically rotates out old snapshots (maintaining the latest 7):
    ```bash
-   python scripts/backup_db.py --output backups/snapshot_$(date +%Y%m%d).db
+   # Live snapshot of both Knowledge DB and Tududi DB
+   python scripts/backup_db.py backup
    ```
 2. **Cold-Restore & Virtual Index Rebuild**:
    ```bash
-   # Replace corrupt database file
-   cp backups/snapshot_20260812.db know.db
-   
+   # Restore Knowledge DB from snapshot
+   python scripts/backup_db.py restore backups/knowledge_backup_20260814_104749.db
+
+   # Restore Tududi Task Master DB from snapshot
+   python scripts/backup_db.py restore backups/tududi_backup_20260814_104749.sqlite3
+
    # Re-initialize FTS5 virtual tables and vacuum WAL
    python know.py init
    ```
 3. **Cross-Machine Corpus Migration**:
-   - Copy `know.db` and the target workspace folder to the new machine.
+   - Copy `knowledge.db` and the target workspace folder to the new machine.
    - Execute `python know.py index "C:\path\to\workspace"` to verify SHA-256 chunk digests without redundant re-indexing.
 
 ---
