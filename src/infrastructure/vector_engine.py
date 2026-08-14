@@ -483,17 +483,17 @@ class MiniVectorEngine:
         cls._cached_db_file = db.DB_FILE
 
         try:
-            conn = get_db()
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT c.id, c.file_id, c.chunk_index, c.content, c.embedding_json, 
-                       f.filepath, f.filename, f.modified_at
-                FROM file_chunks c
-                JOIN files f ON c.file_id = f.id
-                WHERE c.embedding_json IS NOT NULL AND c.embedding_json != '[]'
-            ''')
-            rows = cursor.fetchall()
+            with get_db_connection(db.DB_FILE) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT c.id, c.file_id, c.chunk_index, c.content, c.embedding_json, 
+                           f.filepath, f.filename, f.modified_at
+                    FROM file_chunks c
+                    JOIN files f ON c.file_id = f.id
+                    WHERE c.embedding_json IS NOT NULL AND c.embedding_json != '[]'
+                ''')
+                rows = cursor.fetchall()
             
             cached = []
             from src.core.embeddings import l2_normalize, matryoshka_slice

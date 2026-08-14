@@ -95,7 +95,7 @@ export default function Header() {
         {activeView !== 'chat' && (
           <button
             onClick={() => setActiveView('chat')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-sm transition-all hover:shadow-emerald-600/20 active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-medium shadow-xs transition-all active:scale-95 cursor-pointer"
             title="Start new AI conversation"
           >
             <Plus className="w-3.5 h-3.5" />

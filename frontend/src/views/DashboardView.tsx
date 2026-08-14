@@ -290,13 +290,13 @@ export default function DashboardView() {
 
 function StatCard({ icon, title, value, sub }: { icon: React.ReactNode, title: string, value: string, sub: string }) {
   return (
-    <div className={`${glassCardClasses} p-5 flex items-start space-x-4 hover:border-emerald-500/40 transition-all group shadow-2xs`}>
+    <div className={`${glassCardClasses} p-5 flex items-start space-x-4 hover:border-slate-300 dark:hover:border-white/10 transition-all group shadow-2xs`}>
       <div className="p-3 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 group-hover:bg-slate-200 dark:group-hover:bg-white/10 transition-colors">
         {icon}
       </div>
       <div>
         <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">{title}</p>
-        <p className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5 font-serif-claude">{value}</p>
+        <p className="text-xl font-bold text-slate-900 dark:text-slate-200 mt-0.5 font-serif-claude">{value}</p>
         <p className="text-[11px] text-slate-400 mt-1">{sub}</p>
       </div>
     </div>

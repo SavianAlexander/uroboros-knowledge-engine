@@ -1320,7 +1320,40 @@ def format_agent_prompt(task_desc: str, task_id: str = None):
     print(prompt)
     return 0
 
+def snapshot_cli(action="full_showcase"):
+    """Invoke the Neuro Snapshot Bridge for client visual showcase operations."""
+    skill_scripts_dir = os.path.dirname(__file__)
+    if skill_scripts_dir not in sys.path:
+        sys.path.insert(0, skill_scripts_dir)
+    import snapshot_bridge
+    if action == "scan":
+        print(json.dumps(snapshot_bridge.scan_project_views(), indent=2))
+        return 0
+    elif action == "generate_script":
+        cat = snapshot_bridge.scan_project_views()
+        p = snapshot_bridge.generate_capture_script(cat)
+        print(f"Capture script generated at: {p}")
+        return 0
+    elif action == "render_deck":
+        p = snapshot_bridge.render_client_deck()
+        print(f"Client showcase HTML generated at: {p}")
+        return 0
+    elif action == "sync_readme":
+        res = snapshot_bridge.sync_readme_showcase()
+        print(json.dumps(res, indent=2))
+        return 0
+    elif action == "self_test":
+        return snapshot_bridge.self_test()
+    else:  # full_showcase
+        cat = snapshot_bridge.scan_project_views()
+        p1 = snapshot_bridge.generate_capture_script(cat)
+        p2 = snapshot_bridge.render_client_deck()
+        res = snapshot_bridge.sync_readme_showcase()
+        print(f"[Snapshot Bridge] Showcase Suite Complete: {len(cat.get('views', []))} views mapped, script at {p1}, HTML deck at {p2}.")
+        return 0
+
 def self_test():
+
     """Run assert-based self-test suite for github_bridge.py."""
     print("=== Running Neuro Co-Pilot GitHub Bridge Self-Test Suite ===")
     
@@ -1459,6 +1492,8 @@ def main():
     subparsers.add_parser("audit_security_dependencies", help="Scan dependency manifests for unpinned or risky packages")
     subparsers.add_parser("detect_bloat", help="Audit Python codebase for deep nesting (>=5 levels) & over-engineering")
     subparsers.add_parser("visual_showcase_audit", help="Audit docs/ux_journey screenshots, README visual links, and orphan assets")
+    snap_p = subparsers.add_parser("snapshot", help="Enterprise Client Snapshot Showcase Suite (scan, script, deck, sync)")
+    snap_p.add_argument("action", nargs="?", default="full_showcase", choices=["scan", "generate_script", "render_deck", "sync_readme", "full_showcase", "self_test"], help="Snapshot action")
     subparsers.add_parser("dashboard", help="Render executive ASCII terminal dashboard")
     subparsers.add_parser("tri_engine_health", help="Run unified 4-engine executive health diagnostic")
     subparsers.add_parser("run_full_pipeline", help="Execute 1-click full Tri-Engine pipeline")
@@ -1567,6 +1602,8 @@ def main():
         sys.exit(detect_bloat())
     elif args.command == "visual_showcase_audit":
         sys.exit(visual_showcase_audit())
+    elif args.command == "snapshot":
+        sys.exit(snapshot_cli(args.action))
     elif args.command == "dashboard":
         sys.exit(dashboard())
     elif args.command == "run_full_pipeline":

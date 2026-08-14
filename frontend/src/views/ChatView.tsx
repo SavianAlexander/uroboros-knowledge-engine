@@ -896,9 +896,9 @@ export default function ChatView() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setWebSearchEnabled(!webSearchEnabled)}
-              className={`px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all ${
                 webSearchEnabled
-                  ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm shadow-emerald-600/30'
+                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-xs'
                   : 'bg-slate-100 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
               title={webSearchEnabled ? 'Web Search Enabled' : 'Local Vault RAG Only'}
@@ -1257,7 +1257,7 @@ export default function ChatView() {
               <button
                 type="submit"
                 disabled={!input.trim() || isStreaming}
-                className={`p-2.5 ${emeraldButtonClasses} disabled:opacity-30 disabled:pointer-events-none rounded-xl cursor-pointer`}
+                className="p-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-xl cursor-pointer disabled:opacity-30 transition-all shadow-xs active:scale-95"
                 title="Send Message"
               >
                 <Send className="w-4 h-4" />

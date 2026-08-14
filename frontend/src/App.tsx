@@ -87,7 +87,7 @@ function AppLayout() {
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
-      document.documentElement.style.backgroundColor = '#020617';
+      document.documentElement.style.backgroundColor = '#0B0F17';
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.style.backgroundColor = '#f8fafc';
@@ -98,7 +98,7 @@ function AppLayout() {
     return (
       <Suspense fallback={
         <div className="flex items-center justify-center h-full text-slate-400 text-sm font-medium gap-2">
-          <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-emerald-500/80 border-t-transparent rounded-full animate-spin" />
           <span>Loading Experience...</span>
         </div>
       }>
@@ -122,16 +122,16 @@ function AppLayout() {
   return (
     <>
       {!isAuthenticated && <LoginView onLogin={() => { setIsAuthenticated(true); window.location.reload(); }} />}
-      <div className={`flex h-screen w-full overflow-hidden ${theme === 'dark' ? 'text-slate-200 bg-slate-950' : 'text-slate-900 bg-slate-50'}`}>
-        {/* Ambient atmospheric backdrop (Emerald, Wine Red & Mustard Gold) */}
+      <div className={`flex h-screen w-full overflow-hidden ${theme === 'dark' ? 'text-slate-200 bg-[#0B0F17]' : 'text-slate-900 bg-slate-50'}`}>
+        {/* Ambient atmospheric backdrop (Soft Emerald, Wine Red & Mustard Gold) */}
         {theme === 'dark' ? (
           <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
             {/* Top-Left Emerald Ambient Glow */}
-            <div className="absolute -top-[15%] -left-[10%] w-[50%] h-[50%] bg-emerald-950/25 blur-[140px] rounded-full mix-blend-screen animate-ambient-slow" />
+            <div className="absolute -top-[20%] -left-[10%] w-[55%] h-[55%] bg-emerald-950/20 blur-[150px] rounded-full mix-blend-screen animate-ambient-slow" />
             {/* Bottom-Right Deep Wine Red Ambient Glow */}
-            <div className="absolute -bottom-[15%] -right-[10%] w-[45%] h-[45%] bg-rose-950/20 blur-[150px] rounded-full mix-blend-screen animate-ambient-slow" />
+            <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] bg-rose-950/15 blur-[160px] rounded-full mix-blend-screen animate-ambient-slow" />
             {/* Center-Soft Mustard Gold Warm Glow */}
-            <div className="absolute top-[40%] left-[35%] w-[30%] h-[30%] bg-amber-950/15 blur-[160px] rounded-full mix-blend-screen" />
+            <div className="absolute top-[35%] left-[30%] w-[35%] h-[35%] bg-amber-950/10 blur-[170px] rounded-full mix-blend-screen" />
           </div>
         ) : (
           <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">

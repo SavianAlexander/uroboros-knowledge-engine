@@ -1136,3 +1136,44 @@ Uroboros Knowledge Engine enforces strict standards for community interaction, t
 
 This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) file for complete details.
 
+
+
+## 📸 Comprehensive Visual Showcase & Client Journey
+
+> 💡 **Client Showcase**: Launch the interactive presentation deck at [`docs/ux_journey/client_showcase.html`](file:///docs/ux_journey/client_showcase.html) for live search, category filtering, and theme comparison sliders.
+
+| **Dashboard** | **Chat Studio** |
+| :---: | :---: |
+| ![Dashboard](docs/ux_journey/01_dashboard.png) | ![Chat Studio](docs/ux_journey/02_chat_studio.png) |
+
+| **Workspace** | **Search** |
+| :---: | :---: |
+| ![Workspace](docs/ux_journey/02_workspace.png) | ![Search](docs/ux_journey/03_search.png) |
+
+| **Workspace Studio** | **Ingestion** |
+| :---: | :---: |
+| ![Workspace Studio](docs/ux_journey/03_workspace_studio.png) | ![Ingestion](docs/ux_journey/04_ingestion.png) |
+
+| **Search Explorer** | **Graph** |
+| :---: | :---: |
+| ![Search Explorer](docs/ux_journey/04_search_explorer.png) | ![Graph](docs/ux_journey/05_graph.png) |
+
+| **Ingestion Pipeline** | **Chat** |
+| :---: | :---: |
+| ![Ingestion Pipeline](docs/ux_journey/05_ingestion_pipeline.png) | ![Chat](docs/ux_journey/06_chat.png) |
+
+| **Knowledge Graph** | **Config** |
+| :---: | :---: |
+| ![Knowledge Graph](docs/ux_journey/06_knowledge_graph.png) | ![Config](docs/ux_journey/07_config.png) |
+
+| **Config Orchestration** | **Settings** |
+| :---: | :---: |
+| ![Config Orchestration](docs/ux_journey/07_config_orchestration.png) | ![Settings](docs/ux_journey/08_settings.png) |
+
+| **Settings Maintenance** | **Command Palette** |
+| :---: | :---: |
+| ![Settings Maintenance](docs/ux_journey/08_settings_maintenance.png) | ![Command Palette](docs/ux_journey/09_command_palette.png) |
+
+| **Light Mode** |
+| :---: |
+| ![Light Mode](docs/ux_journey/10_light_mode.png) |
