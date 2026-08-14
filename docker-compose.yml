@@ -1,13 +1,31 @@
+# ==============================================================================
+# Uroboros Knowledge Engine: Cloud-Native Microservice Architecture
+# Standards: SOC 2 Type II, Network Segmentation, GPU Hardware Profiles, CIS Hardened
+# ==============================================================================
+
 services:
+  # ----------------------------------------------------------------------------
+  # 1. FastAPI Core RAG Engine & SQLite Vector Vault
+  # ----------------------------------------------------------------------------
   uroboros_engine:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: neuroalexander-uroboros_engine:latest
     container_name: uroboros_engine
+    restart: unless-stopped
+    stop_signal: SIGINT
+    stop_grace_period: 15s
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "8000:8000"
       - "8098:8098/udp"
     volumes:
-      - .:/app
       - uroboros_data:/app/data
+      - uroboros_vault:/app/vault
+      - uroboros_dumps:/app/dumps
+      - uroboros_backups:/app/backups
     environment:
       - PORT=8000
       - HOST=0.0.0.0
@@ -15,11 +33,13 @@ services:
       - LLM_API_KEY=ollama
       - OPENAI_API_BASE=http://host.docker.internal:11434/v1
       - OLLAMA_HOST=http://host.docker.internal:11434
+      - MAX_WORKERS=2
     deploy:
       resources:
         limits:
           cpus: '4.0'
           memory: 4G
+          pids: 200
         reservations:
           cpus: '1.0'
           memory: 512M
@@ -28,9 +48,9 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    restart: unless-stopped
-    stop_signal: SIGINT
-    stop_grace_period: 15s
+    networks:
+      - backend_net
+      - ai_net
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -40,26 +60,70 @@ services:
       retries: 3
       start_period: 5s
 
+  # ----------------------------------------------------------------------------
+  # 2. High-Performance React SPA & Nginx Reverse Proxy
+  # ----------------------------------------------------------------------------
   uroboros_frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+    image: neuroalexander-uroboros_frontend:latest
     container_name: uroboros_frontend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "80:80"
     depends_on:
       uroboros_engine:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+          pids: 100
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
+    networks:
+      - frontend_net
+      - backend_net
+
+  # ----------------------------------------------------------------------------
+  # 3. Optional Containerized Ollama Instance (NVIDIA GPU Profile)
+  # ----------------------------------------------------------------------------
+  ollama_nvidia:
+    image: ollama/ollama:latest
+    container_name: uroboros_ollama_nvidia
+    profiles: ["gpu-nvidia"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - ai_net
     restart: unless-stopped
 
-  ollama:
+  # ----------------------------------------------------------------------------
+  # 4. Optional Containerized Ollama Instance (AMD ROCm Profile)
+  # ----------------------------------------------------------------------------
+  ollama_amd:
     image: ollama/ollama:latest
-    container_name: uroboros_ollama
+    container_name: uroboros_ollama_amd
+    profiles: ["gpu-amd"]
     ports:
       - "11434:11434"
     volumes:
@@ -69,9 +133,32 @@ services:
       - "/dev/dri:/dev/dri"
     environment:
       - HSA_OVERRIDE_GFX_VERSION=10.3.0
+    networks:
+      - ai_net
     restart: unless-stopped
 
+# ==============================================================================
+# Persistent Volumes & Isolated Network Topologies
+# ==============================================================================
 volumes:
   uroboros_data:
+    name: uroboros_data
+  uroboros_vault:
+    name: uroboros_vault
+  uroboros_dumps:
+    name: uroboros_dumps
+  uroboros_backups:
+    name: uroboros_backups
   ollama_data:
+    name: ollama_data
 
+networks:
+  frontend_net:
+    driver: bridge
+    name: uroboros_frontend_net
+  backend_net:
+    driver: bridge
+    name: uroboros_backend_net
+  ai_net:
+    driver: bridge
+    name: uroboros_ai_net

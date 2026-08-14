@@ -1,19 +1,30 @@
-# Stage 1: Build React App
-FROM node:20-alpine AS builder
+# syntax=docker/dockerfile:1.4
+# ==============================================================================
+# Uroboros Knowledge Engine: React SPA & Nginx Reverse Proxy Container
+# Standard: Multi-Stage, BuildKit Cached, Gzip/SSE Proxy Optimized
+# ==============================================================================
 
+# Stage 1: Build React Production SPA
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY frontend/package*.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 COPY frontend/ .
 RUN npm run build
 
-# Stage 2: Serve via Nginx Alpine
-FROM nginx:alpine
+# Stage 2: Serve via High-Performance Nginx Alpine
+FROM nginx:1.27-alpine-slim
 
+# Copy compiled SPA bundle and optimized Nginx configuration
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/nginx.conf
+
+# Add healthcheck probe
+HEALTHCHECK --interval=15s --timeout=3s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1:80/ || exit 1
 
 EXPOSE 80
 
