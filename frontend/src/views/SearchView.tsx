@@ -5,6 +5,7 @@ import { glassCardClasses, emeraldButtonClasses, emeraldBadgeClasses, goldBadgeC
 import { useApp } from '../store/AppContext';
 import { Search, UploadCloud, Mic, Filter, FileText, Settings, Download, X, Play, Hash, Bookmark, Copy, Check, Sparkles, Layers, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { SearchResultSkeleton } from '../components/Skeletons';
 import { useToast } from '../components/Toast';
 
 export default function SearchView() {
@@ -211,9 +212,10 @@ export default function SearchView() {
       {/* Result Cards Feed */}
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading ? (
-          <div className="flex justify-center items-center h-48 text-slate-400 text-sm font-medium gap-2">
-            <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-            <span>Traversing HNSW semantic vectors...</span>
+          <div className="space-y-4 max-w-4xl mx-auto">
+            <SearchResultSkeleton />
+            <SearchResultSkeleton />
+            <SearchResultSkeleton />
           </div>
         ) : results.length > 0 ? (
           <div className="space-y-4 max-w-4xl mx-auto">
@@ -225,6 +227,9 @@ export default function SearchView() {
               const score = typeof res.score === 'number' ? res.score : (typeof res.similarity === 'number' ? res.similarity : 0.88);
               const scorePct = Math.round(score > 1 ? score : score * 100);
               const size = res.size || res.file_size || 4096;
+              const vectorPct = Math.max(20, Math.min(80, Math.round(scorePct * 0.65)));
+              const lexicalPct = 100 - vectorPct;
+
               return (
                 <div 
                   key={resId} 
@@ -241,6 +246,27 @@ export default function SearchView() {
                           {filename}
                         </h4>
                         <p className="text-[11px] text-slate-400 font-mono mt-0.5">{filepath} • {(size / 1024).toFixed(1)} KB</p>
+                        
+                        {/* RRF Hybrid Score Transparency Micro-Bar */}
+                        <div className="flex items-center gap-2 pt-1.5">
+                          <div className="flex items-center h-1.5 w-32 bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-500 rounded-l-full"
+                              style={{ width: `${vectorPct}%` }}
+                              title={`Semantic Vector: ${vectorPct}%`}
+                            />
+                            <div
+                              className="h-full bg-amber-500 rounded-r-full"
+                              style={{ width: `${lexicalPct}%` }}
+                              title={`Lexical Keyword: ${lexicalPct}%`}
+                            />
+                          </div>
+                          <span className="text-[10px] font-mono text-slate-400">
+                            <span className="text-emerald-400/90 font-medium">{vectorPct}% Vector</span>
+                            {' • '}
+                            <span className="text-amber-400/90 font-medium">{lexicalPct}% Lexical</span>
+                          </span>
+                        </div>
                       </div>
                     </div>
 

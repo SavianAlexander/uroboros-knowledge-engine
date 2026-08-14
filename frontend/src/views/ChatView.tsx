@@ -767,7 +767,7 @@ export default function ChatView() {
               );
             } else {
               renderedElements.push(
-                <p key={lIdx} className="text-slate-800 dark:text-slate-200">
+                <p key={lIdx} className={`text-slate-800 dark:text-slate-200 ${isCurrentlyStreaming ? 'token-fade-in' : ''}`}>
                   {renderFormattedInlineText(line)}
                 </p>
               );
@@ -777,7 +777,7 @@ export default function ChatView() {
           if (inTable) flushTable(`tbl-${sIdx}-end`);
 
           return (
-            <div key={sIdx} className="space-y-1">
+            <div key={sIdx} className={`space-y-1 ${isCurrentlyStreaming ? 'token-fade-in' : ''}`}>
               {renderedElements}
               {isCurrentlyStreaming && sIdx === blocks.length - 1 && (
                 <span className="inline-block w-1.5 h-4 ml-1 bg-emerald-500 animate-pulse align-middle rounded-sm" />

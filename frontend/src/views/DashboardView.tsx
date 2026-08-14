@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { glassCardClasses, emeraldBadgeClasses, goldBadgeClasses, wineBadgeClasses } from '../lib/utils';
 import { useApp } from '../store/AppContext';
+import { StatCardSkeleton, ChartSkeleton } from '../components/Skeletons';
 import SystemControlsCard from '../components/SystemControlsCard';
 import { Activity, HardDrive, FileText, Zap, Clock, CheckCircle2, XCircle, Search, Sparkles } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';

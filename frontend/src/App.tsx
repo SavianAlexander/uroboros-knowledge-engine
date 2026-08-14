@@ -1,4 +1,4 @@
-import React, { Component, useEffect, useState, lazy, Suspense } from 'react';
+import React, { Component, useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './store/AppContext';
 import { ToastProvider } from './components/Toast';
 import Sidebar from './components/Sidebar';
@@ -76,7 +76,9 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
 function AppLayout() {
   const { activeView, theme } = useApp();
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Assume true until 401
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isWindowDragging, setIsWindowDragging] = useState(false);
+  const dragCounter = useRef(0);
 
   useEffect(() => {
     const handleAuth = () => setIsAuthenticated(false);
@@ -93,6 +95,52 @@ function AppLayout() {
       document.documentElement.style.backgroundColor = '#f8fafc';
     }
   }, [theme]);
+
+  // Global Window Drag & Drop Listeners
+  useEffect(() => {
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter.current += 1;
+      if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+        setIsWindowDragging(true);
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter.current -= 1;
+      if (dragCounter.current <= 0) {
+        setIsWindowDragging(false);
+        dragCounter.current = 0;
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setIsWindowDragging(false);
+      dragCounter.current = 0;
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        window.dispatchEvent(new CustomEvent('neuro:global-drop', { detail: { files } }));
+      }
+    };
+
+    window.addEventListener('dragenter', handleDragEnter);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+
+    return () => {
+      window.removeEventListener('dragenter', handleDragEnter);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, []);
 
   const renderView = () => {
     return (
@@ -151,6 +199,26 @@ function AppLayout() {
           </div>
         </div>
         <CommandPalette />
+
+        {/* Global Window Drag-and-Drop Dropzone Overlay */}
+        {isWindowDragging && (
+          <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-8 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl p-12 rounded-3xl border-2 border-dashed border-emerald-500/60 bg-emerald-950/20 text-center space-y-4 shadow-2xl">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto shadow-lg animate-bounce">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-2xl font-bold font-serif-claude text-slate-100">Drop Documents to Ingest</h3>
+                <p className="text-sm text-slate-400">PDF, EPUB, DOCX, Markdown, Audio & Text files will be parsed and vectorized automatically.</p>
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-xs font-mono text-emerald-300">
+                <span>HNSW Semantic Index Ready</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

@@ -209,6 +209,28 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
   const [isXrayActive, setIsXrayActive] = useState<boolean>(true);
   const [activeTool, setActiveTool] = useState<'pointer' | 'highlight' | 'note'>('pointer');
   const [rotation, setRotation] = useState<number>(0);
+  const [panOffset, setPanOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const startPanRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    if (activeTool === 'pointer' || e.button === 1) {
+      setIsPanning(true);
+      startPanRef.current = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
+    }
+  };
+
+  const handleCanvasMouseMove = (e: React.MouseEvent) => {
+    if (!isPanning) return;
+    setPanOffset({
+      x: e.clientX - startPanRef.current.x,
+      y: e.clientY - startPanRef.current.y
+    });
+  };
+
+  const handleCanvasMouseUp = () => {
+    setIsPanning(false);
+  };
 
   // Live Synced Right-Sidebar Concept & AI Assistant State
   const [selectedConcept, setSelectedConcept] = useState<any>({
@@ -1387,9 +1409,13 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                           <ZoomIn className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => setPdfPageZoom(1)}
+                          onClick={() => {
+                            setPdfPageZoom(1);
+                            setPanOffset({ x: 0, y: 0 });
+                            setRotation(0);
+                          }}
                           className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
-                          title="Reset 100% Scale"
+                          title="Reset Scale & Pan (100%)"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                         </button>
@@ -1412,16 +1438,23 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
               {/* Main Document Canvas */}
               {isPdf ? (
                 <div className="flex-1 flex flex-col space-y-3 overflow-hidden">
-                  <div className="flex-1 rounded-2xl border border-slate-700/60 bg-slate-950 p-6 shadow-2xl flex flex-col items-center justify-center overflow-auto relative">
-                    
+                  <div
+                    onMouseDown={handleCanvasMouseDown}
+                    onMouseMove={handleCanvasMouseMove}
+                    onMouseUp={handleCanvasMouseUp}
+                    onMouseLeave={handleCanvasMouseUp}
+                    className={`flex-1 rounded-2xl border border-slate-700/60 bg-slate-950 p-6 shadow-2xl flex flex-col items-center justify-center overflow-hidden relative select-none ${
+                      isPanning ? 'cursor-grabbing' : 'cursor-grab'
+                    }`}
+                  >
                     {/* Real Document Image Canvas with Direct In-Document Word Hover & Contrast Overlay */}
                     <div className="relative max-w-full flex items-center justify-center group/doc">
                       <img
                         src={`/api/file/pdf/page?path=${encodeURIComponent(filePath)}&page=${currentPdfPage}&dpi=150`}
                         alt={`Document Page ${currentPdfPage + 1}`}
-                        className="rounded-xl shadow-2xl border border-slate-700/80 max-h-[72vh] object-contain transition-transform duration-150 bg-white select-none"
+                        className="rounded-xl shadow-2xl border border-slate-700/80 max-h-[72vh] object-contain transition-transform duration-100 bg-white select-none pointer-events-none"
                         style={{
-                          transform: `scale(${pdfPageZoom}) rotate(${rotation}deg)`,
+                          transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${pdfPageZoom}) rotate(${rotation}deg)`,
                           transformOrigin: 'center top'
                         }}
                       />
@@ -1431,7 +1464,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                         <div
                           className="absolute inset-0 max-h-[72vh] mx-auto pointer-events-none"
                           style={{
-                            transform: `scale(${pdfPageZoom}) rotate(${rotation}deg)`,
+                            transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${pdfPageZoom}) rotate(${rotation}deg)`,
                             transformOrigin: 'center top',
                             width: '100%',
                             maxWidth: '560px',

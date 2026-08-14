@@ -74,13 +74,10 @@ def main():
             elif view_id == "search":
                 search_input = page.locator("input[placeholder*='Search']").first
                 if search_input.count() > 0:
+                    search_input.click()
                     search_input.fill("gallup")
-                    page.locator("button[type='submit']").first.click()
-                    try:
-                        page.wait_for_selector(".font-serif-claude", timeout=8000)
-                    except Exception:
-                        pass
-                    time.sleep(1)
+                    page.keyboard.press("Enter")
+                    time.sleep(2.5)
 
             elif view_id == "graph":
                 time.sleep(5)  # Wait for WebGL 3D graph cluster physics simulation

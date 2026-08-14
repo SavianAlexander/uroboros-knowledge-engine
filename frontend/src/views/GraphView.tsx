@@ -9,7 +9,7 @@ import { useApp } from '../store/AppContext';
 
 export default function GraphView() {
   const { toast } = useToast();
-  const { activeWorkspace } = useApp();
+  const { activeWorkspace, setActiveView, setSearchQuery } = useApp();
 
   const handleExportGraphML = async () => {
     try {
@@ -327,8 +327,43 @@ export default function GraphView() {
             <div className="flex justify-between pt-1 border-t border-slate-200 dark:border-white/5">
               <span className="text-slate-500">Linked Nodes:</span>
               <span className="text-emerald-500 font-bold">{
-                filteredEdges.filter(e => e.source.id === selectedNode.id || e.target.id === selectedNode.id).length
+                filteredEdges.filter(e => (e.source?.id || e.source) === selectedNode.id || (e.target?.id || e.target) === selectedNode.id).length
               }</span>
+            </div>
+
+            {/* Bi-Directional Cross-View Actions */}
+            <div className="pt-3 border-t border-slate-200 dark:border-white/5 flex flex-col gap-1.5 font-sans">
+              <button
+                onClick={() => {
+                  toast('Opening Workstation', `Navigating to ${selectedNode.name || 'document'}...`, 'info');
+                  setActiveView('workspace');
+                }}
+                className="w-full py-1.5 px-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
+              >
+                <span>Open in Workstation</span>
+              </button>
+
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => {
+                    toast('Spawning AI Studio', `Grounded on ${selectedNode.name}...`, 'info');
+                    setActiveView('chat');
+                  }}
+                  className="flex-1 py-1.5 px-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Chat Concept</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSearchQuery(selectedNode.name || selectedNode.id);
+                    setActiveView('search');
+                  }}
+                  className="flex-1 py-1.5 px-2 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 text-[11px] font-medium flex items-center justify-center gap-1 transition-all"
+                >
+                  <span>Search Vault</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
