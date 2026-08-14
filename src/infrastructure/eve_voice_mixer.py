@@ -6,9 +6,15 @@ Ponytail Senior Dev Principle: Exact mathematical audio ducking (-14dB attenuati
 
 import os
 import sys
-import numpy as np
 import io
-import soundfile as sf
+try:
+    import numpy as np
+except ImportError:
+    np = None
+try:
+    import soundfile as sf
+except ImportError:
+    sf = None
 from typing import Dict, Any, List, Optional, Tuple
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

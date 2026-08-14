@@ -7,10 +7,16 @@ Ponytail Senior Dev Principle: 100% procedural synthesis of cockpit alarms, warp
 import os
 import sys
 import math
-import numpy as np
 import io
 import time
-import soundfile as sf
+try:
+    import numpy as np
+except ImportError:
+    np = None
+try:
+    import soundfile as sf
+except ImportError:
+    sf = None
 from typing import Dict, Any, List, Optional, Tuple
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -105,13 +111,18 @@ SFX_LIBRARY = {
 
 def render_sfx_to_wav_bytes(sfx_name: str, sample_rate: int = 24000) -> Optional[bytes]:
     """Render procedural SFX to raw WAV bytes."""
+    if sf is None or np is None:
+        return None
     generator = SFX_LIBRARY.get(sfx_name)
     if not generator:
         return None
-    samples = generator(sample_rate=sample_rate)
-    buf = io.BytesIO()
-    sf.write(buf, samples, sample_rate, format="WAV")
-    return buf.getvalue()
+    try:
+        samples = generator(sample_rate=sample_rate)
+        buf = io.BytesIO()
+        sf.write(buf, samples, sample_rate, format="WAV")
+        return buf.getvalue()
+    except Exception:
+        return None
 
 
 def generate_soundscape_markdown() -> List[str]:

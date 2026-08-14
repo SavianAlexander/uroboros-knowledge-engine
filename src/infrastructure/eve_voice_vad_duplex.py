@@ -6,8 +6,11 @@ Ponytail Senior Dev Principle: Zero-latency RMS/ZCR speech state machine enablin
 
 import os
 import sys
-import numpy as np
 import time
+try:
+    import numpy as np
+except ImportError:
+    np = None
 from typing import Dict, Any, List, Optional, Tuple
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

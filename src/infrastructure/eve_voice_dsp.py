@@ -7,11 +7,14 @@ Ponytail Senior Dev Principle: Exact Bessel/Butterworth bandpass filters, multi-
 import os
 import sys
 import math
-import numpy as np
 import io
 import time
 import warnings
 warnings.filterwarnings("ignore")
+try:
+    import numpy as np
+except ImportError:
+    np = None
 from typing import Dict, Any, List, Tuple, Optional
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

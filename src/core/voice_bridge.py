@@ -14,10 +14,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from src.infrastructure.eve_voice_copilot import KokoroVoiceCopilot, KOKORO_PERSONAS
-from src.infrastructure.eve_voice_dsp import process_tactical_dsp_pipeline
-from src.infrastructure.eve_voice_soundboard import SFX_LIBRARY, render_sfx_to_wav_bytes
-from src.infrastructure.eve_voice_mixer import composite_tactical_soundscape
+try:
+    from src.infrastructure.eve_voice_copilot import KokoroVoiceCopilot, KOKORO_PERSONAS
+except Exception:
+    KokoroVoiceCopilot = None
+    KOKORO_PERSONAS = {
+        "AURA_SHIP_AI": "bf_emma",
+        "TACTICAL_ADVISOR": "af_sarah",
+        "FLEET_COMMANDER": "am_adam",
+        "INDUSTRY_OVERSEER": "bm_george",
+        "CALM_OPERATIONS": "af_bella"
+    }
 
 
 DOMAIN_PROFILES = {
