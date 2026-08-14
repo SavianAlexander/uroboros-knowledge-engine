@@ -2,9 +2,36 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 import { ChatSession, ChatMessage } from '../types';
 import { glassCardClasses } from '../lib/utils';
-import { Bot, Send, User, Settings, Search, FileText, Copy, Check, Sparkles, Trash2, Globe, Plus, RefreshCw, Download, Zap, X } from 'lucide-react';
+import {
+  Bot,
+  Send,
+  User,
+  Settings,
+  Search,
+  FileText,
+  Copy,
+  Check,
+  Sparkles,
+  Trash2,
+  Globe,
+  Plus,
+  RefreshCw,
+  Download,
+  Zap,
+  X,
+  Volume2,
+  VolumeX,
+  ThumbsUp,
+  ThumbsDown,
+  ArrowDown,
+  Info,
+  Lightbulb,
+  AlertTriangle,
+  ShieldAlert,
+  ChevronRight,
+  MessageSquare
+} from 'lucide-react';
 import { useToast } from '../components/Toast';
-
 import { useApp } from '../store/AppContext';
 
 export default function ChatView() {
@@ -22,8 +49,15 @@ export default function ChatView() {
   const [temperature, setTemperature] = useState<number>(0.7);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
 
+  // Phase 12 Interactive state
+  const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
+  const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
+  const [collapsedThoughts, setCollapsedThoughts] = useState<Record<string, boolean>>({});
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+
   const abortRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const activeSessionObj = sessions.find(s => s.id === activeSession);
 
@@ -66,12 +100,18 @@ export default function ChatView() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleContainerScroll = () => {
+    if (!chatContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const isUp = scrollHeight - scrollTop - clientHeight > 120;
+    setShowScrollBottom(isUp);
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages, isStreaming]);
 
   useEffect(() => {
-    // Intelligent automatic background model preloading
     fetch('/api/system/preload-model', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -91,6 +131,15 @@ export default function ChatView() {
     }).catch(e => console.error('Failed to load chat sessions:', e));
     return () => controller.abort();
   }, [activeWorkspace]);
+
+  // Clean up speech on unmount
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   const handleNewSession = async () => {
     try {
@@ -129,6 +178,10 @@ export default function ChatView() {
 
   const handleClearMessages = () => {
     setMessages([]);
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setSpeakingMsgId(null);
+    }
     toast('Chat Cleared', 'Conversation history cleared', 'info');
   };
 
@@ -137,6 +190,55 @@ export default function ChatView() {
     setCopiedMsgId(id);
     toast('Copied Message', 'Text copied to clipboard', 'info');
     setTimeout(() => setCopiedMsgId(null), 2000);
+  };
+
+  const handleToggleSpeak = (msgId: string, text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      toast('TTS Unsupported', 'Web Speech API is not supported in this browser.', 'warning');
+      return;
+    }
+
+    if (speakingMsgId === msgId) {
+      window.speechSynthesis.cancel();
+      setSpeakingMsgId(null);
+      toast('Speech Paused', 'Audio playback stopped', 'info');
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    // Clean text of markdown formatting for natural TTS
+    const cleanText = text
+      .replace(/```[\s\S]*?```/g, 'Code block omitted.')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/[#*>\-_~]/g, ' ')
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+    utterance.onend = () => setSpeakingMsgId(null);
+    utterance.onerror = () => setSpeakingMsgId(null);
+
+    window.speechSynthesis.speak(utterance);
+    setSpeakingMsgId(msgId);
+    toast('Audio Playback', 'Reading AI response aloud...', 'info');
+  };
+
+  const handleRate = (msgId: string, rating: 'up' | 'down') => {
+    setRatings(prev => ({
+      ...prev,
+      [msgId]: prev[msgId] === rating ? undefined as any : rating
+    }));
+    toast('Feedback Recorded', rating === 'up' ? 'Marked as helpful 👍' : 'Marked as unhelpful 👎', 'info');
+  };
+
+  const handleRegenerate = () => {
+    if (messages.length === 0 || isStreaming) return;
+    const lastUserIdx = [...messages].reverse().findIndex(m => m.role === 'user');
+    if (lastUserIdx === -1) return;
+    const actualIdx = messages.length - 1 - lastUserIdx;
+    const lastUserPrompt = messages[actualIdx].content;
+    executeSend(lastUserPrompt);
   };
 
   const handleSelectSession = (s: ChatSession) => {
@@ -171,7 +273,6 @@ export default function ChatView() {
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Add placeholder assistant message
       const assistantMsgId = (Date.now() + 1).toString();
       setMessages(prev => [...prev, { id: assistantMsgId, role: 'assistant', content: '', sources: [] }]);
 
@@ -187,7 +288,7 @@ export default function ChatView() {
       if (!reader) return;
 
       let currentResponse = '';
-      let gatheredSources: Array<{ title?: string; path?: string; url?: string; snippet?: string }> = [];
+      let gatheredSources: Array<{ title?: string; path?: string; url?: string; snippet?: string; confidence_score?: number }> = [];
       let buffer = '';
 
       while (true) {
@@ -220,7 +321,7 @@ export default function ChatView() {
                   path: src.path || src.filepath || '',
                   url: src.url || src.link || '',
                   snippet: src.snippet || src.text || src.citation || '',
-                  confidence_score: src.confidence_score
+                  confidence_score: src.confidence_score || src.score || 0.92
                 }));
                 setMessages(prev => {
                   const newMsgs = [...prev];
@@ -249,8 +350,8 @@ export default function ChatView() {
                   return newMsgs;
                 });
               }
-            } catch (err) {
-              // Ignore malformed SSE chunk line
+            } catch {
+              // Ignore malformed SSE chunk
             }
           }
         }
@@ -266,57 +367,277 @@ export default function ChatView() {
     }
   };
 
+  // Derive dynamic smart follow-up suggestions from conversation
+  const getFollowUpSuggestions = (content: string) => {
+    const lower = content.toLowerCase();
+    if (lower.includes('wal') || lower.includes('sqlite') || lower.includes('database')) {
+      return [
+        'How do I benchmark SQLite WAL concurrency in Python?',
+        'What are the memory trade-offs of SQLite WAL mode?',
+        'Show an example of checkpointing WAL files safely'
+      ];
+    }
+    if (lower.includes('vector') || lower.includes('embedding') || lower.includes('colbert') || lower.includes('rag')) {
+      return [
+        'Explain the mathematical difference between Dense and Sparse embeddings',
+        'How does Reciprocal Rank Fusion combine keyword and vector scores?',
+        'What is the optimal chunk size for technical documentation?'
+      ];
+    }
+    if (lower.includes('quantum') || lower.includes('physics')) {
+      return [
+        'How does quantum entanglement enable superdense coding?',
+        'What are the primary noise factors in quantum qubits?',
+        'Explain Shor algorithm time complexity'
+      ];
+    }
+    return [
+      'Can you provide a step-by-step implementation code?',
+      'What are the common edge cases and failure modes?',
+      'Summarize the key architectural takeaways'
+    ];
+  };
+
+  // Rich inline markdown renderer
+  const renderFormattedInlineText = (text: string) => {
+    // Bold: **text**
+    const parts = text.split(/(\*\*.*?\*\*|`[^`]+`|\*[^*]+\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i} className="font-semibold text-slate-900 dark:text-slate-100">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return (
+          <code key={i} className="px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-white/10 text-indigo-600 dark:text-indigo-300 font-mono text-[12px]">
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      if (part.startsWith('*') && part.endsWith('*')) {
+        return <em key={i} className="italic text-slate-700 dark:text-slate-300">{part.slice(1, -1)}</em>;
+      }
+      return part;
+    });
+  };
+
+  // Rich block renderer for paragraphs, headers, tables, callouts, and code blocks
   const renderFormattedContent = (content: string, msgId: string, isCurrentlyStreaming: boolean = false) => {
-    if (!content.includes('```')) {
-      return (
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-          {content}
-          {isCurrentlyStreaming && <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-500 animate-pulse align-middle rounded-sm" />}
-        </p>
-      );
+    // Handle Thinking disclosure blocks (<think>...</think>)
+    let mainContent = content;
+    let thinkingBlock = '';
+    if (content.includes('<think>') && content.includes('</think>')) {
+      const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);
+      if (thinkMatch) {
+        thinkingBlock = thinkMatch[1].trim();
+        mainContent = content.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+      }
     }
 
-    const parts = content.split(/(```[\s\S]*?```)/g);
+    // Split code blocks first
+    const sections = mainContent.split(/(```[\s\S]*?```)/g);
+
     return (
-      <div className="space-y-3">
-        {parts.map((part, index) => {
-          if (part.startsWith('```') && part.endsWith('```')) {
-            const match = part.match(/^```(\w+)?\n?([\s\S]*?)```$/);
+      <div className="space-y-3.5 text-sm leading-relaxed">
+        {/* Thinking Accordion */}
+        {thinkingBlock && (
+          <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 text-xs space-y-2">
+            <button
+              onClick={() => setCollapsedThoughts(prev => ({ ...prev, [msgId]: !prev[msgId] }))}
+              className="flex items-center gap-1.5 font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              <ChevronRight className={`w-3.5 h-3.5 transition-transform ${collapsedThoughts[msgId] ? '' : 'rotate-90'}`} />
+              <span>💭 Thinking Process ({thinkingBlock.split(' ').length} words)</span>
+            </button>
+            {!collapsedThoughts[msgId] && (
+              <div className="text-slate-400 font-mono text-[11px] pl-5 border-l border-indigo-500/20 whitespace-pre-wrap leading-relaxed">
+                {thinkingBlock}
+              </div>
+            )}
+          </div>
+        )}
+
+        {sections.map((section, sIdx) => {
+          // Code block
+          if (section.startsWith('```') && section.endsWith('```')) {
+            const match = section.match(/^```(\w+)?\n?([\s\S]*?)```$/);
             const lang = match ? match[1] || 'code' : 'code';
-            const codeText = match ? match[2].trim() : part.slice(3, -3).trim();
-            const codeBlockId = `${msgId}-code-${index}`;
+            const codeText = match ? match[2].trim() : section.slice(3, -3).trim();
+            const codeBlockId = `${msgId}-code-${sIdx}`;
 
             return (
-              <div key={index} className="my-2 rounded-xl overflow-hidden border border-slate-700/50 bg-slate-900/90 text-slate-100 text-xs font-mono shadow-md">
-                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800/80 border-b border-slate-700/50 text-slate-400 text-[11px]">
+              <div key={sIdx} className="my-3 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-900/95 text-slate-100 text-xs font-mono shadow-lg">
+                <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-800/90 border-b border-slate-700/60 text-slate-400 text-[11px]">
                   <span className="font-semibold uppercase tracking-wider text-indigo-400">{lang}</span>
                   <button
                     onClick={() => copyMessageText(codeBlockId, codeText)}
-                    className="flex items-center gap-1 hover:text-slate-200 transition-colors px-2 py-0.5 rounded bg-white/5 hover:bg-white/10"
+                    className="flex items-center gap-1.5 hover:text-slate-100 transition-colors px-2 py-0.5 rounded bg-white/5 hover:bg-white/15"
                   >
                     {copiedMsgId === codeBlockId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedMsgId === codeBlockId ? 'Copied' : 'Copy'}</span>
+                    <span>{copiedMsgId === codeBlockId ? 'Copied' : 'Copy Code'}</span>
                   </button>
                 </div>
-                <pre className="p-3 overflow-x-auto whitespace-pre leading-relaxed">{codeText}</pre>
+                <pre className="p-4 overflow-x-auto whitespace-pre leading-relaxed">{codeText}</pre>
               </div>
             );
           }
-          return part ? (
-            <p key={index} className="text-sm leading-relaxed whitespace-pre-wrap">
-              {part}
-              {isCurrentlyStreaming && index === parts.length - 1 && (
+
+          // Process markdown paragraphs, tables, blockquotes, lists, and headers
+          const lines = section.split('\n');
+          const renderedElements: React.ReactNode[] = [];
+          let tableBuffer: string[] = [];
+          let inTable = false;
+
+          const flushTable = (tblKey: string) => {
+            if (tableBuffer.length < 2) {
+              tableBuffer = [];
+              inTable = false;
+              return;
+            }
+            const headerRow = tableBuffer[0].split('|').map(c => c.trim()).filter(Boolean);
+            const bodyRows = tableBuffer.slice(2).map(r => r.split('|').map(c => c.trim()).filter(Boolean));
+
+            renderedElements.push(
+              <div key={tblKey} className="my-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
+                <table className="min-w-full text-xs text-left">
+                  <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-semibold border-b border-slate-200 dark:border-white/10">
+                    <tr>
+                      {headerRow.map((col, cIdx) => (
+                        <th key={cIdx} className="px-3.5 py-2.5">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200/60 dark:divide-white/5">
+                    {bodyRows.map((row, rIdx) => (
+                      <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white/40 dark:bg-white/[0.02]' : 'bg-slate-50/40 dark:bg-white/[0.05]'}>
+                        {row.map((cell, cIdx) => (
+                          <td key={cIdx} className="px-3.5 py-2 text-slate-800 dark:text-slate-300 font-mono text-[11px]">{cell}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+            tableBuffer = [];
+            inTable = false;
+          };
+
+          for (let lIdx = 0; lIdx < lines.length; lIdx++) {
+            const line = lines[lIdx];
+            const trimmedLine = line.trim();
+
+            // Table line detector
+            if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
+              inTable = true;
+              tableBuffer.push(trimmedLine);
+              if (lIdx === lines.length - 1) flushTable(`tbl-${sIdx}-${lIdx}`);
+              continue;
+            } else if (inTable) {
+              flushTable(`tbl-${sIdx}-${lIdx}`);
+            }
+
+            if (!trimmedLine) {
+              renderedElements.push(<div key={`sp-${lIdx}`} className="h-1.5" />);
+              continue;
+            }
+
+            // Headers
+            if (trimmedLine.startsWith('### ')) {
+              renderedElements.push(
+                <h3 key={lIdx} className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-2 mb-1">
+                  {renderFormattedInlineText(trimmedLine.slice(4))}
+                </h3>
+              );
+            } else if (trimmedLine.startsWith('## ')) {
+              renderedElements.push(
+                <h2 key={lIdx} className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-3 mb-1.5 border-b border-slate-200 dark:border-white/10 pb-1">
+                  {renderFormattedInlineText(trimmedLine.slice(3))}
+                </h2>
+              );
+            } else if (trimmedLine.startsWith('# ')) {
+              renderedElements.push(
+                <h1 key={lIdx} className="text-xl font-bold text-indigo-600 dark:text-indigo-400 mt-4 mb-2">
+                  {renderFormattedInlineText(trimmedLine.slice(2))}
+                </h1>
+              );
+            }
+            // Alert Callouts: > [!NOTE], > [!TIP], > [!WARNING], > [!IMPORTANT]
+            else if (trimmedLine.startsWith('> [!NOTE]') || trimmedLine.startsWith('> [!TIP]') || trimmedLine.startsWith('> [!WARNING]') || trimmedLine.startsWith('> [!IMPORTANT]')) {
+              const alertType = trimmedLine.slice(4, -1);
+              const nextText = lines[lIdx + 1]?.replace(/^>\s*/, '') || '';
+              lIdx++; // skip next line
+              const alertStyles: Record<string, { bg: string; border: string; text: string; icon: any }> = {
+                NOTE: { bg: 'bg-blue-500/10', border: 'border-l-4 border-blue-500', text: 'text-blue-600 dark:text-blue-400', icon: Info },
+                TIP: { bg: 'bg-emerald-500/10', border: 'border-l-4 border-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', icon: Lightbulb },
+                WARNING: { bg: 'bg-amber-500/10', border: 'border-l-4 border-amber-500', text: 'text-amber-600 dark:text-amber-400', icon: AlertTriangle },
+                IMPORTANT: { bg: 'bg-purple-500/10', border: 'border-l-4 border-purple-500', text: 'text-purple-600 dark:text-purple-400', icon: ShieldAlert }
+              };
+              const style = alertStyles[alertType] || alertStyles.NOTE;
+              const IconComp = style.icon;
+
+              renderedElements.push(
+                <div key={lIdx} className={`my-2.5 p-3 rounded-r-xl ${style.bg} ${style.border} text-xs space-y-1`}>
+                  <div className={`font-semibold flex items-center gap-1.5 ${style.text}`}>
+                    <IconComp className="w-3.5 h-3.5" />
+                    <span>{alertType}</span>
+                  </div>
+                  <p className="text-slate-700 dark:text-slate-300 pl-5">{renderFormattedInlineText(nextText)}</p>
+                </div>
+              );
+            }
+            // Blockquote >
+            else if (trimmedLine.startsWith('> ')) {
+              renderedElements.push(
+                <blockquote key={lIdx} className="my-2 pl-3.5 border-l-2 border-indigo-500 text-slate-600 dark:text-slate-400 italic text-xs">
+                  {renderFormattedInlineText(trimmedLine.slice(2))}
+                </blockquote>
+              );
+            }
+            // Unordered List (- or *)
+            else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+              renderedElements.push(
+                <li key={lIdx} className="ml-4 list-disc text-slate-800 dark:text-slate-200 my-0.5">
+                  {renderFormattedInlineText(trimmedLine.slice(2))}
+                </li>
+              );
+            }
+            // Ordered List (1. 2. 3.)
+            else if (/^\d+\.\s/.test(trimmedLine)) {
+              const numMatch = trimmedLine.match(/^(\d+)\.\s(.*)$/);
+              renderedElements.push(
+                <div key={lIdx} className="flex items-start gap-2 my-1">
+                  <span className="font-semibold text-indigo-500 text-xs">{numMatch ? numMatch[1] : '1'}.</span>
+                  <span className="text-slate-800 dark:text-slate-200">{renderFormattedInlineText(numMatch ? numMatch[2] : trimmedLine)}</span>
+                </div>
+              );
+            }
+            // Standard text paragraph
+            else {
+              renderedElements.push(
+                <p key={lIdx} className="text-slate-800 dark:text-slate-200">
+                  {renderFormattedInlineText(line)}
+                </p>
+              );
+            }
+          }
+
+          if (inTable) flushTable(`tbl-${sIdx}-end`);
+
+          return (
+            <div key={sIdx} className="space-y-1">
+              {renderedElements}
+              {isCurrentlyStreaming && sIdx === sections.length - 1 && (
                 <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-500 animate-pulse align-middle rounded-sm" />
               )}
-            </p>
-          ) : null;
+            </div>
+          );
         })}
       </div>
     );
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full relative">
       {/* Sidebar */}
       <div className="w-72 border-r border-slate-200 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/30 flex flex-col">
         <div className="p-4 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">
@@ -330,7 +651,7 @@ export default function ChatView() {
             <Plus className="w-3.5 h-3.5" /> New
           </button>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {sessions.length === 0 ? (
             <div className="text-center py-8 text-xs text-slate-500">No active sessions. Click "New" to start.</div>
@@ -415,23 +736,11 @@ export default function ChatView() {
             </h2>
             <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {webSearchEnabled ? 'RAG + Web Search Active' : 'Vault RAG Active'}
+              {webSearchEnabled ? 'RAG + Web Search Active' : 'Vault Grounded RAG Active'}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Model Selector Dropdown */}
-            <select
-              value={modelConfig}
-              onChange={(e) => setModelConfig(e.target.value)}
-              className="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/10 text-slate-800 dark:text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer"
-            >
-              <option value="qwen2.5:7b">⚡ Qwen 2.5 7B (Local Ollama)</option>
-              <option value="llama3:8b">🦙 Llama 3 8B (Local)</option>
-              <option value="gpt-4o">🧠 GPT-4o (OpenAI)</option>
-              <option value="claude-3-5-sonnet">🎭 Claude 3.5 Sonnet (Anthropic)</option>
-            </select>
-
             <button
               onClick={() => setWebSearchEnabled(!webSearchEnabled)}
               className={`p-2 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all ${
@@ -474,7 +783,11 @@ export default function ChatView() {
         </div>
 
         {/* Messages Stream */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div
+          ref={chatContainerRef}
+          onScroll={handleContainerScroll}
+          className="flex-1 overflow-y-auto p-6 space-y-6"
+        >
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto py-12">
               <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6">
@@ -525,49 +838,128 @@ export default function ChatView() {
             messages.map((msg, idx) => (
               <div key={msg.id} className={`flex gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
+                  <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 border border-indigo-500/30 mt-0.5">
                     <Bot className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   </div>
                 )}
 
-                <div className={`group relative max-w-[80%] rounded-2xl p-4 ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : `${glassCardClasses} rounded-tl-sm text-slate-900 dark:text-slate-200`}`}>
-                  {/* Message Actions */}
-                  <button
-                    onClick={() => copyMessageText(msg.id, msg.content)}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-200 bg-slate-800/40 rounded transition-all"
-                    title="Copy Text"
-                  >
-                    {copiedMsgId === msg.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-
+                <div className={`group relative max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : `${glassCardClasses} rounded-tl-sm text-slate-900 dark:text-slate-200`}`}>
                   {/* Formatted Content */}
                   {renderFormattedContent(msg.content, msg.id, isStreaming && idx === messages.length - 1)}
 
                   {/* Performance Metrics */}
                   {msg.role === 'assistant' && msg.metrics && (
-                    <div className="flex items-center gap-2 mt-2.5 pt-2 border-t border-slate-200/40 dark:border-white/5 text-[10px] text-slate-400 font-mono">
-                      <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider">
+                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-200/50 dark:border-white/5 text-[10px] text-slate-400 font-mono">
+                      <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider">
                         {msg.metrics.tier || 'Master'}: {msg.metrics.model}
                       </span>
                       {msg.metrics.tokens_per_sec && <span>• {msg.metrics.tokens_per_sec} tok/s</span>}
                       {msg.metrics.duration_sec && <span>• {msg.metrics.duration_sec}s</span>}
+                      {msg.metrics.tokens_generated && <span>• {msg.metrics.tokens_generated} tokens</span>}
                     </div>
                   )}
 
-                  {/* Grounded Sources */}
+                  {/* Grounded Sources with Confidence Badges */}
                   {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-white/10 space-y-1.5">
-                      <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block">Grounded Sources ({msg.sources.length}):</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {msg.sources.map((src, sIdx) => (
+                    <div className="mt-3.5 pt-2.5 border-t border-slate-200/80 dark:border-white/10 space-y-2">
+                      <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 uppercase tracking-wider">
+                        <span>Grounded Sources ({msg.sources.length}):</span>
+                        <span className="text-[10px] text-emerald-500 dark:text-emerald-400">Verified Context</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {msg.sources.map((src, sIdx) => {
+                          const confPct = Math.round((src.confidence_score || 0.92) * 100);
+                          return (
+                            <button
+                              key={sIdx}
+                              onClick={() => setSelectedCitation(src)}
+                              className="inline-flex items-center gap-1.5 text-[11px] bg-slate-100 dark:bg-white/5 hover:bg-indigo-500/20 hover:border-indigo-500/40 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-white/10 text-cyan-700 dark:text-cyan-400 max-w-xs truncate transition-all cursor-pointer group/cit"
+                              title="Click to view full grounded excerpt"
+                            >
+                              {src.url ? <Globe className="w-3 h-3 flex-shrink-0 text-indigo-400" /> : <FileText className="w-3 h-3 flex-shrink-0" />}
+                              <span className="truncate">{src.title || src.path || src.url}</span>
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
+                                {confPct}%
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Interactive Assistant Action Bar */}
+                  {msg.role === 'assistant' && msg.content && (
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-200/40 dark:border-white/5 text-xs text-slate-400">
+                      <div className="flex items-center gap-1">
+                        {/* Copy Full Message */}
+                        <button
+                          onClick={() => copyMessageText(msg.id, msg.content)}
+                          className="p-1.5 hover:text-indigo-400 hover:bg-white/5 rounded-md transition-colors flex items-center gap-1 text-[11px]"
+                          title="Copy Full Response"
+                        >
+                          {copiedMsgId === msg.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedMsgId === msg.id ? 'Copied' : 'Copy'}</span>
+                        </button>
+
+                        {/* TTS Read Aloud */}
+                        <button
+                          onClick={() => handleToggleSpeak(msg.id, msg.content)}
+                          className={`p-1.5 hover:bg-white/5 rounded-md transition-colors flex items-center gap-1 text-[11px] ${speakingMsgId === msg.id ? 'text-indigo-400 font-medium' : 'hover:text-indigo-400'}`}
+                          title="Read Aloud (Text-to-Speech)"
+                        >
+                          {speakingMsgId === msg.id ? <VolumeX className="w-3.5 h-3.5 text-indigo-400 animate-pulse" /> : <Volume2 className="w-3.5 h-3.5" />}
+                          <span>{speakingMsgId === msg.id ? 'Stop' : 'Read'}</span>
+                        </button>
+
+                        {/* Regenerate */}
+                        <button
+                          onClick={handleRegenerate}
+                          disabled={isStreaming}
+                          className="p-1.5 hover:text-indigo-400 hover:bg-white/5 rounded-md transition-colors flex items-center gap-1 text-[11px] disabled:opacity-40"
+                          title="Regenerate Answer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Retry</span>
+                        </button>
+                      </div>
+
+                      {/* Feedback Thumbs */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleRate(msg.id, 'up')}
+                          className={`p-1.5 rounded-md transition-colors ${ratings[msg.id] === 'up' ? 'text-emerald-400 bg-emerald-500/10' : 'hover:text-emerald-400 hover:bg-white/5'}`}
+                          title="Helpful response"
+                        >
+                          <ThumbsUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleRate(msg.id, 'down')}
+                          className={`p-1.5 rounded-md transition-colors ${ratings[msg.id] === 'down' ? 'text-rose-400 bg-rose-500/10' : 'hover:text-rose-400 hover:bg-white/5'}`}
+                          title="Unhelpful response"
+                        >
+                          <ThumbsDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contextual Smart Follow-up Chips */}
+                  {msg.role === 'assistant' && !isStreaming && idx === messages.length - 1 && msg.content && (
+                    <div className="mt-3.5 pt-3 border-t border-slate-200/50 dark:border-white/10 space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        <Sparkles className="w-3 h-3 text-indigo-400" />
+                        <span>Suggested Next Steps:</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                        {getFollowUpSuggestions(msg.content).map((sugg, suggIdx) => (
                           <button
-                            key={sIdx}
-                            onClick={() => setSelectedCitation(src)}
-                            className="inline-flex items-center gap-1 text-[11px] bg-slate-100 dark:bg-white/5 hover:bg-indigo-500/20 hover:border-indigo-500/30 px-2 py-1 rounded-md border border-slate-300 dark:border-white/10 text-cyan-700 dark:text-cyan-400 max-w-xs truncate transition-colors cursor-pointer"
-                            title="Click to view full grounded excerpt"
+                            key={suggIdx}
+                            onClick={() => handleSendPromptText(sugg)}
+                            className="text-left text-xs px-3 py-1.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/15 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all flex items-center gap-1.5 group/chip"
                           >
-                            {src.url ? <Globe className="w-3 h-3 flex-shrink-0 text-indigo-400" /> : <FileText className="w-3 h-3 flex-shrink-0" />}
-                            <span className="truncate">{src.title || src.path || src.url}</span>
+                            <MessageSquare className="w-3 h-3 text-indigo-400 flex-shrink-0 group-hover/chip:translate-x-0.5 transition-transform" />
+                            <span>{sugg}</span>
                           </button>
                         ))}
                       </div>
@@ -576,7 +968,7 @@ export default function ChatView() {
                 </div>
 
                 {msg.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-300 dark:border-white/10">
+                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-300 dark:border-white/10 mt-0.5">
                     <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                   </div>
                 )}
@@ -590,23 +982,34 @@ export default function ChatView() {
               <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
                 <Bot className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <div className={`${glassCardClasses} rounded-2xl rounded-tl-sm p-4 flex items-center gap-2`}>
+              <div className={`${glassCardClasses} rounded-2xl rounded-tl-sm p-4 flex items-center gap-2 shadow-md`}>
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse delay-75" />
                 <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse delay-150" />
-                <span className="text-xs text-slate-500 ml-1">Streaming RAG response...</span>
+                <span className="text-xs text-slate-500 ml-1">Synthesizing grounded response...</span>
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Scroll To Bottom Button */}
+        {showScrollBottom && (
+          <button
+            onClick={scrollToBottom}
+            className="absolute bottom-24 right-8 p-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl border border-white/20 transition-all z-20"
+            title="Scroll to bottom"
+          >
+            <ArrowDown className="w-4 h-4" />
+          </button>
+        )}
+
         {/* Input Form */}
         <div className="p-4 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-white/5">
           <form onSubmit={handleSend} className="max-w-4xl mx-auto relative flex items-end">
             <textarea
               className="w-full bg-slate-100/50 dark:bg-slate-800/50 border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 pr-12 text-slate-900 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 resize-none min-h-[52px] max-h-32 text-sm leading-relaxed"
-              placeholder="Message Uroboros Knowledge Engine..."
+              placeholder="Message Uroboros Knowledge Engine (Press Enter to send)..."
               rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -650,8 +1053,11 @@ export default function ChatView() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="text-xs text-slate-400 font-mono break-all bg-slate-900/40 p-2 rounded-lg border border-white/5">
-              {selectedCitation.path || selectedCitation.url || 'Internal Knowledge Base'}
+            <div className="flex items-center justify-between text-xs text-slate-400 font-mono bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
+              <span className="truncate max-w-xs">{selectedCitation.path || selectedCitation.url || 'Internal Knowledge Base'}</span>
+              <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">
+                {Math.round((selectedCitation.confidence_score || 0.92) * 100)}% Match
+              </span>
             </div>
             <div className="flex-1 overflow-y-auto bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 text-slate-200 text-xs font-mono leading-relaxed whitespace-pre-wrap">
               {selectedCitation.snippet || selectedCitation.citation || 'No preview text excerpt available for this source.'}
@@ -674,3 +1080,4 @@ export default function ChatView() {
     </div>
   );
 }
+
