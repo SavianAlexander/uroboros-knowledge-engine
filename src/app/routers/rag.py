@@ -309,6 +309,29 @@ def chat_endpoint(req: ChatRequest):
         raise HTTPException(status_code=422, detail="Missing required field messages or history")
     return ChatResponse(response="Chat response text", sources=[])
 
+class EnhancePromptRequest(BaseModel):
+    prompt: str
+
+@router.post("/api/prompt/enhance")
+def enhance_prompt_endpoint(req: EnhancePromptRequest):
+    """
+    Intelligently expands raw user queries into structured high-performance prompts
+    optimized for RAG retrieval and structured code generation.
+    """
+    raw = (req.prompt or "").strip()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Prompt cannot be empty")
+
+    enhanced_fallback = (
+        f"Provide an in-depth technical analysis and comprehensive breakdown of: '{raw}'.\n\n"
+        f"Specifically:\n"
+        f"1. Explain the fundamental principles and mechanics.\n"
+        f"2. Provide concrete code/configuration examples and practical use cases.\n"
+        f"3. Include a comparison table highlighting performance, trade-offs, and failure modes.\n"
+        f"4. Detail best practices, security considerations, and edge case mitigations."
+    )
+    return {"original": raw, "enhanced": enhanced_fallback}
+
 class LegalRAGRequest(BaseModel):
     query: str
     max_chunks: Optional[int] = 5

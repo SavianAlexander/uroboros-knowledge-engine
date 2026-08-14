@@ -98,6 +98,7 @@ export const api = {
 
   // Chat & RAG
   chatSessions: () => fetchAPI<any[]>('/chat/sessions'),
+  getChatSession: (id: string) => fetchAPI<any>(`/chat/sessions/${id}`),
   createChatSession: (title: string) =>
     fetchAPI<any>('/chat/sessions', { method: 'POST', body: JSON.stringify({ title }) }),
   deleteChatSession: (id: string) =>

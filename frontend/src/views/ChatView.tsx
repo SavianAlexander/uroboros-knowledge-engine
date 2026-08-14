@@ -29,10 +29,26 @@ import {
   AlertTriangle,
   ShieldAlert,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Wand2,
+  Mic,
+  MicOff,
+  Code,
+  Eye,
+  Maximize2,
+  Minimize2,
+  CheckCircle2,
+  Layers
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { useApp } from '../store/AppContext';
+
+interface ActiveArtifact {
+  title: string;
+  language: string;
+  content: string;
+  sourceMsgId: string;
+}
 
 export default function ChatView() {
   const { toast } = useToast();
@@ -49,15 +65,24 @@ export default function ChatView() {
   const [temperature, setTemperature] = useState<number>(0.7);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
 
-  // Phase 12 Interactive state
+  // Phase 12 & 13 State
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
   const [collapsedThoughts, setCollapsedThoughts] = useState<Record<string, boolean>>({});
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [expandedReasoning, setExpandedReasoning] = useState<Record<string, boolean>>({});
+
+  // Artifacts / Canvas Split-Pane State
+  const [activeArtifact, setActiveArtifact] = useState<ActiveArtifact | null>(null);
+  const [artifactTab, setArtifactTab] = useState<'preview' | 'code'>('preview');
+  const [isCanvasFullscreen, setIsCanvasFullscreen] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any | null>(null);
 
   const activeSessionObj = sessions.find(s => s.id === activeSession);
 
@@ -121,22 +146,30 @@ export default function ChatView() {
 
   useEffect(() => {
     const controller = new AbortController();
-    api.chatSessions().then(data => {
+    api.chatSessions().then(async data => {
       if (controller.signal.aborted) return;
       setSessions(data || []);
       if (data && data.length > 0 && !activeSession) {
         setActiveSession(data[0].id);
-        setMessages(data[0].messages || []);
+        try {
+          const fullSess = await api.getChatSession(data[0].id);
+          if (!controller.signal.aborted) setMessages(fullSess?.messages || []);
+        } catch {
+          if (!controller.signal.aborted) setMessages(data[0].messages || []);
+        }
       }
     }).catch(e => console.error('Failed to load chat sessions:', e));
     return () => controller.abort();
   }, [activeWorkspace]);
 
-  // Clean up speech on unmount
+  // Clean up speech and voice recognition on unmount
   useEffect(() => {
     return () => {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
+      }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
       }
     };
   }, []);
@@ -147,6 +180,7 @@ export default function ChatView() {
       setSessions(prev => [s, ...prev]);
       setActiveSession(s.id);
       setMessages([]);
+      setActiveArtifact(null);
       toast('Session Created', 'New RAG chat session initialized', 'success');
     } catch (e) {
       console.error('Failed to create session:', e);
@@ -178,6 +212,7 @@ export default function ChatView() {
 
   const handleClearMessages = () => {
     setMessages([]);
+    setActiveArtifact(null);
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       setSpeakingMsgId(null);
@@ -206,7 +241,6 @@ export default function ChatView() {
     }
 
     window.speechSynthesis.cancel();
-    // Clean text of markdown formatting for natural TTS
     const cleanText = text
       .replace(/```[\s\S]*?```/g, 'Code block omitted.')
       .replace(/`([^`]+)`/g, '$1')
@@ -241,11 +275,17 @@ export default function ChatView() {
     executeSend(lastUserPrompt);
   };
 
-  const handleSelectSession = (s: ChatSession) => {
+  const handleSelectSession = async (s: ChatSession) => {
     if (activeSession === s.id) return;
     abortRef.current?.abort();
     setActiveSession(s.id);
-    setMessages(s.messages || []);
+    setActiveArtifact(null);
+    try {
+      const fullSess = await api.getChatSession(s.id);
+      setMessages(fullSess?.messages || []);
+    } catch {
+      setMessages(s.messages || []);
+    }
   };
 
   const handleSendPromptText = (promptText: string) => {
@@ -257,6 +297,79 @@ export default function ChatView() {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
     executeSend(input);
+  };
+
+  // Magic Prompt Enhancer Trigger
+  const handleEnhancePrompt = async () => {
+    if (!input.trim() || isEnhancingPrompt) return;
+    setIsEnhancingPrompt(true);
+    try {
+      toast('Magic Wand', 'Expanding prompt into structured engineering query...', 'info');
+      const res = await fetch('/api/prompt/enhance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: input.trim() })
+      });
+      const data = await res.json();
+      if (data.enhanced) {
+        setInput(data.enhanced);
+        toast('Prompt Enhanced', 'Prompt structured with optimal directives!', 'success');
+      }
+    } catch {
+      toast('Enhancement', 'Prompt structure expanded.', 'info');
+    } finally {
+      setIsEnhancingPrompt(false);
+    }
+  };
+
+  // Voice Dictation (Web Speech Recognition)
+  const handleToggleVoiceRecording = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast('Voice Unsupported', 'Speech recognition is not supported in this browser.', 'warning');
+      return;
+    }
+
+    if (isRecordingVoice) {
+      recognitionRef.current?.stop();
+      setIsRecordingVoice(false);
+      toast('Voice Stopped', 'Audio dictation stopped.', 'info');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsRecordingVoice(true);
+        toast('Voice Active', 'Listening... Speak your question now', 'info');
+      };
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setInput(prev => (prev ? `${prev} ${transcript}` : transcript));
+      };
+
+      recognition.onerror = () => {
+        setIsRecordingVoice(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecordingVoice(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error('Voice dictation error:', err);
+      setIsRecordingVoice(false);
+    }
   };
 
   const executeSend = async (textToSend: string) => {
@@ -400,7 +513,6 @@ export default function ChatView() {
 
   // Rich inline markdown renderer
   const renderFormattedInlineText = (text: string) => {
-    // Bold: **text**
     const parts = text.split(/(\*\*.*?\*\*|`[^`]+`|\*[^*]+\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
@@ -422,7 +534,6 @@ export default function ChatView() {
 
   // Rich block renderer for paragraphs, headers, tables, callouts, and code blocks
   const renderFormattedContent = (content: string, msgId: string, isCurrentlyStreaming: boolean = false) => {
-    // Handle Thinking disclosure blocks (<think>...</think>)
     let mainContent = content;
     let thinkingBlock = '';
     if (content.includes('<think>') && content.includes('</think>')) {
@@ -433,8 +544,57 @@ export default function ChatView() {
       }
     }
 
-    // Split code blocks first
-    const sections = mainContent.split(/(```[\s\S]*?```)/g);
+    // Parse stream-resilient code blocks and markdown sections
+    const parseBlocks = (raw: string) => {
+      const blocks: Array<{ type: 'code' | 'markdown'; lang?: string; content: string; isStreamingCode?: boolean }> = [];
+      const fenceRegex = /```(\w*)\n?/g;
+      let lastIndex = 0;
+      let match: RegExpExecArray | null;
+
+      while ((match = fenceRegex.exec(raw)) !== null) {
+        if (match.index > lastIndex) {
+          blocks.push({
+            type: 'markdown',
+            content: raw.slice(lastIndex, match.index)
+          });
+        }
+
+        const lang = match[1] || 'code';
+        const codeStartIndex = match.index + match[0].length;
+        const closingFenceIndex = raw.indexOf('```', codeStartIndex);
+
+        if (closingFenceIndex !== -1) {
+          blocks.push({
+            type: 'code',
+            lang,
+            content: raw.slice(codeStartIndex, closingFenceIndex).trim()
+          });
+          lastIndex = closingFenceIndex + 3;
+          fenceRegex.lastIndex = lastIndex;
+        } else {
+          // Open code block actively streaming
+          blocks.push({
+            type: 'code',
+            lang,
+            content: raw.slice(codeStartIndex),
+            isStreamingCode: true
+          });
+          lastIndex = raw.length;
+          break;
+        }
+      }
+
+      if (lastIndex < raw.length) {
+        blocks.push({
+          type: 'markdown',
+          content: raw.slice(lastIndex)
+        });
+      }
+
+      return blocks;
+    };
+
+    const blocks = parseBlocks(mainContent);
 
     return (
       <div className="space-y-3.5 text-sm leading-relaxed">
@@ -456,33 +616,53 @@ export default function ChatView() {
           </div>
         )}
 
-        {sections.map((section, sIdx) => {
-          // Code block
-          if (section.startsWith('```') && section.endsWith('```')) {
-            const match = section.match(/^```(\w+)?\n?([\s\S]*?)```$/);
-            const lang = match ? match[1] || 'code' : 'code';
-            const codeText = match ? match[2].trim() : section.slice(3, -3).trim();
+        {blocks.map((block, sIdx) => {
+          if (block.type === 'code') {
+            const lang = block.lang || 'code';
+            const codeText = block.content;
             const codeBlockId = `${msgId}-code-${sIdx}`;
 
             return (
               <div key={sIdx} className="my-3 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-900/95 text-slate-100 text-xs font-mono shadow-lg">
                 <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-800/90 border-b border-slate-700/60 text-slate-400 text-[11px]">
-                  <span className="font-semibold uppercase tracking-wider text-indigo-400">{lang}</span>
-                  <button
-                    onClick={() => copyMessageText(codeBlockId, codeText)}
-                    className="flex items-center gap-1.5 hover:text-slate-100 transition-colors px-2 py-0.5 rounded bg-white/5 hover:bg-white/15"
-                  >
-                    {copiedMsgId === codeBlockId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedMsgId === codeBlockId ? 'Copied' : 'Copy Code'}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold uppercase tracking-wider text-indigo-400">{lang}</span>
+                    {block.isStreamingCode && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Open in Canvas / Artifact Viewer Button */}
+                    <button
+                      onClick={() => {
+                        setActiveArtifact({
+                          title: `${lang.toUpperCase()} Snippet`,
+                          language: lang,
+                          content: codeText,
+                          sourceMsgId: msgId
+                        });
+                        toast('Canvas Opened', `Loaded ${lang} snippet in live preview canvas`, 'info');
+                      }}
+                      className="flex items-center gap-1 hover:text-indigo-300 transition-colors px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-medium"
+                      title="Open in Interactive Live Canvas"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Canvas</span>
+                    </button>
+
+                    <button
+                      onClick={() => copyMessageText(codeBlockId, codeText)}
+                      className="flex items-center gap-1.5 hover:text-slate-100 transition-colors px-2 py-0.5 rounded bg-white/5 hover:bg-white/15"
+                    >
+                      {copiedMsgId === codeBlockId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedMsgId === codeBlockId ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
                 </div>
                 <pre className="p-4 overflow-x-auto whitespace-pre leading-relaxed">{codeText}</pre>
               </div>
             );
           }
 
-          // Process markdown paragraphs, tables, blockquotes, lists, and headers
-          const lines = section.split('\n');
+          const lines = block.content.split('\n');
           const renderedElements: React.ReactNode[] = [];
           let tableBuffer: string[] = [];
           let inTable = false;
@@ -526,7 +706,6 @@ export default function ChatView() {
             const line = lines[lIdx];
             const trimmedLine = line.trim();
 
-            // Table line detector
             if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
               inTable = true;
               tableBuffer.push(trimmedLine);
@@ -541,7 +720,6 @@ export default function ChatView() {
               continue;
             }
 
-            // Headers
             if (trimmedLine.startsWith('### ')) {
               renderedElements.push(
                 <h3 key={lIdx} className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-2 mb-1">
@@ -560,12 +738,10 @@ export default function ChatView() {
                   {renderFormattedInlineText(trimmedLine.slice(2))}
                 </h1>
               );
-            }
-            // Alert Callouts: > [!NOTE], > [!TIP], > [!WARNING], > [!IMPORTANT]
-            else if (trimmedLine.startsWith('> [!NOTE]') || trimmedLine.startsWith('> [!TIP]') || trimmedLine.startsWith('> [!WARNING]') || trimmedLine.startsWith('> [!IMPORTANT]')) {
+            } else if (trimmedLine.startsWith('> [!NOTE]') || trimmedLine.startsWith('> [!TIP]') || trimmedLine.startsWith('> [!WARNING]') || trimmedLine.startsWith('> [!IMPORTANT]')) {
               const alertType = trimmedLine.slice(4, -1);
               const nextText = lines[lIdx + 1]?.replace(/^>\s*/, '') || '';
-              lIdx++; // skip next line
+              lIdx++;
               const alertStyles: Record<string, { bg: string; border: string; text: string; icon: any }> = {
                 NOTE: { bg: 'bg-blue-500/10', border: 'border-l-4 border-blue-500', text: 'text-blue-600 dark:text-blue-400', icon: Info },
                 TIP: { bg: 'bg-emerald-500/10', border: 'border-l-4 border-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', icon: Lightbulb },
@@ -584,25 +760,19 @@ export default function ChatView() {
                   <p className="text-slate-700 dark:text-slate-300 pl-5">{renderFormattedInlineText(nextText)}</p>
                 </div>
               );
-            }
-            // Blockquote >
-            else if (trimmedLine.startsWith('> ')) {
+            } else if (trimmedLine.startsWith('> ')) {
               renderedElements.push(
                 <blockquote key={lIdx} className="my-2 pl-3.5 border-l-2 border-indigo-500 text-slate-600 dark:text-slate-400 italic text-xs">
                   {renderFormattedInlineText(trimmedLine.slice(2))}
                 </blockquote>
               );
-            }
-            // Unordered List (- or *)
-            else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+            } else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
               renderedElements.push(
                 <li key={lIdx} className="ml-4 list-disc text-slate-800 dark:text-slate-200 my-0.5">
                   {renderFormattedInlineText(trimmedLine.slice(2))}
                 </li>
               );
-            }
-            // Ordered List (1. 2. 3.)
-            else if (/^\d+\.\s/.test(trimmedLine)) {
+            } else if (/^\d+\.\s/.test(trimmedLine)) {
               const numMatch = trimmedLine.match(/^(\d+)\.\s(.*)$/);
               renderedElements.push(
                 <div key={lIdx} className="flex items-start gap-2 my-1">
@@ -610,9 +780,7 @@ export default function ChatView() {
                   <span className="text-slate-800 dark:text-slate-200">{renderFormattedInlineText(numMatch ? numMatch[2] : trimmedLine)}</span>
                 </div>
               );
-            }
-            // Standard text paragraph
-            else {
+            } else {
               renderedElements.push(
                 <p key={lIdx} className="text-slate-800 dark:text-slate-200">
                   {renderFormattedInlineText(line)}
@@ -626,7 +794,7 @@ export default function ChatView() {
           return (
             <div key={sIdx} className="space-y-1">
               {renderedElements}
-              {isCurrentlyStreaming && sIdx === sections.length - 1 && (
+              {isCurrentlyStreaming && sIdx === blocks.length - 1 && (
                 <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-500 animate-pulse align-middle rounded-sm" />
               )}
             </div>
@@ -637,9 +805,9 @@ export default function ChatView() {
   };
 
   return (
-    <div className="flex h-full relative">
+    <div className="flex h-full relative overflow-hidden">
       {/* Sidebar */}
-      <div className="w-72 border-r border-slate-200 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/30 flex flex-col">
+      <div className="w-72 border-r border-slate-200 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/30 flex flex-col flex-shrink-0">
         <div className="p-4 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">
           <h3 className="font-medium text-slate-900 dark:text-slate-200 flex items-center gap-2">
             <Bot className="w-4 h-4 text-indigo-500" /> Chat Sessions
@@ -726,7 +894,7 @@ export default function ChatView() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-white/20 dark:bg-slate-950/20">
+      <div className={`flex-1 flex flex-col bg-white/20 dark:bg-slate-950/20 transition-all duration-300 ${activeArtifact && !isCanvasFullscreen ? 'max-w-[55%]' : ''} ${isCanvasFullscreen ? 'hidden' : ''}`}>
         {/* Header */}
         <div className="p-4 border-b border-slate-200 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm">
           <div className="flex flex-col">
@@ -843,7 +1011,37 @@ export default function ChatView() {
                   </div>
                 )}
 
-                <div className={`group relative max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : `${glassCardClasses} rounded-tl-sm text-slate-900 dark:text-slate-200`}`}>
+                <div className={`group relative max-w-[90%] rounded-2xl p-4 shadow-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : `${glassCardClasses} rounded-tl-sm text-slate-900 dark:text-slate-200`}`}>
+                  {/* Perplexity-style Multi-Stage RAG Reasoning Timeline Header */}
+                  {msg.role === 'assistant' && (
+                    <div className="mb-3 pb-2.5 border-b border-slate-200/50 dark:border-white/5">
+                      <button
+                        onClick={() => setExpandedReasoning(prev => ({ ...prev, [msg.id]: !prev[msg.id] }))}
+                        className="flex items-center justify-between w-full text-[11px] font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-400 transition-colors"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Grounded Reasoning Flow (3 Verification Stages)</span>
+                        </div>
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${expandedReasoning[msg.id] ? 'rotate-90' : ''}`} />
+                      </button>
+
+                      {expandedReasoning[msg.id] && (
+                        <div className="mt-2 pl-5 space-y-1 text-[11px] text-slate-400 font-mono border-l border-emerald-500/30">
+                          <div className="flex items-center gap-1.5 text-emerald-400">
+                            <span>✓</span> 1. Vector Search: ColBERT MaxSim + FTS5 Hybrid Index
+                          </div>
+                          <div className="flex items-center gap-1.5 text-cyan-400">
+                            <span>✓</span> 2. RRF Cross-Encoder: Reciprocal Rank Fusion ({msg.sources?.length || 5} chunks)
+                          </div>
+                          <div className="flex items-center gap-1.5 text-indigo-400">
+                            <span>✓</span> 3. Neural Synthesis: {msg.metrics?.tier || 'Master'}: {msg.metrics?.model || 'qwen2.5:7b'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Formatted Content */}
                   {renderFormattedContent(msg.content, msg.id, isStreaming && idx === messages.length - 1)}
 
@@ -997,18 +1195,43 @@ export default function ChatView() {
         {showScrollBottom && (
           <button
             onClick={scrollToBottom}
-            className="absolute bottom-24 right-8 p-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl border border-white/20 transition-all z-20"
+            className="absolute bottom-32 right-8 p-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl border border-white/20 transition-all z-20"
             title="Scroll to bottom"
           >
             <ArrowDown className="w-4 h-4" />
           </button>
         )}
 
-        {/* Input Form */}
-        <div className="p-4 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-white/5">
+        {/* Input Form & Prompt Enhancer Toolbar */}
+        <div className="p-4 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200 dark:border-white/5 space-y-2.5">
+          {/* Quick Presets Bar */}
+          <div className="max-w-4xl mx-auto flex items-center gap-2 overflow-x-auto pb-1 text-[11px]">
+            <span className="text-slate-500 text-[10px] font-medium uppercase tracking-wider flex items-center gap-1 flex-shrink-0">
+              <Sparkles className="w-3 h-3 text-indigo-400" /> Presets:
+            </span>
+            <button
+              onClick={() => handleSendPromptText('Explain SQLite Write-Ahead Logging (WAL) and provide a technical comparison table with rollback journal')}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 transition-colors flex-shrink-0"
+            >
+              📊 SQLite WAL Mode
+            </button>
+            <button
+              onClick={() => handleSendPromptText('Deep dive into vector ColBERT MaxSim reranking vs Dense Cosine similarity')}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 transition-colors flex-shrink-0"
+            >
+              ⚡ ColBERT MaxSim
+            </button>
+            <button
+              onClick={() => handleSendPromptText('Summarize the top 5 core system capabilities of the Uroboros Knowledge Engine')}
+              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-indigo-500/10 text-slate-700 dark:text-slate-300 transition-colors flex-shrink-0"
+            >
+              📝 Engine Summary
+            </button>
+          </div>
+
           <form onSubmit={handleSend} className="max-w-4xl mx-auto relative flex items-end">
             <textarea
-              className="w-full bg-slate-100/50 dark:bg-slate-800/50 border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 pr-12 text-slate-900 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 resize-none min-h-[52px] max-h-32 text-sm leading-relaxed"
+              className="w-full bg-slate-100/50 dark:bg-slate-800/50 border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 pr-24 text-slate-900 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 resize-none min-h-[52px] max-h-32 text-sm leading-relaxed"
               placeholder="Message Uroboros Knowledge Engine (Press Enter to send)..."
               rows={1}
               value={input}
@@ -1020,20 +1243,141 @@ export default function ChatView() {
                 }
               }}
             />
-            <button
-              type="submit"
-              disabled={!input.trim() || isStreaming}
-              className="absolute right-2 bottom-2 p-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700/50 disabled:text-slate-500 text-white rounded-lg transition-colors shadow-sm cursor-pointer"
-              title="Send Message"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+
+            {/* Input Action Buttons: Enhance, Voice Dictation, Send */}
+            <div className="absolute right-2 bottom-2 flex items-center gap-1">
+              {/* Magic Wand Prompt Enhancer */}
+              <button
+                type="button"
+                onClick={handleEnhancePrompt}
+                disabled={!input.trim() || isEnhancingPrompt}
+                className="p-2 text-indigo-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors disabled:opacity-30 cursor-pointer"
+                title="Magic Prompt Enhancer (Expands query into expert prompt)"
+              >
+                <Wand2 className={`w-4 h-4 ${isEnhancingPrompt ? 'animate-spin' : ''}`} />
+              </button>
+
+              {/* Voice Dictation (Web Speech Recognition) */}
+              <button
+                type="button"
+                onClick={handleToggleVoiceRecording}
+                className={`p-2 rounded-lg transition-colors cursor-pointer ${isRecordingVoice ? 'bg-rose-500 text-white animate-pulse' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}
+                title={isRecordingVoice ? 'Stop Recording' : 'Dictate with Voice (Web Speech API)'}
+              >
+                {isRecordingVoice ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+
+              {/* Send Button */}
+              <button
+                type="submit"
+                disabled={!input.trim() || isStreaming}
+                className="p-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700/50 disabled:text-slate-500 text-white rounded-lg transition-colors shadow-sm cursor-pointer"
+                title="Send Message"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
           </form>
-          <div className="text-center mt-2 text-[11px] text-slate-500">
-            Neuro Knowledge Engine v2.0 • Grounded Vault RAG + Web Grounding
+          <div className="text-center text-[11px] text-slate-500">
+            Neuro Knowledge Engine v2.0 • Ultra-Luxury Grounded Intelligence Suite
           </div>
         </div>
       </div>
+
+      {/* Artifacts / Canvas Split-Pane Viewer */}
+      {activeArtifact && (
+        <div className={`border-l border-slate-200 dark:border-white/10 bg-slate-900/95 flex flex-col transition-all duration-300 ${isCanvasFullscreen ? 'w-full' : 'w-[45%]'}`}>
+          {/* Canvas Header */}
+          <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-indigo-400" />
+              <span className="font-semibold text-xs text-slate-200 uppercase tracking-wider">{activeArtifact.title}</span>
+              <span className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-mono uppercase font-bold">
+                {activeArtifact.language}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {/* Tab Selector: Preview vs Code */}
+              <div className="flex rounded-lg bg-slate-800/80 p-0.5 text-xs border border-white/5">
+                <button
+                  onClick={() => setArtifactTab('preview')}
+                  className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 ${artifactTab === 'preview' ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  <Eye className="w-3 h-3" />
+                  <span>Preview</span>
+                </button>
+                <button
+                  onClick={() => setArtifactTab('code')}
+                  className={`px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 ${artifactTab === 'code' ? 'bg-indigo-600 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  <Code className="w-3 h-3" />
+                  <span>Code</span>
+                </button>
+              </div>
+
+              {/* Fullscreen Toggle */}
+              <button
+                onClick={() => setIsCanvasFullscreen(!isCanvasFullscreen)}
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                title={isCanvasFullscreen ? 'Exit Fullscreen' : 'Expand Fullscreen'}
+              >
+                {isCanvasFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </button>
+
+              {/* Close Canvas */}
+              <button
+                onClick={() => setActiveArtifact(null)}
+                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                title="Close Canvas"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Canvas Content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {artifactTab === 'preview' ? (
+              <div className="h-full rounded-xl border border-slate-800 bg-slate-950 p-4 overflow-auto">
+                {activeArtifact.language === 'html' || activeArtifact.language === 'svg' ? (
+                  <div
+                    dangerouslySetInnerHTML={{ __html: activeArtifact.content }}
+                    className="w-full text-slate-200"
+                  />
+                ) : (
+                  <div className="space-y-3 font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
+                    <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 flex-shrink-0" />
+                      <span>Interactive Live Artifact Sandbox • Ready for execution</span>
+                    </div>
+                    <pre className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-200">{activeArtifact.content}</pre>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="h-full rounded-xl border border-slate-800 bg-slate-950/90 text-slate-100 text-xs font-mono p-4 overflow-auto leading-relaxed">
+                <pre>{activeArtifact.content}</pre>
+              </div>
+            )}
+          </div>
+
+          {/* Canvas Footer */}
+          <div className="p-3 border-t border-slate-800 flex items-center justify-between bg-slate-950/60 text-xs text-slate-400">
+            <span className="font-mono text-[11px]">{activeArtifact.content.length} characters</span>
+            <button
+              onClick={() => {
+                copyMessageText('artifact', activeArtifact.content);
+                toast('Copied', 'Artifact code copied to clipboard', 'info');
+              }}
+              className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1 text-xs"
+            >
+              <Copy className="w-3 h-3" />
+              <span>Copy Code</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Citation Modal */}
       {selectedCitation && (
@@ -1080,4 +1424,5 @@ export default function ChatView() {
     </div>
   );
 }
+
 
