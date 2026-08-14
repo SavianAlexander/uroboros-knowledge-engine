@@ -244,14 +244,14 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Prompt[Incoming Prompt / Inference Request] --> Router[src/core/model_router.py 4-Tier Neural Router]
+    Prompt["Incoming Prompt / Inference Request"] --> Router["src/core/model_router.py 4-Tier Neural Router"]
 
-    Router -- Task: Micro / Intent / Keywords / HyDE --> Micro[Micro Tier: qwen2.5:0.5b / smollm2:1.7b\nLatency: < 50ms | Temp: 0.1 | Context: 4k]
-    Router -- Task: Code / AST / Refactor / SQL --> Coder[Coder Tier: qwen2.5-coder:14b / 7b\nDeep Programming Reasoning | Temp: 0.2]
-    Router -- Task: Long Doc Digest > 8k Tokens --> LongCtx[Long-Context Tier: phi4-mini:latest\n128k Token Dynamic Context Window]
-    Router -- Task: Conversational RAG / Briefing --> Master[Master RAG Tier: qwen2.5:7b\n32k Context | ~90 tok/s | Temp: 0.3-0.7]
+    Router -- "Task: Micro / Intent / Keywords / HyDE" --> Micro["Micro Tier: qwen2.5:0.5b / smollm2:1.7b<br/>Latency: < 50ms | Temp: 0.1 | Context: 4k"]
+    Router -- "Task: Code / AST / Refactor / SQL" --> Coder["Coder Tier: qwen2.5-coder:14b / 7b<br/>Deep Programming Reasoning | Temp: 0.2"]
+    Router -- "Task: Long Doc Digest > 8k Tokens" --> LongCtx["Long-Context Tier: phi4-mini:latest<br/>128k Token Dynamic Context Window"]
+    Router -- "Task: Conversational RAG / Briefing" --> Master["Master RAG Tier: qwen2.5:7b<br/>32k Context | ~90 tok/s | Temp: 0.3-0.7"]
 
-    Micro --> OllamaClient[src/core/model_manager.py OllamaClient\nDynamic num_ctx Scaling + format:json]
+    Micro --> OllamaClient["src/core/model_manager.py OllamaClient<br/>Dynamic num_ctx Scaling + format:json"]
     Coder --> OllamaClient
     LongCtx --> OllamaClient
     Master --> OllamaClient
@@ -265,30 +265,30 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    User[User / Client App] --> API[FastAPI Server Layer]
-    API --> Intent[Intent Classifier & PII Guard]
-    Intent --> Bandit[Multi-Armed Bandit Query Router]
+    User["User / Client App"] --> API["FastAPI Server Layer"]
+    API --> Intent["Intent Classifier & PII Guard"]
+    Intent --> Bandit["Multi-Armed Bandit Query Router"]
     
-    subgraph Retrieval Engines
-        Bandit --> FTS[FTS5 Lexical Search (BM25)]
-        Bandit --> Vector[Ollama Nomic Vector Search]
-        Bandit --> HyDE[HyDE Contextual Expansion]
-        Bandit --> Graph[GraphRAG Wikilink 2-Hop]
+    subgraph Retrieval_Engines ["Retrieval Engines"]
+        Bandit --> FTS["FTS5 Lexical Search (BM25)"]
+        Bandit --> Vector["Ollama Nomic Vector Search"]
+        Bandit --> HyDE["HyDE Contextual Expansion"]
+        Bandit --> Graph["GraphRAG Wikilink 2-Hop"]
     end
 
-    FTS --> RRF[Reciprocal Rank Fusion & Time-Decay]
+    FTS --> RRF["Reciprocal Rank Fusion & Time-Decay"]
     Vector --> RRF
     HyDE --> RRF
     Graph --> RRF
 
-    RRF --> ACL[ACL Security Permission Trimming]
-    ACL --> Compress[MinHash Context Deduplication]
-    Compress --> Debate[Multi-Agent Adversarial Debate]
-    Debate --> Speculative[Speculative Draft Generator]
-    Speculative --> Guard{Hallucination Refusal Guard}
+    RRF --> ACL["ACL Security Permission Trimming"]
+    ACL --> Compress["MinHash Context Deduplication"]
+    Compress --> Debate["Multi-Agent Adversarial Debate"]
+    Debate --> Speculative["Speculative Draft Generator"]
+    Speculative --> Guard{"Hallucination Refusal Guard"}
 
-    Guard -- Confidence < 0.65 --> Refusal[Refusal & Missing Knowledge Gap Report]
-    Guard -- Confidence >= 0.65 --> Response[Final Answer + Source Line Citations]
+    Guard -- "Confidence < 0.65" --> Refusal["Refusal & Missing Knowledge Gap Report"]
+    Guard -- "Confidence >= 0.65" --> Response["Final Answer + Source Line Citations"]
 
     Response --> User
     Refusal --> User
@@ -885,18 +885,18 @@ Uroboros Knowledge Engine integrates natively with AI Agent skill protocols ([`n
 
 ```mermaid
 graph LR
-    Agent[AI Agent / Antigravity] --> Neuro[Neuro MCP Server]
-    Agent --> Tududi[Tududi Task Master MCP]
-    Agent --> Git[GitHub CLI & Provenance Bridge]
-    Neuro --> VectorDB[(SQLite Knowledge DB)]
-    Tududi --> Audit[Audit Trail & Habit Synchronization]
+    Agent["AI Agent / Antigravity"] --> Neuro["Neuro MCP Server"]
+    Agent --> Tududi["Tududi Task Master MCP"]
+    Agent --> Git["GitHub CLI & Provenance Bridge"]
+    Neuro --> VectorDB[("SQLite Knowledge DB")]
+    Tududi --> Audit["Audit Trail & Habit Synchronization"]
     
-    subgraph Execution Loop
-        Neuro -- 1. Query Knowledge Context --> Agent
-        Agent -- 2. Log Execution Plan [PLAN, BUILD, TEST, AUDIT] --> Tududi
-        Agent -- 3. Ingest New Documents & Git Commits --> Neuro
-        Agent -- 4. Compute Merkle Provenance & Auto-Commit --> Git
-        Tududi -- 5. Mark Task Status Complete --> Audit
+    subgraph Execution_Loop ["Execution Loop"]
+        Neuro -- "1. Query Knowledge Context" --> Agent
+        Agent -- "2. Log Execution Plan [PLAN, BUILD, TEST, AUDIT]" --> Tududi
+        Agent -- "3. Ingest New Documents & Git Commits" --> Neuro
+        Agent -- "4. Compute Merkle Provenance & Auto-Commit" --> Git
+        Tududi -- "5. Mark Task Status Complete" --> Audit
     end
 ```
 
@@ -979,10 +979,10 @@ The application supports hardened, containerized deployment via a self-contained
 
 ```mermaid
 graph TD
-    Client[Host Browser / Desktop Client] -->|Port 8000| App[Uroboros FastAPI + React 19 Container]
-    App -->|Port 11434| Ollama[Local Ollama LLM Container]
-    App -->|WAL Mode| DB[(Volume: ./know.db SQLite)]
-    App -->|Volume Mount| Workspace[(Volume: ./vault Files)]
+    Client["Host Browser / Desktop Client"] -->|Port 8000| App["Uroboros FastAPI + React 19 Container"]
+    App -->|Port 11434| Ollama["Local Ollama LLM Container"]
+    App -->|WAL Mode| DB[("Volume: ./know.db SQLite")]
+    App -->|Volume Mount| Workspace[("Volume: ./vault Files")]
 ```
 
 ### Self-Contained 3-Stage Container Architecture
@@ -1027,16 +1027,16 @@ Built in `frontend/` using **React 19**, **Vite 6**, and **Tailwind CSS v4**, th
 
 ```mermaid
 graph TD
-    App[App.tsx Hash Router] --> Dash[DashboardView.tsx - Analytics & Telemetry]
-    App --> Workspace[WorkspaceView.tsx - Workstation & Document Intelligence]
-    App --> Search[SearchView.tsx - Hybrid RRF Omnibar & Lineage]
-    App --> Ingest[IngestionView.tsx - Pipeline Visualizer & Console]
-    App --> Graph[GraphView.tsx - 3D Force-Directed WebGL Graph]
-    App --> Chat[ChatView.tsx - AI Studio & Split Artifacts Canvas]
-    App --> Config[ConfigView.tsx - P2P Mesh & Chunk Orchestration]
-    App --> Settings[SettingsView.tsx - Provider Keys & WAL Tools]
-    App --> Login[LoginView.tsx - Authentication Modal]
-    App --> Cmd[CommandPalette.tsx - Spotlight Modal ⌘K]
+    App["App.tsx Hash Router"] --> Dash["DashboardView.tsx - Analytics & Telemetry"]
+    App --> Workspace["WorkspaceView.tsx - Workstation & Document Intelligence"]
+    App --> Search["SearchView.tsx - Hybrid RRF Omnibar & Lineage"]
+    App --> Ingest["IngestionView.tsx - Pipeline Visualizer & Console"]
+    App --> Graph["GraphView.tsx - 3D Force-Directed WebGL Graph"]
+    App --> Chat["ChatView.tsx - AI Studio & Split Artifacts Canvas"]
+    App --> Config["ConfigView.tsx - P2P Mesh & Chunk Orchestration"]
+    App --> Settings["SettingsView.tsx - Provider Keys & WAL Tools"]
+    App --> Login["LoginView.tsx - Authentication Modal"]
+    App --> Cmd["CommandPalette.tsx - Spotlight Modal (Cmd+K)"]
 ```
 
 ### Complete UI View Showcase

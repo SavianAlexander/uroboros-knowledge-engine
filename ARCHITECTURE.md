@@ -69,29 +69,29 @@ Uroboros uses a multi-pass hybrid retrieval pipeline combining sparse lexical se
 
 ```mermaid
 flowchart TD
-    Query[User Query String] --> Intent[Intent Classifier & PII Guard]
-    Intent --> Bandit[Multi-Armed Bandit Router]
+    Query["User Query String"] --> Intent["Intent Classifier & PII Guard"]
+    Intent --> Bandit["Multi-Armed Bandit Router"]
 
-    subgraph Channel Retrieval
-        Bandit --> BM25[SQLite FTS5 BM25 Lexical Match]
-        Bandit --> Vector[2-Phase Matryoshka Vector Search]
-        Bandit --> HyDE[Contextual HyDE Expansion]
-        Bandit --> Graph[GraphRAG 2-Hop Wikilink Traversal]
+    subgraph Channel_Retrieval ["Channel Retrieval"]
+        Bandit --> BM25["SQLite FTS5 BM25 Lexical Match"]
+        Bandit --> Vector["2-Phase Matryoshka Vector Search"]
+        Bandit --> HyDE["Contextual HyDE Expansion"]
+        Bandit --> Graph["GraphRAG 2-Hop Wikilink Traversal"]
     end
 
-    BM25 --> RRF[Reciprocal Rank Fusion k=60]
+    BM25 --> RRF["Reciprocal Rank Fusion (k=60)"]
     Vector --> RRF
     HyDE --> RRF
     Graph --> RRF
 
-    RRF --> Decay[Exponential Time-Decay Score Multiplier]
-    Decay --> ACL[ACL Security Permission Filter]
-    ACL --> ColBERT[Binary ColBERT MaxSim 64-bit Hamming Rerank]
-    ColBERT --> Dedupe[MinHash Jaccard Passage Deduplication]
-    Dedupe --> Grounding{Inline Self-RAG Grounding Guard}
+    RRF --> Decay["Exponential Time-Decay Score Multiplier"]
+    Decay --> ACL["ACL Security Permission Filter"]
+    ACL --> ColBERT["Binary ColBERT MaxSim 64-bit Hamming Rerank"]
+    ColBERT --> Dedupe["MinHash Jaccard Passage Deduplication"]
+    Dedupe --> Grounding{"Inline Self-RAG Grounding Guard"}
 
-    Grounding -- Confidence >= 0.65 --> Output[Verified Answer + Source Line Citations]
-    Grounding -- Confidence < 0.65 --> Refusal[Refusal Report & Knowledge Gap Summary]
+    Grounding -- "Confidence >= 0.65" --> Output["Verified Answer + Source Line Citations"]
+    Grounding -- "Confidence < 0.65" --> Refusal["Refusal Report & Knowledge Gap Summary"]
 ```
 
 ---
