@@ -1,0 +1,26 @@
+# SCC Uncovers Pirate Involvement In Caldari Tech Sector
+
+- **Date**: 2007-11-22T17:11:01.000Z
+- **Category**: news
+- **Author**: Svarthol
+- **Source**: https://www.eveonline.com/news/view/scc-uncovers-pirate-involvement-in-caldari-tech-sector
+- **Tags**: #news
+
+## Overview
+Yulai - During the course of routine patent inquiries, SCC investigators have established clear and direct links between the Angel Cartel, a known criminal organization and Itsukame Innovations, a small Caldari research corporation that recently made headlines with its announcement of a major breakt
+
+---
+
+Yulai - During the course of routine patent inquiries, SCC investigators have established clear and direct links between the Angel Cartel, a known criminal organization and Itsukame Innovations, a small Caldari research corporation that recently made headlines with its announcement of a major breakthrough in wormhole technology.
+
+"Before granting an exclusive patent to a corporation, we undertake thorough research in order to determine whether the technology in question is a derivative work, as well as if there has been any corporate malfeasance or espionage involved," explained Galfremen Lelac, senior investigator for the SCC who headed up Itsukame's latest patent request. "In the case of Itsukame Innovations, our technical team found no discrepancies and were ready to approve the patent on technical merit. We first uncovered potential involvement of organized crime on the financial end." Lelac explained that Itsukame had built the majority of its intellectual property through acquisition rather than directed research. "They assembled a lot of small pieces of other corporations, taking the best ideas from each. In order to ensure that Itsukame actually owned the intellectual property the patent would cover, a clear chain of ownership had to be established."
+
+But when SCC accountants began looking into Itsukame's acquisitions, discrepancies started to appear. "The number of investors in such a small corporation was unusually large," said Foruntiver Hrulf, lead SCC accountant in the case. "Furthermore, virtually all of those investors owned substantial shares in each other. The mess was extremely difficult to untangle." Many of these investors were holding companies and equity funds, most of which were privately owned. Diligence and attention to detail paid off however when investigators ran across mention of Sarnol Holdings, a corporation whose CEO and CFO were indicted for racketeering and money-laundering in Molden Heath seven months ago. During the course of that investigation, it became clear that Sarnol Holdings was a front for the Angel Cartel. "This was the loose thread that led to the whole thing unravelling," Hrulf explained. "Once we started with Sarnol, the rest of it came down like a house of cards."
+
+With the investigation still underway, SCC accountants have already unearthed no fewer than four other front companies with known ties to the Angel Cartel, and a further six whose connection is suspected. Lelac summed it up; "It's clear that the Angel Cartel was the major financial backer behind Itsukame. They may have been a silent partner, but I strongly suspect that the people calling the shots on a day-to-day basis knew who their benefactors were. Now all we have to do is prove it."
+
+The ramifications of this discovery go far beyond simple corporate malfeasance, mainly because the advance that Itsukame was attempting to patent has been classed as a military technology. "The financial backing of arms research by pirate cartels is a matter for deep concern," said Eman Autrech, Chairman of the SCC. "Indeed, part of the charter treaty that forms the foundations of the Secure Commerce Commission is the stipulation that criminal organizations may not profit through the legitimate trade in arms or military technology." As a result, SCC authorities have frozen the assets of Itsukame Innovations while further investigation commences, and CONCORD personnel have taken control of lab facilities and data archives to ensure that Cartel operatives do not attempt to destroy or appropriate key records or assets.
+
+The direct involvement of CONCORD in Caldari corporate affairs has ruffled feathers within the State, however. Aivoras Ahtainio, Chief Financial Officer and head of accounting for the Caldari Chief Executive Panel was extremely vocal in her criticism of CONCORD, stating in a recent press conference, "This is outrageous. Freezing the assets of a corporation during an investigation into fraudulent accounting is one thing. Putting police thugs into research labs is quite another. This is a violation of our sovereignty, and the Caldari State will not stand for it." A highly-placed CEP aide (who spoke on condition of anonymity) indicated that the CEP is in the process of filing a cease-and-desist order against CONCORD in SCC court. Given that the SCC is a division of CONCORD, it is unclear who will ultimately have jurisdiction over the case.
+
+In all of the confusion, one thing is clear: the investigation is far from over. Galfremen Lelac and his team are still poring over documents, tax returns, and bogus corporate charters. When asked about the overall scope of his inquiry he vowed, "We'll follow this as far as it leads."

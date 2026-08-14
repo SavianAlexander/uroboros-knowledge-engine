@@ -61,3 +61,6 @@ Triage (Support)/
 
 
 docs/visual_audit/*.png
+tokens.json
+*.sqlite
+*.sqlite3

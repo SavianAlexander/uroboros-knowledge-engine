@@ -38,7 +38,7 @@ Decoupled Clean Architecture in Python (stdlib-first, zero unneeded dependencies
 | M4 | Physical, Mathematical & Computational Boundary Invariant Guards | F7, F8, F9, F10, F11 | none | DONE |
 | M5 | Grounding Scorecard, Refusal Gate & Engine Integration | F12, Full Engine Integration | M1, M2, M3, M4 | DONE |
 | M-E2E | Opaque-Box E2E Test Suite Creation | Test infra & Tiers 1-4 tests covering all 12 features | none | DONE |
-| M6 | Final Verification & Adversarial Coverage Hardening | 100% E2E Pass + Tier 5 Adversarial Hardening | M5, M-E2E | IN_PROGRESS |
+| M6 | Final Verification & Adversarial Coverage Hardening | 100% E2E Pass + Tier 5 Adversarial Hardening | M5, M-E2E | DONE |
 
 ## Interface Contracts
 
