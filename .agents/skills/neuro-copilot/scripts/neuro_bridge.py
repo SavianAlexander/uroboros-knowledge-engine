@@ -330,6 +330,40 @@ def export_plan_to_note(title: str, content: str):
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
 
+def compress_ast(target_path: str = None):
+    """The AST Token Budget Compressor: Semantically compresses Python code for LLM contexts."""
+    if not target_path or not os.path.exists(target_path):
+        target_path = os.path.join(project_root, "know.py") if os.path.exists(os.path.join(project_root, "know.py")) else os.path.abspath(__file__)
+        
+    try:
+        with open(target_path, "r", encoding="utf-8", errors="ignore") as f:
+            orig_code = f.read()
+            
+        orig_bytes = len(orig_code.encode("utf-8"))
+        tree = ast.parse(orig_code)
+        
+        # Strip docstrings from functions, classes, and module bodies
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)):
+                if (node.body and isinstance(node.body[0], ast.Expr) and 
+                    isinstance(node.body[0].value, ast.Constant) and isinstance(node.body[0].value.value, str)):
+                    node.body.pop(0)
+                    
+        compressed_code = ast.unparse(tree)
+        comp_bytes = len(compressed_code.encode("utf-8"))
+        ratio = (1.0 - (comp_bytes / max(orig_bytes, 1))) * 100.0
+        
+        return json.dumps({
+            "status": "success",
+            "target_file": target_path,
+            "original_bytes": orig_bytes,
+            "compressed_bytes": comp_bytes,
+            "token_reduction_ratio": f"{ratio:.1f}%",
+            "compressed_code_preview": compressed_code[:500]
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
 def self_test():
     """Run assert-based self-test suite for neuro_bridge.py."""
     print("=== Running Neuro Bridge Self-Test Suite ===")
@@ -364,6 +398,10 @@ def self_test():
     res_gloss = json.loads(generate_domain_glossary())
     assert res_gloss.get("status") == "success", "generate_domain_glossary failed"
     print("  [Pass] generate_domain_glossary assertion clean")
+
+    res_ast = json.loads(compress_ast())
+    assert res_ast.get("status") == "success", f"compress_ast failed: {res_ast}"
+    print(f"  [Pass] compress_ast assertion clean ({res_ast.get('token_reduction_ratio')} token reduction)")
 
     res_svg = json.loads(export_graph_svg())
     assert res_svg.get("status") == "success", "export_graph_svg failed"
@@ -409,6 +447,10 @@ def main():
     subparsers.add_parser("snapshot", help="Create a cryptographic point-in-time snapshot in vault/snapshots/")
     subparsers.add_parser("export_adrs", help="Export canonical ADR records into vault/architecture/")
     subparsers.add_parser("generate_glossary", help="Generate canonical domain terms glossary in vault/glossary/")
+    
+    ast_p = subparsers.add_parser("compress_ast", help="AST Token Budget Compressor & Semantic Minifier")
+    ast_p.add_argument("--path", help="Optional target Python file path")
+
     subparsers.add_parser("export_svg", help="Export Knowledge Graph topology as DOT/SVG syntax representation")
     subparsers.add_parser("vacuum", help="Execute WAL checkpointing and freelist page vacuuming")
 
@@ -444,6 +486,8 @@ def main():
         print(export_canonical_adrs())
     elif args.command == "generate_glossary":
         print(generate_domain_glossary())
+    elif args.command == "compress_ast":
+        print(compress_ast(args.path))
     elif args.command == "export_svg":
         print(export_graph_svg())
     elif args.command == "vacuum":
@@ -459,4 +503,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
