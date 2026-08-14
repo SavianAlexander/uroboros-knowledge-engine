@@ -44,92 +44,91 @@ def extract_text_from_image(filepath: str) -> Dict[str, Any]:
         try:
             import pytesseract
             from PIL import Image
-            img = Image.open(filepath)
-            
-            # Try detailed bounding box extraction first
-            try:
-                data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
-                raw_words = data.get("text", [])
-                lefts = data.get("left", [])
-                tops = data.get("top", [])
-                widths = data.get("width", [])
-                heights = data.get("height", [])
-                
-                words_list = []
-                for i in range(len(raw_words)):
-                    w_str = str(raw_words[i]).strip()
-                    if w_str:
-                        words_list.append(w_str)
-                        coords.append({
-                            "word": w_str,
-                            "x": int(lefts[i]),
-                            "y": int(tops[i]),
-                            "w": int(widths[i]),
-                            "h": int(heights[i])
-                        })
-                if words_list:
-                    text = " ".join(words_list)
-            except (KeyboardInterrupt, MemoryError, SystemExit):
-                raise
-            except Exception as e:
-                import logging; logging.getLogger(__name__).debug(f"pytesseract box extraction notice in ocr_engine.py: {e}")
+            with Image.open(filepath) as img:
+                # Try detailed bounding box extraction first
+                try:
+                    data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+                    raw_words = data.get("text", [])
+                    lefts = data.get("left", [])
+                    tops = data.get("top", [])
+                    widths = data.get("width", [])
+                    heights = data.get("height", [])
+                    
+                    words_list = []
+                    for i in range(len(raw_words)):
+                        w_str = str(raw_words[i]).strip()
+                        if w_str:
+                            words_list.append(w_str)
+                            coords.append({
+                                "word": w_str,
+                                "x": int(lefts[i]),
+                                "y": int(tops[i]),
+                                "w": int(widths[i]),
+                                "h": int(heights[i])
+                            })
+                    if words_list:
+                        text = " ".join(words_list)
+                except (KeyboardInterrupt, MemoryError, SystemExit):
+                    raise
+                except Exception as e:
+                    import logging; logging.getLogger(__name__).debug(f"pytesseract box extraction notice: {e}")
 
-            if not text:
-                text = pytesseract.image_to_string(img).strip()
+                if not text:
+                    text = pytesseract.image_to_string(img).strip()
 
-            if text:
-                engine_used = "tesseract"
+                if text:
+                    engine_used = "tesseract"
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.getLogger(__name__).debug(f"pytesseract fallback notice in ocr_engine.py: {e}")
+            import logging; logging.getLogger(__name__).debug(f"pytesseract fallback notice: {e}")
 
     # Tier 2: Pillow EXIF metadata and image property fallback
     if not text:
         try:
             from PIL import Image
             from PIL.ExifTags import TAGS
-            img = Image.open(filepath)
-            width, height = img.size
-            img_format = str(img.format)
-            img_mode = str(img.mode)
+            with Image.open(filepath) as img:
+                width, height = img.size
+                img_format = str(img.format)
+                img_mode = str(img.mode)
 
-            exif_dict = {}
-            exif_lines = []
-            try:
-                exif_data = img._getexif()
-                if exif_data:
-                    for tag, val in exif_data.items():
-                        tag_name = TAGS.get(tag, str(tag))
-                        if isinstance(val, (str, int, float)):
-                            exif_dict[str(tag_name)] = val
-                            exif_lines.append(f"{tag_name}: {val}")
-            except (KeyboardInterrupt, MemoryError, SystemExit):
-                raise
-            except Exception as e:
-                import logging; logging.warning(f"Swallowed error in ocr_engine.py: {e}")
+                exif_dict = {}
+                exif_lines = []
+                try:
+                    exif_data = img._getexif()
+                    if exif_data:
+                        for tag, val in exif_data.items():
+                            tag_name = TAGS.get(tag, str(tag))
+                            if isinstance(val, (str, int, float)):
+                                exif_dict[str(tag_name)] = val
+                                exif_lines.append(f"{tag_name}: {val}")
+                except (KeyboardInterrupt, MemoryError, SystemExit):
+                    raise
+                except Exception as e:
+                    import logging; logging.getLogger(__name__).debug(f"EXIF read notice: {e}")
 
-            metadata = {
-                "width": width,
-                "height": height,
-                "format": img_format,
-                "mode": img_mode,
-                "exif": exif_dict
-            }
+                metadata = {
+                    "width": width,
+                    "height": height,
+                    "format": img_format,
+                    "mode": img_mode,
+                    "exif": exif_dict
+                }
 
-            filename = os.path.basename(filepath)
-            text_parts = [f"Scanned Document Image [{filename}]: Format {img_format}, Size {width}x{height}px, Mode {img_mode}."]
-            if exif_lines:
-                text_parts.append("EXIF Metadata: " + ", ".join(exif_lines) + ".")
-            else:
-                text_parts.append("No EXIF metadata tags present.")
+                filename = os.path.basename(filepath)
+                text_parts = [f"Scanned Document Image [{filename}]: Format {img_format}, Size {width}x{height}px, Mode {img_mode}."]
+                if exif_lines:
+                    text_parts.append("EXIF Metadata: " + ", ".join(exif_lines) + ".")
+                else:
+                    text_parts.append("No EXIF metadata tags present.")
 
-            text = " ".join(text_parts)
-            engine_used = "pillow_exif"
+                text = " ".join(text_parts)
+                engine_used = "pillow_exif"
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in ocr_engine.py: {e}")
+            import logging; logging.getLogger(__name__).debug(f"Pillow image inspection fallback notice: {e}")
 
     # Tier 3: Zero-dependency stdlib file property metadata fallback
     if not text:

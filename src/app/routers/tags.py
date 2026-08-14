@@ -133,10 +133,13 @@ def add_rule_endpoint(req: RuleRequest):
         raise HTTPException(status_code=400, detail="Pattern cannot be empty")
     try:
         re.compile(req.pattern)
+    except re.error as e:
+        import logging; logging.getLogger(__name__).debug(f"Invalid regex pattern: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid regex pattern: {str(e)}")
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Swallowed error in tags.py: {e}")
+        import logging; logging.getLogger(__name__).debug(f"Unexpected regex parse notice: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid regex pattern: {str(e)}")
     with get_db() as conn:
         cursor = conn.cursor()
@@ -147,7 +150,7 @@ def add_rule_endpoint(req: RuleRequest):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in tags.py: {e}")
+            import logging; logging.debug(f"WAL checkpoint notice in tags.py: {e}")
     return {"status": "success", "pattern": req.pattern, "tag": req.tag}
 
 @router.post("/api/rules/test-preview")
@@ -157,10 +160,13 @@ def preview_rule_endpoint(req: RuleRequest):
         raise HTTPException(status_code=400, detail="Pattern cannot be empty")
     try:
         rx = re.compile(req.pattern, re.IGNORECASE)
+    except re.error as e:
+        import logging; logging.getLogger(__name__).debug(f"Invalid regex preview pattern: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid regex pattern: {str(e)}")
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).warning(f"Swallowed error in tags.py: {e}")
+        import logging; logging.getLogger(__name__).debug(f"Unexpected regex preview notice: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid regex pattern: {str(e)}")
 
     matches = []

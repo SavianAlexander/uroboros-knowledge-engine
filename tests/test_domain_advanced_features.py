@@ -245,6 +245,33 @@ class TestAdvancedFeatures(unittest.TestCase):
         self.assertEqual(data["status"], "success")
         self.assertIn("reclaimed_gc_objects", data)
 
+    def test_20_agent_memory_crud_endpoints(self):
+        """Verify persistent agent memory store, recall, listing, and deletion."""
+        # 1. Store
+        res_post = self.client.post("/api/memory", json={"key": "user_theme", "value": "dark", "category": "ui_pref"})
+        self.assertEqual(res_post.status_code, 200)
+
+        # 2. List
+        res_list = self.client.get("/api/memory", params={"category": "ui_pref"})
+        self.assertEqual(res_list.status_code, 200)
+        memories = res_list.json().get("memories", [])
+        self.assertTrue(any(m["key"] == "user_theme" for m in memories))
+
+        # 3. Direct recall verification
+        from src.domain.agent_memory import recall
+        self.assertEqual(recall("user_theme"), "dark")
+
+        # 4. Delete
+        res_del = self.client.delete("/api/memory/user_theme")
+        self.assertEqual(res_del.status_code, 200)
+        self.assertIsNone(recall("user_theme"))
+
+    def test_21_p2p_socket_and_rule_regex_guard(self):
+        """Verify invalid regex rules cleanly return 400 without unhandled server crashes."""
+        res_bad_regex = self.client.post("/api/rules", json={"pattern": "[a-z", "tag": "broken"})
+        self.assertEqual(res_bad_regex.status_code, 400)
+        self.assertIn("Invalid regex pattern", res_bad_regex.json().get("detail", ""))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -41,17 +41,19 @@ class P2PPeerBeacon:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
+            import logging; logging.debug(f"P2P multicast TTL notice: {e}")
         sock.settimeout(1.0)
         
         message = json.dumps({"node_id": self.node_id, "port": self.http_port, "ts": time.time()}).encode("utf-8")
         while self.running:
             try:
                 sock.sendto(message, (MULTICAST_GROUP, UDP_PORT))
+            except (socket.timeout, TimeoutError):
+                continue
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
+                import logging; logging.debug(f"P2P broadcast notice: {e}")
             for _ in range(int(BROADCAST_INTERVAL * 10)):
                 if not self.running:
                     break
@@ -65,7 +67,7 @@ class P2PPeerBeacon:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
+            import logging; logging.debug(f"P2P reuseaddr notice: {e}")
 
         bound = False
         for bind_addr in ["", "0.0.0.0"]:
@@ -88,7 +90,7 @@ class P2PPeerBeacon:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
+            import logging; logging.debug(f"P2P multicast membership notice: {e}")
 
         sock.settimeout(1.0)
 
@@ -108,10 +110,12 @@ class P2PPeerBeacon:
                             "port": peer_port,
                             "last_seen": time.time()
                         }
+            except (socket.timeout, TimeoutError):
+                continue
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
+                import logging; logging.debug(f"P2P listen packet notice: {e}")
         sock.close()
 
 def get_active_peers() -> List[Dict[str, Any]]:

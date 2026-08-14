@@ -8,7 +8,8 @@ import sqlite3
 import threading
 import logging
 import urllib.request
-from fastapi import APIRouter, HTTPException
+from typing import Optional, Dict, Any, List
+from fastapi import APIRouter, HTTPException, Body
 import src.infrastructure.database as _infra_db
 from src.infrastructure.database import get_db, db_status, run_maintenance, calculate_sha256, init_db, get_audit_ledger
 from src.infrastructure.repositories.snapshots import create_db_snapshot, restore_db_snapshot, list_db_snapshots, delete_db_snapshot
@@ -470,4 +471,54 @@ def compact_system_memory_and_db_endpoint():
         raise
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py compact: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/memory")
+def list_agent_memories_endpoint(category: Optional[str] = None):
+    """List stored agent episodic and preference memories."""
+    try:
+        from src.domain.agent_memory import list_memories
+        return {"status": "success", "memories": list_memories(category=category)}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error listing memories: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/memory")
+def store_agent_memory_endpoint(payload: Dict[str, Any] = Body(...)):
+    """Store or update an agent memory key-value pair."""
+    key = payload.get("key")
+    val = payload.get("value")
+    category = payload.get("category", "preference")
+    confidence = payload.get("confidence", 1.0)
+    if not key:
+        raise HTTPException(status_code=400, detail="Memory key is required")
+    try:
+        from src.domain.agent_memory import remember
+        return remember(key, val, category=category, confidence=confidence)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error storing memory: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/api/memory/{key}")
+def delete_agent_memory_endpoint(key: str):
+    """Delete an agent memory by key."""
+    try:
+        from src.domain.agent_memory import delete_memory
+        res = delete_memory(key)
+        if res.get("status") == "not_found":
+            raise HTTPException(status_code=404, detail="Memory key not found")
+        return res
+    except HTTPException:
+        raise
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error deleting memory: {e}")
         raise HTTPException(status_code=500, detail=str(e))
