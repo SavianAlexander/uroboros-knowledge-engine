@@ -14,7 +14,6 @@ if (-not $env:PORT) { $env:PORT = "8085" }
 $pyCmd = if (Test-Path ".venv\Scripts\python.exe") { ".venv\Scripts\python.exe" } else { "python" }
 
 Write-Host "Launching backend at http://127.0.0.1:$($env:PORT)..." -ForegroundColor Yellow
-Start-Process "http://127.0.0.1:$($env:PORT)"
 
 try {
     & $pyCmd main.py

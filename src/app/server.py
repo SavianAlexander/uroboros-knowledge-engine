@@ -14,6 +14,8 @@ from src.app.routers import health, search, rag, files, tags, export, analytics,
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    from src.core.shutdown import register_shutdown_handlers, execute_clean_shutdown
+    register_shutdown_handlers()
     beacon = None
     try:
         import uuid
@@ -35,11 +37,7 @@ async def lifespan(app: FastAPI):
                 raise
             except Exception as e:
                 import logging; logging.warning(f"Swallowed error in server.py: {e}")
-        try:
-            from src.infrastructure.database import run_maintenance
-            run_maintenance(truncate_wal=True)
-        except Exception:
-            pass
+        execute_clean_shutdown()
 
 app = FastAPI(title="Uroboros Knowledge Database", default_response_class=JSONResponse, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)

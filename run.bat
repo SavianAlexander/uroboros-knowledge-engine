@@ -22,9 +22,8 @@ if errorlevel 1 (
     "%PY_CMD%" -m pip install -r requirements.txt
 )
 
-:: Start engine and open browser
+:: Start engine (main.py handles health-verified browser launch automatically)
 echo Launching backend at http://127.0.0.1:%PORT%...
-start http://127.0.0.1:%PORT%
 "%PY_CMD%" main.py
 if errorlevel 1 (
     echo.

@@ -348,6 +348,35 @@ class DatabaseWorker:
             valid = verify_merkle_proof(proof_data["leaf_hash"], proof_data["audit_proof"], root_data["merkle_root"])
             self.assertTrue(valid)
 
+    def test_27_process_manager_and_zombie_auditor(self):
+        """Verify process inspector, zombie scanner, and process liveness API."""
+        res_list = self.client.get("/api/system/processes")
+        self.assertEqual(res_list.status_code, 200)
+        data = res_list.json()
+        self.assertEqual(data["status"], "success")
+        self.assertIn("current_pid", data)
+
+        res_kill = self.client.post("/api/system/kill-zombies")
+        self.assertEqual(res_kill.status_code, 200)
+        kill_data = res_kill.json()
+        self.assertEqual(kill_data["status"], "success")
+        self.assertIn("reaped_count", kill_data)
+
+    def test_28_thread_watchdog_and_daemon_registry(self):
+        """Verify thread watchdog enforces daemon=True and clean joins."""
+        import threading
+        from src.domain.thread_watchdog import register_worker_thread, list_active_workers, shutdown_all_workers
+
+        t = threading.Thread(target=lambda: None)
+        register_worker_thread(t, "test_dummy_worker")
+        self.assertTrue(t.daemon)
+
+        workers = list_active_workers()
+        self.assertTrue(any(w["name"] == "test_dummy_worker" for w in workers))
+
+        shutdown_res = shutdown_all_workers(timeout=0.2)
+        self.assertEqual(shutdown_res["status"], "success")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -556,3 +556,29 @@ def get_vault_merkle_proof_endpoint(path: str = "", filepath: str = "", filename
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error generating merkle proof: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/system/processes")
+def get_system_processes_endpoint():
+    """Inspects running Uroboros instances, port listeners, and zombie processes."""
+    try:
+        from src.domain.process_manager import list_uroboros_processes
+        return list_uroboros_processes()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error checking processes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/system/kill-zombies")
+def kill_zombie_processes_endpoint():
+    """Scans and terminates unresponsive zombie processes on Uroboros port range."""
+    try:
+        from src.domain.process_manager import reap_zombies_on_ports
+        return reap_zombies_on_ports()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error reaping zombies: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

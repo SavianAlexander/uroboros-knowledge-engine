@@ -44,17 +44,49 @@ from src.core.state import (
 if __name__ == "__main__":
     import uvicorn
     import socket
+    import webbrowser
+    import urllib.request
+    from src.core.shutdown import register_shutdown_handlers
+    from src.domain.process_manager import check_uroboros_health, is_port_bound
+
+    register_shutdown_handlers()
 
     host = os.environ.get("HOST", "0.0.0.0")
-    port = int(os.environ.get("PORT", 8085))
+    requested_port = int(os.environ.get("PORT", 8085))
+    target_port = requested_port
 
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind((host, port))
-    except OSError:
-        print(f"Error: Port {port} is already in use by another instance of Uroboros Knowledge Engine.")
-        print(f"Please close the existing server process on port {port} before launching a new instance.")
-        sys.exit(1)
+    # 1. Multi-instance & Port Failover Check
+    if is_port_bound(requested_port):
+        if check_uroboros_health(requested_port):
+            print(f"===================================================")
+            print(f" [INFO] Uroboros Knowledge Engine is already active!")
+            print(f" Connecting to running instance on http://127.0.0.1:{requested_port}")
+            print(f"===================================================")
+            webbrowser.open(f"http://127.0.0.1:{requested_port}")
+            sys.exit(0)
+        else:
+            # Port is occupied by an unresponsive or other process; find next available port
+            for candidate in range(requested_port + 1, requested_port + 10):
+                if not is_port_bound(candidate):
+                    target_port = candidate
+                    print(f"[WARN] Port {requested_port} is busy. Failing over to port {target_port}...")
+                    break
+            else:
+                print(f"[ERROR] Unable to bind to ports {requested_port}..{requested_port+9}.")
+                sys.exit(1)
 
-    print(f"Starting Uroboros server on http://127.0.0.1:{port}")
-    uvicorn.run(app, host=host, port=port)
+    # 2. Spawn browser health poller thread (eliminates Cold-Start Connection Refused race condition)
+    def _poll_and_open_browser(port: int):
+        for _ in range(40):
+            time.sleep(0.15)
+            if check_uroboros_health(port):
+                webbrowser.open(f"http://127.0.0.1:{port}")
+                break
+
+    auto_open = os.environ.get("NO_BROWSER", "").lower() not in ("1", "true", "yes")
+    if auto_open:
+        b_thread = threading.Thread(target=_poll_and_open_browser, args=(target_port,), daemon=True)
+        b_thread.start()
+
+    print(f"Starting Uroboros server on http://127.0.0.1:{target_port}")
+    uvicorn.run(app, host=host, port=target_port)
