@@ -49,7 +49,7 @@ sequenceDiagram
     FS->>Watch: File Creation / Modification Event
     Watch->>Watch: 500ms Debounce Buffer
     Watch->>Batch: Dispatch File Paths to Index Worker Queue
-    Batch->>Parse: Parse File Structure (PDF/DOCX/Audio/Image)
+    Batch->>Parse: Parse File Structure (PDF/DOCX/IPYNB/Obsidian/PPTX/CSV/Audio/Image)
     Parse->>Parse: Compute Content SHA-256 Digest
     alt File Unchanged (SHA-256 Digest Match)
         Parse-->>Batch: Skip Re-indexing (Zero Cost)

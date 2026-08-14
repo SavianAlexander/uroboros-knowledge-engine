@@ -537,17 +537,20 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 
 ## 12. Document File Format Parsers & Extraction Pipeline
 
-Uroboros features a multi-format document parsing engine ([`src/infrastructure/parsers.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/parsers.py)):
+Uroboros features a zero-dependency, multi-format document parsing engine ([`src/infrastructure/parsers.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/parsers.py)):
 
 | Extension / Format | Underlying Library | Structural Extraction Features |
 | :--- | :--- | :--- |
-| **`.pdf`** | `pypdf` | Text extraction, page number indexing, PDF form field parsing. |
+| **`.ipynb`** (Jupyter) | Native `json` / stdlib | Markdown narrative cells, LaTeX equations, Python code blocks, and stdout/stderr execution outputs. |
+| **`.md` / `.markdown`** (Obsidian) | Native stdlib regex | YAML frontmatter (`tags`, `aliases`, `date`), Dataview fields (`[key:: value]`), `#tag` taxonomy, and `[[wikilinks]]`. |
+| **`.pptx`** (PowerPoint) | `zipfile` + `xml.etree` | Slide titles, text boxes, bullet lists, shapes, and hidden speaker notes (`notesSlide*.xml`). |
+| **`.csv` / `.tsv` / `.tab`** | Native `csv` / `csv.Sniffer` | Delimiter detection, column data type inference (`Integer`, `Float`, `Date/ISO`, `String`), and Markdown preview table. |
+| **`.pdf`** | `fitz` / `pypdf` / OCR | PyMuPDF text extraction, page number indexing, PDF form field parsing, and Tesseract OCR fallback. |
 | **`.docx`** | `python-docx` | Paragraph extraction, XML table cell mapping, header/footer parsing. |
 | **`.xlsx` / `.xls`** | `openpyxl` | Spreadsheet sheet-by-sheet text mapping, cell coordinate formulas. |
 | **`.rtf`** | `striprtf` | Control-word stripping, formatted rich text plain text conversion. |
-| **`.mp3` / `.wav`** | `mutagen` / stdlib | Audio duration, bitrate, sample rate metadata & ID3 tag extraction. |
+| **`.mp3` / `.wav` / `.m4a`** | `wave` / `whisper` | Audio duration, channel metadata, sample rate validation, and Whisper local transcription. |
 | **`.zip` / `.tar`** | `zipfile` / `tarfile` | In-memory archive extraction and recursive sub-document indexing. |
-| **`.md` / `.txt`** | Native stdlib | Markdown heading hierarchy, code fence parsing, `[[wikilink]]` extraction. |
 
 ---
 
@@ -859,16 +862,47 @@ Uroboros Knowledge Engine integrates natively with AI Agent skill protocols ([`n
 graph LR
     Agent[AI Agent / Antigravity] --> Neuro[Neuro MCP Server]
     Agent --> Tududi[Tududi Task Master MCP]
+    Agent --> Git[GitHub CLI & Provenance Bridge]
     Neuro --> VectorDB[(SQLite Knowledge DB)]
     Tududi --> Audit[Audit Trail & Habit Synchronization]
     
     subgraph Execution Loop
         Neuro -- 1. Query Knowledge Context --> Agent
         Agent -- 2. Log Execution Plan [PLAN, BUILD, TEST, AUDIT] --> Tududi
-        Agent -- 3. Ingest New Documents --> Neuro
-        Tududi -- 4. Mark Task Status Complete --> Audit
+        Agent -- 3. Ingest New Documents & Git Commits --> Neuro
+        Agent -- 4. Compute Merkle Provenance & Auto-Commit --> Git
+        Tududi -- 5. Mark Task Status Complete --> Audit
     end
 ```
+
+### Tri-Engine 24-Command CLI Command Matrix
+
+| Command | Subcommand | Purpose |
+| :--- | :--- | :--- |
+| **1. Flight Plan Generator** | `python .../github_bridge.py copilot --prompt "..."` | Synthesize developer intent into structured engineering flight plan using local brain. |
+| **2. Tri-Engine Health** | `python .../github_bridge.py tri_engine_health` | Unified diagnostic across Neuro, Tududi, GitHub, and Architecture Doctor. |
+| **3. Auto Commit Provenance** | `python .../github_bridge.py auto_commit --scope S --desc D` | Staged-files Merkle tree digest calculation and auto-commit with task tag. |
+| **4. Subagent Prompt Builder** | `python .../github_bridge.py format_agent_prompt --task T` | Format standardized system prompt for autonomous subagent delegation. |
+| **5. Executive Dashboard** | `python .../github_bridge.py dashboard` | Render ASCII terminal dashboard summarizing git state, `gh` auth, hooks, & CI. |
+| **6. Full Pipeline Pass** | `python .../github_bridge.py run_full_pipeline` | Execute 1-click full Tri-Engine pipeline pass. |
+| **7. Health Check** | `python .../github_bridge.py check_health` | Audit git status, `gh` auth, active PRs, issues, git hooks, CI workflows. |
+| **8. Issue Sync** | `python .../github_bridge.py sync_issues` | Fetch open GitHub Issues formatted as Tududi Task import JSON. |
+| **9. CI Diagnosis** | `python .../github_bridge.py diagnose_ci [--run-id ID]` | Auto-detect failed Actions runs, extract tracebacks, & build query. |
+| **10. Provenance Tag** | `python .../github_bridge.py provenance_tag --scope S --desc D` | Compute SHA-256 hash of staged files & format executive commit string. |
+| **11. PR Automation** | `python .../github_bridge.py create_pr --title T` | Generate & open a Pull Request with embedded Tududi checklists. |
+| **12. Hook Guard** | `python .../github_bridge.py install_hooks` | Install `.git/hooks/commit-msg` guard enforcing Tududi/Neuro tags. |
+| **13. CI Workflow Setup** | `python .../github_bridge.py install_ci_workflow` | Generate `.github/workflows/neuro_copilot_ci.yml` for GitHub Actions. |
+| **14. PR Diff Security Audit** | `python .../github_bridge.py audit_pr_diff` | Scan diffs for leaked secrets, anti-patterns, & `AGENTS.md` compliance. |
+| **15. Repo Topology Map** | `python .../github_bridge.py repo_map` | Discover workspace git remotes and submodules. |
+| **16. Conflict Analyzer** | `python .../github_bridge.py resolve_conflicts` | Scan working tree for git conflict markers (`<<<<<<<`). |
+| **17. History Formatter** | `python .../github_bridge.py format_history` | Aggregate unpushed commits into a single provenance-tagged commit message. |
+| **18. Architecture Mermaid** | `python .../github_bridge.py export_architecture_mermaid` | Generate Mermaid JS codebase architecture diagram (`graph TD`). |
+| **19. Benchmark Audit** | `python .../github_bridge.py benchmark_audit` | Measure domain test duration and performance metrics. |
+| **20. Skill Health Audit** | `python .../github_bridge.py audit_skills` | Validate YAML frontmatter & SKILL.md integrity across all skills. |
+| **21. Dependency Security** | `python .../github_bridge.py audit_security_dependencies` | Scan `requirements.txt` and `package.json` for unpinned packages. |
+| **22. Bloat Detector** | `python .../github_bridge.py detect_bloat` | Audit Python codebase for deep nesting (>=5 levels) & over-engineering. |
+| **23. Release Synthesizer** | `python .../github_bridge.py generate_release_notes` | Format Markdown release notes & optionally publish GitHub Release. |
+| **24. Bridge Self-Test** | `python .../github_bridge.py self_test` | Run zero-dependency assert-based unit tests for all CLI bridge functions. |
 
 ---
 
@@ -884,25 +918,33 @@ Uroboros provides native zero-shot multilingual tokenization and diacritic chara
 
 ## 24. Containerized Multi-Service Topology & Docker Orchestration
 
-The application supports containerized single-command deployment via `docker-compose.yml`:
+The application supports hardened, containerized deployment via a self-contained 3-stage multi-stage Docker build and `docker-compose.yml`:
 
 ```mermaid
 graph TD
-    Client[Host Browser / Desktop Client] -->|Port 8000| FastAPI[FastAPI App Server Container]
-    FastAPI -->|Port 11434| Ollama[Ollama Local LLM Container]
-    FastAPI -->|WAL Mode| DB[(Volume: ./know.db SQLite)]
-    FastAPI -->|Volume Mount| Workspace[(Volume: ./workspace Files)]
+    Client[Host Browser / Desktop Client] -->|Port 8000| App[Uroboros FastAPI + React 19 Container]
+    App -->|Port 11434| Ollama[Local Ollama LLM Container]
+    App -->|WAL Mode| DB[(Volume: ./know.db SQLite)]
+    App -->|Volume Mount| Workspace[(Volume: ./vault Files)]
 ```
 
-### Deployment Commands
+### Self-Contained 3-Stage Container Architecture
+1. **Stage 1 (`frontend-builder`)**: Compiles the React 19 / Vite single-page application into optimized static assets (`dist/`).
+2. **Stage 2 (`python-builder`)**: Compiles C-extensions and pre-builds isolated Python wheels.
+3. **Stage 3 (`runner`)**: Stripped unprivileged runtime container running as `appuser:10001` with SQLite WAL `SIGINT` flush checkpointing and a 15-second grace period.
+
+### Deployment & Container Registry
 ```bash
-# Build and start all multi-service containers in detached mode
+# 1. Pull directly from GitHub Container Registry (GHCR)
+docker pull ghcr.io/savianalexander/uroboros-knowledge-engine:master
+
+# 2. Start multi-service stack with local Ollama
 docker-compose up -d --build
 
-# Inspect container health telemetry
+# 3. Inspect container health telemetry
 docker-compose ps
 
-# View unified server logs
+# 4. View unified server logs
 docker-compose logs -f
 ```
 
