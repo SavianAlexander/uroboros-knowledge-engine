@@ -179,4 +179,29 @@ def get_cyno_route(origin: str = "1DQ1-A (Delve)", destination: str = "Jita (The
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/multibox/mind")
+def get_multibox_mind_endpoint():
+    """Retrieve operational fleet mindset, active responsibilities, and tactical intent for all pilots."""
+    try:
+        from src.infrastructure.eve_multibox_mind import get_multibox_mind_state
+        return get_multibox_mind_state()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/multibox/recommendations/{character_id}")
+def get_pilot_recommendations(character_id: int):
+    """Retrieve actionable next steps and protective defensive protocols for a specific pilot."""
+    try:
+        from src.infrastructure.eve_multibox_mind import get_pilot_action_recommendations
+        res = get_pilot_action_recommendations(character_id)
+        if "status" in res and res["status"] == "error":
+            raise HTTPException(status_code=404, detail=res["message"])
+        return res
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
