@@ -628,7 +628,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
   const renderInteractiveEpubStudio = (rawContent: string) => {
     let text = rawContent || insights?.insights || insights?.summary || insights?.text || '';
     if (!text || text.length < 50) {
-      text = 'Your CliftonStrengths assessment reveals a powerful cognitive architecture focused on strategic thinking and relentless execution.\n\nAnalytical Theme: Your Analytical theme challenges other people: "Prove it. Show me why what you are claiming is true." In the face of this kind of questioning, some find that their brilliant theories wither and die. You see yourself as objective and dispassionate.\n\nFocus Theme: Your Focus theme forces you to filter out distractions and prioritize high-leverage execution goals. You determine a direction, follow through, and make corrections necessary to stay on target.\n\nResponsibility & Achiever: You take deep psychological ownership of commitments made, operating with stable values of honesty, precision, and continuous tangible output.\n\nDon Clifton Methodology: Developed by Don Clifton, the Father of Strengths Psychology, this framework magnifies natural patterns of thinking, feeling, and behaving to achieve peak institutional performance.';
+      text = 'Your CliftonStrengths assessment reveals a powerful cognitive architecture focused on strategic thinking and relentless execution.\n\nAnalytical: Your Analytical theme challenges other people: "Prove it. Show me why what you are claiming is true." In the face of this kind of questioning, some find that their brilliant theories wither and die. You see yourself as objective and dispassionate.\n\nFocus: Your Focus theme forces you to filter out distractions and prioritize high-leverage execution goals. You determine a direction, follow through, and make corrections necessary to stay on target.\n\nResponsibility & Achiever: You take deep psychological ownership of commitments made, operating with stable values of honesty, precision, and continuous tangible output.\n\nDon Clifton Methodology: Developed by Don Clifton, the Father of Strengths Psychology, this framework magnifies natural patterns of thinking, feeling, and behaving to achieve peak institutional performance.';
     }
     const cleanText = text.replace(/\r\n/g, '\n');
     let rawParas = cleanText.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
@@ -665,7 +665,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
         text: 'text-[#241C15]',
         subtext: 'text-[#7C6A58]',
         badge: 'text-[#8B5A2B] hover:text-[#5C3A1E] border-b border-[#C89D66] hover:border-[#8B5A2B] bg-amber-500/10 hover:bg-amber-500/20',
-        dropcap: 'text-[#8B5A2B] border-amber-800/20 bg-amber-500/10 shadow-inner',
+        dropcap: 'text-[#8B4513] drop-shadow-xs font-serif',
         divider: 'text-[#C4B59D]',
         cardBg: 'bg-[#F5EFE4]/80 border-[#DECDB3]',
         border: 'border-[#E8DFC8]',
@@ -676,7 +676,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
         text: 'text-[#E2E8F0]',
         subtext: 'text-slate-400',
         badge: 'text-emerald-300 hover:text-emerald-200 border-b border-emerald-500/60 hover:border-emerald-400 bg-emerald-500/15 hover:bg-emerald-500/25',
-        dropcap: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 shadow-inner',
+        dropcap: 'text-emerald-400 drop-shadow-xs font-serif',
         divider: 'text-slate-700',
         cardBg: 'bg-slate-900/80 border-slate-800',
         border: 'border-slate-800/80',
@@ -687,7 +687,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
         text: 'text-[#F3E5D4]',
         subtext: 'text-[#B39882]',
         badge: 'text-amber-300 hover:text-amber-200 border-b border-amber-500/60 hover:border-amber-400 bg-amber-500/15 hover:bg-amber-500/25',
-        dropcap: 'text-amber-400 border-amber-500/30 bg-amber-500/10 shadow-inner',
+        dropcap: 'text-amber-400 drop-shadow-xs font-serif',
         divider: 'text-[#544335]',
         cardBg: 'bg-[#231A10]/80 border-[#453120]',
         border: 'border-[#3B291A]',
@@ -698,7 +698,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
         text: 'text-[#1A202C]',
         subtext: 'text-slate-500',
         badge: 'text-emerald-700 hover:text-emerald-900 border-b border-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20',
-        dropcap: 'text-emerald-600 border-emerald-600/20 bg-emerald-50 shadow-inner',
+        dropcap: 'text-emerald-600 drop-shadow-xs font-serif',
         divider: 'text-slate-300',
         cardBg: 'bg-slate-50 border-slate-200',
         border: 'border-slate-200',
@@ -709,7 +709,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
         text: 'text-[#ECEFF4]',
         subtext: 'text-[#88C0D0]',
         badge: 'text-[#88C0D0] hover:text-[#ECEFF4] border-b border-[#88C0D0] bg-[#88C0D0]/15 hover:bg-[#88C0D0]/25',
-        dropcap: 'text-[#88C0D0] border-[#88C0D0]/30 bg-[#88C0D0]/10 shadow-inner',
+        dropcap: 'text-[#88C0D0] drop-shadow-xs font-serif',
         divider: 'text-[#3B4252]',
         cardBg: 'bg-[#222834]/80 border-[#3B4252]',
         border: 'border-[#2E3440]',
@@ -757,7 +757,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
             onMouseUp={handleMouseUpSelection}
           >
             {isFirst && initialLetter && (
-              <span className={`float-left text-5xl lg:text-6xl font-serif font-bold mr-4 mb-1 px-3 py-1 rounded-xl border leading-none ${curTheme.dropcap} select-none`}>
+              <span className={`float-left text-4xl lg:text-5xl font-serif font-bold mr-1 mt-0.5 leading-none ${curTheme.dropcap} select-none`}>
                 {initialLetter}
               </span>
             )}
