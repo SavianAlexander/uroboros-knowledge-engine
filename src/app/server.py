@@ -87,9 +87,11 @@ def spa_fallback(full_path: str):
     if full_path.startswith("api/") or full_path.startswith("docs") or full_path.startswith("openapi.json") or full_path.startswith("health") or full_path.startswith("metrics"):
         raise HTTPException(status_code=404, detail="Not Found")
 
-    dist_file = Path("frontend/dist") / full_path
-    if dist_file.is_file():
-        return FileResponse(str(dist_file))
+    # Check frontend/dist first, then src/assets, then local root
+    for candidate_dir in [Path("frontend/dist"), Path("src/assets"), Path(".")]:
+        target = candidate_dir / full_path
+        if target.is_file():
+            return FileResponse(str(target))
 
     asset_path = Path("frontend/dist/index.html")
     if asset_path.exists():

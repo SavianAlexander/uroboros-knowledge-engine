@@ -207,19 +207,19 @@ def get_db():
         if cached_path != current_path:
             try:
                 conn.close()
-            except (KeyboardInterrupt, MemoryError, SystemExit):
-                raise
-            except Exception as e:
-                import logging; logging.warning(f"Swallowed error in database.py: {e}")
+            except Exception:
+                pass
             conn = None
             _local.connection = None
             _local.connection_path = None
         else:
             try:
-                conn.execute("SELECT 1")
-            except (KeyboardInterrupt, MemoryError, SystemExit):
-                raise
+                conn.cursor().execute("SELECT 1")
             except Exception:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
                 conn = None
                 _local.connection = None
                 _local.connection_path = None

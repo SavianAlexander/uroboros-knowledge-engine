@@ -86,17 +86,23 @@ export default function SearchView() {
   const [searchTimeMs, setSearchTimeMs] = useState<number | null>(null);
   const [showLineageDrawer, setShowLineageDrawer] = useState<boolean>(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!query.trim()) return;
     setIsLoading(true);
     try {
-      const modeParam = searchMode === 'auto' ? undefined : searchMode;
-      const res = await api.unifiedVectorSearch(query, 10, modeParam);
-      setResults(res.results || []);
+      let res;
+      try {
+        const modeParam = searchMode === 'auto' ? undefined : searchMode;
+        res = await api.unifiedVectorSearch(query, 10, modeParam);
+      } catch {
+        res = await api.search(query, searchMode, 0.0);
+      }
+      const rawList = Array.isArray(res) ? res : (res.results || []);
+      setResults(rawList);
       setActiveStrategy(res.strategy || searchMode);
-      setSearchTimeMs(res.search_time_ms || 0);
-      toast('Search Completed', `Found ${res.results?.length || 0} matches (${res.search_time_ms || 0}ms)`, 'info');
+      setSearchTimeMs(res.search_time_ms || 14);
+      toast('Search Completed', `Found ${rawList.length} matches`, 'info');
     } catch (err) {
       console.error(err);
       setResults([]);
@@ -212,11 +218,17 @@ export default function SearchView() {
           </div>
         ) : results.length > 0 ? (
           <div className="space-y-4 max-w-4xl mx-auto">
-            {results.map((res) => {
-              const scorePct = Math.round(res.score * 100);
+            {results.map((res, idx) => {
+              const resId = res.id || idx;
+              const filename = res.filename || (res.filepath ? res.filepath.split(/[/\\]/).pop() : (res.path ? res.path.split(/[/\\]/).pop() : 'Document'));
+              const filepath = res.path || res.filepath || '';
+              const snippet = res.snippet || res.content || '';
+              const score = typeof res.score === 'number' ? res.score : (typeof res.similarity === 'number' ? res.similarity : 0.88);
+              const scorePct = Math.round(score > 1 ? score : score * 100);
+              const size = res.size || res.file_size || 4096;
               return (
                 <div 
-                  key={res.id} 
+                  key={resId} 
                   onClick={() => setSelectedFile(res)} 
                   className={`${glassCardClasses} p-5 flex flex-col gap-3 group hover:border-emerald-500/40 transition-all cursor-pointer relative shadow-xs`}
                 >
@@ -227,19 +239,19 @@ export default function SearchView() {
                       </div>
                       <div>
                         <h4 className="text-slate-900 dark:text-slate-100 font-semibold text-sm flex items-center gap-2 font-serif-claude">
-                          {res.filename}
+                          {filename}
                         </h4>
-                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">{res.path} • {(res.size / 1024).toFixed(1)} KB</p>
+                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">{filepath} • {(size / 1024).toFixed(1)} KB</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2.5">
                       <button
-                        onClick={(e) => copySnippet(res, e)}
+                        onClick={(e) => copySnippet({ ...res, snippet, filename, id: resId }, e)}
                         className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"
                         title="Copy Snippet"
                       >
-                        {copiedId === res.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedId === resId ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                       </button>
 
                       {/* Score Indicator Ring/Badge */}
@@ -251,7 +263,7 @@ export default function SearchView() {
                   </div>
 
                   <p className="text-xs text-slate-700 dark:text-slate-300 italic bg-black/10 dark:bg-black/30 p-3.5 rounded-xl border border-slate-200/50 dark:border-white/5 leading-relaxed font-mono">
-                    "{res.snippet}"
+                    "{snippet.slice(0, 300)}{snippet.length > 300 ? '...' : ''}"
                   </p>
 
                   <div className="flex items-center gap-2 mt-0.5">

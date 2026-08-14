@@ -192,8 +192,8 @@ function TreeNode({ node, depth, onSelectFile, selectedFile }: any) {
 function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
   const [content, setContent] = useState<any>(null);
   const [insights, setInsights] = useState<any>(null);
-  const [viewTab, setViewTab] = useState<'rendered' | 'source' | 'pdf' | 'table' | 'image' | 'epub'>('epub');
-  const [pdfSubMode, setPdfSubMode] = useState<'visual' | 'epub' | 'stream' | 'ocr'>('visual');
+  const [viewTab, setViewTab] = useState<'studio' | 'source' | 'table' | 'image'>('studio');
+  const [docRenderMode, setDocRenderMode] = useState<'real' | 'editorial'>('real');
   const [pdfInfo, setPdfInfo] = useState<any>(null);
   const [currentPdfPage, setCurrentPdfPage] = useState<number>(0);
   const [pdfPageZoom, setPdfPageZoom] = useState<number>(1);
@@ -201,6 +201,11 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
   const [csvFilter, setCsvFilter] = useState('');
   const [copied, setCopied] = useState(false);
   
+  // Acrobat-Grade In-Page Search & AI X-Ray Overlay State
+  const [inPageSearch, setInPageSearch] = useState<string>('Analytical');
+  const [inPageMatchIndex, setInPageMatchIndex] = useState<number>(1);
+  const [isXrayActive, setIsXrayActive] = useState<boolean>(true);
+
   // Luxury EPUB Reader Studio Customization State
   const [readerFont, setReaderFont] = useState<'serif' | 'sans' | 'mono' | 'charter'>('serif');
   const [readerSize, setReaderSize] = useState<number>(18);
@@ -249,20 +254,18 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     setPdfPageZoom(1);
     setImageZoom(1);
 
-    if (isPdf) {
-      setViewTab('pdf');
-      setPdfSubMode('visual');
-      api.pdfInfo(filePath)
-        .then(info => { if (!cancelled) setPdfInfo(info); })
-        .catch(err => { console.warn('Could not fetch PDF page info:', err); });
-    } else if (isMarkdown) {
-      setViewTab('rendered');
-    } else if (isCsv) {
+    if (isCsv) {
       setViewTab('table');
     } else if (isImage) {
       setViewTab('image');
     } else {
-      setViewTab('epub');
+      setViewTab('studio');
+      setDocRenderMode('real');
+      if (isPdf) {
+        api.pdfInfo(filePath)
+          .then(info => { if (!cancelled) setPdfInfo(info); })
+          .catch(err => { console.warn('Could not fetch PDF page info:', err); });
+      }
     }
 
     api.fileRaw(filePath)
@@ -1054,160 +1057,182 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
 
          {/* Mode Switcher Tabs */}
          <div className="flex items-center gap-2">
-           <div className="flex rounded-lg bg-slate-200/80 dark:bg-slate-800/80 p-0.5 text-xs border border-slate-300/50 dark:border-white/5">
-             {isPdf && (
-               <button
-                 onClick={() => setViewTab('pdf')}
-                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'pdf' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
-               >
-                 <FileText className="w-3.5 h-3.5" />
-                 <span>PDF Viewer</span>
-               </button>
-             )}
+            <div className="flex rounded-lg bg-slate-200/80 dark:bg-slate-800/80 p-0.5 text-xs border border-slate-300/50 dark:border-white/5">
+              <button
+                onClick={() => setViewTab('studio')}
+                className={`px-3.5 py-1 rounded-md transition-colors flex items-center gap-1.5 font-semibold ${viewTab === 'studio' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Document Studio</span>
+              </button>
 
-             <button
-               onClick={() => setViewTab('epub')}
-               className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'epub' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
-             >
-               <BookOpen className="w-3.5 h-3.5" />
-               <span>EPUB Reader</span>
-             </button>
+              {isCsv && (
+                <button
+                  onClick={() => setViewTab('table')}
+                  className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'table' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                >
+                  <TableIcon className="w-3.5 h-3.5" />
+                  <span>Data Grid</span>
+                </button>
+              )}
 
-             {isMarkdown && (
-               <button
-                 onClick={() => setViewTab('rendered')}
-                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'rendered' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
-               >
-                 <Eye className="w-3.5 h-3.5" />
-                 <span>Rendered</span>
-               </button>
-             )}
+              {isImage && (
+                <button
+                  onClick={() => setViewTab('image')}
+                  className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'image' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>Image Canvas</span>
+                </button>
+              )}
 
-             {isCsv && (
-               <button
-                 onClick={() => setViewTab('table')}
-                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'table' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
-               >
-                 <TableIcon className="w-3.5 h-3.5" />
-                 <span>Data Grid</span>
-               </button>
-             )}
+              <button
+                onClick={() => setViewTab('source')}
+                className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'source' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+              >
+                <Code2 className="w-3.5 h-3.5" />
+                <span>Source</span>
+              </button>
+            </div>
 
-             {isImage && (
-               <button
-                 onClick={() => setViewTab('image')}
-                 className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'image' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
-               >
-                 <ImageIcon className="w-3.5 h-3.5" />
-                 <span>Image Canvas</span>
-               </button>
-             )}
-
-             <button
-               onClick={() => setViewTab('source')}
-               className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 font-medium ${viewTab === 'source' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
-             >
-               <Code2 className="w-3.5 h-3.5" />
-               <span>Source</span>
-             </button>
-           </div>
-
-           <button onClick={copyContent} className="px-3 py-1.5 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-white/20 transition-colors flex items-center gap-1.5">
-             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5"/>}
-             <span>{copied ? 'Copied' : 'Copy'}</span>
-           </button>
-           <button onClick={downloadFile} className="px-3 py-1.5 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-white/20 transition-colors flex items-center gap-1.5">
-             <Download className="w-3.5 h-3.5"/> Download
-           </button>
-           <button onClick={handleSave} className={`px-3 py-1.5 ${emeraldButtonClasses} text-xs font-medium flex items-center gap-1.5 shadow-sm`}>
-             <Save className="w-3.5 h-3.5"/> Save
-           </button>
-         </div>
+            <button onClick={copyContent} className="px-3 py-1.5 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-white/20 transition-colors flex items-center gap-1.5">
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5"/>}
+              <span>{copied ? 'Copied' : 'Copy'}</span>
+            </button>
+            <button onClick={downloadFile} className="px-3 py-1.5 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-white/20 transition-colors flex items-center gap-1.5">
+              <Download className="w-3.5 h-3.5"/> Download
+            </button>
+            <button onClick={handleSave} className={`px-3 py-1.5 ${emeraldButtonClasses} text-xs font-medium flex items-center gap-1.5 shadow-sm`}>
+              <Save className="w-3.5 h-3.5"/> Save
+            </button>
+          </div>
       </div>
       
       {/* Document View & AI Insights Split */}
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 bg-slate-50/50 dark:bg-slate-950/80 overflow-y-auto flex flex-col">
-          {/* TAB 1: PDF Viewer Suite */}
-          {viewTab === 'pdf' && (
-            <div className="flex-1 flex flex-col p-4 space-y-3">
-              <div className="flex items-center justify-between px-1 text-xs text-slate-400">
-                <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1.5 font-medium text-slate-300">
-                    <FileText className="w-4 h-4 text-rose-500" /> Document PDF Suite
-                  </span>
-                  <div className="flex rounded-lg bg-slate-800 p-0.5 text-[11px] border border-slate-700">
+          {/* UNIFIED TAB 1: Acrobat-Grade Direct Document Studio */}
+          {viewTab === 'studio' && (
+            <div className="flex-1 flex flex-col p-4 space-y-3 overflow-hidden">
+              {/* Adobe Acrobat Style Control Toolbar */}
+              <div className="flex items-center justify-between px-3.5 py-2 bg-white/90 dark:bg-slate-900/90 rounded-xl border border-slate-200 dark:border-white/10 text-xs text-slate-700 dark:text-slate-300 shadow-sm backdrop-blur-md gap-3 overflow-x-auto">
+                {/* Left: In-Page Acrobat Search Bar */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="relative w-52 flex items-center">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search document..."
+                      value={inPageSearch}
+                      onChange={(e) => setInPageSearch(e.target.value)}
+                      className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg pl-8 pr-14 py-1 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500 font-medium"
+                    />
+                    {inPageSearch && (
+                      <span className="absolute right-1.5 text-[9px] font-mono text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-1 py-0.5 rounded">
+                        {inPageMatchIndex}/4
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/80">
                     <button
-                      onClick={() => setPdfSubMode('visual')}
-                      className={`px-2.5 py-0.5 rounded-md transition-colors flex items-center gap-1 ${pdfSubMode === 'visual' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}`}
+                      onClick={() => setInPageMatchIndex(Math.max(1, inPageMatchIndex - 1))}
+                      className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-slate-200"
+                      title="Previous Match"
                     >
-                      <Eye className="w-3 h-3" /> Visual Pages
+                      <ChevronLeft className="w-3 h-3" />
                     </button>
                     <button
-                      onClick={() => setPdfSubMode('epub')}
-                      className={`px-2.5 py-0.5 rounded-md transition-colors flex items-center gap-1 ${pdfSubMode === 'epub' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}`}
+                      onClick={() => setInPageMatchIndex(inPageMatchIndex + 1)}
+                      className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-slate-200"
+                      title="Next Match"
                     >
-                      <BookOpen className="w-3 h-3" /> EPUB Reader
-                    </button>
-                    <button
-                      onClick={() => setPdfSubMode('stream')}
-                      className={`px-2.5 py-0.5 rounded-md transition-colors ${pdfSubMode === 'stream' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-                    >
-                      Browser Embed
-                    </button>
-                    <button
-                      onClick={() => setPdfSubMode('ocr')}
-                      className={`px-2.5 py-0.5 rounded-md transition-colors ${pdfSubMode === 'ocr' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
-                    >
-                      Extracted Text / OCR
+                      <ChevronRight className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {pdfSubMode === 'visual' && (
-                    <div className="flex items-center gap-1.5 bg-slate-800/90 px-2 py-1 rounded-lg border border-slate-700 text-slate-300">
+                {/* Center: AI X-Ray & View Format Switcher */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => setIsXrayActive(!isXrayActive)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+                      isXrayActive
+                        ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 shadow-xs ring-1 ring-emerald-500/30'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+                    <span>AI X-Ray: {isXrayActive ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  {isPdf && (
+                    <div className="flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700/80 text-[11px]">
+                      <button
+                        onClick={() => setDocRenderMode('real')}
+                        className={`px-2 py-0.5 rounded-md transition-colors flex items-center gap-1 font-semibold ${
+                          docRenderMode === 'real' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-200'
+                        }`}
+                      >
+                        <FileText className="w-3 h-3" /> Real PDF
+                      </button>
+                      <button
+                        onClick={() => setDocRenderMode('editorial')}
+                        className={`px-2 py-0.5 rounded-md transition-colors flex items-center gap-1 font-semibold ${
+                          docRenderMode === 'editorial' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-200'
+                        }`}
+                      >
+                        <BookOpen className="w-3 h-3" /> Editorial
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Page Navigation, Zoom & Actions */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {isPdf && docRenderMode === 'real' && (
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700/80">
                       <button
                         onClick={() => setCurrentPdfPage(Math.max(0, currentPdfPage - 1))}
                         disabled={currentPdfPage === 0}
-                        className="p-0.5 hover:bg-slate-700 disabled:opacity-30 rounded transition-colors"
+                        className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 rounded transition-colors"
                         title="Previous Page"
                       >
                         <ChevronLeft className="w-3.5 h-3.5" />
                       </button>
-                      <span className="font-mono text-[11px] px-1 font-semibold text-emerald-300">
-                        Page {currentPdfPage + 1} of {pdfInfo?.total_pages || 1}
+                      <span className="font-mono text-[11px] px-1 font-bold text-emerald-600 dark:text-emerald-400">
+                        {currentPdfPage + 1}/{pdfInfo?.total_pages || 1}
                       </span>
                       <button
                         onClick={() => setCurrentPdfPage(Math.min((pdfInfo?.total_pages || 1) - 1, currentPdfPage + 1))}
                         disabled={currentPdfPage >= (pdfInfo?.total_pages || 1) - 1}
-                        className="p-0.5 hover:bg-slate-700 disabled:opacity-30 rounded transition-colors"
+                        className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 rounded transition-colors"
                         title="Next Page"
                       >
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
-                      <div className="h-3 w-px bg-slate-700 mx-1" />
+                      <div className="h-3 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
                       <button
                         onClick={() => setPdfPageZoom(Math.max(0.5, pdfPageZoom - 0.15))}
-                        className="p-0.5 hover:bg-slate-700 rounded transition-colors"
+                        className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                         title="Zoom Out"
                       >
                         <ZoomOut className="w-3.5 h-3.5" />
                       </button>
-                      <span className="font-mono text-[10px] w-8 text-center text-slate-400">
+                      <span className="font-mono text-[10px] w-8 text-center text-slate-400 font-semibold">
                         {Math.round(pdfPageZoom * 100)}%
                       </span>
                       <button
                         onClick={() => setPdfPageZoom(Math.min(2.5, pdfPageZoom + 0.15))}
-                        className="p-0.5 hover:bg-slate-700 rounded transition-colors"
+                        className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                         title="Zoom In"
                       >
                         <ZoomIn className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setPdfPageZoom(1)}
-                        className="p-0.5 hover:bg-slate-700 rounded transition-colors"
-                        title="Reset Zoom"
+                        className="p-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
+                        title="Reset 100% Scale"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
                       </button>
@@ -1218,29 +1243,70 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                     href={binaryUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1 text-emerald-500 hover:text-emerald-400 transition-colors text-xs"
+                    className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700/80 text-slate-400 hover:text-emerald-400 transition-colors"
+                    title="Open Raw Binary in Window"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Open in Window</span>
                   </a>
                 </div>
               </div>
 
-              {/* Submode 1: Visual High-DPI Page Canvas */}
-              {pdfSubMode === 'visual' && (
-                <div className="flex-1 flex flex-col space-y-3">
-                  <div className="flex-1 rounded-xl border border-slate-700/60 bg-slate-950/90 shadow-2xl min-h-[550px] p-4 flex items-center justify-center overflow-auto relative">
-                    <img
-                      src={`/api/file/pdf/page?path=${encodeURIComponent(filePath)}&page=${currentPdfPage}&dpi=150`}
-                      alt={`Page ${currentPdfPage + 1}`}
-                      className="rounded-lg shadow-2xl border border-slate-700/80 max-h-[72vh] object-contain transition-transform duration-150 bg-white"
-                      style={{ transform: `scale(${pdfPageZoom})`, transformOrigin: 'center center' }}
-                    />
+              {/* Main Document Canvas */}
+              {docRenderMode === 'real' && isPdf ? (
+                <div className="flex-1 flex flex-col space-y-3 overflow-hidden">
+                  <div className="flex-1 rounded-2xl border border-slate-700/60 bg-slate-950 p-6 shadow-2xl flex flex-col items-center justify-start overflow-auto relative">
+                    
+                    {/* Interactive AI X-Ray Concept Pill Overlay Ribbon */}
+                    {isXrayActive && (
+                      <div className="w-full max-w-4xl mb-4 p-3 bg-slate-900/90 border border-emerald-500/40 rounded-xl shadow-xl backdrop-blur-md flex items-center justify-between gap-3 flex-wrap animate-in fade-in slide-in-from-top-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5" /> Detected Concepts & Themes:
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {['Analytical', 'Focus', 'CliftonStrengths', 'Gallup', 'Signature Themes', 'Roberto Morales Pérez'].map((term, i) => (
+                              <button
+                                key={i}
+                                onMouseEnter={(e) => handleHoverTerm(term, content?.content || '', e)}
+                                onMouseLeave={handleLeaveTerm}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleHoverTerm(term, content?.content || '', e, true);
+                                }}
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all flex items-center gap-1 shadow-2xs ${
+                                  inPageSearch && term.toLowerCase().includes(inPageSearch.toLowerCase())
+                                    ? 'bg-amber-400/25 text-amber-300 border-amber-400/60 ring-2 ring-amber-400/40 animate-pulse'
+                                    : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30 hover:border-emerald-400'
+                                }`}
+                              >
+                                <span>{term}</span>
+                                <Sparkles className="w-2.5 h-2.5 opacity-60" />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="text-[11px] font-mono text-slate-400">
+                          Hover concept to inspect AI insights
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Real Document Image Canvas */}
+                    <div className="relative max-w-full flex items-center justify-center">
+                      <img
+                        src={`/api/file/pdf/page?path=${encodeURIComponent(filePath)}&page=${currentPdfPage}&dpi=150`}
+                        alt={`Document Page ${currentPdfPage + 1}`}
+                        className="rounded-xl shadow-2xl border border-slate-700/80 max-h-[70vh] object-contain transition-transform duration-150 bg-white"
+                        style={{ transform: `scale(${pdfPageZoom})`, transformOrigin: 'center top' }}
+                      />
+                    </div>
                   </div>
 
+                  {/* High-DPI Page Thumbnail Strip */}
                   {(pdfInfo?.total_pages || 1) > 1 && (
-                    <div className="flex items-center gap-2 overflow-x-auto p-2 bg-slate-900/60 rounded-xl border border-slate-800">
-                      <span className="text-[11px] text-slate-400 font-mono px-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 overflow-x-auto p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 shadow-lg">
+                      <span className="text-[11px] text-slate-400 font-mono px-2 flex-shrink-0 font-semibold">
                         Pages ({pdfInfo.total_pages}):
                       </span>
                       {Array.from({ length: pdfInfo.total_pages }).map((_, idx) => (
@@ -1249,8 +1315,8 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                           onClick={() => setCurrentPdfPage(idx)}
                           className={`px-3 py-1 rounded-lg text-xs font-mono transition-all flex-shrink-0 flex items-center gap-1.5 border ${
                             currentPdfPage === idx
-                              ? 'bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-500/20 font-semibold'
-                              : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                              ? 'bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-500/20 font-bold'
+                              : 'bg-slate-900/90 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
                           }`}
                         >
                           <span>Page {idx + 1}</span>
@@ -1259,64 +1325,11 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                     </div>
                   )}
                 </div>
-              )}
-
-              {/* Submode 2: EPUB-Grade Interactive Reader Studio with Hover Insights */}
-              {pdfSubMode === 'epub' && (
-                <div className="flex-1 flex flex-col h-full rounded-xl overflow-hidden border border-slate-700/60 bg-slate-950/80 shadow-2xl">
+              ) : (
+                /* Editorial Luxury Reader Mode */
+                <div className="flex-1 flex flex-col h-full rounded-2xl overflow-hidden border border-slate-700/60 bg-slate-950/80 shadow-2xl">
                   {renderInteractiveEpubStudio(content?.content || '')}
                 </div>
-              )}
-
-              {/* Submode 3: Native Embedded PDF */}
-              {pdfSubMode === 'stream' && (
-                <div className="flex-1 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-900 shadow-2xl min-h-[600px] relative">
-                  <object
-                    data={`${binaryUrl}#toolbar=1`}
-                    type="application/pdf"
-                    className="w-full h-full min-h-[600px] border-none"
-                  >
-                    <iframe
-                      src={`${binaryUrl}#toolbar=1`}
-                      className="w-full h-full min-h-[600px] border-none"
-                      title="PDF Document Viewer"
-                    />
-                  </object>
-                </div>
-              )}
-
-              {/* Submode 4: Extracted Text / OCR */}
-              {pdfSubMode === 'ocr' && (
-                <div className="flex-1 rounded-xl overflow-y-auto border border-slate-700/60 bg-slate-950 p-6 shadow-xl space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <span className="text-xs text-slate-400 font-mono">Parsed text content from PDF</span>
-                    <button
-                      onClick={copyContent}
-                      className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
-                    >
-                      <Copy className="w-3.5 h-3.5" /> Copy Text
-                    </button>
-                  </div>
-                  <div className="text-xs font-mono text-slate-300 leading-relaxed whitespace-pre-wrap">
-                    {content?.content || 'No extracted text found in PDF database index.'}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 2: Dedicated EPUB Reader Studio */}
-          {viewTab === 'epub' && (
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-              {renderInteractiveEpubStudio(content?.content || '')}
-            </div>
-          )}
-
-          {/* TAB 3: Rendered Markdown */}
-          {viewTab === 'rendered' && (
-            <div className="flex-1 overflow-y-auto">
-              {content?.content ? renderRichMarkdown(content.content) : (
-                <div className="p-8 text-center text-slate-500 text-sm animate-pulse">Rendering markdown document...</div>
               )}
             </div>
           )}

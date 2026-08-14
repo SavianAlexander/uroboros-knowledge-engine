@@ -67,12 +67,12 @@ def main():
             elif view_id == "search":
                 search_input = page.locator("input[placeholder*='Search']").first
                 if search_input.count() > 0:
-                    search_input.fill("analytical")
+                    search_input.fill("gallup")
                     page.keyboard.press("Enter")
-                    time.sleep(2)
+                    time.sleep(4.5)  # Wait for HNSW/FTS5 search completion
 
             elif view_id == "graph":
-                time.sleep(5)  # Wait for WebGL 3D graph cluster physics simulation
+                time.sleep(6)  # Wait for WebGL 3D graph cluster physics simulation
 
             target_docs = os.path.join(docs_dir, f"{prefix}.png")
             target_artifact = os.path.join(artifact_dir, f"{prefix}.png")

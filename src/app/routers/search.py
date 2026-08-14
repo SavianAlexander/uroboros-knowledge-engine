@@ -391,10 +391,7 @@ def get_search_history_endpoint(limit: int = 20):
 
 @lru_cache(maxsize=32)
 def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: bool, db_version_key: str, cluster_max_docs: int = 100):
-    conn = get_db()
-    orig_row_factory = conn.row_factory
-    try:
-        conn.row_factory = None
+    with _infra_db.get_db_connection(_infra_db.DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT id, filepath, filename, file_size, mime_type, modified_at, content FROM files LIMIT ?",
@@ -410,8 +407,6 @@ def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: b
         else:
             max_id = 0
             tags = []
-    finally:
-        conn.row_factory = orig_row_factory
 
 
     doc_nid_list = [f"file_{i}" for i in range(max_id + 1)] if files else [""]

@@ -665,6 +665,85 @@ def detect_bloat():
     print(json.dumps(res, indent=2))
     return 0
 
+def visual_showcase_audit(repo_root="."):
+    """Audit visual screenshot assets in docs/ux_journey, check README.md image links and detect orphans."""
+    ux_dir = os.path.join(repo_root, "docs", "ux_journey")
+    readme_path = os.path.join(repo_root, "README.md")
+    script_path = os.path.join(repo_root, "scripts", "capture_ux_journey.mjs")
+    pkg_path = os.path.join(repo_root, "package.json")
+
+    has_ux_dir = os.path.isdir(ux_dir)
+    has_script = os.path.isfile(script_path)
+    has_package_json = os.path.isfile(pkg_path)
+
+    # Check package.json script
+    has_journey_script_entry = False
+    if has_package_json:
+        try:
+            with open(pkg_path, "r", encoding="utf-8", errors="ignore") as f:
+                pkg_data = json.load(f)
+            scripts = pkg_data.get("scripts", {})
+            has_journey_script_entry = "capture-journey" in scripts or "capture_journey" in scripts
+        except Exception:
+            pass
+
+    # Collect images in docs/ux_journey
+    captured_assets = []
+    if has_ux_dir:
+        for f in os.listdir(ux_dir):
+            if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif')):
+                captured_assets.append(f)
+
+    # Scan README.md for visual links
+    referenced_images = []
+    broken_links = []
+    readme_content = ""
+    if os.path.isfile(readme_path):
+        try:
+            with open(readme_path, "r", encoding="utf-8", errors="ignore") as f:
+                readme_content = f.read()
+            # Match markdown images: ![alt](path)
+            md_links = re.findall(r'!\[.*?\]\((.*?)\)', readme_content)
+            # Match html img tags: <img src="path"
+            html_links = re.findall(r'<img[^>]+src=["\']([^"\']+)["\']', readme_content)
+            all_links = md_links + html_links
+            for link in all_links:
+                clean_link = link.split('#')[0].split('?')[0].strip()
+                if clean_link.startswith(('http://', 'https://', 'data:')):
+                    continue
+                referenced_images.append(clean_link)
+                norm_target = os.path.normpath(os.path.join(repo_root, clean_link))
+                if not os.path.exists(norm_target):
+                    broken_links.append(clean_link)
+        except Exception as e:
+            broken_links.append(f"README parse error: {str(e)}")
+
+    # Detect orphan screenshots in docs/ux_journey
+    orphan_assets = []
+    if has_ux_dir and os.path.isfile(readme_path):
+        for asset in captured_assets:
+            rel_path = f"docs/ux_journey/{asset}"
+            if asset not in readme_content and rel_path not in readme_content:
+                orphan_assets.append(rel_path)
+
+    res = {
+        "status": "success",
+        "has_ux_journey_dir": has_ux_dir,
+        "has_capture_script": has_script,
+        "has_package_script_entry": has_journey_script_entry,
+        "captured_assets_count": len(captured_assets),
+        "captured_assets": captured_assets,
+        "referenced_images_count": len(referenced_images),
+        "broken_links_count": len(broken_links),
+        "broken_links": broken_links,
+        "orphan_assets_count": len(orphan_assets),
+        "orphan_assets": orphan_assets,
+        "healthy": len(broken_links) == 0
+    }
+    print(json.dumps(res, indent=2))
+    return 0
+
+
 def dashboard():
     """Render executive ASCII terminal dashboard summarizing workspace state & Tri-Engine status."""
     branch, _, _ = run_cmd("git rev-parse --abbrev-ref HEAD")
@@ -1341,13 +1420,17 @@ def self_test():
     exp_test = json.loads(explain_line(test_line_file, 10))
     assert exp_test.get("status") == "success", f"explain_line failed: {exp_test}"
     print(f"  [Pass] explain_line assertion clean")
+    # 20. Test visual_showcase_audit execution
+    v_res = visual_showcase_audit()
+    assert v_res == 0, "visual_showcase_audit returned error code"
+    print("  [Pass] visual_showcase_audit assertion clean")
         
     print("=====================================================")
     print("Self-Test Complete: ALL ASSERTIONS PASSED (100% Success)")
     return 0
 
 def main():
-    parser = argparse.ArgumentParser(description="Neuro Co-Pilot GitHub Bridge Enterprise CLI (30-Command Cognitive Suite)")
+    parser = argparse.ArgumentParser(description="Neuro Co-Pilot GitHub Bridge Enterprise CLI (31-Command Cognitive Suite)")
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("check_health", help="Verify git, gh auth, Actions, and repo state")
@@ -1375,6 +1458,7 @@ def main():
     subparsers.add_parser("audit_skills", help="Validate YAML frontmatter & integrity of workspace skills")
     subparsers.add_parser("audit_security_dependencies", help="Scan dependency manifests for unpinned or risky packages")
     subparsers.add_parser("detect_bloat", help="Audit Python codebase for deep nesting (>=5 levels) & over-engineering")
+    subparsers.add_parser("visual_showcase_audit", help="Audit docs/ux_journey screenshots, README visual links, and orphan assets")
     subparsers.add_parser("dashboard", help="Render executive ASCII terminal dashboard")
     subparsers.add_parser("tri_engine_health", help="Run unified 4-engine executive health diagnostic")
     subparsers.add_parser("run_full_pipeline", help="Execute 1-click full Tri-Engine pipeline")
@@ -1481,6 +1565,8 @@ def main():
         sys.exit(audit_security_dependencies())
     elif args.command == "detect_bloat":
         sys.exit(detect_bloat())
+    elif args.command == "visual_showcase_audit":
+        sys.exit(visual_showcase_audit())
     elif args.command == "dashboard":
         sys.exit(dashboard())
     elif args.command == "run_full_pipeline":
