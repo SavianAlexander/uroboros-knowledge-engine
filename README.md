@@ -1,17 +1,16 @@
 # Uroboros Knowledge Database Engine (Neuro Alexander)
 
 <p align="center">
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v1.0.0-blue.svg?style=flat-square" alt="Release v1.0.0" /></a>
   <img src="https://img.shields.io/github/actions/workflow/status/SavianAlexander/uroboros-knowledge-engine/build.yml?branch=master&style=flat-square" alt="Build Status" />
+  <img src="https://img.shields.io/badge/Crucible%20Security-100%25%20Trust-emerald?style=flat-square" alt="Crucible 100% Trust" />
+  <img src="https://img.shields.io/badge/Tududi%20Task%20Master-Connected%20Project%20%2313-blue?style=flat-square" alt="Tududi Project #13" />
+  <a href="docs/soc2_type2_attestation.md"><img src="https://img.shields.io/badge/SOC%202%20Type%20II-Verified-green.svg?style=flat-square" alt="SOC 2 Type II" /></a>
   <img src="https://img.shields.io/github/license/SavianAlexander/uroboros-knowledge-engine?style=flat-square" alt="License" />
-
   <img src="https://img.shields.io/badge/python-3.12-blue.svg?style=flat-square" alt="Python Version" />
-  <img src="https://img.shields.io/badge/FastAPI-0.111.0-teal.svg?style=flat-square" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/React-19.0.1-61dafb.svg?style=flat-square" alt="React" />
+  <img src="https://img.shields.io/badge/FastAPI-0.141.1-teal.svg?style=flat-square" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-19.2.8-61dafb.svg?style=flat-square" alt="React" />
   <img src="https://img.shields.io/badge/SQLite-FTS5-orange.svg?style=flat-square" alt="SQLite" />
-  <img src="https://img.shields.io/badge/SOTA%20Engines-32-purple.svg?style=flat-square" alt="32 SOTA Engines" />
-  <img src="https://img.shields.io/badge/Frontier%20Paradigms-13-magenta.svg?style=flat-square" alt="13 Frontier Paradigms" />
-  <img src="https://img.shields.io/badge/RAG%20Innovations-21-indigo.svg?style=flat-square" alt="21 RAG Innovations" />
-  <img src="https://img.shields.io/badge/Domain%20Modules-135-blue.svg?style=flat-square" alt="135 Domain Modules" />
   <img src="https://img.shields.io/badge/Test%20Suites-98-emerald.svg?style=flat-square" alt="98 Test Suites" />
   <img src="https://img.shields.io/badge/test%20pass%20rate-100%25-brightgreen.svg?style=flat-square" alt="Test Pass Rate" />
   <img src="https://img.shields.io/badge/code%20style-ponytail-indigo?style=flat-square" alt="Code Style" />

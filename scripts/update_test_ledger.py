@@ -79,7 +79,18 @@ FILE_DOMAIN_MAPPING = {
     "src/domain/legal_accuracy_engine.py": ["DomainSOTARAG"],
     "tests/test_domain_sota_rag.py": ["DomainSOTARAG"],
     "src/mcp_server.py": ["DomainMCPServer"],
-    "tests/test_domain_mcp_server.py": ["DomainMCPServer"]
+    "tests/test_domain_mcp_server.py": ["DomainMCPServer"],
+    "src/domain/knowledge_self_healing.py": ["DomainCatastrophicRecovery"],
+    "tests/test_domain_catastrophic_recovery.py": ["DomainCatastrophicRecovery"],
+    "src/core/auth_jwt.py": ["DomainAuthSecurityHardening"],
+    "tests/test_domain_auth_security_hardening.py": ["DomainAuthSecurityHardening"],
+    "src/domain/thread_watchdog.py": ["DomainResourceStability"],
+    "src/infrastructure/system_stability_guard.py": ["DomainResourceStability"],
+    "tests/test_domain_resource_stability.py": ["DomainResourceStability"],
+    "src/domain/hallucination_guard.py": ["DomainHallucinationGuardrails"],
+    "src/domain/contradiction_resolver.py": ["DomainHallucinationGuardrails"],
+    "src/domain/vector_health_monitor.py": ["DomainHallucinationGuardrails"],
+    "tests/test_domain_hallucination_guardrails.py": ["DomainHallucinationGuardrails"]
 }
 
 DOMAIN_TEST_MODULES = [
@@ -122,10 +133,40 @@ DOMAIN_TEST_MODULES = [
     "tests.test_domain_sla_caching",
     "tests.test_domain_agent_consensus",
     "tests.test_domain_sota_rag",
-    "tests.test_domain_mcp_server"
+    "tests.test_domain_mcp_server",
+    "tests.test_domain_catastrophic_recovery",
+    "tests.test_domain_auth_security_hardening",
+    "tests.test_domain_resource_stability",
+    "tests.test_domain_hallucination_guardrails"
 ]
 
 BUG_RELATION_TAXONOMY = {
+    "DomainCatastrophicRecovery": [
+        {"test": "test_01_corrupted_sqlite_header_detection_and_recovery", "component": "src/infrastructure/database.py", "prevents": "Unrecoverable crash on corrupted SQLite database header"},
+        {"test": "test_02_orphaned_chunks_pruning", "component": "src/domain/knowledge_self_healing.py", "prevents": "Orphaned database chunk bloat and ghost search hits"},
+        {"test": "test_03_broken_wikilink_cross_reference_audit", "component": "src/domain/knowledge_self_healing.py", "prevents": "Silent knowledge graph broken cross-references"},
+        {"test": "test_04_fts5_index_desynchronization_rebuild", "component": "src/domain/knowledge_self_healing.py", "prevents": "Desynchronized FTS5 full-text search index"},
+        {"test": "test_07_partial_transaction_rollback_on_crash", "component": "src/infrastructure/database.py", "prevents": "Half-written corrupt state upon unhandled transaction exception"}
+    ],
+    "DomainAuthSecurityHardening": [
+        {"test": "test_02_jwt_alg_none_injection_rejection", "component": "src/core/auth_jwt.py", "prevents": "Critical 'alg: none' JWT signature bypass authentication vulnerability"},
+        {"test": "test_03_jwt_tampered_payload_signature_mismatch", "component": "src/core/auth_jwt.py", "prevents": "In-flight JWT payload claim tampering and privilege escalation"},
+        {"test": "test_04_jwt_expired_token_rejection", "component": "src/core/auth_jwt.py", "prevents": "Stale expired session replay attacks"},
+        {"test": "test_07_multi_tenant_user_id_document_filtering", "component": "src/domain/acl_permission_engine.py", "prevents": "Cross-tenant document data leaks"},
+        {"test": "test_09_timing_attack_resilient_signature_comparison", "component": "src/core/auth_jwt.py", "prevents": "Side-channel timing attack on HMAC signature verification"}
+    ],
+    "DomainResourceStability": [
+        {"test": "test_01_thread_watchdog_daemon_enforcement", "component": "src/domain/thread_watchdog.py", "prevents": "Zombie background thread accumulation and process shutdown hangs"},
+        {"test": "test_02_thread_watchdog_shutdown_all_workers", "component": "src/domain/thread_watchdog.py", "prevents": "Worker thread termination timeout deadlocks"},
+        {"test": "test_03_system_stability_gc_collect_and_memory_footprint", "component": "src/infrastructure/system_stability_guard.py", "prevents": "Memory leaks and high RAM working set consumption"},
+        {"test": "test_06_connection_pool_depletion_resistance", "component": "src/infrastructure/database.py", "prevents": "SQLite file descriptor exhaustion under rapid connection cycling"}
+    ],
+    "DomainHallucinationGuardrails": [
+        {"test": "test_01_hallucination_zero_coverage_refusal", "component": "src/domain/hallucination_guard.py", "prevents": "AI hallucination generation when zero vault passages match"},
+        {"test": "test_02_hallucination_low_coverage_refusal_threshold", "component": "src/domain/hallucination_guard.py", "prevents": "Low-confidence retrieval hallucination leakage"},
+        {"test": "test_04_vault_contradiction_detection_negation_conflict", "component": "src/domain/contradiction_resolver.py", "prevents": "Silent factual contradictions between vault documents"},
+        {"test": "test_06_vector_health_monitor_coverage_computation", "component": "src/domain/vector_health_monitor.py", "prevents": "Un-embedded document drift in vector index"}
+    ],
     "DomainCodeAST": [
         {"test": "test_01_ast_extract_classes_and_functions", "component": "src/domain/code_ast_extractor.py", "prevents": "AST extraction failure on class/function definitions"},
         {"test": "test_02_ast_cyclomatic_complexity_calculation", "component": "src/domain/code_ast_extractor.py", "prevents": "Incorrect cyclomatic complexity scoring"},

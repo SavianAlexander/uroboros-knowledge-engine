@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ViewId, AppState } from '../types';
 
 interface AppContextType extends AppState {
@@ -12,7 +12,14 @@ interface AppContextType extends AppState {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [activeView, setActiveView] = useState<ViewId>('dashboard');
+  const [activeView, setActiveViewState] = useState<ViewId>(() => {
+    const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
+    if (['dashboard', 'workspace', 'search', 'ingestion', 'graph', 'chat', 'config', 'settings'].includes(hash)) {
+      return hash as ViewId;
+    }
+    return 'dashboard';
+  });
+
   const [theme, setThemeState] = useState<'dark' | 'light'>(() => {
     return (localStorage.getItem('uroboros_theme') as 'dark' | 'light') || 'dark';
   });
@@ -21,6 +28,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeWorkspace, setActiveWorkspaceState] = useState(() => {
     return localStorage.getItem('uroboros_workspace') || 'Default';
   });
+
+  const setActiveView = (v: ViewId) => {
+    setActiveViewState(v);
+    window.location.hash = `#/${v}`;
+  };
+
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
+      if (['dashboard', 'workspace', 'search', 'ingestion', 'graph', 'chat', 'config', 'settings'].includes(hash)) {
+        setActiveViewState(hash as ViewId);
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   const setTheme = (t: 'dark' | 'light') => {
     setThemeState(t);

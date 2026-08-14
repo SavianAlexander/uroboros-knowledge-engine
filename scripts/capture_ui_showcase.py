@@ -39,8 +39,10 @@ def main():
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
 
+        page.on("pageerror", lambda err: print(f"[PAGE ERROR] {err}"))
+        page.on("console", lambda msg: print(f"[CONSOLE] {msg.text}") if msg.type in ("error", "warning") else None)
+
         page.goto(f"http://127.0.0.1:{port}/")
-        page.wait_for_selector("button[data-tab='dashboard']", timeout=15000)
         time.sleep(2)
 
         views = [
@@ -55,40 +57,20 @@ def main():
         ]
 
         for prefix, view_id in views:
-            print(f"Capturing view: {view_id}...")
-            btn = page.locator(f"button[data-tab='{view_id}']").first
-            if btn.count() > 0:
-                btn.click()
+            print(f"Opening view: {view_id}...")
+            # Use sidebar click
+            sidebar_btn = page.locator(f"button[data-tab='{view_id}']").first
+            if sidebar_btn.count() > 0:
+                sidebar_btn.click()
+            else:
+                page.evaluate(f"() => window.location.hash = '#/{view_id}'")
             
-            time.sleep(1.5)
-
-            # Special actions per view to show rich state
-            if view_id == "workspace":
-                first_file = page.locator("div:has-text('.md'), div:has-text('.pdf'), div:has-text('.txt'), div:has-text('.py')").first
-                if first_file.count() > 0:
-                    first_file.click()
-                    time.sleep(1.5)
-            elif view_id == "search":
-                search_input = page.locator("input[placeholder*='Search']").first
-                if search_input.count() > 0:
-                    search_input.fill("knowledge engine")
-                    search_btn = page.locator("button:has-text('Explore'), button:has-text('Search')").first
-                    if search_btn.count() > 0:
-                        search_btn.click()
-                        time.sleep(1.5)
-            elif view_id == "chat":
-                # Open prompt enhancer or sample question
-                time.sleep(1)
-
-            target_docs = os.path.join(docs_dir, f"{prefix}.png")
-            target_artifact = os.path.join(artifact_dir, f"{prefix}.png")
-            
-            page.screenshot(path=target_docs)
-            page.screenshot(path=target_artifact)
-            print(f"Captured: {target_docs} & {target_artifact}")
+            time.sleep(2)
+            page.screenshot(path=os.path.join(docs_dir, f"{prefix}.png"))
+            page.screenshot(path=os.path.join(artifact_dir, f"{prefix}.png"))
+            print(f"Captured {prefix}.png")
 
         browser.close()
-    print("All UI showcases captured successfully!")
 
 if __name__ == "__main__":
     main()

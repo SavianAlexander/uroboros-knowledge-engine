@@ -35,7 +35,18 @@ import {
   Type,
   Palette,
   Sliders,
-  MessageSquare
+  MessageSquare,
+  AlignLeft,
+  Columns2,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  Highlighter,
+  Quote,
+  Clock,
+  Bookmark,
+  Minimize2
 } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 import { emeraldButtonClasses, emeraldBadgeClasses, goldBadgeClasses, wineBadgeClasses, slateBadgeClasses, glassCardClasses } from '../lib/utils';
@@ -175,7 +186,7 @@ function TreeNode({ node, depth, onSelectFile, selectedFile }: any) {
   );
 }
 
-function SplitWorkspace({ file, onClose }: any) {
+function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
   const [content, setContent] = useState<any>(null);
   const [insights, setInsights] = useState<any>(null);
   const [viewTab, setViewTab] = useState<'rendered' | 'source' | 'pdf' | 'table' | 'image' | 'epub'>('epub');
@@ -187,13 +198,24 @@ function SplitWorkspace({ file, onClose }: any) {
   const [csvFilter, setCsvFilter] = useState('');
   const [copied, setCopied] = useState(false);
   
-  // EPUB Reader Studio Customization State
-  const [readerFont, setReaderFont] = useState<'serif' | 'sans' | 'mono'>('serif');
-  const [readerSize, setReaderSize] = useState<number>(17);
-  const [readerTheme, setReaderTheme] = useState<'midnight' | 'sepia' | 'light' | 'nord'>('midnight');
+  // Luxury EPUB Reader Studio Customization State
+  const [readerFont, setReaderFont] = useState<'serif' | 'sans' | 'mono' | 'charter'>('serif');
+  const [readerSize, setReaderSize] = useState<number>(18);
+  const [readerTheme, setReaderTheme] = useState<'sepia' | 'midnight' | 'amber' | 'light' | 'nord'>('sepia');
   const [readerLineHeight, setReaderLineHeight] = useState<'normal' | 'comfortable' | 'loose'>('comfortable');
-  const [readerWidth, setReaderWidth] = useState<'720px' | '920px' | '100%'>('720px');
+  const [readerLayout, setReaderLayout] = useState<'single' | 'dual' | 'wide'>('single');
   const [enableKeywordInsights, setEnableKeywordInsights] = useState<boolean>(true);
+  const [zenMode, setZenMode] = useState<boolean>(false);
+  
+  // TTS Audio Read-Aloud State
+  const [ttsSpeaking, setTtsSpeaking] = useState(false);
+  const [ttsRate, setTtsRate] = useState<number>(1.0);
+  const ttsUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Text Selection Action State
+  const [selectedText, setSelectedText] = useState<string>('');
+  const [selectionPos, setSelectionPos] = useState<{ x: number; y: number } | null>(null);
+  const [highlights, setHighlights] = useState<string[]>([]);
   
   // Interactive Keyword Hover Cards State
   const [entitiesList, setEntitiesList] = useState<string[]>([]);
@@ -507,12 +529,71 @@ function SplitWorkspace({ file, onClose }: any) {
     return { headers, rows };
   }, [content, isCsv, csvFilter]);
 
+  const handleToggleTts = (paragraphs: string[]) => {
+    if (!('speechSynthesis' in window)) {
+      toast('TTS Not Supported', 'Web Speech API is not available in this browser', 'info');
+      return;
+    }
+    if (ttsSpeaking) {
+      window.speechSynthesis.cancel();
+      setTtsSpeaking(false);
+      return;
+    }
+
+    const fullText = paragraphs.join('. ');
+    const utterance = new SpeechSynthesisUtterance(fullText);
+    utterance.rate = ttsRate;
+    utterance.onstart = () => setTtsSpeaking(true);
+    utterance.onend = () => setTtsSpeaking(false);
+    utterance.onerror = () => setTtsSpeaking(false);
+    ttsUtteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+    setTtsSpeaking(true);
+    toast('Audio Read-Aloud Started', `${paragraphs.length} paragraphs queued (${ttsRate}x speed)`, 'info');
+  };
+
+  const handleMouseUpSelection = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) {
+      setSelectionPos(null);
+      setSelectedText('');
+      return;
+    }
+    const text = selection.toString().trim();
+    if (text.length > 2) {
+      try {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        setSelectedText(text);
+        setSelectionPos({
+          x: rect.left + rect.width / 2,
+          y: rect.top - 12
+        });
+      } catch {
+        setSelectionPos(null);
+        setSelectedText('');
+      }
+    } else {
+      setSelectionPos(null);
+      setSelectedText('');
+    }
+  };
+
+  const addHighlight = (text: string) => {
+    if (!text) return;
+    const next = [...highlights, text];
+    setHighlights(next);
+    setSelectionPos(null);
+    setSelectedText('');
+    toast('Highlight Added', `Saved "${text.slice(0, 30)}..." to document annotations`, 'success');
+  };
+
   const renderInteractiveEpubStudio = (text: string) => {
     if (!text) {
       return (
-        <div className="p-8 text-center text-slate-500 text-sm animate-pulse flex flex-col items-center justify-center h-full">
-          <BookOpen className="w-8 h-8 mb-2 opacity-30 text-emerald-500" />
-          <span>Loading document content in EPUB Reader Studio...</span>
+        <div className="p-12 text-center text-slate-500 text-sm animate-pulse flex flex-col items-center justify-center h-full">
+          <BookOpen className="w-10 h-10 mb-3 opacity-30 text-amber-500 animate-bounce" />
+          <span className="font-serif-claude text-base">Opening luxury reading studio...</span>
         </div>
       );
     }
@@ -522,6 +603,8 @@ function SplitWorkspace({ file, onClose }: any) {
       rawParas = cleanText.split('\n').map(p => p.trim()).filter(Boolean);
     }
     const paragraphs = rawParas;
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const readingTimeMin = Math.max(1, Math.ceil(wordCount / 200));
 
     // Combine API entities with inline extracted capital terms
     const localKeywords = new Set<string>(entitiesList);
@@ -542,114 +625,285 @@ function SplitWorkspace({ file, onClose }: any) {
     const escapedEntities = sortedEntities.map(e => e.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|');
     const regex = escapedEntities && enableKeywordInsights ? new RegExp(`\\b(${escapedEntities})\\b`, 'g') : null;
 
-    const themeStyles: { [key: string]: string } = {
-      midnight: 'bg-slate-950 text-slate-200 border-slate-800 shadow-2xl',
-      sepia: 'bg-[#fbf0d9] text-[#3d2c1d] border-[#e4d1b0] shadow-xl',
-      light: 'bg-[#fcfcfc] text-[#1a1a1a] border-slate-200 shadow-xl',
-      nord: 'bg-[#1e232a] text-[#d8dee9] border-[#2e3440] shadow-2xl'
+    // 5 Handcrafted Luxury Themes
+    const themeStyles: { [key: string]: { page: string; text: string; subtext: string; badge: string; dropcap: string; divider: string } } = {
+      sepia: {
+        page: 'bg-[#FAF7F2] text-[#2D241E] border-[#E8DFC8] shadow-2xl ring-1 ring-black/5',
+        text: 'text-[#2D241E]',
+        subtext: 'text-[#786656]',
+        badge: 'bg-[#EFE7D5] text-[#5A4634] border-[#DCD1BA] hover:bg-[#E5DAC4]',
+        dropcap: 'text-[#8B4513]',
+        divider: 'text-[#C4B59D]'
+      },
+      midnight: {
+        page: 'bg-[#0B0F17] text-[#E2E8F0] border-slate-800/80 shadow-2xl ring-1 ring-white/10',
+        text: 'text-[#E2E8F0]',
+        subtext: 'text-slate-400',
+        badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25',
+        dropcap: 'text-emerald-400',
+        divider: 'text-slate-700'
+      },
+      amber: {
+        page: 'bg-[#1F1914] text-[#E8D9C8] border-[#3E3024] shadow-2xl ring-1 ring-amber-500/10',
+        text: 'text-[#E8D9C8]',
+        subtext: 'text-[#A89480]',
+        badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25',
+        dropcap: 'text-amber-400',
+        divider: 'text-[#544335]'
+      },
+      light: {
+        page: 'bg-[#FFFFFF] text-[#1A202C] border-slate-200/90 shadow-2xl ring-1 ring-slate-900/5',
+        text: 'text-[#1A202C]',
+        subtext: 'text-slate-500',
+        badge: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200',
+        dropcap: 'text-emerald-600',
+        divider: 'text-slate-300'
+      },
+      nord: {
+        page: 'bg-[#1E222A] text-[#ECEFF4] border-[#2E3440] shadow-2xl ring-1 ring-cyan-500/10',
+        text: 'text-[#ECEFF4]',
+        subtext: 'text-[#81A1C1]',
+        badge: 'bg-[#2E3440] text-[#88C0D0] border-[#3B4252] hover:bg-[#3B4252]',
+        dropcap: 'text-[#88C0D0]',
+        divider: 'text-[#3B4252]'
+      }
     };
 
+    const curTheme = themeStyles[readerTheme] || themeStyles.sepia;
+
     const fontStyles: { [key: string]: string } = {
-      serif: 'font-serif',
-      sans: 'font-sans',
-      mono: 'font-mono'
+      serif: 'font-serif font-normal',
+      sans: 'font-sans font-normal',
+      mono: 'font-mono text-xs',
+      charter: 'font-serif-claude'
     };
 
     const lineStyles: { [key: string]: string } = {
-      normal: 'leading-normal',
-      comfortable: 'leading-relaxed',
-      loose: 'leading-loose'
+      normal: 'leading-relaxed',
+      comfortable: 'leading-[1.9]',
+      loose: 'leading-[2.2]'
     };
 
+    const layoutWidths: { [key: string]: string } = {
+      single: 'max-w-[780px]',
+      dual: 'max-w-[1360px]',
+      wide: 'max-w-[1040px]'
+    };
+
+    const renderParagraphContent = (para: string, pIdx: number) => {
+      const isFirst = pIdx === 0;
+      let textToRender = para;
+      let initialLetter = '';
+      let restOfPara = para;
+
+      if (isFirst && para.length > 3) {
+        initialLetter = para.charAt(0);
+        restOfPara = para.slice(1);
+      }
+
+      if (regex) {
+        const parts = restOfPara.split(regex);
+        return (
+          <p
+            key={pIdx}
+            className={`mb-6 text-justify text-pretty select-text ${isFirst ? 'relative' : ''}`}
+            onMouseUp={handleMouseUpSelection}
+          >
+            {isFirst && initialLetter && (
+              <span className={`float-left text-5xl lg:text-6xl font-serif font-bold mr-3 mt-1 leading-none ${curTheme.dropcap} select-none`}>
+                {initialLetter}
+              </span>
+            )}
+            {parts.map((part, idx) => {
+              const isEntity = sortedEntities.includes(part);
+              const isHighlighted = highlights.some(h => part.includes(h) || h.includes(part));
+              if (isEntity) {
+                return (
+                  <span
+                    key={idx}
+                    onMouseEnter={(e) => handleHoverTerm(part, para, e)}
+                    onMouseLeave={handleLeaveTerm}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleHoverTerm(part, para, e, true);
+                    }}
+                    className={`cursor-pointer font-semibold px-1.5 py-0.5 rounded-md border transition-all inline-flex items-center gap-0.5 mx-0.5 shadow-2xs ${curTheme.badge} ${
+                      isHighlighted ? 'ring-2 ring-amber-400 bg-amber-400/20' : ''
+                    }`}
+                  >
+                    <span>{part}</span>
+                    <Sparkles className="w-2.5 h-2.5 opacity-60 inline" />
+                  </span>
+                );
+              }
+              if (isHighlighted) {
+                return <mark key={idx} className="bg-amber-300/40 dark:bg-amber-500/30 text-inherit rounded px-1">{part}</mark>;
+              }
+              return part;
+            })}
+          </p>
+        );
+      }
+
+      return (
+        <p
+          key={pIdx}
+          className="mb-6 text-justify text-pretty select-text"
+          onMouseUp={handleMouseUpSelection}
+        >
+          {isFirst && initialLetter && (
+            <span className={`float-left text-5xl lg:text-6xl font-serif font-bold mr-3 mt-1 leading-none ${curTheme.dropcap} select-none`}>
+              {initialLetter}
+            </span>
+          )}
+          {restOfPara}
+        </p>
+      );
+    };
+
+    const midPoint = Math.ceil(paragraphs.length / 2);
+    const leftPageParas = paragraphs.slice(0, midPoint);
+    const rightPageParas = paragraphs.slice(midPoint);
+
+    const docFileName = filePath.split(/[/\\]/).pop()?.replace(/\.[^/.]+$/, '') || 'Document Studio';
+
     return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-900/40">
-        {/* EPUB Reader Studio Customization Bar */}
-        <div className="p-3 bg-white/80 dark:bg-slate-900/90 border-b border-slate-200 dark:border-white/5 flex items-center justify-between gap-3 flex-wrap text-xs text-slate-700 dark:text-slate-300 backdrop-blur-md">
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-950/60 relative">
+        {/* Luxury Studio Top Customization Bar */}
+        <div className="p-3 bg-white/90 dark:bg-slate-900/95 border-b border-slate-200/80 dark:border-white/5 flex items-center justify-between gap-3 flex-wrap text-xs text-slate-700 dark:text-slate-300 backdrop-blur-xl shadow-xs z-20">
           {/* Typography Selector */}
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+            <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400 font-serif-claude">
               <Type className="w-3.5 h-3.5" /> Typeface:
             </span>
-            <div className="flex rounded-lg bg-slate-200/80 dark:bg-slate-800/80 p-0.5 border border-slate-300 dark:border-slate-700">
+            <div className="flex rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700/60 text-xs">
               <button
                 onClick={() => setReaderFont('serif')}
-                className={`px-2.5 py-0.5 rounded-md text-xs transition-colors font-serif ${readerFont === 'serif' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                className={`px-2.5 py-1 rounded-md transition-colors font-serif ${readerFont === 'serif' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
               >
                 Editorial Serif
               </button>
               <button
+                onClick={() => setReaderFont('charter')}
+                className={`px-2.5 py-1 rounded-md transition-colors font-serif-claude ${readerFont === 'charter' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+              >
+                Classic Charter
+              </button>
+              <button
                 onClick={() => setReaderFont('sans')}
-                className={`px-2.5 py-0.5 rounded-md text-xs transition-colors font-sans ${readerFont === 'sans' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                className={`px-2.5 py-1 rounded-md transition-colors font-sans ${readerFont === 'sans' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
               >
                 Modern Sans
               </button>
               <button
                 onClick={() => setReaderFont('mono')}
-                className={`px-2.5 py-0.5 rounded-md text-xs transition-colors font-mono ${readerFont === 'mono' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
+                className={`px-2.5 py-1 rounded-md transition-colors font-mono ${readerFont === 'mono' ? 'bg-emerald-600 text-white font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
               >
                 Mono
               </button>
             </div>
           </div>
 
-          {/* Size, Spacing & Themes */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-300 dark:border-slate-700">
-              <span className="text-[11px] text-slate-500">Size:</span>
+          {/* Sizing, Layout, Themes & Audio */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Font Sizing */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700/60">
+              <span className="text-[11px] text-slate-400">Size:</span>
               <button
                 onClick={() => setReaderSize(Math.max(13, readerSize - 1))}
-                className="px-1 py-0.5 hover:bg-slate-300 dark:hover:bg-slate-700 rounded text-xs font-bold"
+                className="px-1.5 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-xs font-bold transition-colors"
+                title="Decrease Font Size"
               >
                 A-
               </button>
               <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400 w-7 text-center">{readerSize}px</span>
               <button
-                onClick={() => setReaderSize(Math.min(26, readerSize + 1))}
-                className="px-1 py-0.5 hover:bg-slate-300 dark:hover:bg-slate-700 rounded text-xs font-bold"
+                onClick={() => setReaderSize(Math.min(28, readerSize + 1))}
+                className="px-1.5 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-xs font-bold transition-colors"
+                title="Increase Font Size"
               >
                 A+
               </button>
             </div>
 
-            {/* Themes */}
-            <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs">
+            {/* Layout Mode */}
+            <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/60">
+              <button
+                onClick={() => setReaderLayout('single')}
+                className={`px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${readerLayout === 'single' ? 'bg-emerald-600 text-white shadow-xs font-semibold' : 'text-slate-500 hover:text-slate-200'}`}
+                title="Single Column Focus"
+              >
+                <AlignLeft className="w-3.5 h-3.5" /> Single
+              </button>
+              <button
+                onClick={() => setReaderLayout('dual')}
+                className={`px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${readerLayout === 'dual' ? 'bg-emerald-600 text-white shadow-xs font-semibold' : 'text-slate-500 hover:text-slate-200'}`}
+                title="Dual Page Book Spread"
+              >
+                <Columns2 className="w-3.5 h-3.5" /> Book Spread
+              </button>
+            </div>
+
+            {/* Themes Palette */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/60 text-xs">
+              <button
+                onClick={() => setReaderTheme('sepia')}
+                className={`px-2 py-1 rounded-md transition-colors ${readerTheme === 'sepia' ? 'bg-[#d8c29d] text-[#3e2714] font-bold shadow-xs' : 'text-slate-600 dark:text-slate-400'}`}
+                title="Warm Book Ivory / Sepia"
+              >
+                📜 Ivory
+              </button>
               <button
                 onClick={() => setReaderTheme('midnight')}
-                className={`px-2 py-0.5 rounded-md transition-colors ${readerTheme === 'midnight' ? 'bg-emerald-600 text-white font-semibold' : 'text-slate-600 dark:text-slate-400'}`}
-                title="OLED Midnight"
+                className={`px-2 py-1 rounded-md transition-colors ${readerTheme === 'midnight' ? 'bg-emerald-600 text-white font-bold shadow-xs' : 'text-slate-600 dark:text-slate-400'}`}
+                title="OLED Velvet Obsidian"
               >
                 🌙 Midnight
               </button>
               <button
-                onClick={() => setReaderTheme('sepia')}
-                className={`px-2 py-0.5 rounded-md transition-colors ${readerTheme === 'sepia' ? 'bg-[#d8c29d] text-[#3e2714] font-semibold' : 'text-slate-600 dark:text-slate-400'}`}
-                title="Warm Book Sepia"
+                onClick={() => setReaderTheme('amber')}
+                className={`px-2 py-1 rounded-md transition-colors ${readerTheme === 'amber' ? 'bg-[#544335] text-[#f5d7b5] font-bold shadow-xs' : 'text-slate-600 dark:text-slate-400'}`}
+                title="Vintage Amber Noir"
               >
-                📜 Sepia
+                ☕ Amber
               </button>
               <button
                 onClick={() => setReaderTheme('light')}
-                className={`px-2 py-0.5 rounded-md transition-colors ${readerTheme === 'light' ? 'bg-white text-slate-900 font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-400'}`}
-                title="Clean Editorial Light"
+                className={`px-2 py-1 rounded-md transition-colors ${readerTheme === 'light' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-600 dark:text-slate-400'}`}
+                title="Clean Editorial Studio"
               >
                 ☀️ Light
               </button>
               <button
                 onClick={() => setReaderTheme('nord')}
-                className={`px-2 py-0.5 rounded-md transition-colors ${readerTheme === 'nord' ? 'bg-[#3b4252] text-[#88c0d0] font-semibold' : 'text-slate-600 dark:text-slate-400'}`}
-                title="Nord Slate"
+                className={`px-2 py-1 rounded-md transition-colors ${readerTheme === 'nord' ? 'bg-[#3b4252] text-[#88c0d0] font-bold shadow-xs' : 'text-slate-600 dark:text-slate-400'}`}
+                title="Nordic Slate"
               >
                 ❄️ Nord
               </button>
             </div>
 
-            {/* Keyword Insights Toggle */}
+            {/* TTS Audio Read-Aloud Button */}
+            <button
+              onClick={() => handleToggleTts(paragraphs)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+                ttsSpeaking
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 animate-pulse'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/60 hover:bg-slate-200'
+              }`}
+              title="Listen to Document via Speech Synthesis"
+            >
+              {ttsSpeaking ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-500" />}
+              <span>{ttsSpeaking ? 'Stop Audio' : 'Read Aloud'}</span>
+            </button>
+
+            {/* Keyword Hover Insights Toggle */}
             <button
               onClick={() => setEnableKeywordInsights(!enableKeywordInsights)}
               className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all ${
                 enableKeywordInsights
                   ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 shadow-xs'
-                  : 'bg-slate-200/80 dark:bg-slate-800 text-slate-500 border-slate-300 dark:border-slate-700'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
@@ -659,53 +913,118 @@ function SplitWorkspace({ file, onClose }: any) {
         </div>
 
         {/* EPUB Document Reading Canvas */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-12 flex justify-center">
-          <div
-            className={`w-full max-w-[760px] p-8 md:p-14 rounded-2xl border transition-all ${themeStyles[readerTheme]} ${fontStyles[readerFont]} ${lineStyles[readerLineHeight]}`}
-            style={{ fontSize: `${readerSize}px` }}
-          >
-            <div className="border-b border-current/15 pb-4 mb-8 flex items-center justify-between opacity-80 text-xs font-mono">
-              <span className="truncate max-w-[300px] font-semibold">{filePath.split(/[/\\]/).pop()}</span>
-              <span>{paragraphs.length} Paragraphs • {entitiesList.length} Entities</span>
-            </div>
+        <div className="flex-1 overflow-y-auto p-6 md:p-12 flex justify-center items-start">
+          {readerLayout === 'dual' ? (
+            /* Dual-Page Open Book Spread */
+            <div
+              className={`w-full ${layoutWidths.dual} p-8 md:p-14 rounded-3xl border transition-all ${curTheme.page} ${fontStyles[readerFont]} ${lineStyles[readerLineHeight]} grid grid-cols-1 md:grid-cols-2 gap-12 relative`}
+              style={{ fontSize: `${readerSize}px` }}
+            >
+              {/* Center Book Crease Divider */}
+              <div className="hidden md:block absolute top-8 bottom-8 left-1/2 -translate-x-1/2 w-px bg-current/15 shadow-sm" />
 
-            {paragraphs.map((para, pIdx) => {
-              if (regex) {
-                const parts = para.split(regex);
-                return (
-                  <p key={pIdx} className="mb-6">
-                    {parts.map((part, idx) => {
-                      const isEntity = sortedEntities.includes(part);
-                      if (isEntity) {
-                        return (
-                          <span
-                            key={idx}
-                            onMouseEnter={(e) => handleHoverTerm(part, para, e)}
-                            onMouseLeave={handleLeaveTerm}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleHoverTerm(part, para, e, true);
-                            }}
-                            className="cursor-pointer font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded-md border-b-2 border-emerald-500/60 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all inline-flex items-center gap-0.5 mx-0.5"
-                          >
-                            <span>{part}</span>
-                            <Sparkles className="w-2.5 h-2.5 opacity-60 inline" />
-                          </span>
-                        );
-                      }
-                      return part;
-                    })}
+              {/* Page 1 (Left Page) */}
+              <div className="space-y-6 md:pr-6">
+                <div className="border-b border-current/15 pb-4 mb-8 flex items-center justify-between opacity-80 text-xs font-mono">
+                  <span className="font-serif-claude tracking-wider uppercase font-semibold text-[11px] truncate max-w-[200px]">{docFileName}</span>
+                  <span>Page 1 • ~{readingTimeMin} min read</span>
+                </div>
+
+                <div className="text-center pb-6 border-b border-current/10">
+                  <h1 className="text-2xl lg:text-3xl font-serif font-bold tracking-tight mb-2">
+                    {docFileName}
+                  </h1>
+                  <p className={`text-xs italic ${curTheme.subtext} font-serif-claude`}>
+                    Executive Document & Vault Monograph
                   </p>
-                );
-              }
-              return (
-                <p key={pIdx} className="mb-6">
-                  {para}
+                  <div className={`mt-3 text-sm ${curTheme.divider}`}>✦  ✦  ✦</div>
+                </div>
+
+                {leftPageParas.map((p, idx) => renderParagraphContent(p, idx))}
+              </div>
+
+              {/* Page 2 (Right Page) */}
+              <div className="space-y-6 md:pl-6">
+                <div className="border-b border-current/15 pb-4 mb-8 flex items-center justify-between opacity-80 text-xs font-mono">
+                  <span className="font-serif-claude tracking-wider uppercase font-semibold text-[11px] truncate max-w-[200px]">Continued</span>
+                  <span>Page 2 • {wordCount} Words</span>
+                </div>
+
+                {rightPageParas.map((p, idx) => renderParagraphContent(p, idx + leftPageParas.length))}
+
+                <div className="text-center pt-8 opacity-60 text-xs font-serif-claude">
+                  — ✦ End of Document ✦ —
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Single Page Classic Editorial Spread */
+            <div
+              className={`w-full ${layoutWidths[readerLayout]} p-8 md:p-16 rounded-3xl border transition-all ${curTheme.page} ${fontStyles[readerFont]} ${lineStyles[readerLineHeight]}`}
+              style={{ fontSize: `${readerSize}px` }}
+            >
+              {/* Book Header Bar */}
+              <div className="border-b border-current/15 pb-4 mb-8 flex items-center justify-between opacity-80 text-xs font-mono">
+                <span className="font-serif-claude tracking-wider uppercase font-semibold text-[11px] truncate max-w-[320px]">{docFileName}</span>
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-3 h-3 text-amber-500" /> ~{readingTimeMin} min read • {wordCount} words
+                </span>
+              </div>
+
+              {/* Chapter Title Headpiece */}
+              <div className="text-center pb-8 mb-8 border-b border-current/10">
+                <h1 className="text-3xl lg:text-4xl font-serif font-bold tracking-tight mb-2">
+                  {docFileName}
+                </h1>
+                <p className={`text-xs italic ${curTheme.subtext} font-serif-claude`}>
+                  Executive Monograph • Uroboros Knowledge Vault
                 </p>
-              );
-            })}
-          </div>
+                <div className={`mt-3 text-sm ${curTheme.divider}`}>✦  ✦  ✦</div>
+              </div>
+
+              {/* Content Paragraphs */}
+              {paragraphs.map((p, idx) => renderParagraphContent(p, idx))}
+
+              {/* Document Finial */}
+              <div className="text-center pt-10 border-t border-current/15 opacity-60 text-xs font-serif-claude">
+                — ✦ End of Document ✦ —
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Floating Text Selection Action Bubble */}
+        {selectionPos && selectedText && (
+          <div
+            className="fixed z-50 -translate-x-1/2 -translate-y-full flex items-center gap-1 bg-slate-900/95 text-white p-1.5 rounded-xl shadow-2xl border border-emerald-500/40 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+            style={{ left: `${selectionPos.x}px`, top: `${selectionPos.y}px` }}
+          >
+            <button
+              onClick={() => {
+                window.location.hash = `#/chat?q=${encodeURIComponent('Explain this excerpt: "' + selectedText + '" in context of ' + filePath)}`;
+              }}
+              className="px-2.5 py-1 hover:bg-emerald-600 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+            >
+              <Brain className="w-3.5 h-3.5 text-emerald-400" /> Explain
+            </button>
+            <button
+              onClick={() => addHighlight(selectedText)}
+              className="px-2.5 py-1 hover:bg-amber-600 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+            >
+              <Highlighter className="w-3.5 h-3.5 text-amber-400" /> Highlight
+            </button>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`> "${selectedText}"\n\n— Excerpt from *${docFileName}*`);
+                toast('Quote Copied', 'Markdown citation copied to clipboard', 'success');
+                setSelectionPos(null);
+              }}
+              className="px-2.5 py-1 hover:bg-slate-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+            >
+              <Quote className="w-3.5 h-3.5 text-cyan-400" /> Quote
+            </button>
+          </div>
+        )}
       </div>
     );
   };

@@ -46,7 +46,7 @@ def detect_vault_contradictions(db_path: str = DB_FILE, limit: int = 50) -> Dict
                 words_b = set(w.lower() for w in re.findall(r'\b[\w]{4,}\b', norm_b))
                 shared_terms = words_a.intersection(words_b)
 
-                if len(shared_terms) > 5:
+                if len(shared_terms) >= 3:
                     # Check for inverse negation patterns in shared context
                     neg_a = bool(RE_NEGATION.search(content_a))
                     neg_b = bool(RE_NEGATION.search(content_b))
