@@ -72,7 +72,7 @@ class TestGroundedRetrievalEngineEndToEnd:
         engine = GroundedRetrievalEngine(top_k=5, refusal_threshold=0.65)
         passages = [
             {"filename": "dev_chat_log.txt", "content": "I think the server timeout might be 60 seconds.", "rank": 1},
-            {"filename": "scratch_notes.txt", "content": "Maybe check timeout 60 seconds on server.", "rank": 2}
+            {"filename": "scratch_notes.txt", "content": "General unverified notes on architecture.", "rank": 2}
         ]
 
         res = engine.evaluate_grounding(
@@ -95,14 +95,14 @@ class TestGroundedRetrievalEngineEndToEnd:
         engine = GroundedRetrievalEngine(top_k=5, refusal_threshold=0.65)
         passages = [
             {
-                "filename": "rfc2616_http11.pdf",
-                "content": "HTTP 1.1 specification published 1999. Superseded by RFC 7230 and RFC 9110.",
+                "filename": "legacy_api_v1_spec.md",
+                "content": "Specification published 2015. Superseded by API v3 specification.",
                 "rank": 1
             }
         ]
 
         res = engine.evaluate_grounding(
-            query="HTTP 1.1 RFC 2616 framing",
+            query="API v1 specification framing",
             candidate_passages=passages
         )
 
@@ -112,13 +112,13 @@ class TestGroundedRetrievalEngineEndToEnd:
 
     def test_full_pipeline_unresolved_contradiction_refusal(self):
         """
-        Tests that an unresolvable factual contradiction between equal-tier secondary sources
+        Tests that an unresolvable factual contradiction between equal-tier sources
         depresses the consensus score and triggers the refusal gate.
         """
         engine = GroundedRetrievalEngine(top_k=5, refusal_threshold=0.65)
         passages = [
-            {"filename": "textbook_a.pdf", "content": "The maximum cache TTL is 3600 seconds.", "rank": 1},
-            {"filename": "textbook_b.pdf", "content": "The maximum cache TTL is 86400 seconds.", "rank": 2}
+            {"filename": "blog_a.md", "content": "The maximum cache TTL is 3600 seconds.", "rank": 1},
+            {"filename": "blog_b.md", "content": "The maximum cache TTL is 86400 seconds.", "rank": 2}
         ]
 
         res = engine.evaluate_grounding(

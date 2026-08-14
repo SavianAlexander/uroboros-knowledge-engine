@@ -353,7 +353,7 @@ def check_usl_scalability_invariant(
             "optimal_concurrency_n_star": n_star,
             "is_computationally_valid": False,
             "violation_type": VIOLATION_SUPERLINEAR_SPEEDUP,
-            "violation_details": f"Claimed {claimed_speedup}x speedup exceeds linear ideal bound N={node_count}x (superlinear scaling is physically impossible for parallel compute)."
+            "violation_details": f"USL_SCALABILITY violation: Claimed {claimed_speedup}x speedup exceeds linear ideal bound N={node_count}x (superlinear scaling is physically impossible for parallel compute)."
         }
 
     # Check 2: Retrograde coherency violation (claiming growth or exceeding USL past N*)
@@ -373,10 +373,11 @@ def check_usl_scalability_invariant(
                 "is_computationally_valid": False,
                 "violation_type": VIOLATION_COHERENCY_RETROGRADE,
                 "violation_details": (
-                    f"Claimed {claimed_speedup}x speedup violates USL coherency retrograde limit of "
+                    f"USL_SCALABILITY violation: Claimed {claimed_speedup}x speedup violates USL coherency retrograde limit of "
                     f"{round(theoretical_max_speedup, 2)}x at N={node_count} (peak concurrency N*={round(n_star, 2)})."
                 )
             }
+
 
     # Check 3: Standard USL capacity ceiling
     violates = claimed_speedup > (theoretical_max_speedup * 1.05)

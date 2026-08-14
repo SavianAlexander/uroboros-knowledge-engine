@@ -77,9 +77,11 @@ def classify_source_epistemic_tier(
                 explicit_weight = TIER_WEIGHTS[explicit_tier]
             return explicit_tier, explicit_weight
 
-    fname_norm = unicodedata.normalize("NFC", filename or "").lower().replace("\\", "/")
+    filename_str = str(filename) if filename is not None else ""
+    content_str = str(content_snippet) if content_snippet is not None else ""
+    fname_norm = unicodedata.normalize("NFC", filename_str).lower().replace("\\", "/")
     base_name = fname_norm.rsplit("/", 1)[-1] if "/" in fname_norm else fname_norm
-    snippet_norm = unicodedata.normalize("NFC", content_snippet[:1000] if content_snippet else "").lower()
+    snippet_norm = unicodedata.normalize("NFC", content_str[:1000]).lower()
 
     # 2. Check commentary indicator first on filename
     # Filenames explicitly marked as commentary (blog, scratch, notes, memo, chat, unverified, draft, etc.)
@@ -226,6 +228,13 @@ def compute_authority_weighted_rrf(
             try:
                 staleness_coeff = float(doc["temporal_validity"].get("staleness_coefficient") or 1.0)
             except (ValueError, TypeError):
+                staleness_coeff = 1.0
+        else:
+            try:
+                from src.domain.temporal_validity import detect_temporal_validity
+                temp_info = detect_temporal_validity(content, metadata=metadata)
+                staleness_coeff = float(temp_info.get("staleness_coefficient", 1.0))
+            except Exception:
                 staleness_coeff = 1.0
 
         # Grounded RRF score

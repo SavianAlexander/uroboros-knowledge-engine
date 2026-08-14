@@ -241,23 +241,42 @@ def compute_grounding_scorecard(
         meta = doc.get("metadata") or {}
 
         # Epistemic tier resolution
-        if "epistemic_tier" in doc and doc["epistemic_tier"] in TIER_WEIGHTS:
+        if "epistemic_weight" in doc and doc["epistemic_weight"] is not None:
+            try:
+                w_tier = float(doc["epistemic_weight"])
+            except (ValueError, TypeError):
+                w_tier = 0.35
+            tier = doc.get("epistemic_tier") or (
+                TIER_1_PRIMARY if w_tier >= 1.0 else
+                TIER_2_TECH_SPEC if w_tier >= 0.85 else
+                TIER_3_SECONDARY if w_tier >= 0.70 else
+                TIER_4_COMMENTARY
+            )
+            doc["epistemic_tier"] = tier
+            doc["epistemic_weight"] = w_tier
+        elif "epistemic_tier" in doc and doc["epistemic_tier"] in TIER_WEIGHTS:
             tier = doc["epistemic_tier"]
             w_tier = float(doc.get("epistemic_weight") or TIER_WEIGHTS[tier])
+            doc["epistemic_weight"] = w_tier
         else:
             tier, w_tier = classify_source_epistemic_tier(fname, content, meta)
             doc["epistemic_tier"] = tier
             doc["epistemic_weight"] = w_tier
 
         # Temporal validity resolution
-        if "temporal_validity" in doc and isinstance(doc["temporal_validity"], dict):
+        if "staleness_coefficient" in doc and doc["staleness_coefficient"] is not None:
+            try:
+                staleness = float(doc["staleness_coefficient"])
+            except (ValueError, TypeError):
+                staleness = 1.0
+            if "temporal_validity" not in doc or not isinstance(doc["temporal_validity"], dict):
+                temp_info = detect_temporal_validity(content, metadata=meta)
+                temp_info["staleness_coefficient"] = staleness
+                doc["temporal_validity"] = temp_info
+        elif "temporal_validity" in doc and isinstance(doc["temporal_validity"], dict):
             temp_info = doc["temporal_validity"]
             staleness = float(temp_info.get("staleness_coefficient", 1.0))
-        elif "staleness_coefficient" in doc and doc["staleness_coefficient"] is not None:
-            staleness = float(doc["staleness_coefficient"])
-            temp_info = detect_temporal_validity(content, metadata=meta)
-            temp_info["staleness_coefficient"] = staleness
-            doc["temporal_validity"] = temp_info
+            doc["staleness_coefficient"] = staleness
         else:
             temp_info = detect_temporal_validity(content, metadata=meta)
             staleness = float(temp_info.get("staleness_coefficient", 1.0))

@@ -98,23 +98,20 @@ class TestRefusalGateThresholdBoundaries:
 
     def test_exact_threshold_0_650_accepted(self):
         """Score exactly equal to 0.650 passes the refusal gate (ACCEPTED / GROUNDED)."""
-        # We engineer inputs to give exactly 0.650:
-        # Let w_tier = 0.60, S_consensus = 0.60, S_temporal = 0.85
-        # 0.45(0.60) + 0.35(0.60) + 0.20(0.85) = 0.27 + 0.21 + 0.17 = 0.650
+        # S = 0.45 * w_tier + 0.35 * S_consensus + 0.20 * S_temporal
+        # Let w_tier = 0.60, S_consensus = 0.70 (single-source default), S_temporal = 0.675:
+        # S = 0.45(0.60) + 0.35(0.70) + 0.20(0.675) = 0.270 + 0.245 + 0.135 = 0.650
         passages = [
-            {"filename": "doc.txt", "content": "test text", "epistemic_weight": 0.60, "staleness_coefficient": 0.85}
+            {"filename": "doc.txt", "content": "test text", "epistemic_weight": 0.60, "staleness_coefficient": 0.675}
         ]
-        # Override consensus to 0.60 via custom weight or direct computation
         scorecard = compute_grounding_scorecard(
             passages=passages,
-            threshold=0.65,
-            weight_tier=0.45,
-            weight_consensus=0.35,
-            weight_temporal=0.20
+            threshold=0.65
         )
-        # Single passage default consensus is 0.70 -> S = 0.45(0.60) + 0.35(0.70) + 0.20(0.85) = 0.27 + 0.245 + 0.17 = 0.685 >= 0.65
+        assert math.isclose(scorecard["grounding_score"], 0.650, abs_tol=1e-3)
         assert scorecard["is_grounded"] is True
         assert scorecard["grounding_status"] == STATUS_ACCEPTED
+        assert scorecard["refusal_status"] is False
 
     def test_exact_boundary_sub_threshold_0_649_refused(self):
         """Score of 0.649 is strictly below 0.650 and must be REFUSED."""
