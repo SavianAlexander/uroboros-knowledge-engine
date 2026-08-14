@@ -6,6 +6,7 @@ import subprocess
 import threading
 import logging
 from fastapi import HTTPException
+import functools
 
 try:
     import llama_cpp
@@ -89,16 +90,34 @@ class OllamaClient:
                 continue
         return None
 
-    def stream_chat(self, messages: list, model_name: str = None, temperature: float = 0.3):
-        """Yield token chunks from native Ollama /api/chat streaming endpoint."""
+    def stream_chat(self, messages: list, model_name: str = None, temperature: float = 0.3, num_ctx: int = None, format_json: bool = False):
+        """Yield token chunks from native Ollama /api/chat streaming endpoint with dynamic context scaling."""
         import urllib.request
-        model = model_name or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+        from src.core.model_router import route_prompt_model
+
+        # Estimate context requirements from messages
+        total_words = sum(len(str(m.get("content", "")).split()) for m in messages if isinstance(m, dict))
+        token_est = int(total_words * 1.35)
+
+        if not model_name or model_name == "auto":
+            first_user_prompt = next((m.get("content", "") for m in messages if isinstance(m, dict) and m.get("role") == "user"), "")
+            routing = route_prompt_model(first_user_prompt, token_estimate=token_est)
+            model = routing.get("model", "qwen2.5:7b")
+            ctx_size = num_ctx or routing.get("num_ctx", 4096)
+        else:
+            model = model_name
+            max_limit = 131072 if "phi4" in model else 32768
+            ctx_size = num_ctx or min(max(4096, token_est + 2048), max_limit)
+
         payload = {
             "model": model,
             "messages": messages,
             "stream": True,
-            "options": {"num_ctx": 4096, "temperature": temperature}
+            "options": {"num_ctx": ctx_size, "temperature": temperature}
         }
+        if format_json:
+            payload["format"] = "json"
+
         data_bytes = json.dumps(payload).encode("utf-8")
         urls = ["http://127.0.0.1:11434/api/chat", "http://localhost:11434/api/chat"]
         
@@ -122,21 +141,42 @@ class OllamaClient:
             except Exception as e:
                 logging.warning(f"Ollama stream_chat fallback on {u}: {e}")
                 continue
+
     def __call__(self, prompt, **kwargs):
         if not _llm_semaphore.acquire(blocking=False):
             logging.warning("LLM concurrency limit reached; skipping background inference for stability.")
             return {"choices": [{"text": ""}]}
         try:
-            model = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+            from src.core.model_router import route_prompt_model
+            raw_prompt = str(prompt or "")
+            token_est = int(len(raw_prompt.split()) * 1.35)
+            
+            task_type = kwargs.get("task_type", "auto")
+            model_override = kwargs.get("model")
+
+            if not model_override or model_override == "auto":
+                routing = route_prompt_model(raw_prompt, task_type=task_type, token_estimate=token_est)
+                model = routing.get("model", "qwen2.5:7b")
+                ctx_size = kwargs.get("num_ctx") or routing.get("num_ctx", 4096)
+                temp = kwargs.get("temperature", routing.get("temperature", 0.3))
+            else:
+                model = model_override
+                max_limit = 131072 if "phi4" in model else 32768
+                ctx_size = kwargs.get("num_ctx") or min(max(4096, token_est + 2048), max_limit)
+                temp = kwargs.get("temperature", 0.3)
+
             keep_alive = os.environ.get("OLLAMA_KEEP_ALIVE", "5m")
-            max_toks = min(kwargs.get("max_tokens", 1024), 2048)
+            max_toks = min(kwargs.get("max_tokens", 1024), 4096)
             data = {
                 "model": model,
                 "prompt": prompt,
                 "max_tokens": max_toks,
                 "keep_alive": keep_alive,
-                "options": {"num_ctx": 4096, "num_thread": 4, "temperature": kwargs.get("temperature", 0.3)}
+                "options": {"num_ctx": ctx_size, "num_thread": 4, "temperature": temp}
             }
+            if kwargs.get("format") == "json" or kwargs.get("format_json"):
+                data["format"] = "json"
+
             res_body = self._post_with_fallback("/completions", data)
             if res_body:
                 return {"choices": [{"text": res_body.get("choices", [{}])[0].get("text", "")}]}
@@ -154,22 +194,42 @@ class OllamaClient:
             return [{"choices": [{"text": text}]}]
         return self(prompt, max_tokens=max_tokens, temperature=temperature, **kwargs)
 
-
     def create_chat_completion(self, messages, **kwargs):
         if not _llm_semaphore.acquire(blocking=False):
             logging.warning("LLM concurrency limit reached; skipping background chat inference for stability.")
             return {"choices": [{"message": {"content": ""}}]}
         try:
-            model = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+            from src.core.model_router import route_prompt_model
+            total_words = sum(len(str(m.get("content", "")).split()) for m in messages if isinstance(m, dict))
+            token_est = int(total_words * 1.35)
+
+            task_type = kwargs.get("task_type", "auto")
+            model_override = kwargs.get("model")
+
+            if not model_override or model_override == "auto":
+                first_user_prompt = next((m.get("content", "") for m in messages if isinstance(m, dict) and m.get("role") == "user"), "")
+                routing = route_prompt_model(first_user_prompt, task_type=task_type, token_estimate=token_est)
+                model = routing.get("model", "qwen2.5:7b")
+                ctx_size = kwargs.get("num_ctx") or routing.get("num_ctx", 4096)
+                temp = kwargs.get("temperature", routing.get("temperature", 0.3))
+            else:
+                model = model_override
+                max_limit = 131072 if "phi4" in model else 32768
+                ctx_size = kwargs.get("num_ctx") or min(max(4096, token_est + 2048), max_limit)
+                temp = kwargs.get("temperature", 0.3)
+
             keep_alive = os.environ.get("OLLAMA_KEEP_ALIVE", "5m")
-            max_toks = min(kwargs.get("max_tokens", 1024), 2048)
+            max_toks = min(kwargs.get("max_tokens", 1024), 4096)
             data = {
                 "model": model,
                 "messages": messages,
                 "max_tokens": max_toks,
                 "keep_alive": keep_alive,
-                "options": {"num_ctx": 4096, "num_thread": 4, "temperature": kwargs.get("temperature", 0.3)}
+                "options": {"num_ctx": ctx_size, "num_thread": 4, "temperature": temp}
             }
+            if kwargs.get("format") == "json" or kwargs.get("format_json"):
+                data["format"] = "json"
+
             res_body = self._post_with_fallback("/chat/completions", data)
             if res_body:
                 return res_body
@@ -319,21 +379,22 @@ def get_llm():
 def get_fallback_llm():
     return get_llm()
 
-import functools
-
-@functools.lru_cache(maxsize=128)
+@functools.lru_cache(maxsize=256)
 def expand_query_with_llm(query: str) -> str:
-    """HyDE Query Expansion: Synthesizes search terms & hypothetical document keywords using local LLM with LRU caching."""
+    """HyDE Query Expansion: Synthesizes search terms & keywords using local Micro-Tier LLM with LRU caching."""
     if not query or len(query.strip()) < 3:
         return query
     try:
+        from src.core.model_router import route_prompt_model
         client = get_llm()
         if client and hasattr(client, "stream_chat"):
+            routing = route_prompt_model(query, task_type="micro")
+            target_model = routing.get("model", "qwen2.5:0.5b")
             prompt_msgs = [
                 {"role": "system", "content": "You are a search query expansion engine. Generate 3 concise search terms or synonyms for the query, separated by spaces. Return only the terms without quotes or punctuation."},
                 {"role": "user", "content": query}
             ]
-            expanded = "".join(list(client.stream_chat(prompt_msgs, temperature=0.1)))
+            expanded = "".join(list(client.stream_chat(prompt_msgs, model_name=target_model, temperature=0.1, num_ctx=2048)))
             if expanded and len(expanded.strip()) > 0:
                 clean_exp = " ".join(expanded.strip().splitlines())
                 return f"{query} {clean_exp}"

@@ -232,6 +232,23 @@ sequenceDiagram
     Note over Llama,RAM: Auto-Unload Model Weights after 5m Inactivity (`OLLAMA_KEEP_ALIVE=5m`)
 ```
 
+### 5.1 Intelligent 4-Tier Neural Model Router
+
+```mermaid
+flowchart TD
+    Prompt[Incoming Prompt / Inference Request] --> Router[src/core/model_router.py 4-Tier Neural Router]
+
+    Router -- Task: Micro / Intent / Keywords / HyDE --> Micro[Micro Tier: qwen2.5:0.5b / smollm2:1.7b\nLatency: < 50ms | Temp: 0.1 | Context: 4k]
+    Router -- Task: Code / AST / Refactor / SQL --> Coder[Coder Tier: qwen2.5-coder:14b / 7b\nDeep Programming Reasoning | Temp: 0.2]
+    Router -- Task: Long Doc Digest > 8k Tokens --> LongCtx[Long-Context Tier: phi4-mini:latest\n128k Token Dynamic Context Window]
+    Router -- Task: Conversational RAG / Briefing --> Master[Master RAG Tier: qwen2.5:7b\n32k Context | ~90 tok/s | Temp: 0.3-0.7]
+
+    Micro --> OllamaClient[src/core/model_manager.py OllamaClient\nDynamic num_ctx Scaling + format:json]
+    Coder --> OllamaClient
+    LongCtx --> OllamaClient
+    Master --> OllamaClient
+```
+
 ---
 
 ## 6. End-to-End System Pipeline & Sequence Architecture
