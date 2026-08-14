@@ -17,7 +17,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from src.infrastructure.eve_log_streamer import EveLogStreamer, generate_log_streamer_markdown
-from src.infrastructure.eve_voice_copilot import VoiceTacticalCopilot, generate_voice_copilot_markdown
+from src.infrastructure.eve_voice_copilot import KokoroVoiceCopilot, generate_voice_copilot_markdown
 from src.infrastructure.eve_sp_farm_calculator import calculate_sp_farming_roi, generate_sp_farming_markdown
 from src.infrastructure.eve_universal_discovery import build_universal_fleet_dag, generate_universal_discovery_markdown
 from src.infrastructure.eve_corp_tax_shield import calculate_tax_shield_savings, generate_corp_tax_markdown
@@ -84,12 +84,19 @@ class TestPhase32ExpansionSuite(unittest.TestCase):
         self.assertEqual(mock[2]["type"], "combat_damage")
 
     def test_voice_copilot(self):
-        """Test voice alert template formatting and dispatch record."""
-        copilot = VoiceTacticalCopilot()
+        """Test Kokoro voice alert template formatting, dispatch record, and streaming clause chunker."""
+        copilot = KokoroVoiceCopilot()
         alert = copilot.format_alert("HOSTILE_LOCAL_FLASH", system="G-EURJ")
         self.assertIn("G-EURJ", alert)
-        rec = copilot.speak(alert, priority="CRITICAL")
+        rec = copilot.speak(alert, priority="CRITICAL", voice="bf_emma")
         self.assertTrue(rec["dispatched"])
+        self.assertEqual(rec["voice"], "bf_emma")
+
+        # Test streaming conversational clause chunker
+        tokens = ["Fleet", " command", " broadcast:", " Aligning", " all", " vessels", " to", " station.", " Warp", " drive", " active."]
+        clauses = list(copilot.stream_conversational_clauses(tokens))
+        self.assertGreater(len(clauses), 0)
+        self.assertIn("clause_index", clauses[0])
 
     def test_sp_farming(self):
         """Test 500k SP extractor yield and monthly PLEX balance."""

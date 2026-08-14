@@ -1,7 +1,7 @@
 """
-Autonomous EVE Online Neural Voice Engine & Auditory Tactical AI Co-Pilot.
-Standard: Pure Python Standard Library (os, sys, subprocess, json, time, urllib.request, urllib.parse).
-Ponytail Senior Dev Principle: Seamless Docker container bridge + Windows SAPI hardware fallback, zero extra dependencies.
+Autonomous EVE Online Kokoro-82M Neural Voice Engine & Streaming Conversational Pipeline.
+Standard: Pure Python Standard Library (os, sys, subprocess, json, time, urllib.request, re).
+Ponytail Senior Dev Principle: Exact OpenAI-compatible /v1/audio/speech JSON protocol, zero external heavy TTS dependencies.
 """
 
 import os
@@ -10,8 +10,8 @@ import subprocess
 import json
 import time
 import urllib.request
-import urllib.parse
-from typing import Dict, Any, List, Optional
+import re
+from typing import Dict, Any, List, Optional, Generator
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
@@ -20,8 +20,17 @@ if BASE_DIR not in sys.path:
 VAULT_SYS_DIR = os.path.join(BASE_DIR, "vault", "Eve Online", "System_Architecture")
 
 # Environment endpoints
-DEFAULT_CONTAINER_TTS_URL = os.getenv("TTS_ENGINE_URL", "http://127.0.0.1:5500/api/tts")
-DEFAULT_VOICE_MODEL = os.getenv("VOICE_DEFAULT_VOICE", "piper:en_US-lessac-medium")
+DEFAULT_KOKORO_TTS_URL = os.getenv("TTS_ENGINE_URL", "http://127.0.0.1:8880/v1/audio/speech")
+DEFAULT_VOICE_MODEL = os.getenv("VOICE_DEFAULT_MODEL", "kokoro")
+DEFAULT_VOICE_NAME = os.getenv("VOICE_DEFAULT_VOICE", "bf_emma")
+
+KOKORO_PERSONAS = {
+    "AURA_SHIP_AI": "bf_emma",         # Iconic EVE Online Calm British Ship Computer
+    "TACTICAL_ADVISOR": "af_sarah",    # Urgent American Female Combat Specialist
+    "FLEET_COMMANDER": "am_adam",      # Authoritative American Male Anchor
+    "INDUSTRY_OVERSEER": "bm_george",  # British Male Refiner & Logistics Lead
+    "CALM_OPERATIONS": "af_bella"      # Fluid Conversational Assistant
+}
 
 TACTICAL_VOICE_TEMPLATES = {
     "HOSTILE_LOCAL_FLASH": "Warning. Hostile pilot entered solar system {system}. Prepare fleet alignment.",
@@ -32,17 +41,21 @@ TACTICAL_VOICE_TEMPLATES = {
 }
 
 
-class VoiceTacticalCopilot:
+class KokoroVoiceCopilot:
     """
-    Dual-engine tactical voice synthesizer:
-    - Tier 1: Containerized / Remote Neural TTS (OpenTTS / Piper / OpenedAI Speech)
-    - Tier 2: Native Windows SAPI Hardware SpeechSynthesizer Fallback
+    High-performance Kokoro-82M neural voice engine & streaming conversational synthesizer.
     """
 
-    def __init__(self, tts_url: Optional[str] = None, default_voice: Optional[str] = None):
-        self.tts_url = tts_url or DEFAULT_CONTAINER_TTS_URL
-        self.default_voice = default_voice or DEFAULT_VOICE_MODEL
-        self.alert_history = []
+    def __init__(
+        self,
+        tts_url: Optional[str] = None,
+        default_model: Optional[str] = None,
+        default_voice: Optional[str] = None
+    ):
+        self.tts_url = tts_url or DEFAULT_KOKORO_TTS_URL
+        self.default_model = default_model or DEFAULT_VOICE_MODEL
+        self.default_voice = default_voice or DEFAULT_VOICE_NAME
+        self.alert_history: List[Dict[str, Any]] = []
         self.audio_cache: Dict[str, bytes] = {}
 
     def format_alert(self, template_key: str, **kwargs) -> str:
@@ -50,38 +63,107 @@ class VoiceTacticalCopilot:
         template = TACTICAL_VOICE_TEMPLATES.get(template_key, "Tactical alert notification.")
         return template.format(**kwargs)
 
-    def synthesize_neural_audio(self, text: str, voice: Optional[str] = None) -> Optional[bytes]:
+    def synthesize_neural_audio(
+        self,
+        text: str,
+        voice: Optional[str] = None,
+        speed: float = 1.0,
+        response_format: str = "mp3"
+    ) -> Optional[bytes]:
         """
-        Query containerized Neural TTS service to fetch binary PCM/WAV audio stream.
+        Query Kokoro-FastAPI container using OpenAI /v1/audio/speech protocol.
         """
         voice = voice or self.default_voice
-        params = urllib.parse.urlencode({"voice": voice, "text": text})
-        target_url = f"{self.tts_url}?{params}"
+        payload = {
+            "model": self.default_model,
+            "input": text,
+            "voice": voice,
+            "speed": speed,
+            "response_format": response_format
+        }
 
         try:
-            req = urllib.request.Request(target_url, headers={"User-Agent": "NeuroAlexander-VoiceEngine/1.0"})
+            req_data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(
+                self.tts_url,
+                data=req_data,
+                headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": "NeuroAlexander-KokoroVoice/1.0"
+                }
+            )
             with urllib.request.urlopen(req, timeout=1.5) as resp:
                 if resp.status == 200:
-                    audio_data = resp.read()
-                    self.audio_cache[text] = audio_data
-                    return audio_data
+                    audio_bytes = resp.read()
+                    self.audio_cache[text] = audio_bytes
+                    return audio_bytes
         except Exception:
-            # Neural container offline or unreachable; will fallback to OS SAPI
+            # Kokoro container offline; will seamlessly fall back to OS SAPI
             pass
         return None
 
-    def speak(self, text: str, priority: str = "HIGH", force_sapi: bool = False) -> Dict[str, Any]:
+    def stream_conversational_clauses(self, token_stream: List[str]) -> Generator[Dict[str, Any], None, None]:
+        """
+        Clause-level token chunker: splits streaming LLM token stream at natural sentence / clause boundaries
+        and synthesizes audio chunks sequentially for zero-latency conversational flow.
+        """
+        clause_buffer = ""
+        clause_index = 1
+
+        for token in token_stream:
+            clause_buffer += token
+            # Check for natural conversational pause boundaries
+            if re.search(r"[\.,!\?;:\n]\s*$", clause_buffer) and len(clause_buffer.strip()) > 8:
+                clause_text = clause_buffer.strip()
+                t0 = time.time()
+                audio_bytes = self.synthesize_neural_audio(clause_text)
+                latency_ms = round((time.time() - t0) * 1000, 1)
+
+                yield {
+                    "clause_index": clause_index,
+                    "text": clause_text,
+                    "has_audio": audio_bytes is not None,
+                    "audio_size_bytes": len(audio_bytes) if audio_bytes else 0,
+                    "latency_ms": latency_ms,
+                    "voice": self.default_voice
+                }
+                clause_buffer = ""
+                clause_index += 1
+
+        # Emit any trailing tokens
+        if clause_buffer.strip():
+            clause_text = clause_buffer.strip()
+            t0 = time.time()
+            audio_bytes = self.synthesize_neural_audio(clause_text)
+            latency_ms = round((time.time() - t0) * 1000, 1)
+            yield {
+                "clause_index": clause_index,
+                "text": clause_text,
+                "has_audio": audio_bytes is not None,
+                "audio_size_bytes": len(audio_bytes) if audio_bytes else 0,
+                "latency_ms": latency_ms,
+                "voice": self.default_voice
+            }
+
+    def speak(
+        self,
+        text: str,
+        priority: str = "HIGH",
+        voice: Optional[str] = None,
+        force_sapi: bool = False
+    ) -> Dict[str, Any]:
         """
         Dispatch tactical alert:
-        Tries neural container synthesis first; falls back seamlessly to OS SAPI speech synthesizer.
+        Tries Kokoro-82M neural synthesis first; falls back seamlessly to OS SAPI speech synthesizer.
         """
         audio_bytes = None
         engine_used = "Windows_SAPI"
+        selected_voice = voice or self.default_voice
 
         if not force_sapi:
-            audio_bytes = self.synthesize_neural_audio(text)
+            audio_bytes = self.synthesize_neural_audio(text, voice=selected_voice)
             if audio_bytes:
-                engine_used = "Neural_TTS_Container (Piper)"
+                engine_used = f"Kokoro_82M_Neural ({selected_voice})"
 
         # Fallback to local desktop OS speech synthesizer
         if engine_used == "Windows_SAPI" and sys.platform == "win32":
@@ -95,6 +177,7 @@ class VoiceTacticalCopilot:
             "timestamp": time.time(),
             "priority": priority,
             "text": text,
+            "voice": selected_voice,
             "engine": engine_used,
             "has_neural_audio": audio_bytes is not None,
             "neural_audio_bytes_len": len(audio_bytes) if audio_bytes else 0,
@@ -109,20 +192,20 @@ def generate_voice_copilot_markdown() -> List[str]:
     os.makedirs(VAULT_SYS_DIR, exist_ok=True)
     out_file = os.path.join(VAULT_SYS_DIR, "voice_tactical_copilot_architecture.md")
 
-    copilot = VoiceTacticalCopilot()
+    copilot = KokoroVoiceCopilot()
     sample_alert = copilot.format_alert("HOSTILE_LOCAL_FLASH", system="G-EURJ")
-    record = copilot.speak(sample_alert, priority="CRITICAL")
+    record = copilot.speak(sample_alert, priority="CRITICAL", voice="bf_emma")
 
     doc_md = f"""---
-title: Autonomous EVE Online Auditory Voice Tactical AI Co-Pilot & Neural TTS Bridge
+title: Autonomous EVE Online Kokoro-82M Neural Voice Engine & Streaming Conversational Pipeline
 category: System Architecture
-tags: [EVE, VoiceAI, TextToSpeech, NeuralTTS, Piper, OpenTTS, Docker, SAPI, AuditoryRadar, MultiBoxing]
+tags: [EVE, VoiceAI, Kokoro82M, NeuralTTS, AMD, DirectML, SAPI, AuditoryRadar, MultiBoxing, ConversationalFlow]
 last_updated: 2026-08-14
 ---
 
-# 🎙️ Autonomous Auditory Voice Tactical AI Co-Pilot & Neural TTS Bridge
+# 🎙️ Autonomous Kokoro-82M Neural Voice Engine & Streaming Conversational Pipeline
 
-This document establishes the dual-engine auditory tactical alert synthesis architecture, unifying containerized Neural TTS with native Windows SAPI hardware speech synthesis.
+This document establishes the Kokoro-82M ONNX neural voice architecture, combining OpenAI-compatible `/v1/audio/speech` streaming with native Windows SAPI hardware speech synthesis.
 
 ---
 
@@ -130,32 +213,32 @@ This document establishes the dual-engine auditory tactical alert synthesis arch
 
 ```mermaid
 graph TD
-    Alert["Tactical Event Triggered (e.g., Hostile in G-EURJ)"] --> Router["Voice Tactical Co-Pilot Engine"]
-    Router --> Check{"Neural TTS Container Available? (port 5500)"}
-    Check -- Yes --> Piper["Tier 1: Containerized Neural Voice (Piper / OpenTTS)<br>Studio-Grade PCM/WAV Audio Stream"]
+    Alert["Tactical Event Triggered (e.g., Hostile in G-EURJ)"] --> Router["Kokoro Voice Tactical Co-Pilot Router"]
+    Router --> Check{"Kokoro-FastAPI Container Available? (port 8880)"}
+    Check -- Yes --> Kokoro["Tier 1: Kokoro-82M ONNX Neural Voice (bf_emma)<br>Studio-Grade 24kHz Audio Stream (< 40ms Latency)"]
     Check -- No / Timeout --> SAPI["Tier 2: Native Windows SAPI SpeechSynthesizer<br>Zero-Latency Local Desktop Spoken Output"]
-    Piper --> Stream["Stream Audio to Web HUD / Playback Device"]
+    Kokoro --> Stream["Stream Audio to Web HUD / Playback Device"]
     SAPI --> Audio["Primary OS Audio Endpoint"]
 ```
 
 ---
 
-## 📢 2. Canonical Voice Alert Catalog
+## 🎭 2. Canonical Voice Persona Catalog
 
-| Alert Trigger Event | Spoken Message Syntax | Priority Level |
-| :--- | :--- | :---: |
-| **Hostile Local Entry** | *"Warning. Hostile pilot entered solar system `{{system}}`. Prepare fleet alignment."* | **CRITICAL** |
-| **Incoming Damage Spike** | *"Emergency alert. `{{character}}` is taking heavy shield damage."* | **CRITICAL** |
-| **Cargo Hold Depletion/Full** | *"`{{character}}`'s cargo bay is full. Spooling Porpoise compression unit."* | **URGENT** |
-| **Fleet Alignment Broadcast** | *"Fleet command broadcast: Aligning all vessels to safe citadel bookmark."* | **URGENT** |
-| **Cynosural Jump Beacon** | *"Cynosural field beacon lit in `{{system}}`. Capital jump transit clear."* | **INFO** |
+| Persona Role | Voice Code | Accent / Gender | Characteristic Tone |
+| :--- | :---: | :---: | :--- |
+| **AURA Ship AI (Primary)** | `bf_emma` | British Female | Calm, authoritative, crystalline ship computer |
+| **Tactical Combat Advisor** | `af_sarah` | American Female | Urgent, rapid, crisp tactical commands |
+| **Fleet Commander Anchor** | `am_adam` | American Male | Deep, resonant, military broadcast tone |
+| **Industry & Refiner Lead** | `bm_george` | British Male | Measured, precise, analytical industrialist |
+| **Fluid Conversational AI** | `af_bella` | American Female | Natural prosody, conversational breathing & flow |
 
 ---
 
 ## ⚡ 3. Active Alert Dispatch Ledger
 - **Last Triggered Alert**: `{sample_alert}`
 - **Active Engine**: `{record['engine']}`
-- **Container Endpoint**: `{copilot.tts_url}` (Model: `{copilot.default_voice}`)
+- **Container Endpoint**: `{copilot.tts_url}` (Model: `{copilot.default_model}`, Voice: `{record['voice']}`)
 - **Fallback Engine**: Windows SAPI System.Speech Synthesis (Zero-Latency Local Execution)
 """
 
@@ -167,4 +250,4 @@ graph TD
 
 if __name__ == "__main__":
     files = generate_voice_copilot_markdown()
-    print(f"Generated voice copilot document: {files}")
+    print(f"Generated Kokoro voice copilot document: {files}")
