@@ -1,7 +1,19 @@
 """
-Antigravity Dedicated Neural Voice MCP Server.
+Antigravity Dedicated Omniscient Neural Voice MCP Server.
 Standard: Pure Python Standard Library (json, sys, os, time, threading).
-Ponytail Senior Dev Principle: Zero-dependency JSON-RPC stdio MCP server providing studio-grade voice synthesis, task announcements, soundscapes, and acoustic DSP mastering for Antigravity AI.
+Ponytail Senior Dev Principle: Complete, zero-dependency JSON-RPC stdio MCP server for Antigravity AI featuring:
+1. Master Neural Speech with Acoustic DSP Rack (`antigravity_speak`)
+2. Engineering Milestone Announcer (`antigravity_announce_task`)
+3. Executive Multi-Bullet Briefings (`antigravity_voice_brief`)
+4. Procedural Tactical SFX Generator (`antigravity_play_sfx`)
+5. Vector Persona Blending (`antigravity_blend_persona`)
+6. Speech-to-Text Ear Transcriber (`antigravity_listen`)
+7. Audio Device Discovery & Volume Master (`antigravity_list_audio_devices`)
+8. Conversational Voice Memory Ledger (`antigravity_get_voice_history`)
+9. 32-Band Real-Time FFT Spectrum Visualizer (`antigravity_get_spectrum`)
+10. Proactive Tududi Voice Radar Sweep (`antigravity_trigger_tududi_radar`)
+11. Runtime Voice Configuration (`antigravity_configure_voice`)
+12. Engine Health Telemetry (`antigravity_get_status`)
 """
 
 import os
@@ -17,6 +29,12 @@ if BASE_DIR not in sys.path:
 
 from src.core.voice_bridge import VoiceBridge, DOMAIN_PROFILES, KOKORO_PERSONAS
 from src.core.voice_normalizer import VoiceNormalizer
+from src.core.voice_persona_blend import VoicePersonaBlender
+from src.core.voice_stt_ear import VoiceEarTranscriber
+from src.core.voice_audio_router import VoiceAudioRouter
+from src.core.voice_memory_ledger import VoiceMemoryLedger
+from src.core.voice_spectrum_stream import VoiceSpectrumAnalyzer
+from src.core.voice_tududi_radar import TududiVoiceRadarDaemon
 
 
 # Global Voice Configuration State
@@ -42,7 +60,7 @@ TOOLS_SCHEMA = [
                 },
                 "persona": {
                     "type": "string",
-                    "description": "Voice persona key (e.g., 'AURA_SHIP_AI', 'TACTICAL_ADVISOR', 'FLEET_COMMANDER', 'INDUSTRY_OVERSEER', 'CALM_OPERATIONS') or voice ID ('bf_emma', 'af_sarah', 'am_adam', 'bm_george', 'af_bella', 'af_heart').",
+                    "description": "Voice persona key ('AURA_SHIP_AI', 'TACTICAL_ADVISOR', 'FLEET_COMMANDER', 'INDUSTRY_OVERSEER', 'CALM_OPERATIONS') or voice ID ('bf_emma', 'af_sarah', 'am_adam', 'bm_george', 'af_bella', 'af_heart').",
                     "default": "CALM_OPERATIONS"
                 },
                 "speed": {
@@ -81,26 +99,10 @@ TOOLS_SCHEMA = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "task_name": {
-                    "type": "string",
-                    "description": "Name or headline of the task/feature."
-                },
-                "state": {
-                    "type": "string",
-                    "enum": ["STARTED", "COMPLETED", "FAILED", "PAUSED", "AWAITING_INPUT"],
-                    "description": "The current execution state.",
-                    "default": "COMPLETED"
-                },
-                "details": {
-                    "type": "string",
-                    "description": "Optional additional metrics or explanation.",
-                    "default": ""
-                },
-                "persona": {
-                    "type": "string",
-                    "description": "Voice persona to use (default 'INDUSTRY_OVERSEER' / bm_george for DevOps).",
-                    "default": "INDUSTRY_OVERSEER"
-                }
+                "task_name": {"type": "string", "description": "Name or headline of the task/feature."},
+                "state": {"type": "string", "enum": ["STARTED", "COMPLETED", "FAILED", "PAUSED", "AWAITING_INPUT"], "default": "COMPLETED"},
+                "details": {"type": "string", "description": "Optional additional metrics or explanation.", "default": ""},
+                "persona": {"type": "string", "description": "Voice persona to use.", "default": "INDUSTRY_OVERSEER"}
             },
             "required": ["task_name", "state"]
         }
@@ -111,20 +113,9 @@ TOOLS_SCHEMA = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "title": {
-                    "type": "string",
-                    "description": "Title of the briefing (e.g. 'Daily Standup Briefing' or 'System Health Status')."
-                },
-                "items": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "List of bullet points to narrate."
-                },
-                "persona": {
-                    "type": "string",
-                    "description": "Voice persona (default 'CALM_OPERATIONS' / af_bella).",
-                    "default": "CALM_OPERATIONS"
-                }
+                "title": {"type": "string", "description": "Title of the briefing."},
+                "items": {"type": "array", "items": {"type": "string"}, "description": "List of bullet points to narrate."},
+                "persona": {"type": "string", "description": "Voice persona.", "default": "CALM_OPERATIONS"}
             },
             "required": ["title", "items"]
         }
@@ -145,23 +136,89 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_blend_persona",
+        "description": "Linearly interpolate between two or more Kokoro voice embedding vectors to generate a custom signature timbre.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "weights": {
+                    "type": "object",
+                    "description": "Map of voice IDs to float weights (e.g. {'bf_emma': 0.7, 'af_bella': 0.3})."
+                },
+                "blend_name": {
+                    "type": "string",
+                    "description": "Name identifier for the custom vocal blend.",
+                    "default": "custom_blend"
+                }
+            },
+            "required": ["weights"]
+        }
+    },
+    {
+        "name": "antigravity_listen",
+        "description": "Transcribe audio from microphone recording or an audio file using speech-to-text transcriber.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "audio_path": {
+                    "type": "string",
+                    "description": "Optional path to WAV audio file. If omitted, captures from microphone.",
+                    "default": ""
+                },
+                "duration_seconds": {
+                    "type": "number",
+                    "description": "Microphone capture duration in seconds.",
+                    "default": 3.0
+                }
+            }
+        }
+    },
+    {
+        "name": "antigravity_list_audio_devices",
+        "description": "Enumerate system audio output devices and hardware rendering endpoints.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
+        "name": "antigravity_get_voice_history",
+        "description": "Query the SQLite conversational voice memory ledger for recent dialogue logs and metrics.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer", "description": "Max turns to retrieve", "default": 10},
+                "session_id": {"type": "string", "description": "Optional session ID filter"}
+            }
+        }
+    },
+    {
+        "name": "antigravity_get_spectrum",
+        "description": "Compute 32-band real-time FFT frequency spectrum and waveform envelope for UI visualizer.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "num_bands": {"type": "integer", "description": "Number of spectrum bands", "default": 32}
+            }
+        }
+    },
+    {
+        "name": "antigravity_trigger_tududi_radar",
+        "description": "Execute an immediate Tududi Task Master radar sweep and speak pending deadline alerts.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
         "name": "antigravity_configure_voice",
         "description": "Configure global default voice settings for Antigravity assistant.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "default_persona": {
-                    "type": "string",
-                    "description": "New default persona ('AURA_SHIP_AI', 'TACTICAL_ADVISOR', 'FLEET_COMMANDER', 'INDUSTRY_OVERSEER', 'CALM_OPERATIONS')."
-                },
-                "default_speed": {
-                    "type": "number",
-                    "description": "New default speed multiplier."
-                },
-                "default_dsp": {
-                    "type": "string",
-                    "description": "New default DSP preset."
-                }
+                "default_persona": {"type": "string", "description": "New default persona."},
+                "default_speed": {"type": "number", "description": "New default speed multiplier."},
+                "default_dsp": {"type": "string", "description": "New default DSP preset."}
             }
         }
     },
@@ -177,7 +234,9 @@ TOOLS_SCHEMA = [
 
 
 def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
-    """Execute Antigravity voice MCP tool calls."""
+    """Execute Antigravity omniscient voice MCP tool calls."""
+    t0 = time.time()
+
     if name == "antigravity_speak":
         text = args.get("text", "")
         persona = args.get("persona") or VOICE_CONFIG["default_persona"]
@@ -188,10 +247,7 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         sfx_intro = args.get("sfx_intro", "")
         blocking = bool(args.get("blocking", False))
 
-        # 1. Phonetic & Cadence Normalization
         clean_text = VoiceNormalizer.normalize_for_speech(text)
-
-        # 2. Dispatch through VoiceBridge
         res = VoiceBridge.speak(
             text=clean_text,
             domain="GENERAL",
@@ -203,6 +259,17 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         res["original_text"] = text
         res["normalized_text"] = clean_text
         res["speed"] = speed
+
+        # Log into SQLite Conversational Memory
+        duration_ms = round((time.time() - t0) * 1000, 1)
+        VoiceMemoryLedger.log_turn(
+            speaker="Antigravity",
+            raw_text=text,
+            normalized_text=clean_text,
+            persona=persona,
+            duration_ms=duration_ms,
+            domain="GENERAL"
+        )
         return res
 
     elif name == "antigravity_announce_task":
@@ -235,6 +302,14 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         )
         res["task_name"] = task_name
         res["state"] = state
+
+        VoiceMemoryLedger.log_turn(
+            speaker="Antigravity",
+            raw_text=full_text,
+            normalized_text=clean_text,
+            persona=persona,
+            domain="DEV_OPS"
+        )
         return res
 
     elif name == "antigravity_voice_brief":
@@ -255,6 +330,14 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         )
         res["title"] = title
         res["item_count"] = len(items)
+
+        VoiceMemoryLedger.log_turn(
+            speaker="Antigravity",
+            raw_text=combined,
+            normalized_text=clean_text,
+            persona=persona,
+            domain="DAILY_BRIEF"
+        )
         return res
 
     elif name == "antigravity_play_sfx":
@@ -266,6 +349,48 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             "bytes_len": len(audio_bytes) if audio_bytes else 0,
             "status": "playing"
         }
+
+    elif name == "antigravity_blend_persona":
+        weights = args.get("weights", {"bf_emma": 0.7, "af_bella": 0.3})
+        blend_name = args.get("blend_name", "custom_blend")
+        return VoicePersonaBlender.blend_personas(weights, custom_name=blend_name)
+
+    elif name == "antigravity_listen":
+        audio_path = args.get("audio_path", "")
+        if audio_path and os.path.exists(audio_path):
+            return VoiceEarTranscriber.transcribe_audio_file(audio_path)
+        dur = float(args.get("duration_seconds", 3.0))
+        rec = VoiceEarTranscriber.record_microphone_sample(duration_s=dur)
+        # Transcribe the recorded buffer
+        transcription = VoiceEarTranscriber.transcribe_audio_file(rec["output_path"])
+        transcription["recording_metadata"] = rec
+        return transcription
+
+    elif name == "antigravity_list_audio_devices":
+        devices = VoiceAudioRouter.list_audio_output_devices()
+        return {
+            "devices": devices,
+            "router_status": VoiceAudioRouter.get_router_status()
+        }
+
+    elif name == "antigravity_get_voice_history":
+        limit = int(args.get("limit", 10))
+        session_id = args.get("session_id")
+        turns = VoiceMemoryLedger.get_recent_turns(limit=limit, session_id=session_id)
+        metrics = VoiceMemoryLedger.get_voice_metrics()
+        return {
+            "turns": turns,
+            "metrics": metrics
+        }
+
+    elif name == "antigravity_get_spectrum":
+        num_bands = int(args.get("num_bands", 32))
+        copilot = VoiceBridge.get_copilot()
+        # Generate spectrum from sample or last cached audio
+        return VoiceSpectrumAnalyzer.analyze_audio_buffer(None, num_bands=num_bands)
+
+    elif name == "antigravity_trigger_tududi_radar":
+        return TududiVoiceRadarDaemon.execute_radar_sweep()
 
     elif name == "antigravity_configure_voice":
         if "default_persona" in args:
@@ -280,13 +405,16 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     elif name == "antigravity_get_status":
         copilot = VoiceBridge.get_copilot()
         return {
-            "engine": "Kokoro-82M ONNX Studio",
+            "engine": "Kokoro-82M ONNX Omniscient Suite",
             "supported_personas": KOKORO_PERSONAS,
+            "preset_blends": VoicePersonaBlender.get_preset_blends(),
             "config": VOICE_CONFIG,
             "active_instance": copilot._local_kokoro_instance is not None if copilot else False,
             "sample_rate": 24000,
             "precision": "Zero-Assumption High-Fidelity",
-            "normalizer": "VoiceNormalizer v2.0 Active"
+            "normalizer": "VoiceNormalizer v2.0 Active",
+            "memory_ledger": "SQLite Persistent Active",
+            "router": VoiceAudioRouter.get_router_status()
         }
 
     return {"error": f"Unknown tool: {name}"}
@@ -317,7 +445,7 @@ def main():
                         "capabilities": {"tools": {}},
                         "serverInfo": {
                             "name": "antigravity-voice-mcp",
-                            "version": "2.0.0"
+                            "version": "2.1.0"
                         }
                     }
                 }
