@@ -15,8 +15,10 @@ from src.app.routers import health, search, rag, files, tags, export, analytics,
 async def lifespan(app: FastAPI):
     init_db()
     from src.core.shutdown import register_shutdown_handlers, execute_clean_shutdown
+    from src.domain.thread_watchdog import list_active_workers, shutdown_all_workers
     register_shutdown_handlers()
     beacon = None
+    worker = None
     try:
         import uuid
         from src.infrastructure.p2p_sync import P2PPeerBeacon
@@ -26,17 +28,31 @@ async def lifespan(app: FastAPI):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in server.py: {e}")
+        import logging; logging.warning(f"Swallowed error in server.py beacon: {e}")
+
+    try:
+        from src.domain.background_worker import start_background_summarizer
+        worker = start_background_summarizer()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.warning(f"Swallowed error starting background summarizer: {e}")
+
     try:
         yield
     finally:
+        if worker and hasattr(worker, 'stop'):
+            try:
+                worker.stop()
+            except Exception:
+                pass
         if beacon:
             try:
                 beacon.stop()
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in server.py: {e}")
+                import logging; logging.warning(f"Swallowed error in server.py beacon stop: {e}")
         execute_clean_shutdown()
 
 app = FastAPI(title="Uroboros Knowledge Database", default_response_class=JSONResponse, lifespan=lifespan)

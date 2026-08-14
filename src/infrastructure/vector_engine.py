@@ -29,6 +29,10 @@ from src.core.domain.services import (
     chunk_text,
 )
 from src.infrastructure.parsers import extract_content, parse_audio_metadata, calculate_sha256, calculate_sha256_cached
+from src.domain.cache_guard import VectorCacheGuard
+from src.domain.vector_store import DenseVectorStore
+
+vector_cache_guard = VectorCacheGuard()
 
 def search_files(query: str) -> List[Dict[str, Any]]:
     """Execute FTS5 keyword search across files with Unicode NFC normalization."""

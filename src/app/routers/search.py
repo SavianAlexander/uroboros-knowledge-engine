@@ -23,6 +23,8 @@ from src.domain.louvain_clustering import apply_louvain_communities
 from src.domain.graph_export import export_graph_to_graphml
 from src.domain.sota_rag_engine import execute_sota_rag_search
 from src.domain.self_rag_critique import critique_rag_passages
+from src.domain.reranker import compute_rrf_scores
+from src.domain.intent_classifier import classify_query_intent
 from src.domain.parent_child_retrieval import expand_child_chunks_to_parents
 from src.domain.graph_multihop import find_multihop_pathways
 from src.domain.contextual_hyde import generate_hypothetical_document
@@ -1276,4 +1278,33 @@ def auto_correct_rag_endpoint(payload: Dict[str, Any] = Body({})):
         raise
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in auto_correct_rag: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/cross-lingual")
+def cross_lingual_search_endpoint(payload: Dict[str, Any] = Body({})):
+    """Executes bi-directional cross-lingual RAG expansion and retrieval across multilingual documents."""
+    query = payload.get("query", "") or payload.get("q", "")
+    max_chunks = payload.get("max_chunks", 4)
+    try:
+        from src.domain.cross_lingual_fusion import cross_lingual_rag_search
+        return cross_lingual_rag_search(query, max_chunks=max_chunks)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in cross_lingual_search: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/search/smart-filter")
+@router.post("/api/search/smart-filter")
+def parse_smart_filter_endpoint(query: str = ""):
+    """Parses natural language query strings into structured search parameters and filters."""
+    try:
+        from src.domain.smart_filter import parse_natural_language_filter
+        return parse_natural_language_filter(query)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in smart_filter: {e}")
         raise HTTPException(status_code=500, detail=str(e))

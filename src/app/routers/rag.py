@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Body
 from fastapi.responses import StreamingResponse
+from src.domain.chat_intelligence import estimate_tokens, truncate_context_window
 
 logger = logging.getLogger(__name__)
 

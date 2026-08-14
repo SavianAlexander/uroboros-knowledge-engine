@@ -21,6 +21,7 @@ import openpyxl
 logging.getLogger("pypdf").setLevel(logging.ERROR)
 
 from src.infrastructure.ocr import extract_ocr_text_structured, extract_pdf_ocr
+from src.domain.ocr_engine import extract_text_from_image
 
 RE_PRINTABLE_BYTES = re.compile(b'[\x20-\x7E]{4,}')
 RE_HTML_TAGS = re.compile(r'<[^>]+>')
@@ -533,3 +534,17 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in parsers.py: {e}")
         return f"[Parsing Error: {str(e)}]", []
+
+
+def extract_raptor_hierarchical_summaries(text: str, filename: str = "") -> Dict[str, Any]:
+    """Generates 3-tier semantic cluster and executive abstraction tree for document text."""
+    try:
+        from src.domain.raptor_tree_indexer import build_raptor_tree
+        from src.core.domain.services import chunk_text
+        raw_chunks = chunk_text(text, chunk_size=500, chunk_overlap=50)
+        chunks = [{"text": c, "source": filename} for c in raw_chunks]
+        if len(chunks) < 2:
+            return {"status": "skipped", "reason": "insufficient_chunks"}
+        return build_raptor_tree(chunks)
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

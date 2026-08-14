@@ -77,3 +77,23 @@ def get_analytics_search_activity_endpoint():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve search activity telemetry: {str(e)}"
         )
+
+
+@router.get("/api/sync/events/stream")
+def get_sync_events_stream_endpoint(job_id: str = "default_sync"):
+    """Streams live SSE events for background knowledge synchronization."""
+    try:
+        from fastapi.responses import StreamingResponse
+        from src.domain.sse_sync_stream import generate_knowledge_sync_sse_stream
+        return StreamingResponse(
+            generate_knowledge_sync_sse_stream(sync_job_id=job_id),
+            media_type="text/event-stream"
+        )
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in sync stream: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to stream sync events: {str(e)}"
+        )

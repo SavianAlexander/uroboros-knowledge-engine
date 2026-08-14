@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { glassCardClasses, emeraldButtonClasses, emeraldBadgeClasses, goldBadgeClasses, wineBadgeClasses, slateBadgeClasses } from '../lib/utils';
-import { Settings2, Database, Key, Webhook, SplitSquareHorizontal, Layers, Fingerprint, HardDrive, RefreshCw, ArchiveRestore, Globe, Network, Activity, Plus, Trash2, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { Settings2, Database, Key, Webhook, SplitSquareHorizontal, Layers, Fingerprint, HardDrive, RefreshCw, ArchiveRestore, Globe, Network, Activity, Plus, Trash2, CheckCircle2, ShieldCheck, Sparkles, Tag, FileCode, Play, Terminal, Cpu } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { api } from '../lib/api';
 
@@ -9,10 +9,21 @@ export default function ConfigView() {
   const [snapshots, setSnapshots] = useState<any[]>([]);
   const [syncPeers, setSyncPeers] = useState<any[]>([]);
   const [syncLogs, setSyncLogs] = useState<any[]>([]);
+  const [rules, setRules] = useState<any[]>([]);
+  const [workflowTriggers, setWorkflowTriggers] = useState<any[]>([]);
+  const [workflowLogs, setWorkflowLogs] = useState<any[]>([]);
+  const [backups, setBackups] = useState<any[]>([]);
+  const [synonyms, setSynonyms] = useState<any>({});
+  const [macros, setMacros] = useState<any>({});
+  const [aliases, setAliases] = useState<any>({});
+  
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [newPeer, setNewPeer] = useState('');
-  const [activeModal, setActiveModal] = useState<'rule' | 'synonyms' | 'macros' | 'aliases' | null>(null);
+  const [newRulePattern, setNewRulePattern] = useState('');
+  const [newRuleTag, setNewRuleTag] = useState('');
+  const [previewText, setPreviewText] = useState('');
+  const [previewMatches, setPreviewMatches] = useState<any[]>([]);
 
   // Strategy Tuning State
   const [chunkSize, setChunkSize] = useState<number>(() => {
@@ -41,7 +52,6 @@ export default function ConfigView() {
       const snaps = await api.snapshots().catch(() => ({ snapshots: [] }));
       setSnapshots(snaps?.snapshots || []);
     } catch (e) {
-      console.error('Error loading snapshots:', e);
       setSnapshots([]);
     }
 
@@ -49,7 +59,6 @@ export default function ConfigView() {
       const peers = await api.syncPeers().catch(() => ({ peers: [] }));
       setSyncPeers(peers?.peers || []);
     } catch (e) {
-      console.error('Error loading sync peers:', e);
       setSyncPeers([]);
     }
 
@@ -57,8 +66,56 @@ export default function ConfigView() {
       const logs = await api.syncLogs().catch(() => ({ logs: [] }));
       setSyncLogs(logs?.logs || []);
     } catch (e) {
-      console.error('Error loading sync logs:', e);
       setSyncLogs([]);
+    }
+
+    try {
+      const r = await api.rules().catch(() => ({ rules: [] }));
+      setRules(r?.rules || []);
+    } catch (e) {
+      setRules([]);
+    }
+
+    try {
+      const wt = await api.workflowTriggers().catch(() => ({ triggers: [] }));
+      setWorkflowTriggers(wt?.triggers || []);
+    } catch (e) {
+      setWorkflowTriggers([]);
+    }
+
+    try {
+      const wl = await api.workflowLogs().catch(() => ({ logs: [] }));
+      setWorkflowLogs(wl?.logs || []);
+    } catch (e) {
+      setWorkflowLogs([]);
+    }
+
+    try {
+      const b = await api.listBackups().catch(() => ({ backups: [] }));
+      setBackups(b?.backups || []);
+    } catch (e) {
+      setBackups([]);
+    }
+
+    try {
+      const syn = await api.synonyms().catch(() => ({}));
+      setSynonyms(syn || {});
+    } catch (e) {
+      setSynonyms({});
+    }
+
+    try {
+      const mac = await api.macros().catch(() => ({}));
+      setMacros(mac || {});
+    } catch (e) {
+      setMacros({});
+    }
+
+    try {
+      const ali = await api.aliases().catch(() => ({}));
+      setAliases(ali || {});
+    } catch (e) {
+      setAliases({});
     }
   };
 
@@ -69,7 +126,6 @@ export default function ConfigView() {
       await loadData();
       toast('Snapshot Captured', 'Database state saved', 'success');
     } catch (e) {
-      console.error(e);
       toast('Snapshot Error', 'Failed to capture database state', 'error');
     } finally {
       setIsCapturing(false);
@@ -81,7 +137,6 @@ export default function ConfigView() {
       await api.restoreSnapshot(timestamp);
       toast('Snapshot Restored', `Database rolled back to ${timestamp}`, 'success');
     } catch (e) {
-      console.error(e);
       toast('Restore Error', 'Failed to restore snapshot', 'error');
     }
   };
@@ -92,20 +147,93 @@ export default function ConfigView() {
       await loadData();
       toast('Snapshot Deleted', `Removed ${timestamp}`, 'info');
     } catch (e) {
-      console.error(e);
       toast('Delete Error', 'Failed to delete snapshot', 'error');
+    }
+  };
+
+  const handleCreateRule = async () => {
+    if (!newRulePattern.trim() || !newRuleTag.trim()) return;
+    try {
+      await api.createRule({ pattern: newRulePattern.trim(), tag: newRuleTag.trim() });
+      setNewRulePattern('');
+      setNewRuleTag('');
+      await loadData();
+      toast('Auto-Tag Rule Created', `Pattern: ${newRulePattern} -> #${newRuleTag}`, 'success');
+    } catch (e) {
+      toast('Rule Creation Error', 'Could not create rule', 'error');
+    }
+  };
+
+  const handleTestRulePreview = async () => {
+    if (!newRulePattern.trim() || !previewText.trim()) return;
+    try {
+      const res = await api.testRulePreview({ pattern: newRulePattern.trim(), text: previewText.trim() });
+      setPreviewMatches(res?.matches || []);
+      toast('Rule Preview Tested', `Found ${(res?.matches || []).length} matches`, 'info');
+    } catch (e) {
+      toast('Preview Error', 'Failed to test rule pattern', 'error');
+    }
+  };
+
+  const handleTriggerEvent = async (eventName: string) => {
+    try {
+      await api.triggerWorkflowEvent({ event: eventName });
+      await loadData();
+      toast('Workflow Triggered', `Fired event: ${eventName}`, 'success');
+    } catch (e) {
+      toast('Workflow Error', 'Failed to fire event', 'error');
+    }
+  };
+
+  const handleCreateTrigger = async (triggerObj: any) => {
+    try {
+      await api.createWorkflowTrigger(triggerObj);
+      await loadData();
+      toast('Trigger Created', `Added trigger for event ${triggerObj.event}`, 'success');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeleteTrigger = async (id: number) => {
+    try {
+      await api.deleteWorkflowTrigger(id);
+      await loadData();
+      toast('Trigger Deleted', `Removed trigger ID ${id}`, 'info');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSystemMaintenance = async () => {
+    try {
+      toast('Maintenance In Progress', 'Optimizing database indexes and clearing WAL...', 'info');
+      await api.systemMaintenance();
+      toast('Maintenance Complete', 'Database WAL vacuumed & optimized', 'success');
+    } catch (e) {
+      toast('Maintenance Error', 'Failed to execute maintenance', 'error');
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    try {
+      toast('Creating System Backup', 'Backing up SQLite database and vector embeddings...', 'info');
+      await api.systemBackup();
+      await loadData();
+      toast('Backup Created', 'System backup successfully generated', 'success');
+    } catch (e) {
+      toast('Backup Error', 'Failed to create backup', 'error');
     }
   };
 
   const handleAddPeer = async () => {
     if (!newPeer.trim()) return;
     try {
-      await api.addSyncPeer(newPeer.trim());
+      await api.addSyncPeer(newPeer.trim(), 'Remote-Peer');
       setNewPeer('');
       await loadData();
       toast('Peer Added', `Node ${newPeer} added to sync cluster`, 'success');
     } catch (e) {
-      console.error(e);
       toast('Sync Error', 'Failed to add sync peer', 'error');
     }
   };
@@ -113,11 +241,10 @@ export default function ConfigView() {
   const handleTriggerSync = async () => {
     setIsSyncing(true);
     try {
-      await api.triggerSync();
+      await api.syncExchange(newPeer || 'http://127.0.0.1:8085');
       await loadData();
       toast('Sync Completed', 'All cluster peers reconciled', 'success');
     } catch (e) {
-      console.error(e);
       toast('Sync Error', 'Peer synchronization failed', 'error');
     } finally {
       setIsSyncing(false);
@@ -126,13 +253,31 @@ export default function ConfigView() {
 
   return (
     <div className="p-8 h-full overflow-y-auto max-w-[1600px] mx-auto space-y-6 font-sans">
-      <header className="mb-6">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 font-serif-claude">
-          Configuration & Cluster Orchestration
-        </h2>
-        <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
-          Fine-tune RAG chunking, automate webhook triggers, and manage distributed database snapshots.
-        </p>
+      <header className="mb-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 font-serif-claude">
+            Configuration & Cluster Orchestration
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
+            Fine-tune RAG chunking, automate webhook triggers, manage auto-tag rules, and coordinate distributed sync.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSystemMaintenance}
+            className="px-3.5 py-1.5 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-300 dark:border-white/10"
+          >
+            <Cpu className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Vacuum DB</span>
+          </button>
+          <button
+            onClick={handleCreateBackup}
+            className={`px-3.5 py-1.5 ${emeraldButtonClasses} text-xs font-semibold flex items-center gap-1.5`}
+          >
+            <HardDrive className="w-3.5 h-3.5" />
+            <span>System Backup</span>
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -258,6 +403,85 @@ export default function ConfigView() {
             ) : (
               <div className="py-8 text-center text-xs text-slate-400">No snapshots captured yet.</div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Auto-Tagging Rules & Interactive Regex Tester */}
+      <div className={`${glassCardClasses} p-6 space-y-5`}>
+        <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-white/10 pb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 font-serif-claude">
+              <Tag className="w-4 h-4 text-emerald-500" /> Auto-Tagging Extraction Rules & Testing
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">Define automated regex heuristics to auto-tag documents upon ingestion.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Pattern: (quantum|qubit)"
+                value={newRulePattern}
+                onChange={(e) => setNewRulePattern(e.target.value)}
+                className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500/50"
+              />
+              <input
+                type="text"
+                placeholder="Tag: Physics"
+                value={newRuleTag}
+                onChange={(e) => setNewRuleTag(e.target.value)}
+                className="w-32 bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500/50"
+              />
+              <button
+                onClick={handleCreateRule}
+                className={`px-3 py-1.5 ${emeraldButtonClasses} text-xs font-medium`}
+              >
+                Add Rule
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {rules.length > 0 ? (
+                rules.map((r, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/5 text-xs">
+                    <span className="font-mono text-slate-700 dark:text-slate-300">{r.pattern}</span>
+                    <span className={emeraldBadgeClasses}>#{r.tag}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="p-3 text-center text-xs text-slate-400">No custom auto-tag rules configured.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Test text to evaluate regex matching..."
+                value={previewText}
+                onChange={(e) => setPreviewText(e.target.value)}
+                className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-emerald-500/50"
+              />
+              <button
+                onClick={handleTestRulePreview}
+                className="px-3 py-1.5 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold"
+              >
+                Test Match
+              </button>
+            </div>
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-400 h-28 overflow-y-auto">
+              {previewMatches.length > 0 ? (
+                previewMatches.map((m, idx) => (
+                  <div key={idx} className="text-emerald-400">Match found: {JSON.stringify(m)}</div>
+                ))
+              ) : (
+                <div className="text-slate-600">Enter text above to preview regex match extraction.</div>
+              )}
+            </div>
           </div>
         </div>
       </div>

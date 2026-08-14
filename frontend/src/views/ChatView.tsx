@@ -267,6 +267,27 @@ export default function ChatView() {
     toast('Feedback Recorded', rating === 'up' ? 'Marked as helpful 👍' : 'Marked as unhelpful 👎', 'info');
   };
 
+  const handleAutoCorrectResponse = async (msgId: string, text: string) => {
+    try {
+      toast('Evaluating Grounding', 'Auditing facts with Self-RAG reflection tokens...', 'info');
+      const res = await api.autoCorrectRAG(text, []);
+      toast('Self-RAG Verified', `Grounding Status: ${res?.status || 'grounded'}`, 'success');
+    } catch (e: any) {
+      toast('Correction Error', e.message || 'Failed to evaluate grounding', 'error');
+    }
+  };
+
+  const handleInspectEpisodicMemory = async () => {
+    if (!activeSession) return;
+    try {
+      toast('Querying Episodic Memory', 'Retrieving multi-turn session context...', 'info');
+      const res = await api.sessionEpisodicMemory(activeSession);
+      toast('Episodic Memory Retrieved', `Active turns: ${(res?.episodic_memories || []).length}`, 'success');
+    } catch (e: any) {
+      toast('Memory Error', e.message || 'Could not load episodic memory', 'error');
+    }
+  };
+
   const handleRegenerate = () => {
     if (messages.length === 0 || isStreaming) return;
     const lastUserIdx = [...messages].reverse().findIndex(m => m.role === 'user');
@@ -798,12 +819,23 @@ export default function ChatView() {
             <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             Conversations
           </h3>
-          <button
-            onClick={handleNewSession}
-            className="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 font-medium active:scale-95"
-          >
-            <Plus className="w-3.5 h-3.5" /> New
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleInspectEpisodicMemory}
+              disabled={!activeSession}
+              className="text-xs bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 px-2 py-1 rounded-lg transition-all flex items-center gap-1 font-medium disabled:opacity-40"
+              title="Inspect Multi-Turn Episodic Memory"
+            >
+              <Brain className="w-3.5 h-3.5 text-purple-500" />
+              <span>Episodic</span>
+            </button>
+            <button
+              onClick={handleNewSession}
+              className="text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 font-medium active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5" /> New
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">

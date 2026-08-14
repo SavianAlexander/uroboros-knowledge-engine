@@ -29,6 +29,26 @@ export default function GraphView() {
     }
   };
 
+  const handleCommunityClusters = async () => {
+    try {
+      toast('Computing Clusters', 'Evaluating Louvain modularity partitions...', 'info');
+      const res = await api.communityClusters();
+      toast('Community Clusters Ready', `Detected ${(res?.clusters || []).length} dense graph communities`, 'success');
+    } catch (e: any) {
+      toast('Cluster Error', e.message || 'Failed to detect clusters', 'error');
+    }
+  };
+
+  const handleKnowledgeGaps = async () => {
+    try {
+      toast('Discovering Gaps', 'Finding unlinked concepts and orphaned nodes...', 'info');
+      const res = await api.knowledgeGaps();
+      toast('Knowledge Gaps Audit', `Discovered ${(res?.orphaned_concepts || res?.gaps || []).length} knowledge opportunities`, 'success');
+    } catch (e: any) {
+      toast('Gap Discovery Error', e.message || 'Failed to discover gaps', 'error');
+    }
+  };
+
   const containerRef = useRef<HTMLDivElement>(null);
   const fgRef = useRef<any>();
   const [nodes, setNodes] = useState<any[]>([]);
@@ -46,6 +66,8 @@ export default function GraphView() {
 
   useEffect(() => {
     setLoading(true);
+    api.graphClusters().catch(() => {});
+    api.graphWikilinks().catch(() => {});
     api.graphData()
       .then(data => {
         if (!data) throw new Error('No data');
@@ -251,6 +273,22 @@ export default function GraphView() {
         </div>
 
         <div className="flex items-center gap-2 pointer-events-auto">
+            <button
+              onClick={handleCommunityClusters}
+              className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 transition-colors shadow-lg flex items-center gap-1.5"
+              title="Compute Louvain Community Clusters"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Clusters</span>
+            </button>
+            <button
+              onClick={handleKnowledgeGaps}
+              className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 transition-colors shadow-lg flex items-center gap-1.5"
+              title="Discover Vault Knowledge Gaps"
+            >
+              <Filter className="w-3.5 h-3.5 text-amber-500" />
+              <span>Knowledge Gaps</span>
+            </button>
             <button onClick={() => {
               fgRef.current?.zoomToFit(400);
               toast('Graph Reset', 'Zoomed to fit node boundaries', 'info');

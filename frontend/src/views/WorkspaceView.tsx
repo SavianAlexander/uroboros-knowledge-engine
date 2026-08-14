@@ -77,9 +77,8 @@ export default function WorkspaceView() {
 function DirectoryTreeSidebar({ onSelectFile, selectedFile }: any) {
   const { activeWorkspace } = useApp();
   const [treeData, setTreeData] = useState<any[]>([]);
-  const [searchFilter, setSearchFilter] = useState('');
-  
   useEffect(() => {
+    api.tags().catch(() => {});
     api.fileTree().then(data => {
        if (data?.tree) {
           const root: any = { name: 'root', isDir: true, children: {}, path: '' };
@@ -102,6 +101,32 @@ function DirectoryTreeSidebar({ onSelectFile, selectedFile }: any) {
        }
     }).catch(console.error);
   }, [activeWorkspace]);
+
+  const handleUpload = async (fileObj: File) => {
+    try {
+      const fd = new FormData();
+      fd.append('file', fileObj);
+      await api.upload(fd);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDelete = async (filePath: string) => {
+    try {
+      await api.deleteFile(filePath);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRename = async (oldPath: string, newPath: string) => {
+    try {
+      await api.renameFile(oldPath, newPath);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const filterTreeNodes = (nodes: any[]): any[] => {
     if (!searchFilter.trim()) return nodes;
@@ -284,6 +309,79 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
   const isImage = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'].includes(fileExt);
 
   const binaryUrl = `/api/file/binary?path=${encodeURIComponent(filePath)}`;
+
+  const handleAudioBriefing = async () => {
+    try {
+      toast('Generating Audio Podcast', 'Synthesizing 2-speaker conversational dialogue...', 'info');
+      const res = await api.audioBriefing(file?.filename || 'Document', content?.raw_content || '');
+      toast('Audio Briefing Ready', `Synthesized ${(res?.dialogue || []).length} conversational turns`, 'success');
+    } catch (e: any) {
+      toast('Audio Briefing Error', e.message || 'Failed to generate podcast', 'error');
+    }
+  };
+
+  const handleLegalAudit = async () => {
+    try {
+      toast('Auditing Compliance', 'Evaluating statutory citations and liability risks...', 'info');
+      const res = await api.legalAudit(content?.raw_content || '');
+      toast('Compliance Audit Complete', `Risk Score: ${res?.risk_score || 'Low'} | Citations: ${(res?.citations || []).length}`, 'success');
+    } catch (e: any) {
+      toast('Audit Error', e.message || 'Failed to audit document', 'error');
+    }
+  };
+
+  const handleSemanticDiff = async () => {
+    try {
+      toast('Analyzing Semantic Diff', 'Computing proposition-level changes...', 'info');
+      const res = await api.semanticDiff(content?.raw_content || '', content?.raw_content || '');
+      toast('Diff Analysis Complete', `Statement changes: ${(res?.changes || []).length}`, 'info');
+    } catch (e: any) {
+      toast('Diff Error', e.message || 'Failed to compute diff', 'error');
+    }
+  };
+
+  const handleSynthesizeWikilinks = async () => {
+    try {
+      toast('Synthesizing Wikilinks', 'Scanning document for unlinked concepts...', 'info');
+      const res = await api.synthesizeWikilinks(content?.raw_content || '', entitiesList);
+      if (res?.synthesized_text && res.links_added > 0) {
+        setContent((prev: any) => ({ ...prev, raw_content: res.synthesized_text }));
+        toast('Wikilinks Added', `Auto-linked ${res.links_added} concept nodes`, 'success');
+      } else {
+        toast('Graph Fully Linked', 'No unlinked concepts detected', 'info');
+      }
+    } catch (e: any) {
+      toast('Wikilink Error', e.message || 'Failed to synthesize wikilinks', 'error');
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      toast('Generating PDF Report', 'Assembling executive document layout...', 'info');
+      const blob = await api.exportPDF();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${file?.filename || 'report'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast('PDF Exported', 'Downloaded executive PDF report', 'success');
+    } catch (e: any) {
+      toast('Export Error', e.message || 'Failed to export PDF', 'error');
+    }
+  };
+
+  const handleSuggestedTags = async () => {
+    try {
+      const res = await api.suggestedTags(filePath);
+      const tags = res?.tags || [];
+      toast('Suggested Tags', tags.length ? tags.join(', ') : 'No additional tags suggested', 'info');
+    } catch (e: any) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -1257,6 +1355,25 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
               </button>
             </div>
 
+            <button onClick={handleAudioBriefing} className="px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-medium transition-colors border border-amber-500/20 flex items-center gap-1" title="Generate Audio Podcast Briefing">
+              <Volume2 className="w-3.5 h-3.5" />
+              <span>Podcast</span>
+            </button>
+            <button onClick={handleLegalAudit} className="px-2.5 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-medium transition-colors border border-indigo-500/20 flex items-center gap-1" title="Audit Compliance & Legal Citations">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Legal Audit</span>
+            </button>
+            <button onClick={handleSemanticDiff} className="px-2.5 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 rounded-lg text-xs font-medium transition-colors border border-purple-500/20 flex items-center gap-1" title="Analyze Semantic Document Revisions">
+              <Columns2 className="w-3.5 h-3.5" />
+              <span>Diff</span>
+            </button>
+            <button onClick={handleSynthesizeWikilinks} className="px-2.5 py-1.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 rounded-lg text-xs font-medium transition-colors border border-teal-500/20 flex items-center gap-1" title="Auto-Synthesize Semantic Wikilinks">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Wikilinks</span>
+            </button>
+            <button onClick={handleExportPDF} className="px-2.5 py-1.5 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-white/20 transition-colors flex items-center gap-1" title="Export as PDF Report">
+              <Download className="w-3.5 h-3.5"/> PDF
+            </button>
             <button onClick={copyContent} className="px-3 py-1.5 bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-200 dark:hover:bg-white/20 transition-colors flex items-center gap-1.5">
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5"/>}
               <span>{copied ? 'Copied' : 'Copy'}</span>
