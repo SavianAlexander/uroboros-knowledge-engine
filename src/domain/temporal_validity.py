@@ -49,9 +49,9 @@ SUPERSEDING_PATTERNS = [
 ]
 
 # Date Parsing Patterns
-ISO_DATE_REGEX = re.compile(r'\b(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\b')
+ISO_DATE_REGEX = re.compile(r'(?<!\d)(\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01]))(?!\d)')
 FULL_DATE_REGEX = re.compile(
-    r'\b(?:(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})|(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4}))\b',
+    r'\b(?:(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})\b',
     re.IGNORECASE
 )
 YEAR_REGEX = re.compile(r'\b(19\d\d|20\d\d)\b')
@@ -106,7 +106,7 @@ def compute_temporal_decay(
             iso_match = ISO_DATE_REGEX.search(doc_str)
             if iso_match:
                 try:
-                    d = datetime.strptime(iso_match.group(0), "%Y-%m-%d").date()
+                    d = datetime.strptime(iso_match.group(1), "%Y-%m-%d").date()
                     delta_days = (now.date() - d).days
                     delta_years = max(0.0, delta_days / 365.25)
                 except ValueError:
@@ -188,33 +188,36 @@ def detect_temporal_validity(
     effective_date_str = metadata.get("effective_date")
 
     if not effective_date_str:
-        eff_match = EFFECTIVE_DATE_PREFIX.search(header_snippet)
-        if eff_match:
-            effective_date_str = eff_match.group(1).strip()
+        iso_match = ISO_DATE_REGEX.search(header_snippet)
+        if iso_match:
+            effective_date_str = iso_match.group(1)
+            if not pub_year:
+                pub_year = int(effective_date_str[:4])
+        else:
+            full_date_match = FULL_DATE_REGEX.search(header_snippet)
+            if full_date_match:
+                effective_date_str = full_date_match.group(0)
+                if not pub_year:
+                    year_m = YEAR_REGEX.search(effective_date_str)
+                    if year_m:
+                        pub_year = int(year_m.group(1))
+            else:
+                eff_match = EFFECTIVE_DATE_PREFIX.search(header_snippet)
+                if eff_match:
+                    effective_date_str = eff_match.group(1).strip()
+                    if not pub_year:
+                        year_m = YEAR_REGEX.search(effective_date_str)
+                        if year_m:
+                            pub_year = int(year_m.group(1))
 
     if not pub_year:
-        if effective_date_str:
-            y_match = YEAR_REGEX.search(effective_date_str)
-            if y_match:
-                pub_year = int(y_match.group(1))
-        if not pub_year:
-            iso_match = ISO_DATE_REGEX.search(header_snippet)
-            if iso_match:
-                pub_year = int(iso_match.group(1))
+        year_match = YEAR_REGEX.search(header_snippet)
+        if year_match:
+            candidate_year = int(year_match.group(1))
+            if 1970 <= candidate_year <= current_year + 1:
+                pub_year = candidate_year
                 if not effective_date_str:
-                    effective_date_str = iso_match.group(0)
-            else:
-                full_date_match = FULL_DATE_REGEX.search(header_snippet)
-                if full_date_match:
-                    pub_year = int(full_date_match.group(3) or full_date_match.group(6))
-                    if not effective_date_str:
-                        effective_date_str = full_date_match.group(0)
-                else:
-                    year_match = YEAR_REGEX.search(header_snippet)
-                    if year_match:
-                        candidate_year = int(year_match.group(1))
-                        if 1970 <= candidate_year <= current_year + 1:
-                            pub_year = candidate_year
+                    effective_date_str = str(candidate_year)
 
     # 3. Calculate age in years
     age_years = max(0.0, float(current_year - pub_year)) if pub_year else 0.0

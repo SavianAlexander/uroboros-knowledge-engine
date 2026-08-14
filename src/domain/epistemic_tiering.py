@@ -22,9 +22,9 @@ TIER_WEIGHTS: Dict[str, float] = {
 }
 
 # Precompiled Regex Patterns for Epistemic Classification
-# Handles rfc9110, iso27001, iec62443, ieee802, sec 10-k, cfr, uscode, ansi, merkle
+# Uses lookaround delimiters (?<![a-zA-Z0-9]) and (?![a-zA-Z0-9]) to match across underscores, hyphens, and dots
 TIER_1_REGEX = re.compile(
-    r'\b(rfc\d*|iso\d*|iec\d*|ieee\d*|sec|10-k|10-q|statute|statutory|law|uscode|cfr|ansi|merkle|nist)\b',
+    r'(?<![a-zA-Z0-9])(rfc\d*|iso\d*|iec\d*|ieee\d*|sec|10-k|10-q|statute|statutory|law|uscode|cfr|ansi|merkle|nist)(?![a-zA-Z0-9])',
     re.IGNORECASE
 )
 STATUTORY_CITATION_REGEX = re.compile(
@@ -33,17 +33,17 @@ STATUTORY_CITATION_REGEX = re.compile(
 )
 
 TIER_2_REGEX = re.compile(
-    r'\b(spec|specification|specs|api|documentation|whitepaper|datasheet|protocol|architecture|manual|rfc-draft|reference|schema|rfc\s*draft)\b',
+    r'(?<![a-zA-Z0-9])(spec|specification|specs|api|documentation|whitepaper|datasheet|protocol|architecture|manual|rfc-draft|reference|schema|rfc\s*draft)(?![a-zA-Z0-9])',
     re.IGNORECASE
 )
 
 TIER_3_REGEX = re.compile(
-    r'\b(textbook|guide|handbook|edition|accounting|management|course|journal|curriculum|syllabus|dissertation|monograph|peer-reviewed|academic)\b',
+    r'(?<![a-zA-Z0-9])(textbook|guide|handbook|edition|accounting|management|course|journal|curriculum|syllabus|dissertation|monograph|peer-reviewed|academic)(?![a-zA-Z0-9])',
     re.IGNORECASE
 )
 
 COMMENTARY_REGEX = re.compile(
-    r'\b(scratch|notes|memo|chat|blog|forum|commentary|draft|temp|todo|discussion|meeting|transcript|opinion|unverified)\b',
+    r'(?<![a-zA-Z0-9])(scratch|notes|note|memo|chat|blog|forum|commentary|draft|temp|todo|discussion|meeting|transcript|opinion|unverified)(?![a-zA-Z0-9])',
     re.IGNORECASE
 )
 
@@ -80,7 +80,7 @@ def classify_source_epistemic_tier(
     # 2. File extension priority check for source code & formal data schemas
     if base_name.endswith(CODE_EXTENSIONS):
         # Unless filename explicitly marks it as scratch/draft/temp notes
-        if not re.search(r'\b(scratch|draft|temp|notes?)\b', base_name):
+        if not COMMENTARY_REGEX.search(base_name):
             return TIER_1_PRIMARY, TIER_WEIGHTS[TIER_1_PRIMARY]
 
     # 3. Filename analysis (Filename carries priority over body snippets to prevent commentary citing statutes from being elevated)

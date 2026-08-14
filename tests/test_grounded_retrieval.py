@@ -1,11 +1,12 @@
 """
-Unit test suite for Empirically Grounded Retrieval & Epistemic Invariant Engine.
+Comprehensive Unit Test Suite for Empirically Grounded Retrieval & Epistemic Invariant Engine.
 Covers Epistemic Tiering (F1), Authority-Weighted RRF (F2), Temporal Validity (F3),
 Exponential Staleness Decay (F4), Propositions, Consensus, and Invariants.
 """
 
 import pytest
 import math
+from datetime import datetime, date
 from src.domain.grounded_retrieval_engine import (
     classify_source_epistemic_tier,
     compute_authority_weighted_rrf,
@@ -37,6 +38,14 @@ def test_epistemic_tier_classification():
     assert t1_iso == "TIER_1_PRIMARY"
     assert w1_iso == 1.00
 
+    t1_iec, w1_iec = classify_source_epistemic_tier("iec62443_industrial_security.pdf")
+    assert t1_iec == "TIER_1_PRIMARY"
+    assert w1_iec == 1.00
+
+    t1_ieee, w1_ieee = classify_source_epistemic_tier("ieee802_11ax_standard.pdf")
+    assert t1_ieee == "TIER_1_PRIMARY"
+    assert w1_ieee == 1.00
+
     t1_sec, w1_sec = classify_source_epistemic_tier("sec_10-k_annual_filing_2025.pdf")
     assert t1_sec == "TIER_1_PRIMARY"
     assert w1_sec == 1.00
@@ -45,14 +54,19 @@ def test_epistemic_tier_classification():
     assert t1_law == "TIER_1_PRIMARY"
     assert w1_law == 1.00
 
-    # Tier 1 - Formal Code & Data Schemas
-    t1_py, w1_py = classify_source_epistemic_tier("database_engine.py")
-    assert t1_py == "TIER_1_PRIMARY"
-    assert w1_py == 1.00
+    t1_merkle, w1_merkle = classify_source_epistemic_tier("merkle_tree_provenance_root.json")
+    assert t1_merkle == "TIER_1_PRIMARY"
+    assert w1_merkle == 1.00
 
-    t1_proto, w1_proto = classify_source_epistemic_tier("consensus_message.proto")
-    assert t1_proto == "TIER_1_PRIMARY"
-    assert w1_proto == 1.00
+    # Tier 1 - Formal Code & Data Schemas
+    code_files = [
+        "database_engine.py", "schema_migration.sql", "config.json", "driver.c",
+        "kernel.rs", "server.go", "app.ts", "service.proto", "deploy.yaml", "manifest.yml"
+    ]
+    for cf in code_files:
+        t, w = classify_source_epistemic_tier(cf)
+        assert t == "TIER_1_PRIMARY", f"Failed for {cf}"
+        assert w == 1.00
 
     # Tier 2 - Official Technical Specifications
     t2_spec, w2_spec = classify_source_epistemic_tier("fastapi_rest_api_specification.md")
@@ -63,6 +77,10 @@ def test_epistemic_tier_classification():
     assert t2_arch == "TIER_2_TECH_SPEC"
     assert w2_arch == 0.85
 
+    t2_data, w2_data = classify_source_epistemic_tier("microcontroller_hardware_datasheet.pdf")
+    assert t2_data == "TIER_2_TECH_SPEC"
+    assert w2_data == 0.85
+
     # Tier 3 - Academic Textbooks & Peer-Reviewed Literature
     t3_acc, w3_acc = classify_source_epistemic_tier("Intermediate_Accounting_17th_Edition.pdf")
     assert t3_acc == "TIER_3_SECONDARY"
@@ -72,6 +90,10 @@ def test_epistemic_tier_classification():
     assert t3_guide == "TIER_3_SECONDARY"
     assert w3_guide == 0.70
 
+    t3_journ, w3_journ = classify_source_epistemic_tier("peer-reviewed_journal_case_study.pdf")
+    assert t3_journ == "TIER_3_SECONDARY"
+    assert w3_journ == 0.70
+
     # Tier 4 - Informal Commentary & Notes
     t4_scratch, w4_scratch = classify_source_epistemic_tier("scratch_notes.txt")
     assert t4_scratch == "TIER_4_COMMENTARY"
@@ -80,6 +102,10 @@ def test_epistemic_tier_classification():
     t4_blog, w4_blog = classify_source_epistemic_tier("engineering_blog_post_opinion.md")
     assert t4_blog == "TIER_4_COMMENTARY"
     assert w4_blog == 0.35
+
+    t4_chat, w4_chat = classify_source_epistemic_tier("team_chat_transcript_august.txt")
+    assert t4_chat == "TIER_4_COMMENTARY"
+    assert w4_chat == 0.35
 
 
 def test_epistemic_tier_edge_cases():
@@ -100,6 +126,11 @@ def test_epistemic_tier_edge_cases():
     t_snip, w_snip = classify_source_epistemic_tier("document_482.txt", content_snippet=snippet_statute)
     assert t_snip == "TIER_1_PRIMARY"
     assert w_snip == 1.00
+
+    # Edge Case 4: Deep path with mixed directories
+    t_path, w_path = classify_source_epistemic_tier("C:\\vault\\archive\\specifications\\api_spec_v3.pdf")
+    assert t_path == "TIER_2_TECH_SPEC"
+    assert w_path == 0.85
 
 
 def test_authority_weighted_rrf_fusion():
@@ -128,6 +159,33 @@ def test_authority_weighted_rrf_fusion():
     assert fused[0]["grounded_score"] > fused[1]["grounded_score"]
     assert fused[0]["final_rank"] == 1
     assert fused[1]["final_rank"] == 2
+    assert 0.0 <= fused[0]["normalized_score"] <= 1.0
+
+
+def test_authority_weighted_rrf_multi_channel_asymmetry():
+    # Test candidate present only in lexical vs candidate present in both
+    lexical_ranks = [
+        {"id": "only_lex", "filename": "iso27001_audit.pdf", "rank": 1},
+        {"id": "in_both", "filename": "system_specs.md", "rank": 2}
+    ]
+    dense_ranks = [
+        {"id": "in_both", "filename": "system_specs.md", "rank": 1},
+        {"id": "only_dense", "filename": "whitepaper.pdf", "rank": 2}
+    ]
+
+    fused = compute_authority_weighted_rrf(
+        lexical_ranks=lexical_ranks,
+        dense_ranks=dense_ranks,
+        k=60,
+        intent_weights={"lexical": 0.6, "dense": 0.4}
+    )
+
+    assert len(fused) == 3
+    doc_ids = [d["id"] for d in fused]
+    assert "only_lex" in doc_ids
+    assert "in_both" in doc_ids
+    assert "only_dense" in doc_ids
+    assert all(d["final_rank"] == idx + 1 for idx, d in enumerate(fused))
 
 
 def test_authority_weighted_rrf_temporal_dampening():
@@ -179,17 +237,29 @@ def test_temporal_validity_and_superseding():
     assert res_rfc["is_superseded"] is True
     assert "7230" in res_rfc["superseded_by"]
 
-    # 4. Deprecation marker
+    # 4. Standards Header: Updates
+    content_updates = "Internet Engineering Task Force\nRFC 9293\nUpdates: 793, 879, 2873\nCategory: Standards Track"
+    res_upd = detect_temporal_validity(content_updates)
+    assert res_upd["temporal_status"] == "AMENDED"
+    assert "793" in res_upd["superseded_by"]
+
+    # 5. Deprecation marker
     content_deprecated = "Notice: This API endpoint is deprecated in v3.2 and will be removed in v4.0."
     res_dep = detect_temporal_validity(content_deprecated)
     assert res_dep["temporal_status"] == "DEPRECATED"
     assert res_dep["staleness_coefficient"] <= 0.50
 
-    # 5. Date extraction from ISO text
+    # 6. Date extraction from ISO text
     content_iso_date = "Official Specification published 2021-04-15 by Architecture Board."
     res_date = detect_temporal_validity(content_iso_date)
     assert res_date["publication_year"] == 2021
     assert "2021-04-15" in res_date["effective_date"]
+
+    # 7. Date extraction from full written date
+    content_full_date = "Standard finalized on September 14, 2023 by the Technical Committee."
+    res_full = detect_temporal_validity(content_full_date)
+    assert res_full["publication_year"] == 2023
+    assert "September 14, 2023" in res_full["effective_date"]
 
 
 def test_exponential_temporal_decay():
@@ -199,9 +269,22 @@ def test_exponential_temporal_decay():
     # delta_t = 2026 - 2016 = 10y -> exp(-ln(2)) = 0.50
     assert 0.48 <= decay_law_10y <= 0.52
 
-    # Specs (2y): at delta_t = 2y, decay should be approx 0.50; at delta_t = 6y (3 half-lives) -> 0.125
+    # Academic (5y): at delta_t = 5y -> 0.50
+    decay_acad_5y = compute_temporal_decay(document_year_or_date=2021, domain="academic", status="ACTIVE")
+    assert 0.48 <= decay_acad_5y <= 0.52
+
+    # Specs (2y): at delta_t = 2y -> 0.50; at delta_t = 6y (3 half-lives) -> 0.125
     decay_spec_2y = compute_temporal_decay(document_year_or_date=2024, domain="tech_spec", status="ACTIVE")
     assert 0.48 <= decay_spec_2y <= 0.52
+
+    # Commentary (0.5y): at delta_t = 1y (2 half-lives) -> 0.25
+    decay_comm_1y = compute_temporal_decay(document_year_or_date=2025, domain="commentary", status="ACTIVE")
+    assert decay_comm_1y <= 0.30
+
+    # Date object inputs
+    d_obj = date(2021, 1, 1)
+    decay_from_date = compute_temporal_decay(document_year_or_date=d_obj, domain="academic")
+    assert 0.40 <= decay_from_date <= 0.60
 
     # Superseded hard cap <= 0.40
     decay_superseded_fresh = compute_temporal_decay(document_year_or_date=2026, domain="law", status="SUPERSEDED")
@@ -211,10 +294,18 @@ def test_exponential_temporal_decay():
     decay_deprecated_fresh = compute_temporal_decay(document_year_or_date=2026, domain="tech_spec", status="DEPRECATED")
     assert decay_deprecated_fresh <= 0.50
 
+    # Amended hard cap <= 0.75
+    decay_amended_fresh = compute_temporal_decay(document_year_or_date=2026, domain="law", status="AMENDED")
+    assert decay_amended_fresh <= 0.75
+
     # Custom half-life in days (e.g. 365.25 days = 1 year)
     decay_custom = compute_temporal_decay(document_year_or_date=2025, half_life_days=365.25)
     # delta_t = 1y -> half-life = 1y -> decay approx 0.50
     assert 0.48 <= decay_custom <= 0.52
+
+    # Decay floor verification (decay >= 0.05)
+    decay_ancient = compute_temporal_decay(document_year_or_date=1900, domain="commentary")
+    assert decay_ancient >= 0.05
 
 
 def test_propositional_decomposition():
