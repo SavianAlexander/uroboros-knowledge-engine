@@ -2,7 +2,11 @@
 
 <p align="center">
   <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v1.0.0-blue.svg?style=flat-square" alt="Release v1.0.0" /></a>
-  <img src="https://img.shields.io/github/actions/workflow/status/SavianAlexander/uroboros-knowledge-engine/build.yml?branch=master&style=flat-square" alt="Build Status" />
+  <a href="https://savianalexander.github.io/uroboros-knowledge-engine/"><img src="https://img.shields.io/badge/Live%20Showcase-GitHub%20Pages-blueviolet?style=flat-square&logo=github" alt="Live Client Showcase" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml/badge.svg" alt="CI Pipeline" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml/badge.svg" alt="Neuro Co-Pilot Tri-Engine CI Suite" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml/badge.svg" alt="Crucible Security Matrix" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml/badge.svg" alt="Build & Package" /></a>
   <img src="https://img.shields.io/badge/Crucible%20Security-100%25%20Trust-emerald?style=flat-square" alt="Crucible 100% Trust" />
   <img src="https://img.shields.io/badge/Tududi%20Task%20Master-Connected%20Project%20%2313-blue?style=flat-square" alt="Tududi Project #13" />
   <a href="docs/soc2_type2_attestation.md"><img src="https://img.shields.io/badge/SOC%202%20Type%20II-Verified-green.svg?style=flat-square" alt="SOC 2 Type II" /></a>
@@ -15,6 +19,9 @@
   <img src="https://img.shields.io/badge/test%20pass%20rate-100%25-brightgreen.svg?style=flat-square" alt="Test Pass Rate" />
   <img src="https://img.shields.io/badge/code%20style-ponytail-indigo?style=flat-square" alt="Code Style" />
 </p>
+
+> [!TIP]
+> 🌐 **Interactive Client Showcase & UX Deck**: Explore the live interactive glassmorphic application showcase, multi-viewport UI captures, and architectural flow diagrams at **[savianalexander.github.io/uroboros-knowledge-engine](https://savianalexander.github.io/uroboros-knowledge-engine/)**.
 
 ---
 
