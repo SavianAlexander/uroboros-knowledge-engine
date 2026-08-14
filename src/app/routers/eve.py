@@ -204,4 +204,24 @@ def get_pilot_recommendations(character_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/telemetry/empirical")
+def get_empirical_telemetry_endpoint():
+    """Retrieve 100% verified empirical telemetry dataset and fleet totals."""
+    try:
+        from src.infrastructure.eve_empirical_telemetry import calculate_fleet_totals
+        return calculate_fleet_totals()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/sde/types")
+def get_sde_types_endpoint():
+    """Retrieve canonical SDE Type ID database."""
+    try:
+        from src.infrastructure.eve_empirical_telemetry import CANONICAL_SDE_TYPES
+        return CANONICAL_SDE_TYPES
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
