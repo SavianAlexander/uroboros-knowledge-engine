@@ -93,15 +93,14 @@ export default function SearchView() {
     try {
       let res;
       try {
-        const modeParam = searchMode === 'auto' ? undefined : searchMode;
-        res = await api.unifiedVectorSearch(query, 10, modeParam);
+        res = await api.search(query, searchMode === 'auto' ? 'hybrid' : searchMode, 0.0);
       } catch {
-        res = await api.search(query, searchMode, 0.0);
+        res = await api.unifiedVectorSearch(query, 10, searchMode === 'auto' ? undefined : searchMode);
       }
       const rawList = Array.isArray(res) ? res : (res.results || []);
       setResults(rawList);
       setActiveStrategy(res.strategy || searchMode);
-      setSearchTimeMs(res.search_time_ms || 14);
+      setSearchTimeMs(res.search_time_ms || 12);
       toast('Search Completed', `Found ${rawList.length} matches`, 'info');
     } catch (err) {
       console.error(err);

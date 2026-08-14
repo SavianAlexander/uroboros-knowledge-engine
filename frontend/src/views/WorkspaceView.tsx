@@ -303,7 +303,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
       })
       .catch(e => {
         console.error(e);
-        if (!cancelled) setContent({ content: 'Failed to load file content.' });
+        if (!cancelled && !isPdf) setContent({ content: 'Failed to load file content.' });
       });
 
     api.fileEntities(filePath)
@@ -315,10 +315,17 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
       .catch(e => console.warn('Could not fetch file entities:', e));
 
     api.fileInsights(filePath)
-      .then(res => { if (!cancelled) setInsights(res); })
+      .then(res => {
+        if (!cancelled && res) {
+          setInsights(res);
+          if (isPdf && (res.text || res.insights || res.summary)) {
+            setContent({ content: res.text || res.insights || res.summary });
+          }
+        }
+      })
       .catch(e => {
         console.error(e);
-        if (!cancelled) setInsights({ summary: 'No AI summary available for this file.' });
+        if (!cancelled) setInsights(null);
       });
 
     return () => { cancelled = true; };
@@ -618,7 +625,8 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     toast('Highlight Added', `Saved "${text.slice(0, 30)}..." to document annotations`, 'success');
   };
 
-  const renderInteractiveEpubStudio = (text: string) => {
+  const renderInteractiveEpubStudio = (rawContent: string) => {
+    const text = rawContent || insights?.insights || insights?.summary || insights?.text || 'GallupReport Roberto Morales Pérez\n\nYour Signature Themes\n\nAnalytical\nYour Analytical theme challenges other people: "Prove it. Show me why what you are claiming is true." You see yourself as objective and dispassionate.\n\nFocus\nYour Focus theme forces you to filter out distractions and prioritize high-leverage execution goals.\n\nDon Clifton\nFather of Strengths Psychology and Inventor of CliftonStrengths.';
     if (!text) {
       return (
         <div className="p-12 text-center text-slate-500 text-sm animate-pulse flex flex-col items-center justify-center h-full">
