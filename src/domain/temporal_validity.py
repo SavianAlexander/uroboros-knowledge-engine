@@ -184,7 +184,14 @@ def detect_temporal_validity(
                 superseded_by = target_identifier
 
     # 2. Extract publication year / effective date
-    pub_year = publication_year or metadata.get("publication_year") or metadata.get("effective_year")
+    raw_pub_year = publication_year if publication_year is not None else (metadata.get("publication_year") or metadata.get("effective_year"))
+    pub_year: Optional[int] = None
+    if raw_pub_year is not None:
+        try:
+            pub_year = int(raw_pub_year)
+        except (ValueError, TypeError):
+            pub_year = None
+
     effective_date_str = metadata.get("effective_date")
 
     if not effective_date_str:
@@ -192,7 +199,10 @@ def detect_temporal_validity(
         if iso_match:
             effective_date_str = iso_match.group(1)
             if not pub_year:
-                pub_year = int(effective_date_str[:4])
+                try:
+                    pub_year = int(effective_date_str[:4])
+                except (ValueError, TypeError):
+                    pub_year = None
         else:
             full_date_match = FULL_DATE_REGEX.search(header_snippet)
             if full_date_match:
@@ -200,7 +210,10 @@ def detect_temporal_validity(
                 if not pub_year:
                     year_m = YEAR_REGEX.search(effective_date_str)
                     if year_m:
-                        pub_year = int(year_m.group(1))
+                        try:
+                            pub_year = int(year_m.group(1))
+                        except (ValueError, TypeError):
+                            pub_year = None
             else:
                 eff_match = EFFECTIVE_DATE_PREFIX.search(header_snippet)
                 if eff_match:
@@ -208,19 +221,32 @@ def detect_temporal_validity(
                     if not pub_year:
                         year_m = YEAR_REGEX.search(effective_date_str)
                         if year_m:
-                            pub_year = int(year_m.group(1))
+                            try:
+                                pub_year = int(year_m.group(1))
+                            except (ValueError, TypeError):
+                                pub_year = None
 
     if not pub_year:
         year_match = YEAR_REGEX.search(header_snippet)
         if year_match:
-            candidate_year = int(year_match.group(1))
-            if 1970 <= candidate_year <= current_year + 1:
-                pub_year = candidate_year
-                if not effective_date_str:
-                    effective_date_str = str(candidate_year)
+            try:
+                candidate_year = int(year_match.group(1))
+                if 1970 <= candidate_year <= current_year + 1:
+                    pub_year = candidate_year
+                    if not effective_date_str:
+                        effective_date_str = str(candidate_year)
+            except (ValueError, TypeError):
+                pass
+
+    # Ensure pub_year is an int or None before math operations
+    if pub_year is not None:
+        try:
+            pub_year = int(pub_year)
+        except (ValueError, TypeError):
+            pub_year = None
 
     # 3. Calculate age in years
-    age_years = max(0.0, float(current_year - pub_year)) if pub_year else 0.0
+    age_years = max(0.0, float(current_year - pub_year)) if pub_year is not None else 0.0
 
     # 4. Determine domain
     domain = metadata.get("domain", metadata.get("category", "general"))

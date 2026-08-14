@@ -24,11 +24,11 @@ TIER_WEIGHTS: Dict[str, float] = {
 # Precompiled Regex Patterns for Epistemic Classification
 # Uses lookaround delimiters (?<![a-zA-Z0-9]) and (?![a-zA-Z0-9]) to match across underscores, hyphens, and dots
 TIER_1_REGEX = re.compile(
-    r'(?<![a-zA-Z0-9])(rfc\d*|iso\d*|iec\d*|ieee\d*|sec|10-k|10-q|statute|statutory|law|uscode|cfr|ansi|merkle|nist)\d*(?![a-zA-Z0-9])',
+    r'(?<![a-zA-Z0-9])(rfc\d*|iso\d*|iec\d*|ieee\d*|sec[-_](?:10-?k|10-?q|8-?k|filing|report)|10-k|10-q|statute|statutory|uscode|cfr|ansi|merkle|nist)\d*(?![a-zA-Z0-9])',
     re.IGNORECASE
 )
 STATUTORY_CITATION_REGEX = re.compile(
-    r'(\b\d+\s+u\.s\.c\.|\btitle\s+\d+\s+of\s+the\s+code\b|\bpublic\s+law\s+\d+-\d+\b|\b\d+\s+cfr\s+§?\s*\d+)',
+    r'(\b\d+[\s_-]*u\.?s\.?c\.?|\btitle\s+\d+\s+of\s+the\s+code\b|\bpublic\s+law\s+\d+-\d+\b|\b\d+[\s_-]*cfr\s*§?\s*\d*)',
     re.IGNORECASE
 )
 
@@ -43,7 +43,7 @@ TIER_3_REGEX = re.compile(
 )
 
 COMMENTARY_REGEX = re.compile(
-    r'(?<![a-zA-Z0-9])(scratch|notes|note|memo|chat|blog|forum|commentary|draft|temp|todo|discussion|meeting|transcript|opinion|unverified)\d*(?![a-zA-Z0-9])',
+    r'(?<![a-zA-Z0-9])(scratch|notes|note|memo|chat|blog|forum|commentary|draft|temp|todo|discussion|meeting|transcript|opinion|unverified|informal)\d*(?![a-zA-Z0-9])',
     re.IGNORECASE
 )
 
@@ -70,22 +70,29 @@ def classify_source_epistemic_tier(
     if metadata:
         explicit_tier = metadata.get("epistemic_tier")
         if explicit_tier and explicit_tier in TIER_WEIGHTS:
-            explicit_weight = float(metadata.get("authority_weight", metadata.get("epistemic_weight", TIER_WEIGHTS[explicit_tier])))
+            try:
+                raw_w = metadata.get("authority_weight") or metadata.get("epistemic_weight") or TIER_WEIGHTS[explicit_tier]
+                explicit_weight = float(raw_w)
+            except (ValueError, TypeError):
+                explicit_weight = TIER_WEIGHTS[explicit_tier]
             return explicit_tier, explicit_weight
 
     fname_norm = unicodedata.normalize("NFC", filename or "").lower().replace("\\", "/")
     base_name = fname_norm.rsplit("/", 1)[-1] if "/" in fname_norm else fname_norm
     snippet_norm = unicodedata.normalize("NFC", content_snippet[:1000] if content_snippet else "").lower()
 
-    # 2. File extension priority check for source code & formal data schemas
-    if base_name.endswith(CODE_EXTENSIONS):
-        # Unless filename explicitly marks it as scratch/draft/temp notes
-        if not COMMENTARY_REGEX.search(base_name):
-            return TIER_1_PRIMARY, TIER_WEIGHTS[TIER_1_PRIMARY]
-
-    # 3. Filename analysis (Filename carries priority over body snippets to prevent commentary citing statutes from being elevated)
+    # 2. Check commentary indicator first on filename
+    # Filenames explicitly marked as commentary (blog, scratch, notes, memo, chat, unverified, draft, etc.)
+    # must always return TIER_4_COMMENTARY and not be elevated even if they cite standards or statutes.
     is_filename_commentary = bool(COMMENTARY_REGEX.search(base_name))
+    if is_filename_commentary:
+        return TIER_4_COMMENTARY, TIER_WEIGHTS[TIER_4_COMMENTARY]
 
+    # 3. File extension priority check for source code & formal data schemas
+    if base_name.endswith(CODE_EXTENSIONS):
+        return TIER_1_PRIMARY, TIER_WEIGHTS[TIER_1_PRIMARY]
+
+    # 4. Filename analysis for formal specifications, standards, and literature
     if TIER_1_REGEX.search(base_name) or STATUTORY_CITATION_REGEX.search(base_name):
         return TIER_1_PRIMARY, TIER_WEIGHTS[TIER_1_PRIMARY]
 
@@ -94,10 +101,6 @@ def classify_source_epistemic_tier(
 
     if TIER_3_REGEX.search(base_name):
         return TIER_3_SECONDARY, TIER_WEIGHTS[TIER_3_SECONDARY]
-
-    # 4. If filename explicitly marked as commentary, do not elevate based on body citations
-    if is_filename_commentary:
-        return TIER_4_COMMENTARY, TIER_WEIGHTS[TIER_4_COMMENTARY]
 
     # 5. Content snippet analysis for non-commentary files
     if snippet_norm:
@@ -135,6 +138,12 @@ def compute_authority_weighted_rrf(
     Returns:
         Sorted list of candidate dictionaries with grounded and normalized scores.
     """
+    # Guard against non-positive or invalid k parameter values
+    try:
+        k_val = max(1, int(k))
+    except (ValueError, TypeError):
+        k_val = 60
+
     # Normalize channel weights
     channel_weights = {"lexical": 0.5, "dense": 0.5}
     if intent_weights:
@@ -151,20 +160,28 @@ def compute_authority_weighted_rrf(
     def get_doc_key(doc: Dict[str, Any]) -> str:
         return str(doc.get("id") or doc.get("file_id") or doc.get("filepath") or doc.get("filename") or id(doc))
 
-    # Process lexical channel
+    # Process lexical channel with null-coalescing rank parsing
     n_lex = len(lexical_ranks)
     for idx, doc in enumerate(lexical_ranks):
         key = get_doc_key(doc)
-        rank = int(doc.get("rank", idx + 1))
+        try:
+            rank = int(doc.get("rank") or (idx + 1))
+        except (ValueError, TypeError):
+            rank = idx + 1
+        rank = max(1, rank)
         if key not in doc_map:
             doc_map[key] = {"data": doc, "ranks": {}}
         doc_map[key]["ranks"]["lexical"] = rank
 
-    # Process dense channel
+    # Process dense channel with null-coalescing rank parsing
     n_dense = len(dense_ranks)
     for idx, doc in enumerate(dense_ranks):
         key = get_doc_key(doc)
-        rank = int(doc.get("rank", idx + 1))
+        try:
+            rank = int(doc.get("rank") or (idx + 1))
+        except (ValueError, TypeError):
+            rank = idx + 1
+        rank = max(1, rank)
         if key not in doc_map:
             doc_map[key] = {"data": doc, "ranks": {}}
         doc_map[key]["ranks"]["dense"] = rank
@@ -179,33 +196,42 @@ def compute_authority_weighted_rrf(
         r_lex = ranks.get("lexical", n_lex + 1 if n_lex > 0 else 100)
         r_dense = ranks.get("dense", n_dense + 1 if n_dense > 0 else 100)
 
-        # Compute raw weighted RRF
-        lex_rrf = channel_weights["lexical"] / (float(k) + float(r_lex))
-        dense_rrf = channel_weights["dense"] / (float(k) + float(r_dense))
+        # Compute raw weighted RRF with guarded k_val
+        lex_rrf = channel_weights["lexical"] / (float(k_val) + float(r_lex))
+        dense_rrf = channel_weights["dense"] / (float(k_val) + float(r_dense))
         raw_rrf = lex_rrf + dense_rrf
 
-        # Extract or compute epistemic authority weight
+        # Extract or compute epistemic authority weight with null-coalescing
         filename = str(doc.get("filename") or doc.get("filepath") or "")
         content = str(doc.get("content") or doc.get("snippet") or "")
         metadata = doc.get("metadata") or {}
 
-        if "epistemic_tier" in doc and "epistemic_weight" in doc:
+        if "epistemic_tier" in doc and doc.get("epistemic_tier") in TIER_WEIGHTS:
             tier = doc["epistemic_tier"]
-            tier_weight = float(doc["epistemic_weight"])
+            try:
+                tier_weight = float(doc.get("epistemic_weight") or TIER_WEIGHTS[tier])
+            except (ValueError, TypeError):
+                tier_weight = TIER_WEIGHTS[tier]
         else:
             tier, tier_weight = classify_source_epistemic_tier(filename, content, metadata)
 
-        # Extract temporal validity staleness coefficient
+        # Extract temporal validity staleness coefficient with null-coalescing
         staleness_coeff = 1.0
-        if "staleness_coefficient" in doc:
-            staleness_coeff = float(doc["staleness_coefficient"])
+        if "staleness_coefficient" in doc and doc.get("staleness_coefficient") is not None:
+            try:
+                staleness_coeff = float(doc.get("staleness_coefficient") or 1.0)
+            except (ValueError, TypeError):
+                staleness_coeff = 1.0
         elif "temporal_validity" in doc and isinstance(doc["temporal_validity"], dict):
-            staleness_coeff = float(doc["temporal_validity"].get("staleness_coefficient", 1.0))
+            try:
+                staleness_coeff = float(doc["temporal_validity"].get("staleness_coefficient") or 1.0)
+            except (ValueError, TypeError):
+                staleness_coeff = 1.0
 
         # Grounded RRF score
         grounded_score = raw_rrf * tier_weight * staleness_coeff
-        # Normalized score relative to theoretical maximum single-item score (k + 1)
-        normalized_score = min(1.0, max(0.0, grounded_score * (float(k) + 1.0)))
+        # Normalized score relative to theoretical maximum single-item score (k_val + 1)
+        normalized_score = min(1.0, max(0.0, grounded_score * (float(k_val) + 1.0)))
 
         merged_record = {
             **doc,

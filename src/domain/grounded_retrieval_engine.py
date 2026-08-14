@@ -28,6 +28,11 @@ from src.domain.temporal_validity import (
     DOMAIN_HALF_LIVES,
     STATUS_PENALTY_CAPS
 )
+from src.domain.dense_propositions import (
+    decompose_into_propositions,
+    expand_propositions_to_parent_context,
+    format_breadcrumb_scope
+)
 
 # Re-export for backward compatibility
 __all__ = [
@@ -36,6 +41,8 @@ __all__ = [
     "detect_temporal_validity",
     "compute_temporal_decay",
     "decompose_into_propositions",
+    "expand_propositions_to_parent_context",
+    "format_breadcrumb_scope",
     "evaluate_cross_document_consensus",
     "check_optical_latency_invariant",
     "check_usl_scalability_invariant",
@@ -59,31 +66,6 @@ __all__ = [
     "DOMAIN_HALF_LIVES",
     "STATUS_PENALTY_CAPS"
 ]
-
-
-# --- 3. Atomic Propositional Decomposition & Breadcrumbs ---
-def decompose_into_propositions(
-    text: str,
-    document_title: str,
-    section_hierarchy: Optional[List[str]] = None
-) -> List[Dict[str, Any]]:
-    """Deconstructs complex document text into atomic self-contained factual propositions with breadcrumb scope."""
-    breadcrumb = " > ".join([document_title] + (section_hierarchy or []))
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-    propositions = []
-
-    for idx, s in enumerate(sentences):
-        s_clean = s.strip()
-        if len(s_clean) < 15:
-            continue
-        propositions.append({
-            "proposition_id": f"{document_title}#prop_{idx}",
-            "breadcrumb_scope": breadcrumb,
-            "statement": s_clean,
-            "contextual_statement": f"[{breadcrumb}] {s_clean}"
-        })
-
-    return propositions
 
 
 # --- 4. Cross-Document Consensus & Contradiction Resolver ---
