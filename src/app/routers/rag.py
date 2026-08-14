@@ -109,7 +109,7 @@ def rag_stream_endpoint(req: RAGStreamRequest):
 def _stream_llm_chunks(llm, messages: list, req):
     """Yield streamed tokens from Ollama or Llama LLM instance."""
     if hasattr(llm, "stream_chat"):
-        model_choice = getattr(req, "model_config", None) or os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+        model_choice = getattr(req, "model", None) or getattr(req, "model_config", None) or "auto"
         temp_val = req.temperature if req.temperature is not None else 0.3
         for tok in llm.stream_chat(messages=messages, model_name=model_choice, temperature=temp_val):
             yield tok
@@ -179,19 +179,35 @@ def chat_stream_endpoint(req: ChatRequest):
 
     add_chat_message(session_id=session_id, role="user", content=user_query)
 
+    from src.core.model_router import route_prompt_model
+    total_words = len(user_query.split()) + (len(local_context.split()) if local_context else 0)
+    token_est = int(total_words * 1.35)
+    model_req = getattr(req, "model", None) or getattr(req, "model_config", None) or "auto"
+    if not model_req or model_req == "auto":
+        routing_info = route_prompt_model(user_query, token_estimate=token_est)
+    else:
+        routing_info = {"model": model_req, "tier": "custom", "num_ctx": 4096}
+
     def event_generator():
-        # Yield sources SSE event
+        # Yield sources SSE event with model tier metadata
         sources_payload = {
             "type": "sources",
             "session_id": session_id,
             "sources": local_citations,
             "local_citations": local_citations,
-            "web_sources": web_sources
+            "web_sources": web_sources,
+            "model_info": {
+                "model": routing_info.get("model", "qwen2.5:7b"),
+                "tier": routing_info.get("tier", "master_rag"),
+                "context_window": routing_info.get("num_ctx", 4096)
+            }
         }
         yield f"data: {json.dumps(sources_payload)}\n\n"
 
         # Stream response tokens
         full_response_text = ""
+        token_count = 0
+        t_gen_start = time.perf_counter()
         
         system_prompt = (
             "You are Uroboros AI, a world-class senior staff AI research assistant and domain expert. "
@@ -238,6 +254,7 @@ def chat_stream_endpoint(req: ChatRequest):
         if llm:
             try:
                 for tok in _stream_llm_chunks(llm, messages, req):
+                    token_count += 1
                     full_response_text += tok
                     yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
             except (KeyboardInterrupt, MemoryError, SystemExit):
@@ -246,15 +263,29 @@ def chat_stream_endpoint(req: ChatRequest):
                 import logging; logging.error(f"Streaming exception in rag.py: {e}")
                 fallback_toks = ["Grounded ", "response ", "based ", "on ", "retrieved ", "documents."]
                 for tok in fallback_toks:
+                    token_count += 1
                     full_response_text += tok
                     yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
                     time.sleep(0.01)
         else:
             fallback_toks = ["Synthesized ", "response ", "grounded ", "in ", "retrieved ", "vault ", "documents."]
             for tok in fallback_toks:
+                token_count += 1
                 full_response_text += tok
                 yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
                 time.sleep(0.01)
+
+        dt_gen = max(0.001, time.perf_counter() - t_gen_start)
+        tok_speed = round(token_count / dt_gen, 1)
+        done_payload = {
+            "type": "done",
+            "tokens_generated": token_count,
+            "duration_sec": round(dt_gen, 2),
+            "tokens_per_sec": tok_speed,
+            "model": routing_info.get("model", "qwen2.5:7b"),
+            "tier": routing_info.get("tier", "master_rag")
+        }
+        yield f"data: {json.dumps(done_payload)}\n\n"
 
         # Save assistant message turn into SQLite chat_messages table
         msg_record = add_chat_message(

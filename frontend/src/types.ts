@@ -64,6 +64,13 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  sources?: Array<{ title?: string; path?: string; url?: string; snippet?: string }>;
+  sources?: Array<{ title?: string; path?: string; url?: string; snippet?: string; citation?: string; confidence_score?: number }>;
+  metrics?: {
+    model?: string;
+    tier?: string;
+    tokens_generated?: number;
+    tokens_per_sec?: number;
+    duration_sec?: number;
+  };
 }
 

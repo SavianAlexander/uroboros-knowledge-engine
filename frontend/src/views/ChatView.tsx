@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../lib/api';
 import { ChatSession, ChatMessage } from '../types';
 import { glassCardClasses } from '../lib/utils';
-import { Bot, Send, User, Settings, Search, FileText, Copy, Check, Sparkles, Trash2, Globe, Plus, RefreshCw, Download, Zap } from 'lucide-react';
+import { Bot, Send, User, Settings, Search, FileText, Copy, Check, Sparkles, Trash2, Globe, Plus, RefreshCw, Download, Zap, X } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
 import { useApp } from '../store/AppContext';
@@ -15,6 +15,7 @@ export default function ChatView() {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [selectedCitation, setSelectedCitation] = useState<any | null>(null);
 
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [modelConfig, setModelConfig] = useState('auto');
@@ -218,13 +219,32 @@ export default function ChatView() {
                   title: src.title || src.filename || src.path || 'Document Context',
                   path: src.path || src.filepath || '',
                   url: src.url || src.link || '',
-                  snippet: src.snippet || src.text || ''
+                  snippet: src.snippet || src.text || src.citation || '',
+                  confidence_score: src.confidence_score
                 }));
                 setMessages(prev => {
                   const newMsgs = [...prev];
                   const idx = newMsgs.findIndex(m => m.id === assistantMsgId);
                   if (idx !== -1) {
                     newMsgs[idx] = { ...newMsgs[idx], sources: gatheredSources };
+                  }
+                  return newMsgs;
+                });
+              } else if (data.type === 'done') {
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  const idx = newMsgs.findIndex(m => m.id === assistantMsgId);
+                  if (idx !== -1) {
+                    newMsgs[idx] = {
+                      ...newMsgs[idx],
+                      metrics: {
+                        model: data.model,
+                        tier: data.tier,
+                        tokens_generated: data.tokens_generated,
+                        tokens_per_sec: data.tokens_per_sec,
+                        duration_sec: data.duration_sec
+                      }
+                    };
                   }
                   return newMsgs;
                 });
@@ -246,9 +266,14 @@ export default function ChatView() {
     }
   };
 
-  const renderFormattedContent = (content: string, msgId: string) => {
+  const renderFormattedContent = (content: string, msgId: string, isCurrentlyStreaming: boolean = false) => {
     if (!content.includes('```')) {
-      return <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>;
+      return (
+        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+          {content}
+          {isCurrentlyStreaming && <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-500 animate-pulse align-middle rounded-sm" />}
+        </p>
+      );
     }
 
     const parts = content.split(/(```[\s\S]*?```)/g);
@@ -262,12 +287,12 @@ export default function ChatView() {
             const codeBlockId = `${msgId}-code-${index}`;
 
             return (
-              <div key={index} className="my-2 rounded-xl overflow-hidden border border-slate-700/50 bg-slate-900/90 text-slate-100 text-xs font-mono">
+              <div key={index} className="my-2 rounded-xl overflow-hidden border border-slate-700/50 bg-slate-900/90 text-slate-100 text-xs font-mono shadow-md">
                 <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800/80 border-b border-slate-700/50 text-slate-400 text-[11px]">
-                  <span>{lang}</span>
+                  <span className="font-semibold uppercase tracking-wider text-indigo-400">{lang}</span>
                   <button
                     onClick={() => copyMessageText(codeBlockId, codeText)}
-                    className="flex items-center gap-1 hover:text-slate-200 transition-colors"
+                    className="flex items-center gap-1 hover:text-slate-200 transition-colors px-2 py-0.5 rounded bg-white/5 hover:bg-white/10"
                   >
                     {copiedMsgId === codeBlockId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                     <span>{copiedMsgId === codeBlockId ? 'Copied' : 'Copy'}</span>
@@ -277,7 +302,14 @@ export default function ChatView() {
               </div>
             );
           }
-          return part ? <p key={index} className="text-sm leading-relaxed whitespace-pre-wrap">{part}</p> : null;
+          return part ? (
+            <p key={index} className="text-sm leading-relaxed whitespace-pre-wrap">
+              {part}
+              {isCurrentlyStreaming && index === parts.length - 1 && (
+                <span className="inline-block w-1.5 h-4 ml-1 bg-indigo-500 animate-pulse align-middle rounded-sm" />
+              )}
+            </p>
+          ) : null;
         })}
       </div>
     );
@@ -490,7 +522,7 @@ export default function ChatView() {
               </div>
             </div>
           ) : (
-            messages.map(msg => (
+            messages.map((msg, idx) => (
               <div key={msg.id} className={`flex gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'assistant' && (
                   <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 border border-indigo-500/30">
@@ -509,21 +541,30 @@ export default function ChatView() {
                   </button>
 
                   {/* Formatted Content */}
-                  {renderFormattedContent(msg.content, msg.id)}
+                  {renderFormattedContent(msg.content, msg.id, isStreaming && idx === messages.length - 1)}
+
+                  {/* Performance Metrics */}
+                  {msg.role === 'assistant' && msg.metrics && (
+                    <div className="flex items-center gap-2 mt-2.5 pt-2 border-t border-slate-200/40 dark:border-white/5 text-[10px] text-slate-400 font-mono">
+                      <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider">
+                        {msg.metrics.tier || 'Master'}: {msg.metrics.model}
+                      </span>
+                      {msg.metrics.tokens_per_sec && <span>• {msg.metrics.tokens_per_sec} tok/s</span>}
+                      {msg.metrics.duration_sec && <span>• {msg.metrics.duration_sec}s</span>}
+                    </div>
+                  )}
 
                   {/* Grounded Sources */}
                   {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-3.5 pt-3 border-t border-slate-200/80 dark:border-white/10 space-y-1.5">
-                      <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block">Grounded Sources:</span>
+                    <div className="mt-3 pt-2.5 border-t border-slate-200/80 dark:border-white/10 space-y-1.5">
+                      <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider block">Grounded Sources ({msg.sources.length}):</span>
                       <div className="flex flex-wrap gap-1.5">
-                        {msg.sources.map((src, idx) => (
+                        {msg.sources.map((src, sIdx) => (
                           <button
-                            key={idx}
-                            onClick={() => {
-                              toast('Grounded Source', src.path || src.url || src.title || 'Vault Document Citation', 'info');
-                            }}
-                            className="inline-flex items-center gap-1 text-[11px] bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 px-2 py-1 rounded-md border border-slate-300 dark:border-white/10 text-cyan-700 dark:text-cyan-400 max-w-xs truncate transition-colors cursor-pointer"
-                            title={src.path || src.url || src.title}
+                            key={sIdx}
+                            onClick={() => setSelectedCitation(src)}
+                            className="inline-flex items-center gap-1 text-[11px] bg-slate-100 dark:bg-white/5 hover:bg-indigo-500/20 hover:border-indigo-500/30 px-2 py-1 rounded-md border border-slate-300 dark:border-white/10 text-cyan-700 dark:text-cyan-400 max-w-xs truncate transition-colors cursor-pointer"
+                            title="Click to view full grounded excerpt"
                           >
                             {src.url ? <Globe className="w-3 h-3 flex-shrink-0 text-indigo-400" /> : <FileText className="w-3 h-3 flex-shrink-0" />}
                             <span className="truncate">{src.title || src.path || src.url}</span>
@@ -579,7 +620,7 @@ export default function ChatView() {
             <button
               type="submit"
               disabled={!input.trim() || isStreaming}
-              className="absolute right-2 bottom-2 p-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700/50 disabled:text-slate-500 text-white rounded-lg transition-colors shadow-sm"
+              className="absolute right-2 bottom-2 p-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700/50 disabled:text-slate-500 text-white rounded-lg transition-colors shadow-sm cursor-pointer"
               title="Send Message"
             >
               <Send className="w-4 h-4" />
@@ -590,6 +631,46 @@ export default function ChatView() {
           </div>
         </div>
       </div>
+
+      {/* Citation Modal */}
+      {selectedCitation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className={`${glassCardClasses} w-full max-w-xl rounded-2xl p-6 shadow-2xl border border-slate-700/50 space-y-4 max-h-[80vh] flex flex-col`}>
+            <div className="flex items-center justify-between border-b border-slate-700/50 pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-sm font-semibold text-slate-100 truncate max-w-md">
+                  {selectedCitation.title || selectedCitation.filename || 'Grounded Vault Context'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedCitation(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="text-xs text-slate-400 font-mono break-all bg-slate-900/40 p-2 rounded-lg border border-white/5">
+              {selectedCitation.path || selectedCitation.url || 'Internal Knowledge Base'}
+            </div>
+            <div className="flex-1 overflow-y-auto bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 text-slate-200 text-xs font-mono leading-relaxed whitespace-pre-wrap">
+              {selectedCitation.snippet || selectedCitation.citation || 'No preview text excerpt available for this source.'}
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => {
+                  copyMessageText('cit', selectedCitation.snippet || selectedCitation.path || '');
+                  toast('Copied', 'Citation excerpt copied to clipboard', 'info');
+                }}
+                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copy Excerpt</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

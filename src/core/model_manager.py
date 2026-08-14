@@ -124,7 +124,7 @@ class OllamaClient:
         for u in urls:
             try:
                 req = urllib.request.Request(u, data=data_bytes, headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(req, timeout=3) as resp:
+                with urllib.request.urlopen(req, timeout=45) as resp:
                     for line in resp:
                         if not line:
                             continue
@@ -349,20 +349,8 @@ class ModelManager:
     def get_llm(self):
         with self._llm_lock:
             if self._llm is None:
-                openai_base = os.environ.get("OPENAI_API_BASE")
-                if openai_base:
-                    self._llm = OllamaClient(openai_base)
-                    return self._llm
-
-                if Llama is not None:
-                    try:
-                        model_path = os.environ.get("LLM_MODEL_PATH", "models/llama-2-7b.Q4_K_M.gguf")
-                        if os.path.exists(model_path):
-                            self._llm = IsolatedLlamaClient(model_path)
-                        else:
-                            logging.info(f"Local LLM GGUF model file not found at '{model_path}'. Skipping isolated worker initialization.")
-                    except Exception as e:
-                        logging.warning(f"Failed to setup LLM isolation in model_manager.py: {e}")
+                openai_base = os.environ.get("OPENAI_API_BASE", "http://127.0.0.1:11434/v1")
+                self._llm = OllamaClient(openai_base)
             return self._llm
 
     def unload(self):
