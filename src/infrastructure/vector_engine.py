@@ -162,8 +162,8 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
             return
 
     text_extensions = {
-        '.md', '.py', '.txt', '.json', '.yaml', '.yml', '.ini', '.csv', '.xml',
-        '.html', '.css', '.js', '.pdf', '.docx', '.rtf', '.xlsx', '.epub',
+        '.md', '.markdown', '.py', '.txt', '.json', '.yaml', '.yml', '.ini', '.csv', '.tsv', '.tab',
+        '.xml', '.html', '.css', '.js', '.pdf', '.docx', '.rtf', '.xlsx', '.pptx', '.ipynb', '.epub',
         '.png', '.jpg', '.jpeg', '.bmp'
     }
     ignored_dirs = {".git", "node_modules", "__pycache__", ".venv", "dist", "build"}

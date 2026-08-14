@@ -169,15 +169,121 @@ class TestDomainIngestion(unittest.TestCase):
         conn.close()
 
     def test_09_wildcard_rule_matching(self):
-        """Verify wildcard glob rule matching in extract_ai_tags without regex exceptions.
-
-        Preconditions: Tag rule defined with wildcard pattern (*quantum*).
-        Invariants: Pattern matching evaluates glob wildcards against document text.
-        Expected Outcomes: Extracted tags include rule target 'quantum_physics'.
-        """
+        """Verify wildcard glob rule matching in extract_ai_tags without regex exceptions."""
         rule_matches = [("*quantum*", "quantum_physics")]
         tags = know.extract_ai_tags("Quantum computing research note", "note.txt", rule_matches)
         self.assertIn("quantum_physics", tags)
+
+    def test_10_jupyter_notebook_extraction(self):
+        """Verify structured extraction of markdown, code, and stdout from Jupyter Notebooks (.ipynb)."""
+        import json
+        ipynb_path = os.path.join(self.test_dir, "analysis.ipynb")
+        nb_data = {
+            "metadata": {"language_info": {"name": "python"}},
+            "cells": [
+                {
+                    "cell_type": "markdown",
+                    "source": ["# Statistical Data Analysis\n", "Evaluating distribution parameters $E=mc^2$."]
+                },
+                {
+                    "cell_type": "code",
+                    "source": ["import math\n", "print('Variance calculated: 42.0')"],
+                    "outputs": [
+                        {"output_type": "stream", "text": ["Variance calculated: 42.0\n"]}
+                    ]
+                }
+            ]
+        }
+        with open(ipynb_path, "w", encoding="utf-8") as f:
+            json.dump(nb_data, f)
+
+        content, coords = know.extract_content(ipynb_path, ".ipynb")
+        self.assertIsInstance(content, str)
+        self.assertIn("Statistical Data Analysis", content)
+        self.assertIn("Variance calculated: 42.0", content)
+        self.assertIn("```python", content)
+
+    def test_11_obsidian_frontmatter_wikilinks_extraction(self):
+        """Verify YAML frontmatter, dataview fields, and wikilinks extraction from Obsidian markdown."""
+        md_path = os.path.join(self.test_dir, "quantum_pkm.md")
+        md_text = """---
+tags: [quantum, physics, computation]
+aliases: [Quantum PKM, QC Notes]
+date: 2026-08-13
+status: active
+---
+
+# Quantum Computation Architecture
+Exploring [[Quantum Algorithms|Shor's Algorithm]] and [[Superconducting Qubits]].
+[priority:: high]
+
+Inline concept #entanglement and notes.
+"""
+        with open(md_path, "w", encoding="utf-8") as f:
+            f.write(md_text)
+
+        content, coords = know.extract_content(md_path, ".md")
+        self.assertIsInstance(content, str)
+        self.assertIn("**Tags**: quantum, physics, computation", content)
+        self.assertIn("**Aliases**: Quantum PKM, QC Notes", content)
+        self.assertIn("**Wikilinks**: Quantum Algorithms, Superconducting Qubits", content)
+        self.assertIn("Shor's Algorithm", content)
+
+    def test_12_pptx_presentation_extraction(self):
+        """Verify slide titles, bullet points, and speaker notes extraction from PowerPoint (.pptx)."""
+        import zipfile
+        pptx_path = os.path.join(self.test_dir, "deck.pptx")
+        
+        slide_xml = b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:sp>
+        <p:txBody>
+          <a:p><a:r><a:t>Executive Strategy Overview</a:t></a:r></a:p>
+          <a:p><a:r><a:t>High-velocity autonomous engineering</a:t></a:r></a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+</p:sld>"""
+
+        notes_xml = b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:notes xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:sp>
+        <p:txBody>
+          <a:p><a:r><a:t>Key talking point: emphasize zero-dependency runtime resilience.</a:t></a:r></a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+</p:notes>"""
+
+        with zipfile.ZipFile(pptx_path, "w") as z:
+            z.writestr("ppt/slides/slide1.xml", slide_xml)
+            z.writestr("ppt/notesSlides/notesSlide1.xml", notes_xml)
+
+        content, coords = know.extract_content(pptx_path, ".pptx")
+        self.assertIsInstance(content, str)
+        self.assertIn("Executive Strategy Overview", content)
+        self.assertIn("High-velocity autonomous engineering", content)
+        self.assertIn("Key talking point: emphasize zero-dependency runtime resilience.", content)
+
+    def test_13_csv_tsv_tabular_dataset_extraction(self):
+        """Verify schema type inference, summary statistics, and markdown table rendering for CSV/TSV."""
+        csv_path = os.path.join(self.test_dir, "metrics.csv")
+        csv_data = "TransactionID,Amount,Category,Date\nTX101,150.50,Infrastructure,2026-08-01\nTX102,320.00,Security,2026-08-02\nTX103,45.25,Compute,2026-08-03\n"
+        with open(csv_path, "w", encoding="utf-8") as f:
+            f.write(csv_data)
+
+        content, coords = know.extract_content(csv_path, ".csv")
+        self.assertIsInstance(content, str)
+        self.assertIn("3 rows x 4 columns", content)
+        self.assertIn("`Amount` (Float)", content)
+        self.assertIn("`Date` (Date/ISO)", content)
+        self.assertIn("| TX101 | 150.50 | Infrastructure | 2026-08-01 |", content)
 
 if __name__ == "__main__":
     unittest.main()

@@ -100,12 +100,321 @@ def parse_audio_metadata(filepath: str) -> Dict[str, Any]:
         logger.warning(f"Error parsing audio metadata for {filepath}: {e}")
         return {"duration": 0.0, "channels": 0, "samplerate": 0, "bitrate": "0 kbps"}
 
+def parse_jupyter_notebook(filepath: str) -> str:
+    """
+    Extracts structured Markdown narrative, Python code cells, LaTeX equations,
+    and stdout / evaluation outputs from Jupyter Notebook (.ipynb) files.
+    """
+    import json
+    try:
+        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+            nb = json.load(f)
+
+        cells = nb.get("cells", [])
+        if not cells:
+            return "[Empty Jupyter Notebook]"
+
+        sections = []
+        metadata = nb.get("metadata", {})
+        kernel_name = metadata.get("kernelspec", {}).get("display_name") or metadata.get("language_info", {}).get("name") or "Python"
+        sections.append(f"# Jupyter Notebook: {os.path.basename(filepath)} [Kernel: {kernel_name}]\n")
+
+        for idx, cell in enumerate(cells, 1):
+            cell_type = cell.get("cell_type", "code")
+            source_lines = cell.get("source", [])
+            source_text = "".join(source_lines) if isinstance(source_lines, list) else str(source_lines)
+
+            if cell_type == "markdown":
+                if source_text.strip():
+                    sections.append(f"<!-- Cell {idx}: Markdown -->\n{source_text.strip()}\n")
+            elif cell_type == "code":
+                if source_text.strip():
+                    sections.append(f"```python\n# [Cell {idx}: Code]\n{source_text.strip()}\n```")
+                
+                # Extract text outputs (stdout, stderr, text/plain)
+                outputs = cell.get("outputs", [])
+                out_texts = []
+                for out in outputs:
+                    out_type = out.get("output_type", "")
+                    if out_type == "stream":
+                        s_text = "".join(out.get("text", [])) if isinstance(out.get("text"), list) else str(out.get("text", ""))
+                        if s_text.strip():
+                            out_texts.append(f"[Stdout]:\n{s_text.strip()}")
+                    elif out_type in ("execute_result", "display_data"):
+                        data = out.get("data", {})
+                        if "text/plain" in data:
+                            res_txt = "".join(data["text/plain"]) if isinstance(data["text/plain"], list) else str(data["text/plain"])
+                            if res_txt.strip():
+                                out_texts.append(f"[Result]: {res_txt.strip()}")
+                    elif out_type == "error":
+                        ename = out.get("ename", "Error")
+                        evalue = out.get("evalue", "")
+                        out_texts.append(f"[Error: {ename}]: {evalue}")
+
+                if out_texts:
+                    sections.append("```text\n" + "\n".join(out_texts) + "\n```\n")
+            elif cell_type == "raw":
+                if source_text.strip():
+                    sections.append(f"<!-- Cell {idx}: Raw Text -->\n{source_text.strip()}\n")
+
+        return "\n".join(sections)
+    except Exception as e:
+        return f"[Jupyter Notebook Parsing Error: {str(e)}]"
+
+
+def parse_obsidian_markdown(filepath: str) -> Tuple[str, Dict[str, Any]]:
+    """
+    Parses Obsidian YAML frontmatter, Dataview key::value fields, and [[Wikilinks]].
+    Extracts structured metadata (tags, aliases, dates, relations) into a searchable document header.
+    """
+    try:
+        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+            raw = f.read()
+
+        metadata: Dict[str, Any] = {
+            "tags": [],
+            "aliases": [],
+            "wikilinks": [],
+            "dataview": {},
+            "created": None,
+            "modified": None
+        }
+
+        body = raw
+        # 1. Parse YAML frontmatter bounded by ---
+        fm_match = re.match(r'^---\s*\n(.*?)\n---\s*\n', raw, re.DOTALL)
+        if fm_match:
+            fm_text = fm_match.group(1)
+            body = raw[fm_match.end():]
+            
+            for line in fm_text.splitlines():
+                if ":" in line and not line.strip().startswith("-"):
+                    k, v = line.split(":", 1)
+                    key = k.strip().lower()
+                    val = v.strip().strip("'\"")
+                    
+                    if key in ("tags", "tag"):
+                        if val.startswith("[") and val.endswith("]"):
+                            metadata["tags"].extend([t.strip().strip("'\"#") for t in val[1:-1].split(",") if t.strip()])
+                        elif val:
+                            metadata["tags"].append(val.strip("#"))
+                    elif key in ("aliases", "alias"):
+                        if val.startswith("[") and val.endswith("]"):
+                            metadata["aliases"].extend([a.strip().strip("'\"") for a in val[1:-1].split(",") if a.strip()])
+                        elif val:
+                            metadata["aliases"].append(val)
+                    elif key in ("created", "date"):
+                        metadata["created"] = val
+                    elif key in ("modified", "updated"):
+                        metadata["modified"] = val
+                    elif val:
+                        metadata["dataview"][key] = val
+                elif line.strip().startswith("-") and metadata["tags"] is not None:
+                    item = line.strip().lstrip("-").strip().strip("'\"#")
+                    if item:
+                        metadata["tags"].append(item)
+
+        # 2. Extract Obsidian [[Wikilinks]] (e.g. [[Target Page|Display Name]] or [[Target Page]])
+        wikilink_matches = re.findall(r'\[\[([^\]\|]+)(?:\|([^\]]+))?\]\]', body)
+        for target, display in wikilink_matches:
+            target_clean = target.strip()
+            if target_clean:
+                metadata["wikilinks"].append({
+                    "target": target_clean,
+                    "display": (display or target_clean).strip()
+                })
+
+        # 3. Extract Dataview inline fields [key:: value] or key:: value
+        dv_bracketed = re.findall(r'\[([a-zA-Z0-9_\-]+)::\s*([^\]]+)\]', body)
+        for k, v in dv_bracketed:
+            metadata["dataview"][k.strip().lower()] = v.strip()
+
+        # 4. Extract inline hashtags #topic/subtopic
+        inline_tags = re.findall(r'(?:^|\s)#([a-zA-Z0-9_\-/]+)', body)
+        for t in inline_tags:
+            clean_t = t.strip()
+            if clean_t and clean_t not in metadata["tags"] and not clean_t.isdigit():
+                metadata["tags"].append(clean_t)
+
+        # Build clean enriched content with structured metadata header for RAG indexing
+        meta_header = []
+        if metadata["tags"]:
+            meta_header.append(f"**Tags**: {', '.join(metadata['tags'])}")
+        if metadata["aliases"]:
+            meta_header.append(f"**Aliases**: {', '.join(metadata['aliases'])}")
+        if metadata["wikilinks"]:
+            link_names = [w["target"] for w in metadata["wikilinks"]]
+            meta_header.append(f"**Wikilinks**: {', '.join(link_names[:10])}")
+        if metadata["dataview"]:
+            dv_str = ", ".join([f"{k}={v}" for k, v in list(metadata["dataview"].items())[:6]])
+            meta_header.append(f"**Dataview**: {dv_str}")
+
+        header_block = "\n".join(meta_header) + "\n\n" if meta_header else ""
+        return header_block + body.strip(), metadata
+    except Exception as e:
+        return f"[Obsidian Parsing Error: {str(e)}]", {}
+
+
+def parse_pptx_presentation(filepath: str) -> str:
+    """
+    Extracts slide titles, body bullet points, shapes, and speaker notes from PowerPoint (.pptx) files
+    using stdlib zipfile and XML parsing for zero-dependency portability.
+    """
+    import zipfile
+    import xml.etree.ElementTree as ET
+    try:
+        slides_text = []
+        with zipfile.ZipFile(filepath, "r") as z:
+            # 1. Discover all slide XML files
+            slide_names = [n for n in z.namelist() if re.match(r'ppt/slides/slide\d+\.xml', n)]
+            # Sort slides numerically: slide1.xml, slide2.xml, slide10.xml
+            slide_names.sort(key=lambda x: int(re.search(r'\d+', x).group()))
+
+            for idx, sname in enumerate(slide_names, 1):
+                raw_xml = z.read(sname)
+                root = ET.fromstring(raw_xml)
+                
+                # Text runs in DrawingML: a:p (paragraph), a:r (run), a:t (text)
+                paragraphs = []
+                for p in root.iter('{http://schemas.openxmlformats.org/drawingml/2006/main}p'):
+                    p_texts = [t.text for t in p.iter('{http://schemas.openxmlformats.org/drawingml/2006/main}t') if t.text]
+                    line = "".join(p_texts).strip()
+                    if line:
+                        paragraphs.append(line)
+
+                slide_title = paragraphs[0] if paragraphs else f"Slide {idx}"
+                body_lines = paragraphs[1:] if len(paragraphs) > 1 else []
+
+                slide_block = [f"## Slide {idx}: {slide_title}"]
+                for b in body_lines:
+                    slide_block.append(f"- {b}")
+
+                # 2. Check for speaker notes in notesSlides
+                notes_name = f"ppt/notesSlides/notesSlide{idx}.xml"
+                if notes_name in z.namelist():
+                    notes_xml = z.read(notes_name)
+                    notes_root = ET.fromstring(notes_xml)
+                    notes_paras = []
+                    for np in notes_root.iter('{http://schemas.openxmlformats.org/drawingml/2006/main}p'):
+                        np_texts = [t.text for t in np.iter('{http://schemas.openxmlformats.org/drawingml/2006/main}t') if t.text]
+                        nline = "".join(np_texts).strip()
+                        if nline and not nline.isdigit() and nline != slide_title:
+                            notes_paras.append(nline)
+                    if notes_paras:
+                        slide_block.append(f"\n> **Speaker Notes**: {' '.join(notes_paras)}")
+
+                slides_text.append("\n".join(slide_block))
+
+        doc_header = f"# PowerPoint Presentation: {os.path.basename(filepath)} [Total Slides: {len(slides_text)}]\n\n"
+        return doc_header + "\n\n".join(slides_text)
+    except Exception as e:
+        return f"[PPTX Parsing Error: {str(e)}]"
+
+
+def parse_tabular_csv(filepath: str, max_preview_rows: int = 30) -> str:
+    """
+    Parses CSV and TSV tabular datasets, automatically detecting delimiters,
+    inferring column data types, computing summary statistics, and generating markdown tables.
+    """
+    import csv
+    try:
+        sample_bytes = safe_read_file(filepath)[:8192]
+        sample_text = sample_bytes.decode("utf-8", errors="replace")
+        
+        # Detect delimiter
+        delim = ","
+        if "\t" in sample_text and sample_text.count("\t") > sample_text.count(","):
+            delim = "\t"
+        elif ";" in sample_text and sample_text.count(";") > sample_text.count(","):
+            delim = ";"
+        elif "|" in sample_text and sample_text.count("|") > sample_text.count(","):
+            delim = "|"
+
+        with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+            reader = csv.reader(f, delimiter=delim)
+            rows = []
+            for r in reader:
+                if r:
+                    rows.append(r)
+
+        if not rows:
+            return "[Empty Tabular Dataset]"
+
+        headers = rows[0]
+        data_rows = rows[1:]
+        total_rows = len(data_rows)
+        total_cols = len(headers)
+
+        # Infer column types
+        type_summary = []
+        for col_idx in range(total_cols):
+            col_name = headers[col_idx] if col_idx < len(headers) else f"Col_{col_idx+1}"
+            col_values = [r[col_idx] for r in data_rows if col_idx < len(r) and r[col_idx].strip()]
+            
+            is_int = True
+            is_float = True
+            for v in col_values[:100]:
+                try:
+                    int(v)
+                except ValueError:
+                    is_int = False
+                try:
+                    float(v)
+                except ValueError:
+                    is_float = False
+
+            if is_int:
+                inferred = "Integer"
+            elif is_float:
+                inferred = "Float"
+            elif all(len(v) in (10, 19) and ("-" in v or "/" in v) for v in col_values[:50] if v):
+                inferred = "Date/ISO"
+            else:
+                inferred = "String"
+            type_summary.append(f"`{col_name}` ({inferred})")
+
+        sections = [
+            f"# Tabular Dataset: {os.path.basename(filepath)}",
+            f"- **Dimensions**: {total_rows} rows x {total_cols} columns | **Delimiter**: `{repr(delim)[1:-1]}`",
+            f"- **Schema**: {', '.join(type_summary)}\n",
+            f"### Preview (First {min(total_rows, max_preview_rows)} rows):"
+        ]
+
+        # Format markdown table
+        md_table = []
+        header_row = "| " + " | ".join([h.replace("|", "/") for h in headers]) + " |"
+        sep_row = "| " + " | ".join(["---"] * total_cols) + " |"
+        md_table.append(header_row)
+        md_table.append(sep_row)
+
+        for row in data_rows[:max_preview_rows]:
+            padded = row + [""] * (total_cols - len(row))
+            row_str = "| " + " | ".join([str(val).replace("|", "/").replace("\n", " ") for val in padded[:total_cols]]) + " |"
+            md_table.append(row_str)
+
+        sections.append("\n".join(md_table))
+        return "\n".join(sections)
+    except Exception as e:
+        return f"[CSV/Tabular Parsing Error: {str(e)}]"
+
+
 def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any]]]:
     """Extract text content and coordinates based on file extension/type."""
     try:
         if os.path.exists(filepath) and os.path.getsize(filepath) > 50 * 1024 * 1024:
             return f"[File Size Exceeds 50MB - Extraction Skipped: {os.path.basename(filepath)}]", []
-        if suffix == '.epub':
+        
+        # 1. Specialized Parsers
+        if suffix == '.ipynb':
+            return parse_jupyter_notebook(filepath), []
+        elif suffix in ('.md', '.markdown'):
+            content, _ = parse_obsidian_markdown(filepath)
+            return content, []
+        elif suffix == '.pptx':
+            return parse_pptx_presentation(filepath), []
+        elif suffix in ('.csv', '.tsv', '.tab'):
+            return parse_tabular_csv(filepath), []
+        elif suffix == '.epub':
             try:
                 epub_texts = []
                 with zipfile.ZipFile(filepath, 'r') as z:
@@ -119,7 +428,7 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
                 return "\n\n".join(epub_texts), []
             except Exception as e:
                 return f"[EPUB Extraction Error: {str(e)}]", []
-        if suffix == '.pdf':
+        elif suffix == '.pdf':
             try:
                 # Primary high-performance engine: PyMuPDF (fitz)
                 try:
