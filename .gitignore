@@ -57,3 +57,5 @@ build/UroborosKnowledgeHub/
 scripts/node_modules/
 Triage (Support)/
 
+
+docs/visual_audit/*.png

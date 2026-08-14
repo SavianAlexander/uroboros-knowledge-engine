@@ -1,83 +1,181 @@
 {
-  "timestamp": "2026-08-14T04:10:00Z",
-  "total_canonical_views": 10,
+  "timestamp": "2026-08-14T04:48:27Z",
+  "total_views_discovered": 19,
   "categories": [
-    "Core Application",
-    "Knowledge & RAG Studio",
     "Configuration & Maintenance",
+    "Core Application",
     "Interactive Overlays",
+    "Knowledge & RAG Studio",
     "Theme & Mobile Variants"
+  ],
+  "viewports": [
+    {
+      "name": "Widescreen Desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "name": "Mobile Device",
+      "width": 375,
+      "height": 812
+    }
+  ],
+  "themes": [
+    "Dark Theme",
+    "Light Theme"
   ],
   "views": [
     {
-      "id": "01_dashboard",
-      "filename": "01_dashboard.png",
-      "title": "System Analytics & Telemetry",
-      "category": "Core Application",
-      "description": "Real-time database status metrics, ingestion velocity, storage distribution, and 1-click WAL maintenance."
-    },
-    {
-      "id": "02_chat_studio",
-      "filename": "02_chat_studio.png",
-      "title": "Claude AI Chat Studio & Canvas",
-      "category": "Knowledge & RAG Studio",
-      "description": "Split-pane conversational studio with reasoning process trace, verified citation badges, and side-by-side artifacts canvas."
-    },
-    {
-      "id": "03_workspace_studio",
-      "filename": "03_workspace_studio.png",
-      "title": "Workspace Workstation & Document Intelligence",
-      "category": "Core Application",
-      "description": "Vault tree, Acrobat/Foxit tool dock, in-document OCR word highlight layer, and live synced Document Intelligence drawer."
-    },
-    {
-      "id": "04_search_explorer",
-      "filename": "04_search_explorer.png",
-      "title": "Semantic Search & Discovery Omnibar",
-      "category": "Knowledge & RAG Studio",
-      "description": "Hybrid search omnibar with auto-routing vector chips, circular match percentage rings, and RAG Lineage drawer."
-    },
-    {
-      "id": "05_ingestion_pipeline",
-      "filename": "05_ingestion_pipeline.png",
-      "title": "Ingestion Pipeline & Live Stream",
-      "category": "Knowledge & RAG Studio",
-      "description": "Real-time ingestion flow visualizer (Ingest -> Parse -> Chunk -> Embed), ShareGPT dataset exporter, and live stream."
-    },
-    {
-      "id": "06_knowledge_graph",
-      "filename": "06_knowledge_graph.png",
-      "title": "3D Force-Directed Vector Graph",
-      "category": "Knowledge & RAG Studio",
-      "description": "Interactive 3D WebGL graph rendering connections between document nodes, extracted entities, and wikilinks."
-    },
-    {
-      "id": "07_config_orchestration",
-      "filename": "07_config_orchestration.png",
-      "title": "Process Configuration & P2P Mesh",
-      "category": "Configuration & Maintenance",
-      "description": "Interactive RAG chunk sliders, point-in-time database snapshot backups, and P2P peer synchronization."
-    },
-    {
-      "id": "08_settings_maintenance",
-      "filename": "08_settings_maintenance.png",
-      "title": "Platform Settings & Database Tools",
-      "category": "Configuration & Maintenance",
-      "description": "AI provider credentials (Claude, OpenAI, Ollama), SQLite WAL maintenance, vacuuming, and vault re-indexing."
-    },
-    {
-      "id": "09_command_palette",
-      "filename": "09_command_palette.png",
-      "title": "Spotlight Command Palette (\u2318K)",
+      "id": "modal_logs",
+      "title": "Logs Modal Overlay",
+      "path": "/#modal",
       "category": "Interactive Overlays",
-      "description": "Keyboard-driven modal providing instant navigation across all application views, quick actions, and search shortcuts."
+      "selector": null,
+      "description": "Logs modal dialog view"
     },
     {
-      "id": "10_light_mode",
-      "filename": "10_light_mode.png",
-      "title": "Ocular-Comfort Light Theme",
+      "id": "modal_lineage",
+      "title": "Lineage Modal Overlay",
+      "path": "/#modal",
+      "category": "Interactive Overlays",
+      "selector": null,
+      "description": "Lineage modal dialog view"
+    },
+    {
+      "id": "captured_01_dashboard",
+      "title": "Dashboard",
+      "path": "/01_dashboard",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Captured interface showcase for Dashboard"
+    },
+    {
+      "id": "captured_02_chat_studio",
+      "title": "Chat Studio",
+      "path": "/02_chat_studio",
+      "category": "Knowledge & RAG Studio",
+      "selector": null,
+      "description": "Captured interface showcase for Chat Studio"
+    },
+    {
+      "id": "captured_02_workspace",
+      "title": "Workspace",
+      "path": "/02_workspace",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Captured interface showcase for Workspace"
+    },
+    {
+      "id": "captured_03_search",
+      "title": "Search",
+      "path": "/03_search",
+      "category": "Knowledge & RAG Studio",
+      "selector": null,
+      "description": "Captured interface showcase for Search"
+    },
+    {
+      "id": "captured_03_workspace_studio",
+      "title": "Workspace Studio",
+      "path": "/03_workspace_studio",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Captured interface showcase for Workspace Studio"
+    },
+    {
+      "id": "captured_04_ingestion",
+      "title": "Ingestion",
+      "path": "/04_ingestion",
+      "category": "Knowledge & RAG Studio",
+      "selector": null,
+      "description": "Captured interface showcase for Ingestion"
+    },
+    {
+      "id": "captured_04_search_explorer",
+      "title": "Search Explorer",
+      "path": "/04_search_explorer",
+      "category": "Knowledge & RAG Studio",
+      "selector": null,
+      "description": "Captured interface showcase for Search Explorer"
+    },
+    {
+      "id": "captured_05_graph",
+      "title": "Graph",
+      "path": "/05_graph",
+      "category": "Knowledge & RAG Studio",
+      "selector": null,
+      "description": "Captured interface showcase for Graph"
+    },
+    {
+      "id": "captured_05_ingestion_pipeline",
+      "title": "Ingestion Pipeline",
+      "path": "/05_ingestion_pipeline",
+      "category": "Knowledge & RAG Studio",
+      "selector": null,
+      "description": "Captured interface showcase for Ingestion Pipeline"
+    },
+    {
+      "id": "captured_06_chat",
+      "title": "Chat",
+      "path": "/06_chat",
+      "category": "Knowledge & RAG Studio",
+      "selector": null,
+      "description": "Captured interface showcase for Chat"
+    },
+    {
+      "id": "captured_06_knowledge_graph",
+      "title": "Knowledge Graph",
+      "path": "/06_knowledge_graph",
+      "category": "Knowledge & RAG Studio",
+      "selector": null,
+      "description": "Captured interface showcase for Knowledge Graph"
+    },
+    {
+      "id": "captured_07_config",
+      "title": "Config",
+      "path": "/07_config",
+      "category": "Configuration & Maintenance",
+      "selector": null,
+      "description": "Captured interface showcase for Config"
+    },
+    {
+      "id": "captured_07_config_orchestration",
+      "title": "Config Orchestration",
+      "path": "/07_config_orchestration",
+      "category": "Configuration & Maintenance",
+      "selector": null,
+      "description": "Captured interface showcase for Config Orchestration"
+    },
+    {
+      "id": "captured_08_settings",
+      "title": "Settings",
+      "path": "/08_settings",
+      "category": "Configuration & Maintenance",
+      "selector": null,
+      "description": "Captured interface showcase for Settings"
+    },
+    {
+      "id": "captured_08_settings_maintenance",
+      "title": "Settings Maintenance",
+      "path": "/08_settings_maintenance",
+      "category": "Configuration & Maintenance",
+      "selector": null,
+      "description": "Captured interface showcase for Settings Maintenance"
+    },
+    {
+      "id": "captured_09_command_palette",
+      "title": "Command Palette",
+      "path": "/09_command_palette",
+      "category": "Interactive Overlays",
+      "selector": null,
+      "description": "Captured interface showcase for Command Palette"
+    },
+    {
+      "id": "captured_10_light_mode",
+      "title": "Light Mode",
+      "path": "/10_light_mode",
       "category": "Theme & Mobile Variants",
-      "description": "High-contrast light theme with responsive glassmorphic UI elements complying with WCAG AA accessibility standards."
+      "selector": null,
+      "description": "Captured interface showcase for Light Mode"
     }
   ]
 }
