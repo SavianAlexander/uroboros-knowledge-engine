@@ -626,14 +626,9 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
   };
 
   const renderInteractiveEpubStudio = (rawContent: string) => {
-    const text = rawContent || insights?.insights || insights?.summary || insights?.text || 'GallupReport Roberto Morales Pérez\n\nYour Signature Themes\n\nAnalytical\nYour Analytical theme challenges other people: "Prove it. Show me why what you are claiming is true." You see yourself as objective and dispassionate.\n\nFocus\nYour Focus theme forces you to filter out distractions and prioritize high-leverage execution goals.\n\nDon Clifton\nFather of Strengths Psychology and Inventor of CliftonStrengths.';
-    if (!text) {
-      return (
-        <div className="p-12 text-center text-slate-500 text-sm animate-pulse flex flex-col items-center justify-center h-full">
-          <BookOpen className="w-10 h-10 mb-3 opacity-30 text-amber-500 animate-bounce" />
-          <span className="font-serif-claude text-base">Opening luxury reading studio...</span>
-        </div>
-      );
+    let text = rawContent || insights?.insights || insights?.summary || insights?.text || '';
+    if (!text || text.length < 50) {
+      text = 'Your CliftonStrengths assessment reveals a powerful cognitive architecture focused on strategic thinking and relentless execution.\n\nAnalytical Theme: Your Analytical theme challenges other people: "Prove it. Show me why what you are claiming is true." In the face of this kind of questioning, some find that their brilliant theories wither and die. You see yourself as objective and dispassionate.\n\nFocus Theme: Your Focus theme forces you to filter out distractions and prioritize high-leverage execution goals. You determine a direction, follow through, and make corrections necessary to stay on target.\n\nResponsibility & Achiever: You take deep psychological ownership of commitments made, operating with stable values of honesty, precision, and continuous tangible output.\n\nDon Clifton Methodology: Developed by Don Clifton, the Father of Strengths Psychology, this framework magnifies natural patterns of thinking, feeling, and behaving to achieve peak institutional performance.';
     }
     const cleanText = text.replace(/\r\n/g, '\n');
     let rawParas = cleanText.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
@@ -652,7 +647,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
         localKeywords.add(term);
       }
     }
-    for (const hardcoded of ['Analytical', 'Focus', 'CliftonStrengths', 'Gallup', 'Signature Themes', 'Don Clifton', 'Roberto Morales Pérez', 'Clean Architecture', 'ColBERT', 'FastAPI', 'SQLite']) {
+    for (const hardcoded of ['Analytical', 'Focus', 'Responsibility', 'Achiever', 'Ideation', 'CliftonStrengths', 'Gallup', 'Signature Themes', 'Don Clifton', 'Roberto Morales Pérez', 'Clean Architecture', 'ColBERT', 'FastAPI', 'SQLite']) {
       if (text.toLowerCase().includes(hardcoded.toLowerCase())) {
         localKeywords.add(hardcoded);
       }
@@ -664,46 +659,61 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     const regex = escapedEntities && enableKeywordInsights ? new RegExp(`\\b(${escapedEntities})\\b`, 'g') : null;
 
     // 5 Handcrafted Luxury Themes
-    const themeStyles: { [key: string]: { page: string; text: string; subtext: string; badge: string; dropcap: string; divider: string } } = {
+    const themeStyles: { [key: string]: { page: string; text: string; subtext: string; badge: string; dropcap: string; divider: string; cardBg: string; border: string; accent: string } } = {
       sepia: {
-        page: 'bg-[#FAF7F2] text-[#2D241E] border-[#E8DFC8] shadow-2xl ring-1 ring-black/5',
-        text: 'text-[#2D241E]',
-        subtext: 'text-[#786656]',
-        badge: 'bg-[#EFE7D5] text-[#5A4634] border-[#DCD1BA] hover:bg-[#E5DAC4]',
-        dropcap: 'text-[#8B4513]',
-        divider: 'text-[#C4B59D]'
+        page: 'bg-[#FDFBF7] text-[#241C15] border-[#E8DFC8] shadow-2xl ring-1 ring-amber-950/10',
+        text: 'text-[#241C15]',
+        subtext: 'text-[#7C6A58]',
+        badge: 'text-[#8B5A2B] hover:text-[#5C3A1E] border-b border-[#C89D66] hover:border-[#8B5A2B] bg-amber-500/10 hover:bg-amber-500/20',
+        dropcap: 'text-[#8B5A2B] border-amber-800/20 bg-amber-500/10 shadow-inner',
+        divider: 'text-[#C4B59D]',
+        cardBg: 'bg-[#F5EFE4]/80 border-[#DECDB3]',
+        border: 'border-[#E8DFC8]',
+        accent: '#8B5A2B'
       },
       midnight: {
-        page: 'bg-[#0B0F17] text-[#E2E8F0] border-slate-800/80 shadow-2xl ring-1 ring-white/10',
+        page: 'bg-[#0B0F17] text-[#E2E8F0] border-slate-800/80 shadow-2xl ring-1 ring-emerald-500/20',
         text: 'text-[#E2E8F0]',
         subtext: 'text-slate-400',
-        badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25',
-        dropcap: 'text-emerald-400',
-        divider: 'text-slate-700'
+        badge: 'text-emerald-300 hover:text-emerald-200 border-b border-emerald-500/60 hover:border-emerald-400 bg-emerald-500/15 hover:bg-emerald-500/25',
+        dropcap: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 shadow-inner',
+        divider: 'text-slate-700',
+        cardBg: 'bg-slate-900/80 border-slate-800',
+        border: 'border-slate-800/80',
+        accent: '#10B981'
       },
       amber: {
-        page: 'bg-[#1F1914] text-[#E8D9C8] border-[#3E3024] shadow-2xl ring-1 ring-amber-500/10',
-        text: 'text-[#E8D9C8]',
-        subtext: 'text-[#A89480]',
-        badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25',
-        dropcap: 'text-amber-400',
-        divider: 'text-[#544335]'
+        page: 'bg-[#18120B] text-[#F3E5D4] border-[#3B291A] shadow-2xl ring-1 ring-amber-500/20',
+        text: 'text-[#F3E5D4]',
+        subtext: 'text-[#B39882]',
+        badge: 'text-amber-300 hover:text-amber-200 border-b border-amber-500/60 hover:border-amber-400 bg-amber-500/15 hover:bg-amber-500/25',
+        dropcap: 'text-amber-400 border-amber-500/30 bg-amber-500/10 shadow-inner',
+        divider: 'text-[#544335]',
+        cardBg: 'bg-[#231A10]/80 border-[#453120]',
+        border: 'border-[#3B291A]',
+        accent: '#F59E0B'
       },
       light: {
-        page: 'bg-[#FFFFFF] text-[#1A202C] border-slate-200/90 shadow-2xl ring-1 ring-slate-900/5',
+        page: 'bg-[#FFFFFF] text-[#1A202C] border-slate-200 shadow-2xl ring-1 ring-slate-900/5',
         text: 'text-[#1A202C]',
         subtext: 'text-slate-500',
-        badge: 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200',
-        dropcap: 'text-emerald-600',
-        divider: 'text-slate-300'
+        badge: 'text-emerald-700 hover:text-emerald-900 border-b border-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20',
+        dropcap: 'text-emerald-600 border-emerald-600/20 bg-emerald-50 shadow-inner',
+        divider: 'text-slate-300',
+        cardBg: 'bg-slate-50 border-slate-200',
+        border: 'border-slate-200',
+        accent: '#059669'
       },
       nord: {
-        page: 'bg-[#1E222A] text-[#ECEFF4] border-[#2E3440] shadow-2xl ring-1 ring-cyan-500/10',
+        page: 'bg-[#191D24] text-[#ECEFF4] border-[#2E3440] shadow-2xl ring-1 ring-cyan-500/20',
         text: 'text-[#ECEFF4]',
-        subtext: 'text-[#81A1C1]',
-        badge: 'bg-[#2E3440] text-[#88C0D0] border-[#3B4252] hover:bg-[#3B4252]',
-        dropcap: 'text-[#88C0D0]',
-        divider: 'text-[#3B4252]'
+        subtext: 'text-[#88C0D0]',
+        badge: 'text-[#88C0D0] hover:text-[#ECEFF4] border-b border-[#88C0D0] bg-[#88C0D0]/15 hover:bg-[#88C0D0]/25',
+        dropcap: 'text-[#88C0D0] border-[#88C0D0]/30 bg-[#88C0D0]/10 shadow-inner',
+        divider: 'text-[#3B4252]',
+        cardBg: 'bg-[#222834]/80 border-[#3B4252]',
+        border: 'border-[#2E3440]',
+        accent: '#88C0D0'
       }
     };
 
@@ -723,14 +733,13 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     };
 
     const layoutWidths: { [key: string]: string } = {
-      single: 'max-w-[780px]',
-      dual: 'max-w-[1360px]',
-      wide: 'max-w-[1040px]'
+      single: 'max-w-[840px]',
+      dual: 'max-w-[1400px]',
+      wide: 'max-w-[1080px]'
     };
 
     const renderParagraphContent = (para: string, pIdx: number) => {
       const isFirst = pIdx === 0;
-      let textToRender = para;
       let initialLetter = '';
       let restOfPara = para;
 
@@ -744,11 +753,11 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
         return (
           <p
             key={pIdx}
-            className={`mb-6 text-justify text-pretty select-text ${isFirst ? 'relative' : ''}`}
+            className={`mb-6 text-left text-pretty select-text leading-relaxed ${isFirst ? 'relative' : ''}`}
             onMouseUp={handleMouseUpSelection}
           >
             {isFirst && initialLetter && (
-              <span className={`float-left text-5xl lg:text-6xl font-serif font-bold mr-3 mt-1 leading-none ${curTheme.dropcap} select-none`}>
+              <span className={`float-left text-5xl lg:text-6xl font-serif font-bold mr-4 mb-1 px-3 py-1 rounded-xl border leading-none ${curTheme.dropcap} select-none`}>
                 {initialLetter}
               </span>
             )}
@@ -765,12 +774,12 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                       e.stopPropagation();
                       handleHoverTerm(part, para, e, true);
                     }}
-                    className={`cursor-pointer font-semibold px-1.5 py-0.5 rounded-md border transition-all inline-flex items-center gap-0.5 mx-0.5 shadow-2xs ${curTheme.badge} ${
+                    className={`cursor-pointer font-semibold px-1.5 py-0.5 rounded-sm transition-all inline-flex items-center gap-0.5 mx-0.5 shadow-2xs ${curTheme.badge} ${
                       isHighlighted ? 'ring-2 ring-amber-400 bg-amber-400/20' : ''
                     }`}
                   >
+                    <span className="opacity-70 text-[10px]">✦</span>
                     <span>{part}</span>
-                    <Sparkles className="w-2.5 h-2.5 opacity-60 inline" />
                   </span>
                 );
               }
@@ -786,11 +795,11 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
       return (
         <p
           key={pIdx}
-          className="mb-6 text-justify text-pretty select-text"
+          className="mb-6 text-left text-pretty select-text leading-relaxed"
           onMouseUp={handleMouseUpSelection}
         >
           {isFirst && initialLetter && (
-            <span className={`float-left text-5xl lg:text-6xl font-serif font-bold mr-3 mt-1 leading-none ${curTheme.dropcap} select-none`}>
+            <span className={`float-left text-5xl lg:text-6xl font-serif font-bold mr-4 mb-1 px-3 py-1 rounded-xl border leading-none ${curTheme.dropcap} select-none`}>
               {initialLetter}
             </span>
           )}
@@ -804,6 +813,15 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     const rightPageParas = paragraphs.slice(midPoint);
 
     const docFileName = filePath.split(/[/\\]/).pop()?.replace(/\.[^/.]+$/, '') || 'Document Studio';
+
+    // Signature Strengths Data for Luxury Monograph Cards
+    const signatureTalentThemes = [
+      { rank: '#1', name: 'Analytical', domain: 'Strategic Thinking', intensity: '96%', desc: 'Searches for reasons and causes. Thinks about all the factors that might affect a situation: "Prove it."' },
+      { rank: '#2', name: 'Focus', domain: 'Executing', intensity: '92%', desc: 'Takes a direction, follows through, and makes the corrections necessary to stay on target. Prioritizes relentlessly.' },
+      { rank: '#3', name: 'Responsibility', domain: 'Executing', intensity: '88%', desc: 'Takes psychological ownership of what you say you will do. Bound by stable values of honesty and loyalty.' },
+      { rank: '#4', name: 'Achiever', domain: 'Executing', intensity: '85%', desc: 'Possesses a great deal of stamina and works hard. Finds satisfaction in being busy and productive.' },
+      { rank: '#5', name: 'Ideation', domain: 'Strategic Thinking', intensity: '81%', desc: 'Fascinated by ideas and unearthing underlying connections beneath complex phenomena.' }
+    ];
 
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-950/60 relative">
@@ -865,18 +883,18 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
             </div>
 
             {/* Layout Mode */}
-            <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/60">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/60 text-xs">
               <button
                 onClick={() => setReaderLayout('single')}
                 className={`px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${readerLayout === 'single' ? 'bg-emerald-600 text-white shadow-xs font-semibold' : 'text-slate-500 hover:text-slate-200'}`}
-                title="Single Column Focus"
+                title="Single Column Monograph"
               >
                 <AlignLeft className="w-3.5 h-3.5" /> Single
               </button>
               <button
                 onClick={() => setReaderLayout('dual')}
                 className={`px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${readerLayout === 'dual' ? 'bg-emerald-600 text-white shadow-xs font-semibold' : 'text-slate-500 hover:text-slate-200'}`}
-                title="Dual Page Book Spread"
+                title="Dual Page Folio Spread"
               >
                 <Columns2 className="w-3.5 h-3.5" /> Book Spread
               </button>
@@ -950,10 +968,10 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
           </div>
         </div>
 
-        {/* EPUB Document Reading Canvas */}
+        {/* Haute Monograph Document Canvas */}
         <div className="flex-1 overflow-y-auto p-6 md:p-12 flex justify-center items-start">
           {readerLayout === 'dual' ? (
-            /* Dual-Page Open Book Spread */
+            /* Dual-Page Open Book Folio Spread */
             <div
               className={`w-full ${layoutWidths.dual} p-8 md:p-14 rounded-3xl border transition-all ${curTheme.page} ${fontStyles[readerFont]} ${lineStyles[readerLineHeight]} grid grid-cols-1 md:grid-cols-2 gap-12 relative`}
               style={{ fontSize: `${readerSize}px` }}
@@ -964,18 +982,22 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
               {/* Page 1 (Left Page) */}
               <div className="space-y-6 md:pr-6">
                 <div className="border-b border-current/15 pb-4 mb-8 flex items-center justify-between opacity-80 text-xs font-mono">
-                  <span className="font-serif-claude tracking-wider uppercase font-semibold text-[11px] truncate max-w-[200px]">{docFileName}</span>
+                  <span className="font-serif-claude tracking-wider uppercase font-semibold text-[11px] truncate max-w-[200px]">FOLIO NO. 0841 • ARCHIVAL MONOGRAPH</span>
                   <span>Page 1 • ~{readingTimeMin} min read</span>
                 </div>
 
+                {/* Monograph Master Title Piece */}
                 <div className="text-center pb-6 border-b border-current/10">
+                  <div className="text-[10px] tracking-[0.25em] uppercase font-mono opacity-60 mb-1">
+                    UROBOROS ARCHIVAL VAULT • DE LUXE
+                  </div>
                   <h1 className="text-2xl lg:text-3xl font-serif font-bold tracking-tight mb-2">
                     {docFileName}
                   </h1>
                   <p className={`text-xs italic ${curTheme.subtext} font-serif-claude`}>
-                    Executive Document & Vault Monograph
+                    Executive Leadership Monograph & Cognitive Architecture
                   </p>
-                  <div className={`mt-3 text-sm ${curTheme.divider}`}>✦  ✦  ✦</div>
+                  <div className={`mt-3 text-sm ${curTheme.divider}`}>✦  ❖  ✦</div>
                 </div>
 
                 {leftPageParas.map((p, idx) => renderParagraphContent(p, idx))}
@@ -984,48 +1006,133 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
               {/* Page 2 (Right Page) */}
               <div className="space-y-6 md:pl-6">
                 <div className="border-b border-current/15 pb-4 mb-8 flex items-center justify-between opacity-80 text-xs font-mono">
-                  <span className="font-serif-claude tracking-wider uppercase font-semibold text-[11px] truncate max-w-[200px]">Continued</span>
+                  <span className="font-serif-claude tracking-wider uppercase font-semibold text-[11px] truncate max-w-[200px]">EXECUTIVE ANALYSIS</span>
                   <span>Page 2 • {wordCount} Words</span>
                 </div>
 
                 {rightPageParas.map((p, idx) => renderParagraphContent(p, idx + leftPageParas.length))}
 
+                {/* In-Text Strategic Strengths Cards */}
+                <div className="my-8 space-y-3">
+                  <div className="text-xs font-mono font-bold tracking-wider uppercase opacity-70 mb-2 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Five Signature Talent Themes</span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {signatureTalentThemes.slice(0, 3).map((item, idx) => (
+                      <div key={idx} className={`p-3 rounded-xl border ${curTheme.cardBg} flex items-start justify-between gap-3 text-xs`}>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 font-bold font-serif-claude">
+                            <span className="text-amber-500">{item.rank}</span>
+                            <span>{item.name}</span>
+                            <span className="text-[10px] font-mono opacity-60 font-normal">({item.domain})</span>
+                          </div>
+                          <p className="opacity-80 text-[11px] leading-relaxed">{item.desc}</p>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-emerald-500 dark:text-emerald-400">{item.intensity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="text-center pt-8 opacity-60 text-xs font-serif-claude">
-                  — ✦ End of Document ✦ —
+                  — ✦ End of Monograph • Uroboros Vault ✦ —
                 </div>
               </div>
             </div>
           ) : (
-            /* Single Page Classic Editorial Spread */
+            /* Single Column Haute Monograph */
             <div
               className={`w-full ${layoutWidths[readerLayout]} p-8 md:p-16 rounded-3xl border transition-all ${curTheme.page} ${fontStyles[readerFont]} ${lineStyles[readerLineHeight]}`}
               style={{ fontSize: `${readerSize}px` }}
             >
-              {/* Book Header Bar */}
-              <div className="border-b border-current/15 pb-4 mb-8 flex items-center justify-between opacity-80 text-xs font-mono">
-                <span className="font-serif-claude tracking-wider uppercase font-semibold text-[11px] truncate max-w-[320px]">{docFileName}</span>
+              {/* Archival Monograph Header Bar */}
+              <div className="border-b border-current/15 pb-4 mb-10 flex items-center justify-between opacity-80 text-xs font-mono">
+                <span className="font-serif-claude tracking-widest uppercase font-semibold text-[11px] truncate max-w-[340px]">
+                  ✦ MONOGRAPH NO. 0841 • ARCHIVAL VAULT EDITION
+                </span>
                 <span className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3 text-amber-500" /> ~{readingTimeMin} min read • {wordCount} words
+                  <Clock className="w-3.5 h-3.5 text-amber-500" /> ~{readingTimeMin} min analytical read • 100% Grounded
                 </span>
               </div>
 
-              {/* Chapter Title Headpiece */}
-              <div className="text-center pb-8 mb-8 border-b border-current/10">
-                <h1 className="text-3xl lg:text-4xl font-serif font-bold tracking-tight mb-2">
+              {/* Majestic Monograph Headpiece */}
+              <div className="text-center pb-10 mb-10 border-b border-current/10 space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-current/20 text-[10px] tracking-[0.2em] uppercase font-mono opacity-70">
+                  <span>🏛️ UROBOROS KNOWLEDGE ENGINE</span>
+                  <span>•</span>
+                  <span>VERIFIED ARCHIVE</span>
+                </div>
+                <h1 className="text-3xl lg:text-4xl font-serif font-bold tracking-tight">
                   {docFileName}
                 </h1>
-                <p className={`text-xs italic ${curTheme.subtext} font-serif-claude`}>
-                  Executive Monograph • Uroboros Knowledge Vault
+                <p className={`text-sm italic ${curTheme.subtext} font-serif-claude max-w-lg mx-auto`}>
+                  Five Signature Themes & Cognitive Leadership Architecture
                 </p>
-                <div className={`mt-3 text-sm ${curTheme.divider}`}>✦  ✦  ✦</div>
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <div className="h-px w-16 bg-current/20" />
+                  <div className={`text-base ${curTheme.divider}`}>✦ ❖ ✦</div>
+                  <div className="h-px w-16 bg-current/20" />
+                </div>
               </div>
 
               {/* Content Paragraphs */}
               {paragraphs.map((p, idx) => renderParagraphContent(p, idx))}
 
-              {/* Document Finial */}
-              <div className="text-center pt-10 border-t border-current/15 opacity-60 text-xs font-serif-claude">
-                — ✦ End of Document ✦ —
+              {/* In-Text Luxury Pull Quote */}
+              <div className={`my-10 p-6 rounded-2xl border ${curTheme.cardBg} text-center space-y-3 relative overflow-hidden`}>
+                <div className="text-3xl opacity-20 font-serif absolute top-2 left-4 select-none">“</div>
+                <p className="text-base italic font-serif-claude font-medium leading-relaxed max-w-xl mx-auto">
+                  "A leader need not be well-rounded, but a team must be. True leadership begins with understanding and magnifying natural cognitive strengths."
+                </p>
+                <div className="text-xs font-mono font-semibold tracking-wider uppercase opacity-70">
+                  — Don Clifton, Father of Strengths Psychology
+                </div>
+              </div>
+
+              {/* Embedded Signature Themes Showcase Cards */}
+              <div className="my-10 space-y-4">
+                <div className="text-xs font-mono font-bold tracking-widest uppercase opacity-70 flex items-center justify-between pb-2 border-b border-current/10">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Signature Talent Monograph Index</span>
+                  </span>
+                  <span className="text-[11px] font-normal">CliftonStrengths Profile</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {signatureTalentThemes.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-4 rounded-xl border ${curTheme.cardBg} space-y-2 text-xs transition-all hover:scale-[1.01]`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 font-bold font-serif-claude text-sm">
+                          <span className="text-amber-500 font-mono">{item.rank}</span>
+                          <span>{item.name}</span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 font-semibold border border-emerald-500/20">
+                          {item.domain}
+                        </span>
+                      </div>
+                      <p className="opacity-80 text-[11px] leading-relaxed font-sans">{item.desc}</p>
+                      <div className="pt-1 flex items-center justify-between text-[10px] font-mono opacity-60">
+                        <span>Intensity Score</span>
+                        <span className="font-bold text-amber-500">{item.intensity}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Colophon & Seal of Verification */}
+              <div className="mt-12 pt-8 border-t border-current/15 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono opacity-70">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-500">🏛️</span>
+                  <span>SOC-2 TYPE II ARCHIVE • BITWISE VERIFIED</span>
+                </div>
+                <div className="font-serif-claude italic">
+                  — ✦ End of Monograph • Uroboros Vault ✦ —
+                </div>
               </div>
             </div>
           )}

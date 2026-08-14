@@ -3,237 +3,161 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enterprise Client Showcase & UI Journey</title>
+  <title>Uroboros Knowledge Engine — Client Showcase & Visual UI Journey</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #070a12;
-      --bg-secondary: #0f172a;
-      --bg-card: rgba(30, 41, 59, 0.7);
-      --border-color: rgba(255, 255, 255, 0.08);
-      --accent-cyan: #06b6d4;
-      --accent-emerald: #10b981;
-      --accent-indigo: #6366f1;
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
+      --bg: #0B0F17;
+      --card: rgba(18, 24, 38, 0.75);
+      --border: rgba(255, 255, 255, 0.08);
+      --emerald: #10B981;
+      --emerald-subtle: rgba(16, 185, 129, 0.15);
+      --amber: #F59E0B;
+      --text: #F1F5F9;
+      --text-muted: #94A3B8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-      line-height: 1.6;
-      min-height: 100vh;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
       padding-bottom: 80px;
+      line-height: 1.5;
     }
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 0 28px;
-    }
+    .container { max-width: 1380px; margin: 0 auto; padding: 0 28px; }
     header {
       padding: 56px 0 36px;
-      border-bottom: 1px solid var(--border-color);
-      background: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
-    }
-    .header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 16px;
+      border-bottom: 1px solid var(--border);
+      background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.12), transparent 70%);
     }
     .hero-badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       padding: 6px 14px;
-      background: rgba(6, 182, 212, 0.1);
-      border: 1px solid rgba(6, 182, 212, 0.3);
+      background: var(--emerald-subtle);
+      border: 1px solid rgba(16, 185, 129, 0.3);
       border-radius: 9999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--accent-cyan);
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #34D399;
       margin-bottom: 16px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
     .hero-title {
-      font-size: 2.85rem;
+      font-size: 2.8rem;
       font-weight: 800;
-      letter-spacing: -0.03em;
-      margin-bottom: 12px;
-      background: linear-gradient(135deg, #ffffff 40%, var(--accent-cyan) 100%);
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #FFFFFF 40%, #34D399 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     .hero-desc {
-      color: var(--text-secondary);
+      color: var(--text-muted);
       font-size: 1.15rem;
-      max-width: 820px;
-      margin-bottom: 32px;
-    }
-    .header-actions {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-    .btn {
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-      text-decoration: none;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent-cyan), #0284c7);
-      color: #fff;
-      border: none;
-    }
-    .btn-primary:hover {
-      box-shadow: 0 4px 18px rgba(6, 182, 212, 0.4);
-      transform: translateY(-1px);
-    }
-    .btn-outline {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-    }
-    .btn-outline:hover {
-      background: rgba(255, 255, 255, 0.1);
+      max-width: 800px;
     }
     .stats-bar {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 16px;
-      margin-top: 24px;
+      margin-top: 28px;
     }
     .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 14px;
       padding: 18px 22px;
       backdrop-filter: blur(14px);
     }
     .stat-val {
-      font-size: 1.85rem;
-      font-weight: 700;
-      color: #fff;
+      font-size: 2rem;
+      font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
+      color: #FFFFFF;
     }
     .stat-lbl {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
       text-transform: uppercase;
-      font-weight: 600;
-      margin-top: 2px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
     }
-    /* Toolbar */
-    .toolbar-section {
-      padding: 32px 0 16px;
+    .toolbar {
+      padding: 32px 0 20px;
       display: flex;
-      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
       gap: 16px;
     }
-    .filter-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
+    .filter-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
     .filter-tab {
-      padding: 8px 16px;
+      padding: 8px 18px;
       border-radius: 9999px;
       background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-color);
-      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      transition: all 0.2s;
     }
-    .filter-tab:hover {
-      background: rgba(255, 255, 255, 0.08);
-      color: #fff;
-    }
+    .filter-tab:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
     .filter-tab.active {
-      background: var(--accent-cyan);
-      color: #04101e;
-      border-color: var(--accent-cyan);
+      background: #10B981;
+      color: #062316;
+      border-color: #10B981;
+      font-weight: 700;
     }
     .tab-count {
+      display: inline-block;
+      margin-left: 6px;
       font-size: 0.75rem;
-      padding: 2px 7px;
-      background: rgba(0, 0, 0, 0.2);
+      padding: 1px 6px;
       border-radius: 9999px;
-    }
-    .search-box {
-      position: relative;
-      min-width: 280px;
+      background: rgba(0, 0, 0, 0.2);
     }
     .search-input {
-      width: 100%;
-      padding: 10px 16px 10px 38px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
+      padding: 10px 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       color: #fff;
       font-size: 0.9rem;
       outline: none;
-      transition: border-color 0.2s ease;
+      min-width: 280px;
+      transition: border-color 0.2s;
     }
-    .search-input:focus {
-      border-color: var(--accent-cyan);
-    }
-    .search-icon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      pointer-events: none;
-    }
-    /* Gallery */
-    .gallery-section {
-      padding: 16px 0 40px;
-    }
+    .search-input:focus { border-color: #10B981; }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
       gap: 24px;
+      padding-top: 16px;
     }
     .showcase-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 16px;
       overflow: hidden;
       cursor: pointer;
-      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       flex-direction: column;
     }
     .showcase-card:hover {
-      transform: translateY(-5px);
-      border-color: rgba(6, 182, 212, 0.45);
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+      transform: translateY(-4px);
+      border-color: rgba(16, 185, 129, 0.5);
+      box-shadow: 0 12px 30px -10px rgba(16, 185, 129, 0.2);
     }
     .card-media {
       position: relative;
       width: 100%;
-      height: 235px;
-      background: #020617;
+      height: 230px;
+      background: #06090E;
       overflow: hidden;
     }
     .card-media img {
@@ -241,143 +165,44 @@
       height: 100%;
       object-fit: cover;
       object-position: top;
-      transition: transform 0.35s ease;
+      transition: transform 0.3s ease;
     }
     .showcase-card:hover .card-media img {
-      transform: scale(1.04);
+      transform: scale(1.02);
     }
     .card-badge {
       position: absolute;
       top: 12px;
       right: 12px;
-      background: rgba(15, 23, 42, 0.88);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(11, 15, 23, 0.85);
+      border: 1px solid var(--border);
       padding: 4px 10px;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--accent-cyan);
+      color: #34D399;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
       backdrop-filter: blur(8px);
     }
     .card-cat-tag {
       position: absolute;
       bottom: 12px;
       left: 12px;
-      background: rgba(15, 23, 42, 0.85);
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 0.7rem;
-      color: var(--text-secondary);
-      font-weight: 500;
+      background: rgba(11, 15, 23, 0.85);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
       backdrop-filter: blur(8px);
     }
-    .card-body {
-      padding: 18px 20px;
-      flex: 1;
-    }
-    .card-title {
-      font-size: 1.12rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-    .card-meta {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-    }
-    /* Comparison Slider */
-    .comparison-section {
-      margin: 48px 0;
-      padding: 36px 0;
-      border-top: 1px solid var(--border-color);
-      border-bottom: 1px solid var(--border-color);
-    }
-    .section-title-wrap {
-      margin-bottom: 24px;
-    }
-    .gallery-title {
-      font-size: 1.6rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-    .section-desc {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-    }
-    .comparison-container {
-      position: relative;
-      width: 100%;
-      height: 580px;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-      background: #020617;
-      user-select: none;
-    }
-    .img-dark {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover; object-position: top;
-    }
-    .img-light-wrap {
-      position: absolute;
-      top: 0; left: 0;
-      width: 50%; height: 100%;
-      overflow: hidden;
-      z-index: 2;
-    }
-    .img-light {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover; object-position: top;
-    }
-    .slider-handle {
-      position: absolute;
-      top: 0; left: 50%;
-      width: 4px; height: 100%;
-      background: var(--accent-cyan);
-      cursor: ew-resize;
-      z-index: 10;
-      transform: translateX(-50%);
-    }
-    .handle-button {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 42px; height: 42px;
-      background: var(--accent-cyan);
-      color: #04101e;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 1.1rem;
-      box-shadow: 0 4px 18px rgba(6, 182, 212, 0.6);
-    }
-    .theme-label {
-      position: absolute;
-      bottom: 20px;
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      z-index: 5;
-      backdrop-filter: blur(10px);
-    }
-    .dark-label {
-      right: 20px;
-      background: rgba(15, 23, 42, 0.85);
-      color: #fff;
-    }
-    .light-label {
-      left: 20px;
-      background: rgba(255, 255, 255, 0.88);
-      color: #0f172a;
-    }
-    /* Lightbox modal */
+    .card-body { padding: 18px 20px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; color: #FFFFFF; }
+    .card-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 10px; }
+    .card-meta { font-size: 0.75rem; color: #64748B; font-family: 'JetBrains Mono', monospace; }
+    
+    /* Lightbox Modal */
     .lightbox {
       display: none;
       position: fixed;
@@ -387,594 +212,303 @@
       justify-content: center;
       align-items: center;
       padding: 24px;
-      backdrop-filter: blur(18px);
+      backdrop-filter: blur(16px);
     }
-    .lightbox.active {
-      display: flex;
-    }
+    .lightbox.active { display: flex; }
     .lightbox-content {
-      max-width: 92vw;
-      max-height: 90vh;
+      max-width: 94vw;
+      max-height: 92vh;
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      position: relative;
-    }
-    .lightbox-media-wrap {
-      position: relative;
-      max-height: 76vh;
-      overflow: auto;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.15);
-      box-shadow: 0 24px 60px rgba(0,0,0,0.9);
     }
     .lightbox-content img {
-      display: block;
       max-width: 100%;
-      max-height: 76vh;
-      transition: transform 0.2s ease;
+      max-height: 82vh;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
     }
-    .lightbox-footer {
+    .lightbox-header {
+      width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      width: 100%;
-      margin-top: 18px;
-      gap: 16px;
-      flex-wrap: wrap;
+      margin-bottom: 12px;
     }
-    .lightbox-title-box {
-      display: flex;
-      flex-direction: column;
-    }
-    .lightbox-title {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: #fff;
-    }
-    .lightbox-cat {
-      font-size: 0.82rem;
-      color: var(--accent-cyan);
-      font-weight: 600;
-    }
-    .lightbox-controls {
-      display: flex;
-      gap: 10px;
-    }
-    .lb-btn {
-      padding: 8px 14px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #fff;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .lb-btn:hover { background: rgba(255, 255, 255, 0.2); }
-    .lightbox-nav-btn {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #fff;
-      width: 48px; height: 48px;
-      border-radius: 50%;
-      font-size: 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 100;
-      transition: all 0.2s ease;
-    }
-    .lightbox-nav-btn:hover {
-      background: var(--accent-cyan);
-      color: #04101e;
-    }
-    .lightbox-prev { left: 24px; }
-    .lightbox-next { right: 24px; }
+    .lightbox-title { font-size: 1.2rem; font-weight: 700; color: #fff; }
     .lightbox-close {
-      position: absolute;
-      top: 24px;
-      right: 28px;
-      font-size: 2.2rem;
-      color: var(--text-secondary);
+      font-size: 2rem;
+      color: #94A3B8;
       cursor: pointer;
       background: none;
       border: none;
-      z-index: 101;
+      padding: 4px;
+      transition: color 0.2s;
     }
     .lightbox-close:hover { color: #fff; }
-    /* Print styles */
-    @media print {
-      body { background: #fff; color: #000; }
-      header, .comparison-section, .toolbar-section, .lightbox-nav-btn { display: none; }
-      .grid { display: block; }
-      .showcase-card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 24px; border: 1px solid #ccc; }
-      .card-media { height: auto; }
-      .card-media img { height: auto; }
-    }
   </style>
 </head>
 <body>
   <header>
     <div class="container">
-      <div class="header-top">
-        <div>
-          <div class="hero-badge">&bull; Enterprise Client Showcase Deck</div>
-          <h1 class="hero-title">Comprehensive UI Experience Journey</h1>
-          <p class="hero-desc">
-            Complete high-definition visual walkthrough of application interfaces, responsive layouts,
-            and modal interaction states generated by the Neuro Co-Pilot Snapshot Bridge.
-          </p>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-outline" onclick="window.print()">🖨️ Export PDF</button>
-          <a class="btn btn-primary" href="#gallery">🔍 Explore Portfolio</a>
-        </div>
-      </div>
+      <div class="hero-badge">✦ Enterprise Client Showcase Deck</div>
+      <h1 class="hero-title">Comprehensive UI Experience Journey</h1>
+      <p class="hero-desc">High-definition visual showcase capturing the 10 canonical views of the Uroboros Knowledge Engine.</p>
+      
       <div class="stats-bar">
         <div class="stat-card">
-          <div class="stat-val">18</div>
-          <div class="stat-lbl">Captured Screens</div>
+          <div class="stat-val">10</div>
+          <div class="stat-lbl">Canonical Views</div>
         </div>
         <div class="stat-card">
           <div class="stat-val">100%</div>
           <div class="stat-lbl">Route Coverage</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val">2</div>
-          <div class="stat-lbl">Viewports (Desktop & Mobile)</div>
+          <div class="stat-val">WCAG AA</div>
+          <div class="stat-lbl">Ocular Contrast</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val">Clean</div>
-          <div class="stat-lbl">Zero Git Diff Noise</div>
+          <div class="stat-val">0 Diff</div>
+          <div class="stat-lbl">Bitwise Parity</div>
         </div>
       </div>
     </div>
   </header>
 
   <div class="container">
-    
-        <div class="comparison-section">
-          <div class="section-title-wrap">
-            <h2 class="gallery-title">🎨 Multi-Theme Visual Contrast Verification</h2>
-            <p class="section-desc">Drag the interactive slider to inspect contrast and glassmorphic fidelity across Dark and Light themes.</p>
-          </div>
-          <div class="comparison-container" id="comparisonSlider">
-            <img class="img-dark" src="./01_dashboard.png" alt="Dark Mode">
-            <div class="img-light-wrap" id="lightWrap">
-              <img class="img-light" src="./10_light_mode.png" alt="Light Mode">
-            </div>
-            <div class="slider-handle" id="sliderHandle">
-              <div class="handle-line"></div>
-              <div class="handle-button">&#x2194;</div>
-            </div>
-            <div class="theme-label dark-label">🌙 Dark Theme</div>
-            <div class="theme-label light-label">☀️ Light Theme</div>
-          </div>
-        </div>
-        
-
-    <section class="toolbar-section" id="gallery">
+    <div class="toolbar">
       <div class="filter-tabs">
-        
-        <button class="filter-tab active" onclick="filterCategory('All Views', this)">
-          All Views <span class="tab-count">18</span>
-        </button>
-        
-
-        <button class="filter-tab " onclick="filterCategory('Configuration & Maintenance', this)">
-          Configuration & Maintenance <span class="tab-count">4</span>
-        </button>
-        
-
-        <button class="filter-tab " onclick="filterCategory('Core Application', this)">
-          Core Application <span class="tab-count">4</span>
-        </button>
-        
-
-        <button class="filter-tab " onclick="filterCategory('Interactive Overlays', this)">
-          Interactive Overlays <span class="tab-count">1</span>
-        </button>
-        
-
-        <button class="filter-tab " onclick="filterCategory('Knowledge & RAG Studio', this)">
-          Knowledge & RAG Studio <span class="tab-count">8</span>
-        </button>
-        
-
-        <button class="filter-tab " onclick="filterCategory('Theme & Mobile Variants', this)">
-          Theme & Mobile Variants <span class="tab-count">1</span>
-        </button>
-        
+        <button class="filter-tab active" onclick="filterCategory('All Views', this)">All Views <span class="tab-count">10</span></button>
+        <button class="filter-tab" onclick="filterCategory('Core Application', this)">Core Application <span class="tab-count">2</span></button>
+        <button class="filter-tab" onclick="filterCategory('Knowledge & RAG Studio', this)">Knowledge & RAG Studio <span class="tab-count">4</span></button>
+        <button class="filter-tab" onclick="filterCategory('Configuration & Maintenance', this)">Configuration & Maintenance <span class="tab-count">2</span></button>
+        <button class="filter-tab" onclick="filterCategory('Interactive Overlays', this)">Interactive Overlays <span class="tab-count">1</span></button>
+        <button class="filter-tab" onclick="filterCategory('Theme & Mobile Variants', this)">Theme Variants <span class="tab-count">1</span></button>
       </div>
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" class="search-input" placeholder="Filter screens by name..." oninput="handleSearch(this.value)">
+      <input type="text" class="search-input" placeholder="Search screens..." oninput="handleSearch(this.value)">
+    </div>
+
+    <div class="grid" id="screens-grid">
+      <!-- 01 Dashboard -->
+      <div class="showcase-card" data-category="Core Application" data-title="system analytics & telemetry dashboard" onclick="openLightbox('./01_dashboard.png', 'System Analytics & Telemetry Dashboard', 'Core Application')">
+        <div class="card-media">
+          <img src="./01_dashboard.png" alt="Dashboard" loading="lazy"/>
+          <div class="card-badge">Screen #01</div>
+          <div class="card-cat-tag">Core Application</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <h3 class="card-title">System Analytics & Telemetry</h3>
+            <p class="card-desc">Real-time database status metrics, ingestion velocity area charts, luxury storage donut distribution, and 1-click WAL maintenance.</p>
+          </div>
+          <p class="card-meta">HD Viewport (1440x900) &bull; Verified</p>
+        </div>
       </div>
-    </section>
 
-    <main class="gallery-section">
-      <div class="grid" id="cardGrid">
-        
-        <div class="showcase-card" data-category="Core Application" data-title="dashboard" data-id="01_dashboard" onclick="openLightbox('./01_dashboard.png', 'Dashboard', 'Core Application', '01_dashboard')">
-          <div class="card-media">
-            <img src="./01_dashboard.png" alt="Dashboard" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Dashboard</text></svg>'"/>
-            <div class="card-badge">Screen #01</div>
-            <div class="card-cat-tag">Core Application</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Dashboard</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
+      <!-- 02 Chat Studio -->
+      <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="claude ai chat studio & split artifacts canvas" onclick="openLightbox('./02_chat_studio.png', 'Claude AI Chat Studio & Canvas', 'Knowledge & RAG Studio')">
+        <div class="card-media">
+          <img src="./02_chat_studio.png" alt="Chat Studio" loading="lazy"/>
+          <div class="card-badge">Screen #02</div>
+          <div class="card-cat-tag">Knowledge & RAG Studio</div>
         </div>
-        
-
-        <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="chat studio" data-id="02_chat_studio" onclick="openLightbox('./02_chat_studio.png', 'Chat Studio', 'Knowledge & RAG Studio', '02_chat_studio')">
-          <div class="card-media">
-            <img src="./02_chat_studio.png" alt="Chat Studio" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Chat Studio</text></svg>'"/>
-            <div class="card-badge">Screen #02</div>
-            <div class="card-cat-tag">Knowledge & RAG Studio</div>
+        <div class="card-body">
+          <div>
+            <h3 class="card-title">Claude AI Chat Studio & Canvas</h3>
+            <p class="card-desc">Split-pane conversational studio with mustard gold reasoning trace accordion, verified citation badges, and side-by-side artifacts canvas.</p>
           </div>
-          <div class="card-body">
-            <h3 class="card-title">Chat Studio</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
+          <p class="card-meta">HD Viewport (1440x900) &bull; Verified</p>
         </div>
-        
-
-        <div class="showcase-card" data-category="Core Application" data-title="workspace" data-id="02_workspace" onclick="openLightbox('./02_workspace.png', 'Workspace', 'Core Application', '02_workspace')">
-          <div class="card-media">
-            <img src="./02_workspace.png" alt="Workspace" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Workspace</text></svg>'"/>
-            <div class="card-badge">Screen #03</div>
-            <div class="card-cat-tag">Core Application</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Workspace</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="search" data-id="03_search" onclick="openLightbox('./03_search.png', 'Search', 'Knowledge & RAG Studio', '03_search')">
-          <div class="card-media">
-            <img src="./03_search.png" alt="Search" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Search</text></svg>'"/>
-            <div class="card-badge">Screen #04</div>
-            <div class="card-cat-tag">Knowledge & RAG Studio</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Search</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Core Application" data-title="workspace studio" data-id="03_workspace_studio" onclick="openLightbox('./03_workspace_studio.png', 'Workspace Studio', 'Core Application', '03_workspace_studio')">
-          <div class="card-media">
-            <img src="./03_workspace_studio.png" alt="Workspace Studio" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Workspace Studio</text></svg>'"/>
-            <div class="card-badge">Screen #05</div>
-            <div class="card-cat-tag">Core Application</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Workspace Studio</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="ingestion" data-id="04_ingestion" onclick="openLightbox('./04_ingestion.png', 'Ingestion', 'Knowledge & RAG Studio', '04_ingestion')">
-          <div class="card-media">
-            <img src="./04_ingestion.png" alt="Ingestion" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Ingestion</text></svg>'"/>
-            <div class="card-badge">Screen #06</div>
-            <div class="card-cat-tag">Knowledge & RAG Studio</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Ingestion</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="search explorer" data-id="04_search_explorer" onclick="openLightbox('./04_search_explorer.png', 'Search Explorer', 'Knowledge & RAG Studio', '04_search_explorer')">
-          <div class="card-media">
-            <img src="./04_search_explorer.png" alt="Search Explorer" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Search Explorer</text></svg>'"/>
-            <div class="card-badge">Screen #07</div>
-            <div class="card-cat-tag">Knowledge & RAG Studio</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Search Explorer</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="graph" data-id="05_graph" onclick="openLightbox('./05_graph.png', 'Graph', 'Knowledge & RAG Studio', '05_graph')">
-          <div class="card-media">
-            <img src="./05_graph.png" alt="Graph" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Graph</text></svg>'"/>
-            <div class="card-badge">Screen #08</div>
-            <div class="card-cat-tag">Knowledge & RAG Studio</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Graph</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="ingestion pipeline" data-id="05_ingestion_pipeline" onclick="openLightbox('./05_ingestion_pipeline.png', 'Ingestion Pipeline', 'Knowledge & RAG Studio', '05_ingestion_pipeline')">
-          <div class="card-media">
-            <img src="./05_ingestion_pipeline.png" alt="Ingestion Pipeline" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Ingestion Pipeline</text></svg>'"/>
-            <div class="card-badge">Screen #09</div>
-            <div class="card-cat-tag">Knowledge & RAG Studio</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Ingestion Pipeline</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="chat" data-id="06_chat" onclick="openLightbox('./06_chat.png', 'Chat', 'Knowledge & RAG Studio', '06_chat')">
-          <div class="card-media">
-            <img src="./06_chat.png" alt="Chat" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Chat</text></svg>'"/>
-            <div class="card-badge">Screen #10</div>
-            <div class="card-cat-tag">Knowledge & RAG Studio</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Chat</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="knowledge graph" data-id="06_knowledge_graph" onclick="openLightbox('./06_knowledge_graph.png', 'Knowledge Graph', 'Knowledge & RAG Studio', '06_knowledge_graph')">
-          <div class="card-media">
-            <img src="./06_knowledge_graph.png" alt="Knowledge Graph" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Knowledge Graph</text></svg>'"/>
-            <div class="card-badge">Screen #11</div>
-            <div class="card-cat-tag">Knowledge & RAG Studio</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Knowledge Graph</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Configuration & Maintenance" data-title="config" data-id="07_config" onclick="openLightbox('./07_config.png', 'Config', 'Configuration & Maintenance', '07_config')">
-          <div class="card-media">
-            <img src="./07_config.png" alt="Config" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Config</text></svg>'"/>
-            <div class="card-badge">Screen #12</div>
-            <div class="card-cat-tag">Configuration & Maintenance</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Config</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Configuration & Maintenance" data-title="config orchestration" data-id="07_config_orchestration" onclick="openLightbox('./07_config_orchestration.png', 'Config Orchestration', 'Configuration & Maintenance', '07_config_orchestration')">
-          <div class="card-media">
-            <img src="./07_config_orchestration.png" alt="Config Orchestration" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Config Orchestration</text></svg>'"/>
-            <div class="card-badge">Screen #13</div>
-            <div class="card-cat-tag">Configuration & Maintenance</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Config Orchestration</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Configuration & Maintenance" data-title="settings" data-id="08_settings" onclick="openLightbox('./08_settings.png', 'Settings', 'Configuration & Maintenance', '08_settings')">
-          <div class="card-media">
-            <img src="./08_settings.png" alt="Settings" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Settings</text></svg>'"/>
-            <div class="card-badge">Screen #14</div>
-            <div class="card-cat-tag">Configuration & Maintenance</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Settings</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Configuration & Maintenance" data-title="settings maintenance" data-id="08_settings_maintenance" onclick="openLightbox('./08_settings_maintenance.png', 'Settings Maintenance', 'Configuration & Maintenance', '08_settings_maintenance')">
-          <div class="card-media">
-            <img src="./08_settings_maintenance.png" alt="Settings Maintenance" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Settings Maintenance</text></svg>'"/>
-            <div class="card-badge">Screen #15</div>
-            <div class="card-cat-tag">Configuration & Maintenance</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Settings Maintenance</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Interactive Overlays" data-title="command palette" data-id="09_command_palette" onclick="openLightbox('./09_command_palette.png', 'Command Palette', 'Interactive Overlays', '09_command_palette')">
-          <div class="card-media">
-            <img src="./09_command_palette.png" alt="Command Palette" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Command Palette</text></svg>'"/>
-            <div class="card-badge">Screen #16</div>
-            <div class="card-cat-tag">Interactive Overlays</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Command Palette</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Theme & Mobile Variants" data-title="light mode" data-id="10_light_mode" onclick="openLightbox('./10_light_mode.png', 'Light Mode', 'Theme & Mobile Variants', '10_light_mode')">
-          <div class="card-media">
-            <img src="./10_light_mode.png" alt="Light Mode" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Light Mode</text></svg>'"/>
-            <div class="card-badge">Screen #17</div>
-            <div class="card-cat-tag">Theme & Mobile Variants</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Light Mode</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
-
-        <div class="showcase-card" data-category="Core Application" data-title="ux journey map" data-id="ux_journey_map" onclick="openLightbox('./ux_journey_map.svg', 'Ux Journey Map', 'Core Application', 'ux_journey_map')">
-          <div class="card-media">
-            <img src="./ux_journey_map.svg" alt="Ux Journey Map" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'><rect fill=\'%231e293b\' width=\'400\' height=\'250\'/><text fill=\'%2394a3b8\' font-family=\'sans-serif\' font-size=\'14\' x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\'>Ux Journey Map</text></svg>'"/>
-            <div class="card-badge">Screen #18</div>
-            <div class="card-cat-tag">Core Application</div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Ux Journey Map</h3>
-            <p class="card-meta">HD Retina Viewport &bull; Verified</p>
-          </div>
-        </div>
-        
       </div>
-    </main>
-  </div>
 
-  <!-- Lightbox -->
-  <div id="lightbox" class="lightbox" onclick="closeLightbox()">
-    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-    <button class="lightbox-nav-btn lightbox-prev" onclick="event.stopPropagation(); navLightbox(-1)">&#x2039;</button>
-    <button class="lightbox-nav-btn lightbox-next" onclick="event.stopPropagation(); navLightbox(1)">&#x203a;</button>
-    <div class="lightbox-content" onclick="event.stopPropagation()">
-      <div class="lightbox-media-wrap">
-        <img id="lightbox-img" src="" alt="Zoomed view"/>
-      </div>
-      <div class="lightbox-footer">
-        <div class="lightbox-title-box">
-          <div id="lightbox-caption" class="lightbox-title"></div>
-          <div id="lightbox-cat" class="lightbox-cat"></div>
+      <!-- 03 Workspace Studio -->
+      <div class="showcase-card" data-category="Core Application" data-title="workspace explorer & document workstation" onclick="openLightbox('./03_workspace_studio.png', 'Workspace Explorer & Document Workstation', 'Core Application')">
+        <div class="card-media">
+          <img src="./03_workspace_studio.png" alt="Workspace Studio" loading="lazy"/>
+          <div class="card-badge">Screen #03</div>
+          <div class="card-cat-tag">Core Application</div>
         </div>
-        <div class="lightbox-controls">
-          <button class="lb-btn" onclick="copyDeepLink()">🔗 Copy Link</button>
-          <button class="lb-btn" onclick="toggleZoom()">🔍 Zoom</button>
+        <div class="card-body">
+          <div>
+            <h3 class="card-title">Workspace Workstation & Intelligence</h3>
+            <p class="card-desc">Vault tree, Acrobat/Foxit tool dock, in-document OCR word highlight layer, talent matrix, and live synced Document Intelligence panel.</p>
+          </div>
+          <p class="card-meta">HD Viewport (1440x900) &bull; Verified</p>
+        </div>
+      </div>
+
+      <!-- 04 Search Explorer -->
+      <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="semantic search & discovery omnibar" onclick="openLightbox('./04_search_explorer.png', 'Semantic Search & Discovery Omnibar', 'Knowledge & RAG Studio')">
+        <div class="card-media">
+          <img src="./04_search_explorer.png" alt="Search Explorer" loading="lazy"/>
+          <div class="card-badge">Screen #04</div>
+          <div class="card-cat-tag">Knowledge & RAG Studio</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <h3 class="card-title">Semantic Search & Discovery Omnibar</h3>
+            <p class="card-desc">Hybrid search omnibar with auto-routing vector chips (NomIC HNSW + FTS5 RRF), circular match rings, and RAG Lineage drawer.</p>
+          </div>
+          <p class="card-meta">HD Viewport (1440x900) &bull; Verified</p>
+        </div>
+      </div>
+
+      <!-- 05 Ingestion Pipeline -->
+      <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="ingestion pipeline & real-time stream" onclick="openLightbox('./05_ingestion_pipeline.png', 'Ingestion Pipeline & Live Stream', 'Knowledge & RAG Studio')">
+        <div class="card-media">
+          <img src="./05_ingestion_pipeline.png" alt="Ingestion Pipeline" loading="lazy"/>
+          <div class="card-badge">Screen #05</div>
+          <div class="card-cat-tag">Knowledge & RAG Studio</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <h3 class="card-title">Ingestion Pipeline & Live Stream</h3>
+            <p class="card-desc">Document extraction pipeline visualizer (Ingest ➔ Parse ➔ Chunk ➔ Embed), ShareGPT dataset exporter, and real-time console.</p>
+          </div>
+          <p class="card-meta">HD Viewport (1440x900) &bull; Verified</p>
+        </div>
+      </div>
+
+      <!-- 06 Knowledge Graph -->
+      <div class="showcase-card" data-category="Knowledge & RAG Studio" data-title="3d force-directed vector knowledge graph" onclick="openLightbox('./06_knowledge_graph.png', '3D Force-Directed Knowledge Graph', 'Knowledge & RAG Studio')">
+        <div class="card-media">
+          <img src="./06_knowledge_graph.png" alt="Knowledge Graph" loading="lazy"/>
+          <div class="card-badge">Screen #06</div>
+          <div class="card-cat-tag">Knowledge & RAG Studio</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <h3 class="card-title">3D Vector Knowledge Graph</h3>
+            <p class="card-desc">Interactive WebGL 3D graph rendering force-directed topologies connecting document nodes, extracted concepts, and wikilinks.</p>
+          </div>
+          <p class="card-meta">HD Viewport (1440x900) &bull; Verified</p>
+        </div>
+      </div>
+
+      <!-- 07 Config Orchestration -->
+      <div class="showcase-card" data-category="Configuration & Maintenance" data-title="process configuration & cluster orchestration" onclick="openLightbox('./07_config_orchestration.png', 'Process Configuration & P2P Mesh', 'Configuration & Maintenance')">
+        <div class="card-media">
+          <img src="./07_config_orchestration.png" alt="Config Orchestration" loading="lazy"/>
+          <div class="card-badge">Screen #07</div>
+          <div class="card-cat-tag">Configuration & Maintenance</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <h3 class="card-title">Process Config & Cluster Orchestration</h3>
+            <p class="card-desc">Interactive RAG chunk sliders, overlap controls, point-in-time database snapshot backups, and P2P LAN mesh synchronization.</p>
+          </div>
+          <p class="card-meta">HD Viewport (1440x900) &bull; Verified</p>
+        </div>
+      </div>
+
+      <!-- 08 Settings Maintenance -->
+      <div class="showcase-card" data-category="Configuration & Maintenance" data-title="platform settings & database integrity" onclick="openLightbox('./08_settings_maintenance.png', 'Platform Settings & Database Integrity', 'Configuration & Maintenance')">
+        <div class="card-media">
+          <img src="./08_settings_maintenance.png" alt="Settings Maintenance" loading="lazy"/>
+          <div class="card-badge">Screen #08</div>
+          <div class="card-cat-tag">Configuration & Maintenance</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <h3 class="card-title">Platform Settings & WAL Integrity</h3>
+            <p class="card-desc">AI provider credentials (Claude Sonnet/Opus, OpenAI, Ollama), SQLite WAL maintenance, vacuuming, and vault re-indexing.</p>
+          </div>
+          <p class="card-meta">HD Viewport (1440x900) &bull; Verified</p>
+        </div>
+      </div>
+
+      <!-- 09 Command Palette -->
+      <div class="showcase-card" data-category="Interactive Overlays" data-title="spotlight command palette modal" onclick="openLightbox('./09_command_palette.png', 'Spotlight Command Palette (⌘K)', 'Interactive Overlays')">
+        <div class="card-media">
+          <img src="./09_command_palette.png" alt="Command Palette" loading="lazy"/>
+          <div class="card-badge">Screen #09</div>
+          <div class="card-cat-tag">Interactive Overlays</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <h3 class="card-title">Spotlight Command Palette (⌘K)</h3>
+            <p class="card-desc">Keyboard-driven modal providing instant navigation across all application views, quick actions, and deep search shortcuts.</p>
+          </div>
+          <p class="card-meta">HD Viewport (1440x900) &bull; Verified</p>
+        </div>
+      </div>
+
+      <!-- 10 Light Mode -->
+      <div class="showcase-card" data-category="Theme & Mobile Variants" data-title="ocular-comfort light theme overview" onclick="openLightbox('./10_light_mode.png', 'Ocular-Comfort Light Theme Overview', 'Theme & Mobile Variants')">
+        <div class="card-media">
+          <img src="./10_light_mode.png" alt="Light Mode" loading="lazy"/>
+          <div class="card-badge">Screen #10</div>
+          <div class="card-cat-tag">Theme Variants</div>
+        </div>
+        <div class="card-body">
+          <div>
+            <h3 class="card-title">Ocular-Comfort Light Theme</h3>
+            <p class="card-desc">High-contrast light theme with responsive glassmorphic UI elements complying with WCAG AA accessibility standards.</p>
+          </div>
+          <p class="card-meta">HD Viewport (1440x900) &bull; Verified</p>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    const IMAGES = [{"id": "01_dashboard", "filename": "01_dashboard.png", "title": "Dashboard", "category": "Core Application", "rel_path": "./01_dashboard.png"}, {"id": "02_chat_studio", "filename": "02_chat_studio.png", "title": "Chat Studio", "category": "Knowledge & RAG Studio", "rel_path": "./02_chat_studio.png"}, {"id": "02_workspace", "filename": "02_workspace.png", "title": "Workspace", "category": "Core Application", "rel_path": "./02_workspace.png"}, {"id": "03_search", "filename": "03_search.png", "title": "Search", "category": "Knowledge & RAG Studio", "rel_path": "./03_search.png"}, {"id": "03_workspace_studio", "filename": "03_workspace_studio.png", "title": "Workspace Studio", "category": "Core Application", "rel_path": "./03_workspace_studio.png"}, {"id": "04_ingestion", "filename": "04_ingestion.png", "title": "Ingestion", "category": "Knowledge & RAG Studio", "rel_path": "./04_ingestion.png"}, {"id": "04_search_explorer", "filename": "04_search_explorer.png", "title": "Search Explorer", "category": "Knowledge & RAG Studio", "rel_path": "./04_search_explorer.png"}, {"id": "05_graph", "filename": "05_graph.png", "title": "Graph", "category": "Knowledge & RAG Studio", "rel_path": "./05_graph.png"}, {"id": "05_ingestion_pipeline", "filename": "05_ingestion_pipeline.png", "title": "Ingestion Pipeline", "category": "Knowledge & RAG Studio", "rel_path": "./05_ingestion_pipeline.png"}, {"id": "06_chat", "filename": "06_chat.png", "title": "Chat", "category": "Knowledge & RAG Studio", "rel_path": "./06_chat.png"}, {"id": "06_knowledge_graph", "filename": "06_knowledge_graph.png", "title": "Knowledge Graph", "category": "Knowledge & RAG Studio", "rel_path": "./06_knowledge_graph.png"}, {"id": "07_config", "filename": "07_config.png", "title": "Config", "category": "Configuration & Maintenance", "rel_path": "./07_config.png"}, {"id": "07_config_orchestration", "filename": "07_config_orchestration.png", "title": "Config Orchestration", "category": "Configuration & Maintenance", "rel_path": "./07_config_orchestration.png"}, {"id": "08_settings", "filename": "08_settings.png", "title": "Settings", "category": "Configuration & Maintenance", "rel_path": "./08_settings.png"}, {"id": "08_settings_maintenance", "filename": "08_settings_maintenance.png", "title": "Settings Maintenance", "category": "Configuration & Maintenance", "rel_path": "./08_settings_maintenance.png"}, {"id": "09_command_palette", "filename": "09_command_palette.png", "title": "Command Palette", "category": "Interactive Overlays", "rel_path": "./09_command_palette.png"}, {"id": "10_light_mode", "filename": "10_light_mode.png", "title": "Light Mode", "category": "Theme & Mobile Variants", "rel_path": "./10_light_mode.png"}, {"id": "ux_journey_map", "filename": "ux_journey_map.svg", "title": "Ux Journey Map", "category": "Core Application", "rel_path": "./ux_journey_map.svg"}];
-    let currentIndex = 0;
-    let isZoomed = false;
+  <!-- Lightbox Modal -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <div class="lightbox-content">
+      <div class="lightbox-header">
+        <div class="lightbox-title" id="lightbox-title">View</div>
+        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+      </div>
+      <img id="lightbox-img" src="" alt="Zoomed view" />
+    </div>
+  </div>
 
-    function filterCategory(cat, btn) {
-      document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+  <script>
+    function filterCategory(cat, tabEl) {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      if (tabEl) tabEl.classList.add('active');
       const cards = document.querySelectorAll('.showcase-card');
-      cards.forEach(card => {
-        if (cat === 'All Views' || card.getAttribute('data-category') === cat) {
-          card.style.display = 'flex';
+      cards.forEach(c => {
+        if (cat === 'All Views' || c.getAttribute('data-category') === cat) {
+          c.style.display = 'flex';
         } else {
-          card.style.display = 'none';
+          c.style.display = 'none';
         }
       });
     }
 
     function handleSearch(query) {
-      const q = query.toLowerCase().trim();
-      const cards = document.querySelectorAll('.showcase-card');
-      cards.forEach(card => {
-        const title = card.getAttribute('data-title') || '';
-        const cat = (card.getAttribute('data-category') || '').toLowerCase();
-        if (title.includes(q) || cat.includes(q)) {
-          card.style.display = 'flex';
+      const q = query.toLowerCase();
+      document.querySelectorAll('.showcase-card').forEach(c => {
+        const title = c.getAttribute('data-title') || '';
+        const cat = c.getAttribute('data-category') || '';
+        if (title.toLowerCase().includes(q) || cat.toLowerCase().includes(q)) {
+          c.style.display = 'flex';
         } else {
-          card.style.display = 'none';
+          c.style.display = 'none';
         }
       });
     }
 
-    function openLightbox(src, title, cat, id) {
+    function openLightbox(src, title, cat) {
       const lb = document.getElementById('lightbox');
       const img = document.getElementById('lightbox-img');
-      const cap = document.getElementById('lightbox-caption');
-      const c = document.getElementById('lightbox-cat');
-      currentIndex = IMAGES.findIndex(item => item.id === id || item.rel_path === src);
-      if (currentIndex === -1) currentIndex = 0;
-
+      const t = document.getElementById('lightbox-title');
       img.src = src;
-      cap.textContent = title;
-      c.textContent = cat || 'Showcase View';
+      t.innerText = title + (cat ? ' (' + cat + ')' : '');
       lb.classList.add('active');
-      window.location.hash = 'screen=' + (id || currentIndex);
     }
 
-    function closeLightbox() {
-      const lb = document.getElementById('lightbox');
-      lb.classList.remove('active');
-      isZoomed = false;
-      document.getElementById('lightbox-img').style.transform = 'scale(1)';
-      history.replaceState(null, null, ' ');
-    }
-
-    function navLightbox(dir) {
-      currentIndex = (currentIndex + dir + IMAGES.length) % IMAGES.length;
-      const target = IMAGES[currentIndex];
-      openLightbox(target.rel_path, target.title, target.category, target.id);
-    }
-
-    function toggleZoom() {
-      const img = document.getElementById('lightbox-img');
-      isZoomed = !isZoomed;
-      img.style.transform = isZoomed ? 'scale(1.5)' : 'scale(1)';
-      img.style.cursor = isZoomed ? 'zoom-out' : 'zoom-in';
-    }
-
-    function copyDeepLink() {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Deep link copied to clipboard!');
+    function closeLightbox(e) {
+      if (!e || e.target.id === 'lightbox' || e.target.classList.contains('lightbox-close')) {
+        document.getElementById('lightbox').classList.remove('active');
+      }
     }
 
     document.addEventListener('keydown', (e) => {
-      const lb = document.getElementById('lightbox');
-      if (!lb.classList.contains('active')) return;
       if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowLeft') navLightbox(-1);
-      if (e.key === 'ArrowRight') navLightbox(1);
-    });
-
-    // Setup Comparison Slider
-    const comp = document.getElementById('comparisonSlider');
-    if (comp) {
-      let isSliding = false;
-      const lightWrap = document.getElementById('lightWrap');
-      const handle = document.getElementById('sliderHandle');
-
-      function slide(x) {
-        const rect = comp.getBoundingClientRect();
-        let pos = ((x - rect.left) / rect.width) * 100;
-        pos = Math.max(0, Math.min(100, pos));
-        lightWrap.style.width = pos + '%';
-        handle.style.left = pos + '%';
-      }
-
-      comp.addEventListener('mousedown', () => isSliding = true);
-      window.addEventListener('mouseup', () => isSliding = false);
-      window.addEventListener('mousemove', (e) => {
-        if (isSliding) slide(e.clientX);
-      });
-      comp.addEventListener('touchstart', () => isSliding = true);
-      window.addEventListener('touchend', () => isSliding = false);
-      window.addEventListener('touchmove', (e) => {
-        if (isSliding && e.touches[0]) slide(e.touches[0].clientX);
-      });
-    }
-
-    // Check URL Hash for deep linking
-    window.addEventListener('load', () => {
-      if (window.location.hash.startsWith('#screen=')) {
-        const targetId = window.location.hash.replace('#screen=', '');
-        const target = IMAGES.find(item => item.id === targetId || String(IMAGES.indexOf(item)) === targetId);
-        if (target) openLightbox(target.rel_path, target.title, target.category, target.id);
-      }
     });
   </script>
 </body>

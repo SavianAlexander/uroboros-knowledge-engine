@@ -1,181 +1,83 @@
 {
-  "timestamp": "2026-08-14T03:55:42Z",
-  "total_views_discovered": 19,
+  "timestamp": "2026-08-14T04:10:00Z",
+  "total_canonical_views": 10,
   "categories": [
-    "Configuration & Maintenance",
     "Core Application",
-    "Interactive Overlays",
     "Knowledge & RAG Studio",
+    "Configuration & Maintenance",
+    "Interactive Overlays",
     "Theme & Mobile Variants"
-  ],
-  "viewports": [
-    {
-      "name": "Widescreen Desktop",
-      "width": 1440,
-      "height": 900
-    },
-    {
-      "name": "Mobile Device",
-      "width": 375,
-      "height": 812
-    }
-  ],
-  "themes": [
-    "Dark Theme",
-    "Light Theme"
   ],
   "views": [
     {
-      "id": "modal_logs",
-      "title": "Logs Modal Overlay",
-      "path": "/#modal",
-      "category": "Interactive Overlays",
-      "selector": null,
-      "description": "Logs modal dialog view"
-    },
-    {
-      "id": "modal_lineage",
-      "title": "Lineage Modal Overlay",
-      "path": "/#modal",
-      "category": "Interactive Overlays",
-      "selector": null,
-      "description": "Lineage modal dialog view"
-    },
-    {
-      "id": "captured_01_dashboard",
-      "title": "Dashboard",
-      "path": "/01_dashboard",
+      "id": "01_dashboard",
+      "filename": "01_dashboard.png",
+      "title": "System Analytics & Telemetry",
       "category": "Core Application",
-      "selector": null,
-      "description": "Captured interface showcase for Dashboard"
+      "description": "Real-time database status metrics, ingestion velocity, storage distribution, and 1-click WAL maintenance."
     },
     {
-      "id": "captured_02_chat_studio",
-      "title": "Chat Studio",
-      "path": "/02_chat_studio",
+      "id": "02_chat_studio",
+      "filename": "02_chat_studio.png",
+      "title": "Claude AI Chat Studio & Canvas",
       "category": "Knowledge & RAG Studio",
-      "selector": null,
-      "description": "Captured interface showcase for Chat Studio"
+      "description": "Split-pane conversational studio with reasoning process trace, verified citation badges, and side-by-side artifacts canvas."
     },
     {
-      "id": "captured_02_workspace",
-      "title": "Workspace",
-      "path": "/02_workspace",
+      "id": "03_workspace_studio",
+      "filename": "03_workspace_studio.png",
+      "title": "Workspace Workstation & Document Intelligence",
       "category": "Core Application",
-      "selector": null,
-      "description": "Captured interface showcase for Workspace"
+      "description": "Vault tree, Acrobat/Foxit tool dock, in-document OCR word highlight layer, and live synced Document Intelligence drawer."
     },
     {
-      "id": "captured_03_search",
-      "title": "Search",
-      "path": "/03_search",
+      "id": "04_search_explorer",
+      "filename": "04_search_explorer.png",
+      "title": "Semantic Search & Discovery Omnibar",
       "category": "Knowledge & RAG Studio",
-      "selector": null,
-      "description": "Captured interface showcase for Search"
+      "description": "Hybrid search omnibar with auto-routing vector chips, circular match percentage rings, and RAG Lineage drawer."
     },
     {
-      "id": "captured_03_workspace_studio",
-      "title": "Workspace Studio",
-      "path": "/03_workspace_studio",
-      "category": "Core Application",
-      "selector": null,
-      "description": "Captured interface showcase for Workspace Studio"
-    },
-    {
-      "id": "captured_04_ingestion",
-      "title": "Ingestion",
-      "path": "/04_ingestion",
+      "id": "05_ingestion_pipeline",
+      "filename": "05_ingestion_pipeline.png",
+      "title": "Ingestion Pipeline & Live Stream",
       "category": "Knowledge & RAG Studio",
-      "selector": null,
-      "description": "Captured interface showcase for Ingestion"
+      "description": "Real-time ingestion flow visualizer (Ingest -> Parse -> Chunk -> Embed), ShareGPT dataset exporter, and live stream."
     },
     {
-      "id": "captured_04_search_explorer",
-      "title": "Search Explorer",
-      "path": "/04_search_explorer",
+      "id": "06_knowledge_graph",
+      "filename": "06_knowledge_graph.png",
+      "title": "3D Force-Directed Vector Graph",
       "category": "Knowledge & RAG Studio",
-      "selector": null,
-      "description": "Captured interface showcase for Search Explorer"
+      "description": "Interactive 3D WebGL graph rendering connections between document nodes, extracted entities, and wikilinks."
     },
     {
-      "id": "captured_05_graph",
-      "title": "Graph",
-      "path": "/05_graph",
-      "category": "Knowledge & RAG Studio",
-      "selector": null,
-      "description": "Captured interface showcase for Graph"
-    },
-    {
-      "id": "captured_05_ingestion_pipeline",
-      "title": "Ingestion Pipeline",
-      "path": "/05_ingestion_pipeline",
-      "category": "Knowledge & RAG Studio",
-      "selector": null,
-      "description": "Captured interface showcase for Ingestion Pipeline"
-    },
-    {
-      "id": "captured_06_chat",
-      "title": "Chat",
-      "path": "/06_chat",
-      "category": "Knowledge & RAG Studio",
-      "selector": null,
-      "description": "Captured interface showcase for Chat"
-    },
-    {
-      "id": "captured_06_knowledge_graph",
-      "title": "Knowledge Graph",
-      "path": "/06_knowledge_graph",
-      "category": "Knowledge & RAG Studio",
-      "selector": null,
-      "description": "Captured interface showcase for Knowledge Graph"
-    },
-    {
-      "id": "captured_07_config",
-      "title": "Config",
-      "path": "/07_config",
+      "id": "07_config_orchestration",
+      "filename": "07_config_orchestration.png",
+      "title": "Process Configuration & P2P Mesh",
       "category": "Configuration & Maintenance",
-      "selector": null,
-      "description": "Captured interface showcase for Config"
+      "description": "Interactive RAG chunk sliders, point-in-time database snapshot backups, and P2P peer synchronization."
     },
     {
-      "id": "captured_07_config_orchestration",
-      "title": "Config Orchestration",
-      "path": "/07_config_orchestration",
+      "id": "08_settings_maintenance",
+      "filename": "08_settings_maintenance.png",
+      "title": "Platform Settings & Database Tools",
       "category": "Configuration & Maintenance",
-      "selector": null,
-      "description": "Captured interface showcase for Config Orchestration"
+      "description": "AI provider credentials (Claude, OpenAI, Ollama), SQLite WAL maintenance, vacuuming, and vault re-indexing."
     },
     {
-      "id": "captured_08_settings",
-      "title": "Settings",
-      "path": "/08_settings",
-      "category": "Configuration & Maintenance",
-      "selector": null,
-      "description": "Captured interface showcase for Settings"
-    },
-    {
-      "id": "captured_08_settings_maintenance",
-      "title": "Settings Maintenance",
-      "path": "/08_settings_maintenance",
-      "category": "Configuration & Maintenance",
-      "selector": null,
-      "description": "Captured interface showcase for Settings Maintenance"
-    },
-    {
-      "id": "captured_09_command_palette",
-      "title": "Command Palette",
-      "path": "/09_command_palette",
+      "id": "09_command_palette",
+      "filename": "09_command_palette.png",
+      "title": "Spotlight Command Palette (\u2318K)",
       "category": "Interactive Overlays",
-      "selector": null,
-      "description": "Captured interface showcase for Command Palette"
+      "description": "Keyboard-driven modal providing instant navigation across all application views, quick actions, and search shortcuts."
     },
     {
-      "id": "captured_10_light_mode",
-      "title": "Light Mode",
-      "path": "/10_light_mode",
+      "id": "10_light_mode",
+      "filename": "10_light_mode.png",
+      "title": "Ocular-Comfort Light Theme",
       "category": "Theme & Mobile Variants",
-      "selector": null,
-      "description": "Captured interface showcase for Light Mode"
+      "description": "High-contrast light theme with responsive glassmorphic UI elements complying with WCAG AA accessibility standards."
     }
   ]
 }
