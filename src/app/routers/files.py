@@ -8,7 +8,7 @@ import mimetypes
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException, UploadFile, File, Body
+from fastapi import APIRouter, HTTPException, UploadFile, File, Body, Response
 from fastapi.responses import FileResponse
 import logging
 
@@ -120,30 +120,29 @@ def get_raw_file(path: str):
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+def resolve_file_on_disk(path: str) -> Optional[str]:
+    """Helper to locate canonical file path on disk across active dir, workspace root, or SQLite DB."""
+    if os.path.exists(path) and not os.path.isdir(path):
+        return os.path.abspath(path)
+    cand = Path(get_active_dir()).resolve() / path
+    if cand.exists() and not cand.is_dir():
+        return str(cand)
+    cand_root = Path(".").resolve() / path
+    if cand_root.exists() and not cand_root.is_dir():
+        return str(cand_root)
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT filepath FROM files WHERE filepath = ? OR filepath LIKE ? LIMIT 1",
+                       (path, f"%{os.path.basename(path)}"))
+        row = cursor.fetchone()
+        if row and os.path.exists(row[0]) and not os.path.isdir(row[0]):
+            return row[0]
+    return None
+
 @router.get("/api/file/binary")
 def get_file_binary(path: str):
     """Serve raw file binary with proper MIME type for native browser PDF, Markdown, and media rendering."""
-    real_path = None
-    if os.path.exists(path) and not os.path.isdir(path):
-        real_path = os.path.abspath(path)
-    else:
-        cand = Path(get_active_dir()).resolve() / path
-        if cand.exists() and not cand.is_dir():
-            real_path = str(cand)
-        else:
-            cand_root = Path(".").resolve() / path
-            if cand_root.exists() and not cand_root.is_dir():
-                real_path = str(cand_root)
-
-    if not real_path:
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT filepath FROM files WHERE filepath = ? OR filepath LIKE ? LIMIT 1",
-                           (path, f"%{os.path.basename(path)}"))
-            row = cursor.fetchone()
-            if row and os.path.exists(row[0]) and not os.path.isdir(row[0]):
-                real_path = row[0]
-
+    real_path = resolve_file_on_disk(path)
     if not real_path or not os.path.exists(real_path):
         raise HTTPException(status_code=404, detail="File binary not found")
 
@@ -163,6 +162,54 @@ def get_file_binary(path: str):
     }
     media_type = media_types.get(ext, 'application/octet-stream')
     return FileResponse(real_path, media_type=media_type, filename=os.path.basename(real_path))
+
+@router.get("/api/file/pdf/info")
+def get_pdf_info(path: str):
+    """Retrieve PDF page count, metadata and dimensions for visual page rendering."""
+    real_path = resolve_file_on_disk(path)
+    if not real_path or not os.path.exists(real_path):
+        raise HTTPException(status_code=404, detail="PDF file not found")
+    
+    try:
+        import fitz
+        doc = fitz.open(real_path)
+        total_pages = len(doc)
+        doc.close()
+        return {
+            "total_pages": total_pages,
+            "filename": os.path.basename(real_path),
+            "filepath": real_path,
+            "size_bytes": os.path.getsize(real_path)
+        }
+    except Exception as e:
+        logger.exception("Error reading PDF info: %s", e)
+        raise HTTPException(status_code=500, detail=f"Failed to parse PDF metadata: {str(e)}")
+
+@router.get("/api/file/pdf/page")
+def render_pdf_page(path: str, page: int = 0, dpi: int = 150):
+    """Render a specific PDF page directly to a high-DPI PNG image."""
+    real_path = resolve_file_on_disk(path)
+    if not real_path or not os.path.exists(real_path):
+        raise HTTPException(status_code=404, detail="PDF file not found")
+    
+    try:
+        import fitz
+        doc = fitz.open(real_path)
+        if page < 0 or page >= len(doc):
+            doc.close()
+            raise HTTPException(status_code=400, detail=f"Page index {page} out of bounds (0..{len(doc)-1})")
+        
+        pdf_page = doc.load_page(page)
+        safe_dpi = max(72, min(300, dpi))
+        pix = pdf_page.get_pixmap(dpi=safe_dpi)
+        img_bytes = pix.tobytes("png")
+        doc.close()
+        return Response(content=img_bytes, media_type="image/png")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Error rendering PDF page %s: %s", page, e)
+        raise HTTPException(status_code=500, detail=f"Failed to render PDF page: {str(e)}")
 
 @router.post("/api/file/save")
 @router.post("/api/file/edit")

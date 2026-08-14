@@ -127,6 +127,7 @@ export const api = {
   // Files
   fileRaw: (path: string) => fetchAPI<any>(`/file/raw?path=${encodeURIComponent(path)}`),
   fileInsights: (path: string) => fetchAPI<any>(`/file/insights?path=${encodeURIComponent(path)}`),
+  pdfInfo: (path: string) => fetchAPI<any>(`/file/pdf/info?path=${encodeURIComponent(path)}`),
   upload: (file: File) => {
     const fd = new FormData();
     fd.append('file', file);

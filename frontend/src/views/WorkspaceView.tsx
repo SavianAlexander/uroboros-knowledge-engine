@@ -5,6 +5,7 @@ import {
   Folder,
   File,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   X,
   Save,
@@ -28,7 +29,8 @@ import {
   AlertTriangle,
   ShieldAlert,
   Maximize2,
-  Layers
+  Layers,
+  LayoutGrid
 } from 'lucide-react';
 import { useApp } from '../store/AppContext';
 
@@ -171,7 +173,10 @@ function SplitWorkspace({ file, onClose }: any) {
   const [content, setContent] = useState<any>(null);
   const [insights, setInsights] = useState<any>(null);
   const [viewTab, setViewTab] = useState<'rendered' | 'source' | 'pdf' | 'table' | 'image'>('rendered');
-  const [pdfSubMode, setPdfSubMode] = useState<'stream' | 'ocr'>('stream');
+  const [pdfSubMode, setPdfSubMode] = useState<'visual' | 'stream' | 'ocr'>('visual');
+  const [pdfInfo, setPdfInfo] = useState<any>(null);
+  const [currentPdfPage, setCurrentPdfPage] = useState<number>(0);
+  const [pdfPageZoom, setPdfPageZoom] = useState<number>(1);
   const [imageZoom, setImageZoom] = useState(1);
   const [csvFilter, setCsvFilter] = useState('');
   const [copied, setCopied] = useState(false);
@@ -190,10 +195,17 @@ function SplitWorkspace({ file, onClose }: any) {
     let cancelled = false;
     setContent(null);
     setInsights(null);
+    setPdfInfo(null);
+    setCurrentPdfPage(0);
+    setPdfPageZoom(1);
     setImageZoom(1);
 
     if (isPdf) {
       setViewTab('pdf');
+      setPdfSubMode('visual');
+      api.pdfInfo(filePath)
+        .then(info => { if (!cancelled) setPdfInfo(info); })
+        .catch(err => { console.warn('Could not fetch PDF page info:', err); });
     } else if (isMarkdown) {
       setViewTab('rendered');
     } else if (isCsv) {
@@ -510,20 +522,27 @@ function SplitWorkspace({ file, onClose }: any) {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Document Area */}
         <div className="flex-1 bg-slate-50/50 dark:bg-slate-950/80 overflow-y-auto flex flex-col">
-          {/* TAB 1: Native PDF Viewer */}
+          {/* TAB 1: Real Visual PDF Viewer Suite */}
           {viewTab === 'pdf' && (
             <div className="flex-1 flex flex-col p-4 space-y-3">
+              {/* PDF Header & Submode Navigation */}
               <div className="flex items-center justify-between px-1 text-xs text-slate-400">
                 <div className="flex items-center gap-2">
                   <span className="flex items-center gap-1.5 font-medium text-slate-300">
-                    <FileText className="w-4 h-4 text-rose-400" /> Native High-Fidelity PDF Stream
+                    <FileText className="w-4 h-4 text-rose-400" /> Document PDF Suite
                   </span>
                   <div className="flex rounded-lg bg-slate-800 p-0.5 text-[11px] border border-slate-700">
+                    <button
+                      onClick={() => setPdfSubMode('visual')}
+                      className={`px-2.5 py-0.5 rounded-md transition-colors flex items-center gap-1 ${pdfSubMode === 'visual' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                      <Eye className="w-3 h-3" /> Visual Pages
+                    </button>
                     <button
                       onClick={() => setPdfSubMode('stream')}
                       className={`px-2.5 py-0.5 rounded-md transition-colors ${pdfSubMode === 'stream' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
                     >
-                      Embedded PDF
+                      Browser Embed
                     </button>
                     <button
                       onClick={() => setPdfSubMode('ocr')}
@@ -533,18 +552,107 @@ function SplitWorkspace({ file, onClose }: any) {
                     </button>
                   </div>
                 </div>
-                <a
-                  href={binaryUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors text-xs"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open in Full Browser Window</span>
-                </a>
+
+                <div className="flex items-center gap-3">
+                  {pdfSubMode === 'visual' && (
+                    <div className="flex items-center gap-1.5 bg-slate-800/80 px-2 py-1 rounded-lg border border-slate-700 text-slate-300">
+                      <button
+                        onClick={() => setCurrentPdfPage(Math.max(0, currentPdfPage - 1))}
+                        disabled={currentPdfPage === 0}
+                        className="p-0.5 hover:bg-slate-700 disabled:opacity-30 rounded transition-colors"
+                        title="Previous Page"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="font-mono text-[11px] px-1 font-semibold text-indigo-300">
+                        Page {currentPdfPage + 1} of {pdfInfo?.total_pages || 1}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPdfPage(Math.min((pdfInfo?.total_pages || 1) - 1, currentPdfPage + 1))}
+                        disabled={currentPdfPage >= (pdfInfo?.total_pages || 1) - 1}
+                        className="p-0.5 hover:bg-slate-700 disabled:opacity-30 rounded transition-colors"
+                        title="Next Page"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="h-3 w-px bg-slate-700 mx-1" />
+                      <button
+                        onClick={() => setPdfPageZoom(Math.max(0.5, pdfPageZoom - 0.15))}
+                        className="p-0.5 hover:bg-slate-700 rounded transition-colors"
+                        title="Zoom Out"
+                      >
+                        <ZoomOut className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="font-mono text-[10px] w-8 text-center text-slate-400">
+                        {Math.round(pdfPageZoom * 100)}%
+                      </span>
+                      <button
+                        onClick={() => setPdfPageZoom(Math.min(2.5, pdfPageZoom + 0.15))}
+                        className="p-0.5 hover:bg-slate-700 rounded transition-colors"
+                        title="Zoom In"
+                      >
+                        <ZoomIn className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setPdfPageZoom(1)}
+                        className="p-0.5 hover:bg-slate-700 rounded transition-colors"
+                        title="Reset Zoom"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  <a
+                    href={binaryUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors text-xs"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open in Browser Window</span>
+                  </a>
+                </div>
               </div>
 
-              {pdfSubMode === 'stream' ? (
+              {/* Submode 1: Visual High-DPI Page Canvas */}
+              {pdfSubMode === 'visual' && (
+                <div className="flex-1 flex flex-col space-y-3">
+                  <div className="flex-1 rounded-xl border border-slate-700/60 bg-slate-950/90 shadow-2xl min-h-[550px] p-4 flex items-center justify-center overflow-auto relative">
+                    <img
+                      src={`/api/file/pdf/page?path=${encodeURIComponent(filePath)}&page=${currentPdfPage}&dpi=150`}
+                      alt={`Page ${currentPdfPage + 1}`}
+                      className="rounded-lg shadow-2xl border border-slate-700/80 max-h-[72vh] object-contain transition-transform duration-150 bg-white"
+                      style={{ transform: `scale(${pdfPageZoom})`, transformOrigin: 'center center' }}
+                    />
+                  </div>
+
+                  {/* Thumbnail Strip */}
+                  {(pdfInfo?.total_pages || 1) > 1 && (
+                    <div className="flex items-center gap-2 overflow-x-auto p-2 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <span className="text-[11px] text-slate-400 font-mono px-2 flex-shrink-0">
+                        Pages ({pdfInfo.total_pages}):
+                      </span>
+                      {Array.from({ length: pdfInfo.total_pages }).map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setCurrentPdfPage(idx)}
+                          className={`px-3 py-1 rounded-lg text-xs font-mono transition-all flex-shrink-0 flex items-center gap-1.5 border ${
+                            currentPdfPage === idx
+                              ? 'bg-indigo-600 text-white border-indigo-400 shadow-md shadow-indigo-500/20 font-semibold'
+                              : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                          }`}
+                        >
+                          <span>Page {idx + 1}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Submode 2: Native Embedded PDF */}
+              {pdfSubMode === 'stream' && (
                 <div className="flex-1 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-900 shadow-2xl min-h-[600px] relative">
                   <object
                     data={`${binaryUrl}#toolbar=1`}
@@ -558,7 +666,10 @@ function SplitWorkspace({ file, onClose }: any) {
                     />
                   </object>
                 </div>
-              ) : (
+              )}
+
+              {/* Submode 3: Extracted Text / OCR */}
+              {pdfSubMode === 'ocr' && (
                 <div className="flex-1 rounded-xl overflow-y-auto border border-slate-700/60 bg-slate-950 p-6 shadow-xl space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                     <span className="text-xs text-slate-400 font-mono">Parsed text content from PDF</span>
