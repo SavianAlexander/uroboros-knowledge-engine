@@ -326,4 +326,47 @@ def get_asset_safety_evac_endpoint(asset_value: float = 25000000000.0, in_system
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/voice/command")
+def execute_voice_command_endpoint(payload: Dict[str, Any]):
+    """Execute natural language voice command and return intent, response, and audio."""
+    try:
+        from src.infrastructure.eve_voice_commander import VoiceCommander
+        cmd = VoiceCommander()
+        prompt = payload.get("prompt", "")
+        auto_speak = payload.get("auto_speak", False)
+        return cmd.execute_voice_prompt(prompt, auto_speak=auto_speak)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/voice/dsp/presets")
+def get_voice_dsp_presets_endpoint():
+    """Return available tactical DSP acoustic presets and character voice stems."""
+    try:
+        from src.infrastructure.eve_voice_copilot import KOKORO_PERSONAS
+        return {
+            "status": "success",
+            "dsp_presets": ["AURA_COCKPIT", "TACTICAL_RADIO", "HARVESTER_COMMS", "STUDIO_DIRECT"],
+            "personas": KOKORO_PERSONAS,
+            "spatial_panning": {
+                "harvester_wing": -0.8,
+                "aura_ship_ai": 0.0,
+                "threat_combat_radar": 1.0
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/voice/radar/sweep")
+def trigger_voice_radar_sweep_endpoint():
+    """Trigger automated tactical log radar sweep and dispatch audio alerts."""
+    try:
+        from src.infrastructure.eve_voice_radar_daemon import TacticalVoiceRadarDaemon
+        daemon = TacticalVoiceRadarDaemon()
+        return {"status": "success", "dispatches": daemon.simulate_radar_sweep()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
