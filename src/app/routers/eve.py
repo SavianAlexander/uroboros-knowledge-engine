@@ -8,6 +8,7 @@ from typing import Optional, List, Dict, Any
 import time
 import os
 import json
+import io
 
 from src.infrastructure.eve_sso import (
     token_manager,
@@ -365,6 +366,51 @@ def trigger_voice_radar_sweep_endpoint():
         from src.infrastructure.eve_voice_radar_daemon import TacticalVoiceRadarDaemon
         daemon = TacticalVoiceRadarDaemon()
         return {"status": "success", "dispatches": daemon.simulate_radar_sweep()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/voice/soundscape/sfx")
+def get_procedural_sfx_endpoint(sfx_type: str = "warp_spool"):
+    """Synthesize and stream procedural tactical sci-fi SFX audio."""
+    try:
+        from src.infrastructure.eve_voice_soundboard import render_sfx_to_wav_bytes, SFX_LIBRARY
+        if sfx_type not in SFX_LIBRARY:
+            raise HTTPException(status_code=400, detail=f"Unknown SFX type: {sfx_type}. Available: {list(SFX_LIBRARY.keys())}")
+        wav_bytes = render_sfx_to_wav_bytes(sfx_type)
+        return Response(content=wav_bytes, media_type="audio/wav")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/voice/mixer/composite")
+def composite_audio_soundscape_endpoint(payload: Dict[str, Any]):
+    """Composite voice track + SFX + ambient hum with dynamic audio ducking."""
+    try:
+        from src.infrastructure.eve_voice_mixer import composite_tactical_soundscape
+        import soundfile as sf
+        sfx_type = payload.get("sfx_type")
+        include_ambient = payload.get("include_ambient", True)
+        master = composite_tactical_soundscape(sfx_type=sfx_type, include_ambient=include_ambient)
+        buf = io.BytesIO()
+        sf.write(buf, master, 24000, format="WAV")
+        return Response(content=buf.getvalue(), media_type="audio/wav")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/voice/vad/process-frame")
+def process_vad_frame_endpoint(payload: Dict[str, Any]):
+    """Evaluate audio frame for voice activity and barge-in state transition."""
+    try:
+        from src.infrastructure.eve_voice_vad_duplex import VoiceActivityDetector
+        import numpy as np
+        samples_list = payload.get("samples", [])
+        is_ai_speaking = payload.get("is_ai_speaking", False)
+        detector = VoiceActivityDetector()
+        detector.set_ai_speaking_state(is_ai_speaking)
+        frame_arr = np.array(samples_list, dtype=np.float32) if samples_list else np.zeros(480, dtype=np.float32)
+        return detector.process_audio_frame(frame_arr)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
