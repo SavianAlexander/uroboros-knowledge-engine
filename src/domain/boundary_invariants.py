@@ -801,7 +801,7 @@ def verify_shannon_capacity_invariant(
 
 def parse_claims_from_text(text: str) -> List[Dict[str, Any]]:
     """
-    Scans free-form plain text using regular expressions to extract structured physical claims:
+    Scans free-form plain text by analyzing individual sentences to extract structured physical claims:
     - Optical fiber / vacuum latency statements
     - USL / concurrency scaling claims
     - CAP & PACELC distributed guarantees
@@ -819,172 +819,169 @@ def parse_claims_from_text(text: str) -> List[Dict[str, Any]]:
     if not text or not isinstance(text, str):
         return claims
 
-    # 1. Optical latency extraction: distance + latency
-    # Pattern: e.g. "5000 km with 10 ms latency", "fiber over 8000km in 12ms"
-    opt_matches = re.finditer(
-        r'(?:distance\s*(?:of|is|=)?\s*)?(\d+(?:\.\d+)?)\s*(?:km|kilometers|kilometer)\b.*?'
-        r'(?:latency|ping|rtt|time|propagation|delay)?\s*(?:of|is|=)?\s*(\d+(?:\.\d+)?)\s*(ms|milliseconds|millisecond|s|seconds|second|us|µs|ns)\b',
-        text,
-        re.IGNORECASE
-    )
-    for m in opt_matches:
-        dist = float(m.group(1))
-        raw_lat = float(m.group(2))
-        unit = m.group(3).lower()
-        lat_ms = raw_lat
-        if unit in ("s", "seconds", "second"):
-            lat_ms = raw_lat * 1000.0
-        elif unit in ("us", "µs"):
-            lat_ms = raw_lat / 1000.0
-        elif unit == "ns":
-            lat_ms = raw_lat / 1e6
+    # Split into sentences / clauses
+    sentences = [s.strip() for s in re.split(r'[.\n;]+', text) if s.strip()]
 
-        claims.append({
-            "type": "OPTICAL",
-            "distance_km": dist,
-            "reported_latency_ms": lat_ms
-        })
+    for sent in sentences:
+        sent_lower = sent.lower()
 
-    # Reverse order: latency first then distance
-    opt_rev_matches = re.finditer(
-        r'(?:latency|ping|rtt|delay)\s*(?:of|is|=)?\s*(\d+(?:\.\d+)?)\s*(ms|milliseconds|millisecond|s|seconds|second|us|µs|ns)\b.*?'
-        r'(?:across|over|distance)?\s*(\d+(?:\.\d+)?)\s*(?:km|kilometers|kilometer)\b',
-        text,
-        re.IGNORECASE
-    )
-    for m in opt_rev_matches:
-        raw_lat = float(m.group(1))
-        unit = m.group(2).lower()
-        dist = float(m.group(3))
-        lat_ms = raw_lat
-        if unit in ("s", "seconds", "second"):
-            lat_ms = raw_lat * 1000.0
-        elif unit in ("us", "µs"):
-            lat_ms = raw_lat / 1000.0
-        elif unit == "ns":
-            lat_ms = raw_lat / 1e6
+        # 1. Optical latency extraction
+        dist_m = re.search(r'(\d+(?:\.\d+)?)\s*(km|kilometers|kilometer|miles|mile)\b', sent, re.IGNORECASE)
+        lat_m = re.search(r'(\d+(?:\.\d+)?)\s*(ms|milliseconds|millisecond|s|seconds|second|us|µs|ns)\b', sent, re.IGNORECASE)
+        if dist_m and lat_m:
+            dist_val = float(dist_m.group(1))
+            dist_unit = dist_m.group(2).lower()
+            if dist_unit in ("miles", "mile"):
+                dist_km = dist_val * 1.60934
+            else:
+                dist_km = dist_val
 
-        claims.append({
-            "type": "OPTICAL",
-            "distance_km": dist,
-            "reported_latency_ms": lat_ms
-        })
+            lat_val = float(lat_m.group(1))
+            lat_unit = lat_m.group(2).lower()
+            if lat_unit in ("s", "seconds", "second"):
+                lat_ms = lat_val * 1000.0
+            elif lat_unit in ("us", "µs"):
+                lat_ms = lat_val / 1000.0
+            elif lat_unit == "ns":
+                lat_ms = lat_val / 1e6
+            else:
+                lat_ms = lat_val
 
-    # 2. USL / Concurrency scaling extraction
-    # Pattern: e.g. "64 nodes achieving 100x speedup", "node_count=32, speedup=50"
-    usl_matches = re.finditer(
-        r'(?:node_count|nodes|servers|cores|threads|instances|workers)\s*[:=]?\s*(\d+).*?'
-        r'(?:speedup|throughput|scaling|acceleration)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*x?',
-        text,
-        re.IGNORECASE
-    )
-    for m in usl_matches:
-        nodes = int(m.group(1))
-        speedup = float(m.group(2))
-        alpha = 0.0
-        beta = 0.0
-        alpha_m = re.search(r'\balpha\s*[:=]?\s*(\d+(?:\.\d+)?)', text, re.IGNORECASE)
-        if alpha_m:
-            alpha = float(alpha_m.group(1))
-        beta_m = re.search(r'\bbeta\s*[:=]?\s*(\d+(?:\.\d+)?)', text, re.IGNORECASE)
-        if beta_m:
-            beta = float(beta_m.group(1))
+            med = "silica_fiber"
+            if "vacuum" in sent_lower:
+                med = "vacuum"
+            elif "air" in sent_lower:
+                med = "air"
+            elif "copper" in sent_lower:
+                med = "copper"
 
-        claims.append({
-            "type": "USL",
-            "node_count": nodes,
-            "alpha": alpha,
-            "beta": beta,
-            "claimed_speedup": speedup
-        })
+            claims.append({
+                "type": "OPTICAL",
+                "distance_km": dist_km,
+                "reported_latency_ms": lat_ms,
+                "medium": med
+            })
 
-    # 3. Carnot thermodynamic extraction
-    # Pattern: e.g. "Th=600K, Tc=300K, efficiency 85%", "operating between 600 K and 300 K with 80% efficiency"
-    carnot_matches = re.finditer(
-        r'(?:th|t_hot|hot)?\s*[:=]?\s*(\d+(?:\.\d+)?)\s*k\b.*?'
-        r'(?:tc|t_cold|cold)?\s*[:=]?\s*(\d+(?:\.\d+)?)\s*k\b.*?'
-        r'(?:efficiency|eta)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(%|\b)',
-        text,
-        re.IGNORECASE
-    )
-    for m in carnot_matches:
-        t_hot = float(m.group(1))
-        t_cold = float(m.group(2))
-        eff_raw = float(m.group(3))
-        is_pct = (m.group(4) == "%") or (eff_raw > 1.0)
-        eff = eff_raw / 100.0 if is_pct else eff_raw
+        # 2. USL / Concurrency scaling extraction
+        nodes_m = re.search(r'(\d+)\s*(?:nodes|servers|cores|threads|instances|workers|processes)\b|(?:node_count|nodes|concurrency)\s*[:=]?\s*(\d+)\b', sent, re.IGNORECASE)
+        speedup_m = re.search(r'(\d+(?:\.\d+)?)\s*x\s*(?:speedup|throughput|scaling|acceleration)?\b|(?:speedup|throughput|scaling)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*x?\b', sent, re.IGNORECASE)
+        if nodes_m and speedup_m:
+            n_str = nodes_m.group(1) if nodes_m.group(1) is not None else nodes_m.group(2)
+            s_str = speedup_m.group(1) if speedup_m.group(1) is not None else speedup_m.group(2)
+            nodes = int(n_str)
+            speedup = float(s_str)
 
-        claims.append({
-            "type": "CARNOT",
-            "t_hot_k": t_hot,
-            "t_cold_k": t_cold,
-            "claimed_efficiency": eff
-        })
+            alpha = 0.0
+            beta = 0.0
+            alpha_m = re.search(r'\balpha\s*[:=]?\s*(\d+(?:\.\d+)?)', sent, re.IGNORECASE) or re.search(r'\balpha\s*[:=]?\s*(\d+(?:\.\d+)?)', text, re.IGNORECASE)
+            if alpha_m:
+                alpha = float(alpha_m.group(1))
+            beta_m = re.search(r'\bbeta\s*[:=]?\s*(\d+(?:\.\d+)?)', sent, re.IGNORECASE) or re.search(r'\bbeta\s*[:=]?\s*(\d+(?:\.\d+)?)', text, re.IGNORECASE)
+            if beta_m:
+                beta = float(beta_m.group(1))
 
-    # 4. Landauer extraction
-    # Pattern: e.g. "erasing 1000 bits at 300 K with 1e-25 J", "erasure of 100 bits at 300K consuming 1e-22 Joules"
-    landauer_matches = re.finditer(
-        r'(?:erasing|erasure of|erase)\s*(\d+)\s*bits?\b.*?'
-        r'(?:at|temperature)\s*(\d+(?:\.\d+)?)\s*k\b.*?'
-        r'(?:energy|consuming|using)?\s*[:=]?\s*(\d+(?:\.\d+)?(?:e[+-]?\d+)?)\s*(?:j|joules|nanojoules|nj|pj|fj|aj|zj|yj)\b',
-        text,
-        re.IGNORECASE
-    )
-    for m in landauer_matches:
-        bits = int(m.group(1))
-        temp = float(m.group(2))
-        energy = float(m.group(3))
-        claims.append({
-            "type": "LANDAUER",
-            "bit_count": bits,
-            "t_kelvin": temp,
-            "claimed_energy_joules": energy
-        })
+            claims.append({
+                "type": "USL",
+                "node_count": nodes,
+                "alpha": alpha,
+                "beta": beta,
+                "claimed_speedup": speedup
+            })
 
-    # 5. Shannon capacity extraction
-    # Pattern: e.g. "bandwidth of 20 MHz and SNR of 30 dB delivering 2 Gbps", "10 MHz, SNR 10, throughput 100 Mbps"
-    shannon_matches = re.finditer(
-        r'(?:bandwidth|channel|b)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(hz|khz|mhz|ghz)\b.*?'
-        r'(?:snr)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(db|\b).*?'
-        r'(?:throughput|data rate|rate|capacity|delivering|achieving)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(bps|kbps|mbps|gbps|tbps)\b',
-        text,
-        re.IGNORECASE
-    )
-    for m in shannon_matches:
-        raw_b = float(m.group(1))
-        b_unit = m.group(2).lower()
-        if b_unit == "khz":
-            b_hz = raw_b * 1e3
-        elif b_unit == "mhz":
-            b_hz = raw_b * 1e6
-        elif b_unit == "ghz":
-            b_hz = raw_b * 1e9
-        else:
-            b_hz = raw_b
+        # 3. Carnot thermodynamic extraction
+        # Look for two temperatures in Kelvin + efficiency
+        k_temps = re.findall(r'(?:th|t_hot|hot)?\s*[:=]?\s*(\d+(?:\.\d+)?)\s*k\b', sent, re.IGNORECASE)
+        eff_m = re.search(r'(\d+(?:\.\d+)?)\s*%\s*(?:efficiency|thermal efficiency)?|(?:efficiency|eta)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(%|\b)', sent, re.IGNORECASE)
+        if len(k_temps) >= 2 and eff_m:
+            t1 = float(k_temps[0])
+            t2 = float(k_temps[1])
+            t_hot = max(t1, t2)
+            t_cold = min(t1, t2)
 
-        raw_snr = float(m.group(3))
-        is_db = (m.group(4).lower() == "db")
-        snr_lin = 10.0 ** (raw_snr / 10.0) if is_db else raw_snr
+            if eff_m.group(1) is not None:
+                eff = float(eff_m.group(1)) / 100.0
+            else:
+                raw_eff = float(eff_m.group(2))
+                is_pct = (eff_m.group(3) == "%") or (raw_eff > 1.0)
+                eff = raw_eff / 100.0 if is_pct else raw_eff
 
-        raw_rate = float(m.group(5))
-        r_unit = m.group(6).lower()
-        if r_unit == "kbps":
-            rate_bps = raw_rate * 1e3
-        elif r_unit == "mbps":
-            rate_bps = raw_rate * 1e6
-        elif r_unit == "gbps":
-            rate_bps = raw_rate * 1e9
-        elif r_unit == "tbps":
-            rate_bps = raw_rate * 1e12
-        else:
-            rate_bps = raw_rate
+            claims.append({
+                "type": "CARNOT",
+                "t_hot_k": t_hot,
+                "t_cold_k": t_cold,
+                "claimed_efficiency": eff
+            })
 
-        claims.append({
-            "type": "SHANNON",
-            "bandwidth_hz": b_hz,
-            "snr_linear": snr_lin,
-            "claimed_bps": rate_bps
-        })
+        # 4. Landauer extraction
+        bits_m = re.search(r'(\d+)\s*bits?\b', sent, re.IGNORECASE)
+        temp_m = re.search(r'(\d+(?:\.\d+)?)\s*k\b', sent, re.IGNORECASE)
+        energy_m = re.search(r'(\d+(?:\.\d+)?(?:e[+-]?\d+)?)\s*(j|joules|nanojoules|nj|pj|fj|aj|zj|yj)\b', sent, re.IGNORECASE)
+        if bits_m and temp_m and energy_m:
+            bits = int(bits_m.group(1))
+            temp = float(temp_m.group(1))
+            raw_e = float(energy_m.group(1))
+            e_unit = energy_m.group(2).lower()
+            if e_unit in ("nanojoules", "nj"):
+                e_j = raw_e * 1e-9
+            elif e_unit == "pj":
+                e_j = raw_e * 1e-12
+            elif e_unit == "fj":
+                e_j = raw_e * 1e-15
+            elif e_unit == "aj":
+                e_j = raw_e * 1e-18
+            elif e_unit == "zj":
+                e_j = raw_e * 1e-21
+            elif e_unit == "yj":
+                e_j = raw_e * 1e-24
+            else:
+                e_j = raw_e
+
+            claims.append({
+                "type": "LANDAUER",
+                "bit_count": bits,
+                "t_kelvin": temp,
+                "claimed_energy_joules": e_j
+            })
+
+        # 5. Shannon capacity extraction
+        bw_m = re.search(r'(\d+(?:\.\d+)?)\s*(hz|khz|mhz|ghz)\b', sent, re.IGNORECASE)
+        snr_m = re.search(r'(?:snr)\s*(?:of|is|=)?\s*(\d+(?:\.\d+)?)\s*(db|\b)', sent, re.IGNORECASE)
+        rate_m = re.search(r'(\d+(?:\.\d+)?)\s*(bps|kbps|mbps|gbps|tbps)\b', sent, re.IGNORECASE)
+        if bw_m and snr_m and rate_m:
+            raw_bw = float(bw_m.group(1))
+            bw_unit = bw_m.group(2).lower()
+            if bw_unit == "khz":
+                bw_hz = raw_bw * 1e3
+            elif bw_unit == "mhz":
+                bw_hz = raw_bw * 1e6
+            elif bw_unit == "ghz":
+                bw_hz = raw_bw * 1e9
+            else:
+                bw_hz = raw_bw
+
+            raw_snr = float(snr_m.group(1))
+            is_db = (snr_m.group(2).lower() == "db")
+            snr_lin = 10.0 ** (raw_snr / 10.0) if is_db else raw_snr
+
+            raw_rate = float(rate_m.group(1))
+            rate_unit = rate_m.group(2).lower()
+            if rate_unit == "kbps":
+                rate_bps = raw_rate * 1e3
+            elif rate_unit == "mbps":
+                rate_bps = raw_rate * 1e6
+            elif rate_unit == "gbps":
+                rate_bps = raw_rate * 1e9
+            elif rate_unit == "tbps":
+                rate_bps = raw_rate * 1e12
+            else:
+                rate_bps = raw_rate
+
+            claims.append({
+                "type": "SHANNON",
+                "bandwidth_hz": bw_hz,
+                "snr_linear": snr_lin,
+                "claimed_bps": rate_bps
+            })
 
     return claims
 

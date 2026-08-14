@@ -1,18 +1,24 @@
 """
-Empirically True, Real-World Grounded Retrieval & Epistemic Invariant Engine.
-Zero-dependency, standard-library implementation for evidentiary source tiering,
-temporal staleness & superseding document detection, propositional breadcrumb scoping,
-cross-document contradiction resolution, and physical/computational boundary guards.
+Empirically True, Real-World Grounded Retrieval & Epistemic Invariant Engine (Milestone M5).
+Primary Coordinator integrating:
+- Epistemic Evidentiary Tiering (F1) & Authority-Weighted RRF (F2)
+- Temporal Validity & Superseding Detection (F3) & Staleness Decay (F4)
+- Dense Propositional Decomposition & Breadcrumb Scoping (F5)
+- Cross-Document Consensus Matrix & Contradiction Resolution (F6)
+- Physical, Mathematical & Computational Boundary Guards (F7, F8, F9, F10, F11)
+- Composite Grounding Scorecard & Hallucination Refusal Gate (F12)
 """
 
-import re
 import math
-import json
 import sqlite3
-from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple, Set, Union
 
-from src.infrastructure.database import get_db
+try:
+    from src.infrastructure.database import get_db
+except ImportError:
+    get_db = None
+
+# Epistemic Evidentiary Tiering & RRF Fusion (M1)
 from src.domain.epistemic_tiering import (
     classify_source_epistemic_tier,
     compute_authority_weighted_rrf,
@@ -22,17 +28,23 @@ from src.domain.epistemic_tiering import (
     TIER_3_SECONDARY,
     TIER_4_COMMENTARY
 )
+
+# Temporal Validity & Staleness Decay (M1)
 from src.domain.temporal_validity import (
     detect_temporal_validity,
     compute_temporal_decay,
     DOMAIN_HALF_LIVES,
     STATUS_PENALTY_CAPS
 )
+
+# Dense Propositional Decomposition & Breadcrumb Scoping (M2)
 from src.domain.dense_propositions import (
     decompose_into_propositions,
     expand_propositions_to_parent_context,
     format_breadcrumb_scope
 )
+
+# Cross-Document Consensus & Contradiction Resolution Matrix (M3)
 from src.domain.consensus_matrix import (
     evaluate_cross_document_consensus,
     extract_document_assertions,
@@ -53,6 +65,8 @@ from src.domain.consensus_matrix import (
     TIER_3_CONDITION_SCOPE,
     TIER_4_UNRESOLVABLE
 )
+
+# Boundary Invariant Guards (M4)
 from src.domain.boundary_invariants import (
     check_optical_latency_invariant,
     check_usl_scalability_invariant,
@@ -67,6 +81,7 @@ from src.domain.boundary_invariants import (
     verify_cap_pacelc_invariant,
     verify_carnot_landauer_invariant,
     verify_shannon_capacity_invariant,
+    parse_claims_from_text,
     INV_SPEED_OF_LIGHT,
     INV_USL,
     INV_CAP_PACELC,
@@ -86,23 +101,65 @@ from src.domain.boundary_invariants import (
     VIOLATION_SHANNON_CAPACITY
 )
 
-# Re-export for backward compatibility
+# Grounding Scorecard & Refusal Gate (M5)
+from src.domain.grounding_scorecard import (
+    compute_grounding_scorecard,
+    generate_knowledge_gap_diagnostic_report,
+    KnowledgeGapDiagnosticReport,
+    REFUSAL_THRESHOLD,
+    WEIGHT_TIER,
+    WEIGHT_CONSENSUS,
+    WEIGHT_TEMPORAL,
+    STATUS_ACCEPTED,
+    STATUS_REFUSED,
+    STATUS_GROUNDED,
+    STATUS_UNGROUNDED
+)
+
+# Comprehensive re-export for backward compatibility
 __all__ = [
+    # M1 Tiering & RRF
     "classify_source_epistemic_tier",
     "compute_authority_weighted_rrf",
+    "TIER_WEIGHTS",
+    "TIER_1_PRIMARY",
+    "TIER_2_TECH_SPEC",
+    "TIER_3_SECONDARY",
+    "TIER_4_COMMENTARY",
+    # M1 Temporal
     "detect_temporal_validity",
     "compute_temporal_decay",
+    "DOMAIN_HALF_LIVES",
+    "STATUS_PENALTY_CAPS",
+    # M2 Propositions
     "decompose_into_propositions",
     "expand_propositions_to_parent_context",
     "format_breadcrumb_scope",
+    # M3 Consensus
     "evaluate_cross_document_consensus",
     "extract_document_assertions",
     "compute_consensus_boost",
     "resolve_contradiction_hierarchy",
+    "HIGH_CONSENSUS",
+    "MODERATE_CONSENSUS",
+    "NEUTRAL",
+    "SINGLE_SOURCE",
+    "MINOR_DISCREPANCY",
+    "CONTRADICTION_DETECTED",
+    "CONTRADICTION_UNRESOLVED",
+    "CONFLICT_NUMERICAL_DISCREPANCY",
+    "CONFLICT_POLARITY_INVERSION",
+    "CONFLICT_STATUS_COLLISION",
+    "TIER_1_EPISTEMIC_DOMINANCE",
+    "TIER_2_TEMPORAL_DOMINANCE",
+    "TIER_3_CONDITION_SCOPE",
+    "TIER_4_UNRESOLVABLE",
+    # M4 Invariants
     "check_optical_latency_invariant",
     "check_usl_scalability_invariant",
     "check_carnot_efficiency_invariant",
     "check_landauer_limit_invariant",
+    "check_landauer_erasure_invariant",
     "check_cap_pacelc_invariant",
     "check_shannon_capacity_invariant",
     "evaluate_all_boundary_invariants",
@@ -111,58 +168,112 @@ __all__ = [
     "verify_cap_pacelc_invariant",
     "verify_carnot_landauer_invariant",
     "verify_shannon_capacity_invariant",
+    "parse_claims_from_text",
+    "INV_SPEED_OF_LIGHT",
+    "INV_USL",
+    "INV_CAP_PACELC",
+    "INV_CARNOT",
+    "INV_LANDAUER",
+    "INV_SHANNON",
+    "VIOLATION_SPEED_OF_LIGHT",
+    "VIOLATION_SUPERLINEAR_SPEEDUP",
+    "VIOLATION_COHERENCY_RETROGRADE",
+    "VIOLATION_USL_SCALABILITY",
+    "VIOLATION_CAP_PARTITION",
+    "VIOLATION_PACELC_ZERO_LATENCY",
+    "VIOLATION_QUORUM_DEFICIT",
+    "VIOLATION_SPLIT_BRAIN",
+    "VIOLATION_CARNOT_SECOND_LAW",
+    "VIOLATION_LANDAUER_THERMODYNAMIC",
+    "VIOLATION_SHANNON_CAPACITY",
+    # M5 Scorecard & Refusal Gate
+    "compute_grounding_scorecard",
+    "generate_knowledge_gap_diagnostic_report",
+    "KnowledgeGapDiagnosticReport",
+    "REFUSAL_THRESHOLD",
+    "WEIGHT_TIER",
+    "WEIGHT_CONSENSUS",
+    "WEIGHT_TEMPORAL",
+    "STATUS_ACCEPTED",
+    "STATUS_REFUSED",
+    "STATUS_GROUNDED",
+    "STATUS_UNGROUNDED",
+    # Coordinators & High-Level APIs
     "execute_grounded_retrieval",
-    "GroundedRetrievalEngine",
-    "TIER_WEIGHTS",
-    "TIER_1_PRIMARY",
-    "TIER_2_TECH_SPEC",
-    "TIER_3_SECONDARY",
-    "TIER_4_COMMENTARY",
-    "DOMAIN_HALF_LIVES",
-    "STATUS_PENALTY_CAPS",
-    "HIGH_CONSENSUS",
-    "MODERATE_CONSENSUS",
-    "NEUTRAL",
-    "SINGLE_SOURCE",
-    "MINOR_DISCREPANCY",
-    "CONTRADICTION_DETECTED",
-    "CONTRADICTION_UNRESOLVED"
+    "evaluate_grounding_for_claim",
+    "GroundedRetrievalEngine"
 ]
 
 
-# --- 5. Physical & Computational Boundary Invariant Guards ---
-# All physical, mathematical and computational boundary invariants are implemented in
-# src.domain.boundary_invariants and re-exported above for backward compatibility.
+# ==============================================================================
+# GROUNDED RETRIEVAL ENGINE COORDINATOR CLASS
+# ==============================================================================
 
-
-# --- 6. Grounding Scorecard & Refusal Gate Engine ---
 class GroundedRetrievalEngine:
-    def __init__(self, top_k: int = 5, refusal_threshold: float = 0.65):
-        self.top_k = top_k
-        self.refusal_threshold = refusal_threshold
+    """
+    Coordinator engine executing end-to-end grounded retrieval:
+    1. Lexical and dense candidate rank fusion with epistemic authority coefficients
+    2. Atomic propositional breadcrumb extraction
+    3. Cross-document consensus analysis & contradiction matrix resolution
+    4. Physical, mathematical & computational boundary invariant validation
+    5. Composite Grounding Scorecard calculation and refusal gating
+    """
+
+    def __init__(self, top_k: int = 5, refusal_threshold: float = REFUSAL_THRESHOLD):
+        self.top_k = max(1, int(top_k))
+        self.refusal_threshold = float(refusal_threshold)
 
     def evaluate_grounding(
         self,
         query: str,
-        candidate_passages: List[Dict[str, Any]],
-        generated_claim: Union[str, Dict[str, Any], List[Dict[str, Any]]] = ""
+        candidate_passages: Optional[List[Dict[str, Any]]] = None,
+        generated_claim: Optional[Union[str, Dict[str, Any], List[Dict[str, Any]]]] = None
     ) -> Dict[str, Any]:
         """
         Calculates composite Grounding Confidence Score (0-100%) and returns refusal verdict
         if score < 0.65 with structured missing knowledge gap diagnostics.
         """
+        # Guard for empty or whitespace query
         if not query or not query.strip() or not candidate_passages:
             return {
                 "status": "refusal",
+                "grounding_status": STATUS_REFUSED,
+                "is_grounded": False,
+                "refusal_status": True,
                 "reason": "ZERO_EVIDENCE",
                 "overall_grounded_confidence": 0.0,
+                "grounding_score": 0.0,
+                "score": 0.0,
                 "refusal_threshold": self.refusal_threshold,
                 "message": f"Confidence score 0.0 < {self.refusal_threshold} threshold. Zero evidence found for query: '{query}'",
+                "top_passages_count": 0,
                 "diagnostics": {
                     "knowledge_gaps": ["No relevant primary or secondary documents retrieved for query."],
-                    "retrieved_count": len(candidate_passages) if candidate_passages else 0
+                    "retrieved_count": len(candidate_passages) if candidate_passages else 0,
+                    "avg_tier_weight": 0.0,
+                    "avg_staleness": 0.0,
+                    "consensus_score": 0.0,
+                    "invariant_violations": [],
+                    "epistemic_deficits": ["No candidate passages retrieved; zero evidentiary backing."],
+                    "temporal_deficits": [],
+                    "consensus_deficits": [],
+                    "recommended_actions": ["Provide relevant reference documents or reformulate query with more specific search terms."],
+                    "dissenting_ledger": []
                 },
-                "passages": []
+                "diagnostic_report": {
+                    "refusal_status": True,
+                    "score": 0.0,
+                    "threshold": self.refusal_threshold,
+                    "epistemic_deficits": ["No candidate passages retrieved; zero evidentiary backing."],
+                    "temporal_deficits": [],
+                    "consensus_deficits": [],
+                    "invariant_violations": [],
+                    "recommended_actions": ["Provide relevant reference documents or reformulate query with more specific search terms."],
+                    "dissenting_ledger": []
+                },
+                "passages": [],
+                "consensus_audit": {},
+                "invariant_audit": {}
             }
 
         # 1. Authority-Weighted RRF Ranking
@@ -174,115 +285,156 @@ class GroundedRetrievalEngine:
         )
         top_passages = scored_passages[:self.top_k]
 
-        # 2. Cross-Document Consensus Analysis
-        consensus = evaluate_cross_document_consensus(top_passages)
+        # 2. Evaluate Grounding Scorecard
+        scorecard = compute_grounding_scorecard(
+            passages=top_passages,
+            generated_claim=generated_claim,
+            threshold=self.refusal_threshold
+        )
 
-        # 3. Physical & Computational Invariant Evaluation
-        inv_audit = evaluate_all_boundary_invariants(generated_claim) if generated_claim else {"valid": True, "violations": [], "multiplier": 1.0}
-        invariant_mult = inv_audit["multiplier"]
+        scorecard["query"] = query
+        scorecard["top_passages_count"] = len(top_passages)
+        scorecard["consensus_level"] = scorecard.get("consensus_audit", {}).get("consensus_level", NEUTRAL)
 
-        # 4. Composite Confidence Calculation
-        avg_tier_weight = sum(p.get("epistemic_weight", 0.35) for p in top_passages) / max(1, len(top_passages))
-        avg_staleness = sum(p.get("staleness_coefficient", 1.0) for p in top_passages) / max(1, len(top_passages))
-        consensus_score = float(consensus.get("consensus_score", 0.70))
+        return scorecard
 
-        # Formula: 50% Tier Authority, 30% Consensus, 20% Temporal Freshness, multiplied by Invariant Gate
-        base_confidence = (avg_tier_weight * 0.50) + (consensus_score * 0.30) + (avg_staleness * 0.20)
-        overall_confidence = round(min(1.0, max(0.0, base_confidence * invariant_mult)), 2)
+    def execute_retrieval(
+        self,
+        query: str,
+        candidate_passages: Optional[List[Dict[str, Any]]] = None,
+        top_k: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Executes retrieval and grounding evaluation."""
+        if top_k is not None:
+            self.top_k = max(1, int(top_k))
+        return execute_grounded_retrieval(query=query, passages=candidate_passages, top_k=self.top_k)
 
-        is_success = (overall_confidence >= self.refusal_threshold) and inv_audit["valid"]
-
-        if not is_success:
-            reasons = []
-            if not inv_audit["valid"]:
-                reasons.append("BOUNDARY_INVARIANT_VETO")
-            if overall_confidence < self.refusal_threshold:
-                reasons.append("HALLUCINATION_REFUSAL_GATE")
-
-            return {
-                "status": "refusal",
-                "reason": "_AND_".join(reasons) or "HALLUCINATION_REFUSAL_GATE",
-                "overall_grounded_confidence": overall_confidence,
-                "refusal_threshold": self.refusal_threshold,
-                "message": f"Grounded confidence ({overall_confidence}) is below the required {self.refusal_threshold} threshold or violated physical invariants.",
-                "diagnostics": {
-                    "avg_tier_weight": round(avg_tier_weight, 2),
-                    "avg_staleness": round(avg_staleness, 2),
-                    "consensus_score": round(consensus_score, 2),
-                    "invariant_violations": inv_audit["violations"],
-                    "knowledge_gaps": ["Retrieved sources lack sufficient evidentiary authority or consensus."]
-                },
-                "passages": top_passages,
-                "consensus_audit": consensus,
-                "invariant_audit": inv_audit
-            }
-
-        return {
-            "status": "success",
-            "query": query,
-            "overall_grounded_confidence": overall_confidence,
-            "refusal_threshold": self.refusal_threshold,
-            "consensus_level": consensus["consensus_level"],
-            "top_passages_count": len(top_passages),
-            "passages": top_passages,
-            "consensus_audit": consensus,
-            "invariant_audit": inv_audit
-        }
+    def evaluate_claim(
+        self,
+        claim: Union[str, Dict[str, Any], List[Dict[str, Any]]],
+        passages: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """Evaluates grounding for a generated claim against a collection of passages."""
+        return evaluate_grounding_for_claim(claim=claim, retrieved_passages=passages, threshold=self.refusal_threshold)
 
 
-# --- 7. Unified Grounded Retrieval Pipeline ---
-def execute_grounded_retrieval(query: str, top_k: int = 5) -> Dict[str, Any]:
+# ==============================================================================
+# TOP-LEVEL EXECUTION APIS & BACKWARD-COMPATIBLE SHIMS
+# ==============================================================================
+
+def evaluate_grounding_for_claim(
+    claim: Union[str, Dict[str, Any], List[Dict[str, Any]]],
+    retrieved_passages: List[Dict[str, Any]],
+    threshold: float = REFUSAL_THRESHOLD
+) -> Dict[str, Any]:
     """
-    Executes empirically grounded search across SQLite FTS5 index, applies epistemic source weighting,
-    temporal staleness penalties, and evaluates cross-document consensus.
+    Evaluates grounding for a specific claim given retrieved passages.
+    Cross-checks physical/computational invariants, authority tiering, temporal validity, and consensus.
     """
-    with get_db() as conn:
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+    return compute_grounding_scorecard(
+        passages=retrieved_passages,
+        generated_claim=claim,
+        threshold=threshold
+    )
 
-        # FTS5 Lexical Search with Snippets
-        try:
-            cursor.execute(
-                """SELECT f.id, f.filepath, f.filename, f.content,
-                          rank
-                   FROM fts_files MATCH ?
-                   JOIN files f ON fts_files.filepath = f.filepath
-                   ORDER BY rank LIMIT 25""",
-                (query,)
-            )
-            raw_rows = [dict(r) for r in cursor.fetchall()]
-        except Exception:
-            cursor.execute(
-                "SELECT id, filepath, filename, content, 0 as rank FROM files WHERE content LIKE ? LIMIT 25",
-                (f"%{query}%",)
-            )
-            raw_rows = [dict(r) for r in cursor.fetchall()]
+
+def execute_grounded_retrieval(
+    query: str,
+    passages: Optional[List[Dict[str, Any]]] = None,
+    top_k: int = 5,
+    require_grounded: bool = True
+) -> Dict[str, Any]:
+    """
+    Executes empirically grounded search pipeline across SQLite FTS5 index (or explicit candidate passages),
+    applies epistemic source weighting, temporal staleness decay, cross-document consensus, and refusal gating.
+    """
+    if passages is not None:
+        raw_rows = list(passages)
+    else:
+        raw_rows = []
+        if get_db is not None:
+            try:
+                with get_db() as conn:
+                    conn.row_factory = sqlite3.Row
+                    cursor = conn.cursor()
+                    try:
+                        cursor.execute(
+                            """SELECT f.id, f.filepath, f.filename, f.content,
+                                      rank
+                               FROM fts_files MATCH ?
+                               JOIN files f ON fts_files.filepath = f.filepath
+                               ORDER BY rank LIMIT 25""",
+                            (query,)
+                        )
+                        raw_rows = [dict(r) for r in cursor.fetchall()]
+                    except Exception:
+                        cursor.execute(
+                            "SELECT id, filepath, filename, content, 0 as rank FROM files WHERE content LIKE ? LIMIT 25",
+                            (f"%{query}%",)
+                        )
+                        raw_rows = [dict(r) for r in cursor.fetchall()]
+            except Exception:
+                raw_rows = []
 
     if not raw_rows:
         return {
             "status": "refusal",
+            "grounding_status": STATUS_REFUSED,
+            "is_grounded": False,
+            "refusal_status": True,
             "reason": "HALLUCINATION_REFUSAL_GATE",
             "overall_grounded_confidence": 0.0,
-            "message": f"Confidence score 0.0 < 0.65 threshold. No grounded primary evidence found for query: '{query}'",
+            "grounding_score": 0.0,
+            "score": 0.0,
+            "refusal_threshold": REFUSAL_THRESHOLD,
+            "message": f"Confidence score 0.0 < {REFUSAL_THRESHOLD} threshold. No grounded primary evidence found for query: '{query}'",
+            "top_passages_count": 0,
+            "diagnostics": {
+                "knowledge_gaps": ["No grounded primary evidence found for query."],
+                "epistemic_deficits": ["No candidate passages retrieved."],
+                "temporal_deficits": [],
+                "consensus_deficits": [],
+                "recommended_actions": ["Expand retrieval query or provide reference documents."],
+                "invariant_violations": [],
+                "dissenting_ledger": []
+            },
+            "diagnostic_report": {
+                "refusal_status": True,
+                "score": 0.0,
+                "threshold": REFUSAL_THRESHOLD,
+                "epistemic_deficits": ["No candidate passages retrieved."],
+                "temporal_deficits": [],
+                "consensus_deficits": [],
+                "invariant_violations": [],
+                "recommended_actions": ["Expand retrieval query or provide reference documents."],
+                "dissenting_ledger": []
+            },
             "passages": []
         }
 
     # Format lexical ranks for authority-weighted RRF
     lexical_candidates = []
     for rank_idx, r in enumerate(raw_rows):
-        fname = r.get("filename", "")
-        content = r.get("content", "")
+        fname = str(r.get("filename") or r.get("filepath") or "")
+        content = str(r.get("content") or r.get("snippet") or "")
         temporal_info = detect_temporal_validity(content)
 
         lexical_candidates.append({
-            "id": r.get("id"),
+            "id": r.get("id", rank_idx + 1),
             "filepath": r.get("filepath", ""),
             "filename": fname,
             "content": content[:500],
-            "rank": rank_idx + 1,
+            "rank": int(r.get("rank") or (rank_idx + 1)),
             "temporal_validity": temporal_info,
-            "staleness_coefficient": temporal_info["staleness_coefficient"]
+            "staleness_coefficient": temporal_info["staleness_coefficient"],
+            "epistemic_weight": r.get("epistemic_weight"),
+            "epistemic_tier": r.get("epistemic_tier")
         })
 
-    engine = GroundedRetrievalEngine(top_k=top_k)
-    return engine.evaluate_grounding(query=query, candidate_passages=lexical_candidates)
+    engine = GroundedRetrievalEngine(top_k=top_k, refusal_threshold=REFUSAL_THRESHOLD)
+    result = engine.evaluate_grounding(query=query, candidate_passages=lexical_candidates)
+
+    if not require_grounded and result["status"] == "refusal":
+        result["forced_status"] = "UNGROUNDED_ALLOW"
+
+    return result
