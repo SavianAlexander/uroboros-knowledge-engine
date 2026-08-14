@@ -582,8 +582,6 @@ def evaluate_cross_document_consensus(passages: List[Dict[str, Any]]) -> Dict[st
                                 "scope_a": scope_a,
                                 "scope_b": scope_b,
                                 "sentence_a": num_a["sentence"],
-                                "sentence_b": num_b["sentence"],
-                                "context": list(shared_ctx)
                             }
 
             # B. Predicate Assertion Comparisons (Entity-Attribute-Predicate)
@@ -601,10 +599,11 @@ def evaluate_cross_document_consensus(passages: List[Dict[str, Any]]) -> Dict[st
 
                     if subj_match:
                         matched_b_preds.add(idx_b)
+                        c_key = (pred_a["sentence"], pred_b["sentence"])
+
                         # Check if numbers inside predicates clash
                         if pred_a["predicate_nums"] and pred_b["predicate_nums"]:
                             if pred_a["predicate_nums"] != pred_b["predicate_nums"]:
-                                c_key = (pred_a["sentence"], pred_b["sentence"])
                                 if c_key not in pair_contradictions_map:
                                     pair_contradictions_map[c_key] = {
                                         "conflict_type": CONFLICT_POLARITY_INVERSION,
@@ -622,9 +621,9 @@ def evaluate_cross_document_consensus(passages: List[Dict[str, Any]]) -> Dict[st
 
                         shared_pred_val = pred_a["predicate_tokens"].intersection(pred_b["predicate_tokens"])
                         if len(shared_pred_val) >= 1 and len(shared_pred_val) >= max(len(pred_a["predicate_tokens"]), len(pred_b["predicate_tokens"])) // 2:
-                            pair_agreements += 1
+                            if c_key not in pair_contradictions_map:
+                                pair_agreements += 1
                         else:
-                            c_key = (pred_a["sentence"], pred_b["sentence"])
                             if c_key not in pair_contradictions_map:
                                 pair_contradictions_map[c_key] = {
                                     "conflict_type": CONFLICT_POLARITY_INVERSION,
@@ -649,10 +648,12 @@ def evaluate_cross_document_consensus(passages: List[Dict[str, Any]]) -> Dict[st
                     shared_sub = pol_a["subject_tokens"].intersection(pol_b["subject_tokens"])
                     if len(shared_sub) >= 2 or (len(shared_sub) >= 1 and len(pol_a["subject_tokens"]) <= 2):
                         matched_b_pols.add(idx_b)
+                        c_key = (pol_a["sentence"], pol_b["sentence"])
+
                         if pol_a["is_positive"] == pol_b["is_positive"]:
-                            pair_agreements += 1
+                            if c_key not in pair_contradictions_map:
+                                pair_agreements += 1
                         else:
-                            c_key = (pol_a["sentence"], pol_b["sentence"])
                             if c_key not in pair_contradictions_map:
                                 pair_contradictions_map[c_key] = {
                                     "conflict_type": CONFLICT_POLARITY_INVERSION,
@@ -677,10 +678,12 @@ def evaluate_cross_document_consensus(passages: List[Dict[str, Any]]) -> Dict[st
                     shared_ent = stat_a["entity_tokens"].intersection(stat_b["entity_tokens"])
                     if len(shared_ent) >= 1:
                         matched_b_stats.add(idx_b)
+                        c_key = (stat_a["sentence"], stat_b["sentence"])
+
                         if stat_a["status"] == stat_b["status"]:
-                            pair_agreements += 1
+                            if c_key not in pair_contradictions_map:
+                                pair_agreements += 1
                         else:
-                            c_key = (stat_a["sentence"], stat_b["sentence"])
                             pair_contradictions_map[c_key] = {
                                 "conflict_type": CONFLICT_STATUS_COLLISION,
                                 "source_a": doc_a["filename"],
@@ -739,20 +742,22 @@ def evaluate_cross_document_consensus(passages: List[Dict[str, Any]]) -> Dict[st
     all_weights = [d["epistemic_weight"] for d in doc_profiles]
     boost_score = compute_consensus_boost(all_weights, agreements_count, gamma=CONSENSUS_GAMMA)
 
+    # Check if all contradictions were harmonized via Tier 3 condition scopes
+    all_harmonized = len(resolved_claims) > 0 and all(r.get("resolution_tier") == TIER_3_CONDITION_SCOPE for r in resolved_claims)
+
     # Majority consensus determination across multi-party sources
     has_majority_agreement = (
         agreements_count >= 1 and (
-            (len(doc_profiles) > 2 and (agreements_count >= len(contradictions) or agreements_count >= len(doc_profiles) // 2)) or
-            (len(doc_profiles) == 2 and agreements_count >= len(contradictions) and len(dissenting_ledger) == 0 and not any(r.get("resolution_tier") == TIER_3_CONDITION_SCOPE for r in resolved_claims))
-        )
+            agreements_count >= len(contradictions) or
+            (len(doc_profiles) > 2 and agreements_count >= len(doc_profiles) // 2)
+        ) and not all_harmonized
     )
 
     if has_majority_agreement:
         consensus_level = HIGH_CONSENSUS
         consensus_score = 1.00 if (boost_score >= 0.99 and agreements_count >= 3) else 0.95
     elif contradictions:
-        all_harmonized = all(r.get("resolution_tier") == TIER_3_CONDITION_SCOPE for r in resolved_claims)
-        if all_harmonized and resolved_claims:
+        if all_harmonized:
             consensus_level = MINOR_DISCREPANCY
             consensus_score = 0.50
         elif resolved_claims and len(dissenting_ledger) == 0 and all(r.get("resolution_tier") in (TIER_1_EPISTEMIC_DOMINANCE, TIER_2_TEMPORAL_DOMINANCE) for r in resolved_claims):
