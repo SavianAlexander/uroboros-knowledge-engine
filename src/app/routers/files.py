@@ -60,6 +60,7 @@ def get_active_dir():
 @router.get("/api/file")
 def get_raw_file(path: str):
     """Retrieve raw file content and metadata."""
+    verify_path_containment(path)
     try:
         norm_path = os.path.abspath(path)
         tags = []
@@ -263,9 +264,12 @@ def get_term_insight(req: TermInsightRequest):
     }
 
 @router.get("/api/file/entities")
-def get_file_entities(path: str):
+def get_file_entities(filepath: str = "", path: str = "", top_k: int = 10):
     """Extract key keywords, named entities, and highlighted terms for interactive EPUB hover cards."""
-    real_path = resolve_file_on_disk(path)
+    fp = filepath or path or ""
+    if fp:
+        verify_path_containment(fp)
+    real_path = resolve_file_on_disk(fp) if fp else None
     content = ""
     if real_path and os.path.exists(real_path):
         try:
@@ -273,28 +277,18 @@ def get_file_entities(path: str):
                 content = f.read()
         except Exception:
             pass
-    if not content:
+    if not content and fp:
         with get_db() as conn:
             c = conn.cursor()
-            c.execute("SELECT content FROM files WHERE filepath = ? OR filepath LIKE ? LIMIT 1", (path, f"%{os.path.basename(path)}"))
+            c.execute("SELECT content FROM files WHERE filepath = ? OR filepath LIKE ? LIMIT 1", (fp, f"%{os.path.basename(fp)}"))
             row = c.fetchone()
             if row:
                 content = row[0] or ""
-    
-    keywords = set()
-    for m in re.finditer(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b', content):
-        match_str = m.group(1).strip()
-        if len(match_str) > 3 and match_str.lower() not in ["the", "this", "that", "with", "from", "your", "they", "have", "more", "some", "when", "page", "date"]:
-            keywords.add(match_str)
-    
-    for term in ["Analytical", "Focus", "CliftonStrengths", "Gallup", "Clean Architecture", "Vector Embeddings", "MaxSim", "ColBERT", "Knowledge Engine", "SQLite"]:
-        if term.lower() in content.lower():
-            keywords.add(term)
-            
-    return {
-        "filepath": path,
-        "entities": list(keywords)[:50]
-    }
+
+    from src.domain.entity_extractor import extract_entities_from_text
+    result = extract_entities_from_text(content, top_k=top_k)
+    result["filepath"] = fp
+    return result
 
 @router.post("/api/file/save")
 @router.post("/api/file/edit")
@@ -494,16 +488,17 @@ def bulk_delete_endpoint(req: BulkDeleteRequest):
 def upload_file_endpoint(file: UploadFile = File(...)):
     """Upload new file into workspace active directory."""
     base = get_active_dir()
+    clean_fn = os.path.basename(file.filename or "upload.txt")
     if file.filename and file.filename.startswith("voice-memo-"):
         base = os.path.join(base, "voice_memos")
     os.makedirs(base, exist_ok=True)
-    dest_path = os.path.join(base, file.filename)
+    dest_path = os.path.join(base, clean_fn)
     verify_path_containment(dest_path)
     try:
         with open(dest_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
         index_directory(base)
-        return {"status": "success", "filename": file.filename, "filepath": dest_path}
+        return {"status": "success", "filename": clean_fn, "filepath": dest_path}
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
@@ -868,27 +863,7 @@ def open_file_endpoint(req: OpenFileRequest):
 
 
 
-@router.get("/api/file/entities")
-def file_entities_endpoint(filepath: str = "", path: str = "", top_k: int = 10):
-    """Extracts capitalized domain entities and TF-IDF terms from document content."""
-    fp = filepath or path or ""
-    verify_path_containment(fp)
-    
-    content = ""
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT content FROM files WHERE filepath = ?", (fp,))
-        row = cursor.fetchone()
-        if row:
-            content = row[0] or ""
-        elif fp and os.path.exists(fp):
-            with open(fp, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
 
-    from src.domain.entity_extractor import extract_entities_from_text
-    result = extract_entities_from_text(content, top_k=top_k)
-    result["filepath"] = fp
-    return result
 
 
 @router.get("/api/file/readability")

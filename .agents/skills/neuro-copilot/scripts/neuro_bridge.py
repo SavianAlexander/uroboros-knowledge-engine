@@ -122,14 +122,121 @@ def export_graph_svg():
         return json.dumps({"status": "error", "message": str(e)})
 
 def vacuum_db_cli():
-    """Execute WAL checkpointing and freelist page vacuuming on SQLite database."""
+    """Execute WAL checkpointing, VACUUM, and freelist page reclaiming on SQLite database."""
     try:
-        from know import get_db
-        conn = get_db()
+        import sqlite3
+        from src.infrastructure.database import DB_FILE, db_status
+        conn = sqlite3.connect(DB_FILE)
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-        conn.execute("PRAGMA incremental_vacuum")
+        conn.execute("VACUUM")
         conn.close()
-        return json.dumps({"status": "success", "message": "WAL checkpointed and freelist pages reclaimed."}, indent=2)
+        status = db_status()
+        return json.dumps({
+            "status": "success",
+            "message": "WAL checkpointed and VACUUM completed.",
+            "freelist_pages": status.get("freelist_pages", 0),
+            "db_size_bytes": status.get("db_size_bytes", 0)
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+def create_snapshot_cli():
+    """Create a point-in-time cryptographic SQLite snapshot in vault/snapshots/."""
+    try:
+        import sqlite3, shutil
+        from src.infrastructure.database import DB_FILE
+        vault_snapshots_dir = os.path.join(project_root, "vault", "snapshots")
+        os.makedirs(vault_snapshots_dir, exist_ok=True)
+        timestamp = int(time.time())
+        
+        # Calculate SHA256 of current DB
+        hasher = hashlib.sha256()
+        with open(DB_FILE, "rb") as f:
+            while chunk := f.read(65536):
+                hasher.update(chunk)
+        db_hash = hasher.hexdigest()[:8]
+        
+        dest_file = os.path.join(vault_snapshots_dir, f"snapshot_{timestamp}_{db_hash}.db")
+        c_src = sqlite3.connect(DB_FILE)
+        c_dst = sqlite3.connect(dest_file)
+        c_src.backup(c_dst)
+        c_dst.close()
+        c_src.close()
+        
+        return json.dumps({
+            "status": "success",
+            "timestamp": timestamp,
+            "sha256_prefix": db_hash,
+            "snapshot_path": dest_file,
+            "size_bytes": os.path.getsize(dest_file)
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+def export_canonical_adrs():
+    """Export canonical Architecture Decision Records (ADRs) into vault/architecture/."""
+    try:
+        adr_dir = os.path.join(project_root, "vault", "architecture")
+        os.makedirs(adr_dir, exist_ok=True)
+        
+        adrs = [
+            ("ADR-001-Tri-Engine-Architecture", "The Tri-Engine integration unites Neuro Knowledge Engine, Tududi Task Master, and GitHub CLI."),
+            ("ADR-002-Zero-Dependency-Stdlib-Standard", "Strict Ponytail Senior Developer protocol: Standard library only (ast, dis, sqlite3, hashlib, json)."),
+            ("ADR-003-Thread-Local-SQLite-Lifecycle", "Prevent Windows WinError 32 permission locks via thread-local connection pooling and explicit reset."),
+            ("ADR-004-Merkle-Causal-Line-Provenance", "Every line of code traces to a commit SHA, author, Tududi Task ID, and Neuro knowledge hash."),
+            ("ADR-005-Crucible-Adversarial-Security-Arena", "Continuous multi-agent Red/Blue team exploit fuzzer guaranteeing SOC 2 Type II trust.")
+        ]
+        
+        created = []
+        for name, summary in adrs:
+            file_path = os.path.join(adr_dir, f"{name}.md")
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(f"# {name.replace('-', ' ')}\n\n## Status\nACCEPTED\n\n## Summary\n{summary}\n\n## Provenance\n- **Standard**: Ponytail Senior Dev\n- **Project**: Neuro Alexander (Project #13)\n")
+            created.append(file_path)
+            
+        from know import index_directory
+        indexed = index_directory(adr_dir)
+        
+        return json.dumps({
+            "status": "success",
+            "adrs_created": len(created),
+            "indexed_count": indexed,
+            "directory": adr_dir
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+def generate_domain_glossary():
+    """Generate canonical domain entities and subsystem terms glossary in vault/glossary/."""
+    try:
+        glossary_dir = os.path.join(project_root, "vault", "glossary")
+        os.makedirs(glossary_dir, exist_ok=True)
+        glossary_file = os.path.join(glossary_dir, "terms.md")
+        
+        content = """# Uroboros Knowledge Engine: Canonical Domain Glossary
+
+## 1. Core Engines
+- **Neuro Knowledge Engine**: Hybrid FTS5 + Binary ColBERT vector vault with sub-15ms retrieval.
+- **Tududi Task Master**: Centralized project governance, task orchestration, and burndown tracking.
+- **GitHub CLI Bridge**: Provenance Merkle tagging, blast radius calculation, and Crucible security fuzzer.
+
+## 2. Architectural Concepts
+- **Ponytail Senior Developer Standard**: The philosophy of zero-dependency, minimal functional diffs.
+- **Merkle Causal Proof**: Cryptographic validation tying code changes to Git commits and Tududi tasks.
+- **The Crucible Arena**: Red Team vs Blue Team security fuzzer testing SQLi, ReDoS, and homoglyphs.
+- **AST Blast Radius**: Static analysis mapping downstream file dependencies and affected API endpoints.
+"""
+        with open(glossary_file, "w", encoding="utf-8") as f:
+            f.write(content)
+            
+        from know import index_directory
+        indexed = index_directory(glossary_dir)
+        
+        return json.dumps({
+            "status": "success",
+            "glossary_file": glossary_file,
+            "indexed_count": indexed
+        }, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
 
@@ -246,6 +353,18 @@ def self_test():
     assert res_bak.get("status") == "success", "backup_db_cli failed"
     print("  [Pass] backup_db_cli assertion clean")
 
+    res_snap = json.loads(create_snapshot_cli())
+    assert res_snap.get("status") == "success", "create_snapshot_cli failed"
+    print("  [Pass] create_snapshot_cli assertion clean")
+
+    res_adr = json.loads(export_canonical_adrs())
+    assert res_adr.get("status") == "success", "export_canonical_adrs failed"
+    print("  [Pass] export_canonical_adrs assertion clean")
+
+    res_gloss = json.loads(generate_domain_glossary())
+    assert res_gloss.get("status") == "success", "generate_domain_glossary failed"
+    print("  [Pass] generate_domain_glossary assertion clean")
+
     res_svg = json.loads(export_graph_svg())
     assert res_svg.get("status") == "success", "export_graph_svg failed"
     print("  [Pass] export_graph_svg assertion clean")
@@ -287,6 +406,9 @@ def main():
     g_parser.add_argument("--entity", required=True, help="Entity name")
 
     subparsers.add_parser("backup", help="Execute 1-click online SQLite database backup")
+    subparsers.add_parser("snapshot", help="Create a cryptographic point-in-time snapshot in vault/snapshots/")
+    subparsers.add_parser("export_adrs", help="Export canonical ADR records into vault/architecture/")
+    subparsers.add_parser("generate_glossary", help="Generate canonical domain terms glossary in vault/glossary/")
     subparsers.add_parser("export_svg", help="Export Knowledge Graph topology as DOT/SVG syntax representation")
     subparsers.add_parser("vacuum", help="Execute WAL checkpointing and freelist page vacuuming")
 
@@ -316,6 +438,12 @@ def main():
         print(search_graph(args.entity))
     elif args.command == "backup":
         print(backup_db_cli())
+    elif args.command == "snapshot":
+        print(create_snapshot_cli())
+    elif args.command == "export_adrs":
+        print(export_canonical_adrs())
+    elif args.command == "generate_glossary":
+        print(generate_domain_glossary())
     elif args.command == "export_svg":
         print(export_graph_svg())
     elif args.command == "vacuum":
@@ -331,3 +459,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

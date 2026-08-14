@@ -22,7 +22,6 @@ def main():
     server_thread = threading.Thread(target=run_server, args=(port,), daemon=True)
     server_thread.start()
 
-    # Wait for server to start
     for _ in range(30):
         try:
             urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=1)
@@ -41,7 +40,7 @@ def main():
         page = context.new_page()
 
         page.goto(f"http://127.0.0.1:{port}/")
-        page.wait_for_load_state("networkidle")
+        page.wait_for_selector("button[data-tab='dashboard']", timeout=15000)
         time.sleep(2)
 
         views = [
@@ -57,44 +56,18 @@ def main():
 
         for prefix, view_id in views:
             print(f"Capturing view: {view_id}...")
-            # Click sidebar button or evaluate navigation
-            page.evaluate(f"""() => {{
-                const btn = document.querySelector('button[title*="{view_id}"], button:has-text("{view_id}")');
-                if (window.dispatchEvent) {{
-                    window.location.hash = '#/{view_id}';
-                }}
-            }}""")
+            btn = page.locator(f"button[data-tab='{view_id}']").first
+            if btn.count() > 0:
+                btn.click()
             
-            # Click specific sidebar link if available
-            sidebar_btn = page.locator(f"aside button:has-text('{view_id}'), aside button[data-view='{view_id}']").first
-            if sidebar_btn.count() > 0:
-                sidebar_btn.click()
-            else:
-                # Try clicking sidebar button by text or icon
-                nav_map = {
-                    "dashboard": "System Analytics",
-                    "chat": "AI Assistant",
-                    "workspace": "Document Studio",
-                    "search": "Semantic Search",
-                    "ingestion": "Ingestion Pipeline",
-                    "graph": "3D Knowledge Graph",
-                    "config": "Process & Rules",
-                    "settings": "System Settings"
-                }
-                label = nav_map.get(view_id, "")
-                if label:
-                    loc = page.locator(f"aside button:has-text('{label}')").first
-                    if loc.count() > 0:
-                        loc.click()
-
             time.sleep(1.5)
 
             # Special actions per view to show rich state
             if view_id == "workspace":
-                first_file = page.locator("div:has-text('.md'), div:has-text('.pdf'), div:has-text('.txt')").first
+                first_file = page.locator("div:has-text('.md'), div:has-text('.pdf'), div:has-text('.txt'), div:has-text('.py')").first
                 if first_file.count() > 0:
                     first_file.click()
-                    time.sleep(1)
+                    time.sleep(1.5)
             elif view_id == "search":
                 search_input = page.locator("input[placeholder*='Search']").first
                 if search_input.count() > 0:
@@ -103,8 +76,10 @@ def main():
                     if search_btn.count() > 0:
                         search_btn.click()
                         time.sleep(1.5)
+            elif view_id == "chat":
+                # Open prompt enhancer or sample question
+                time.sleep(1)
 
-            # Capture to docs and artifact dir
             target_docs = os.path.join(docs_dir, f"{prefix}.png")
             target_artifact = os.path.join(artifact_dir, f"{prefix}.png")
             
@@ -113,6 +88,7 @@ def main():
             print(f"Captured: {target_docs} & {target_artifact}")
 
         browser.close()
+    print("All UI showcases captured successfully!")
 
 if __name__ == "__main__":
     main()

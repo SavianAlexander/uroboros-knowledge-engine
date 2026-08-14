@@ -1,9 +1,9 @@
 {
-  "last_updated": "2026-08-14T03:21:51Z",
-  "total_duration_seconds": 47.017,
+  "last_updated": "2026-08-14T03:28:57Z",
+  "total_duration_seconds": 68.3095,
   "overall_summary": {
-    "total_domains": 34,
-    "passed": 294,
+    "total_domains": 40,
+    "passed": 354,
     "failed": 0,
     "errors": 0,
     "skipped": 42
@@ -110,9 +110,273 @@
     ],
     "tests/test_domain_advanced_features.py": [
       "DomainAdvancedFeatures"
+    ],
+    "src/domain/code_ast_extractor.py": [
+      "DomainCodeAST"
+    ],
+    "src/domain/ast_parser.py": [
+      "DomainCodeAST"
+    ],
+    "src/domain/code_diff_synthesizer.py": [
+      "DomainCodeAST"
+    ],
+    "src/domain/code_self_refactor.py": [
+      "DomainCodeAST"
+    ],
+    "tests/test_domain_code_ast.py": [
+      "DomainCodeAST"
+    ],
+    "src/domain/vault_merkle_tree.py": [
+      "DomainMerkleVault"
+    ],
+    "src/domain/zk_data_masker.py": [
+      "DomainMerkleVault"
+    ],
+    "src/domain/prompt_injection_guard.py": [
+      "DomainMerkleVault"
+    ],
+    "src/domain/pii_privacy_guard.py": [
+      "DomainMerkleVault"
+    ],
+    "src/domain/acl_permission_engine.py": [
+      "DomainMerkleVault"
+    ],
+    "src/domain/crypto_audit_ledger.py": [
+      "DomainMerkleVault"
+    ],
+    "tests/test_domain_merkle_vault.py": [
+      "DomainMerkleVault"
+    ],
+    "src/domain/sla_circuit_breaker.py": [
+      "DomainSLACaching"
+    ],
+    "src/domain/cache_guard.py": [
+      "DomainSLACaching"
+    ],
+    "src/domain/streaming_token_compressor.py": [
+      "DomainSLACaching"
+    ],
+    "src/domain/adaptive_context_compressor.py": [
+      "DomainSLACaching"
+    ],
+    "src/domain/context_budget_allocator.py": [
+      "DomainSLACaching"
+    ],
+    "src/domain/speculative_warmer.py": [
+      "DomainSLACaching"
+    ],
+    "src/domain/predictive_precacher.py": [
+      "DomainSLACaching"
+    ],
+    "tests/test_domain_sla_caching.py": [
+      "DomainSLACaching"
+    ],
+    "src/domain/multi_agent_consensus.py": [
+      "DomainAgentConsensus"
+    ],
+    "src/domain/multi_agent_debate.py": [
+      "DomainAgentConsensus"
+    ],
+    "src/domain/agent_memory.py": [
+      "DomainAgentConsensus"
+    ],
+    "src/domain/bandit_query_router.py": [
+      "DomainAgentConsensus"
+    ],
+    "src/domain/intent_router.py": [
+      "DomainAgentConsensus"
+    ],
+    "tests/test_domain_agent_consensus.py": [
+      "DomainAgentConsensus"
+    ],
+    "src/domain/entropy_chunker.py": [
+      "DomainSOTARAG"
+    ],
+    "src/domain/temporal_rag.py": [
+      "DomainSOTARAG"
+    ],
+    "src/domain/cross_lingual_aligner.py": [
+      "DomainSOTARAG"
+    ],
+    "src/domain/self_rag_critique.py": [
+      "DomainSOTARAG"
+    ],
+    "src/domain/legal_accuracy_engine.py": [
+      "DomainSOTARAG"
+    ],
+    "tests/test_domain_sota_rag.py": [
+      "DomainSOTARAG"
+    ],
+    "src/mcp_server.py": [
+      "DomainMCPServer"
+    ],
+    "tests/test_domain_mcp_server.py": [
+      "DomainMCPServer"
     ]
   },
   "bug_relation_taxonomy": {
+    "DomainCodeAST": [
+      {
+        "test": "test_01_ast_extract_classes_and_functions",
+        "component": "src/domain/code_ast_extractor.py",
+        "prevents": "AST extraction failure on class/function definitions"
+      },
+      {
+        "test": "test_02_ast_cyclomatic_complexity_calculation",
+        "component": "src/domain/code_ast_extractor.py",
+        "prevents": "Incorrect cyclomatic complexity scoring"
+      },
+      {
+        "test": "test_03_ast_call_graph_dependency_extraction",
+        "component": "src/domain/ast_parser.py",
+        "prevents": "Missing caller-callee call graph edges"
+      },
+      {
+        "test": "test_04_angle_corrupt_syntax_payload_handling",
+        "component": "src/domain/code_ast_extractor.py",
+        "prevents": "Parser crash on corrupt or invalid syntax payloads"
+      },
+      {
+        "test": "test_08_code_diff_synthesizer_and_refactor",
+        "component": "src/domain/code_diff_synthesizer.py",
+        "prevents": "Malformed git diff patch or HTML view generation"
+      }
+    ],
+    "DomainMerkleVault": [
+      {
+        "test": "test_01_merkle_tree_root_generation",
+        "component": "src/domain/vault_merkle_tree.py",
+        "prevents": "Non-deterministic Merkle root computation across documents"
+      },
+      {
+        "test": "test_02_merkle_inclusion_proof_and_verification",
+        "component": "src/domain/vault_merkle_tree.py",
+        "prevents": "Cryptographic audit proof verification failure"
+      },
+      {
+        "test": "test_03_merkle_tamper_detection",
+        "component": "src/domain/vault_merkle_tree.py",
+        "prevents": "Silent undetected vault document tampering"
+      },
+      {
+        "test": "test_04_zk_data_masker_and_pii_sanitization",
+        "component": "src/domain/zk_data_masker.py",
+        "prevents": "PII token leakage (SSN, credit card, email, API key)"
+      },
+      {
+        "test": "test_05_prompt_injection_defense_matrix",
+        "component": "src/domain/prompt_injection_guard.py",
+        "prevents": "Adversarial prompt injection and system override attacks"
+      }
+    ],
+    "DomainSLACaching": [
+      {
+        "test": "test_01_sla_circuit_breaker_normal_execution",
+        "component": "src/domain/sla_circuit_breaker.py",
+        "prevents": "Primary SLA execution regression"
+      },
+      {
+        "test": "test_02_sla_circuit_breaker_tripping_and_fallback",
+        "component": "src/domain/sla_circuit_breaker.py",
+        "prevents": "SLA timeout violation without automatic fallback"
+      },
+      {
+        "test": "test_04_cache_guard_lru_invalidation_and_hashes",
+        "component": "src/domain/cache_guard.py",
+        "prevents": "Stale vector embedding cache persistence"
+      },
+      {
+        "test": "test_05_streaming_token_compressor_budget",
+        "component": "src/domain/streaming_token_compressor.py",
+        "prevents": "LLM token throughput degradation from filler words"
+      },
+      {
+        "test": "test_07_context_budget_allocation_ratios",
+        "component": "src/domain/context_budget_allocator.py",
+        "prevents": "Context window token budget overflow"
+      }
+    ],
+    "DomainAgentConsensus": [
+      {
+        "test": "test_01_orchestrate_multi_agent_consensus",
+        "component": "src/domain/multi_agent_consensus.py",
+        "prevents": "Multi-agent persona consensus synthesis failure"
+      },
+      {
+        "test": "test_02_multi_agent_debate_synthesis",
+        "component": "src/domain/multi_agent_debate.py",
+        "prevents": "Adversarial context debate failure"
+      },
+      {
+        "test": "test_03_agent_memory_crud_and_episodic_search",
+        "component": "src/domain/agent_memory.py",
+        "prevents": "Agent episodic memory persistence and recall loss"
+      },
+      {
+        "test": "test_04_bandit_query_router_thompson_sampling",
+        "component": "src/domain/bandit_query_router.py",
+        "prevents": "Sub-optimal retrieval pipeline exploration routing"
+      },
+      {
+        "test": "test_05_intent_router_classification_and_pipeline",
+        "component": "src/domain/intent_router.py",
+        "prevents": "Query intent misclassification and routing errors"
+      }
+    ],
+    "DomainSOTARAG": [
+      {
+        "test": "test_01_entropy_semantic_boundary_chunking",
+        "component": "src/domain/entropy_chunker.py",
+        "prevents": "Chunking boundaries splitting cohesive topic sentences"
+      },
+      {
+        "test": "test_03_temporal_exponential_decay_scoring",
+        "component": "src/domain/temporal_rag.py",
+        "prevents": "Obsolete documents outranking fresh authoritative versions"
+      },
+      {
+        "test": "test_04_cross_lingual_query_alignment",
+        "component": "src/domain/cross_lingual_aligner.py",
+        "prevents": "Multilingual search term mismatch against English vault"
+      },
+      {
+        "test": "test_05_self_rag_critique_rubric_scoring",
+        "component": "src/domain/self_rag_critique.py",
+        "prevents": "Unhallucinated grounding failure in Self-RAG"
+      },
+      {
+        "test": "test_06_legal_accuracy_engine_sanitization_and_nfc",
+        "component": "src/domain/legal_accuracy_engine.py",
+        "prevents": "FTS5 syntax injection in legal queries"
+      }
+    ],
+    "DomainMCPServer": [
+      {
+        "test": "test_01_mcp_list_tools_schema_contracts",
+        "component": "src/mcp_server.py",
+        "prevents": "MCP tool schema contract drift or missing required parameters"
+      },
+      {
+        "test": "test_02_mcp_call_tool_neuro_search_success",
+        "component": "src/mcp_server.py",
+        "prevents": "MCP neuro_search tool execution failure"
+      },
+      {
+        "test": "test_04_mcp_call_tool_unknown_tool_error",
+        "component": "src/mcp_server.py",
+        "prevents": "Server crash on unregistered MCP tool call"
+      },
+      {
+        "test": "test_06_mcp_list_resources_and_read_resource",
+        "component": "src/mcp_server.py",
+        "prevents": "MCP vault stats and recent doc resource retrieval failure"
+      },
+      {
+        "test": "test_09_mcp_http_error_handling",
+        "component": "src/mcp_server.py",
+        "prevents": "Unhandled backend HTTP exception crash in MCP server"
+      }
+    ],
     "DomainAdvancedFeatures": [
       {
         "test": "test_01_cosine_similarity_edge_cases",
@@ -519,7 +783,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.3043
+      "duration_seconds": 0.3309
     },
     "test_domain_vector": {
       "module": "tests.test_domain_vector",
@@ -528,7 +792,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 1.0117
+      "duration_seconds": 1.0224
     },
     "test_domain_ingestion": {
       "module": "tests.test_domain_ingestion",
@@ -537,7 +801,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.4236
+      "duration_seconds": 0.3932
     },
     "test_domain_api": {
       "module": "tests.test_domain_api",
@@ -546,7 +810,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 2.9632
+      "duration_seconds": 2.9157
     },
     "test_domain_llm": {
       "module": "tests.test_domain_llm",
@@ -555,7 +819,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.0675
+      "duration_seconds": 0.0694
     },
     "test_domain_security": {
       "module": "tests.test_domain_security",
@@ -564,7 +828,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 1,
-      "duration_seconds": 0.1263
+      "duration_seconds": 0.1162
     },
     "test_domain_performance": {
       "module": "tests.test_domain_performance",
@@ -573,7 +837,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.0892
+      "duration_seconds": 0.0872
     },
     "test_domain_architecture": {
       "module": "tests.test_domain_architecture",
@@ -582,7 +846,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 1,
-      "duration_seconds": 0.0015
+      "duration_seconds": 0.001
     },
     "test_domain_chaos": {
       "module": "tests.test_domain_chaos",
@@ -591,7 +855,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.1414
+      "duration_seconds": 0.1395
     },
     "test_domain_soc2": {
       "module": "tests.test_domain_soc2",
@@ -600,7 +864,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 14.3116
+      "duration_seconds": 29.9614
     },
     "test_domain_mutation": {
       "module": "tests.test_domain_mutation",
@@ -609,7 +873,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.0297
+      "duration_seconds": 0.0342
     },
     "test_domain_rag": {
       "module": "tests.test_domain_rag",
@@ -618,7 +882,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 8.2943
+      "duration_seconds": 12.4362
     },
     "test_domain_desktop": {
       "module": "tests.test_domain_desktop",
@@ -627,7 +891,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.0637
+      "duration_seconds": 0.0768
     },
     "test_domain_expanded_coverage": {
       "module": "tests.test_domain_expanded_coverage",
@@ -636,7 +900,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.5373
+      "duration_seconds": 0.6069
     },
     "test_fundamental_adversarial_matrix": {
       "module": "tests.test_fundamental_adversarial_matrix",
@@ -645,7 +909,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.7208
+      "duration_seconds": 0.7234
     },
     "test_deep_fuzzing_and_concurrency": {
       "module": "tests.test_deep_fuzzing_and_concurrency",
@@ -654,7 +918,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.5835
+      "duration_seconds": 0.6168
     },
     "test_domain_metamorphic": {
       "module": "tests.test_domain_metamorphic",
@@ -663,7 +927,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.3962
+      "duration_seconds": 0.4169
     },
     "test_domain_accessibility": {
       "module": "tests.test_domain_accessibility",
@@ -672,7 +936,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 5,
-      "duration_seconds": 0.0016
+      "duration_seconds": 0.0011
     },
     "test_domain_localization": {
       "module": "tests.test_domain_localization",
@@ -681,7 +945,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 4,
-      "duration_seconds": 0.0005
+      "duration_seconds": 0.001
     },
     "test_domain_contract_chaos": {
       "module": "tests.test_domain_contract_chaos",
@@ -690,7 +954,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 4,
-      "duration_seconds": 0.075
+      "duration_seconds": 0.0771
     },
     "test_router_micro_units": {
       "module": "tests.test_router_micro_units",
@@ -699,7 +963,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.8495
+      "duration_seconds": 0.8708
     },
     "test_empirical_challenger_final": {
       "module": "tests.test_empirical_challenger_final",
@@ -708,7 +972,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 8,
-      "duration_seconds": 0.055
+      "duration_seconds": 0.0593
     },
     "test_adversarial_ui_stress": {
       "module": "tests.test_adversarial_ui_stress",
@@ -717,7 +981,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 4,
-      "duration_seconds": 0.0214
+      "duration_seconds": 0.0309
     },
     "test_adversarial_challenger_2": {
       "module": "tests.test_adversarial_challenger_2",
@@ -726,7 +990,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 2,
-      "duration_seconds": 0.0181
+      "duration_seconds": 0.0213
     },
     "test_adversarial_i3": {
       "module": "tests.test_adversarial_i3",
@@ -735,7 +999,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 2,
-      "duration_seconds": 2.329
+      "duration_seconds": 2.304
     },
     "test_domain_chat_intelligence": {
       "module": "tests.test_domain_chat_intelligence",
@@ -744,7 +1008,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.3315
+      "duration_seconds": 0.3726
     },
     "test_domain_graph_performance": {
       "module": "tests.test_domain_graph_performance",
@@ -753,7 +1017,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.4094
+      "duration_seconds": 0.4016
     },
     "test_domain_analytics_intelligence": {
       "module": "tests.test_domain_analytics_intelligence",
@@ -762,7 +1026,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 1,
-      "duration_seconds": 0.1273
+      "duration_seconds": 0.1011
     },
     "test_domain_workflow_triggers": {
       "module": "tests.test_domain_workflow_triggers",
@@ -771,7 +1035,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 2,
-      "duration_seconds": 0.5284
+      "duration_seconds": 0.5314
     },
     "test_e2e_analytics_graph_workflows": {
       "module": "tests.test_e2e_analytics_graph_workflows",
@@ -780,7 +1044,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 5,
-      "duration_seconds": 6.7664
+      "duration_seconds": 6.7566
     },
     "test_domain_ocr_transcription": {
       "module": "tests.test_domain_ocr_transcription",
@@ -789,7 +1053,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.5486
+      "duration_seconds": 0.6073
     },
     "test_domain_p2p_sync": {
       "module": "tests.test_domain_p2p_sync",
@@ -798,7 +1062,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 1,
-      "duration_seconds": 4.2948
+      "duration_seconds": 4.2934
     },
     "test_domain_backup_auth_theme": {
       "module": "tests.test_domain_backup_auth_theme",
@@ -807,7 +1071,7 @@
       "failures": 0,
       "errors": 0,
       "skipped": 2,
-      "duration_seconds": 0.0205
+      "duration_seconds": 0.0198
     },
     "test_domain_advanced_features": {
       "module": "tests.test_domain_advanced_features",
@@ -816,7 +1080,61 @@
       "failures": 0,
       "errors": 0,
       "skipped": 0,
-      "duration_seconds": 0.5723
+      "duration_seconds": 0.4595
+    },
+    "test_domain_code_ast": {
+      "module": "tests.test_domain_code_ast",
+      "tests_run": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.0201
+    },
+    "test_domain_merkle_vault": {
+      "module": "tests.test_domain_merkle_vault",
+      "tests_run": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.6028
+    },
+    "test_domain_sla_caching": {
+      "module": "tests.test_domain_sla_caching",
+      "tests_run": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.1559
+    },
+    "test_domain_agent_consensus": {
+      "module": "tests.test_domain_agent_consensus",
+      "tests_run": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.2467
+    },
+    "test_domain_sota_rag": {
+      "module": "tests.test_domain_sota_rag",
+      "tests_run": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.1397
+    },
+    "test_domain_mcp_server": {
+      "module": "tests.test_domain_mcp_server",
+      "tests_run": 10,
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "duration_seconds": 0.2853
     }
   }
 }

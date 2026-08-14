@@ -243,11 +243,27 @@ def get_db():
                 with _local_connections_lock:
                     _local_connections.append(conn)
                 break
-            except sqlite3.OperationalError as e:
-                attempts += 1
-                if attempts >= 5:
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                if conn:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                raise
+            except Exception as e:
+                if conn:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                    conn = None
+                if isinstance(e, sqlite3.OperationalError):
+                    attempts += 1
+                    if attempts >= 5:
+                        raise e
+                    time.sleep(0.05 * (2 ** attempts))
+                else:
                     raise e
-                time.sleep(0.05 * (2 ** attempts))
     return conn
 
 def backup_db_online(backup_target_path: str) -> bool:

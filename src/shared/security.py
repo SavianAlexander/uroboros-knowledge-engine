@@ -69,24 +69,14 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
                 raise HTTPException(status_code=400, detail="External system path traversal detected")
 
         normalized = decoded_path.replace("\\", "/")
-        workspace_root = Path(".").resolve()
-        if not os.path.isabs(decoded_path) and not (len(decoded_path) > 1 and decoded_path[1] == ':'):
-            target = (base / normalized).resolve()
-            if not target.exists():
-                alt_target = (workspace_root / normalized).resolve()
-                if alt_target.exists():
-                    target = alt_target
-        else:
-            target = Path(normalized).resolve()
+        target = Path(normalized).resolve()
         
         is_inside_base = False
-        for allowed_root in [base, workspace_root]:
-            try:
-                target.relative_to(allowed_root)
-                is_inside_base = True
-                break
-            except ValueError:
-                pass
+        try:
+            target.relative_to(base)
+            is_inside_base = True
+        except ValueError:
+            pass
 
         if not is_inside_base:
             temp_dirs = [Path(tempfile.gettempdir()).resolve(), Path("/tmp").resolve(), Path("/var/tmp").resolve()]
@@ -99,7 +89,7 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
                 except ValueError:
                     pass
 
-        if not is_inside_base:
+        if not is_inside_base or ".." in path_str or ".." in decoded_path:
             raise HTTPException(status_code=400, detail="Path traversal detected")
         return target
     except HTTPException:
