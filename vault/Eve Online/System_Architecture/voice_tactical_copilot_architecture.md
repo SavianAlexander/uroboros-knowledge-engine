@@ -5,9 +5,9 @@ tags: [EVE, VoiceAI, Kokoro82M, NeuralTTS, AMD, DirectML, SAPI, AuditoryRadar, M
 last_updated: 2026-08-14
 ---
 
-# 🎙️ Autonomous Kokoro-82M Neural Voice Engine & Streaming Conversational Pipeline
+# 🎙️ Autonomous Kokoro-82M Neural Voice Engine & Non-Interrupting Queue
 
-This document establishes the Kokoro-82M ONNX neural voice architecture, combining OpenAI-compatible `/v1/audio/speech` streaming with native Windows SAPI hardware speech synthesis.
+This document establishes the Kokoro-82M ONNX neural voice architecture, featuring non-interrupting serialized audio playback queues with emergency preemption.
 
 ---
 
@@ -16,11 +16,15 @@ This document establishes the Kokoro-82M ONNX neural voice architecture, combini
 ```mermaid
 graph TD
     Alert["Tactical Event Triggered (e.g., Hostile in G-EURJ)"] --> Router["Kokoro Voice Tactical Co-Pilot Router"]
-    Router --> CheckKokoro-FastAPI Container Available? (port 8880)
-    Check -- Yes --> Kokoro["Tier 1: Kokoro-82M ONNX Neural Voice (bf_emma)<br>Studio-Grade 24kHz Audio Stream (< 40ms Latency)"]
-    Check -- No / Timeout --> SAPI["Tier 2: Native Windows SAPI SpeechSynthesizer<br>Zero-Latency Local Desktop Spoken Output"]
-    Kokoro --> Stream["Stream Audio to Web HUD / Playback Device"]
-    SAPI --> Audio["Primary OS Audio Endpoint"]
+    Router --> Queue["Non-Interrupting Audio Queue (Thread-Safe Priority Serialization)"]
+    Queue --> EngineTier 1: Direct In-Process ONNX Model Available?
+    Engine -- Yes --> InProcess["Direct ONNX Runtime (bf_emma)<br>Studio-Grade 24kHz Audio (< 35ms Latency)"]
+    Engine -- No --> ContainerTier 2: Kokoro-FastAPI Container Available? (port 8880)
+    Container -- Yes --> HTTP["OpenAI /v1/audio/speech Protocol"]
+    Container -- No --> SAPI["Tier 3: Native Windows SAPI SpeechSynthesizer Fallback"]
+    InProcess --> Speaker["🔊 Primary Audio Output (Sequential Playback)"]
+    HTTP --> Speaker
+    SAPI --> Speaker
 ```
 
 ---

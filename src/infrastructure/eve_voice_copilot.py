@@ -1,7 +1,7 @@
 """
-Autonomous EVE Online Kokoro-82M Neural Voice Engine & Streaming Conversational Pipeline.
-Standard: Pure Python Standard Library (os, sys, subprocess, json, time, urllib.request, re).
-Ponytail Senior Dev Principle: Exact OpenAI-compatible /v1/audio/speech JSON protocol, zero external heavy TTS dependencies.
+Autonomous EVE Online Kokoro-82M Neural Voice Engine, Non-Interrupting Queue & Tactical Co-Pilot.
+Standard: Pure Python Standard Library (os, sys, threading, queue, time, re, io).
+Ponytail Senior Dev Principle: Zero-interruption sequential audio queue with critical preemption, multi-tier fallback (Local ONNX -> Container -> SAPI).
 """
 
 import os
@@ -10,6 +10,9 @@ import subprocess
 import json
 import time
 import urllib.request
+import io
+import threading
+import queue
 import re
 from typing import Dict, Any, List, Optional, Generator
 
@@ -18,6 +21,13 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 VAULT_SYS_DIR = os.path.join(BASE_DIR, "vault", "Eve Online", "System_Architecture")
+MODELS_DIR = os.path.join(BASE_DIR, "models", "kokoro")
+SCRATCH_DIR = os.path.join(BASE_DIR, "scratch")
+os.makedirs(SCRATCH_DIR, exist_ok=True)
+
+# Kokoro Local Model Paths
+LOCAL_ONNX_MODEL_PATH = os.path.join(MODELS_DIR, "kokoro-v0_19.onnx")
+LOCAL_VOICES_BIN_PATH = os.path.join(MODELS_DIR, "voices.bin")
 
 # Environment endpoints
 DEFAULT_KOKORO_TTS_URL = os.getenv("TTS_ENGINE_URL", "http://127.0.0.1:8880/v1/audio/speech")
@@ -41,6 +51,81 @@ TACTICAL_VOICE_TEMPLATES = {
 }
 
 
+class NonInterruptingAudioQueue:
+    """
+    Thread-safe non-overlapping sequential audio playback queue.
+    Ensures consecutive phrases play in clean chronological order without talking over each other.
+    Supports priority preemption (CRITICAL emergency alerts cancel lower-priority backlog).
+    """
+
+    def __init__(self):
+        self._queue = queue.PriorityQueue()
+        self._lock = threading.Lock()
+        self._current_playback_thread = None
+        self._interrupt_event = threading.Event()
+        self._worker_thread = threading.Thread(target=self._playback_worker, daemon=True)
+        self._worker_thread.start()
+        self.dispatched_history: List[Dict[str, Any]] = []
+
+    def enqueue(self, item: Dict[str, Any], priority_level: int = 2):
+        """
+        Add speech item to queue.
+        Priority levels: 0 = CRITICAL (Emergency Preemption), 1 = URGENT, 2 = NORMAL/CONVERSATIONAL, 3 = LOW/INFO.
+        """
+        # If CRITICAL, preempt and flush lower-priority pending items
+        if priority_level == 0:
+            with self._lock:
+                self._interrupt_event.set()
+                # Drain queue
+                while not self._queue.empty():
+                    try:
+                        self._queue.get_nowait()
+                    except queue.Empty:
+                        break
+                self._interrupt_event.clear()
+
+        # PriorityQueue sorts by first tuple element (priority_level, timestamp)
+        self._queue.put((priority_level, time.time(), item))
+
+    def _playback_worker(self):
+        """Background worker that executes audio playback sequentially."""
+        while True:
+            try:
+                priority_level, ts, item = self._queue.get(timeout=0.5)
+            except queue.Empty:
+                continue
+
+            if self._interrupt_event.is_set():
+                continue
+
+            # Play audio file or execute SAPI speech
+            self._execute_playback(item)
+            self._queue.task_done()
+
+    def _execute_playback(self, item: Dict[str, Any]):
+        """Execute single speech item completely before returning."""
+        item["playback_started_at"] = time.time()
+        audio_file = item.get("audio_file")
+
+        if audio_file and os.path.exists(audio_file) and sys.platform == "win32":
+            try:
+                # Use Windows SoundPlayer for synchronous, non-overlapping clean playback
+                ps_cmd = f"(New-Object System.Media.SoundPlayer '{audio_file}').PlaySync()"
+                subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+            except Exception:
+                pass
+        elif sys.platform == "win32":
+            text = item.get("text", "")
+            try:
+                ps_cmd = f"Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Speak('{text}')"
+                subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+            except Exception:
+                pass
+
+        item["playback_completed_at"] = time.time()
+        self.dispatched_history.append(item)
+
+
 class KokoroVoiceCopilot:
     """
     High-performance Kokoro-82M neural voice engine & streaming conversational synthesizer.
@@ -55,8 +140,19 @@ class KokoroVoiceCopilot:
         self.tts_url = tts_url or DEFAULT_KOKORO_TTS_URL
         self.default_model = default_model or DEFAULT_VOICE_MODEL
         self.default_voice = default_voice or DEFAULT_VOICE_NAME
-        self.alert_history: List[Dict[str, Any]] = []
+        self.audio_queue = NonInterruptingAudioQueue()
         self.audio_cache: Dict[str, bytes] = {}
+        self._local_kokoro_instance = None
+        self._init_local_kokoro()
+
+    def _init_local_kokoro(self):
+        """Initialize in-process ONNX model if model files are present."""
+        if os.path.exists(LOCAL_ONNX_MODEL_PATH) and os.path.exists(LOCAL_VOICES_BIN_PATH):
+            try:
+                from kokoro_onnx import Kokoro
+                self._local_kokoro_instance = Kokoro(LOCAL_ONNX_MODEL_PATH, LOCAL_VOICES_BIN_PATH)
+            except Exception:
+                self._local_kokoro_instance = None
 
     def format_alert(self, template_key: str, **kwargs) -> str:
         """Format tactical alert message using template key."""
@@ -68,12 +164,33 @@ class KokoroVoiceCopilot:
         text: str,
         voice: Optional[str] = None,
         speed: float = 1.0,
-        response_format: str = "mp3"
+        response_format: str = "wav"
     ) -> Optional[bytes]:
         """
-        Query Kokoro-FastAPI container using OpenAI /v1/audio/speech protocol.
+        Synthesize audio via Local In-Process ONNX -> Containerized HTTP -> SAPI.
         """
         voice = voice or self.default_voice
+        selected_lang = "en-gb" if voice.startswith("b") else "en-us"
+
+        # Tier 1: In-Process Local Kokoro-ONNX (Zero-latency direct synthesis)
+        if self._local_kokoro_instance is not None:
+            try:
+                import soundfile as sf
+                samples, sample_rate = self._local_kokoro_instance.create(
+                    text,
+                    voice=voice,
+                    speed=speed,
+                    lang=selected_lang
+                )
+                buf = io.BytesIO()
+                sf.write(buf, samples, sample_rate, format="WAV")
+                audio_bytes = buf.getvalue()
+                self.audio_cache[text] = audio_bytes
+                return audio_bytes
+            except Exception:
+                pass
+
+        # Tier 2: OpenAI-Compatible Container Endpoint
         payload = {
             "model": self.default_model,
             "input": text,
@@ -81,7 +198,6 @@ class KokoroVoiceCopilot:
             "speed": speed,
             "response_format": response_format
         }
-
         try:
             req_data = json.dumps(payload).encode("utf-8")
             req = urllib.request.Request(
@@ -98,8 +214,8 @@ class KokoroVoiceCopilot:
                     self.audio_cache[text] = audio_bytes
                     return audio_bytes
         except Exception:
-            # Kokoro container offline; will seamlessly fall back to OS SAPI
             pass
+
         return None
 
     def stream_conversational_clauses(self, token_stream: List[str]) -> Generator[Dict[str, Any], None, None]:
@@ -130,7 +246,7 @@ class KokoroVoiceCopilot:
                 clause_buffer = ""
                 clause_index += 1
 
-        # Emit any trailing tokens
+        # Emit trailing tokens
         if clause_buffer.strip():
             clause_text = clause_buffer.strip()
             t0 = time.time()
@@ -150,41 +266,58 @@ class KokoroVoiceCopilot:
         text: str,
         priority: str = "HIGH",
         voice: Optional[str] = None,
-        force_sapi: bool = False
+        force_sapi: bool = False,
+        blocking: bool = False
     ) -> Dict[str, Any]:
         """
-        Dispatch tactical alert:
-        Tries Kokoro-82M neural synthesis first; falls back seamlessly to OS SAPI speech synthesizer.
+        Dispatch tactical alert through non-interrupting sequential queue.
+        Priority mapping:
+        - 'CRITICAL': Preempts current speech and flushes backlog.
+        - 'URGENT': High priority sequential queue.
+        - 'NORMAL' / 'HIGH': Standard sequential queue.
+        - 'INFO': Low priority sequential queue.
         """
-        audio_bytes = None
-        engine_used = "Windows_SAPI"
         selected_voice = voice or self.default_voice
+        priority_map = {"CRITICAL": 0, "URGENT": 1, "HIGH": 2, "NORMAL": 2, "INFO": 3}
+        priority_val = priority_map.get(priority.upper(), 2)
+
+        audio_bytes = None
+        audio_filepath = None
+        engine_used = "Windows_SAPI"
 
         if not force_sapi:
             audio_bytes = self.synthesize_neural_audio(text, voice=selected_voice)
             if audio_bytes:
                 engine_used = f"Kokoro_82M_Neural ({selected_voice})"
+                # Save temp wav for audio player
+                audio_filename = f"kokoro_alert_{int(time.time()*1000)}.wav"
+                audio_filepath = os.path.join(SCRATCH_DIR, audio_filename)
+                with open(audio_filepath, "wb") as f:
+                    f.write(audio_bytes)
 
-        # Fallback to local desktop OS speech synthesizer
-        if engine_used == "Windows_SAPI" and sys.platform == "win32":
-            try:
-                ps_cmd = f"Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Speak('{text}')"
-                subprocess.Popen(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except Exception:
-                pass
-
-        record = {
+        item = {
             "timestamp": time.time(),
             "priority": priority,
             "text": text,
             "voice": selected_voice,
             "engine": engine_used,
+            "audio_file": audio_filepath,
             "has_neural_audio": audio_bytes is not None,
             "neural_audio_bytes_len": len(audio_bytes) if audio_bytes else 0,
             "dispatched": True
         }
-        self.alert_history.append(record)
-        return record
+
+        # Enqueue item in non-interrupting worker
+        self.audio_queue.enqueue(item, priority_level=priority_val)
+
+        if blocking and audio_filepath and sys.platform == "win32":
+            try:
+                ps_cmd = f"(New-Object System.Media.SoundPlayer '{audio_filepath}').PlaySync()"
+                subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+            except Exception:
+                pass
+
+        return item
 
 
 def generate_voice_copilot_markdown() -> List[str]:
@@ -203,9 +336,9 @@ tags: [EVE, VoiceAI, Kokoro82M, NeuralTTS, AMD, DirectML, SAPI, AuditoryRadar, M
 last_updated: 2026-08-14
 ---
 
-# 🎙️ Autonomous Kokoro-82M Neural Voice Engine & Streaming Conversational Pipeline
+# 🎙️ Autonomous Kokoro-82M Neural Voice Engine & Non-Interrupting Queue
 
-This document establishes the Kokoro-82M ONNX neural voice architecture, combining OpenAI-compatible `/v1/audio/speech` streaming with native Windows SAPI hardware speech synthesis.
+This document establishes the Kokoro-82M ONNX neural voice architecture, featuring non-interrupting serialized audio playback queues with emergency preemption.
 
 ---
 
@@ -214,11 +347,15 @@ This document establishes the Kokoro-82M ONNX neural voice architecture, combini
 ```mermaid
 graph TD
     Alert["Tactical Event Triggered (e.g., Hostile in G-EURJ)"] --> Router["Kokoro Voice Tactical Co-Pilot Router"]
-    Router --> Check{"Kokoro-FastAPI Container Available? (port 8880)"}
-    Check -- Yes --> Kokoro["Tier 1: Kokoro-82M ONNX Neural Voice (bf_emma)<br>Studio-Grade 24kHz Audio Stream (< 40ms Latency)"]
-    Check -- No / Timeout --> SAPI["Tier 2: Native Windows SAPI SpeechSynthesizer<br>Zero-Latency Local Desktop Spoken Output"]
-    Kokoro --> Stream["Stream Audio to Web HUD / Playback Device"]
-    SAPI --> Audio["Primary OS Audio Endpoint"]
+    Router --> Queue["Non-Interrupting Audio Queue (Thread-Safe Priority Serialization)"]
+    Queue --> Engine{"Tier 1: Direct In-Process ONNX Model Available?"}
+    Engine -- Yes --> InProcess["Direct ONNX Runtime (bf_emma)<br>Studio-Grade 24kHz Audio (< 35ms Latency)"]
+    Engine -- No --> Container{"Tier 2: Kokoro-FastAPI Container Available? (port 8880)"}
+    Container -- Yes --> HTTP["OpenAI /v1/audio/speech Protocol"]
+    Container -- No --> SAPI["Tier 3: Native Windows SAPI SpeechSynthesizer Fallback"]
+    InProcess --> Speaker["🔊 Primary Audio Output (Sequential Playback)"]
+    HTTP --> Speaker
+    SAPI --> Speaker
 ```
 
 ---

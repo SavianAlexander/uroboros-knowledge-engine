@@ -58,6 +58,9 @@ build/UroborosKnowledgeHub/
 *.zip
 scripts/node_modules/
 Triage (Support)/
+models/
+*.onnx
+*.bin
 
 
 docs/visual_audit/*.png
