@@ -265,4 +265,48 @@ def parse_eft_endpoint(payload: Dict[str, str]):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/logs/stream")
+def get_log_stream_endpoint():
+    """Retrieve simulated/live log streamer event buffer."""
+    try:
+        from src.infrastructure.eve_log_streamer import EveLogStreamer
+        streamer = EveLogStreamer()
+        return {"status": "success", "events": streamer.simulate_mock_stream()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/voice/alert")
+def trigger_voice_alert_endpoint(payload: Dict[str, Any]):
+    """Dispatch text-to-speech alert to local audio output."""
+    try:
+        from src.infrastructure.eve_voice_copilot import VoiceTacticalCopilot
+        copilot = VoiceTacticalCopilot()
+        msg = payload.get("message", "Tactical alert.")
+        priority = payload.get("priority", "HIGH")
+        return copilot.speak(msg, priority=priority)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/sp-farm/roi")
+def get_sp_farm_roi_endpoint():
+    """Calculate passive skill farm extraction ROI and PLEX balances."""
+    try:
+        from src.infrastructure.eve_sp_farm_calculator import calculate_sp_farming_roi
+        return calculate_sp_farming_roi()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/asset-safety/evac")
+def get_asset_safety_evac_endpoint(asset_value: float = 25000000000.0, in_system: bool = True):
+    """Calculate asset safety recovery fees and emergency jump freighter evacuation routes."""
+    try:
+        from src.infrastructure.eve_asset_safety import calculate_asset_safety_costs
+        return calculate_asset_safety_costs(total_asset_value_isk=asset_value, in_system_recovery=in_system)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
