@@ -983,3 +983,77 @@ def analyze_code_snippet_endpoint(payload: Dict[str, Any] = Body(...)):
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in code analyze: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/file/synthesize-wikilinks")
+def synthesize_wikilinks_endpoint(payload: Dict[str, Any] = Body({})):
+    """Scans text for unlinked concept titles and automatically synthesizes [[wikilinks]]."""
+    text = payload.get("text", "")
+    titles = payload.get("known_titles", [])
+    try:
+        from src.domain.graph_link_synthesizer import auto_synthesize_wikilinks
+        return auto_synthesize_wikilinks(text, known_doc_titles=titles)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in synthesize_wikilinks: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/file/semantic-diff")
+def semantic_diff_endpoint(payload: Dict[str, Any] = Body({})):
+    """Computes semantic statement-level diff between original and updated document versions."""
+    orig = payload.get("original_text", "")
+    mod = payload.get("modified_text", "")
+    try:
+        from src.domain.semantic_doc_diff import compute_semantic_doc_diff
+        return compute_semantic_doc_diff(orig, mod)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in semantic_diff: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/file/legal-audit")
+def legal_audit_endpoint(payload: Dict[str, Any] = Body({})):
+    """Audits contract and policy documents for statutory citations, obligations, and risk terms."""
+    text = payload.get("text", "")
+    try:
+        from src.domain.legal_accuracy_engine import audit_legal_accuracy
+        return audit_legal_accuracy(text)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in legal_audit: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/file/audio-briefing")
+def audio_briefing_endpoint(payload: Dict[str, Any] = Body({})):
+    """Synthesizes structured 2-speaker podcast conversational dialogue script from vault context."""
+    topic = payload.get("topic", "")
+    context = payload.get("context", "")
+    try:
+        from src.domain.audio_briefing import generate_audio_briefing
+        return generate_audio_briefing(topic, context=context)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in audio_briefing: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/file/zk-mask")
+def zk_mask_endpoint(payload: Dict[str, Any] = Body({})):
+    """Masks sensitive document data and generates SHA-256 HMAC Zero-Knowledge commitments."""
+    text = payload.get("text", "")
+    salt = payload.get("salt", "")
+    try:
+        from src.domain.zk_data_masker import mask_sensitive_document_data
+        return mask_sensitive_document_data(text, salt=salt)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in zk_mask: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

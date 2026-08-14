@@ -454,6 +454,19 @@ def add_message_endpoint(session_id: str, req: AddMessageRequest):
     )
 
 
+@router.get("/api/chat/sessions/{session_id}/episodic")
+def get_session_episodic_memory_endpoint(session_id: str, query: str = ""):
+    """Queries episodic memory and multi-turn conversational context for a chat session."""
+    try:
+        from src.domain.episodic_rag import query_episodic_rag
+        return query_episodic_rag(query, session_id=session_id)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in episodic memory: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 class ColBERTRerankRequest(BaseModel):
     query_tokens: List[List[float]]
     candidates: List[Dict[str, Any]]

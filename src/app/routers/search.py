@@ -1204,3 +1204,76 @@ def get_vault_timeline_endpoint(topic: str = "", limit: int = 25):
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py timeline: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/voice/search")
+def voice_search_endpoint(payload: Dict[str, Any] = Body({})):
+    """Transcribes audio payload (base64 or text) and executes grounded hybrid vault search."""
+    audio_data = payload.get("audio_payload") or payload.get("audio") or payload.get("transcript") or ""
+    top_k = payload.get("top_k", 5)
+    try:
+        from src.domain.voice_rag import transcribe_and_search_voice_memo
+        return transcribe_and_search_voice_memo(audio_data, top_k=top_k)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in voice_search_endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/graph/community-clusters")
+@router.post("/api/graph/community-clusters")
+def graph_community_clusters_endpoint():
+    """Computes Louvain/Modularity community clusters on live vault wikilinks."""
+    try:
+        from src.domain.graph_reasoning import detect_community_clusters
+        return detect_community_clusters()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in graph_community_clusters: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/graph/knowledge-gaps")
+@router.post("/api/graph/knowledge-gaps")
+def graph_knowledge_gaps_endpoint():
+    """Discovers missing concepts and unlinked knowledge gaps across the vault."""
+    try:
+        from src.domain.graph_reasoning import discover_knowledge_gaps
+        return discover_knowledge_gaps()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in graph_knowledge_gaps: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/search/hypergraph")
+@router.post("/api/search/hypergraph")
+def hypergraph_search_endpoint(query: str = "", entities: str = ""):
+    """Queries N-ary relational hyper-edges connecting multiple entities and documents."""
+    try:
+        from src.domain.hypergraph_router import route_hypergraph_query
+        target_list = [e.strip() for e in entities.split(",") if e.strip()] if entities else None
+        return route_hypergraph_query(query=query, target_entities=target_list)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in hypergraph_search: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/search/auto-correct")
+def auto_correct_rag_endpoint(payload: Dict[str, Any] = Body({})):
+    """Audits response grounding against source chunks and generates verified factual corrections."""
+    llm_response = payload.get("response", "") or payload.get("text", "")
+    source_chunks = payload.get("source_chunks", []) or payload.get("chunks", [])
+    try:
+        from src.domain.auto_correct_rag import auto_correct_grounding
+        return auto_correct_grounding(llm_response, source_chunks)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in auto_correct_rag: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

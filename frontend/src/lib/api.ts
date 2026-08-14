@@ -205,4 +205,24 @@ export const api = {
   searchBenchmark: (query: string = 'accounting standards') => fetchAPI<any>(`/search/benchmark?query=${encodeURIComponent(query)}`),
   exportGraphML: () => fetch(`${BASE_URL}/graph/export`, { headers: { ...getAuthHeaders() } }).then(r => r.blob()),
   exportVaultJSON: () => fetchAPI<any>('/export/vault/json'),
+
+  // Modern Cognitive & RAG Intelligence Endpoints
+  voiceSearch: (audioPayload: string, topK: number = 5) =>
+    fetchAPI<any>('/voice/search', { method: 'POST', body: JSON.stringify({ audio_payload: audioPayload, top_k: topK }) }),
+  communityClusters: () => fetchAPI<any>('/graph/community-clusters'),
+  knowledgeGaps: () => fetchAPI<any>('/graph/knowledge-gaps'),
+  hypergraphSearch: (query: string, entities: string = '') =>
+    fetchAPI<any>(`/search/hypergraph?query=${encodeURIComponent(query)}&entities=${encodeURIComponent(entities)}`),
+  autoCorrectRAG: (response: string, sourceChunks: string[]) =>
+    fetchAPI<any>('/search/auto-correct', { method: 'POST', body: JSON.stringify({ response, source_chunks: sourceChunks }) }),
+  semanticDiff: (originalText: string, modifiedText: string) =>
+    fetchAPI<any>('/file/semantic-diff', { method: 'POST', body: JSON.stringify({ original_text: originalText, modified_text: modifiedText }) }),
+  legalAudit: (text: string) =>
+    fetchAPI<any>('/file/legal-audit', { method: 'POST', body: JSON.stringify({ text }) }),
+  audioBriefing: (topic: string, context: string = '') =>
+    fetchAPI<any>('/file/audio-briefing', { method: 'POST', body: JSON.stringify({ topic, context }) }),
+  synthesizeWikilinks: (text: string, knownTitles: string[] = []) =>
+    fetchAPI<any>('/file/synthesize-wikilinks', { method: 'POST', body: JSON.stringify({ text, known_titles: knownTitles }) }),
+  sessionEpisodicMemory: (sessionId: string, query: string = '') =>
+    fetchAPI<any>(`/chat/sessions/${sessionId}/episodic?query=${encodeURIComponent(query)}`),
 };
