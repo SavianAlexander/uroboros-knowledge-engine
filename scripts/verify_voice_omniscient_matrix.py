@@ -1,7 +1,7 @@
 """
 Universal Voice Omniscient Matrix Verification Suite & System Diagnostic.
 Standard: Pure Python Standard Library (unittest, json, os, sys, time).
-Ponytail Senior Dev Principle: Single unified verification entrypoint for the complete neural audio stack (Kokoro-82M TTS, STT Ear, Persona Blending, DSP Acoustics, Procedural Soundboard, SQLite Memory, FFT Spectrum, Tududi Radar, and 12-Tool MCP Server).
+Ponytail Senior Dev Principle: Single unified verification entrypoint for the complete neural audio stack (Kokoro-82M TTS, STT Ear, Persona Blending, DSP Acoustics, Procedural Soundboard, SQLite Memory, FFT Spectrum, Tududi Radar, Full-Duplex Call Intercom, VAD Barge-In, and 17-Tool MCP Server).
 """
 
 import os
@@ -14,7 +14,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from batch_index import index_single_file, run_maintenance
 from src.core.voice_bridge import VoiceBridge, DOMAIN_PROFILES, KOKORO_PERSONAS
 from src.core.voice_normalizer import VoiceNormalizer
 from src.core.voice_persona_blend import VoicePersonaBlender
@@ -23,6 +22,8 @@ from src.core.voice_audio_router import VoiceAudioRouter
 from src.core.voice_memory_ledger import VoiceMemoryLedger
 from src.core.voice_spectrum_stream import VoiceSpectrumAnalyzer
 from src.core.voice_tududi_radar import TududiVoiceRadarDaemon
+from src.core.voice_call_intercom import VoiceCallIntercomEngine
+from src.core.voice_vad_interrupter import VoiceActivityInterrupter
 from src.antigravity_voice_mcp import handle_tool_call, TOOLS_SCHEMA
 from scripts.verify_zero_assumptions import run_zero_assumption_audit
 
@@ -100,13 +101,53 @@ class TestVoiceOmniscientMatrix(unittest.TestCase):
         sweep = TududiVoiceRadarDaemon.execute_radar_sweep()
         self.assertEqual(sweep["status"], "sweep_completed")
 
-    def test_all_12_antigravity_mcp_tools(self):
-        """Test all 12 tools in the dedicated Antigravity Voice MCP server."""
+    def test_voice_call_intercom_lifecycle(self):
+        """Test full-duplex conversational voice call session lifecycle."""
+        # 1. Start Call
+        start_res = VoiceCallIntercomEngine.start_call(persona="AURA_SHIP_AI", caller_name="Test Commander")
+        self.assertEqual(start_res["status"], "call_connected")
+        self.assertTrue(VoiceCallIntercomEngine.get_call_status()["active"])
+
+        # 2. Conversational Filler
+        filler_res = VoiceCallIntercomEngine.trigger_immediate_filler()
+        self.assertEqual(filler_res["status"], "filler_dispatched")
+
+        # 3. In-Call Response with Roger Beep
+        resp_res = VoiceCallIntercomEngine.respond_in_call("Understood, navigating to waypoint.", with_roger_beep=True)
+        self.assertEqual(resp_res["status"], "responded")
+        self.assertTrue(resp_res["with_roger_beep"])
+
+        # 4. End Call
+        end_res = VoiceCallIntercomEngine.end_call()
+        self.assertEqual(end_res["status"], "call_ended")
+        self.assertFalse(VoiceCallIntercomEngine.get_call_status()["active"])
+
+    def test_voice_vad_barge_in(self):
+        """Test real-time VAD speech detection and instant audio purge."""
+        vad = VoiceActivityInterrupter(energy_threshold=0.01)
+        # Synthetic speech frame
+        try:
+            import numpy as np
+            sine_wave = (0.2 * np.sin(2 * np.pi * 440.0 * np.linspace(0, 0.02, 480))).astype(np.float32)
+            metrics = vad.analyze_frame(sine_wave)
+            self.assertTrue(metrics["is_speech"])
+        except ImportError:
+            pass
+
+        # Barge-in cutoff
+        cut = VoiceActivityInterrupter.execute_instant_barge_in()
+        self.assertEqual(cut["status"], "barge_in_executed")
+        self.assertLess(cut["interruption_latency_ms"], 50.0)
+
+    def test_all_17_antigravity_mcp_tools(self):
+        """Test all 17 tools in the dedicated Antigravity Voice MCP server."""
         expected_tools = [
             "antigravity_speak", "antigravity_announce_task", "antigravity_voice_brief",
             "antigravity_play_sfx", "antigravity_blend_persona", "antigravity_listen",
             "antigravity_list_audio_devices", "antigravity_get_voice_history",
             "antigravity_get_spectrum", "antigravity_trigger_tududi_radar",
+            "antigravity_start_call", "antigravity_call_respond", "antigravity_barge_in_cut",
+            "antigravity_end_call", "antigravity_get_call_status",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]
@@ -115,6 +156,7 @@ class TestVoiceOmniscientMatrix(unittest.TestCase):
 
         status = handle_tool_call("antigravity_get_status", {})
         self.assertIn("engine", status)
+        self.assertIn("playback_engine", status)
 
     def test_zero_assumptions_integrity(self):
         """Test strict 38-assertion zero-assumption validation suite."""

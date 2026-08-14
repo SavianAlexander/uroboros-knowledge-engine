@@ -1,7 +1,7 @@
 """
 Universal Polyglot Neural Voice Bridge & Multi-Domain Audio Dispatcher.
 Standard: Pure Python Standard Library (os, sys, json, time, threading).
-Ponytail Senior Dev Principle: Domain-agnostic unified bridge serving DevOps, Tududi Productivity, Executive Briefs, and Gaming with zero overhead.
+Ponytail Senior Dev Principle: Domain-agnostic unified bridge serving DevOps, Tududi Productivity, Executive Briefs, Call Intercom, and Gaming with zero overhead.
 """
 
 import os
@@ -15,16 +15,17 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 try:
-    from src.infrastructure.eve_voice_copilot import KokoroVoiceCopilot, KOKORO_PERSONAS
+    from src.infrastructure.eve_voice_copilot import KokoroVoiceCopilot
 except Exception:
     KokoroVoiceCopilot = None
-    KOKORO_PERSONAS = {
-        "AURA_SHIP_AI": "bf_emma",
-        "TACTICAL_ADVISOR": "af_sarah",
-        "FLEET_COMMANDER": "am_adam",
-        "INDUSTRY_OVERSEER": "bm_george",
-        "CALM_OPERATIONS": "af_bella"
-    }
+
+KOKORO_PERSONAS = {
+    "AURA_SHIP_AI": "bf_emma",
+    "TACTICAL_ADVISOR": "af_sarah",
+    "FLEET_COMMANDER": "am_adam",
+    "INDUSTRY_OVERSEER": "bm_george",
+    "CALM_OPERATIONS": "af_bella"
+}
 
 
 DOMAIN_PROFILES = {
@@ -52,6 +53,12 @@ DOMAIN_PROFILES = {
         "dsp_preset": "TACTICAL_RADIO",
         "description": "Military-grade Tactical Radar & Combat Alert Voice"
     },
+    "CALL_INTERCOM": {
+        "voice": "bf_emma",
+        "speed": 1.05,
+        "dsp_preset": "COCKPIT_ACOUSTIC",
+        "description": "Real-Time Full-Duplex Phone Call & Radio Intercom Voice"
+    },
     "GENERAL": {
         "voice": "bf_emma",
         "speed": 1.00,
@@ -68,8 +75,8 @@ class VoiceBridge:
     _copilot = None
 
     @classmethod
-    def get_copilot(cls) -> KokoroVoiceCopilot:
-        if cls._copilot is None:
+    def get_copilot(cls) -> Optional[KokoroVoiceCopilot]:
+        if cls._copilot is None and KokoroVoiceCopilot is not None:
             cls._copilot = KokoroVoiceCopilot()
         return cls._copilot
 
@@ -85,6 +92,7 @@ class VoiceBridge:
     ) -> Dict[str, Any]:
         """
         Universal 1-line speech dispatcher for any agent, script, or workflow.
+        Zero-disk in-memory playback path.
         """
         copilot = cls.get_copilot()
         profile = DOMAIN_PROFILES.get(domain.upper(), DOMAIN_PROFILES["GENERAL"])
@@ -93,22 +101,42 @@ class VoiceBridge:
         selected_dsp = dsp_preset or profile["dsp_preset"]
 
         # If sfx_intro requested, play SFX first
-        if sfx_intro:
+        if sfx_intro and copilot:
             try:
-                from src.infrastructure.eve_voice_soundboard import SFX_LIBRARY
+                from src.infrastructure.eve_voice_soundboard import SFX_LIBRARY, render_sfx_to_wav_bytes
                 if sfx_intro in SFX_LIBRARY:
-                    copilot.speak(f"[{sfx_intro}]", priority="INFO", force_sapi=True)
+                    sfx_bytes = render_sfx_to_wav_bytes(sfx_intro)
+                    if sfx_bytes:
+                        copilot.audio_queue.play_raw_pcm_wav(sfx_bytes, priority_level=1)
             except Exception:
                 pass
 
-        rec = copilot.speak(
-            text=text,
-            priority=priority,
-            voice=selected_voice
-        )
+        if copilot:
+            rec = copilot.speak(
+                text=text,
+                priority=priority,
+                voice=selected_voice
+            )
+        else:
+            rec = {
+                "status": "fallback_logged",
+                "priority": priority,
+                "text": text,
+                "voice": selected_voice,
+                "engine": "Offline_Fallback"
+            }
+
         rec["domain"] = domain
         rec["dsp_preset"] = selected_dsp
         return rec
+
+    @classmethod
+    def purge_current_speech(cls) -> Dict[str, Any]:
+        """Instantly stop active audio playback and clear pending queues (barge-in cutoff)."""
+        copilot = cls.get_copilot()
+        if copilot:
+            copilot.purge_playback()
+        return {"status": "purged", "timestamp": time.time()}
 
     @classmethod
     def synthesize_bytes(
@@ -120,14 +148,21 @@ class VoiceBridge:
     ) -> Optional[bytes]:
         """Synthesize raw audio bytes (OpenAI compatible)."""
         copilot = cls.get_copilot()
-        return copilot.synthesize_neural_audio(text, voice=voice, speed=speed, response_format=response_format)
+        if copilot:
+            return copilot.synthesize_neural_audio(text, voice=voice, speed=speed, response_format=response_format)
+        return None
 
     @classmethod
     def play_sfx(cls, sfx_name: str) -> Optional[bytes]:
         """Synthesize and return procedural SFX audio bytes."""
         try:
             from src.infrastructure.eve_voice_soundboard import render_sfx_to_wav_bytes
-            return render_sfx_to_wav_bytes(sfx_name)
+            sfx_bytes = render_sfx_to_wav_bytes(sfx_name)
+            if sfx_bytes:
+                copilot = cls.get_copilot()
+                if copilot:
+                    copilot.audio_queue.play_raw_pcm_wav(sfx_bytes)
+            return sfx_bytes
         except Exception:
             return None
 
@@ -138,22 +173,3 @@ class VoiceBridge:
         msg = f"DevOps Notice: GitHub Actions workflow {workflow_name} {status_text}."
         priority = "NORMAL" if passed else "CRITICAL"
         return cls.speak(msg, domain="DEV_OPS", priority=priority)
-
-    @classmethod
-    def announce_tududi_daily_brief(cls, pending_count: int, completed_today: int) -> Dict[str, Any]:
-        """Productivity Helper: Speak Tududi daily briefing."""
-        msg = (
-            f"Good day Savian. Tududi Task Master report: You have completed {completed_today} tasks today, "
-            f"with {pending_count} pending action items remaining on your dashboard."
-        )
-        return cls.speak(msg, domain="DAILY_BRIEF", priority="NORMAL")
-
-    @classmethod
-    def get_supported_personas(cls) -> Dict[str, str]:
-        """Return available voice personas."""
-        return KOKORO_PERSONAS
-
-    @classmethod
-    def get_domain_profiles(cls) -> Dict[str, Any]:
-        """Return registered domain profiles."""
-        return DOMAIN_PROFILES

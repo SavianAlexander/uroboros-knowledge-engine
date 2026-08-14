@@ -12,8 +12,13 @@ Ponytail Senior Dev Principle: Complete, zero-dependency JSON-RPC stdio MCP serv
 8. Conversational Voice Memory Ledger (`antigravity_get_voice_history`)
 9. 32-Band Real-Time FFT Spectrum Visualizer (`antigravity_get_spectrum`)
 10. Proactive Tududi Voice Radar Sweep (`antigravity_trigger_tududi_radar`)
-11. Runtime Voice Configuration (`antigravity_configure_voice`)
-12. Engine Health Telemetry (`antigravity_get_status`)
+11. Full-Duplex Voice Call Intercom Start (`antigravity_start_call`)
+12. Conversational In-Call Response with Roger Beep (`antigravity_call_respond`)
+13. Instant VAD Barge-In Audio Cutoff (`antigravity_barge_in_cut`)
+14. Voice Call Termination (`antigravity_end_call`)
+15. Real-Time Call Telemetry & State (`antigravity_get_call_status`)
+16. Runtime Voice Configuration (`antigravity_configure_voice`)
+17. Engine Health Telemetry (`antigravity_get_status`)
 """
 
 import os
@@ -35,6 +40,8 @@ from src.core.voice_audio_router import VoiceAudioRouter
 from src.core.voice_memory_ledger import VoiceMemoryLedger
 from src.core.voice_spectrum_stream import VoiceSpectrumAnalyzer
 from src.core.voice_tududi_radar import TududiVoiceRadarDaemon
+from src.core.voice_call_intercom import VoiceCallIntercomEngine
+from src.core.voice_vad_interrupter import VoiceActivityInterrupter
 
 
 # Global Voice Configuration State
@@ -50,7 +57,7 @@ VOICE_CONFIG = {
 TOOLS_SCHEMA = [
     {
         "name": "antigravity_speak",
-        "description": "Synthesize and speak clear natural voice messages using the Kokoro-82M neural engine with acoustic DSP presets, pronunciation normalizer, and non-interrupting priority queue.",
+        "description": "Synthesize and speak clear natural voice messages using the Kokoro-82M neural engine with in-memory zero-disk C-level playback, acoustic DSP presets, pronunciation normalizer, and non-interrupting priority queue.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -211,6 +218,68 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_start_call",
+        "description": "Initiate an active interactive voice call / radio intercom session with rising connection chime and greeting.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "persona": {
+                    "type": "string",
+                    "description": "Persona for the call ('AURA_SHIP_AI', 'CALM_OPERATIONS', 'TACTICAL_ADVISOR', 'FLEET_COMMANDER').",
+                    "default": "AURA_SHIP_AI"
+                },
+                "caller_name": {
+                    "type": "string",
+                    "description": "Name of the user/commander on the call.",
+                    "default": "Commander Savian Alexander"
+                }
+            }
+        }
+    },
+    {
+        "name": "antigravity_call_respond",
+        "description": "Speak conversational response in active call followed by radio Roger beep squelch tail.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "description": "The response message to speak."
+                },
+                "with_roger_beep": {
+                    "type": "boolean",
+                    "description": "Whether to append tactical NASA Apollo Roger beep.",
+                    "default": True
+                }
+            },
+            "required": ["text"]
+        }
+    },
+    {
+        "name": "antigravity_barge_in_cut",
+        "description": "Instantly halt active speech playback in under 1 millisecond when the user begins speaking or interrupts.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
+        "name": "antigravity_end_call",
+        "description": "Terminate the active voice call session and play falling disconnect chime.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
+        "name": "antigravity_get_call_status",
+        "description": "Retrieve live state of the active voice call session and turn metrics.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
         "name": "antigravity_configure_voice",
         "description": "Configure global default voice settings for Antigravity assistant.",
         "inputSchema": {
@@ -361,7 +430,6 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             return VoiceEarTranscriber.transcribe_audio_file(audio_path)
         dur = float(args.get("duration_seconds", 3.0))
         rec = VoiceEarTranscriber.record_microphone_sample(duration_s=dur)
-        # Transcribe the recorded buffer
         transcription = VoiceEarTranscriber.transcribe_audio_file(rec["output_path"])
         transcription["recording_metadata"] = rec
         return transcription
@@ -385,12 +453,29 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
 
     elif name == "antigravity_get_spectrum":
         num_bands = int(args.get("num_bands", 32))
-        copilot = VoiceBridge.get_copilot()
-        # Generate spectrum from sample or last cached audio
         return VoiceSpectrumAnalyzer.analyze_audio_buffer(None, num_bands=num_bands)
 
     elif name == "antigravity_trigger_tududi_radar":
         return TududiVoiceRadarDaemon.execute_radar_sweep()
+
+    elif name == "antigravity_start_call":
+        persona = args.get("persona", "AURA_SHIP_AI")
+        caller_name = args.get("caller_name", "Commander Savian Alexander")
+        return VoiceCallIntercomEngine.start_call(persona=persona, caller_name=caller_name)
+
+    elif name == "antigravity_call_respond":
+        text = args.get("text", "")
+        with_roger = bool(args.get("with_roger_beep", True))
+        return VoiceCallIntercomEngine.respond_in_call(response_text=text, with_roger_beep=with_roger)
+
+    elif name == "antigravity_barge_in_cut":
+        return VoiceActivityInterrupter.execute_instant_barge_in()
+
+    elif name == "antigravity_end_call":
+        return VoiceCallIntercomEngine.end_call()
+
+    elif name == "antigravity_get_call_status":
+        return VoiceCallIntercomEngine.get_call_status()
 
     elif name == "antigravity_configure_voice":
         if "default_persona" in args:
@@ -411,7 +496,8 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             "config": VOICE_CONFIG,
             "active_instance": copilot._local_kokoro_instance is not None if copilot else False,
             "sample_rate": 24000,
-            "precision": "Zero-Assumption High-Fidelity",
+            "playback_engine": "Native In-Memory Win32 C-Level winsound (<15ms)",
+            "call_status": VoiceCallIntercomEngine.get_call_status(),
             "normalizer": "VoiceNormalizer v2.0 Active",
             "memory_ledger": "SQLite Persistent Active",
             "router": VoiceAudioRouter.get_router_status()
@@ -445,7 +531,7 @@ def main():
                         "capabilities": {"tools": {}},
                         "serverInfo": {
                             "name": "antigravity-voice-mcp",
-                            "version": "2.1.0"
+                            "version": "2.2.0"
                         }
                     }
                 }
