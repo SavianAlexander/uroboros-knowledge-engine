@@ -34,6 +34,7 @@ from src.domain.source_citation_generator import generate_source_citations
 from src.domain.query_intent_classifier import classify_query_intent
 from src.domain.graph_mermaid_generator import generate_mermaid_graph
 from src.domain.rerank_score_explainer import explain_candidate_score
+from src.domain.binary_colbert import rerank_search_results_colbert
 
 router = APIRouter()
 
@@ -326,10 +327,14 @@ def search_endpoint(
                     if tag_mode.upper() == "AND":
                         if all(t in file_tags for t in target_tags):
                             filtered_results.append(r)
-                    else:
-                        if any(t in file_tags for t in target_tags):
-                            filtered_results.append(r)
                 results = filtered_results
+
+        # Apply Binary ColBERT MaxSim token late-interaction reranking if query provided
+        if target_q and len(results) > 1:
+            try:
+                results = rerank_search_results_colbert(target_q, results, top_k=len(results))
+            except Exception as e:
+                import logging; logging.warning(f"Binary ColBERT rerank notice in search.py: {e}")
 
         try:
             with get_db() as conn:
@@ -726,9 +731,19 @@ def autocomplete_suggest(token: str = "", q: str = "", query: str = ""):
 
     matched = [s for s in suggestions if clean in s["text"].lower()]
     res_list = matched or suggestions
+
+    warmed_ids = []
+    try:
+        from src.domain.speculative_warmer import SpeculativeContextWarmer
+        warmer = SpeculativeContextWarmer()
+        warmed_ids = warmer.get_warmed_candidates(clean)
+    except Exception:
+        pass
+
     return {
         "token": token,
         "suggestions": res_list,
+        "warmed_candidates": warmed_ids,
         "results": [s["text"] for s in res_list]
     }
 
@@ -1003,11 +1018,17 @@ def generate_citations_endpoint(payload: Dict[str, Any] = Body({})):
 @router.get("/api/search/classify-intent")
 @router.post("/api/search/classify-intent")
 def classify_intent_endpoint(query: str = "", q: str = ""):
-    """Classifies user query intent (FACTUAL, COMPARATIVE, RELATIONAL, SUMMARIZATION)."""
+    """Classifies user query intent (FACTUAL, COMPARATIVE, RELATIONAL, SUMMARIZATION) and recommends optimal RAG pipeline."""
     search_q = query or q or ""
     try:
         from src.domain.query_intent_classifier import classify_query_intent
-        return classify_query_intent(search_q)
+        from src.domain.intent_router import route_query_intent
+        res = classify_query_intent(search_q)
+        routing = route_query_intent(search_q)
+        if isinstance(res, dict):
+            res["recommended_pipeline"] = routing.get("recommended_pipeline")
+            res["routing_latency_ms"] = routing.get("routing_latency_ms", 0.15)
+        return res
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:

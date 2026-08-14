@@ -48,6 +48,8 @@ from src.infrastructure.vector_engine import extract_rag_context
 from src.infrastructure.repositories.chat import create_chat_session, list_chat_sessions, get_chat_session, update_chat_session, delete_chat_session, add_chat_message, get_chat_messages
 from src.infrastructure.llm import is_llm_available
 from src.core.model_manager import get_fallback_llm, expand_query_with_llm
+from src.domain.adaptive_context_compressor import compress_context_entropy
+from src.domain.auto_correct_rag import auto_correct_grounding
 import re
 
 RE_WORD_BOUNDARIES = re.compile(r'\w+')
@@ -153,6 +155,13 @@ def chat_stream_endpoint(req: ChatRequest):
     # 1. Grounded local context extraction using domain RAG engine with HyDE query expansion
     expanded_query = expand_query_with_llm(user_query)
     local_context, local_citations = extract_advanced_rag_context(expanded_query, max_chunks=5, jaccard_threshold=0.70)
+    if local_context:
+        try:
+            comp_res = compress_context_entropy([local_context])
+            if comp_res.get("compressed_chunks") and comp_res["compressed_chunks"][0]:
+                local_context = comp_res["compressed_chunks"][0]
+        except Exception:
+            pass
 
     # 2. Web search context fetch if vault hits < 2 or explicitly requested
     web_sources = []

@@ -661,17 +661,18 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     const wordCount = text.split(/\s+/).filter(Boolean).length;
     const readingTimeMin = Math.max(1, Math.ceil(wordCount / 200));
 
-    // Combine API entities with inline extracted capital terms
+    // Combine API entities with inline extracted capital terms and document tags
     const localKeywords = new Set<string>(entitiesList);
+    if (insights?.tags && Array.isArray(insights.tags)) {
+      insights.tags.forEach((t: string) => { if (t && t.length > 2) localKeywords.add(t); });
+    }
+    if (insights?.entities && Array.isArray(insights.entities)) {
+      insights.entities.forEach((e: string) => { if (e && e.length > 2) localKeywords.add(e); });
+    }
     for (const match of text.matchAll(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g)) {
       const term = match[1].trim();
       if (term.length > 3 && !['The', 'This', 'That', 'With', 'From', 'Your', 'They', 'Have', 'More', 'Some', 'When', 'Page', 'Date'].includes(term)) {
         localKeywords.add(term);
-      }
-    }
-    for (const hardcoded of ['Analytical', 'Focus', 'Responsibility', 'Achiever', 'Ideation', 'CliftonStrengths', 'Gallup', 'Signature Themes', 'Don Clifton', 'Roberto Morales Pérez', 'Clean Architecture', 'ColBERT', 'FastAPI', 'SQLite']) {
-      if (text.toLowerCase().includes(hardcoded.toLowerCase())) {
-        localKeywords.add(hardcoded);
       }
     }
 
