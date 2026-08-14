@@ -183,6 +183,25 @@ RELEASE_CERT_SCHEMA = {
     "properties": {},
 }
 
+SPEAK_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "text": {"type": "string", "description": "Text message for neural voice synthesis"},
+        "domain": {"type": "string", "description": "Domain profile (DEV_OPS, DAILY_BRIEF, EXECUTIVE_ASSISTANT, TACTICAL_COCKPIT, GENERAL)", "default": "GENERAL"},
+        "priority": {"type": "string", "description": "Alert priority (CRITICAL, URGENT, NORMAL, INFO)", "default": "NORMAL"},
+        "voice": {"type": "string", "description": "Kokoro voice persona (bf_emma, af_sarah, am_adam, af_bella, bm_george)"}
+    },
+    "required": ["text"],
+}
+
+SFX_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "sfx_name": {"type": "string", "description": "Procedural SFX name (warp_spool, shield_critical, armor_bleed, hull_breach, target_lock, cockpit_ambient)", "default": "target_lock"}
+    },
+    "required": ["sfx_name"],
+}
+
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     return [
@@ -235,6 +254,16 @@ async def handle_list_tools() -> list[types.Tool]:
             name="neuro_release_certificate",
             description="Generate immutable cryptographic SOC 2 Type II Merkle Release Certificate.",
             inputSchema=RELEASE_CERT_SCHEMA,
+        ),
+        types.Tool(
+            name="neuro_speak",
+            description="Speak message through Universal Kokoro-82M Neural Voice Bridge across multi-domain profiles.",
+            inputSchema=SPEAK_SCHEMA,
+        ),
+        types.Tool(
+            name="neuro_play_sfx",
+            description="Play procedural tactical cockpit sound effect (warp spool, shield siren, target lock).",
+            inputSchema=SFX_SCHEMA,
         ),
     ]
 
@@ -304,6 +333,24 @@ async def handle_call_tool(
             from .agents.skills.neuro_copilot.scripts.github_bridge import generate_certificate
             res = generate_certificate()
             return [types.TextContent(type="text", text=res)]
+
+        if name == "neuro_speak":
+            from src.core.voice_bridge import VoiceBridge
+            res = VoiceBridge.speak(
+                text=args.get("text", ""),
+                domain=args.get("domain", "GENERAL"),
+                priority=args.get("priority", "NORMAL"),
+                voice=args.get("voice")
+            )
+            return [types.TextContent(type="text", text=f"Spoken via VoiceBridge ({res.get('engine')}): '{res.get('text')}' [Dispatched: {res.get('dispatched')}]")]
+
+        if name == "neuro_play_sfx":
+            from src.core.voice_bridge import VoiceBridge
+            sfx = args.get("sfx_name", "target_lock")
+            wav_bytes = VoiceBridge.play_sfx(sfx)
+            if wav_bytes:
+                return [types.TextContent(type="text", text=f"Procedural SFX '{sfx}' synthesized successfully ({len(wav_bytes):,} bytes).")]
+            return [types.TextContent(type="text", text=f"SFX '{sfx}' failed to generate.")]
 
         raise ValueError(f"Unknown tool: {name}")
     except httpx.HTTPStatusError as e:

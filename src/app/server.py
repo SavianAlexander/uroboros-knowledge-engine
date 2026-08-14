@@ -91,9 +91,10 @@ def get_style_bundle():
 from fastapi import Depends
 from src.app.auth import verify_api_key
 
-from src.app.routers import health, search, rag, files, tags, export, analytics, workflows, briefing, ocr, eve
+from src.app.routers import health, search, rag, files, tags, export, analytics, workflows, briefing, ocr, eve, voice
 
 app.include_router(health.router) # Health remains unprotected
+app.include_router(voice.router) # Voice and OpenAI audio API
 app.include_router(search.router, dependencies=[Depends(verify_api_key)])
 app.include_router(rag.router, dependencies=[Depends(verify_api_key)])
 app.include_router(files.router, dependencies=[Depends(verify_api_key)])
