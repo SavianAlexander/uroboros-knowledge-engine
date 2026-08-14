@@ -125,6 +125,50 @@ def vacuum_db_cli():
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
 
+def ingest_git_history(limit: int = 20):
+    """Extracts recent Git commit history and indexes into local knowledge database."""
+    import subprocess
+    try:
+        cmd = f'git log -n {limit} --pretty=format:"%H|%an|%ad|%s" --date=short'
+        res = subprocess.run(cmd, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        if res.returncode != 0 or not res.stdout.strip():
+            return json.dumps({"status": "notice", "message": "No git commits found to ingest."})
+
+        commits = []
+        for line in res.stdout.strip().splitlines():
+            parts = line.split("|", 3)
+            if len(parts) == 4:
+                commits.append({
+                    "hash": parts[0],
+                    "author": parts[1],
+                    "date": parts[2],
+                    "subject": parts[3]
+                })
+
+        vault_git_dir = os.path.join(project_root, "vault", "git_history")
+        os.makedirs(vault_git_dir, exist_ok=True)
+        summary_md = "# Codebase Git Commit History & Provenance\n\n"
+        for c in commits:
+            summary_md += f"## Commit `{c['hash'][:10]}` ({c['date']})\n"
+            summary_md += f"- **Author**: {c['author']}\n"
+            summary_md += f"- **Message**: {c['subject']}\n\n"
+
+        target_file = os.path.join(vault_git_dir, "recent_commits.md")
+        with open(target_file, "w", encoding="utf-8") as f:
+            f.write(summary_md)
+
+        from know import index_directory
+        index_directory(vault_git_dir)
+
+        return json.dumps({
+            "status": "success",
+            "commits_ingested": len(commits),
+            "vault_file": target_file
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
 def self_test():
     """Run assert-based self-test suite for neuro_bridge.py."""
     print("=== Running Neuro Bridge Self-Test Suite ===")
@@ -155,6 +199,11 @@ def self_test():
     res_vac = json.loads(vacuum_db_cli())
     assert res_vac.get("status") == "success", "vacuum_db_cli failed"
     print("  [Pass] vacuum_db_cli assertion clean")
+
+    res_git = json.loads(ingest_git_history(limit=5))
+    assert res_git.get("status") in ["success", "notice"], "ingest_git_history failed"
+    print("  [Pass] ingest_git_history assertion clean")
+
     print("Self-Test Complete: ALL ASSERTIONS PASSED (100% Success)")
     return 0
 
@@ -179,6 +228,9 @@ def main():
     subparsers.add_parser("export_svg", help="Export Knowledge Graph topology as DOT/SVG syntax representation")
     subparsers.add_parser("vacuum", help="Execute WAL checkpointing and freelist page vacuuming")
 
+    git_parser = subparsers.add_parser("ingest_git_history", help="Extract and index recent git commits into vault")
+    git_parser.add_argument("--limit", type=int, default=20, help="Number of recent commits to index")
+
     subparsers.add_parser("stats", help="Get vault statistics")
     subparsers.add_parser("self_test", help="Run assertion self-tests")
 
@@ -200,6 +252,8 @@ def main():
         print(export_graph_svg())
     elif args.command == "vacuum":
         print(vacuum_db_cli())
+    elif args.command == "ingest_git_history":
+        print(ingest_git_history(args.limit))
     elif args.command == "self_test":
         sys.exit(self_test())
 

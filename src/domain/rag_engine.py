@@ -57,8 +57,9 @@ def generate_hyde_expansion(query: str) -> str:
     expanded = raw_query
 
     try:
-        if is_testing:
-            expanded = f"{raw_query} - hypothetical answer context"
+        import os
+        if is_testing or not os.environ.get("OPENAI_API_BASE"):
+            expanded = f"{raw_query} - technical answer context"
         else:
             llm = get_fallback_llm()
             if llm:
