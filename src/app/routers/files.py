@@ -417,12 +417,57 @@ def get_file_revisions_endpoint(path: str):
     return {"path": path, "revisions": get_file_revisions(path)}
 
 @router.get("/api/file/diff")
-def get_file_diff_endpoint(path: str, rev1: Optional[int] = None, rev2: Optional[int] = None):
+def get_file_diff_endpoint(
+    path: Optional[str] = None,
+    file_a: Optional[str] = None,
+    file_b: Optional[str] = None,
+    rev1: Optional[int] = None,
+    rev2: Optional[int] = None
+):
     """
-    Compute structured Myers diff and similarity ratio between file revision snapshots.
+    Compute structured Myers diff and similarity ratio between file revision snapshots or two files.
     Zero-dependency stdlib difflib implementation.
     """
     import difflib
+    if file_a and file_b:
+        verify_path_containment(file_a)
+        verify_path_containment(file_b)
+        text_a = ""
+        text_b = ""
+        with get_db() as conn:
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT content FROM files WHERE filepath = ?", (file_a,))
+                row_a = cursor.fetchone()
+                if row_a:
+                    text_a = row_a[0] or ""
+            except Exception:
+                pass
+            if not text_a and os.path.exists(file_a):
+                with open(file_a, "r", encoding="utf-8", errors="ignore") as f:
+                    text_a = f.read()
+
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT content FROM files WHERE filepath = ?", (file_b,))
+                row_b = cursor.fetchone()
+                if row_b:
+                    text_b = row_b[0] or ""
+            except Exception:
+                pass
+            if not text_b and os.path.exists(file_b):
+                with open(file_b, "r", encoding="utf-8", errors="ignore") as f:
+                    text_b = f.read()
+
+        from src.domain.file_diff import compare_text_content
+        result = compare_text_content(text_a, text_b, label_a=os.path.basename(file_a), label_b=os.path.basename(file_b))
+        result["file_a"] = file_a
+        result["file_b"] = file_b
+        return result
+
+    if not path:
+        raise HTTPException(status_code=422, detail="Missing path or file_a/file_b parameters")
+
     verify_path_containment(path)
     revisions = get_file_revisions(path)
     
@@ -637,38 +682,7 @@ def open_file_endpoint(req: OpenFileRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/api/file/diff")
-def file_diff_endpoint(file_a: str, file_b: str):
-    """Line-by-line comparison diff endpoint between two files or document revisions."""
-    verify_path_containment(file_a)
-    verify_path_containment(file_b)
-    
-    text_a = ""
-    text_b = ""
-    
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT content FROM files WHERE filepath = ?", (file_a,))
-        row_a = cursor.fetchone()
-        if row_a:
-            text_a = row_a[0] or ""
-        elif os.path.exists(file_a):
-            with open(file_a, "r", encoding="utf-8", errors="ignore") as f:
-                text_a = f.read()
 
-        cursor.execute("SELECT content FROM files WHERE filepath = ?", (file_b,))
-        row_b = cursor.fetchone()
-        if row_b:
-            text_b = row_b[0] or ""
-        elif os.path.exists(file_b):
-            with open(file_b, "r", encoding="utf-8", errors="ignore") as f:
-                text_b = f.read()
-
-    from src.domain.file_diff import compare_text_content
-    result = compare_text_content(text_a, text_b, label_a=os.path.basename(file_a), label_b=os.path.basename(file_b))
-    result["file_a"] = file_a
-    result["file_b"] = file_b
-    return result
 
 
 @router.get("/api/file/entities")

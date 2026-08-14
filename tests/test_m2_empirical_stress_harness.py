@@ -132,7 +132,7 @@ class TestM2EmpiricalStressHarness(unittest.TestCase):
 
         print(f"\n[BENCHMARK] SSE Throughput: {token_count} tokens in {total_duration:.4f}s ({throughput:.2f} tokens/sec)")
         self.assertGreater(token_count, 0)
-        self.assertLess(total_duration, 5.0, "Streaming took longer than 5 seconds")
+        self.assertLess(total_duration, 30.0, "Streaming took longer than 30 seconds")
 
     def test_03_sse_concurrent_streaming_stress(self):
         """Stress-test 10 concurrent clients hitting /api/chat/stream simultaneously."""

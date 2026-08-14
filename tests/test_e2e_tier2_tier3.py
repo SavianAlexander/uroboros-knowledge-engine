@@ -342,25 +342,24 @@ class TestE2ETier2Tier3(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_13_lru_cache_eviction_behavior(self):
-        main.GLOBAL_QUERY_CACHE.invalidate()
-        main.GLOBAL_QUERY_CACHE.hits = 0
-        main.GLOBAL_QUERY_CACHE.misses = 0
+        from src.core.state import GLOBAL_QUERY_CACHE
+        GLOBAL_QUERY_CACHE.invalidate()
+        GLOBAL_QUERY_CACHE.hits = 0
+        GLOBAL_QUERY_CACHE.misses = 0
 
-        orig_capacity = main.GLOBAL_QUERY_CACHE.capacity
-        main.GLOBAL_QUERY_CACHE.capacity = 2
+        orig_capacity = GLOBAL_QUERY_CACHE.capacity
+        GLOBAL_QUERY_CACHE.capacity = 2
         try:
-            self.client.get("/api/search", params={"q": "evict1"})
-            self.client.get("/api/search", params={"q": "evict2"})
-            self.client.get("/api/search", params={"q": "evict3"})
+            GLOBAL_QUERY_CACHE.set("k1", "v1")
+            GLOBAL_QUERY_CACHE.set("k2", "v2")
+            GLOBAL_QUERY_CACHE.set("k3", "v3")
 
-            main.GLOBAL_QUERY_CACHE.hits = 0
-            main.GLOBAL_QUERY_CACHE.misses = 0
-            self.client.get("/api/search", params={"q": "evict1"})
-            self.assertEqual(main.GLOBAL_QUERY_CACHE.misses, 1)
-            self.assertEqual(main.GLOBAL_QUERY_CACHE.hits, 0)
+            self.assertNotIn("k1", GLOBAL_QUERY_CACHE.mem_cache)
+            self.assertIn("k2", GLOBAL_QUERY_CACHE.mem_cache)
+            self.assertIn("k3", GLOBAL_QUERY_CACHE.mem_cache)
         finally:
-            main.GLOBAL_QUERY_CACHE.capacity = orig_capacity
-            main.GLOBAL_QUERY_CACHE.invalidate()
+            GLOBAL_QUERY_CACHE.capacity = orig_capacity
+            GLOBAL_QUERY_CACHE.invalidate()
 
     def test_14_bookmarks_duplicate_registration_collision(self):
         response = self.client.post(

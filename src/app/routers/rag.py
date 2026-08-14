@@ -275,18 +275,6 @@ def chat_stream_endpoint(req: ChatRequest):
                 yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
                 time.sleep(0.01)
 
-        dt_gen = max(0.001, time.perf_counter() - t_gen_start)
-        tok_speed = round(token_count / dt_gen, 1)
-        done_payload = {
-            "type": "done",
-            "tokens_generated": token_count,
-            "duration_sec": round(dt_gen, 2),
-            "tokens_per_sec": tok_speed,
-            "model": routing_info.get("model", "qwen2.5:7b"),
-            "tier": routing_info.get("tier", "master_rag")
-        }
-        yield f"data: {json.dumps(done_payload)}\n\n"
-
         # Save assistant message turn into SQLite chat_messages table
         msg_record = add_chat_message(
             session_id=session_id,
@@ -297,11 +285,17 @@ def chat_stream_endpoint(req: ChatRequest):
             tokens_used=len(full_response_text.split())
         )
 
-        # Yield done SSE event
+        dt_gen = max(0.001, time.perf_counter() - t_gen_start)
+        tok_speed = round(token_count / dt_gen, 1)
         done_payload = {
             "type": "done",
             "session_id": session_id,
-            "message_id": msg_record.get("id") if isinstance(msg_record, dict) else None
+            "message_id": msg_record.get("id") if isinstance(msg_record, dict) else None,
+            "tokens_generated": token_count,
+            "duration_sec": round(dt_gen, 2),
+            "tokens_per_sec": tok_speed,
+            "model": routing_info.get("model", "qwen2.5:7b"),
+            "tier": routing_info.get("tier", "master_rag")
         }
         yield f"data: {json.dumps(done_payload)}\n\n"
 

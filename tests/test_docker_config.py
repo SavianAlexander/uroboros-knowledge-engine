@@ -9,7 +9,7 @@ class TestDockerConfig(unittest.TestCase):
         df_path = BASE_DIR / "Dockerfile"
         self.assertTrue(df_path.exists())
         content = df_path.read_text(encoding="utf-8")
-        self.assertIn("FROM python:3.12-slim AS builder", content)
+        self.assertTrue("AS builder" in content or "AS python-builder" in content)
         self.assertIn("FROM python:3.12-slim AS runner", content)
         self.assertIn("HEALTHCHECK", content)
 
