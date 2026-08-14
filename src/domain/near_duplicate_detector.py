@@ -43,12 +43,12 @@ def detect_near_duplicates(similarity_threshold: float = 0.80) -> Dict[str, Any]
     Zero-dependency stdlib implementation.
     """
     try:
-        from src.infrastructure.database import get_db_connection, init_db, DB_FILE
+        from src.infrastructure.database import get_db, init_db
 
         init_db()
-        with get_db_connection(DB_FILE) as conn:
+        with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL LIMIT 50")
+            cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL LIMIT 100")
             rows = cursor.fetchall()
 
         shingles_by_file = {}
@@ -94,3 +94,92 @@ def detect_near_duplicates(similarity_threshold: float = 0.80) -> Dict[str, Any]
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+def detect_near_duplicate_chunks(similarity_threshold: float = 0.80, limit: int = 150) -> Dict[str, Any]:
+    """
+    Scans file chunks across the vault to detect near-duplicate chunk clusters and token savings.
+    """
+    try:
+        from src.infrastructure.database import get_db, init_db
+
+        init_db()
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT fc.id, fc.file_id, f.filename, fc.chunk_index, fc.content 
+                FROM file_chunks fc
+                JOIN files f ON fc.file_id = f.id
+                WHERE LENGTH(fc.content) > 40
+                LIMIT ?
+            """, (limit,))
+            rows = cursor.fetchall()
+
+        if not rows:
+            return {
+                "status": "success",
+                "total_chunks_analyzed": 0,
+                "duplicate_clusters": [],
+                "potential_token_savings": 0
+            }
+
+        shingles_by_chunk = [
+            {
+                "chunk_id": r[0],
+                "file_id": r[1],
+                "filename": r[2],
+                "chunk_index": r[3],
+                "content_preview": (r[4][:120] + "...") if len(r[4]) > 120 else r[4],
+                "char_length": len(r[4]),
+                "shingles": compute_shingles(r[4], k=3)
+            }
+            for r in rows
+        ]
+
+        duplicate_clusters = []
+        claimed_ids = set()
+        total_token_savings = 0
+
+        for i, c_a in enumerate(shingles_by_chunk):
+            if c_a["chunk_id"] in claimed_ids:
+                continue
+            cluster = [c_a]
+            for j in range(i + 1, len(shingles_by_chunk)):
+                c_b = shingles_by_chunk[j]
+                if c_b["chunk_id"] in claimed_ids:
+                    continue
+                sim = jaccard_similarity(c_a["shingles"], c_b["shingles"])
+                if sim >= similarity_threshold:
+                    cluster.append(c_b)
+                    claimed_ids.add(c_b["chunk_id"])
+
+            if len(cluster) > 1:
+                claimed_ids.add(c_a["chunk_id"])
+                # Estimate token savings (4 chars ~ 1 token)
+                saved_chars = sum(c["char_length"] for c in cluster[1:])
+                saved_tokens = max(1, saved_chars // 4)
+                total_token_savings += saved_tokens
+                duplicate_clusters.append({
+                    "cluster_size": len(cluster),
+                    "primary_file": cluster[0]["filename"],
+                    "savings_tokens_approx": saved_tokens,
+                    "items": [
+                        {
+                            "chunk_id": c["chunk_id"],
+                            "filename": c["filename"],
+                            "chunk_index": c["chunk_index"],
+                            "preview": c["content_preview"]
+                        }
+                        for c in cluster
+                    ]
+                })
+
+        return {
+            "status": "success",
+            "total_chunks_analyzed": len(rows),
+            "total_duplicate_clusters": len(duplicate_clusters),
+            "potential_token_savings": total_token_savings,
+            "duplicate_clusters": duplicate_clusters
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e), "duplicate_clusters": []}

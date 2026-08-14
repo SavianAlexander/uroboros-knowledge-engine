@@ -153,3 +153,89 @@ def export_vault_json_endpoint():
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in export.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/vault/export/manifest")
+def get_vault_export_manifest_endpoint():
+    """Generates an export manifest containing SHA-256 integrity hashes, metadata, and chunk stats."""
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, filename, filepath, file_size, mime_type, modified_at, sha256, tags FROM files")
+            rows = cursor.fetchall()
+            files_meta = [
+                {
+                    "id": r[0],
+                    "filename": r[1],
+                    "filepath": r[2],
+                    "file_size": r[3] or 0,
+                    "mime_type": r[4] or "text/plain",
+                    "modified_at": r[5] or 0,
+                    "sha256": r[6] or "",
+                    "tags": r[7] or ""
+                }
+                for r in rows
+            ]
+        return {
+            "status": "success",
+            "engine": "Uroboros Knowledge Engine v8.0",
+            "exported_at": time.time(),
+            "total_files": len(files_meta),
+            "manifest": files_meta
+        }
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        logger.exception(f"Swallowed error generating manifest: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/vault/export/package")
+def export_vault_package_zip_endpoint():
+    """Creates a self-contained portable ZIP archive of the vault with manifest and markdown contents."""
+    import zipfile
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, filename, filepath, file_size, mime_type, modified_at, sha256, tags, content FROM files")
+            rows = cursor.fetchall()
+
+        manifest_items = []
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for r in rows:
+                fname = r[1] or f"doc_{r[0]}.txt"
+                archive_name = f"documents/{r[0]}_{fname}"
+                content = r[8] or ""
+                zf.writestr(archive_name, content.encode("utf-8", errors="ignore"))
+                manifest_items.append({
+                    "id": r[0],
+                    "filename": fname,
+                    "archive_path": archive_name,
+                    "file_size": r[3] or len(content),
+                    "mime_type": r[4] or "text/plain",
+                    "modified_at": r[5] or 0,
+                    "sha256": r[6] or "",
+                    "tags": r[7] or ""
+                })
+
+            manifest_json = json.dumps({
+                "engine": "Uroboros Knowledge Engine v8.0",
+                "exported_at": time.time(),
+                "total_documents": len(manifest_items),
+                "documents": manifest_items
+            }, indent=2)
+            zf.writestr("manifest.json", manifest_json.encode("utf-8"))
+
+        zip_buffer.seek(0)
+        timestamp_str = int(time.time())
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename=vault_export_{timestamp_str}.zip"}
+        )
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        logger.exception(f"Swallowed error creating vault package: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

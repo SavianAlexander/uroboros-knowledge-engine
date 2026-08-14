@@ -45,21 +45,28 @@ def get_all_tags_endpoint():
 
 @router.get("/api/suggested_tags")
 @router.get("/api/file/suggested-tags")
-def get_suggested_tags_endpoint(filepath: Optional[str] = None, path: Optional[str] = None):
-    """Suggest relevant tags for a file based on content analysis."""
+@router.get("/api/tags/suggestions")
+def get_suggested_tags_endpoint(filepath: Optional[str] = None, path: Optional[str] = None, text: Optional[str] = None, scored: bool = True):
+    """Suggest relevant tags for a file or raw text based on content frequency and specificity analysis."""
     target = filepath or path or ""
-    if target and os.path.exists(target):
+    content = text or ""
+    if not content and target and os.path.exists(target):
         try:
             with open(target, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
-            from src.core.domain.services import suggest_tags_from_text
-            suggested = suggest_tags_from_text(content)
-            return {"status": "success", "suggested_tags": suggested}
-        except (KeyboardInterrupt, MemoryError, SystemExit):
-            raise
-        except Exception as e:
-            import logging; logging.warning(f"Swallowed error in tags.py: {e}")
-    return {"status": "success", "suggested_tags": []}
+        except Exception:
+            pass
+
+    if content:
+        from src.core.domain.services import suggest_tags_from_text, suggest_scored_tags_from_text
+        suggested = suggest_tags_from_text(content)
+        scored_tags = suggest_scored_tags_from_text(content)
+        return {
+            "status": "success",
+            "suggested_tags": suggested,
+            "scored_suggestions": scored_tags
+        }
+    return {"status": "success", "suggested_tags": [], "scored_suggestions": []}
 
 @router.post("/api/file/tag")
 def add_file_tag_endpoint(req: TagRequest):

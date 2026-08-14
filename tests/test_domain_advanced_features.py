@@ -197,6 +197,54 @@ class TestAdvancedFeatures(unittest.TestCase):
         self.assertEqual(data["status"], "success")
         self.assertGreaterEqual(data["total_required"], 5)
 
+    def test_15_intent_classification_router(self):
+        """Verify deterministic syntactic query intent classification."""
+        from src.domain.query_intent_classifier import classify_query_intent
+        res_compare = classify_query_intent("compare redis vs sqlite")
+        self.assertEqual(res_compare["intent"], "comparative_analysis")
+        self.assertEqual(res_compare["recommended_pipeline"], "multi_query_decomposition")
+
+        res_path = classify_query_intent("relationship between machine learning and optimization")
+        self.assertEqual(res_path["intent"], "exploratory_pathfinding")
+        self.assertEqual(res_path["recommended_pipeline"], "graph_multihop_traversal")
+
+    def test_16_vault_duplicate_chunks(self):
+        """Verify vault-wide duplicate chunk consolidation endpoint."""
+        res = self.client.get("/api/vault/duplicate-chunks")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertIn("duplicate_clusters", data)
+
+    def test_17_fuzzy_scored_tag_suggestions(self):
+        """Verify confidence-scored tag suggestions endpoint /api/tags/suggestions."""
+        sample_text = "Quantum computing and quantum superposition algorithms for quantum cryptography."
+        res = self.client.get("/api/tags/suggestions", params={"text": sample_text})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertIn("scored_suggestions", data)
+
+    def test_18_vault_export_manifest_and_package(self):
+        """Verify vault export manifest metadata and package generator."""
+        res_manifest = self.client.get("/api/vault/export/manifest")
+        self.assertEqual(res_manifest.status_code, 200)
+        manifest_data = res_manifest.json()
+        self.assertEqual(manifest_data["status"], "success")
+        self.assertIn("manifest", manifest_data)
+
+        res_pkg = self.client.get("/api/vault/export/package")
+        self.assertEqual(res_pkg.status_code, 200)
+        self.assertEqual(res_pkg.headers.get("content-type"), "application/zip")
+
+    def test_19_system_memory_and_db_compactor(self):
+        """Verify runtime memory compaction and SQLite page cache shrinker."""
+        res = self.client.post("/api/system/compact")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertIn("reclaimed_gc_objects", data)
+
 
 if __name__ == "__main__":
     unittest.main()

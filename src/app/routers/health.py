@@ -424,3 +424,50 @@ def repair_vault_indexes_endpoint():
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/system/compact")
+def compact_system_memory_and_db_endpoint():
+    """
+    Triggers memory compaction, incremental database vacuum, SQLite page cache shrinking, and garbage collection.
+    """
+    import gc
+    try:
+        from src.infrastructure.database import DB_FILE, get_db_write_connection, DB_TIMEOUT
+        
+        db_before = os.path.getsize(DB_FILE) if DB_FILE and os.path.exists(DB_FILE) else 0
+        wal_file = DB_FILE + "-wal" if DB_FILE else ""
+        wal_before = os.path.getsize(wal_file) if wal_file and os.path.exists(wal_file) else 0
+
+        with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
+            with conn:
+                cursor = conn.cursor()
+                cursor.execute("PRAGMA incremental_vacuum(500);")
+                cursor.execute("PRAGMA shrink_memory;")
+                cursor.execute("PRAGMA wal_checkpoint(PASSIVE);")
+
+        reclaimed_gc = gc.collect()
+
+        try:
+            from src.core.state import GLOBAL_QUERY_CACHE
+            GLOBAL_QUERY_CACHE.clear()
+        except Exception:
+            pass
+
+        db_after = os.path.getsize(DB_FILE) if DB_FILE and os.path.exists(DB_FILE) else 0
+        wal_after = os.path.getsize(wal_file) if wal_file and os.path.exists(wal_file) else 0
+
+        return {
+            "status": "success",
+            "reclaimed_gc_objects": reclaimed_gc,
+            "db_size_before_mb": round(db_before / (1024.0 * 1024.0), 3),
+            "db_size_after_mb": round(db_after / (1024.0 * 1024.0), 3),
+            "wal_size_before_mb": round(wal_before / (1024.0 * 1024.0), 3),
+            "wal_size_after_mb": round(wal_after / (1024.0 * 1024.0), 3),
+            "freed_bytes": max(0, (db_before + wal_before) - (db_after + wal_after))
+        }
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py compact: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

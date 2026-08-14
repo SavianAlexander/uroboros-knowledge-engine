@@ -307,6 +307,45 @@ def suggest_tags_from_text(text: str) -> List[str]:
     sorted_words = sorted(freq.items(), key=lambda x: x[1], reverse=True)
     return [w[0] for w in sorted_words[:4]]
 
+def suggest_scored_tags_from_text(text: str, top_k: int = 6) -> List[Dict[str, Any]]:
+    """
+    Computes confidence-scored tag suggestions with word length normalization and IDF penalty.
+    Returns [{'tag': str, 'confidence': float, 'occurrences': int}].
+    """
+    if not text or not isinstance(text, str):
+        return []
+    
+    stopwords = {
+        "the", "and", "of", "to", "is", "in", "that", "it", "for", "on", "with", "as",
+        "this", "was", "at", "by", "an", "be", "are", "from", "or", "your", "have",
+        "had", "has", "but", "not", "what", "all", "were", "when", "we", "can", "will",
+        "about", "into", "more", "their", "which", "there", "would", "they", "been"
+    }
+    
+    words = re.findall(r"\b[a-z]{3,20}\b", text.lower())
+    if not words:
+        return []
+        
+    counts = Counter(w for w in words if w not in stopwords)
+    if not counts:
+        return []
+        
+    max_count = max(counts.values())
+    total_non_stop = sum(counts.values())
+    
+    scored = []
+    for tag, count in counts.most_common(top_k * 2):
+        length_bonus = min(1.3, 0.8 + (len(tag) / 10.0))
+        raw_conf = min(0.99, (count / float(max_count)) * length_bonus)
+        scored.append({
+            "tag": tag,
+            "confidence": round(raw_conf, 2),
+            "occurrences": count
+        })
+        
+    scored.sort(key=lambda x: x["confidence"], reverse=True)
+    return scored[:top_k]
+
 @lru_cache(maxsize=1024)
 def generate_summary(text: str) -> str:
     """Generate extractive summary using TF-IDF sentence scoring."""

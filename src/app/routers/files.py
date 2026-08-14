@@ -722,11 +722,28 @@ def file_readability_endpoint(filepath: str = "", path: str = ""):
 
 
 @router.get("/api/vault/duplicates")
-def get_vault_duplicates_endpoint(threshold: float = 0.80):
-    """Scans vault documents for near-duplicate content using MinHash Jaccard similarity."""
+def get_vault_duplicates_endpoint(threshold: float = 0.80, mode: str = "files"):
+    """Scans vault documents or chunks for near-duplicate content using MinHash Jaccard similarity."""
     try:
-        from src.domain.near_duplicate_detector import detect_near_duplicates
-        return detect_near_duplicates(similarity_threshold=threshold)
+        if mode == "chunks":
+            from src.domain.near_duplicate_detector import detect_near_duplicate_chunks
+            return detect_near_duplicate_chunks(similarity_threshold=threshold)
+        else:
+            from src.domain.near_duplicate_detector import detect_near_duplicates
+            return detect_near_duplicates(similarity_threshold=threshold)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/vault/duplicate-chunks")
+def get_vault_duplicate_chunks_endpoint(threshold: float = 0.80, limit: int = 150):
+    """Scans chunk-level text across vault files and returns consolidation clusters and token savings."""
+    try:
+        from src.domain.near_duplicate_detector import detect_near_duplicate_chunks
+        return detect_near_duplicate_chunks(similarity_threshold=threshold, limit=limit)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
