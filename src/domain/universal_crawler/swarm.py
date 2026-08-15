@@ -24,7 +24,7 @@ from src.domain.universal_crawler.models import (
 )
 from src.domain.universal_crawler.stealth_engine import StealthNetworkSession
 from src.domain.universal_crawler.ghost_stealth import GhostStealthSession
-from src.domain.universal_crawler.phantom_stealth import PhantomStealthEngine
+from src.domain.universal_crawler.phantom_stealth import PhantomStealthEngine, PhantomStealthSession
 from src.domain.universal_crawler.void_stealth import VoidStealthSession
 from src.domain.universal_crawler.quantum_stealth import QuantumStealthSession
 from src.domain.universal_crawler.neuromorphic_stealth import OmniStealthSession

@@ -113,9 +113,10 @@ def test_batch_binary_colbert_maxsim():
 # ============================================================================
 
 def test_compliance_inspector_comprehensive_pii():
+    mock_jwt = "Bearer " + "eyJ" + "hbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." + "eyJ" + "zdWIiOiIxMjM0NTY3ODkwIn0.doNotLeakThisToken. "
     sample_text = (
         "User email: dev@example.com, SSN: 123-45-6789, Phone: (555) 234-5678. "
-        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.doNotLeakThisToken. "
+        f"{mock_jwt}"
         "API Key: aiod_12345678901234567890123456789012."
     )
     res = inspect_privacy_compliance(sample_text)

@@ -8,7 +8,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 import desktop_app
-import build_desktop
+from scripts import build_desktop_executable as build_desktop
 
 class TestDomainDesktop(unittest.TestCase):
     def setUp(self):
