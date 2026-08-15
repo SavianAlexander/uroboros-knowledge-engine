@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sovereign Voice Studio — Live Audio Showcase</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(22, 27, 34, 0.85);
+      --border: rgba(255, 255, 255, 0.12);
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background: radial-gradient(circle at 50% 0%, #1e293b 0%, var(--bg) 80%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 35px;
+      max-width: 700px;
+    }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+      color: #38bdf8;
+    }
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+    .controls-banner {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 16px 24px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .btn-play-all {
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-play-all:hover { background: #0369a1; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .script-quote {
+      font-size: 0.95rem;
+      color: #cbd5e1;
+      font-style: italic;
+      line-height: 1.5;
+      margin: 12px 0 16px 0;
+      background: rgba(0,0,0,0.25);
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 3px solid #38bdf8;
+    }
+    audio {
+      width: 100%;
+      height: 40px;
+      border-radius: 8px;
+      outline: none;
+    }
+    .now-playing-badge {
+      display: none;
+      color: #22c55e;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🎙️ Sovereign Neural Voice Studio</h1>
+    <p class="subtitle">Live multi-persona audio player. Click <strong>Play All In Sequence</strong> or use the individual controls below to audition each voice.</p>
+  </div>
+
+  <div class="controls-banner">
+    <button class="btn-play-all" id="playAllBtn" onclick="playAllSequential()">▶️ Play All 8 Voices Sequentially</button>
+    <span id="statusLabel" style="color: var(--text-muted); font-size: 0.95rem;">Click to start automated playback</span>
+  </div>
+
+  <div class="grid">
+    <!-- 1 -->
+    <div class="card" id="card-1">
+      <div>
+        <div class="card-title">
+          <span>1. Aura Ship AI</span>
+          <span class="badge">TRANSCENDENTAL_AURA</span>
+        </div>
+        <div class="script-quote">"Greetings Commander. I am Aura, your shipboard neural intelligence. I monitor starship defensive shields, warp envelope harmonics, and navigational telemetry across New Eden."</div>
+      </div>
+      <audio id="audio-1" controls src="1_AURA_SHIP_AI.wav"></audio>
+    </div>
+
+    <!-- 2 -->
+    <div class="card" id="card-2">
+      <div>
+        <div class="card-title">
+          <span>2. Fleet Commander</span>
+          <span class="badge">SOVEREIGN_PRESENCE</span>
+        </div>
+        <div class="script-quote">"Fleet Commander speaking. I coordinate sovereign battle wings, cynosural jump bridges, and capital fleet engagements. Anchor on the flagship and prepare for warp."</div>
+      </div>
+      <audio id="audio-2" controls src="2_FLEET_COMMANDER.wav"></audio>
+    </div>
+
+    <!-- 3 -->
+    <div class="card" id="card-3">
+      <div>
+        <div class="card-title">
+          <span>3. Tactical Advisor</span>
+          <span class="badge">COMMANDER_TACTICAL</span>
+        </div>
+        <div class="script-quote">"Tactical Advisor standing by. I deliver rapid combat intelligence, threat interception scans, and warp disruption telemetry with zero latency."</div>
+      </div>
+      <audio id="audio-3" controls src="3_TACTICAL_ADVISOR.wav"></audio>
+    </div>
+
+    <!-- 4 -->
+    <div class="card" id="card-4">
+      <div>
+        <div class="card-title">
+          <span>4. Industry Overseer</span>
+          <span class="badge">AWE_STUDIO_MASTER</span>
+        </div>
+        <div class="script-quote">"Industry Overseer reporting. I manage deep-space mining fleets, planetary reactions, and industrial ore compression aboard the Pillar of Autumn in G-EURJ."</div>
+      </div>
+      <audio id="audio-4" controls src="4_INDUSTRY_OVERSEER.wav"></audio>
+    </div>
+
+    <!-- 5 -->
+    <div class="card" id="card-5">
+      <div>
+        <div class="card-title">
+          <span>5. Calm Operations</span>
+          <span class="badge">STUDIO_DIRECT</span>
+        </div>
+        <div class="script-quote">"Calm Operations active. I manage background database indexing, system vitals, and continuous integration pipelines with quiet, uninterrupted precision."</div>
+      </div>
+      <audio id="audio-5" controls src="5_CALM_OPERATIONS.wav"></audio>
+    </div>
+
+    <!-- 6 -->
+    <div class="card" id="card-6">
+      <div>
+        <div class="card-title">
+          <span>6. Executive Director</span>
+          <span class="badge">SOVEREIGN_PRESENCE</span>
+        </div>
+        <div class="script-quote">"Executive Director here. I analyze high-level strategic intelligence, asset reserves, and organizational milestones across all active operational projects."</div>
+      </div>
+      <audio id="audio-6" controls src="6_EXECUTIVE_DIRECTOR.wav"></audio>
+    </div>
+
+    <!-- 7 -->
+    <div class="card" id="card-7">
+      <div>
+        <div class="card-title">
+          <span>7. Warp Navigator</span>
+          <span class="badge">TRANSCENDENTAL_AURA</span>
+        </div>
+        <div class="script-quote">"Warp Navigator online. Plotting celestial transit vectors and safe navigational routes through Jita 4-4 and nullsec stargate perimeters."</div>
+      </div>
+      <audio id="audio-7" controls src="7_WARP_NAVIGATOR.wav"></audio>
+    </div>
+
+    <!-- 8 -->
+    <div class="card" id="card-8">
+      <div>
+        <div class="card-title">
+          <span>8. Sovereign Oracle</span>
+          <span class="badge">SOVEREIGN_PRESENCE</span>
+        </div>
+        <div class="script-quote">"I am the Sovereign Oracle. I certify deterministic truth, canonical game physics, and immutable cryptographic audit hashchains with zero assumptions."</div>
+      </div>
+      <audio id="audio-8" controls src="8_SOVEREIGN_ORACLE.wav"></audio>
+    </div>
+  </div>
+
+  <script>
+    let currentIndex = 1;
+    const totalVoices = 8;
+
+    function playAllSequential() {
+      currentIndex = 1;
+      document.getElementById('statusLabel').innerText = 'Playing voice 1 of 8...';
+      playTrack(1);
+    }
+
+    function playTrack(idx) {
+      if (idx > totalVoices) {
+        document.getElementById('statusLabel').innerText = '🎉 All 8 voices completed!';
+        return;
+      }
+      
+      // Highlight card
+      for (let i = 1; i <= totalVoices; i++) {
+        const c = document.getElementById('card-' + i);
+        if (c) c.style.borderColor = (i === idx) ? '#38bdf8' : 'rgba(255,255,255,0.12)';
+      }
+
+      const audio = document.getElementById('audio-' + idx);
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play().then(() => {
+          document.getElementById('statusLabel').innerText = '🗣️ Playing voice ' + idx + ' of ' + totalVoices;
+        }).catch(err => {
+          console.error(err);
+        });
+
+        audio.onended = () => {
+          setTimeout(() => {
+            playTrack(idx + 1);
+          }, 600);
+        };
+      }
+    }
+
+    // Auto-start on load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        playAllSequential();
+      }, 500);
+    });
+  </script>
+</body>
+</html>

@@ -92,15 +92,19 @@ class TacticalVoiceRadarDaemon:
         self.dispatched_events_history.append(dispatch_record)
         return dispatch_record
 
-    def simulate_radar_sweep(self) -> List[Dict[str, Any]]:
-        """Simulate real-time log radar sweep for automated test suites."""
-        mock_stream = self.streamer.simulate_mock_stream()
+    def execute_live_radar_sweep(self, auto_speak: bool = False) -> List[Dict[str, Any]]:
+        """Execute real-time tactical radar sweep over live or simulated game event streams."""
+        event_stream = self.streamer.stream_events()
         results = []
-        for ev in mock_stream:
-            rec = self.process_event_to_speech(ev, auto_speak=False)
+        for ev in event_stream:
+            rec = self.process_event_to_speech(ev, auto_speak=auto_speak)
             if rec:
                 results.append(rec)
         return results
+
+    def simulate_radar_sweep(self) -> List[Dict[str, Any]]:
+        """Simulate real-time log radar sweep for automated test suites."""
+        return self.execute_live_radar_sweep(auto_speak=False)
 
 
 def generate_tactical_dsp_markdown() -> List[str]:

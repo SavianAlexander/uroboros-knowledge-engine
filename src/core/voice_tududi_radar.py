@@ -26,22 +26,92 @@ class TududiVoiceRadarDaemon:
     _poll_interval_seconds = 300  # 5 minutes
 
     @classmethod
+    def _fetch_live_metrics(cls, project_id: int = 13) -> Dict[str, int]:
+        """Query live Tududi SQLite database or cached snapshot for real task counts."""
+        candidates = [
+            os.environ.get("TUDUDI_DB_PATH", ""),
+            "tududi.sqlite",
+            os.path.expanduser("~/.tududi/tududi.sqlite"),
+            os.path.join(BASE_DIR, "tududi.sqlite"),
+            os.path.join(BASE_DIR, "..", "tududi.sqlite")
+        ]
+        
+        today_prefix = time.strftime("%Y-%m-%d")
+        
+        for path in candidates:
+            if path and os.path.isfile(path):
+                try:
+                    import sqlite3
+                    with sqlite3.connect(path) as conn:
+                        conn.row_factory = sqlite3.Row
+                        cursor = conn.cursor()
+                        # Total pending / in progress
+                        cursor.execute("SELECT COUNT(*) FROM tasks WHERE (project_id=? OR ? IS NULL) AND status IN (0, 1)", (project_id, project_id))
+                        pending = cursor.fetchone()[0]
+                        
+                        # Completed today
+                        cursor.execute(
+                            "SELECT COUNT(*) FROM tasks WHERE (project_id=? OR ? IS NULL) AND status=2 AND (completed_at LIKE ? OR updated_at LIKE ?)",
+                            (project_id, project_id, f"{today_prefix}%", f"{today_prefix}%")
+                        )
+                        completed_today = cursor.fetchone()[0]
+                        
+                        # Overdue tasks
+                        cursor.execute(
+                            "SELECT COUNT(*) FROM tasks WHERE (project_id=? OR ? IS NULL) AND status IN (0, 1) AND due_date IS NOT NULL AND due_date != '' AND due_date < ?",
+                            (project_id, project_id, today_prefix)
+                        )
+                        overdue = cursor.fetchone()[0]
+                        
+                        return {
+                            "pending_tasks": int(pending),
+                            "completed_today": int(completed_today),
+                            "overdue_tasks": int(overdue)
+                        }
+                except Exception:
+                    pass
+
+        # Check cached snapshot
+        cache_path = os.path.join(BASE_DIR, "vault", "roadmap", "tududi_cache.json")
+        if os.path.isfile(cache_path):
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    tasks = data.get("tasks", [])
+                    pending = sum(1 for t in tasks if t.get("status") in (0, 1))
+                    completed_today = sum(1 for t in tasks if t.get("status") == 2 and str(t.get("completed_at", "")).startswith(today_prefix))
+                    overdue = sum(1 for t in tasks if t.get("status") in (0, 1) and t.get("due_date") and str(t.get("due_date")) < today_prefix)
+                    return {
+                        "pending_tasks": pending,
+                        "completed_today": completed_today,
+                        "overdue_tasks": overdue
+                    }
+            except Exception:
+                pass
+
+        # Graceful fallback
+        return {"pending_tasks": 0, "completed_today": 0, "overdue_tasks": 0}
+
+    @classmethod
     def execute_radar_sweep(cls) -> Dict[str, Any]:
         """
         Execute an immediate Tududi task radar sweep and synthesize voice alert.
         """
         cls._last_sweep_time = time.time()
-        # Query task metrics (simulated/mocked when offline or integrated with MCP)
-        pending_tasks = 4
-        completed_today = 8
-        overdue_tasks = 0
+        metrics = cls._fetch_live_metrics()
+        pending_tasks = metrics["pending_tasks"]
+        completed_today = metrics["completed_today"]
+        overdue_tasks = metrics["overdue_tasks"]
 
         # Speak announcement if pending items exist
         if overdue_tasks > 0:
             msg = f"Tududi Radar Alert: You have {overdue_tasks} overdue tasks requiring immediate attention."
             VoiceBridge.speak(msg, domain="DAILY_BRIEF", priority="CRITICAL", sfx_intro="shield_critical")
-        else:
+        elif pending_tasks > 0 or completed_today > 0:
             msg = f"Tududi Task Master report: {completed_today} tasks completed today with {pending_tasks} pending action items."
+            VoiceBridge.speak(msg, domain="DAILY_BRIEF", priority="NORMAL")
+        else:
+            msg = "Tududi Task Master report: All task master action items and milestones are fully synchronized."
             VoiceBridge.speak(msg, domain="DAILY_BRIEF", priority="NORMAL")
 
         return {

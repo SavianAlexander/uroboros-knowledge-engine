@@ -138,12 +138,14 @@ async def get_live_telemetry_stream():
     async def event_generator():
         while True:
             chars = token_manager.list_characters()
+            active_count = len(chars)
+            pilot_str = f"{active_count} pilot{'s' if active_count != 1 else ''}"
             event_data = {
                 "timestamp": time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime()),
-                "active_pilots": len(chars),
+                "active_pilots": active_count,
                 "tactical_status": "MONITORING_ACTIVE",
                 "cyno_threat_level": "LOW",
-                "message": "Tranquility ESI telemetry nominal. All 8 pilots synced."
+                "message": f"Tranquility ESI telemetry nominal. {pilot_str} synchronized in local vault."
             }
             yield f"data: {json.dumps(event_data)}\n\n"
             await asyncio.sleep(5)
@@ -272,7 +274,7 @@ def get_log_stream_endpoint():
     try:
         from src.infrastructure.eve_log_streamer import EveLogStreamer
         streamer = EveLogStreamer()
-        return {"status": "success", "events": streamer.simulate_mock_stream()}
+        return {"status": "success", "events": streamer.stream_events()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -364,7 +366,7 @@ def trigger_voice_radar_sweep_endpoint():
     try:
         from src.infrastructure.eve_voice_radar_daemon import TacticalVoiceRadarDaemon
         daemon = TacticalVoiceRadarDaemon()
-        return {"status": "success", "dispatches": daemon.simulate_radar_sweep()}
+        return {"status": "success", "dispatches": daemon.execute_live_radar_sweep(auto_speak=False)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

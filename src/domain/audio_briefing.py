@@ -15,9 +15,15 @@ def generate_audio_podcast_script(db_path: Optional[str] = None) -> Dict[str, An
     """
     try:
         briefing = generate_daily_briefing(db_path) if db_path is not None else generate_daily_briefing()
-        total_files = briefing.get("total_files", 0) if isinstance(briefing, dict) else 0
-        raw_tags = briefing.get("active_tags", []) if isinstance(briefing, dict) else []
-        tags = [unicodedata.normalize("NFC", str(t)) for t in raw_tags] if isinstance(raw_tags, list) else []
+        total_files = briefing.get("total_documents", briefing.get("total_files", 0)) if isinstance(briefing, dict) else 0
+        raw_tags = briefing.get("top_tags") or briefing.get("active_tags", []) if isinstance(briefing, dict) else []
+        tags = []
+        if isinstance(raw_tags, list):
+            for t in raw_tags:
+                if isinstance(t, dict) and "tag" in t:
+                    tags.append(unicodedata.normalize("NFC", str(t["tag"])))
+                elif t:
+                    tags.append(unicodedata.normalize("NFC", str(t)))
         summary = unicodedata.normalize("NFC", str(briefing.get("executive_summary", "") or "")) if isinstance(briefing, dict) else ""
 
         script_turns = [

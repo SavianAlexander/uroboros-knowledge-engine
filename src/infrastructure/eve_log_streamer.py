@@ -79,6 +79,61 @@ class EveLogStreamer:
 
         return {"type": "generic_log", "raw_line": line}
 
+    def get_latest_log_files(self, max_files: int = 4) -> List[str]:
+        """Discover the most recently modified EVE gamelog and chatlog files."""
+        found_files = []
+        for log_dir in (self.gamelogs_dir, self.chatlogs_dir):
+            if os.path.isdir(log_dir):
+                try:
+                    pattern = os.path.join(log_dir, "*.txt")
+                    files = glob.glob(pattern)
+                    # Sort by modification time descending
+                    files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+                    found_files.extend(files[:max_files])
+                except Exception:
+                    pass
+        return found_files
+
+    def read_recent_events(self, max_lines_per_file: int = 30) -> List[Dict[str, Any]]:
+        """Read and parse recent log lines from live disk files."""
+        log_files = self.get_latest_log_files()
+        events = []
+        
+        for fpath in log_files:
+            try:
+                # EVE Online writes logs in UTF-16 LE or UTF-8 depending on client version
+                encodings = ["utf-8-sig", "utf-16-le", "utf-8", "cp1252"]
+                lines = []
+                for enc in encodings:
+                    try:
+                        with open(fpath, "r", encoding=enc, errors="ignore") as f:
+                            lines = f.readlines()
+                        if lines:
+                            break
+                    except Exception:
+                        continue
+                
+                # Take last N lines
+                recent_lines = [l.strip() for l in lines[-max_lines_per_file:] if l.strip()]
+                for line in recent_lines:
+                    parsed = self.parse_log_line(line)
+                    if parsed.get("type") not in ("empty", "generic_log"):
+                        events.append(parsed)
+            except Exception:
+                continue
+
+        return events
+
+    def stream_events(self) -> List[Dict[str, Any]]:
+        """
+        Dynamically retrieve stream events from live disk logs,
+        falling back to high-fidelity simulation if no active game logs exist.
+        """
+        live_events = self.read_recent_events()
+        if live_events:
+            return live_events
+        return self.simulate_mock_stream()
+
     def simulate_mock_stream(self) -> List[Dict[str, Any]]:
         """Simulate real-time stream sample for automated test suites."""
         sample_lines = [

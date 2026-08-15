@@ -75,6 +75,9 @@ class VoiceFleetTelemetryDaemon:
         ship_match = re.search(r'Active Ship\*\*:\s*\*\*([^\*]+)\*\*', content)
         ship_name = ship_match.group(1).strip() if ship_match else "Porpoise ('Pillar of Autumn')"
 
+        sys_match = re.search(r'Current Solar System\*\*:\s*\*\*([^\*]+)\*\*', content)
+        system_loc = sys_match.group(1).strip() if sys_match and sys_match.group(1).strip() != "Unknown System" else "G-EURJ"
+
         return {
             "commander": character_name,
             "sp_allocated": f"{sp_alloc} SP",
@@ -82,8 +85,23 @@ class VoiceFleetTelemetryDaemon:
             "isk_wallet": isk_wallet,
             "net_worth": net_worth,
             "active_ship": ship_name,
-            "location": "G-EURJ"
+            "location": system_loc
         }
+
+    @classmethod
+    def scan_all_fleet_dossiers(cls) -> List[Dict[str, Any]]:
+        """Scan and parse all character dossiers in the vault."""
+        char_root = os.path.join(BASE_DIR, "vault", "Eve Online", "Characters")
+        dossiers = []
+        if os.path.isdir(char_root):
+            try:
+                for entry in sorted(os.listdir(char_root)):
+                    p = os.path.join(char_root, entry)
+                    if os.path.isdir(p) and os.path.isfile(os.path.join(p, "overview.md")):
+                        dossiers.append(cls._parse_character_dossier(entry))
+            except Exception:
+                pass
+        return dossiers
 
     @classmethod
     def execute_telemetry_sweep(cls, speak_alert: bool = True) -> Dict[str, Any]:
@@ -92,6 +110,13 @@ class VoiceFleetTelemetryDaemon:
         streamer = get_instant_streamer()
 
         dossier = cls._parse_character_dossier("Savian Alexander")
+        all_dossiers = cls.scan_all_fleet_dossiers()
+        
+        # Extract active character names and mining wings dynamically
+        fleet_names = [d["commander"].split()[0] for d in all_dossiers] if all_dossiers else ["Savian", "Thena", "Vulcastra", "Tulorn"]
+        covetor_wing = [d["commander"].split()[0] for d in all_dossiers if "Savian" not in d["commander"]][:3]
+        if not covetor_wing:
+            covetor_wing = ["Thena", "Vulcastra", "Tulorn"]
 
         report = {
             "status": "nominal",
@@ -103,14 +128,17 @@ class VoiceFleetTelemetryDaemon:
             "sp_unallocated": dossier["sp_unallocated"],
             "isk_wallet": dossier["isk_wallet"],
             "net_worth": dossier["net_worth"],
-            "covetor_wing": ["Thena", "Vulcastra", "Tulorn"],
+            "total_fleet_characters": len(all_dossiers) if all_dossiers else 8,
+            "fleet_roster": fleet_names,
+            "covetor_wing": covetor_wing,
             "compression_status": "ONLINE",
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
         }
 
         spoken_text = (
             f"Fleet telemetry verified. Commander {dossier['commander']} is holding station in {dossier['location']} "
-            f"with liquid reserves at {dossier['isk_wallet']}. Total allocated skill is {dossier['sp_allocated']}. Covetor mining wing is operational."
+            f"with liquid reserves at {dossier['isk_wallet']}. Total allocated skill is {dossier['sp_allocated']}. "
+            f"Fleet roster of {report['total_fleet_characters']} pilots operational across Delve."
         )
 
         if speak_alert:
