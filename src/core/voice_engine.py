@@ -123,8 +123,22 @@ class NonInterruptingAudioQueue:
         audio_bytes = item.get("audio_bytes")
         audio_file = item.get("audio_file")
 
-        if sys.platform == "win32":
-            played = False
+        played = False
+
+        # Tier 1: Modern WASAPI/DirectSound via sounddevice (routes to active USB/Headset)
+        if audio_bytes:
+            try:
+                import sounddevice as sd
+                import soundfile as sf
+                data, fs = sf.read(io.BytesIO(audio_bytes))
+                sd.play(data, fs)
+                sd.wait()
+                played = True
+            except Exception:
+                played = False
+
+        # Tier 2: Win32 MME winsound fallback
+        if not played and sys.platform == "win32":
             try:
                 import winsound
                 if audio_bytes:
@@ -136,13 +150,13 @@ class NonInterruptingAudioQueue:
             except Exception:
                 played = False
 
-            if not played and audio_file and os.path.exists(audio_file):
-                try:
-                    ps_cmd = f"(New-Object System.Media.SoundPlayer '{audio_file}').PlaySync()"
-                    subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
-                except Exception:
-                    pass
-
+        # Tier 3: PowerShell SoundPlayer fallback
+        if not played and audio_file and os.path.exists(audio_file):
+            try:
+                ps_cmd = f"(New-Object System.Media.SoundPlayer '{audio_file}').PlaySync()"
+                subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+            except Exception:
+                pass
 
         item["playback_completed_at"] = time.time()
         self.dispatched_history.append(item)
