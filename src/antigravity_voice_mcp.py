@@ -429,6 +429,20 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_voice_rag_query",
+        "description": "Execute a SOTA Knowledge Vault RAG search and speak the factual answer directly into the user's headset.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Knowledge search query to retrieve and speak."},
+                "persona": {"type": "string", "description": "Spoken voice persona (e.g. AURA_SHIP_AI, SOVEREIGN_ORACLE, FLEET_COMMANDER)."},
+                "dsp_preset": {"type": "string", "description": "Acoustic DSP mastering preset."},
+                "max_sentences": {"type": "integer", "description": "Maximum sentences to synthesize for spoken summary."}
+            },
+            "required": ["query"]
+        }
+    },
+    {
         "name": "antigravity_get_status",
         "description": "Retrieve active neural voice engine status, available personas, memory footprint, and audio history.",
         "inputSchema": {
@@ -722,6 +736,20 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         if "default_dsp" in args:
             VOICE_CONFIG["default_dsp"] = args["default_dsp"]
         return {"status": "updated", "config": VOICE_CONFIG}
+
+    elif name == "antigravity_voice_rag_query":
+        from src.core.voice_rag_bridge import VoiceRAGBridge
+        query = args.get("query", "")
+        persona = args.get("persona") or VOICE_CONFIG["default_persona"]
+        dsp = args.get("dsp_preset") or VOICE_CONFIG["default_dsp"]
+        max_sentences = int(args.get("max_sentences", 2))
+        return VoiceRAGBridge.query_rag_and_speak(
+            query=query,
+            persona=persona,
+            dsp_preset=dsp,
+            sync=True,
+            max_sentences=max_sentences
+        )
 
     elif name == "antigravity_get_status":
         copilot = VoiceBridge.get_copilot()

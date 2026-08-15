@@ -321,7 +321,7 @@ Sent from my iPhone
             "antigravity_verify_audit_hashchain", "antigravity_parse_voice_command",
             "antigravity_get_audio_telemetry", "antigravity_broadcast_fleet_alert",
             "antigravity_instant_speak", "antigravity_prewarm_voice_engine",
-            "antigravity_get_instant_streamer_stats",
+            "antigravity_get_instant_streamer_stats", "antigravity_voice_rag_query",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]
@@ -354,6 +354,15 @@ Sent from my iPhone
 
         stats_res = handle_tool_call("antigravity_get_instant_streamer_stats", {})
         self.assertEqual(stats_res["status"], "ok")
+
+    def test_voice_rag_bridge_retrieval(self):
+        """Test direct Voice-RAG knowledge retrieval and speech summarization."""
+        from src.core.voice_rag_bridge import VoiceRAGBridge
+        res = VoiceRAGBridge.query_and_summarize("Council of Stellar Management", max_sentences=2)
+        self.assertIn("query", res)
+        self.assertIn("speech_text", res)
+        self.assertIn("retrieval_ms", res)
+        self.assertTrue(len(res["speech_text"]) > 10)
 
     def test_instant_audio_streamer_and_client(self):
         """Test persistent WASAPI stream, RAM cache hit latency (<1ms), and pre-warming."""

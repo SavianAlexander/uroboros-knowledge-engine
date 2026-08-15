@@ -93,10 +93,11 @@ def execute_sota_rag_search(query: str, top_k: int = 5) -> Dict[str, Any]:
             if not clean_sq:
                 continue
             try:
+                tokens = [w for w in clean_sq.split() if len(w) > 2]
+                fts_expr = " OR ".join([f'"{t}"*' for t in tokens]) if tokens else f'"{clean_sq}"*'
                 cursor.execute(
-                    "SELECT f.id, f.filename, f.filepath, f.content FROM files f "
-                    "JOIN files_fts fts ON f.id = fts.rowid WHERE files_fts MATCH ? LIMIT 10",
-                    (f"{clean_sq}*",)
+                    "SELECT rowid as id, filename, filepath, content FROM fts_files WHERE fts_files MATCH ? LIMIT 10",
+                    (fts_expr,)
                 )
                 rows = cursor.fetchall()
                 for rank_idx, r in enumerate(rows):
