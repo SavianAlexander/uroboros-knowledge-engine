@@ -44,6 +44,8 @@ from src.core.voice_call_intercom import VoiceCallIntercomEngine
 from src.core.voice_vad_interrupter import VoiceActivityInterrupter
 from src.core.voice_code_narrator import CodeSyntaxNarrator
 from src.core.voice_document_reader import DocumentVoiceReader
+from src.core.voice_studio_showcase import VoiceStudioShowcase
+from src.core.voice_dsp import VoiceDSP
 
 
 # Global Voice Configuration State
@@ -309,6 +311,32 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_showcase_personas",
+        "description": "Audition and explore all neural voice personas with their custom acoustic DSP presets or retrieve studio catalog.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "persona": {"type": "string", "description": "Specific persona key to audition (e.g. 'AURA_SHIP_AI', 'SOVEREIGN_ORACLE', 'FLEET_COMMANDER')."},
+                "custom_text": {"type": "string", "description": "Custom audition phrase."},
+                "dsp_preset": {"type": "string", "description": "DSP acoustic preset override."},
+                "speak": {"type": "boolean", "description": "If true, synthesizes and plays audio in-memory immediately.", "default": True}
+            }
+        }
+    },
+    {
+        "name": "antigravity_apply_studio_master",
+        "description": "Speak text processed through the Sovereign Awe high-fidelity studio mastering rack.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "Text to master and speak."},
+                "preset": {"type": "string", "description": "Acoustic preset ('SOVEREIGN_PRESENCE', 'AWE_STUDIO_MASTER', 'COMMANDER_TACTICAL', 'TRANSCENDENTAL_AURA').", "default": "SOVEREIGN_PRESENCE"},
+                "persona": {"type": "string", "description": "Persona identifier.", "default": "SOVEREIGN_ORACLE"}
+            },
+            "required": ["text"]
+        }
+    },
+    {
         "name": "antigravity_configure_voice",
         "description": "Configure global default voice settings for Antigravity assistant.",
         "inputSchema": {
@@ -531,6 +559,34 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             )
             cleaned["voice_dispatch"] = voice_res
         return cleaned
+
+    elif name == "antigravity_showcase_personas":
+        persona = args.get("persona")
+        if persona:
+            custom_text = args.get("custom_text")
+            dsp_override = args.get("dsp_preset")
+            speak_now = args.get("speak", True)
+            return VoiceStudioShowcase.audition_persona(
+                persona_key=persona,
+                custom_text=custom_text,
+                dsp_override=dsp_override,
+                speak_now=speak_now
+            )
+        else:
+            return VoiceStudioShowcase.get_studio_catalog()
+
+    elif name == "antigravity_apply_studio_master":
+        text = args.get("text", "")
+        preset = args.get("preset", "SOVEREIGN_PRESENCE")
+        persona = args.get("persona", "SOVEREIGN_ORACLE")
+        voice = KOKORO_PERSONAS.get(persona, "af_sky")
+        return VoiceBridge.speak(
+            text=text,
+            domain="STUDIO_SHOWCASE",
+            priority="HIGH",
+            voice=voice,
+            dsp_preset=preset
+        )
 
     elif name == "antigravity_configure_voice":
         if "default_persona" in args:

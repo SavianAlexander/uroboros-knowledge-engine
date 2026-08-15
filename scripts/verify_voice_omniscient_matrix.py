@@ -30,8 +30,37 @@ from src.antigravity_voice_mcp import handle_tool_call, TOOLS_SCHEMA
 from scripts.verify_zero_assumptions import run_zero_assumption_audit
 
 
+from src.core.voice_studio_showcase import VoiceStudioShowcase
+from src.core.voice_dsp import VoiceDSP
+
+
 class TestVoiceOmniscientMatrix(unittest.TestCase):
     """Complete system test suite for Uroboros Neural Voice & Audio Matrix."""
+
+    def test_voice_studio_and_awe_dsp_presets(self):
+        """Test Sovereign Awe DSP mastering presets and studio showcase catalog."""
+        catalog = VoiceStudioShowcase.get_studio_catalog()
+        self.assertIn("personas", catalog)
+        self.assertIn("dsp_presets", catalog)
+        self.assertIn("SOVEREIGN_PRESENCE", catalog["dsp_presets"])
+        self.assertIn("TRANSCENDENTAL_AURA", catalog["dsp_presets"])
+
+        # Test audition dry-run
+        audition = VoiceStudioShowcase.audition_persona("SOVEREIGN_ORACLE", speak_now=False)
+        self.assertEqual(audition["status"], "auditioned")
+        self.assertEqual(audition["persona"], "SOVEREIGN_ORACLE")
+        self.assertEqual(audition["dsp_preset"], "SOVEREIGN_PRESENCE")
+
+        # Test DSP filtering
+        try:
+            import numpy as np
+            samples = np.random.uniform(-0.5, 0.5, 4800).astype(np.float32)
+            for preset in ["SOVEREIGN_PRESENCE", "AWE_STUDIO_MASTER", "COMMANDER_TACTICAL", "TRANSCENDENTAL_AURA"]:
+                filtered = VoiceDSP.apply_dsp_preset(samples, preset=preset, fs=24000)
+                self.assertEqual(len(filtered), len(samples))
+                self.assertLessEqual(np.max(np.abs(filtered)), 1.0)
+        except ImportError:
+            pass
 
     def test_code_syntax_narrator(self):
         """Test translation of code syntax, SQL, and CLI into executive spoken narrative."""
@@ -188,8 +217,8 @@ Sent from my iPhone
         self.assertEqual(cut["status"], "barge_in_executed")
         self.assertLess(cut["interruption_latency_ms"], 50.0)
 
-    def test_all_19_antigravity_mcp_tools(self):
-        """Test all 19 tools in the dedicated Antigravity Voice MCP server."""
+    def test_all_21_antigravity_mcp_tools(self):
+        """Test all 21 tools in the dedicated Antigravity Voice MCP server."""
         expected_tools = [
             "antigravity_speak", "antigravity_announce_task", "antigravity_voice_brief",
             "antigravity_play_sfx", "antigravity_blend_persona", "antigravity_listen",
@@ -198,6 +227,7 @@ Sent from my iPhone
             "antigravity_start_call", "antigravity_call_respond", "antigravity_barge_in_cut",
             "antigravity_end_call", "antigravity_get_call_status",
             "antigravity_read_code", "antigravity_read_email",
+            "antigravity_showcase_personas", "antigravity_apply_studio_master",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]

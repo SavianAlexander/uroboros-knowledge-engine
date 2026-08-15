@@ -507,16 +507,47 @@ class VoiceNormalizer:
         text = re.sub(r"\s*\.\s*\.\s*", ". ", text)
         text = re.sub(r",\s*\.", ".", text)
         text = re.sub(r"\.\s*,", ".", text)
-        # Clean up repeated spaces
         text = re.sub(r"\s+", " ", text).strip()
-        # Ensure trailing period
         if text and text[-1] not in ".!?":
             text += "."
+        return text
+
+    @classmethod
+    def shape_gravitas_intent_cadence(cls, text: str) -> str:
+
+        """
+        Gravitas & Intent Prosody Shaper (Kratos / Master Chief / Sovereign Authority):
+        - Strips frivolous filler words ('basically', 'you know', 'sort of', 'kind of').
+        - Injects deliberate reflective micro-pauses at consequential transition boundaries.
+        - Structures sentence conclusions with downward pitch drop.
+        """
+        if not text:
+            return ""
+
+        # 1. Remove dilution fillers
+        fillers = [
+            r"\bbasically\b", r"\byou know\b", r"\bsort of\b", r"\bkind of\b",
+            r"\bliterally\b", r"\bto be honest\b", r"\bhonestly\b"
+        ]
+        for f in fillers:
+            text = re.sub(f, "", text, flags=re.IGNORECASE)
+
+        # 2. Add reflective cadence to strong introductory markers
+        markers = [
+            (r"\b(Listen|Remember|Understand|In truth|In fact|However|Therefore|Indeed|Conclusively)\s*,\s*", r"\1... "),
+            (r"\b(The reality is|The fact remains|Mark my words|Make no mistake)\s*,\s*", r"\1— "),
+        ]
+        for pat, repl in markers:
+            text = re.sub(pat, repl, text, flags=re.IGNORECASE)
+
+        # 3. Clean spacing and punctuation
+        text = re.sub(r"\s+", " ", text).strip()
         return text
 
     # ------------------------------------------------------------------
     # 6. Master Synthesis Pipeline
     # ------------------------------------------------------------------
+
     @classmethod
     def normalize_for_speech(cls, text: str, mode: str = "AUTO") -> str:
         """

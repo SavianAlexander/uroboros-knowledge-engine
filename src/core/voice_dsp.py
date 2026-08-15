@@ -110,14 +110,46 @@ class VoiceDSP:
         out = samples.copy()
         preset_upper = preset.upper()
 
-        if preset_upper == "COCKPIT_ACOUSTIC" or preset_upper == "AURA_COCKPIT":
-            # 80Hz Highpass + 3.2kHz Peaking Air Boost + 10kHz High Shelf
+        if preset_upper in ("SOVEREIGN_PRESENCE", "SOVEREIGN_AWE"):
+            # 100Hz Low-End Warmth + 3.8kHz Crystal Vocal Presence + 11.5kHz Harmonic Air
+            b_hp, a_hp = biquad_highpass(70.0, q=0.707, fs=fs)
+            out = apply_iir_filter(out, b_hp, a_hp)
+            b_warm, a_warm = biquad_peaking(180.0, gain_db=2.5, q=1.0, fs=fs)
+            out = apply_iir_filter(out, b_warm, a_warm)
+            b_pres, a_pres = biquad_peaking(3800.0, gain_db=4.2, q=1.3, fs=fs)
+            out = apply_iir_filter(out, b_pres, a_pres)
+
+        elif preset_upper in ("AWE_STUDIO_MASTER", "STUDIO_MASTER"):
+            # Broad Studio Air + Gentle Warmth Compression
+            b_hp, a_hp = biquad_highpass(60.0, q=0.707, fs=fs)
+            out = apply_iir_filter(out, b_hp, a_hp)
+            b_air, a_air = biquad_peaking(4500.0, gain_db=3.0, q=0.9, fs=fs)
+            out = apply_iir_filter(out, b_air, a_air)
+
+        elif preset_upper in ("COMMANDER_TACTICAL", "FLEET_COMMAND"):
+            # 2.8kHz Midrange Vocal Punch with tight 120Hz bass roll-off
+            b_hp, a_hp = biquad_highpass(120.0, q=0.8, fs=fs)
+            out = apply_iir_filter(out, b_hp, a_hp)
+            b_punch, a_punch = biquad_peaking(2800.0, gain_db=5.0, q=1.4, fs=fs)
+            out = apply_iir_filter(out, b_punch, a_punch)
+
+        elif preset_upper in ("TRANSCENDENTAL_AURA", "HOLOGRAPHIC_AURA"):
+            # Aura Shimmer: 85Hz Lowpass clean + 3.4kHz Presence + 8.5kHz Harmonic Lift
+            b_hp, a_hp = biquad_highpass(85.0, q=0.707, fs=fs)
+            out = apply_iir_filter(out, b_hp, a_hp)
+            b_shimmer, a_shimmer = biquad_peaking(3400.0, gain_db=3.8, q=1.1, fs=fs)
+            out = apply_iir_filter(out, b_shimmer, a_shimmer)
+            b_air, a_air = biquad_peaking(8500.0, gain_db=2.8, q=1.0, fs=fs)
+            out = apply_iir_filter(out, b_air, a_air)
+
+        elif preset_upper in ("COCKPIT_ACOUSTIC", "AURA_COCKPIT"):
+            # 80Hz Highpass + 3.2kHz Peaking Air Boost
             b_hp, a_hp = biquad_highpass(80.0, q=0.707, fs=fs)
             out = apply_iir_filter(out, b_hp, a_hp)
             b_pk, a_pk = biquad_peaking(3200.0, gain_db=3.5, q=1.2, fs=fs)
             out = apply_iir_filter(out, b_pk, a_pk)
 
-        elif preset_upper == "RADIO_BANDPASS_300_3400HZ" or preset_upper == "TACTICAL_RADIO":
+        elif preset_upper in ("RADIO_BANDPASS_300_3400HZ", "TACTICAL_RADIO"):
             # Military 300Hz-3400Hz Bandpass + 2.4kHz Presence Peaking
             b_hp, a_hp = biquad_highpass(300.0, q=0.8, fs=fs)
             out = apply_iir_filter(out, b_hp, a_hp)
@@ -135,6 +167,20 @@ class VoiceDSP:
 
         # Apply final True-Peak Soft-Tanh Limiter
         return cls.master_audio_buffer(out, target_dbfs=-1.0)
+
+    @classmethod
+    def get_available_presets(cls) -> Dict[str, str]:
+        """List all available high-fidelity DSP acoustic mastering presets."""
+        return {
+            "STUDIO_DIRECT": "Bit-accurate direct linear output with True-Peak -1.0 dBFS limiter.",
+            "SOVEREIGN_PRESENCE": "Deep chest warmth (180Hz) + crystal presence (3.8kHz) for commanding executive authority.",
+            "AWE_STUDIO_MASTER": "Polished high-end sheen (4.5kHz) and transparent dynamic range for broadcast narratives.",
+            "COMMANDER_TACTICAL": "Aggressive vocal punch (2.8kHz) with tight low-cut (120Hz) for fleet combat and alert clarity.",
+            "TRANSCENDENTAL_AURA": "Ethereal high-frequency shimmer (3.4kHz & 8.5kHz) for holographic shipboard AI persona.",
+            "COCKPIT_ACOUSTIC": "Classic ship cockpit acoustic resonance with air presence boost.",
+            "RADIO_BANDPASS_300_3400HZ": "NASA Apollo / Military 300Hz-3400Hz frequency bandpass comms filter.",
+            "LONG_RANGE_SQUELCH": "Narrow 500Hz-2800Hz long-range deep space radio intercom filter."
+        }
 
     @classmethod
     def master_audio_buffer(

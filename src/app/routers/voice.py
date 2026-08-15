@@ -94,42 +94,139 @@ def clear_voice_cache_endpoint():
 
 
 
+class CustomPersonaRequest(BaseModel):
+    name: str
+    weights: Dict[str, float]
+    dsp_preset: Optional[str] = "SOVEREIGN_AWE"
+    description: Optional[str] = ""
+
+
+class VoicePreviewRequest(BaseModel):
+    text: Optional[str] = "Command recognized. Power and intent online."
+    voice: Optional[str] = None
+    weights: Optional[Dict[str, float]] = None
+    dsp_preset: Optional[str] = "SOVEREIGN_AWE"
+    speed: Optional[float] = 0.92
+
+
 @router.get("/v1/audio/voices")
 @router.get("/api/voice/personas")
 def list_voices_endpoint():
     """List available signature voice personas and DSP mastering presets."""
     try:
-        from src.core.voice_persona_blend import SIGNATURE_PERSONA_BLENDS
+        from src.core.voice_persona_blend import VoicePersonaBlender, SIGNATURE_PERSONA_BLENDS
+        all_blends = VoicePersonaBlender.get_preset_blends()
     except Exception:
-        SIGNATURE_PERSONA_BLENDS = {}
+        all_blends = {}
 
     dsp_presets = [
-        {"id": "STUDIO_MASTER", "name": "Studio Master (Cortana Broadcast)", "description": "4-Band Mastering EQ, Studio Compressor, De-Esser & Subtle Holographic Presence"},
-        {"id": "HOLOGRAPHIC_AI", "name": "Holographic AI (3D Spatial)", "description": "Air Presence EQ with Haas 3D Spatial Stereo Widener"},
-        {"id": "AURA_COCKPIT", "name": "Aura Cockpit (Starship Bridge)", "description": "Naval AI Crystalline Voice with Multi-Tap Bridge Reverb"},
-        {"id": "TACTICAL_RADIO", "name": "Tactical Radio (Military Comms)", "description": "VHF Bandpass Filter with Tactical Start Chirp and End Squelch Burst"},
-        {"id": "STUDIO_DIRECT", "name": "Studio Direct (Raw Neural)", "description": "Uncolored Direct Neural PCM Audio"}
+        {"id": "SOVEREIGN_AWE", "name": "Sovereign Awe (Sub-Harmonic Chest & Tube Warmth)", "description": "Visceral chest thump, magnetic tube saturation, dynamic limiter & 3D spatial air."},
+        {"id": "STOIC_GRAVITAS", "name": "Stoic Gravitas (Kratos / Master Chief)", "description": "Maximum sub-bass chest resonance, analog tube drive & intimate proximity leveler."},
+        {"id": "MAGNETIC_INTIMATE", "name": "Magnetic Intimate (Velvet Warmth)", "description": "Velvet mid-range tube saturation, vocal presence & Haas 3D stereo widener."},
+        {"id": "STUDIO_MASTER", "name": "Studio Master (Cortana Broadcast)", "description": "4-Band Mastering EQ, Studio Compressor, De-Esser & Subtle Holographic Presence."},
+        {"id": "HOLOGRAPHIC_AI", "name": "Holographic AI (3D Spatial)", "description": "Air Presence EQ with Haas 3D Spatial Stereo Widener."},
+        {"id": "AURA_COCKPIT", "name": "Aura Cockpit (Starship Bridge)", "description": "Naval AI Crystalline Voice with Multi-Tap Bridge Reverb."},
+        {"id": "TACTICAL_RADIO", "name": "Tactical Radio (Military Comms)", "description": "VHF Bandpass Filter with Tactical Start Chirp and End Squelch Burst."},
+        {"id": "STUDIO_DIRECT", "name": "Studio Direct (Raw Neural)", "description": "Uncolored Direct Neural PCM Audio."}
     ]
 
     personas = [
-        {"id": "CORTANA_PRIME", "name": "Cortana Prime (Halo AI)", "category": "Signature", "description": "Articulate, crystalline, warm Cortana AI persona"},
-        {"id": "AURA_SHIP_AI", "name": "Aura Ship AI (British Naval)", "category": "Signature", "description": "Authoritative crystalline starship bridge AI"},
-        {"id": "EXECUTIVE_ADVISOR", "name": "Executive Advisor (Warm Productivity)", "category": "Signature", "description": "Engaging, natural executive briefing tone"},
-        {"id": "TACTICAL_OFFICER", "name": "Tactical Officer (Command)", "category": "Signature", "description": "Deep, resonant tactical commanding officer"},
-        {"id": "af_sky", "name": "Kokoro Sky (Clear US Female)", "category": "Base", "description": "Base Kokoro clear American female"},
-        {"id": "af_bella", "name": "Kokoro Bella (Warm US Female)", "category": "Base", "description": "Base Kokoro warm American female"},
-        {"id": "bf_emma", "name": "Kokoro Emma (British Female)", "category": "Base", "description": "Base Kokoro British female"}
+        # Sovereign Legendary Tier
+        {"id": "ALEXANDER_SOVEREIGN", "name": "Alexander Sovereign (The Commanding Imperator)", "category": "Sovereign", "description": "Deep baritone, sub-harmonic chest power & magnetic authority."},
+        {"id": "FREYA_VALKYRIE", "name": "Freya Valkyrie (The Resolute Commander)", "category": "Sovereign", "description": "Powerful, impassioned, crystalline noble authority & grace."},
+        {"id": "AURELIUS_STOIC", "name": "Aurelius Stoic (The Philosopher Emperor)", "category": "Sovereign", "description": "Visceral sub-bass thump, deliberate pauses & unshakable wisdom (Kratos grade)."},
+        {"id": "NOCTURNA_SOLON", "name": "Nocturna Solon (The Shadow Strategist)", "category": "Sovereign", "description": "Textured, weathered operative authority & magnetic gravitas (Big Boss aura)."},
+        
+        # Classic AI & Signature Tier
+        {"id": "CORTANA_PRIME", "name": "Cortana Prime (Halo AI)", "category": "Signature", "description": "Articulate, crystalline, warm Cortana AI persona."},
+        {"id": "AURA_SHIP_AI", "name": "Aura Ship AI (British Naval)", "category": "Signature", "description": "Authoritative crystalline starship bridge AI."},
+        {"id": "EXECUTIVE_ADVISOR", "name": "Executive Advisor (Warm Productivity)", "category": "Signature", "description": "Engaging, natural executive briefing tone."},
+        {"id": "TACTICAL_OFFICER", "name": "Tactical Officer (Command)", "category": "Signature", "description": "Deep, resonant tactical commanding officer."},
+        
+        # Base Kokoro Embeddings
+        {"id": "am_adam", "name": "Kokoro Adam (Deep US Male)", "category": "Base", "description": "Deep resonant American male baritone."},
+        {"id": "bm_george", "name": "Kokoro George (Commanding UK Male)", "category": "Base", "description": "Commanding authoritative British male."},
+        {"id": "bf_emma", "name": "Kokoro Emma (Crystalline UK Female)", "category": "Base", "description": "Crystalline, articulate British female."},
+        {"id": "af_sky", "name": "Kokoro Sky (Clear US Female)", "category": "Base", "description": "Clear, bright American female."},
+        {"id": "af_bella", "name": "Kokoro Bella (Warm US Female)", "category": "Base", "description": "Warm, velvety American female."}
     ]
 
     return {
         "status": "success",
-        "default_voice": "CORTANA_PRIME",
-        "default_dsp": "STUDIO_MASTER",
+        "default_voice": "ALEXANDER_SOVEREIGN",
+        "default_dsp": "SOVEREIGN_AWE",
         "personas": personas,
-        "signature_blends": SIGNATURE_PERSONA_BLENDS,
+        "signature_blends": all_blends,
         "dsp_presets": dsp_presets,
         "domain_profiles": DOMAIN_PROFILES
     }
+
+
+# ----------------------------------------------------------------------
+# 2. Custom Persona CRUD & Preview
+# ----------------------------------------------------------------------
+@router.get("/api/voice/custom-personas")
+def list_custom_personas():
+    """List all saved custom user personas."""
+    try:
+        from src.core.voice_persona_blend import VoicePersonaBlender
+        custom = VoicePersonaBlender.load_custom_personas()
+        return {"status": "success", "personas": custom}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/voice/custom-personas")
+def save_custom_persona_endpoint(req: CustomPersonaRequest):
+    """Save a user-created custom sovereign persona."""
+    try:
+        from src.core.voice_persona_blend import VoicePersonaBlender
+        res = VoicePersonaBlender.save_custom_persona(
+            name=req.name,
+            weights=req.weights,
+            dsp_preset=req.dsp_preset or "SOVEREIGN_AWE",
+            description=req.description or ""
+        )
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/api/voice/custom-personas/{persona_id}")
+def delete_custom_persona_endpoint(persona_id: str):
+    """Delete a custom persona."""
+    try:
+        from src.core.voice_persona_blend import VoicePersonaBlender
+        deleted = VoicePersonaBlender.delete_custom_persona(persona_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Persona not found.")
+        return {"status": "success", "message": f"Persona '{persona_id}' deleted."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/voice/preview")
+def preview_voice_endpoint(req: VoicePreviewRequest):
+    """Instant low-latency audio preview for any custom blend or preset."""
+    try:
+        target_voice = req.weights if req.weights else (req.voice or "ALEXANDER_SOVEREIGN")
+        audio_bytes = VoiceBridge.synthesize_bytes(
+            text=req.text or "Command recognized. Power and intent online.",
+            voice=target_voice,
+            speed=req.speed or 0.92,
+            response_format="wav",
+            dsp_preset=req.dsp_preset or "SOVEREIGN_AWE"
+        )
+        if not audio_bytes:
+            raise HTTPException(status_code=500, detail="Preview synthesis failed.")
+        return Response(content=audio_bytes, media_type="audio/wav")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 

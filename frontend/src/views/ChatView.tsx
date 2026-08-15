@@ -75,12 +75,25 @@ export default function ChatView() {
 
   // Audio & Interactive State
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
-  const [voicePersona, setVoicePersona] = useState<string>(() => localStorage.getItem('neuro_voice_persona') || 'CORTANA_PRIME');
-  const [dspPreset, setDspPreset] = useState<string>(() => localStorage.getItem('neuro_voice_dsp') || 'STUDIO_MASTER');
-  const [voiceSpeed, setVoiceSpeed] = useState<number>(() => parseFloat(localStorage.getItem('neuro_voice_speed') || '1.0'));
+  const [voicePersona, setVoicePersona] = useState<string>(() => localStorage.getItem('neuro_voice_persona') || 'ALEXANDER_SOVEREIGN');
+  const [dspPreset, setDspPreset] = useState<string>(() => localStorage.getItem('neuro_voice_dsp') || 'SOVEREIGN_AWE');
+  const [voiceSpeed, setVoiceSpeed] = useState<number>(() => parseFloat(localStorage.getItem('neuro_voice_speed') || '0.92'));
   const [showVoiceStudio, setShowVoiceStudio] = useState<boolean>(false);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
+  // Custom Sovereign Voice Studio State
+  const [customPersonas, setCustomPersonas] = useState<Record<string, any>>({});
+  const [showCustomBuilder, setShowCustomBuilder] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customAdam, setCustomAdam] = useState(0.70);
+  const [customGeorge, setCustomGeorge] = useState(0.20);
+  const [customEmma, setCustomEmma] = useState(0.10);
+  const [customBella, setCustomBella] = useState(0.0);
+  const [customSarah, setCustomSarah] = useState(0.0);
+  const [customDsp, setCustomDsp] = useState('SOVEREIGN_AWE');
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+
 
   const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
   const [collapsedThoughts, setCollapsedThoughts] = useState<Record<string, boolean>>({});
@@ -244,12 +257,126 @@ export default function ChatView() {
     toast('Chat Cleared', 'Conversation history cleared', 'info');
   };
 
+  useEffect(() => {
+    fetch('/api/voice/custom-personas')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success' && data.personas) {
+          setCustomPersonas(data.personas);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handlePreviewCustomVoice = async () => {
+    setIsPreviewPlaying(true);
+    try {
+      const weights: Record<string, number> = {};
+      if (customAdam > 0) weights['am_adam'] = customAdam;
+      if (customGeorge > 0) weights['bm_george'] = customGeorge;
+      if (customEmma > 0) weights['bf_emma'] = customEmma;
+      if (customBella > 0) weights['af_bella'] = customBella;
+      if (customSarah > 0) weights['af_sarah'] = customSarah;
+
+      const res = await fetch('/api/voice/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: `I am ${customName.trim() || 'Sovereign'}. My voice carries intent and power.`,
+          weights: Object.keys(weights).length > 0 ? weights : { am_adam: 0.7, bm_george: 0.2, am_michael: 0.1 },
+          dsp_preset: customDsp,
+          speed: 0.92
+        })
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = () => {
+          setIsPreviewPlaying(false);
+          URL.revokeObjectURL(url);
+        };
+        audio.onerror = () => {
+          setIsPreviewPlaying(false);
+          URL.revokeObjectURL(url);
+        };
+        await audio.play();
+      } else {
+        setIsPreviewPlaying(false);
+      }
+    } catch {
+      setIsPreviewPlaying(false);
+      toast('Preview Failed', 'Could not synthesize voice preview', 'error');
+    }
+  };
+
+  const handleSaveCustomPersona = async () => {
+    if (!customName.trim()) {
+      toast('Name Required', 'Please enter a name for your sovereign persona', 'warning');
+      return;
+    }
+    const weights: Record<string, number> = {};
+    if (customAdam > 0) weights['am_adam'] = customAdam;
+    if (customGeorge > 0) weights['bm_george'] = customGeorge;
+    if (customEmma > 0) weights['bf_emma'] = customEmma;
+    if (customBella > 0) weights['af_bella'] = customBella;
+    if (customSarah > 0) weights['af_sarah'] = customSarah;
+
+    try {
+      const res = await fetch('/api/voice/custom-personas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: customName.trim(),
+          weights: Object.keys(weights).length > 0 ? weights : { am_adam: 0.7, bm_george: 0.2, am_michael: 0.1 },
+          dsp_preset: customDsp
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        const personaId = data.persona.id;
+        setCustomPersonas(prev => ({ ...prev, [personaId]: data.persona }));
+        setVoicePersona(personaId);
+        setDspPreset(customDsp);
+        localStorage.setItem('neuro_voice_persona', personaId);
+        localStorage.setItem('neuro_voice_dsp', customDsp);
+        setShowCustomBuilder(false);
+        setCustomName('');
+        toast('Sovereign Voice Created', `Voice '${data.persona.name}' saved and set active!`, 'success');
+      }
+    } catch {
+      toast('Save Failed', 'Could not save custom persona', 'error');
+    }
+  };
+
+  const handleDeleteCustomPersona = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/voice/custom-personas/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setCustomPersonas(prev => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        if (voicePersona === id) {
+          setVoicePersona('ALEXANDER_SOVEREIGN');
+          localStorage.setItem('neuro_voice_persona', 'ALEXANDER_SOVEREIGN');
+        }
+        toast('Persona Deleted', `Custom voice removed`, 'info');
+      }
+    } catch {
+      toast('Delete Failed', 'Could not delete custom persona', 'error');
+    }
+  };
+
   const copyMessageText = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedMsgId(id);
     toast('Copied Message', 'Text copied to clipboard', 'info');
     setTimeout(() => setCopiedMsgId(null), 2000);
   };
+
 
   const handleToggleSpeak = async (msgId: string, text: string) => {
     if (speakingMsgId === msgId) {
@@ -1065,72 +1192,289 @@ export default function ChatView() {
           </div>
         </div>
 
-        {/* Neural Voice Studio Toolbar */}
+        {/* Neural Voice Studio Toolbar & Sovereign Studio Drawer */}
         {showVoiceStudio && (
-          <div className="px-6 py-2.5 bg-slate-100/90 dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs">
-            <div className="flex items-center gap-3">
-              <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-purple-500" /> Neural Persona:
-              </span>
-              <select
-                value={voicePersona}
-                onChange={(e) => {
-                  setVoicePersona(e.target.value);
-                  localStorage.setItem('neuro_voice_persona', e.target.value);
-                }}
-                className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-slate-200 outline-none focus:border-purple-500"
+          <div className="bg-slate-900/95 border-b border-purple-500/20 text-xs shadow-xl backdrop-blur-md transition-all">
+            <div className="px-6 py-3 flex flex-wrap items-center justify-between gap-4 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <span className="font-semibold text-purple-400 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-purple-400" /> Neural Persona:
+                </span>
+                <select
+                  value={voicePersona}
+                  onChange={(e) => {
+                    setVoicePersona(e.target.value);
+                    localStorage.setItem('neuro_voice_persona', e.target.value);
+                  }}
+                  className="bg-slate-800 border border-purple-500/30 rounded-xl px-3 py-1.5 text-xs text-slate-100 outline-none focus:border-purple-400 font-medium cursor-pointer"
+                >
+                  <optgroup label="👑 Sovereign Legendary Tier (Awe & Gravitas)">
+                    <option value="ALEXANDER_SOVEREIGN">Alexander Sovereign (The Commanding Imperator)</option>
+                    <option value="FREYA_VALKYRIE">Freya Valkyrie (The Resolute Commander)</option>
+                    <option value="AURELIUS_STOIC">Aurelius Stoic (The Philosopher Emperor / Kratos Gravitas)</option>
+                    <option value="NOCTURNA_SOLON">Nocturna Solon (The Shadow Strategist / Big Boss Aura)</option>
+                  </optgroup>
+                  <optgroup label="🎙️ Classic AI & Signature Blends">
+                    <option value="CORTANA_PRIME">Cortana Prime (Halo AI Blend)</option>
+                    <option value="AURA_SHIP_AI">Aura Ship AI (British Naval Blend)</option>
+                    <option value="EXECUTIVE_ADVISOR">Executive Advisor (Warm Productivity)</option>
+                    <option value="TACTICAL_OFFICER">Tactical Officer (Command)</option>
+                  </optgroup>
+                  {Object.keys(customPersonas).length > 0 && (
+                    <optgroup label="👤 Personal Custom Voices">
+                      {Object.values(customPersonas).map((cp: any) => (
+                        <option key={cp.id} value={cp.id}>
+                          ⭐ {cp.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <optgroup label="🔊 Base Neural Voices">
+                    <option value="am_adam">Kokoro Adam (Deep US Male)</option>
+                    <option value="bm_george">Kokoro George (Commanding UK Male)</option>
+                    <option value="bf_emma">Kokoro Emma (Crystalline UK Female)</option>
+                    <option value="af_sky">Kokoro Sky (Clear US Female)</option>
+                    <option value="af_bella">Kokoro Bella (Warm US Female)</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="font-semibold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                  <Activity className="w-3.5 h-3.5 text-emerald-400" /> DSP Mastering:
+                </span>
+                <select
+                  value={dspPreset}
+                  onChange={(e) => {
+                    setDspPreset(e.target.value);
+                    localStorage.setItem('neuro_voice_dsp', e.target.value);
+                  }}
+                  className="bg-slate-800 border border-emerald-500/30 rounded-xl px-3 py-1.5 text-xs text-slate-100 outline-none focus:border-emerald-400 font-medium cursor-pointer"
+                >
+                  <option value="SOVEREIGN_AWE">Sovereign Awe (Sub-Harmonic Chest + Tube Warmth)</option>
+                  <option value="STOIC_GRAVITAS">Stoic Gravitas (Kratos / Master Chief Chest Thump)</option>
+                  <option value="MAGNETIC_INTIMATE">Magnetic Intimate (Velvet Tube Warmth)</option>
+                  <option value="STUDIO_MASTER">Studio Master (4-Band EQ + Compressor + De-Esser)</option>
+                  <option value="HOLOGRAPHIC_AI">Holographic AI (3D Haas Spatial Width)</option>
+                  <option value="AURA_COCKPIT">Aura Cockpit (Bridge Multi-Tap Reverb)</option>
+                  <option value="TACTICAL_RADIO">Tactical Radio (VHF Bandpass Filter)</option>
+                  <option value="STUDIO_DIRECT">Studio Direct (Uncolored)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 text-xs">Pacing:</span>
+                <input
+                  type="range"
+                  min="0.80"
+                  max="1.30"
+                  step="0.02"
+                  value={voiceSpeed}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setVoiceSpeed(val);
+                    localStorage.setItem('neuro_voice_speed', val.toString());
+                  }}
+                  className="w-20 accent-purple-500 cursor-pointer h-1.5"
+                />
+                <span className="font-mono text-purple-300 text-[11px] w-8">
+                  {voiceSpeed.toFixed(2)}x
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowCustomBuilder(!showCustomBuilder)}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  showCustomBuilder
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-xs'
+                    : 'bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
               >
-                <option value="CORTANA_PRIME">Cortana Prime (Halo AI Blend)</option>
-                <option value="AURA_SHIP_AI">Aura Ship AI (British Naval Blend)</option>
-                <option value="EXECUTIVE_ADVISOR">Executive Advisor (Warm Productivity)</option>
-                <option value="TACTICAL_OFFICER">Tactical Officer (Command)</option>
-                <option value="af_sky">Kokoro Sky (Clear US Female)</option>
-                <option value="af_bella">Kokoro Bella (Warm US Female)</option>
-                <option value="bf_emma">Kokoro Emma (British Female)</option>
-              </select>
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>{showCustomBuilder ? 'Close Voice Builder' : '+ Design Custom Voice'}</span>
+              </button>
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Activity className="w-3.5 h-3.5 text-emerald-500" /> DSP Mastering:
-              </span>
-              <select
-                value={dspPreset}
-                onChange={(e) => {
-                  setDspPreset(e.target.value);
-                  localStorage.setItem('neuro_voice_dsp', e.target.value);
-                }}
-                className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-slate-200 outline-none focus:border-emerald-500"
-              >
-                <option value="STUDIO_MASTER">Studio Master (4-Band EQ + Comp + De-Esser)</option>
-                <option value="HOLOGRAPHIC_AI">Holographic AI (3D Haas Spatial Width)</option>
-                <option value="AURA_COCKPIT">Aura Cockpit (Bridge Reverb)</option>
-                <option value="TACTICAL_RADIO">Tactical Radio (VHF Bandpass)</option>
-                <option value="STUDIO_DIRECT">Studio Direct (Uncolored)</option>
-              </select>
-            </div>
+            {/* Custom Sovereign Voice Designer Drawer */}
+            {showCustomBuilder && (
+              <div className="px-6 py-4 bg-slate-950/80 border-t border-purple-500/20 space-y-4 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                      Personal Sovereign Voice Creator
+                    </h4>
+                  </div>
+                  <span className="text-[11px] text-slate-400">
+                    Combine 512-D neural embeddings with sub-harmonic analog mastering
+                  </span>
+                </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-slate-500">Speed:</span>
-              <input
-                type="range"
-                min="0.8"
-                max="1.4"
-                step="0.05"
-                value={voiceSpeed}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  setVoiceSpeed(val);
-                  localStorage.setItem('neuro_voice_speed', val.toString());
-                }}
-                className="w-20 accent-purple-600 cursor-pointer h-1.5"
-              />
-              <span className="font-mono text-slate-600 dark:text-slate-400 text-[11px] w-8">
-                {voiceSpeed.toFixed(2)}x
-              </span>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                      Personal Persona Name:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Imperator Savian, Athena, Solon..."
+                      value={customName}
+                      onChange={(e) => setCustomName(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-300 mb-1">
+                      DSP Mastering Acoustic Rack:
+                    </label>
+                    <select
+                      value={customDsp}
+                      onChange={(e) => setCustomDsp(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-amber-400"
+                    >
+                      <option value="SOVEREIGN_AWE">Sovereign Awe (Sub-Harmonic Chest Drive)</option>
+                      <option value="STOIC_GRAVITAS">Stoic Gravitas (Kratos / Chief Presence)</option>
+                      <option value="MAGNETIC_INTIMATE">Magnetic Intimate (Velvet Warmth)</option>
+                      <option value="STUDIO_MASTER">Studio Master (Cortana Broadcast)</option>
+                    </select>
+                  </div>
+
+                  {/* Vocal Balance Sliders */}
+                  <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-900/60 p-3 rounded-xl border border-white/5">
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Adam (Baritone):</span>
+                        <span className="font-mono text-cyan-300">{(customAdam * 100).toFixed(0)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={customAdam}
+                        onChange={(e) => setCustomAdam(parseFloat(e.target.value))}
+                        className="w-full accent-cyan-500 h-1 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>George (Command):</span>
+                        <span className="font-mono text-cyan-300">{(customGeorge * 100).toFixed(0)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={customGeorge}
+                        onChange={(e) => setCustomGeorge(parseFloat(e.target.value))}
+                        className="w-full accent-cyan-500 h-1 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Emma (Crystalline):</span>
+                        <span className="font-mono text-purple-300">{(customEmma * 100).toFixed(0)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={customEmma}
+                        onChange={(e) => setCustomEmma(parseFloat(e.target.value))}
+                        className="w-full accent-purple-500 h-1 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Bella (Warmth):</span>
+                        <span className="font-mono text-purple-300">{(customBella * 100).toFixed(0)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={customBella}
+                        onChange={(e) => setCustomBella(parseFloat(e.target.value))}
+                        className="w-full accent-purple-500 h-1 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Sarah (Articulate):</span>
+                        <span className="font-mono text-purple-300">{(customSarah * 100).toFixed(0)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={customSarah}
+                        onChange={(e) => setCustomSarah(parseFloat(e.target.value))}
+                        className="w-full accent-purple-500 h-1 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handlePreviewCustomVoice}
+                      disabled={isPreviewPlaying}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                    >
+                      <Volume2 className={`w-4 h-4 ${isPreviewPlaying ? 'animate-pulse' : ''}`} />
+                      <span>{isPreviewPlaying ? 'Synthesizing...' : 'Test Voice Preview'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveCustomPersona}
+                      disabled={!customName.trim()}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm disabled:opacity-40"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>Save & Set Active</span>
+                    </button>
+                  </div>
+
+                  {/* Saved custom personas list */}
+                  {Object.keys(customPersonas).length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] text-slate-400">Saved:</span>
+                      {Object.values(customPersonas).map((cp: any) => (
+                        <span
+                          key={cp.id}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-[11px] border border-white/10"
+                        >
+                          <span>{cp.name}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteCustomPersona(cp.id, e)}
+                            className="text-slate-400 hover:text-rose-400 cursor-pointer"
+                            title="Delete custom voice"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
+
 
 
         {/* Message Bubble Feed */}

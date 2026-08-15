@@ -264,7 +264,64 @@ def apply_spatial_panning(samples: np.ndarray, pan: float = 0.0) -> np.ndarray:
 
 
 # ----------------------------------------------------------------------
-# 5. Master DSP Preset Orchestrator
+# 5. Sovereign Awe & Magnetic Gravitas Harmonic DSP
+# ----------------------------------------------------------------------
+def apply_subharmonic_chest_resonance(
+    samples: np.ndarray,
+    sample_rate: int = 24000,
+    sub_freq: float = 75.0,
+    blend: float = 0.22
+) -> np.ndarray:
+    """
+    Generates 2nd-order sub-harmonic chest resonance (50Hz - 110Hz).
+    Provides the physical, room-filling acoustic thump of Kratos / Master Chief.
+    """
+    if np is None or samples is None or len(samples) == 0:
+        return samples
+
+    # 1. Extract low frequencies (<160 Hz)
+    b_low, a_low = biquad_peaking(sub_freq, gain_db=6.0, q=1.2, fs=sample_rate)
+    low_band = apply_biquad(samples, b_low, a_low)
+
+    # 2. Generate sub-octave harmonic energy via non-linear full-wave phase folding
+    sub_harmonics = np.sign(low_band) * (low_band ** 2)
+
+    # 3. Steep low-pass filter to keep only sub-bass warmth (<120 Hz)
+    b_sub, a_sub = biquad_highshelf(120.0, gain_db=-18.0, q=0.707, fs=sample_rate)
+    filtered_sub = apply_biquad(sub_harmonics, b_sub, a_sub)
+
+    # 4. Blend sub-harmonics into original signal
+    out = samples + filtered_sub * blend
+    return out.astype(np.float32)
+
+
+def apply_magnetic_tube_saturation(
+    samples: np.ndarray,
+    drive: float = 1.35,
+    warmth: float = 0.18
+) -> np.ndarray:
+    """
+    Analog Vacuum Tube & Tape Saturation.
+    Uses polynomial wave-shaping and asymmetric 2nd-order harmonics for rich velvet vocal warmth.
+    """
+    if np is None or samples is None or len(samples) == 0:
+        return samples
+
+    x = samples * drive
+    # Asymmetric polynomial distortion: tanh(x) + warmth * x^2 for even-order tube harmonics
+    even_harmonics = warmth * (x * np.abs(x))
+    saturated = np.tanh(x) + even_harmonics
+
+    # Normalize ceiling to avoid clipping
+    max_val = np.max(np.abs(saturated))
+    if max_val > 0.95:
+        saturated = saturated * (0.95 / max_val)
+
+    return saturated.astype(np.float32)
+
+
+# ----------------------------------------------------------------------
+# 6. Master DSP Preset Orchestrator
 # ----------------------------------------------------------------------
 def process_tactical_dsp_pipeline(
     raw_samples: np.ndarray,
@@ -275,7 +332,10 @@ def process_tactical_dsp_pipeline(
     """
     Master Audio DSP Processing Pipeline.
     Presets:
-    - 'STUDIO_MASTER' / 'CORTANA_MASTER': Full 4-band mastering EQ + Studio compressor + De-esser + Holographic spatial presence.
+    - 'SOVEREIGN_AWE': Sub-harmonic chest drive + Magnetic tube warmth + 4-band mastering EQ + 3D spatial air.
+    - 'STOIC_GRAVITAS': Maximum sub-bass chest thump + Analog tube drive + Proximity compressor (Kratos / Master Chief).
+    - 'MAGNETIC_INTIMATE': Velvet tube saturation + De-esser + Vocal presence + Haas 3D stereo widener.
+    - 'STUDIO_MASTER' / 'CORTANA_MASTER': Full 4-band mastering EQ + Studio compressor + De-esser + Holographic presence.
     - 'HOLOGRAPHIC_AI': Air shelf EQ + Haas 3D stereo widener + subtle room acoustics.
     - 'AURA_COCKPIT': Crystalline voice + cockpit reverb reflections.
     - 'TACTICAL_RADIO': VHF bandpass filter + chirp + squelch.
@@ -286,14 +346,49 @@ def process_tactical_dsp_pipeline(
 
     p_upper = (preset or "STUDIO_MASTER").upper()
 
-    if p_upper in ("STUDIO_MASTER", "CORTANA_MASTER", "CORTANA_PRIME"):
+    if p_upper in ("SOVEREIGN_AWE", "ALEXANDER_SOVEREIGN", "FREYA_VALKYRIE", "SOVEREIGN"):
         # 1. 4-Band Mastering EQ
         eq = apply_parametric_mastering_eq(raw_samples, sample_rate)
-        # 2. De-Esser
+        # 2. Sub-harmonic chest resonance (physical thump)
+        chested = apply_subharmonic_chest_resonance(eq, sample_rate, sub_freq=75.0, blend=0.24)
+        # 3. Magnetic tube saturation (velvet warmth)
+        saturated = apply_magnetic_tube_saturation(chested, drive=1.35, warmth=0.20)
+        # 4. De-esser
+        deessed = apply_dynamic_deesser(saturated, sample_rate)
+        # 5. Studio compression & peak limiting
+        compressed = apply_studio_compression_limiting(deessed, sample_rate, threshold_db=-15.0, ratio=2.8, makeup_gain_db=2.2)
+        # 6. Holographic 3D spatial widener
+        mastered = apply_holographic_spatial_widener(compressed, sample_rate, wet=0.08)
+        return mastered, sample_rate
+
+    if p_upper in ("STOIC_GRAVITAS", "AURELIUS_STOIC", "NOCTURNA_SOLON", "KRATOS", "MASTER_CHIEF"):
+        # 1. Low-end heavy EQ
+        b_low, a_low = biquad_peaking(110.0, gain_db=3.5, q=1.0, fs=sample_rate)
+        eq = apply_biquad(raw_samples, b_low, a_low)
+        # 2. Deep sub-harmonic chest resonance
+        chested = apply_subharmonic_chest_resonance(eq, sample_rate, sub_freq=65.0, blend=0.32)
+        # 3. Heavy tube saturation
+        saturated = apply_magnetic_tube_saturation(chested, drive=1.45, warmth=0.25)
+        # 4. De-esser
+        deessed = apply_dynamic_deesser(saturated, sample_rate)
+        # 5. Heavy optical proximity compression
+        compressed = apply_studio_compression_limiting(deessed, sample_rate, threshold_db=-17.0, ratio=3.2, makeup_gain_db=2.5)
+        # 6. Subtle spatial width
+        mastered = apply_holographic_spatial_widener(compressed, sample_rate, wet=0.05)
+        return mastered, sample_rate
+
+    if p_upper in ("MAGNETIC_INTIMATE", "INTIMATE"):
+        eq = apply_parametric_mastering_eq(raw_samples, sample_rate)
+        saturated = apply_magnetic_tube_saturation(eq, drive=1.25, warmth=0.16)
+        deessed = apply_dynamic_deesser(saturated, sample_rate)
+        compressed = apply_studio_compression_limiting(deessed, sample_rate, threshold_db=-14.0, ratio=2.4)
+        mastered = apply_holographic_spatial_widener(compressed, sample_rate, wet=0.10)
+        return mastered, sample_rate
+
+    if p_upper in ("STUDIO_MASTER", "CORTANA_MASTER", "CORTANA_PRIME"):
+        eq = apply_parametric_mastering_eq(raw_samples, sample_rate)
         deessed = apply_dynamic_deesser(eq, sample_rate)
-        # 3. Dynamic Compression & Peak Limiting
         compressed = apply_studio_compression_limiting(deessed, sample_rate)
-        # 4. Holographic Spatial Widener
         mastered = apply_holographic_spatial_widener(compressed, sample_rate, wet=0.06)
         return mastered, sample_rate
 
@@ -319,4 +414,5 @@ def process_tactical_dsp_pipeline(
     if pan != 0.0:
         return apply_spatial_panning(raw_samples, pan), sample_rate
     return raw_samples, sample_rate
+
 

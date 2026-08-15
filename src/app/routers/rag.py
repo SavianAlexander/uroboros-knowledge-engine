@@ -13,30 +13,6 @@ from src.domain.chat_intelligence import estimate_tokens, truncate_context_windo
 
 logger = logging.getLogger(__name__)
 
-def _smart_extract_context(context: str, query: str, max_chars: int = 6000) -> str:
-    if len(context) <= max_chars:
-        return context
-    import re
-    keywords = set([kw for kw in re.findall(r'\w+', query.lower()) if len(kw) > 3])
-    if not keywords:
-        return context[:max_chars]
-    sentences = re.split(r'(?<=[.!?])\s+', context)
-    scored = []
-    for idx, s in enumerate(sentences):
-        s_lower = s.lower()
-        score = sum(1 for kw in keywords if kw in s_lower)
-        scored.append((score, idx, s))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    selected_indices = []
-    current_len = 0
-    for score, idx, s in scored:
-        if current_len + len(s) > max_chars:
-            continue
-        selected_indices.append(idx)
-        current_len += len(s)
-    selected_indices.sort()
-    selected_text = " ... ".join([sentences[i] for i in selected_indices])
-    return selected_text if selected_text else context[:max_chars]
 
 from src.core.domain.models import (
     RAGStreamRequest, ChatRequest, ChatResponse, ContemplateRequest, ContemplateResponse,

@@ -7,7 +7,9 @@ Ponytail Senior Dev Principle: Exact linear interpolation of 512-D Kokoro voice 
 import os
 import sys
 import math
+import time
 from typing import Dict, Any, List, Optional, Tuple
+
 
 try:
     import numpy as np
@@ -23,15 +25,25 @@ VOICES_JSON_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.json")
 
 # Signature Curated Vocal Timbre Persona Blends
 SIGNATURE_PERSONA_BLENDS: Dict[str, Dict[str, float]] = {
-    "CORTANA_PRIME": {"af_sky": 0.60, "af_bella": 0.25, "af_sarah": 0.15},       # Articulate, crystalline, warm Cortana AI
-    "AURA_SHIP_AI": {"bf_emma": 0.85, "bf_isabella": 0.15},                      # British crystalline starship bridge AI
-    "EXECUTIVE_ADVISOR": {"af_bella": 0.70, "af_nicole": 0.30},                  # Warm, engaging productivity & executive tone
-    "TACTICAL_OFFICER": {"am_adam": 0.70, "bm_george": 0.30},                    # Deep, resonant tactical commander
-    "CYBER_EXECUTIVE": {"bf_emma": 0.60, "af_bella": 0.40},                       # Polished, authoritative executive assistant
-    "TACTICAL_COMMANDER": {"am_adam": 0.70, "bm_george": 0.30},                  # Deep resonant leader
-    "COCKPIT_SYNTHESIS": {"bf_emma": 0.85, "af_sarah": 0.15},                     # Sharp, alert AURA AI
-    "CONVERSATIONAL_FLOW": {"af_bella": 0.60, "af_sky": 0.40}                     # Ultra-natural conversational narrator
+    # Sovereign Legendary Personas (Awe & Gravitas)
+    "ALEXANDER_SOVEREIGN": {"am_adam": 0.70, "bm_george": 0.20, "am_michael": 0.10},  # Commanding Imperator: Deep baritone, chest thump & magnetic authority
+    "FREYA_VALKYRIE": {"bf_emma": 0.60, "af_sarah": 0.25, "af_bella": 0.15},          # Resolute Commander: Powerful, impassioned, crystalline noble authority
+    "AURELIUS_STOIC": {"am_adam": 0.80, "bm_lewis": 0.20},                             # Philosopher Emperor / Kratos Gravitas: Visceral sub-bass thump & unshakable wisdom
+    "NOCTURNA_SOLON": {"bm_george": 0.65, "am_adam": 0.35},                           # Shadow Strategist / Big Boss Aura: Textured, weathered operative authority
+    
+    # Classic AI & Signature Personas
+    "CORTANA_PRIME": {"af_sky": 0.60, "af_bella": 0.25, "af_sarah": 0.15},            # Articulate, crystalline, warm Cortana AI
+    "AURA_SHIP_AI": {"bf_emma": 0.85, "bf_isabella": 0.15},                           # British crystalline starship bridge AI
+    "EXECUTIVE_ADVISOR": {"af_bella": 0.70, "af_nicole": 0.30},                       # Warm, engaging productivity & executive tone
+    "TACTICAL_OFFICER": {"am_adam": 0.70, "bm_george": 0.30},                         # Deep, resonant tactical commander
+    "CYBER_EXECUTIVE": {"bf_emma": 0.60, "af_bella": 0.40},                            # Polished, authoritative executive assistant
+    "TACTICAL_COMMANDER": {"am_adam": 0.70, "bm_george": 0.30},                       # Deep resonant leader
+    "COCKPIT_SYNTHESIS": {"bf_emma": 0.85, "af_sarah": 0.15},                          # Sharp, alert AURA AI
+    "CONVERSATIONAL_FLOW": {"af_bella": 0.60, "af_sky": 0.40}                          # Ultra-natural conversational narrator
 }
+
+CUSTOM_PERSONAS_FILE = os.path.join(BASE_DIR, "data", "custom_voice_personas.json")
+
 
 
 class VoicePersonaBlender:
@@ -190,5 +202,66 @@ class VoicePersonaBlender:
     @classmethod
     def get_preset_blends(cls) -> Dict[str, Dict[str, float]]:
         """Return curated signature vocal timbres."""
-        return SIGNATURE_PERSONA_BLENDS
+        all_blends = dict(SIGNATURE_PERSONA_BLENDS)
+        all_blends.update(cls.load_custom_personas())
+        return all_blends
+
+    @classmethod
+    def load_custom_personas(cls) -> Dict[str, Dict[str, Any]]:
+        """Load user-saved custom personas from disk."""
+        if not os.path.exists(CUSTOM_PERSONAS_FILE):
+            return {}
+        try:
+            import json
+            with open(CUSTOM_PERSONAS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    @classmethod
+    def save_custom_persona(
+        cls,
+        name: str,
+        weights: Dict[str, float],
+        dsp_preset: str = "SOVEREIGN_AWE",
+        description: str = ""
+    ) -> Dict[str, Any]:
+        """Save a new custom persona persistently to disk and cache."""
+        import json
+        clean_name = name.strip().upper().replace(" ", "_")
+        existing = cls.load_custom_personas()
+        
+        persona_record = {
+            "name": name.strip(),
+            "id": clean_name,
+            "weights": weights,
+            "dsp_preset": dsp_preset,
+            "description": description or f"Custom sovereign blend of {', '.join(weights.keys())}",
+            "created_at": time.time()
+        }
+        
+        existing[clean_name] = persona_record
+        os.makedirs(os.path.dirname(CUSTOM_PERSONAS_FILE), exist_ok=True)
+        with open(CUSTOM_PERSONAS_FILE, "w", encoding="utf-8") as f:
+            json.dump(existing, f, indent=2)
+            
+        # Re-blend into memory cache
+        cls.blend_personas(weights, custom_name=clean_name)
+        return {"status": "success", "persona": persona_record}
+
+    @classmethod
+    def delete_custom_persona(cls, persona_id: str) -> bool:
+        """Delete a custom persona from disk and cache."""
+        import json
+        clean_id = persona_id.strip().upper().replace(" ", "_")
+        existing = cls.load_custom_personas()
+        if clean_id in existing:
+            del existing[clean_id]
+            os.makedirs(os.path.dirname(CUSTOM_PERSONAS_FILE), exist_ok=True)
+            with open(CUSTOM_PERSONAS_FILE, "w", encoding="utf-8") as f:
+                json.dump(existing, f, indent=2)
+            cls._blends_cache.pop(clean_id, None)
+            return True
+        return False
+
 
