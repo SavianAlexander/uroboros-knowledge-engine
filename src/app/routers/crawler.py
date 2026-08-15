@@ -75,7 +75,7 @@ def api_list_jobs():
 
 @router.post("/jobs")
 def api_create_job(req: CreateJobRequest):
-    """Create a new crawl job defaulting to Apex Omni-Sovereign stealth."""
+    """Create a new crawl job defaulting to stealth mode."""
     config = CrawlConfig(
         max_pages=req.max_pages or 100,
         max_depth=req.max_depth or 3,
@@ -99,7 +99,7 @@ def api_create_job(req: CreateJobRequest):
         "job_id": job_id,
         "name": job.name,
         "stealth_mode": config.stealth_mode,
-        "message": f"Omni-Sovereign Job #{job_id} created successfully."
+        "message": f"Crawler Job #{job_id} created successfully."
     }
 
 @router.get("/jobs/{job_id}")
@@ -139,7 +139,7 @@ def api_get_job(job_id: int):
 
 @router.post("/jobs/{job_id}/start")
 def api_start_job(job_id: int, background_tasks: BackgroundTasks, workers: int = Query(default=4, ge=1, le=16)):
-    """Launch high-concurrency Omni-Sovereign worker swarm in background."""
+    """Launch high-concurrency crawler worker swarm in background."""
     with get_db() as conn:
         job = get_job(conn, job_id)
         if not job:
@@ -162,7 +162,7 @@ def api_start_job(job_id: int, background_tasks: BackgroundTasks, workers: int =
         "status": "started",
         "job_id": job_id,
         "workers": workers,
-        "message": f"Omni-Sovereign Swarm with {workers} workers started in background."
+        "message": f"Crawler Swarm with {workers} workers started in background."
     }
 
 @router.post("/jobs/{job_id}/stop")

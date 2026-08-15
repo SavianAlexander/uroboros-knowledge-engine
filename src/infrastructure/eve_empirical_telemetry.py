@@ -41,7 +41,7 @@ CANONICAL_SDE_TYPES = {
     # Ships
     42244: {"name": "Porpoise", "group": "Industrial Command Vessel", "base_ehp": 45000, "role": "Command Booster"},
     17476: {"name": "Covetor", "group": "Mining Barge", "base_ehp": 16500, "role": "High-Yield Harvester"},
-    22544: {"name": "Hulk", "group": "Exhumer", "base_ehp": 28000, "role": "Apex Strip Mining"},
+    22544: {"name": "Hulk", "group": "Exhumer", "base_ehp": 28000, "role": "Max-Yield Strip Mining"},
     28659: {"name": "Paladin", "group": "Marauder (Amarr)", "base_ehp": 185000, "role": "Bastion DPS Anchor"},
     28665: {"name": "Kronos", "group": "Marauder (Gallente)", "base_ehp": 180000, "role": "Blaster Bastion DPS"},
     28661: {"name": "Vargur", "group": "Marauder (Minmatar)", "base_ehp": 190000, "role": "Autocannon Bastion DPS"},
@@ -224,7 +224,7 @@ This document records the canonical CCP Type IDs, packaged cargo volumes ($m^3$)
 | :---: | :--- | :--- | :---: | :--- |
 | **42244** | **Porpoise** | Industrial Command | 45,000 | Mining Command Burst Lead & Fleet Ore Compression |
 | **17476** | **Covetor** | Mining Barge | 16,500 | High-Yield Strip Mining Harvester |
-| **22544** | **Hulk** | Exhumer | 28,000 | Apex Yield Strip Mining Harvester |
+| **22544** | **Hulk** | Exhumer | 28,000 | Max-Yield Strip Mining Harvester |
 | **28659** | **Paladin** | Marauder (Amarr) | 185,000 | Bastion EM/Thermal Armor DPS Anchor |
 | **28665** | **Kronos** | Marauder (Gallente) | 180,000 | Bastion Kinetic/Thermal Blaster DPS Anchor |
 | **28661** | **Vargur** | Marauder (Minmatar) | 190,000 | Bastion Explosive/Kinetic Projectile DPS Anchor |

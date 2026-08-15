@@ -65,7 +65,7 @@ def evaluate_character_capabilities(skills: dict) -> dict:
         "Exhumer Strip Miner": mining_score,
         "Fleet Command Booster": command_score,
         "Planetary Industry Director": pi_score,
-        "Apex Battleship / Marauder Combatant": combat_score
+        "Heavy Battleship / Marauder Combatant": combat_score
     }
     primary_role = max(scores.items(), key=lambda x: x[1])[0]
 

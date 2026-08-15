@@ -1,6 +1,6 @@
 # Tactical Mineral Reprocessing Plan
 
-- **Date**: 2026-08-15T09:47:12.000Z
+- **Date**: 2026-08-15T10:03:50.000Z
 - **Category**: voice-note
 - **Tags**: #mining #nullsec
 
@@ -8,4 +8,4 @@
 Refining 100k m3 of Spodumain in G-EURJ.
 
 ---
-*Captured via Sovereign Voice Ingest Engine*
+*Captured via Voice Ingest Engine*

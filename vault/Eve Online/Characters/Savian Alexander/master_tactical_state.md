@@ -14,7 +14,7 @@ Strict empirical intelligence extracted directly from live CCP Swagger Interface
 | **Liquid Wallet Balance** | **281,849,840.70 ISK** |
 | **Total Skillpoints** | **74,225,867 SP** |
 | **Unallocated Skillpoints**| **241,613 SP** |
-| **Primary Operational Role**| **Apex Combatant, Capital Director & Fleet Master Refiner** |
+| **Primary Operational Role**| **Heavy Combatant, Capital Director & Fleet Master Refiner** |
 
 ---
 

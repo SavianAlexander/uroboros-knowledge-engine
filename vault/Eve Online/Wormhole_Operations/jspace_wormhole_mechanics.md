@@ -12,7 +12,7 @@ Complete navigation and mass transit doctrine across J-Space system classes (C1 
 | **C3 (Class 3)** | Battleships / Marauders (Large Holes) | Lowsec / Nullsec | ❌ No |
 | **C4 (Class 4)** | Battleships / Marauders (Large Holes) | Dual Wormhole Statics (e.g. C3/C5)| ❌ No |
 | **C5 (Class 5)** | Capital Ships (Dreadnoughts, Carriers) | C5 Static (High-End Blue Loot)| ✅ Yes (Drifter Bosses) |
-| **C6 (Class 6)** | Supercapitals / Titans (Theoretical) | C6 Static (Apex Farm Worlds) | ✅ Yes (10B+ ISK/hr) |
+| **C6 (Class 6)** | Supercapitals / Titans (Theoretical) | C6 Static (High-Yield Farm Systems) | ✅ Yes (10B+ ISK/hr) |
 
 ---
 

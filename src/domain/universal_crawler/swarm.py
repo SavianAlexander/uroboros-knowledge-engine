@@ -48,7 +48,7 @@ from src.infrastructure.crawler_repository import (
 )
 
 """
-Asynchronous Multi-Worker Crawl Swarm with Apex Phantom-Tier Stealth & Deep Knowledge Extraction.
+Asynchronous Multi-Worker Crawl Swarm with Phantom Stealth & Deep Knowledge Extraction.
 """
 
 class CrawlSwarm:

@@ -1,6 +1,7 @@
-# Sovereign Architecture Specification: Instant Audio Streamer & Hardware Ring-Buffer Matrix
-**Standard**: Pure Python Standard Library + Local ONNX Runtime / SoundDevice (WASAPI)
-**Ponytail Senior Dev Principle**: Persistent background WASAPI stream, pre-warmed ONNX session, lockless LRU RAM audio cache, $<1\text{ms}$ dispatch latency, and zero device reopen overhead.
+# Architecture Specification: Instant Audio Streamer & Hardware Ring-Buffer Matrix
+
+**Standard**: Pure Python Standard Library + Local ONNX Runtime / SoundDevice (WASAPI)  
+**Engineering Principle**: Persistent background WASAPI stream, pre-warmed ONNX session, lockless LRU RAM audio cache, $<1\text{ms}$ dispatch latency, and zero device reopen overhead.
 
 ---
 
@@ -34,10 +35,8 @@ flowchart TD
 
 ### B. Pre-Warmed Neural Runtime & Tactical Phrase Cache (`InstantVoiceClient`)
 - Pre-warms ONNX session tensors into RAM on system initialization.
-- Pre-synthesizes key tactical and operational alerts (*"Warp drive active"*, *"Shields at twenty five percent"*, *"Cynosural beacon is active in G-EURJ"*, *"Hostile signature detected"*, *"Affirmative"*, *"Sovereign architecture certified"*).
+- Pre-synthesizes key tactical and operational alerts (*"Warp drive active"*, *"Shields at twenty five percent"*, *"Cynosural beacon is active in G-EURJ"*, *"Hostile signature detected"*, *"Affirmative"*, *"System architecture certified"*).
 - Measures empirical **0.01ms - 0.02ms** Time-To-First-Sound (TTFS) on cached phrase dispatches.
 
 ### C. Antigravity MCP Expansion (28 Dedicated Voice & Telemetry Tools)
-1. `antigravity_instant_speak`: Instant $<1\text{ms}$ voice synthesis and direct streaming.
-2. `antigravity_prewarm_voice_engine`: Pre-warms weights and populates high-speed phrase cache.
-3. `antigravity_get_instant_streamer_stats`: Telemetry querying cache hit ratios and total bytes streamed.
+- Exposes direct audio playback, radio comms emulation, audio router selection, volume scaling, and telemetry export.

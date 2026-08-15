@@ -46,7 +46,7 @@ from src.domain.universal_crawler.genesis_engine import (
 from src.domain.universal_crawler.vector_semantic_matrix import FastSemanticVectorMatrix
 
 """
-Omni-Sovereign Deep Neural Harvester & Legal Cross-Examination Matrix CLI.
+Universal Deep Neural Harvester & Legal Cross-Examination Matrix CLI.
 Features:
   - Cross-Examination Legal Deposition Synthesizer (Liabilities, Deadlines, Penalties)
   - Legislative Genesis & Historical Timeline Provenance (Draft -> Gazette)
@@ -83,11 +83,11 @@ def cmd_create(args):
         job_id = create_job(conn, job)
 
     print(f"============================================================")
-    print(f"  [+] Omni-Sovereign Deep Harvester Job #{job_id} Created!")
+    print(f"  [+] Deep Harvester Job #{job_id} Created!")
     print(f"  Name:         {job.name}")
     print(f"  Seeds:        {seeds}")
     print(f"  Stealth Mode: {config.stealth_mode.upper()} (Persona: {config.persona})")
-    print(f"  Standard:     FRE 902(13)/(14) & Omni-Sovereign Neural Synthesis")
+    print(f"  Standard:     FRE 902(13)/(14) & Neural Synthesis")
     print(f"  Max Pages:    {config.max_pages} (Max Depth: {config.max_depth})")
     print(f"============================================================")
     print(f"Run swarm:          python scripts/crawler_cli.py swarm --id {job_id} --workers 4")
@@ -114,20 +114,20 @@ def cmd_swarm(args):
     swarm = CrawlSwarm(db_path="knowledge.db", max_workers=args.workers)
 
     print(f"============================================================")
-    print(f"  Launching Omni-Sovereign Swarm for Job #{args.id}")
-    print(f"  Worker Count: {args.workers} Threads | Neuromorphic Invisibility: ACTIVE")
+    print(f"  Launching Crawler Swarm for Job #{args.id}")
+    print(f"  Worker Count: {args.workers} Threads | Adaptive Stealth: ACTIVE")
     print(f"============================================================")
 
     def telemetry_callback(metrics):
         sys.stdout.write(
-            f"\r  [Omni Swarm] Pages: {metrics['pages_crawled']} | Docs: {metrics['docs_saved']} | "
+            f"\r  [Crawler Swarm] Pages: {metrics['pages_crawled']} | Docs: {metrics['docs_saved']} | "
             f"Entities: {metrics['entities_found']} | Tables: {metrics['tables_found']} | "
             f"Triplets: {metrics['triplets_found']} | Speed: {metrics['throughput_pages_sec']:.2f} p/s   "
         )
         sys.stdout.flush()
 
     res = swarm.run(args.id, progress_callback=telemetry_callback)
-    print(f"\n\nOmni-Sovereign Swarm Completed: {json.dumps(res, indent=2, ensure_ascii=False)}\n")
+    print(f"\n\nCrawler Swarm Completed: {json.dumps(res, indent=2, ensure_ascii=False)}\n")
 
 def cmd_list(args):
     init_db()
@@ -389,7 +389,7 @@ def cmd_concordance(args):
     print(f"============================================================\n")
 
 def main():
-    parser = argparse.ArgumentParser(description="Omni-Sovereign Deep Harvester & Legal Matrix CLI")
+    parser = argparse.ArgumentParser(description="Universal Deep Harvester & Legal Matrix CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Create command

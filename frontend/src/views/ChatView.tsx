@@ -85,7 +85,7 @@ export default function ChatView() {
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-  // Custom Sovereign Voice Studio State
+  // Custom Voice Studio State
   const [customPersonas, setCustomPersonas] = useState<Record<string, any>>({});
   const [showCustomBuilder, setShowCustomBuilder] = useState(false);
   const [customName, setCustomName] = useState('');
@@ -285,7 +285,7 @@ export default function ChatView() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: `I am ${customName.trim() || 'Sovereign'}. My voice carries intent and power.`,
+          text: `I am ${customName.trim() || 'Advisor'}. My voice carries clarity and intent.`,
           weights: Object.keys(weights).length > 0 ? weights : { am_adam: 0.7, bm_george: 0.2, am_michael: 0.1 },
           dsp_preset: customDsp,
           speed: 0.92
@@ -315,7 +315,7 @@ export default function ChatView() {
 
   const handleSaveCustomPersona = async () => {
     if (!customName.trim()) {
-      toast('Name Required', 'Please enter a name for your sovereign persona', 'warning');
+      toast('Name Required', 'Please enter a name for your custom persona', 'warning');
       return;
     }
     const weights: Record<string, number> = {};
@@ -518,7 +518,7 @@ export default function ChatView() {
     if (!input.trim() || isEnhancingPrompt) return;
     setIsEnhancingPrompt(true);
     try {
-      toast('Magic Wand', 'Expanding prompt into structured engineering query...', 'info');
+      toast('Prompt Optimizer', 'Expanding prompt into structured engineering query...', 'info');
       const res = await fetch('/api/prompt/enhance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1212,7 +1212,7 @@ export default function ChatView() {
           </div>
         </div>
 
-        {/* Neural Voice Studio Toolbar & Sovereign Studio Drawer */}
+        {/* Neural Voice Studio Toolbar & Studio Drawer */}
         {showVoiceStudio && (
           <div className="bg-slate-900/95 border-b border-purple-500/20 text-xs shadow-xl backdrop-blur-md transition-all">
             <div className="px-6 py-3 flex flex-wrap items-center justify-between gap-4 border-b border-white/5">
@@ -1821,13 +1821,13 @@ export default function ChatView() {
             />
 
             <div className="absolute right-2.5 bottom-2.5 flex items-center gap-1.5">
-              {/* Magic Wand Prompt Enhancer (Mustard Gold) */}
+              {/* Prompt Enhancer (Mustard Gold) */}
               <button
                 type="button"
                 onClick={handleEnhancePrompt}
                 disabled={!input.trim() || isEnhancingPrompt}
                 className="p-2 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-xl transition-colors disabled:opacity-30 cursor-pointer"
-                title="Magic Prompt Enhancer (Mustard Gold Wand)"
+                title="Prompt Optimizer (Directives Enhancer)"
               >
                 <Wand2 className={`w-4 h-4 ${isEnhancingPrompt ? 'animate-spin' : ''}`} />
               </button>

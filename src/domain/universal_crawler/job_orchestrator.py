@@ -52,7 +52,7 @@ Rule 902 Forensic Multi-Hashes, Hierarchical Merkle DAG, and In-Database Vectors
 """
 
 class CrawlJobOrchestrator:
-    """Controls crawl execution lifecycle, state transitions, and unified apex ingestion."""
+    """Controls crawl execution lifecycle, state transitions, and unified ingestion."""
 
     def __init__(self, db_conn: sqlite3.Connection):
         self.conn = db_conn
@@ -68,7 +68,7 @@ class CrawlJobOrchestrator:
         progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None
     ) -> Dict[str, Any]:
         """
-        Execute or resume a crawl job at maximum apex absorption.
+        Execute or resume a crawl job at maximum throughput.
         """
         job = get_job(self.conn, job_id)
         if not job:
@@ -160,7 +160,7 @@ class CrawlJobOrchestrator:
                 docs_saved += 1
                 print(f"  [OK] Saved Binary Asset: {raw_filename} ({file_size:,} bytes)")
 
-            # Apex Deep Knowledge Harvest
+            # Deep Knowledge Harvest
             harvest_data = DeepKnowledgeHarvester.harvest(content_bytes, content_type or "", url)
             title = harvest_data["title"]
             clean_text = harvest_data["text"]

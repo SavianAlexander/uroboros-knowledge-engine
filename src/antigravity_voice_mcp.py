@@ -320,7 +320,7 @@ TOOLS_SCHEMA = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "persona": {"type": "string", "description": "Specific persona key to audition (e.g. 'AURA_SHIP_AI', 'SOVEREIGN_ORACLE', 'FLEET_COMMANDER')."},
+                "persona": {"type": "string", "description": "Specific persona key to audition (e.g. 'AURA_SHIP_AI', 'ORACLE_ADVISOR', 'FLEET_COMMANDER')."},
                 "custom_text": {"type": "string", "description": "Custom audition phrase."},
                 "dsp_preset": {"type": "string", "description": "DSP acoustic preset override."},
                 "speak": {"type": "boolean", "description": "If true, synthesizes and plays audio in-memory immediately.", "default": True}
@@ -435,7 +435,7 @@ TOOLS_SCHEMA = [
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "Knowledge search query to retrieve and speak."},
-                "persona": {"type": "string", "description": "Spoken voice persona (e.g. AURA_SHIP_AI, SOVEREIGN_ORACLE, FLEET_COMMANDER)."},
+                "persona": {"type": "string", "description": "Spoken voice persona (e.g. AURA_SHIP_AI, ORACLE_ADVISOR, FLEET_COMMANDER)."},
                 "dsp_preset": {"type": "string", "description": "Acoustic DSP mastering preset."},
                 "max_sentences": {"type": "integer", "description": "Maximum sentences to synthesize for spoken summary."}
             },
@@ -804,8 +804,8 @@ def _handle_showcase_personas(args: Dict[str, Any]) -> Dict[str, Any]:
 
 def _handle_apply_studio_master(args: Dict[str, Any]) -> Dict[str, Any]:
     text = args.get("text", "")
-    preset = args.get("preset", "SOVEREIGN_PRESENCE")
-    persona = args.get("persona", "SOVEREIGN_ORACLE")
+    preset = args.get("preset", "EXECUTIVE_PRESENCE")
+    persona = args.get("persona", "ORACLE_ADVISOR")
     voice = KOKORO_PERSONAS.get(persona, "af_sky")
     return VoiceBridge.speak(
         text=text,
@@ -851,7 +851,7 @@ def _handle_instant_speak(args: Dict[str, Any]) -> Dict[str, Any]:
     text = args.get("text", "")
     persona = args.get("persona", "AURA_SHIP_AI")
     voice = KOKORO_PERSONAS.get(persona, persona)
-    dsp_preset = args.get("dsp_preset", "TRANSCENDENTAL_AURA")
+    dsp_preset = args.get("dsp_preset", "HOLOGRAPHIC_AURA")
     speed = float(args.get("speed", 1.0))
     sync = bool(args.get("sync", False))
     return InstantVoiceClient.speak_instant(text, voice=voice, dsp_preset=dsp_preset, speed=speed, sync=sync)

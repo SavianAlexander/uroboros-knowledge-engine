@@ -46,7 +46,7 @@ This document records the canonical CCP Type IDs, packaged cargo volumes ($m^3$)
 | :---: | :--- | :--- | :---: | :--- |
 | **42244** | **Porpoise** | Industrial Command | 45,000 | Mining Command Burst Lead & Fleet Ore Compression |
 | **17476** | **Covetor** | Mining Barge | 16,500 | High-Yield Strip Mining Harvester |
-| **22544** | **Hulk** | Exhumer | 28,000 | Apex Yield Strip Mining Harvester |
+| **22544** | **Hulk** | Exhumer | 28,000 | Max-Yield Strip Mining Harvester |
 | **28659** | **Paladin** | Marauder (Amarr) | 185,000 | Bastion EM/Thermal Armor DPS Anchor |
 | **28665** | **Kronos** | Marauder (Gallente) | 180,000 | Bastion Kinetic/Thermal Blaster DPS Anchor |
 | **28661** | **Vargur** | Marauder (Minmatar) | 190,000 | Bastion Explosive/Kinetic Projectile DPS Anchor |

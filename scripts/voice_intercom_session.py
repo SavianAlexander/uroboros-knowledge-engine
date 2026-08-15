@@ -58,7 +58,7 @@ def generate_conversational_reply(user_text: str, persona: str = "AURA_SHIP_AI")
         return f"The mining wing consisting of Thena, Vulcastra, and Tulorn are deployed in {PILOT_STATE['location']} synchronized with your Porpoise compression cycle."
 
     if any(w in user_lower for w in ["who are you", "what are you"]):
-        return "I am your sovereign AI tactical copilot, monitoring starship navigation, fleet industrial cycles, and knowledge infrastructure."
+        return "I am your AI tactical copilot, monitoring starship navigation, fleet industrial cycles, and knowledge infrastructure."
 
     if any(w in user_lower for w in ["hello", "hi", "hey", "greetings"]):
         return "Greetings Commander. Voice link is crystal clear. How can I assist your operations today?"
@@ -73,7 +73,7 @@ def generate_conversational_reply(user_text: str, persona: str = "AURA_SHIP_AI")
 def run_interactive_intercom_session():
     """Interactive conversational session loop."""
     print("\n" + "=" * 70)
-    print("🎙️ SOVEREIGN FULL-DUPLEX VOICE INTERCOM SESSION (GEMINI LIVE MODE)")
+    print("🎙️ FULL-DUPLEX VOICE INTERCOM SESSION (GEMINI LIVE MODE)")
     print("=" * 70)
     print("Type your message or prompt below (or 'exit' to disconnect channel).")
     print("Every response will speak immediately out loud through your headset.\n")

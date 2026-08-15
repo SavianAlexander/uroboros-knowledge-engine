@@ -98,7 +98,7 @@ class TestM2AdversarialVoiceMatrix(unittest.TestCase):
         for fs in sample_rates:
             n_samples = min(2400, fs)
             buf = np.random.uniform(-0.5, 0.5, n_samples).astype(np.float32)
-            out = VoiceDSP.apply_dsp_preset(buf, preset="TRANSCENDENTAL_AURA", fs=fs)
+            out = VoiceDSP.apply_dsp_preset(buf, preset="HOLOGRAPHIC_AURA", fs=fs)
             self.assertEqual(len(out), n_samples)
             self.assertFalse(np.isnan(out).any(), f"NaN at sample rate {fs}")
 

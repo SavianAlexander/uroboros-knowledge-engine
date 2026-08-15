@@ -311,8 +311,8 @@ class TestStreamingNeuralSynthesizerAndCache:
         assert StreamingAudioCache.get("test clause", "CORTANA_PRIME", 1.0, "STUDIO_MASTER") is None
 
 
-class TestSovereignAweDSPAndPersonas:
-    """Validate Sovereign Legendary Personas, Sub-Harmonic Chest DSP, and Custom Persona CRUD."""
+class TestExecutiveDSPAndPersonas:
+    """Validate Executive Voice Personas, Sub-Harmonic Chest DSP, and Custom Persona CRUD."""
 
     def test_sovereign_persona_vectors(self):
         from src.core.voice_persona_blend import VoicePersonaBlender
@@ -447,7 +447,7 @@ class TestSovereignAweDSPAndPersonas:
         ttfs = VoiceStreamingPipeliner._speak_clause_if_valid(
             clause="..",
             voice_id="bf_emma",
-            dsp_preset="TRANSCENDENTAL_AURA",
+            dsp_preset="HOLOGRAPHIC_AURA",
             sync=False,
             clauses_spoken=clauses,
             t0=0.0,
@@ -460,7 +460,7 @@ class TestSovereignAweDSPAndPersonas:
         ttfs_valid = VoiceStreamingPipeliner._speak_clause_if_valid(
             clause="Warp drive active.",
             voice_id="bf_emma",
-            dsp_preset="TRANSCENDENTAL_AURA",
+            dsp_preset="HOLOGRAPHIC_AURA",
             sync=False,
             clauses_spoken=clauses,
             t0=0.0,

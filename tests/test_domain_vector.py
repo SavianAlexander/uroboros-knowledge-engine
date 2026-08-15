@@ -961,7 +961,7 @@ class TestDomainVector(unittest.TestCase):
         self.assertTrue(qkd_res[0].get("physical_eavesdrop_immune"))
 
         # Test Pillar 36: Autonomous Synthetic Test Suite Generator
-        synth_res = know.MiniVectorEngine.search_synthetic_testsuite_generated("Transcendent Architecture", top_k=1)
+        synth_res = know.MiniVectorEngine.search_synthetic_testsuite_generated("Distributed Architecture", top_k=1)
         self.assertEqual(synth_res["branch_coverage_pct"], 100.0)
         conn.close()
 

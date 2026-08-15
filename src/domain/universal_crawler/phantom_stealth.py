@@ -156,7 +156,7 @@ class PhantomStealthSession:
         timeout: int = 15
     ) -> Tuple[Optional[bytes], Optional[str], int, Optional[str], Dict[str, Any]]:
         """
-        Execute Apex Phantom fetch with synthetic biometric dwell and human journey recording.
+        Execute Phantom fetch with synthetic biometric dwell and human journey recording.
         """
         self.request_count += 1
         t_start = time.time()
@@ -205,7 +205,7 @@ class PhantomStealthSession:
                     "dwell_sec": dwell_sec,
                     "persona": self.persona_name,
                     "cookies_count": len(self.cookie_jar),
-                    "stealth_tier": "APEX_PHANTOM"
+                    "stealth_tier": "BROWSER_AUTOMATION"
                 }
 
                 return raw_data, content_type, status_code, None, telemetry

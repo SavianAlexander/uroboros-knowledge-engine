@@ -60,7 +60,7 @@ class VoiceKnowledgeIngest:
 {content}
 
 ---
-*Captured via Sovereign Voice Ingest Engine*
+*Captured via Voice Ingest Engine*
 """
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(md_content)

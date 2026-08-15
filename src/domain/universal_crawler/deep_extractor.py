@@ -124,7 +124,7 @@ class DeepKnowledgeHarvester:
     @classmethod
     def harvest(cls, raw_content: bytes, content_type: str, url: str) -> Dict[str, Any]:
         """
-        Apex extraction pipeline returning:
+        Deep extraction pipeline returning:
         1. Clean text with zero omission
         2. Structured tables (Markdown & JSON)
         3. Typed legal entities

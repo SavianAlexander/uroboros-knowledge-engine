@@ -52,7 +52,7 @@ class NeuromorphicCognitiveEngine:
 
 class OmniStealthSession:
     """
-    Omni-Sovereign Apex Network Session.
+    Adaptive Stealth Network Session.
     Combines Neuromorphic Dynamics, Sub-Zero Flow Jitter, and TLS 1.3.
     """
 

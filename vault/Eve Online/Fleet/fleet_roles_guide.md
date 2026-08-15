@@ -10,7 +10,7 @@ Standardized capability deduction generated via live ESI skill evaluation. Fully
 ## 🌐 Dynamic Role Allocations
 | Pilot Name | Total SP | Current System | Active Ship | Primary Deduce Role | Capability Score Breakdown |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Savian Alexander** | `74,225,867` | **G-EURJ** | `Pillar of Autumn (Porpoise)` | **Apex Battleship / Marauder Combatant** | Ref: `410` • Mine: `475` • Cmd: `425` |
+| **Savian Alexander** | `74,225,867` | **G-EURJ** | `Pillar of Autumn (Porpoise)` | **Heavy Battleship / Marauder Combatant** | Ref: `410` • Mine: `475` • Cmd: `425` |
 | **Thena Alexander** | `3,272,860` | **G-EURJ** | `Vintage Prowler (Covetor)` | **Exhumer Strip Miner** | Ref: `80` • Mine: `250` • Cmd: `0` |
 | **Vulcastra Alexander** | `3,234,190` | **G-EURJ** | `Vintage Prowler (Covetor)` | **Exhumer Strip Miner** | Ref: `60` • Mine: `250` • Cmd: `0` |
 | **Tulorn Alexander** | `3,242,830` | **G-EURJ** | `Vintage Prowler (Covetor)` | **Exhumer Strip Miner** | Ref: `80` • Mine: `250` • Cmd: `0` |

@@ -275,16 +275,16 @@ class InstantVoiceClient:
         engine = KokoroVoiceEngine()
 
         essential_phrases = [
-            ("AURA_SHIP_AI", "bf_emma", "TRANSCENDENTAL_AURA", "Warp drive active."),
-            ("AURA_SHIP_AI", "bf_emma", "TRANSCENDENTAL_AURA", "Shields at twenty five percent."),
+            ("AURA_SHIP_AI", "bf_emma", "HOLOGRAPHIC_AURA", "Warp drive active."),
+            ("AURA_SHIP_AI", "bf_emma", "HOLOGRAPHIC_AURA", "Shields at twenty five percent."),
             ("TACTICAL_ADVISOR", "af_sarah", "COMMANDER_TACTICAL", "Hostile signature detected on directional scan."),
             ("TACTICAL_ADVISOR", "af_sarah", "COMMANDER_TACTICAL", "Interdictor bubble deployed."),
-            ("FLEET_COMMANDER", "am_adam", "SOVEREIGN_PRESENCE", "Cynosural beacon is active in G-EURJ."),
-            ("FLEET_COMMANDER", "am_adam", "SOVEREIGN_PRESENCE", "Anchor on the flagship."),
-            ("INDUSTRY_OVERSEER", "bm_george", "AWE_STUDIO_MASTER", "Pillar of Autumn ore compression cycle active."),
+            ("FLEET_COMMANDER", "am_adam", "FLEET_COMMAND", "Cynosural beacon is active in G-EURJ."),
+            ("FLEET_COMMANDER", "am_adam", "FLEET_COMMAND", "Anchor on the flagship."),
+            ("INDUSTRY_OVERSEER", "bm_george", "STUDIO_MASTER", "Pillar of Autumn ore compression cycle active."),
             ("CALM_OPERATIONS", "af_bella", "STUDIO_DIRECT", "Affirmative."),
             ("CALM_OPERATIONS", "af_bella", "STUDIO_DIRECT", "Command acknowledged."),
-            ("SOVEREIGN_ORACLE", "af_sky", "SOVEREIGN_PRESENCE", "Sovereign architecture certified.")
+            ("ORACLE_ADVISOR", "af_sky", "EXECUTIVE_PRESENCE", "System architecture certified.")
         ]
 
         streamer = get_instant_streamer()
