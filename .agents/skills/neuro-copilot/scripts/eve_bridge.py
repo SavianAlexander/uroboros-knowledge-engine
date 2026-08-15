@@ -101,7 +101,7 @@ def get_neural_remaps(repo_root: str = REPO_ROOT) -> Dict[str, Any]:
 
 def run_zero_assumption_audit(repo_root: str = REPO_ROOT) -> Dict[str, Any]:
     """Run strict 38-assertion zero-assumption validation suite."""
-    from scripts.verify_zero_assumptions import run_zero_assumption_audit as audit_func
+    from scripts.verify_system_integrity import run_zero_assumption_audit as audit_func
     t0 = time.time()
     try:
         audit_func()

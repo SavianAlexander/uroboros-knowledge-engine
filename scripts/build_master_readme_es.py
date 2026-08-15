@@ -10,11 +10,11 @@ readme_es_content = r"""# Motor de Base de Datos de Conocimiento Uroboros (Neuro
   <img src="https://img.shields.io/badge/FastAPI-0.111.0-teal.svg?style=flat-square" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React-19.0.1-61dafb.svg?style=flat-square" alt="React" />
   <img src="https://img.shields.io/badge/SQLite-FTS5-orange.svg?style=flat-square" alt="SQLite" />
-  <img src="https://img.shields.io/badge/Motores%20SOTA-32-purple.svg?style=flat-square" alt="32 Motores SOTA" />
-  <img src="https://img.shields.io/badge/Paradigmas%20Frontera-13-magenta.svg?style=flat-square" alt="13 Paradigmas Frontera" />
-  <img src="https://img.shields.io/badge/Innovaciones%20RAG-21-indigo.svg?style=flat-square" alt="21 Innovaciones RAG" />
-  <img src="https://img.shields.io/badge/Modulos%20de%20Dominio-135-blue.svg?style=flat-square" alt="135 Modulos de Dominio" />
-  <img src="https://img.shields.io/badge/Suites%20de%20Prueba-98-emerald.svg?style=flat-square" alt="98 Suites de Prueba" />
+  <img src="https://img.shields.io/badge/Subsistemas%20de%20Recuperacion-32-purple.svg?style=flat-square" alt="32 Subsistemas de Recuperacion" />
+  <img src="https://img.shields.io/badge/Estrategias%20Avanzadas-13-magenta.svg?style=flat-square" alt="13 Estrategias Avanzadas" />
+  <img src="https://img.shields.io/badge/Optimizaciones%20de%20Arquitectura-21-indigo.svg?style=flat-square" alt="21 Optimizaciones" />
+  <img src="https://img.shields.io/badge/Modulos%20de%20Dominio-141-blue.svg?style=flat-square" alt="141 Modulos de Dominio" />
+  <img src="https://img.shields.io/badge/Suites%20de%20Prueba-99-emerald.svg?style=flat-square" alt="99 Suites de Prueba" />
   <img src="https://img.shields.io/badge/Tasa%20de%20Aprobacion-100%25-brightgreen.svg?style=flat-square" alt="Tasa de Aprobacion 100%" />
   <img src="https://img.shields.io/badge/Estilo%20de%20Codigo-ponytail-indigo?style=flat-square" alt="Estilo Ponytail" />
 </p>
@@ -25,7 +25,7 @@ readme_es_content = r"""# Motor de Base de Datos de Conocimiento Uroboros (Neuro
 
 **Motor de Conocimiento Uroboros (Neuro Alexander)** es una plataforma de grado empresarial, 100% local (sin nube), autocontenida y de nodo unico para la gestion de conocimiento, busqueda semantica, inteligencia documental y razonamiento RAG multietapa. Desarrollado con un backend modular en **FastAPI**, almacenamiento vectorial y lexico **SQLite FTS5**, integracion con **Ollama / GGUF** local y una interfaz web SPA en **React 19 / Vite**, Uroboros ofrece busqueda local en tiempo real, analisis estructural, razonamiento multihop RAG y exploracion de conocimiento en grafos sin depender de bases de datos vectoriales en la nube ni dependencias pesadas de terceros.
 
-Con **32 Motores Arquitectonicos de Ultima Generacion (SOTA)**, **13 Paradigmas RAG de Frontera**, **21 Innovaciones RAG de Nodo Unico**, **135 Modulos de Dominio** y **98 Suites de Pruebas Automatizadas (826 Pruebas de Verificacion)**, Uroboros supera a los servicios en la nube (como Microsoft Azure AI Search, NotebookLM, Glean, Cursor RAG y Perplexity) al ofrecer pruebas de estres contrafacticas, indexacion jerarquica RAPTOR, reordenamiento binario ColBERT MaxSim, enmascaramiento de datos con pruebas de conocimiento cero, debate adversarial multiagente, precachado predictivo de contexto y aislamiento de memoria de procesos en hardware local.
+Con **32 Subsistemas Principales de Recuperacion**, **13 Estrategias Avanzadas de RAG**, **21 Optimizaciones de Arquitectura de Nodo Unico**, **141 Modulos de Dominio** y **99 Suites de Pruebas Automatizadas**, Uroboros proporciona validacion contrafactica, indexacion jerarquica RAPTOR, reordenamiento binario ColBERT MaxSim, enmascaramiento criptografico de datos, sintesis de debate multiagente, precachado predictivo de contexto y aislamiento de memoria de procesos en hardware local.
 
 ---
 

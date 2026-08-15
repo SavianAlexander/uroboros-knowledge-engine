@@ -156,10 +156,10 @@ Whenever executing multi-step work or in planning mode:
 2. **Post-Push Remote Monitoring & Confirmation**:
    - Immediately after `git push`, invoke `python .agents/skills/neuro-copilot/scripts/github_bridge.py verify_ci --wait`.
    - Actively watch all 4 remote GitHub Actions workflows:
-     - `CI Pipeline` (Matrix Test Python 3.11 & 3.12)
-     - `Neuro Co-Pilot Tri-Engine CI Suite` (Domain Test Suite & Tri-Engine Health)
-     - `Crucible Security Matrix & Merkle Provenance Audit` (Fuzzing & Blast Radius)
-     - `Build & Package` (Desktop Artifacts, Web Dist & GHCR Container Image)
+      - `CI Pipeline` (Matrix Test Python 3.11 & 3.12)
+      - `Domain Integration CI Suite` (Domain Test Matrix & Security Controls)
+      - `Security & Static Analysis Audit` (Static Blast Radius & Dependency Security Audit)
+      - `Build & Package` (Desktop Artifacts, Web Dist & GHCR Container Image)
 3. **Zero-Failure Completion Guarantee**:
    - Never declare work complete or mark Tududi milestones done until 100% of remote workflows conclude with `SUCCESS (Green)`.
    - If any workflow fails, immediately execute `github_bridge.py diagnose_ci --run-id <id>`, apply root-cause fixes, re-verify locally, push, and confirm all pipelines pass green.
@@ -176,7 +176,29 @@ Whenever executing multi-step work or in planning mode:
 3. **Pre-Merge PR Security & Diff Audit**:
    - Execute `python .../github_bridge.py audit_pr_diff` before merging any PR to ensure zero API key leaks or anti-patterns.
 4. **Master Branch Protection Invariant**:
-   - `master` is strictly protected: All 5 CI workflows (`CI Pipeline`, `Crucible Security Matrix`, `Neuro CI Suite`, `Build & Package`, `GitHub Pages`) must be 100% Green before merging.
+   - `master` is strictly protected: All 5 CI workflows (`CI Pipeline`, `Domain Integration CI Suite`, `Security & Static Analysis Audit`, `Build & Package`, `GitHub Pages`) must be 100% Green before merging.
+
+### VIII. Dynamic, Autonomous & Self-Calibrating Engine Architecture Protocol
+All retrieval, domain, and bridge engines in the system are architected to operate on **dynamic, autonomous, and automatic values**, eliminating brittle hardcoded assumptions, static port binds, and manual calibration:
+
+1. **Dynamic Runtime Values & Adaptive Calibration**:
+   - **Dynamic Socket & Port Allocation**: Network and E2E servers bind to dynamic OS ephemeral ports (`socket.bind(('127.0.0.1', 0))` / `get_free_port()`) rather than static ports to guarantee zero collisions across parallel worker threads.
+   - **Dynamic Context Budgeting & Token Compression**: Context managers (`adaptive_context_compressor.py`, `context_budget_allocator.py`, `mrl_compressor.py`) dynamically calculate token capacity per active LLM context window limits and dynamically compress or truncate embeddings and prompts without hardcoded slice lengths.
+   - **Dynamic Retrieval Fusion ($\alpha$-Tuning)**: Hybrid retrieval engines (`auto_weight_tuner.py`, `sparse_dense_fusion.py`) balance dense semantic vectors and lexical BM25/FTS5 indexes via dynamically adjusted reciprocal rank fusion weights calculated from query entropy.
+   - **Dynamic Hardware Sizing**: Model management engines (`model_manager.py`) detect available GPU VRAM and CPU core topologies to size batching and select quantization tiers automatically; audio DSP pipelines dynamically calibrate sample rates, chunk sizes, and jitter buffers.
+
+2. **Autonomous Decision Loops & Self-Healing**:
+   - **Autonomous Multi-Tier Model Routing**: The model router (`model_router.py`) dynamically discovers available inference providers (local Ollama, vLLM, GGUF runtimes, or in-memory fallback embeddings) and routes queries without operator intervention.
+   - **Autonomous Storage & Index Healing**: Database health services (`database_self_healer.py`, `index_self_healing.py`, `knowledge_self_healing.py`) continuously monitor SQLite WAL states, detect deadlocks or corrupted virtual tables, and rebuild indexes automatically.
+   - **Autonomous Parallel DAG Scheduling**: The contract bus (`contract_bus.py`, `workflow_hub_bridge.py`) resolves bridge dependency graphs dynamically, scheduling independent bridges concurrently via asynchronous task groups with SHA-256 Merkle contract verification.
+   - **Autonomous OS Process Hygiene**: Process management engines (`process_hygiene_bridge.py`) execute automated pre-flight and post-flight sweeps to identify and terminate orphan browser workers and dead console hosts while protecting core OS whitelists.
+
+3. **Automatic Configuration & Invariant Preservation**:
+   - **Automatic Zero-Configuration Defaults**: All modular bridges and CLI commands auto-resolve project directories, task IDs, database paths, and environment settings.
+   - **Automatic Database Pragma Initialization**: SQLite managers (`know.py`) automatically ensure WAL mode, synchronous=NORMAL, cache sizing, FTS5 virtual table schemas, and indexing triggers on boot.
+   - **Automatic NFC Unicode Normalization**: Query parsers and legal retrieval engines automatically apply NFC Unicode normalization and word-boundary tokenization before database indexing.
+   - **Automatic Zero-Reboot System Recovery**: Recovery daemons (`system_recovery_bridge.py`) automatically cascade through non-reboot restorative phases (Explorer shell -> DWM -> Audio services -> DNS resolver -> process pruning) during platform degradation.
+
 ### IX. Automated OS Process Hygiene & System Perfection Protocol
 To maintain a high-performance, clutter-free operating system environment:
 1. **Automated Dual-Hook Guarantee**: Process hygiene executes automatically as a **Pre-Flight sweep** before any Neuro workflow begins, and as a **Post-Flight sweep** upon pipeline conclusion.
@@ -191,6 +213,18 @@ To maintain a high-performance, clutter-free operating system environment:
    - Clean: `python .../process_hygiene_bridge.py clean`
    - Pre-Flight: `python .../process_hygiene_bridge.py preflight`
    - Post-Flight: `python .../process_hygiene_bridge.py postflight`
+
+### X. Production-Grade Technical Precision & Domain-Driven Naming Standard
+To ensure immediate readability, executive clarity, and frictionless collaboration:
+1. **Strict Anti-Hyperbole Rule**: Never introduce or use marketing, hype-y, sensationalist, or fictional adjectives (e.g., *"supremacy"*, *"incomparable"*, *"singularity"*, *"omniscient"*, *"crucible matrix"*, *"omni-perfection"*, *"magic"*).
+2. **Self-Descriptive Test Naming Invariant**: Every test suite file must clearly name the exact subsystem and verification method being tested:
+   - Pattern: `test_<subsystem>_<verification_type>.py`
+   - Examples: `test_rag_metamorphic_validation.py`, `test_crawler_browser_automation.py`, `test_developer_ast_rag.py`, `test_voice_synthesis_audio_processing.py`.
+3. **Descriptive Operational Script Naming**: Operational utilities must use clear functional verbs and nouns:
+   - Examples: `scripts/fault_injection_harness.py`, `scripts/verify_system_integrity.py`, `scripts/verify_voice_audio_matrix.py`, `scripts/verify_empirical_models.py`.
+4. **Self-Descriptive Domain & Crawler Mode Aliasing**: All multi-mode engines (e.g. web crawlers, RAG routers) must expose clear, human-understandable session mode aliases:
+   - `adaptive_session`, `browser_automation`, `proxy_rotation`, `async_pool`, `rotating_headers`, `direct`.
+5. **Clean CI/CD Workflow & Documentation Nomenclature**: GitHub Actions workflows and documentation badges/headings must reflect clear technical operations (e.g. *Domain Integration CI Suite*, *Security & Static Analysis Audit*, *Core Retrieval Subsystems*).
 
 ---
 

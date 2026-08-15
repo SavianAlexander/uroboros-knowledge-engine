@@ -124,6 +124,13 @@ from src.domain.web_search import (
     WebSearchFetcher,
     fetch_web_context
 )
+from src.domain.pr_legal_engine import PRLegalEngine
+from src.infrastructure.pr_legal_repository import (
+    init_pr_legal_schema,
+    ingest_pr_statutory_corpus,
+    lookup_pr_citation_exact,
+    query_pr_legal_hybrid
+)
 
 def search_knowledge(query: str, limit: int = 10):
     """Primary Hybrid RAG search entrypoint combining FTS5 BM25 and Vector Cosine similarity via RRF."""
@@ -131,10 +138,51 @@ def search_knowledge(query: str, limit: int = 10):
 
 
 def main():
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
     if len(sys.argv) > 1 and sys.argv[1] == "init":
         init_db()
+        from src.infrastructure.crawler_repository import init_crawler_schema
+        with get_db() as conn:
+            init_crawler_schema(conn)
+        print("[OK] Uroboros Knowledge Vault & Sovereign Crawler Matrix Initialized Successfully.")
+    elif len(sys.argv) > 1 and sys.argv[1] in ("crawl", "crawler"):
+        import subprocess
+        # Forward arguments to crawler_cli.py
+        crawler_script = os.path.join(os.path.dirname(__file__), "scripts", "crawler_cli.py")
+        sys.argv[0] = crawler_script
+        sys.argv.pop(1) # Remove 'crawl'
+        from scripts.crawler_cli import main as crawler_main
+        crawler_main()
+    elif len(sys.argv) > 1 and sys.argv[1] == "search":
+        q = " ".join(sys.argv[2:]) if len(sys.argv) > 2 else "Puerto Rico"
+        results = search_knowledge(q, limit=5)
+        print(f"\n[SEARCH] Hybrid RAG Results for '{q}':\n")
+        for r in results:
+            title = r.get("title") or r.get("filename") or "Document"
+            score = r.get("score") or r.get("similarity", 0.0)
+            print(f" - [{score:.4f}] {title} ({r.get('path', '')})")
     else:
-        print("Uroboros Knowledge Engine CLI")
+        print("=====================================================================")
+        print("[APEX] UROBOROS KNOWLEDGE ENGINE & SOVEREIGN HARVESTER (APEX FUSION)")
+        print("=====================================================================")
+        print("Commands:")
+        print("  python know.py init                  - Initialize SQLite knowledge & crawler vaults")
+        print("  python know.py search <query>        - Execute hybrid RRF search across entire corpus")
+        print("  python know.py crawl create ...      - Create an Omni-Sovereign crawler job")
+        print("  python know.py crawl swarm ...       - Launch concurrent worker swarm")
+        print("  python know.py crawl list            - List active jobs and extraction telemetry")
+        print("  python know.py crawl certificate ... - Generate Rule 902 FRE Evidence Certificate")
+        print("  python know.py crawl dossier ...     - Generate Cross-Examination Deposition Dossier")
+        print("  python know.py crawl genesis ...     - Extract legislative journey milestones")
+        print("  python know.py crawl visualizer ...  - Launch interactive HTML5 force-directed graph")
+        print("=====================================================================")
 
 if __name__ == "__main__":
+    import os
     main()
+

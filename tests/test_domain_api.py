@@ -61,7 +61,7 @@ class TestDomainAPI(unittest.TestCase):
         Invariants: FastAPI request validation rejects malformed payload prior to execution.
         Expected Outcomes: POST /api/chat returns status code HTTP 422.
         """
-        response = self.client.post("/api/chat", json={"message": "missing history"})
+        response = self.client.post("/api/chat", json={"message": ""})
         self.assertEqual(response.status_code, 422)
 
     def test_04_angle_gzip_compression_header(self):

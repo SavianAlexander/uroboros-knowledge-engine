@@ -31,7 +31,7 @@ def get_modified_git_files():
 
 def main_runner():
     print("===================================================")
-    print("   EUROBOROS DOMAIN-ALLOCATED TEST RUNNER v2.0")
+    print("   UROBOROS DOMAIN TEST RUNNER v2.0")
     print("===================================================")
     
     is_fast_mode = "--fast" in sys.argv or "--changed-only" in sys.argv

@@ -234,7 +234,7 @@ def diagnose_ci(run_id=None):
 def verify_ci(wait=False, timeout_seconds=300):
     """Query GitHub Actions workflow runs for the active commit/branch, optionally watching until completion.
     
-    Verifies that all triggered CI workflows (CI Pipeline, Neuro CI Suite, Crucible Security, Build & Package)
+    Verifies that all triggered CI workflows (CI Pipeline, Domain Integration CI Suite, Security & Static Analysis Audit, Build & Package)
     reach 100% SUCCESS (Green) status.
     """
     head_sha, _, _ = run_cmd("git rev-parse HEAD")
@@ -1213,12 +1213,12 @@ def ghost_loop(prompt: str, auto_pr: bool = False):
     install_hooks()
     print("  [Pass] Commit-msg provenance hook armed.")
 
-    print("[3/5] Pre-Computing AST Omniscient Blast Radius...")
+    print("[3/5] Pre-Computing AST Static Blast Radius...")
     target_f = "src/know.py" if os.path.exists("src/know.py") else ("know.py" if os.path.exists("know.py") else ".agents/skills/neuro-copilot/scripts/github_bridge.py")
     br_res = json.loads(blast_radius(target_f))
     print(f"  [Pass] Blast radius verified: {br_res.get('blast_radius_severity', 'LOW')} severity ({br_res.get('downstream_impacted_files_count', 0)} downstream modules).")
 
-    print("[4/5] Executing Adversarial Fuzzing Crucible Arena...")
+    print("[4/5] Executing Adversarial Security & Fuzzing Audit...")
     c_res = json.loads(crucible())
     print(f"  [Pass] {c_res.get('attestation')} ({c_res.get('adversarial_trust_score')} Trust Score).")
 
@@ -1318,12 +1318,12 @@ def generate_certificate():
         "version": "1.0.0",
         "merkle_root_sha256": merkle_root,
         "timestamp_utc": timestamp,
-        "issuer": "Uroboros Tri-Engine Knowledge Singularity Suite",
+        "issuer": "Uroboros Knowledge Engine Suite",
         "verified_domains": [
             "Neuro ColBERT Hybrid Vector Vault",
             "Tududi Task Master Orchestration",
             "GitHub Merkle Commit Subsystem",
-            "The Crucible Adversarial Arena (100% Trust)"
+            "Adversarial Security & Fuzzing Audit (100% Trust)"
         ],
         "domain_tests_passed": 394,
         "total_files_audited": repo_files_count,

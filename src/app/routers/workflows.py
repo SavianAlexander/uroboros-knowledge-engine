@@ -3,6 +3,7 @@ REST API router for Workflow Triggers and Webhook Engine.
 Exposes CRUD operations for trigger rules, execution logs, and event trigger dispatches.
 """
 
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Query, status
 
@@ -89,8 +90,15 @@ def trigger_event_endpoint(req: WorkflowEventTriggerRequest):
         trigger = get_workflow_trigger(req.trigger_id)
         if not trigger:
             raise HTTPException(status_code=404, detail="Workflow trigger not found")
-        event_type = req.event_type or trigger.get("event_type", "test_event")
-        payload = req.payload or {"message": "Test webhook payload", "trigger_id": req.trigger_id}
+        event_type = req.event_type or trigger.get("event_type", "trigger_event")
+        payload = req.payload if req.payload is not None else {
+            "event": event_type,
+            "trigger_id": trigger["id"],
+            "trigger_name": trigger.get("name", "Workflow Trigger"),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "target_url": trigger.get("webhook_url", ""),
+            "status": "active"
+        }
         res = WebhookDispatcher.dispatch_sync(
             trigger_id=trigger["id"],
             webhook_url=trigger["webhook_url"],
@@ -105,8 +113,12 @@ def trigger_event_endpoint(req: WorkflowEventTriggerRequest):
             "results": [res]
         }
     
-    event_type = req.event_type or "test_event"
-    payload = req.payload or {"message": "Test event payload"}
+    event_type = req.event_type or "system_event"
+    payload = req.payload if req.payload is not None else {
+        "event": event_type,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "source": "WorkflowEngine.dispatch"
+    }
     results = WorkflowEngine.process_event(event_type=event_type, payload=payload, sync_dispatch=True)
     log_id = results[0].get("log_id") if results and "log_id" in results[0] else None
     return {

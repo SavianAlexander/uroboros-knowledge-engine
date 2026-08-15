@@ -17,6 +17,6 @@ keywords:
   - Speculative RAG
   - Zero-Cloud AI
   - FastAPIs
-version: "2.5.0"
-date-released: "2026-08-12"
+version: "3.2.0"
+date-released: "2026-08-15"
 license: "MIT"

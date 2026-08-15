@@ -9,11 +9,11 @@ readme_content = r"""# Uroboros Knowledge Database Engine (Neuro Alexander)
   <img src="https://img.shields.io/badge/FastAPI-0.111.0-teal.svg?style=flat-square" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React-19.0.1-61dafb.svg?style=flat-square" alt="React" />
   <img src="https://img.shields.io/badge/SQLite-FTS5-orange.svg?style=flat-square" alt="SQLite" />
-  <img src="https://img.shields.io/badge/SOTA%20Engines-32-purple.svg?style=flat-square" alt="32 SOTA Engines" />
-  <img src="https://img.shields.io/badge/Frontier%20Paradigms-13-magenta.svg?style=flat-square" alt="13 Frontier Paradigms" />
-  <img src="https://img.shields.io/badge/RAG%20Innovations-21-indigo.svg?style=flat-square" alt="21 RAG Innovations" />
-  <img src="https://img.shields.io/badge/Domain%20Modules-135-blue.svg?style=flat-square" alt="135 Domain Modules" />
-  <img src="https://img.shields.io/badge/Test%20Suites-98-emerald.svg?style=flat-square" alt="98 Test Suites" />
+  <img src="https://img.shields.io/badge/Retrieval%20Subsystems-32-purple.svg?style=flat-square" alt="32 Retrieval Subsystems" />
+  <img src="https://img.shields.io/badge/Advanced%20Strategies-13-magenta.svg?style=flat-square" alt="13 Advanced Strategies" />
+  <img src="https://img.shields.io/badge/Architecture%20Optimizations-21-indigo.svg?style=flat-square" alt="21 Optimizations" />
+  <img src="https://img.shields.io/badge/Domain%20Modules-141-blue.svg?style=flat-square" alt="141 Domain Modules" />
+  <img src="https://img.shields.io/badge/Test%20Suites-99-emerald.svg?style=flat-square" alt="99 Test Suites" />
   <img src="https://img.shields.io/badge/test%20pass%20rate-100%25-brightgreen.svg?style=flat-square" alt="Test Pass Rate" />
   <img src="https://img.shields.io/badge/code%20style-ponytail-indigo?style=flat-square" alt="Code Style" />
 </p>
@@ -24,7 +24,7 @@ readme_content = r"""# Uroboros Knowledge Database Engine (Neuro Alexander)
 
 **Uroboros Knowledge Engine (Neuro Alexander)** is an enterprise-grade, zero-cloud, single-node knowledge management, semantic retrieval, document intelligence, and multi-hop RAG platform. Built around a modular FastAPI backend, SQLite FTS5 vector storage, local Ollama / GGUF LLM integration, and a React 19 / Vite single-page frontend, Uroboros enables real-time local search, structural parsing, multi-hop RAG reasoning, and graph-based knowledge discovery without requiring external cloud vector databases or heavy third-party runtime dependencies.
 
-With **32 State-of-the-Art Architectural Engines**, **13 Incomparable Frontier RAG Paradigms**, **21 Single-Node RAG Innovations**, **135 Domain Modules**, and **98 Automated Test Suites (826 Verification Tests)**, Uroboros surpasses cloud search services (such as Microsoft Azure AI Search, NotebookLM, Glean, Cursor RAG, and Perplexity) by delivering counterfactual stress-testing, hierarchical RAPTOR indexing, binary ColBERT MaxSim reranking, quantum-safe zero-knowledge data masking, multi-agent adversarial debate, predictive context pre-caching, and hardware single-instance process memory isolation directly on local hardware.
+Featuring **32 Core Retrieval Subsystems**, **13 Advanced Retrieval Strategies**, **21 Single-Node Architecture Optimizations**, **141 Decoupled Domain Modules**, and **99 Automated Test Suites**, Uroboros provides counterfactual validation, hierarchical RAPTOR indexing, binary ColBERT MaxSim reranking, dynamic SQLite HyperGraph routing, Louvain community clusters, statutory legal audits, semantic document diffing, cryptographic data masking, multi-agent debate synthesis, predictive context pre-caching, and hardware single-instance process memory isolation directly on local hardware.
 
 ---
 

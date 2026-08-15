@@ -1,13 +1,13 @@
 # Uroboros Knowledge Database Engine (Neuro Alexander)
 
 <p align="center">
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v2.1.0--cognitive--frontier-blue.svg?style=flat-square" alt="Release v2.1.0-cognitive-frontier" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v2.1.0-blue.svg?style=flat-square" alt="Release v2.1.0" /></a>
   <a href="https://savianalexander.github.io/uroboros-knowledge-engine/"><img src="https://img.shields.io/badge/Live%20Showcase-GitHub%20Pages-blueviolet?style=flat-square&logo=github" alt="Live Client Showcase" /></a>
   <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml/badge.svg" alt="CI Pipeline" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml/badge.svg" alt="Neuro Co-Pilot Tri-Engine CI Suite" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml/badge.svg" alt="Crucible Security Matrix" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml/badge.svg" alt="Domain Integration CI Suite" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml/badge.svg" alt="Security & Static Analysis Audit" /></a>
   <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml/badge.svg" alt="Build & Package" /></a>
-  <img src="https://img.shields.io/badge/Crucible%20Security-100%25%20Trust-emerald?style=flat-square" alt="Crucible 100% Trust" />
+  <img src="https://img.shields.io/badge/Security%20Audit-100%25%20Verified-emerald?style=flat-square" alt="Security Audit Passed" />
   <img src="https://img.shields.io/badge/Tududi%20Task%20Master-Connected%20Project%20%2313-blue?style=flat-square" alt="Tududi Project #13" />
   <a href="docs/soc2_type2_attestation.md"><img src="https://img.shields.io/badge/SOC%202%20Type%20II-Verified-green.svg?style=flat-square" alt="SOC 2 Type II" /></a>
   <img src="https://img.shields.io/github/license/SavianAlexander/uroboros-knowledge-engine?style=flat-square" alt="License" />
@@ -21,7 +21,7 @@
 </p>
 
 > [!TIP]
-> 🌐 **Interactive Client Showcase & UX Deck**: Explore the live interactive glassmorphic application showcase, multi-viewport UI captures, and architectural flow diagrams at **[savianalexander.github.io/uroboros-knowledge-engine](https://savianalexander.github.io/uroboros-knowledge-engine/)**.
+> 🌐 **Interactive Client Showcase & UX Deck**: Explore the live interactive application showcase, multi-viewport UI captures, and architectural flow diagrams at **[savianalexander.github.io/uroboros-knowledge-engine](https://savianalexander.github.io/uroboros-knowledge-engine/)**.
 
 ---
 
@@ -29,16 +29,16 @@
 
 **Uroboros Knowledge Engine (Neuro Alexander)** is an enterprise-grade, zero-cloud, single-node knowledge management, semantic retrieval, document intelligence, and multi-hop RAG platform. Built around a modular FastAPI backend, SQLite FTS5 vector storage, local Ollama / GGUF LLM integration, and a React 19 / Vite single-page frontend, Uroboros enables real-time local search, structural parsing, multi-hop RAG reasoning, and graph-based knowledge discovery without requiring external cloud vector databases or heavy third-party runtime dependencies.
 
-With **36 State-of-the-Art Architectural Engines**, **13 Incomparable Frontier RAG Paradigms**, **21 Single-Node RAG Innovations**, **141 Domain Modules (100% Tested)**, and **99 Automated Test Suites**, Uroboros surpasses cloud search services (such as Microsoft Azure AI Search, NotebookLM, Glean, Cursor RAG, and Perplexity) by delivering counterfactual stress-testing, hierarchical RAPTOR indexing, binary ColBERT MaxSim reranking, dynamic SQLite HyperGraph routing, Louvain community clusters, statutory legal audits, semantic document diffing, quantum-safe zero-knowledge data masking, multi-agent adversarial debate, predictive context pre-caching, and hardware single-instance process memory isolation directly on local hardware.
+Featuring **32 Core Retrieval Subsystems**, **13 Advanced Retrieval Strategies**, **21 Single-Node Architecture Optimizations**, **141 Decoupled Domain Modules**, and **99 Automated Test Suites**, Uroboros provides counterfactual validation, hierarchical RAPTOR indexing, binary ColBERT MaxSim reranking, dynamic SQLite HyperGraph routing, Louvain community clusters, statutory legal audits, semantic document diffing, cryptographic data masking, multi-agent debate synthesis, predictive context pre-caching, and hardware single-instance process memory isolation directly on local hardware.
 
 ---
 
 ## Table of Contents
 
 - [1. Mathematical Foundations, Formal Proofs & Retrieval Algorithms](#1-mathematical-foundations-formal-proofs-retrieval-algorithms)
-- [2. The 32 State-of-the-Art (SOTA) Architectural Engines](#2-the-32-state-of-the-art-sota-architectural-engines)
-- [3. The 13 Incomparable Frontier RAG Paradigms](#3-the-13-incomparable-frontier-rag-paradigms)
-- [4. The 21 Single-Node RAG Innovations Matrix](#4-the-21-single-node-rag-innovations-matrix)
+- [2. Core Retrieval & Ranking Subsystems](#2-core-retrieval--ranking-subsystems)
+- [3. Advanced Retrieval & Synthesis Strategies](#3-advanced-retrieval--synthesis-strategies)
+- [4. Local Architecture & Optimization Matrix](#4-local-architecture--optimization-matrix)
 - [5. Hardware Single-Instance Process Memory Guard](#5-hardware-single-instance-process-memory-guard)
 - [6. End-to-End System Pipeline & Sequence Architecture](#6-end-to-end-system-pipeline-sequence-architecture)
 - [7. Complete Codebase Directory Layout](#7-complete-codebase-directory-layout)
@@ -137,9 +137,9 @@ $$RE = 206.835 - 1.015 \left( \frac{\text{total words}}{\text{total sentences}} 
 
 ---
 
-## 2. The 32 State-of-the-Art (SOTA) Architectural Engines
+## 2. Core Retrieval & Ranking Subsystems
 
-Uroboros incorporates 32 complete architectural engines divided into Core Acceleration, Code-Graph Analysis, Fine-Tuning & Audio, Fusion RAG, Privacy & Compliance, Telemetry, and Frontier Paradigms:
+Uroboros incorporates 32 complete modular subsystems divided into Core Acceleration, Code-Graph Analysis, Audio Processing, Fusion RAG, Privacy & Compliance, Telemetry, and Advanced Retrieval Strategies:
 
 ### Core Acceleration & Swarm RAG
 1. **2-Phase Matryoshka Vector Search** ([`src/domain/vector_store.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/vector_store.py)): Coarse-to-fine vector retrieval (32-dim fast pass $\to$ 128-dim rescore).
@@ -174,7 +174,7 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 
 ---
 
-## 3. The 13 Incomparable Frontier RAG Paradigms
+## 3. Advanced Retrieval & Synthesis Strategies
 
 1. **⚔️ Counterfactual RAG & Multi-Scenario Stress Testing** ([`src/domain/counterfactual_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/counterfactual_rag.py)): Generates counter-hypotheses and searches for refutations or edge cases before output.
 2. **🌲 RAPTOR Tree Indexer** ([`src/domain/raptor_tree_indexer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/raptor_tree_indexer.py)): Recursive Abstractive Processing constructing hierarchical multi-level summary trees.
@@ -183,7 +183,7 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 5. **🛠️ Inline Self-Correction Grounding Guard** ([`src/domain/auto_correct_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/auto_correct_rag.py)): Identifies ungrounded claims during text generation and patches them with verified context in real time.
 6. **🧹 Semantic Entropy Context Compressor** ([`src/domain/adaptive_context_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/adaptive_context_compressor.py)): Strips filler prose while preserving numbers, code, and entities (saving up to 60% prompt tokens).
 7. **🌐 Zero-Shot Cross-Lingual RAG Fusion** ([`src/domain/cross_lingual_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cross_lingual_fusion.py)): Queries English against multi-lingual document vaults (Spanish, German, French) with zero translation latency.
-8. **🔐 Quantum-Safe Zero-Knowledge Data Masker** ([`src/domain/zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py)): Salt-hashed zero-knowledge verification proofs for sensitive document payloads.
+8. **🔐 Cryptographic Data Masker** ([`src/domain/zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py)): Salt-hashed zero-knowledge verification proofs for sensitive document payloads.
 9. **🎯 Sub-1ms Speculative Query Intent Router** ([`src/domain/intent_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/intent_router.py)): Classifies intent in sub-1ms and routes execution to the optimal RAG pipeline.
 10. **🔗 Knowledge Graph Self-Healing & Wikilink Synthesizer** ([`src/domain/graph_link_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_link_synthesizer.py)): Scans unlinked concept nodes across raw vault files and automatically inserts missing semantic `[[wikilinks]]`.
 11. **🌊 Specular Speculative Context Streaming Guard** ([`src/domain/speculative_streamer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_streamer.py)): Pre-tokenizes and speculative-streams retrieved context in parallel with decoding (< 10ms $TTFT$).
@@ -192,9 +192,9 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 
 ---
 
-## 4. The 21 Single-Node RAG Innovations Matrix
+## 4. Local Architecture & Optimization Matrix
 
-| # | Innovation Pillar | Module File Path | API Endpoint | Incomparable Moat over Cloud Services |
+| # | Feature Subsystem | Module File Path | API Endpoint | Technical Description & Performance |
 |---| :--- | :--- | :--- | :--- |
 | **1** | **Speculative RAG Synthesizer** | [`src/domain/speculative_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_rag.py) | `POST /api/search/speculative-rag` | Synthesizes and scores 3 candidate draft representations in parallel, cutting context latency by **~78%**. |
 | **2** | **Temporal Knowledge Lineage** | [`src/domain/temporal_rag_lineage.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/temporal_rag_lineage.py) | `GET/POST /api/knowledge/temporal-lineage` | Tracks document version history and relationship evolution across time ($t_0 \to t_1 \to t_2$). |
@@ -554,10 +554,14 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 | Script File Path | Target Operation & Execution Syntax | Description |
 | :--- | :--- | :--- |
 | [`scripts/architecture_cli.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/architecture_cli.py) | `python scripts/architecture_cli.py audit .` | Verifies clean architecture layer boundaries & imports |
+| [`scripts/crawler_cli.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/crawler_cli.py) | `python scripts/crawler_cli.py crawl --url <URL>` | High-concurrency crawler with multi-format parsing |
 | [`scripts/backup_db.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/backup_db.py) | `python scripts/backup_db.py --output snapshot.db` | Executes non-blocking online SQLite WAL backup |
 | [`scripts/update_test_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/update_test_ledger.py) | `python scripts/update_test_ledger.py --soc2` | Generates SOC 2 Type II attestation & coverage ledger |
 | [`scripts/benchmark_engine.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/benchmark_engine.py) | `python scripts/benchmark_engine.py --runs 100` | Benchmarks retrieval latency, QPS, & precision |
-| [`scripts/chaos_monkey.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/chaos_monkey.py) | `python scripts/chaos_monkey.py --duration 30` | Injects fault concurrency & memory stress |
+| [`scripts/fault_injection_harness.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/fault_injection_harness.py) | `python scripts/fault_injection_harness.py --duration 30` | Injects fault concurrency & resilience testing |
+| [`scripts/verify_system_integrity.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/verify_system_integrity.py) | `python scripts/verify_system_integrity.py` | Full end-to-end system and vault integrity check |
+| [`scripts/verify_voice_audio_matrix.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/verify_voice_audio_matrix.py) | `python scripts/verify_voice_audio_matrix.py` | Voice synthesis & audio routing verification |
+| [`scripts/verify_empirical_models.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/verify_empirical_models.py) | `python scripts/verify_empirical_models.py` | Empirical retrieval accuracy and invariant scoring |
 | [`scripts/audit_ui_playwright.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/audit_ui_playwright.py) | `python scripts/audit_ui_playwright.py` | Automated Playwright end-to-end UI audit |
 | [`scripts/capture_showcase.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/capture_showcase.py) | `python scripts/capture_showcase.py` | Captures HD application screenshots |
 | [`scripts/stress_test_domain.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/stress_test_domain.py) | `python scripts/stress_test_domain.py` | Multithreaded domain algorithm stress test |
@@ -878,7 +882,7 @@ python scripts/update_test_ledger.py --soc2
 python scripts/benchmark_engine.py --runs 100
 
 # Execute fault injection and memory stress tests
-python scripts/chaos_monkey.py --duration 30
+python scripts/fault_injection_harness.py --duration 30
 ```
 
 ---

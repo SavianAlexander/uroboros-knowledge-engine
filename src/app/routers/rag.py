@@ -293,10 +293,42 @@ def chat_stream_endpoint(req: ChatRequest):
 
 @router.post("/api/chat")
 def chat_endpoint(req: ChatRequest):
-    """Non-streaming chat endpoint."""
-    if not req.messages and not req.history:
+    """Non-streaming chat endpoint with grounded RAG context and model completion."""
+    if req.history is None and req.messages is None:
+        raise HTTPException(status_code=422, detail="Missing required field 'history' or 'messages'")
+
+    user_query = req.message or ""
+    if not user_query and req.messages:
+        user_query = req.messages[-1].content
+    if not user_query and req.history:
+        user_query = req.history[-1].content
+
+    if not user_query or not user_query.strip():
         raise HTTPException(status_code=422, detail="Missing required field messages or history")
-    return ChatResponse(response="Chat response text", sources=[])
+
+    user_query = user_query.strip()
+    expanded_query = expand_query_with_llm(user_query)
+    local_context, local_citations = extract_advanced_rag_context(expanded_query, max_chunks=5, jaccard_threshold=0.70)
+
+    sources = [{"filename": c.get("filename", ""), "similarity": c.get("similarity", 0.0)} for c in local_citations]
+
+    llm = get_fallback_llm()
+    if is_llm_available() and llm is not None:
+        try:
+            prompt = f"Context:\n{local_context}\n\nUser: {user_query}\n\nAssistant:"
+            temp = req.temperature if req.temperature is not None else 0.3
+            resp = llm.create_completion(prompt=prompt, max_tokens=512, temperature=temp)
+            text_resp = resp["choices"][0]["text"].strip()
+            return ChatResponse(response=text_resp, sources=sources)
+        except Exception:
+            pass
+
+    if local_context:
+        resp_text = f"Based on retrieved vault context:\n\n{local_context[:500]}"
+    else:
+        resp_text = f"No direct document context found for query: '{user_query}'."
+
+    return ChatResponse(response=resp_text, sources=sources)
 
 class EnhancePromptRequest(BaseModel):
     prompt: str

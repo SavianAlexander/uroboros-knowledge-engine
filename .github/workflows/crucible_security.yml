@@ -1,4 +1,4 @@
-name: Crucible Security Matrix & Merkle Provenance Audit
+name: Security & Static Analysis Audit
 
 on:
   push:
@@ -9,8 +9,8 @@ on:
     - cron: '0 4 * * *' # Nightly at 04:00 UTC
 
 jobs:
-  crucible_audit:
-    name: Red/Blue Team Crucible Exploit Fuzzing & Static Blast Radius
+  security_audit:
+    name: Static Blast Radius & Dependency Security Audit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Codebase

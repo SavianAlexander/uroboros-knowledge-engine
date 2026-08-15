@@ -26,7 +26,7 @@ def run_preflight_checks():
     print("🚀 UROBOROS KNOWLEDGE ENGINE: EVE ON-DEMAND CO-PILOT LAUNCHER")
     print("=================================================================")
     print("\n[1/3] Running Zero-Assumption Preflight Verification...")
-    from scripts.verify_zero_assumptions import run_zero_assumption_audit
+    from scripts.verify_system_integrity import run_zero_assumption_audit
     try:
         run_zero_assumption_audit()
         print("  ✅ Preflight checks passed with 100% precision.")

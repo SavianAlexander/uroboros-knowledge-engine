@@ -1,4 +1,4 @@
-name: Neuro Co-Pilot Tri-Engine CI Suite
+name: Domain Integration CI Suite
 
 on:
   push:
@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Run Domain Test Suite & Tri-Engine Audit
+    name: Run Domain Test Matrix & Security Controls
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Codebase

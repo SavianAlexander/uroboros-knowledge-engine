@@ -115,9 +115,9 @@ DOMAIN_TEST_MODULES = [
     "tests.test_domain_localization",
     "tests.test_domain_contract_chaos",
     "tests.test_router_micro_units",
-    "tests.test_empirical_challenger_final",
+    "tests.test_empirical_verification_final",
     "tests.test_adversarial_ui_stress",
-    "tests.test_adversarial_challenger_2",
+    "tests.test_adversarial_verification_v2",
     "tests.test_adversarial_i3",
     "tests.test_domain_chat_intelligence",
     "tests.test_domain_graph_performance",
@@ -137,7 +137,11 @@ DOMAIN_TEST_MODULES = [
     "tests.test_domain_catastrophic_recovery",
     "tests.test_domain_auth_security_hardening",
     "tests.test_domain_resource_stability",
-    "tests.test_domain_hallucination_guardrails"
+    "tests.test_domain_hallucination_guardrails",
+    "tests.test_universal_crawler",
+    "tests.test_crawler_api",
+    "tests.test_pr_legal_engine",
+    "tests.test_fusion_engine"
 ]
 
 BUG_RELATION_TAXONOMY = {

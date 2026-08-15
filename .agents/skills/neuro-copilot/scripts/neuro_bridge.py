@@ -33,6 +33,24 @@ def query_brain(query_text: str, max_chunks: int = 5):
     if not query_text:
         return json.dumps({"status": "error", "message": "Query string required"})
     try:
+        from src.infrastructure.database import get_db
+        from src.infrastructure.pr_legal_repository import lookup_pr_citation_exact
+        try:
+            conn = get_db()
+            exact_pr = lookup_pr_citation_exact(conn, query_text)
+            if exact_pr:
+                return json.dumps({
+                    "status": "success",
+                    "match_type": exact_pr.get("match_type", "DETERMINISTIC_LEGAL_HIT"),
+                    "canonical_citation": exact_pr.get("canonical_citation") or exact_pr.get("citation"),
+                    "status_validity": exact_pr.get("status", "VIGENTE"),
+                    "hierarchy": exact_pr.get("hierarchy_path", ""),
+                    "merkle_sha256": exact_pr.get("merkle_sha256", ""),
+                    "content": exact_pr.get("content") or exact_pr.get("doctrine", "")
+                }, indent=2)
+        except Exception:
+            pass
+
         from src.domain.rag_engine import extract_advanced_rag_context
         from src.core.model_manager import expand_query_with_llm
         expanded = expand_query_with_llm(query_text)
@@ -184,7 +202,7 @@ def export_canonical_adrs():
             ("ADR-002-Zero-Dependency-Stdlib-Standard", "Strict Ponytail Senior Developer protocol: Standard library only (ast, dis, sqlite3, hashlib, json)."),
             ("ADR-003-Thread-Local-SQLite-Lifecycle", "Prevent Windows WinError 32 permission locks via thread-local connection pooling and explicit reset."),
             ("ADR-004-Merkle-Causal-Line-Provenance", "Every line of code traces to a commit SHA, author, Tududi Task ID, and Neuro knowledge hash."),
-            ("ADR-005-Crucible-Adversarial-Security-Arena", "Continuous multi-agent Red/Blue team exploit fuzzer guaranteeing SOC 2 Type II trust.")
+            ("ADR-005-Adversarial-Security-Fuzzing-Audit", "Continuous multi-agent Red/Blue team exploit fuzzer guaranteeing SOC 2 Type II trust.")
         ]
         
         created = []
@@ -218,12 +236,12 @@ def generate_domain_glossary():
 ## 1. Core Engines
 - **Neuro Knowledge Engine**: Hybrid FTS5 + Binary ColBERT vector vault with sub-15ms retrieval.
 - **Tududi Task Master**: Centralized project governance, task orchestration, and burndown tracking.
-- **GitHub CLI Bridge**: Provenance Merkle tagging, blast radius calculation, and Crucible security fuzzer.
+- **GitHub CLI Bridge**: Provenance Merkle tagging, blast radius calculation, and adversarial security fuzzer.
 
 ## 2. Architectural Concepts
 - **Ponytail Senior Developer Standard**: The philosophy of zero-dependency, minimal functional diffs.
 - **Merkle Causal Proof**: Cryptographic validation tying code changes to Git commits and Tududi tasks.
-- **The Crucible Arena**: Red Team vs Blue Team security fuzzer testing SQLi, ReDoS, and homoglyphs.
+- **Adversarial Security Fuzzer**: Red Team vs Blue Team security fuzzer testing SQLi, ReDoS, and homoglyphs.
 - **AST Blast Radius**: Static analysis mapping downstream file dependencies and affected API endpoints.
 """
         with open(glossary_file, "w", encoding="utf-8") as f:

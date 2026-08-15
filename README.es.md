@@ -1,13 +1,13 @@
 # Motor de Base de Datos de Conocimiento Uroboros (Neuro Alexander)
 
 <p align="center">
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v1.0.1-blue.svg?style=flat-square" alt="Release v1.0.1" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v2.1.0-blue.svg?style=flat-square" alt="Release v2.1.0" /></a>
   <a href="https://savianalexander.github.io/uroboros-knowledge-engine/"><img src="https://img.shields.io/badge/Showcase%20en%20Vivo-GitHub%20Pages-blueviolet?style=flat-square&logo=github" alt="Showcase en Vivo" /></a>
   <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml/badge.svg" alt="CI Pipeline" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml/badge.svg" alt="Neuro Co-Pilot Tri-Engine CI Suite" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml/badge.svg" alt="Crucible Security Matrix" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml/badge.svg" alt="Domain Integration CI Suite" /></a>
+  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/crucible_security.yml/badge.svg" alt="Auditoria de Seguridad y Analisis Estatico" /></a>
   <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml/badge.svg" alt="Build & Package" /></a>
-  <img src="https://img.shields.io/badge/Seguridad%20Crucible-100%25%20Confianza-emerald?style=flat-square" alt="Crucible 100% Confianza" />
+  <img src="https://img.shields.io/badge/Auditoria%20de%20Seguridad-100%25%20Verificada-emerald?style=flat-square" alt="Auditoria de Seguridad Verificada" />
   <img src="https://img.shields.io/badge/Tududi%20Task%20Master-Conectado%20Proyecto%20%2313-blue?style=flat-square" alt="Tududi Proyecto #13" />
   <a href="docs/soc2_type2_attestation.md"><img src="https://img.shields.io/badge/SOC%202%20Type%20II-Verificado-green.svg?style=flat-square" alt="SOC 2 Type II" /></a>
   <img src="https://img.shields.io/github/license/SavianAlexander/uroboros-knowledge-engine?style=flat-square" alt="Licencia" />
@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/FastAPI-0.141.1-teal.svg?style=flat-square" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React-19.2.8-61dafb.svg?style=flat-square" alt="React" />
   <img src="https://img.shields.io/badge/SQLite-FTS5-orange.svg?style=flat-square" alt="SQLite" />
-  <img src="https://img.shields.io/badge/Suites%20de%20Prueba-98-emerald.svg?style=flat-square" alt="98 Suites de Prueba" />
+  <img src="https://img.shields.io/badge/Suites%20de%20Prueba-99-emerald.svg?style=flat-square" alt="99 Suites de Prueba" />
   <img src="https://img.shields.io/badge/Tasa%20de%20Aprobacion-100%25-brightgreen.svg?style=flat-square" alt="Tasa de Aprobacion 100%" />
   <img src="https://img.shields.io/badge/Estilo%20de%20Codigo-ponytail-indigo?style=flat-square" alt="Estilo Ponytail" />
 </p>
@@ -29,16 +29,16 @@
 
 **Motor de Conocimiento Uroboros (Neuro Alexander)** es una plataforma de grado empresarial, 100% local (sin nube), autocontenida y de nodo unico para la gestion de conocimiento, busqueda semantica, inteligencia documental y razonamiento RAG multietapa. Desarrollado con un backend modular en **FastAPI**, almacenamiento vectorial y lexico **SQLite FTS5**, integracion con **Ollama / GGUF** local y una interfaz web SPA en **React 19 / Vite**, Uroboros ofrece busqueda local en tiempo real, analisis estructural, razonamiento multihop RAG y exploracion de conocimiento en grafos sin depender de bases de datos vectoriales en la nube ni dependencias pesadas de terceros.
 
-Con **32 Motores Arquitectonicos de Ultima Generacion (SOTA)**, **13 Paradigmas RAG de Frontera**, **21 Innovaciones RAG de Nodo Unico**, **135 Modulos de Dominio** y **98 Suites de Pruebas Automatizadas (826 Pruebas de Verificacion)**, Uroboros supera a los servicios en la nube (como Microsoft Azure AI Search, NotebookLM, Glean, Cursor RAG y Perplexity) al ofrecer pruebas de estres contrafacticas, indexacion jerarquica RAPTOR, reordenamiento binario ColBERT MaxSim, enmascaramiento de datos con pruebas de conocimiento cero, debate adversarial multiagente, precachado predictivo de contexto y aislamiento de memoria de procesos en hardware local.
+Con **32 Subsistemas Principales de Recuperacion**, **13 Estrategias Avanzadas de RAG**, **21 Optimizaciones de Arquitectura de Nodo Unico**, **141 Modulos de Dominio** y **99 Suites de Pruebas Automatizadas**, Uroboros proporciona validacion contrafactica, indexacion jerarquica RAPTOR, reordenamiento binario ColBERT MaxSim, enmascaramiento criptografico de datos, sintesis de debate multiagente, precachado predictivo de contexto y aislamiento de memoria de procesos en hardware local.
 
 ---
 
 ## Tabla de Contenidos
 
 - [1. Fundamentos Matematicos, Pruebas Formales y Algoritmos de Recuperacion](#1-fundamentos-matematicos-pruebas-formales-y-algoritmos-de-recuperacion)
-- [2. Los 32 Motores Arquitectonicos de Ultima Generacion (SOTA)](#2-los-32-motores-arquitectonicos-de-ultima-generacion-sota)
-- [3. Los 13 Paradigmas RAG de Frontera Incomparables](#3-los-13-paradigmas-rag-de-frontera-incomparables)
-- [4. Matriz de las 21 Innovaciones RAG de Nodo Unico](#4-matriz-de-las-21-innovaciones-rag-de-nodo-unico)
+- [2. Subsistemas Principales de Recuperacion y Ranking](#2-subsistemas-principales-de-recuperacion-y-ranking)
+- [3. Estrategias Avanzadas de Recuperacion y Sintesis](#3-estrategias-avanzadas-de-recuperacion-y-sintesis)
+- [4. Matriz de Optimizaciones y Arquitectura Local](#4-matriz-de-optimizaciones-y-arquitectura-local)
 - [5. Guardián de Memoria de Proceso Unico en Hardware](#5-guardian-de-memoria-de-proceso-unico-en-hardware)
 - [6. Arquitectura del Pipeline y Secuencias del Sistema](#6-arquitectura-del-pipeline-y-secuencias-del-sistema)
 - [7. Estructura Completa del Directorio del Codigo Fuente](#7-estructura-completa-del-directorio-del-codigo-fuente)
@@ -85,9 +85,9 @@ $$\text{Score}_{Final}(d) = \text{Score}_{RRF}(d) \cdot e^{-\lambda \cdot \Delta
 
 ---
 
-## 4. Matriz de las 21 Innovaciones RAG de Nodo Unico
+## 4. Matriz de Optimizaciones y Arquitectura Local
 
-| # | Pilar de Innovacion | Archivo | Endpoint API | Ventaja Competitiva |
+| # | Subsistema | Archivo | Endpoint API | Descripcion Tecnica |
 |---| :--- | :--- | :--- | :--- |
 | **1** | **Sintetizador RAG Especulativo** | [`src/domain/speculative_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_rag.py) | `POST /api/search/speculative-rag` | Sintetiza 3 borradores candidatos en paralelo, reduciendo latencia en **~78%**. |
 | **2** | **Linaje Temporal de Conocimiento** | [`src/domain/temporal_rag_lineage.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/temporal_rag_lineage.py) | `GET/POST /api/knowledge/temporal-lineage` | Rastra el historial de versiones a lo largo del tiempo ($t_0 \to t_1 \to t_2$). |

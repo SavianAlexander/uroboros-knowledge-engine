@@ -1,6 +1,6 @@
 """
 Master System Telemetry & Benchmark Scoreboard.
-Aggregates health metrics, vector dimensions, privacy risk scores, and architectural health across all engines.
+Aggregates health metrics, vector dimensions, privacy risk scores, and architectural health across all domain modules.
 """
 import os
 import glob
@@ -38,8 +38,8 @@ def generate_system_scoreboard(root_dir: str = "src") -> Dict[str, Any]:
 
     return {
         "status": "success",
-        "system_name": "Uroboros Supremacy Knowledge Engine",
-        "total_sota_engines": total_engines,
+        "system_name": "Uroboros Knowledge Engine",
+        "total_domain_modules": total_engines,
         "architecture_health_score": arch.get("average_architecture_health", 100.0),
         "vector_search_p99_latency_ms": bench.get("p99_latency_ms", 1.2),
         "privacy_compliance_status": privacy.get("status", "compliant"),
