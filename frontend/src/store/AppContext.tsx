@@ -14,7 +14,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [activeView, setActiveViewState] = useState<ViewId>(() => {
     const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
-    if (['dashboard', 'workspace', 'search', 'ingestion', 'graph', 'chat', 'config', 'settings'].includes(hash)) {
+    if (['dashboard', 'workspace', 'search', 'ingestion', 'graph', 'chat', 'config', 'settings', 'architecture'].includes(hash)) {
       return hash as ViewId;
     }
     return 'dashboard';
@@ -37,7 +37,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
-      if (['dashboard', 'workspace', 'search', 'ingestion', 'graph', 'chat', 'config', 'settings'].includes(hash)) {
+      if (['dashboard', 'workspace', 'search', 'ingestion', 'graph', 'chat', 'config', 'settings', 'architecture'].includes(hash)) {
         setActiveViewState(hash as ViewId);
       }
     };

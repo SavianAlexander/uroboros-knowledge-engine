@@ -49,6 +49,7 @@ export default function Sidebar() {
     {
       label: 'SYSTEM & STRATEGY',
       items: [
+        { id: 'architecture', label: 'Architecture & Diagrams', icon: Layers, badge: 'SOC2', badgeColor: 'emerald' },
         { id: 'config', label: 'Processes & Sync', icon: Settings2 },
         { id: 'settings', label: 'System Settings', icon: ShieldCheck },
       ]

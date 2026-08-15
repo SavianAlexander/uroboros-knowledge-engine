@@ -14,6 +14,7 @@ const GraphView = lazy(() => import('./views/GraphView'));
 const ChatView = lazy(() => import('./views/ChatView'));
 const ConfigView = lazy(() => import('./views/ConfigView'));
 const SettingsView = lazy(() => import('./views/SettingsView'));
+const ArchitectureView = lazy(() => import('./views/ArchitectureView'));
 const LoginView = lazy(() => import('./views/LoginView'));
 
 interface ErrorBoundaryProps {
@@ -160,6 +161,7 @@ function AppLayout() {
             case 'chat': return <ChatView />;
             case 'config': return <ConfigView />;
             case 'settings': return <SettingsView />;
+            case 'architecture': return <ArchitectureView />;
             default: return <DashboardView />;
           }
         })()}
