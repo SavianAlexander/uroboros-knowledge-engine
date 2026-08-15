@@ -155,8 +155,15 @@ class VoiceCommandParser:
 
         return {
             "status": "command_executed",
+            "intent": intent,
             "parsed_intent": parsed,
             "feedback_text": feedback_text,
+            "spoken_confirmation": feedback_text,
             "action_result": action_result,
             "latency_ms": round((time.time() - t0) * 1000, 1)
         }
+
+    # Backward compatibility and alias helpers
+    parse_and_execute = execute_command
+    parse_command = execute_command
+

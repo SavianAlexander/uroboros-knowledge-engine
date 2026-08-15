@@ -180,6 +180,8 @@ class VoiceBridge:
             )
         return None
 
+    synthesize_speech_bytes = synthesize_bytes
+
 
     @classmethod
     def play_sfx(cls, sfx_name: str) -> Optional[bytes]:

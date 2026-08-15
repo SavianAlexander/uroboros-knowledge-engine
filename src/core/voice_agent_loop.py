@@ -58,12 +58,14 @@ class VoiceAgentLoop:
             }
 
         # Play welcome chime earcon
-        welcome_audio = VoiceBridge.synthesize_speech_bytes(
+        welcome_audio = VoiceBridge.synthesize_bytes(
             "Voice link established. Sovereign neural assistant online and listening.",
-            voice_persona=persona,
+            voice=persona,
             speed=1.0,
             dsp_preset=dsp_preset
         )
+
+
 
         return {
             "status": "active",
@@ -125,12 +127,14 @@ class VoiceAgentLoop:
         spoken_response = VoiceNormalizer.shape_gravitas_intent_cadence(spoken_response)
 
         # 4. Neural Audio Synthesis & DSP Mastering
-        audio_bytes = VoiceBridge.synthesize_speech_bytes(
+        audio_bytes = VoiceBridge.synthesize_bytes(
             spoken_response,
-            voice_persona=active_persona,
+            voice=active_persona,
             speed=1.0,
             dsp_preset=active_dsp
         )
+
+
 
         # 5. Record Turn into VoiceMemoryLedger
         try:
