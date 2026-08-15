@@ -1,7 +1,7 @@
 """
 Live EVE Market Arbitrage & Regional Spread Voice Engine.
 Standard: Pure Python Standard Library (urllib, json, time) + Kokoro-82M Voice Bridge.
-Ponytail Senior Dev Principle: Real-time CCP ESI market order book analysis, dynamic item/region resolution, Jita vs regional spreads, transport profitability per m3, and acoustic trade briefs.
+Ponytail Senior Dev Principle: Real-time CCP ESI market order book analysis, dynamic item/region resolution, universe base price index, and acoustic trade briefs.
 """
 
 import os
@@ -52,8 +52,11 @@ class EveMarketArbitrage:
     }
 
     _market_cache: Dict[str, Any] = {}
+    _universe_prices_cache: Dict[int, float] = {}
     _last_fetch_ts: float = 0.0
+    _last_universe_prices_ts: float = 0.0
     _CACHE_TTL_S: float = 120.0
+    _UNIVERSE_TTL_S: float = 300.0
 
     @classmethod
     def resolve_type_id(cls, item_name: str) -> int:
@@ -116,6 +119,26 @@ class EveMarketArbitrage:
         return 10000002  # Default The Forge
 
     @classmethod
+    def _fetch_universe_base_price(cls, type_id: int) -> float:
+        """Fetch CCP ESI official universe average market price for any item."""
+        now = time.time()
+        if now - cls._last_universe_prices_ts > cls._UNIVERSE_TTL_S or not cls._universe_prices_cache:
+            try:
+                url = "https://esi.evetech.net/latest/markets/prices/?datasource=tranquility"
+                req = urllib.request.Request(url, headers={"User-Agent": "NeuroAlexander-MarketRadar/1.0"})
+                with urllib.request.urlopen(req, timeout=2.0) as resp:
+                    items = json.loads(resp.read().decode("utf-8"))
+                    cls._universe_prices_cache = {
+                        it["type_id"]: float(it.get("average_price") or it.get("adjusted_price") or 5.0)
+                        for it in items if "type_id" in it
+                    }
+                    cls._last_universe_prices_ts = now
+            except Exception:
+                pass
+
+        return cls._universe_prices_cache.get(type_id, 4.50)
+
+    @classmethod
     def _fetch_live_market_stats(
         cls,
         type_id: int = 34,
@@ -129,8 +152,9 @@ class EveMarketArbitrage:
         if now - cls._last_fetch_ts < cls._CACHE_TTL_S and cache_key in cls._market_cache:
             return cls._market_cache[cache_key]
 
-        source_sell_price = 4.25
-        target_buy_price = 4.95
+        base_universe_price = cls._fetch_universe_base_price(type_id)
+        source_sell_price = base_universe_price
+        target_buy_price = round(base_universe_price * 1.15, 2)
 
         # 1. Source region sell orders
         try:

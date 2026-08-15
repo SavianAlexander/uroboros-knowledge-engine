@@ -383,11 +383,18 @@ Sent from my iPhone
         self.assertEqual(arb_custom["type_id"], 44992)
 
     def test_eve_pi_sentinel(self):
-        """Test planetary interaction colony audit."""
+        """Test planetary interaction colony audit and fleet aggregation."""
         from src.domain.eve_pi_sentinel import EvePISentinel
+        # 1. Single character audit
         pi = EvePISentinel.audit_planetary_colonies(character_name="Savian Alexander", speak_alert=False)
         self.assertEqual(pi["status"], "pi_audit_completed")
         self.assertIn("Savian Alexander", pi["character"])
+
+        # 2. Fleet-wide aggregated audit
+        pi_fleet = EvePISentinel.audit_planetary_colonies(character_name="all", speak_alert=False)
+        self.assertEqual(pi_fleet["status"], "pi_audit_completed")
+        self.assertEqual(pi_fleet["character"], "Fleet Total")
+        self.assertIn("fleet_breakdown", pi_fleet)
 
     def test_vault_auto_watcher(self):
         """Test autonomous vault filesystem delta scanner."""
