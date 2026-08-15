@@ -908,7 +908,7 @@ graph LR
     end
 ```
 
-### The 8 Dedicated Modular Bridges (`.agents/skills/neuro-copilot/scripts/`)
+### The 10 Dedicated Modular Bridges (`.agents/skills/neuro-copilot/scripts/`)
 
 | # | Bridge Script | Domain & Responsibility |
 | :-: | :--- | :--- |
@@ -920,6 +920,10 @@ graph LR
 | **5** | [`visual_audit_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/visual_audit_bridge.py) | Automated PDF Page Rendering & Layout QA Engine |
 | **6** | [`architecture_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/architecture_bridge.py) | Universal Polyglot Clean Architecture Engine (0–100% Score) |
 | **7** | [`workflow_hub_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/workflow_hub_bridge.py) | Master Multi-Phase Engineering Pipeline Orchestrator |
+| **8** | [`eve_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/eve_bridge.py) | EVE Online Live ESI Fleet Telemetry, Refinement & Physics Engine |
+| **9** | [`system_recovery_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/system_recovery_bridge.py) | Zero-Reboot Windows Recovery & Subsystem Process Hygiene |
+
+> 📐 **System Diagrams Reference**: For complete high-resolution topological and sequence diagrams across all subsystems, visit [`docs/system_architecture_diagrams.md`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/docs/system_architecture_diagrams.md).
 
 ### Tri-Engine 43-Operation Enterprise Command Matrix
 
