@@ -28,6 +28,29 @@ class VoiceRAGBridge:
     """
 
     @classmethod
+    def _extract_facts_from_content(
+        cls,
+        content: str,
+        valid_query_words: set,
+        seen_facts: set,
+        extracted_facts: list,
+        max_sentences: int
+    ):
+        """Extract matching fact sentences from candidate text using early continue guards."""
+        sentences = [s.strip() for s in re.split(r'[.!?\n]+', content) if len(s.strip()) > 20]
+        for s in sentences:
+            if len(extracted_facts) >= max_sentences:
+                break
+            s_clean = re.sub(r'[*_#`\[\]]', '', s).strip()
+            s_words = set(re.findall(r'\w+', s_clean.lower()))
+            if not (s_words & valid_query_words):
+                continue
+            if s_clean in seen_facts:
+                continue
+            seen_facts.add(s_clean)
+            extracted_facts.append(s_clean)
+
+    @classmethod
     def query_and_summarize(cls, query: str, max_sentences: int = 3) -> Dict[str, Any]:
         """Query the SOTA RAG engine and synthesize a speech-optimized conversational summary."""
         t0 = time.perf_counter()
@@ -45,24 +68,19 @@ class VoiceRAGBridge:
 
         extracted_facts = []
         citations = []
+        seen_citations = set()
+        seen_facts = set()
 
-        query_words = set(re.findall(r'\w+', query.lower()))
+        valid_query_words = {w for w in re.findall(r'\w+', query.lower()) if len(w) > 3}
 
         for cand in candidates[:3]:
             fname = cand.get("filename", "Knowledge Vault")
-            if fname not in citations:
+            if fname not in seen_citations:
+                seen_citations.add(fname)
                 citations.append(fname)
 
             content = cand.get("content", "")
-            sentences = [s.strip() for s in re.split(r'[.!?\n]+', content) if len(s.strip()) > 20]
-            for s in sentences:
-                s_clean = re.sub(r'[*_#`\[\]]', '', s).strip()
-                s_lower = s_clean.lower()
-                if any(w in s_lower for w in query_words if len(w) > 3):
-                    if s_clean not in extracted_facts:
-                        extracted_facts.append(s_clean)
-                        if len(extracted_facts) >= max_sentences:
-                            break
+            cls._extract_facts_from_content(content, valid_query_words, seen_facts, extracted_facts, max_sentences)
             if len(extracted_facts) >= max_sentences:
                 break
 

@@ -13,6 +13,99 @@ from src.core.voice_dsp import VoiceDSP
 from src.core.audit_hashchain import GLOBAL_AUDIT_HASHCHAIN
 
 
+def _exec_set_persona(param: str) -> Tuple[str, Dict[str, Any]]:
+    target_key = "CALM_OPERATIONS"
+    for pkey in KOKORO_PERSONAS.keys():
+        if pkey.lower().replace("_", " ") in param.lower():
+            target_key = pkey
+            break
+    feedback = f"Persona switched to {target_key.replace('_', ' ').title()}."
+    action = {"new_persona": target_key, "voice": KOKORO_PERSONAS.get(target_key, "af_bella")}
+    return feedback, action
+
+
+def _exec_set_dsp_preset(param: str) -> Tuple[str, Dict[str, Any]]:
+    target_dsp = "STUDIO_DIRECT"
+    for dkey in VoiceDSP.get_available_presets().keys():
+        if dkey.lower().replace("_", " ") in param.lower():
+            target_dsp = dkey
+            break
+    feedback = f"Mastering preset adjusted to {target_dsp.replace('_', ' ').title()}."
+    action = {"new_dsp_preset": target_dsp}
+    return feedback, action
+
+
+def _exec_check_radar(param: str) -> Tuple[str, Dict[str, Any]]:
+    from src.core.voice_radar_announcer import AutonomousVoiceRadar
+    radar_res = AutonomousVoiceRadar.sweep_and_announce()
+    feedback = radar_res.get("summary", "Tududi radar sweep complete. All deadlines monitored.")
+    return feedback, radar_res
+
+
+def _exec_verify_audit(param: str) -> Tuple[str, Dict[str, Any]]:
+    integrity = GLOBAL_AUDIT_HASHCHAIN.verify_integrity()
+    valid = integrity.get("valid", False)
+    blocks = integrity.get("total_blocks", 0)
+    feedback = (
+        f"Cryptographic audit verified. All {blocks} blocks link to the Merkle root with zero tampering."
+        if valid else "Audit warning. Cryptographic chain discrepancy detected."
+    )
+    return feedback, integrity
+
+
+def _exec_read_code(param: str) -> Tuple[str, Dict[str, Any]]:
+    from src.core.voice_code_narrator import CodeSyntaxNarrator
+    narrative = CodeSyntaxNarrator.deconstruct_code_for_speech(param)
+    return narrative, {"narrative": narrative}
+
+
+def _exec_read_email(param: str) -> Tuple[str, Dict[str, Any]]:
+    from src.core.voice_document_reader import DocumentVoiceReader
+    cleaned = DocumentVoiceReader.clean_email_for_speech(param)
+    return cleaned["speech_text"], cleaned
+
+
+def _exec_start_call(param: str) -> Tuple[str, Dict[str, Any]]:
+    from src.core.voice_call_intercom import VoiceCallIntercomEngine
+    call_res = VoiceCallIntercomEngine.start_call_session(domain="COMMAND_SESSION")
+    return "Voice intercom session opened. Full-duplex channel active.", call_res
+
+
+def _exec_end_call(param: str) -> Tuple[str, Dict[str, Any]]:
+    from src.core.voice_call_intercom import VoiceCallIntercomEngine
+    call_res = VoiceCallIntercomEngine.end_call_session()
+    return "Voice intercom session closed. Turn logs committed to memory.", call_res
+
+
+def _exec_get_status(param: str) -> Tuple[str, Dict[str, Any]]:
+    return (
+        "All neural voice sub-systems, DSP master racks, and C-level playback queues are fully operational.",
+        {"status": "all_systems_nominal"}
+    )
+
+
+def _exec_speak_text(param: str) -> Tuple[str, Dict[str, Any]]:
+    return param, {"spoken": param}
+
+
+def _exec_default(param: str) -> Tuple[str, Dict[str, Any]]:
+    return f"Command processed: {param}", {"query": param}
+
+
+_INTENT_EXECUTORS = {
+    "SET_PERSONA": _exec_set_persona,
+    "SET_DSP_PRESET": _exec_set_dsp_preset,
+    "CHECK_RADAR": _exec_check_radar,
+    "VERIFY_AUDIT": _exec_verify_audit,
+    "READ_CODE": _exec_read_code,
+    "READ_EMAIL": _exec_read_email,
+    "START_CALL": _exec_start_call,
+    "END_CALL": _exec_end_call,
+    "GET_STATUS": _exec_get_status,
+    "SPEAK_TEXT": _exec_speak_text,
+}
+
+
 class VoiceCommandParser:
     """Zero-dependency spoken voice command intent parser and execution engine."""
 
@@ -59,85 +152,14 @@ class VoiceCommandParser:
 
     @classmethod
     def execute_command(cls, spoken_text: str, speak_feedback: bool = True) -> Dict[str, Any]:
-        """Parse and execute spoken command with immediate voice confirmation."""
+        """Parse and execute spoken command with immediate voice confirmation via O(1) table dispatch."""
         parsed = cls.parse_intent(spoken_text)
         intent = parsed["intent"]
         param = parsed.get("extracted_param", "")
         t0 = time.time()
 
-        feedback_text = ""
-        action_result: Dict[str, Any] = {}
-
-        if intent == "SET_PERSONA":
-            # Match persona name fuzzily
-            target_key = "CALM_OPERATIONS"
-            for pkey in KOKORO_PERSONAS.keys():
-                if pkey.lower().replace("_", " ") in param.lower():
-                    target_key = pkey
-                    break
-            feedback_text = f"Persona switched to {target_key.replace('_', ' ').title()}."
-            action_result = {"new_persona": target_key, "voice": KOKORO_PERSONAS.get(target_key, "af_bella")}
-
-        elif intent == "SET_DSP_PRESET":
-            target_dsp = "STUDIO_DIRECT"
-            for dkey in VoiceDSP.get_available_presets().keys():
-                if dkey.lower().replace("_", " ") in param.lower():
-                    target_dsp = dkey
-                    break
-            feedback_text = f"Mastering preset adjusted to {target_dsp.replace('_', ' ').title()}."
-            action_result = {"new_dsp_preset": target_dsp}
-
-        elif intent == "CHECK_RADAR":
-            from src.core.voice_radar_announcer import AutonomousVoiceRadar
-            radar_res = AutonomousVoiceRadar.sweep_and_announce()
-            feedback_text = radar_res.get("summary", "Tududi radar sweep complete. All deadlines monitored.")
-            action_result = radar_res
-
-        elif intent == "VERIFY_AUDIT":
-            integrity = GLOBAL_AUDIT_HASHCHAIN.verify_integrity()
-            valid = integrity.get("valid", False)
-            blocks = integrity.get("total_blocks", 0)
-            if valid:
-                feedback_text = f"Cryptographic audit verified. All {blocks} blocks link to the Merkle root with zero tampering."
-            else:
-                feedback_text = "Audit warning. Cryptographic chain discrepancy detected."
-            action_result = integrity
-
-        elif intent == "READ_CODE":
-            from src.core.voice_code_narrator import CodeSyntaxNarrator
-            narrative = CodeSyntaxNarrator.deconstruct_code_for_speech(param)
-            feedback_text = narrative
-            action_result = {"narrative": narrative}
-
-        elif intent == "READ_EMAIL":
-            from src.core.voice_document_reader import DocumentVoiceReader
-            cleaned = DocumentVoiceReader.clean_email_for_speech(param)
-            feedback_text = cleaned["speech_text"]
-            action_result = cleaned
-
-        elif intent == "START_CALL":
-            from src.core.voice_call_intercom import VoiceCallIntercomEngine
-            call_res = VoiceCallIntercomEngine.start_call_session(domain="COMMAND_SESSION")
-            feedback_text = "Voice intercom session opened. Full-duplex channel active."
-            action_result = call_res
-
-        elif intent == "END_CALL":
-            from src.core.voice_call_intercom import VoiceCallIntercomEngine
-            call_res = VoiceCallIntercomEngine.end_call_session()
-            feedback_text = "Voice intercom session closed. Turn logs committed to memory."
-            action_result = call_res
-
-        elif intent == "GET_STATUS":
-            feedback_text = "All neural voice sub-systems, DSP master racks, and C-level playback queues are fully operational."
-            action_result = {"status": "all_systems_nominal"}
-
-        elif intent == "SPEAK_TEXT":
-            feedback_text = param
-            action_result = {"spoken": param}
-
-        else:
-            feedback_text = f"Command processed: {param}"
-            action_result = {"query": param}
+        executor = _INTENT_EXECUTORS.get(intent, _exec_default)
+        feedback_text, action_result = executor(param)
 
         # Dispatch voice audio feedback
         if speak_feedback and feedback_text:

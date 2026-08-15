@@ -98,6 +98,37 @@ def apply_iir_filter(samples: Any, b: Any, a: Any) -> Any:
         return y.astype(np.float32)
 
 
+_DSP_PIPELINES: Dict[str, List[Tuple[str, float, float, float]]] = {
+    # format: (filter_type, freq, q, gain_db)
+    "SOVEREIGN_PRESENCE": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
+    "SOVEREIGN_AWE": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
+    "AWE_STUDIO_MASTER": [("hp", 60.0, 0.707, 0.0), ("pk", 4500.0, 0.9, 3.0)],
+    "STUDIO_MASTER": [("hp", 60.0, 0.707, 0.0), ("pk", 4500.0, 0.9, 3.0)],
+    "COMMANDER_TACTICAL": [("hp", 120.0, 0.8, 0.0), ("pk", 2800.0, 1.4, 5.0)],
+    "FLEET_COMMAND": [("hp", 120.0, 0.8, 0.0), ("pk", 2800.0, 1.4, 5.0)],
+    "TRANSCENDENTAL_AURA": [("hp", 85.0, 0.707, 0.0), ("pk", 3400.0, 1.1, 3.8), ("pk", 8500.0, 1.0, 2.8)],
+    "HOLOGRAPHIC_AURA": [("hp", 85.0, 0.707, 0.0), ("pk", 3400.0, 1.1, 3.8), ("pk", 8500.0, 1.0, 2.8)],
+    "COCKPIT_ACOUSTIC": [("hp", 80.0, 0.707, 0.0), ("pk", 3200.0, 1.2, 3.5)],
+    "AURA_COCKPIT": [("hp", 80.0, 0.707, 0.0), ("pk", 3200.0, 1.2, 3.5)],
+    "RADIO_BANDPASS_300_3400HZ": [("hp", 300.0, 0.8, 0.0), ("lp", 3400.0, 0.8, 0.0), ("pk", 2400.0, 1.5, 4.0)],
+    "TACTICAL_RADIO": [("hp", 300.0, 0.8, 0.0), ("lp", 3400.0, 0.8, 0.0), ("pk", 2400.0, 1.5, 4.0)],
+    "LONG_RANGE_SQUELCH": [("hp", 500.0, 1.0, 0.0), ("lp", 2800.0, 1.0, 0.0)],
+}
+
+
+def _apply_dsp_filter_stage(out: Any, ftype: str, freq: float, q: float, gain: float, fs: int) -> Any:
+    """Apply a single biquad filter stage to the audio buffer."""
+    if ftype == "hp":
+        b, a = biquad_highpass(freq, q=q, fs=fs)
+    elif ftype == "lp":
+        b, a = biquad_lowpass(freq, q=q, fs=fs)
+    elif ftype == "pk":
+        b, a = biquad_peaking(freq, gain_db=gain, q=q, fs=fs)
+    else:
+        return out
+    return apply_iir_filter(out, b, a)
+
+
 # ----------------------------------------------------------------------
 # 2. Master Audio DSP Class
 # ----------------------------------------------------------------------
@@ -106,67 +137,15 @@ class VoiceDSP:
 
     @classmethod
     def apply_dsp_preset(cls, samples: Any, preset: str = "STUDIO_DIRECT", fs: int = 24000) -> Any:
-        """Apply acoustic EQ preset and filtering to float audio buffer."""
+        """Apply acoustic EQ preset and filtering to float audio buffer via pipeline dispatch."""
         if np is None or len(samples) == 0:
             return samples
 
         out = samples.copy()
-        preset_upper = preset.upper()
-
-        if preset_upper in ("SOVEREIGN_PRESENCE", "SOVEREIGN_AWE"):
-            # 100Hz Low-End Warmth + 3.8kHz Crystal Vocal Presence + 11.5kHz Harmonic Air
-            b_hp, a_hp = biquad_highpass(70.0, q=0.707, fs=fs)
-            out = apply_iir_filter(out, b_hp, a_hp)
-            b_warm, a_warm = biquad_peaking(180.0, gain_db=2.5, q=1.0, fs=fs)
-            out = apply_iir_filter(out, b_warm, a_warm)
-            b_pres, a_pres = biquad_peaking(3800.0, gain_db=4.2, q=1.3, fs=fs)
-            out = apply_iir_filter(out, b_pres, a_pres)
-
-        elif preset_upper in ("AWE_STUDIO_MASTER", "STUDIO_MASTER"):
-            # Broad Studio Air + Gentle Warmth Compression
-            b_hp, a_hp = biquad_highpass(60.0, q=0.707, fs=fs)
-            out = apply_iir_filter(out, b_hp, a_hp)
-            b_air, a_air = biquad_peaking(4500.0, gain_db=3.0, q=0.9, fs=fs)
-            out = apply_iir_filter(out, b_air, a_air)
-
-        elif preset_upper in ("COMMANDER_TACTICAL", "FLEET_COMMAND"):
-            # 2.8kHz Midrange Vocal Punch with tight 120Hz bass roll-off
-            b_hp, a_hp = biquad_highpass(120.0, q=0.8, fs=fs)
-            out = apply_iir_filter(out, b_hp, a_hp)
-            b_punch, a_punch = biquad_peaking(2800.0, gain_db=5.0, q=1.4, fs=fs)
-            out = apply_iir_filter(out, b_punch, a_punch)
-
-        elif preset_upper in ("TRANSCENDENTAL_AURA", "HOLOGRAPHIC_AURA"):
-            # Aura Shimmer: 85Hz Lowpass clean + 3.4kHz Presence + 8.5kHz Harmonic Lift
-            b_hp, a_hp = biquad_highpass(85.0, q=0.707, fs=fs)
-            out = apply_iir_filter(out, b_hp, a_hp)
-            b_shimmer, a_shimmer = biquad_peaking(3400.0, gain_db=3.8, q=1.1, fs=fs)
-            out = apply_iir_filter(out, b_shimmer, a_shimmer)
-            b_air, a_air = biquad_peaking(8500.0, gain_db=2.8, q=1.0, fs=fs)
-            out = apply_iir_filter(out, b_air, a_air)
-
-        elif preset_upper in ("COCKPIT_ACOUSTIC", "AURA_COCKPIT"):
-            # 80Hz Highpass + 3.2kHz Peaking Air Boost
-            b_hp, a_hp = biquad_highpass(80.0, q=0.707, fs=fs)
-            out = apply_iir_filter(out, b_hp, a_hp)
-            b_pk, a_pk = biquad_peaking(3200.0, gain_db=3.5, q=1.2, fs=fs)
-            out = apply_iir_filter(out, b_pk, a_pk)
-
-        elif preset_upper in ("RADIO_BANDPASS_300_3400HZ", "TACTICAL_RADIO"):
-            # Military 300Hz-3400Hz Bandpass + 2.4kHz Presence Peaking
-            b_hp, a_hp = biquad_highpass(300.0, q=0.8, fs=fs)
-            out = apply_iir_filter(out, b_hp, a_hp)
-            b_lp, a_lp = biquad_lowpass(3400.0, q=0.8, fs=fs)
-            out = apply_iir_filter(out, b_lp, a_lp)
-            b_pk, a_pk = biquad_peaking(2400.0, gain_db=4.0, q=1.5, fs=fs)
-            out = apply_iir_filter(out, b_pk, a_pk)
-
-        elif preset_upper == "LONG_RANGE_SQUELCH":
-            # 500Hz-2800Hz Narrow Voice Comm
-            b_hp, a_hp = biquad_highpass(500.0, q=1.0, fs=fs)
-            out = apply_iir_filter(out, b_hp, a_hp)
-            b_lp, a_lp = biquad_lowpass(2800.0, q=1.0, fs=fs)
-            out = apply_iir_filter(out, b_lp, a_lp)
+        pipeline = _DSP_PIPELINES.get(preset.upper())
+        if pipeline:
+            for ftype, freq, q, gain in pipeline:
+                out = _apply_dsp_filter_stage(out, ftype, freq, q, gain, fs)
 
         # Apply final True-Peak Soft-Tanh Limiter
         return cls.master_audio_buffer(out, target_dbfs=-1.0)

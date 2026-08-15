@@ -128,33 +128,31 @@ class JobManager:
         now = time.time()
         reaped = 0
         with self._jobs_lock:
-            terminal_jobs = [
-                (jid, j) for jid, j in self.jobs.items()
-                if j["status"] in ("completed", "failed", "cancelled")
-            ]
-            
+            surviving_terminal = []
+            to_evict_ttl = []
+            for jid, j in list(self.jobs.items()):
+                if j["status"] in ("completed", "failed", "cancelled"):
+                    comp_at = j.get("completed_at") or j.get("started_at", now)
+                    if now - comp_at > ttl_seconds:
+                        to_evict_ttl.append(jid)
+                    else:
+                        surviving_terminal.append((jid, comp_at))
+
             # 1. Evict by TTL
-            for jid, j in terminal_jobs:
-                comp_at = j.get("completed_at") or j.get("started_at", now)
-                if now - comp_at > ttl_seconds:
-                    del self.jobs[jid]
-                    self.futures.pop(jid, None)
-                    reaped += 1
+            for jid in to_evict_ttl:
+                self.jobs.pop(jid, None)
+                self.futures.pop(jid, None)
+                reaped += 1
 
             # 2. Evict by max history limit (oldest first)
-            remaining_terminal = [
-                (jid, j) for jid, j in self.jobs.items()
-                if j["status"] in ("completed", "failed", "cancelled")
-            ]
-            if len(remaining_terminal) > max_history:
-                remaining_terminal.sort(key=lambda x: x[1].get("completed_at") or 0)
-                overflow_count = len(remaining_terminal) - max_history
+            if len(surviving_terminal) > max_history:
+                surviving_terminal.sort(key=lambda x: x[1])
+                overflow_count = len(surviving_terminal) - max_history
                 for i in range(overflow_count):
-                    jid_to_del = remaining_terminal[i][0]
-                    if jid_to_del in self.jobs:
-                        del self.jobs[jid_to_del]
-                        self.futures.pop(jid_to_del, None)
-                        reaped += 1
+                    jid_to_del = surviving_terminal[i][0]
+                    self.jobs.pop(jid_to_del, None)
+                    self.futures.pop(jid_to_del, None)
+                    reaped += 1
 
             self._reaped_jobs_count += reaped
 

@@ -6,6 +6,7 @@ import logging
 import os
 import math
 import functools
+from collections import OrderedDict
 from typing import List
 
 # Default to the local docker-compose Ollama instance
@@ -14,7 +15,7 @@ OLLAMA_BASE_URL = os.environ.get("OPENAI_API_BASE", "http://host.docker.internal
 OLLAMA_EMBED_MODEL = os.environ.get("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 
 MAX_EMBED_CACHE_SIZE = 4096
-_embed_cache = {}  # LRU bounded cache preventing empty error caching
+_embed_cache: OrderedDict = OrderedDict()  # LRU bounded cache preventing empty error caching
 
 def generate_embeddings_batch(texts: List[str], batch_size: int = 64) -> List[List[float]]:
     """High-performance batch vector embedding generation via local Ollama /api/embed (170+ chunks/sec)."""
@@ -30,6 +31,7 @@ def generate_embeddings_batch(texts: List[str], batch_size: int = 64) -> List[Li
         if not key.strip():
             continue
         if key in _embed_cache:
+            _embed_cache.move_to_end(key)
             results[i] = _embed_cache[key]
         else:
             uncached_indices.append(i)
@@ -61,7 +63,7 @@ def generate_embeddings_batch(texts: List[str], batch_size: int = 64) -> List[Li
                         results[idx] = emb
                         if emb:
                             if len(_embed_cache) >= MAX_EMBED_CACHE_SIZE:
-                                _embed_cache.pop(next(iter(_embed_cache)))
+                                _embed_cache.popitem(last=False)
                             _embed_cache[prompt] = emb
                     break
             except (urllib.error.URLError, ConnectionError, OSError) as e:

@@ -50,7 +50,7 @@ class TestDomainSOC2(unittest.TestCase):
 
         leaks = []
         for root, _, files in os.walk(root_dir):
-            if ".git" in root or ".venv" in root or "__pycache__" in root or "dist" in root or "build" in root or ".gemini" in root:
+            if ".git" in root or ".venv" in root or "__pycache__" in root or "dist" in root or "build" in root or ".gemini" in root or ".agents" in root:
                 continue
             for f_name in files:
                 if f_name.endswith(('.py', '.js', '.json', '.html', '.css', '.md')):

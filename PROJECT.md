@@ -1,117 +1,57 @@
-# Project: Empirically True, Real-World Grounded Retrieval & Epistemic Invariant Engine
+# Project: Uroboros Knowledge Engine Multi-Agent Autonomous Refactoring Mission
 
 ## Architecture
 Decoupled Clean Architecture in Python (stdlib-first, zero unneeded dependencies):
-- `src/domain/grounded_retrieval_engine.py`: Primary domain coordinator & modular sub-components for R1-R6.
-- `src/domain/`:
-  - `epistemic_tiering.py`: Tier classification & authority weighting.
-  - `temporal_validity.py`: Date parsing, superseding/amendment detection & exponential staleness decay.
-  - `dense_propositions.py`: Atomic proposition deconstruction with breadcrumb scopes (`Document > Section > Subsection > Scope`).
-  - `consensus_matrix.py`: Cross-document NLI entailment, consensus boosting, and contradiction resolution hierarchy.
-  - `boundary_invariants.py`: First-principles physical and mathematical boundary guards (Speed of Light, USL, CAP/PACELC, Carnot/Landauer, Shannon).
-  - `grounding_scorecard.py`: Composite grounding confidence scoring, invariant veto, and >= 0.65 refusal gate with diagnostic reporting.
-- `src/app/routers/grounded_retrieval.py`: FastAPI endpoint integration.
-- `tests/`: Unit, integration, and E2E verification suites (`tests/test_grounded_retrieval.py`, `tests/test_grounded_retrieval_e2e.py`).
+- `src/app/routers/`: FastAPI endpoints (`search.py`, `files.py`, `rag.py`, `tags.py`, `voice_ws.py`).
+- `src/core/`: Embeddings (`embeddings.py`), Model Manager (`model_manager.py`), Model Router (`model_router.py`), Job Queue (`jobs.py`), Voice Subsystems (`voice_audio_router.py`, `voice_command_parser.py`, `voice_dsp.py`, `voice_persona_blend.py`, `voice_rag_bridge.py`, `voice_sfx.py`, `voice_streaming_pipeline.py`, `voice_normalizer.py`, `voice_tududi_radar.py`, `voice_engine.py`).
+- `src/infrastructure/`: Vector search engine & MMR (`vector_engine.py`), document parsers (`parsers.py`).
+- `src/antigravity_voice_mcp.py` & `src/mcp_server.py`: FastMCP / JSON-RPC voice & knowledge tool protocol servers.
+- `tests/` & `scripts/`: Master domain test runner (`run_domain_tests.py`), inter-bridge contract bus (`contract_bus.py`), architecture hygiene CLI (`architecture_cli.py`), voice audio test matrix (`verify_voice_audio_matrix.py`).
 
 ## Feature Inventory
 | # | Feature | Description | Milestone | Source |
 |---|---------|-------------|-----------|--------|
-| 1 | F1: Epistemic Evidentiary Tier Classifier | Authority coefficients: Tier 1 (1.00), Tier 2 (0.85), Tier 3 (0.70), Tier 4 (0.35) | M1 | ORIGINAL_REQUEST §R1 |
-| 2 | F2: Authority-Weighted Hybrid RRF Fusion | Mathematical RRF score weighting across lexical FTS5 & dense vector search with temporal scalars | M1 | ORIGINAL_REQUEST §R1 |
-| 3 | F3: Temporal Validity & Superseding Detection | Effective date range extraction & superseding/amendment marker detection with status tagging | M1 | ORIGINAL_REQUEST §R2 |
-| 4 | F4: Exponential Staleness Decay | Domain half-life exponential decay curves and hard caps for superseded documents | M1 | ORIGINAL_REQUEST §R2 |
-| 5 | F5: Dense Propositional Decomposition | Atomic proposition extraction preserving hierarchical breadcrumb scopes | M2 | ORIGINAL_REQUEST §R3 |
-| 6 | F6: Cross-Document Consensus & Contradiction Matrix | Pairwise NLI entailment, consensus confidence boost, and 4-tier contradiction resolution hierarchy | M3 | ORIGINAL_REQUEST §R4 |
-| 7 | F7: Optical Fiber Latency Invariant Guard | Speed of light propagation lower bounds ($c_{\text{fiber}} = c/n$, Haversine geodesic check) | M4 | ORIGINAL_REQUEST §R5 |
-| 8 | F8: Universal Scalability Law (USL) Guard | Gunther USL concurrency contention ($\alpha$), coherency ($\beta$), retrograde peak & superlinear veto | M4 | ORIGINAL_REQUEST §R5 |
-| 9 | F9: CAP & PACELC Invariant Guard | Impossibility of strong consistency + zero-latency availability under partition, quorum bounds | M4 | ORIGINAL_REQUEST §R5 |
-| 10 | F10: Carnot & Landauer Thermodynamic Guard | Carnot efficiency upper bound ($\eta \le 1 - T_c/T_h$) & Landauer erasure minimum energy ($E \ge k_B T \ln 2$) | M4 | ORIGINAL_REQUEST §R5 |
-| 11 | F11: Shannon Channel Capacity Guard | Shannon-Hartley capacity ceiling ($C = B \log_2(1+\text{SNR})$) & spectral efficiency limits | M4 | ORIGINAL_REQUEST §R5 |
-| 12 | F12: Grounding Scorecard & Refusal Gate | Composite confidence score, binary invariant veto multiplier, and $\ge 0.65$ threshold refusal gate | M5 | ORIGINAL_REQUEST §R6 |
+| 1 | F1: Search & Filter O(1) Hash Optimization | Convert linear tag/exclusion lists and inner-loop scans in `src/app/routers/search.py` to constant-time set lookups and single-pass file reads | M1 | ORIGINAL_REQUEST §R1 |
+| 2 | F2: File Router & Tree Traversal Optimization | Eliminate redundant `os.path.abspath` calls and hoist static ignore sets in `src/app/routers/files.py` | M1 | ORIGINAL_REQUEST §R1 |
+| 3 | F3: Core Embeddings OrderedDict LRU Eviction | Replace FIFO dict with `collections.OrderedDict` (`move_to_end`, `popitem(last=False)`) in `src/core/embeddings.py` | M1 | ORIGINAL_REQUEST §R1 |
+| 4 | F4: Vector Engine MMR & Autocomplete Set Acceleration | Switch `unselected_indices` in `search_mmr` to set operations and companion seen sets in `src/infrastructure/vector_engine.py` | M1 | ORIGINAL_REQUEST §R1 |
+| 5 | F5: Core Jobs, Model Router & Parser Hotspots | Optimize `jobs.py`, `model_router.py`, `rag.py`, and `parsers.py` (slide zip archive lookups, word-set intersections, single-pass job reaping) | M1 | ORIGINAL_REQUEST §R1 |
+| 6 | F6: Antigravity Voice MCP Dispatch Table Refactor | Flatten monolithic `handle_tool_call` (depth 39) into O(1) dictionary dispatch table `_TOOL_HANDLERS` + modular single-responsibility helpers in `src/antigravity_voice_mcp.py` | M2 | ORIGINAL_REQUEST §R2 |
+| 7 | F7: Voice MCP Main Loop & JSON-RPC Flattening | Extract `_process_jsonrpc_request` with early guard returns in `src/antigravity_voice_mcp.py` reducing depth from 5 to <= 2 | M2 | ORIGINAL_REQUEST §R2 |
+| 8 | F8: Downstream Voice/MCP Subsystem Guard Flattening | Refactor deep nesting (>= 4 levels) across `voice_ws.py`, `voice_audio_router.py`, `voice_command_parser.py`, `voice_dsp.py`, `voice_persona_blend.py`, `voice_rag_bridge.py`, `voice_sfx.py`, `voice_streaming_pipeline.py`, `voice_normalizer.py`, `voice_tududi_radar.py`, `voice_engine.py`, and `mcp_server.py` | M2 | ORIGINAL_REQUEST §R2 |
+| 9 | F9: 28-Domain Master Matrix Zero-Regression Certification | Execute full `run_domain_tests.py` ensuring 100% pass (419/419 assertions) across all 28 functional domains | M3 | ORIGINAL_REQUEST §R3 |
+| 10 | F10: 10-Bridge Contract DAG Integrity Certification | Verify all 10 inter-bridge contracts via `contract_bus.py self_test` with execution time < 25.0s | M3 | ORIGINAL_REQUEST §R3 |
+| 11 | F11: Clean Architecture Doctor & Zero Secret Leak | Confirm 100.0% clean compliance score and 0 secrets via `architecture_cli.py doctor .` | M3 | ORIGINAL_REQUEST §R3 |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Epistemic Tiering, Temporal Validity & Grounded RRF | F1, F2, F3, F4 | none | DONE |
-| M2 | Dense Propositional Decomposition & Breadcrumb Scoping | F5 | M1 | DONE |
-| M3 | Cross-Document Consensus & Contradiction Resolution Matrix | F6 | M1 | DONE |
-| M4 | Physical, Mathematical & Computational Boundary Invariant Guards | F7, F8, F9, F10, F11 | none | DONE |
-| M5 | Grounding Scorecard, Refusal Gate & Engine Integration | F12, Full Engine Integration | M1, M2, M3, M4 | DONE |
-| M-E2E | Opaque-Box E2E Test Suite Creation | Test infra & Tiers 1-4 tests covering all 12 features | none | DONE |
-| M6 | Final Verification & Adversarial Coverage Hardening | 100% E2E Pass + Tier 5 Adversarial Hardening | M5, M-E2E | DONE |
+| M1 | Darwinian AST Algorithmic Optimization (O(N^2) -> O(1)) | F1, F2, F3, F4, F5 | none | IN_PROGRESS |
+| M2 | Codebase Bloat & Nesting Flattening (Ponytail Rule) | F6, F7, F8 | none | PLANNED |
+| M3 | Zero-Regression Master Matrix & Contract Certification | F9, F10, F11 | M1, M2 | PLANNED |
 
-## Interface Contracts
+## Interface Contracts & Invariant Guarantees
 
-### `src/domain/epistemic_tiering.py`
-```python
-def classify_source_epistemic_tier(source_metadata: dict | str) -> tuple[int, float]:
-    """Returns (tier_int, authority_weight: float) where tier in 1..4."""
-    ...
+### R1 Algorithmic Hotspot Invariants:
+- All function signatures in `src/app/routers/search.py`, `src/app/routers/files.py`, `src/core/embeddings.py`, `src/infrastructure/vector_engine.py`, and `src/infrastructure/parsers.py` must retain 100% backward-compatible argument types and return schemas.
+- Output ordering contracts (e.g. search rankings, tag ordering, suggestion sequences) must remain deterministic.
+- Embeddings caching must operate in true LRU order using `collections.OrderedDict`.
 
-def compute_authority_weighted_rrf(
-    lexical_ranks: list[dict],
-    dense_ranks: list[dict],
-    k: int = 60,
-    intent_weights: dict | None = None
-) -> list[dict]:
-    """Computes RRF scores weighted by epistemic authority and temporal validity."""
-    ...
-```
+### R2 Control-Flow & Nesting Invariants:
+- All 39 MCP tool calls handled by `src/antigravity_voice_mcp.py` must produce identical response dictionaries and error handling behavior.
+- Control-flow nesting depth must be strictly $< 4$ (target $\le 2$) across all refactored voice/MCP functions.
+- Pure standard library only: zero external pip dependencies added.
 
-### `src/domain/temporal_validity.py`
-```python
-def extract_temporal_metadata(text: str, metadata: dict | None = None) -> dict:
-    """Extracts creation date, effective date range, and superseding markers."""
-    ...
-
-def compute_temporal_decay(
-    document_date: datetime | str | None,
-    domain: str = "general",
-    status: str = "ACTIVE",
-    half_life_days: float | None = None
-) -> float:
-    """Returns decay multiplier in (0.0, 1.0]. Hard cap <= 0.35 if superseded."""
-    ...
-```
-
-### `src/domain/dense_propositions.py`
-```python
-def decompose_into_propositions(text: str, document_title: str = "") -> list[dict]:
-    """Decomposes text into atomic factual propositions with breadcrumb scope:
-    [{'id': ..., 'proposition': ..., 'breadcrumb': 'Doc > Sec > Sub > Scope', ...}]"""
-    ...
-```
-
-### `src/domain/consensus_matrix.py`
-```python
-def evaluate_cross_document_consensus(passages: list[dict]) -> dict:
-    """Evaluates NLI entailment, calculates consensus boost, detects contradictions,
-    and applies 4-tier resolution hierarchy.
-    Returns: {'consensus_score': float, 'contradictions': list, 'resolved_claims': list}"""
-    ...
-```
-
-### `src/domain/boundary_invariants.py`
-```python
-def verify_optical_latency_invariant(distance_km: float, claimed_latency_ms: float, n_refractive: float = 1.4682) -> tuple[bool, str]: ...
-def verify_usl_invariant(concurrency: int, throughput: float, gamma: float, alpha: float, beta: float) -> tuple[bool, str]: ...
-def verify_cap_pacelc_invariant(claim: dict) -> tuple[bool, str]: ...
-def verify_carnot_landauer_invariant(claim: dict) -> tuple[bool, str]: ...
-def verify_shannon_capacity_invariant(bandwidth_hz: float, snr_linear: float, claimed_bps: float) -> tuple[bool, str]: ...
-def evaluate_all_boundary_invariants(claims_or_text: str | list[dict]) -> dict:
-    """Evaluates all physical invariants. Returns {'valid': bool, 'violations': list[dict], 'multiplier': 1.0 or 0.0}"""
-    ...
-```
-
-### `src/domain/grounded_retrieval_engine.py`
-```python
-class GroundedRetrievalEngine:
-    def evaluate_grounding(self, query: str, candidate_passages: list[dict], generated_claim: str = "") -> dict:
-        """Calculates composite Grounding Confidence Score (0-100%) and returns refusal verdict
-        if score < 0.65 with structured missing knowledge gap diagnostics."""
-        ...
-```
+### R3 Certification Invariants:
+- `python run_domain_tests.py` must report 419 passed, 0 failed.
+- `python .agents/skills/neuro-copilot/scripts/contract_bus.py self_test` must report 100% PASSED in $< 25.0$s.
+- `python scripts/architecture_cli.py doctor .` must report 100.0% score and 0 secrets.
 
 ## Code Layout
-- Clean Architecture: stdlib-first, modular sub-components in `src/domain/`, unified in `src/domain/grounded_retrieval_engine.py`.
-- Tests: `tests/test_grounded_retrieval.py`, `tests/test_grounded_retrieval_e2e.py`.
+- `src/app/routers/`: Router implementations (`search.py`, `files.py`, `rag.py`, `tags.py`, `voice_ws.py`)
+- `src/core/`: Core business logic & voice subsystems
+- `src/infrastructure/`: Vector engine & parsers
+- `src/antigravity_voice_mcp.py`: Voice MCP server
+- `tests/`: 48 modular domain test suites across 28 domains
+- `scripts/`: Architecture doctor, test ledger update, voice audio verification
+- `.agents/skills/neuro-copilot/scripts/`: Inter-bridge contract bus (`contract_bus.py`)

@@ -232,9 +232,11 @@ def parse_obsidian_markdown(filepath: str) -> Tuple[str, Dict[str, Any]]:
 
         # 4. Extract inline hashtags #topic/subtopic
         inline_tags = re.findall(r'(?:^|\s)#([a-zA-Z0-9_\-/]+)', body)
+        seen_tags = set(metadata["tags"])
         for t in inline_tags:
             clean_t = t.strip()
-            if clean_t and clean_t not in metadata["tags"] and not clean_t.isdigit():
+            if clean_t and clean_t not in seen_tags and not clean_t.isdigit():
+                seen_tags.add(clean_t)
                 metadata["tags"].append(clean_t)
 
         # Build clean enriched content with structured metadata header for RAG indexing
@@ -266,8 +268,10 @@ def parse_pptx_presentation(filepath: str) -> str:
     try:
         slides_text = []
         with zipfile.ZipFile(filepath, "r") as z:
+            namelist = z.namelist()
+            namelist_set = set(namelist)
             # 1. Discover all slide XML files
-            slide_names = [n for n in z.namelist() if re.match(r'ppt/slides/slide\d+\.xml', n)]
+            slide_names = [n for n in namelist if re.match(r'ppt/slides/slide\d+\.xml', n)]
             # Sort slides numerically: slide1.xml, slide2.xml, slide10.xml
             slide_names.sort(key=lambda x: int(re.search(r'\d+', x).group()))
 
@@ -292,7 +296,7 @@ def parse_pptx_presentation(filepath: str) -> str:
 
                 # 2. Check for speaker notes in notesSlides
                 notes_name = f"ppt/notesSlides/notesSlide{idx}.xml"
-                if notes_name in z.namelist():
+                if notes_name in namelist_set:
                     notes_xml = z.read(notes_name)
                     notes_root = ET.fromstring(notes_xml)
                     notes_paras = []

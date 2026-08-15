@@ -73,7 +73,7 @@ export default function SearchView() {
     try {
       if (q.length > 2) {
         await api.autocomplete(q).catch(() => {});
-        await api.validateQuery({ query: q }).catch(() => {});
+        await api.validateQuery(q).catch(() => {});
       }
     } catch (e) {
       console.error(e);

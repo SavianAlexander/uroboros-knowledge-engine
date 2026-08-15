@@ -35,14 +35,14 @@ RE_SENTENCE_BOUNDARIES = re.compile(r'(?<=[.!?])\s+')
 def _smart_extract_context(context: str, query: str, max_chars: int = 6000) -> str:
     if len(context) <= max_chars:
         return context
-    keywords = set([kw for kw in RE_WORD_BOUNDARIES.findall(query.lower()) if len(kw) > 3])
+    keywords = {kw for kw in RE_WORD_BOUNDARIES.findall(query.lower()) if len(kw) > 3}
     if not keywords:
         return context[:max_chars]
     sentences = RE_SENTENCE_BOUNDARIES.split(context)
     scored = []
     for idx, s in enumerate(sentences):
-        s_lower = s.lower()
-        score = sum(1 for kw in keywords if kw in s_lower)
+        sentence_words = set(RE_WORD_BOUNDARIES.findall(s.lower()))
+        score = len(sentence_words & keywords)
         scored.append((score, idx, s))
     scored.sort(key=lambda x: x[0], reverse=True)
     selected_indices = []

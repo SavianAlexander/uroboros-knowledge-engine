@@ -25,6 +25,54 @@ router = APIRouter()
 logger = logging = __import__("logging").getLogger(__name__)
 
 
+async def _handle_ws_text_message(websocket: WebSocket, raw_text: str, session_id: str):
+    """Handle incoming JSON text message in voice WebSocket stream."""
+    try:
+        payload = json.loads(raw_text)
+    except Exception:
+        payload = {"action": "say", "text": raw_text}
+
+    action = payload.get("action", "turn")
+    text = payload.get("text", "")
+    persona = payload.get("persona")
+    dsp_preset = payload.get("dsp_preset")
+
+    if action in ("turn", "say", "command"):
+        turn_res = VoiceAgentLoop.process_spoken_turn(
+            user_input_text=text,
+            session_id=session_id,
+            persona=persona,
+            dsp_preset=dsp_preset
+        )
+        await websocket.send_json({
+            "event": "turn_complete",
+            "data": turn_res
+        })
+        return
+
+    if action == "ping":
+        await websocket.send_json({"event": "pong", "timestamp": time.time()})
+        return
+
+    if action == "history":
+        hist = VoiceAgentLoop.get_session_history(session_id)
+        await websocket.send_json({"event": "history", "data": hist})
+
+
+async def _handle_ws_bytes_message(websocket: WebSocket, raw_bytes: bytes):
+    """Handle incoming binary PCM audio telemetry in voice WebSocket stream."""
+    try:
+        import numpy as np
+        samples = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+        fft_res = VoiceSpectrumAnalyzer.compute_spectrum_bins(samples)
+        await websocket.send_json({
+            "event": "spectrum_telemetry",
+            "data": fft_res
+        })
+    except Exception:
+        pass
+
+
 @router.websocket("/ws/voice/stream")
 async def voice_streaming_websocket_endpoint(websocket: WebSocket):
     """
@@ -45,48 +93,10 @@ async def voice_streaming_websocket_endpoint(websocket: WebSocket):
         while True:
             # Receive message (JSON text command or binary PCM audio)
             message = await websocket.receive()
-            if "text" in message and message["text"]:
-                try:
-                    payload = json.loads(message["text"])
-                except Exception:
-                    payload = {"action": "say", "text": message["text"]}
-
-                action = payload.get("action", "turn")
-                text = payload.get("text", "")
-                persona = payload.get("persona")
-                dsp_preset = payload.get("dsp_preset")
-
-                if action in ("turn", "say", "command"):
-                    turn_res = VoiceAgentLoop.process_spoken_turn(
-                        user_input_text=text,
-                        session_id=session_id,
-                        persona=persona,
-                        dsp_preset=dsp_preset
-                    )
-                    await websocket.send_json({
-                        "event": "turn_complete",
-                        "data": turn_res
-                    })
-
-                elif action == "ping":
-                    await websocket.send_json({"event": "pong", "timestamp": time.time()})
-
-                elif action == "history":
-                    hist = VoiceAgentLoop.get_session_history(session_id)
-                    await websocket.send_json({"event": "history", "data": hist})
-
-            elif "bytes" in message and message["bytes"]:
-                # Binary audio telemetry: compute FFT spectrum
-                try:
-                    import numpy as np
-                    samples = np.frombuffer(message["bytes"], dtype=np.int16).astype(np.float32) / 32768.0
-                    fft_res = VoiceSpectrumAnalyzer.compute_spectrum_bins(samples)
-                    await websocket.send_json({
-                        "event": "spectrum_telemetry",
-                        "data": fft_res
-                    })
-                except Exception:
-                    pass
+            if text := message.get("text"):
+                await _handle_ws_text_message(websocket, text, session_id)
+            elif raw_bytes := message.get("bytes"):
+                await _handle_ws_bytes_message(websocket, raw_bytes)
 
     except WebSocketDisconnect:
         VoiceAgentLoop.end_session(session_id)

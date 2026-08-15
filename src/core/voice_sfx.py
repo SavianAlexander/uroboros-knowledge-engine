@@ -21,6 +21,90 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 
+def _sfx_crystalline_chime(sr: int) -> Tuple[Any, Any]:
+    duration = 0.38
+    t = np.linspace(0, duration, int(sr * duration), endpoint=False)
+    env = np.exp(-t * 9.5) * (1.0 - np.exp(-t * 400.0))  # 2.5ms attack, smooth ring decay
+    f1, f2, f3 = 1046.50, 1318.51, 1567.98
+    left = (0.50 * np.sin(2 * np.pi * f1 * t) + 0.35 * np.sin(2 * np.pi * f2 * t) + 0.15 * np.sin(2 * np.pi * f3 * t)) * env
+    right = (0.35 * np.sin(2 * np.pi * f1 * t) + 0.50 * np.sin(2 * np.pi * f2 * t) + 0.15 * np.sin(2 * np.pi * f3 * t)) * env
+    return left, right
+
+
+def _sfx_holographic_sweep(sr: int) -> Tuple[Any, Any]:
+    duration = 0.28
+    t = np.linspace(0, duration, int(sr * duration), endpoint=False)
+    env = np.exp(-t * 8.0) * (1.0 - np.exp(-t * 300.0))
+    freq = 880.0 + (1760.0 - 880.0) * (t / duration) ** 1.5
+    mod = 0.2 * np.sin(2 * np.pi * 32.0 * t)  # 32Hz vibrato shimmer
+    left = np.sin(2 * np.pi * freq * t + mod) * env * 0.7
+    right = np.sin(2 * np.pi * freq * (t + 0.002) + mod) * env * 0.7
+    return left, right
+
+
+def _sfx_dual_bell(sr: int) -> Tuple[Any, Any]:
+    duration = 0.45
+    t = np.linspace(0, duration, int(sr * duration), endpoint=False)
+    t1 = t[t < 0.12]
+    t2 = t[t >= 0.12] - 0.12
+    env1 = np.exp(-t[t < 0.12] * 12.0)
+    env2 = np.exp(-t2 * 6.5)
+
+    sig1 = (0.6 * np.sin(2 * np.pi * 587.33 * t1) + 0.2 * np.sin(2 * np.pi * 1174.66 * t1)) * env1
+    sig2 = (0.7 * np.sin(2 * np.pi * 880.00 * t2) + 0.3 * np.sin(2 * np.pi * 1760.00 * t2)) * env2
+    combined = np.concatenate([sig1, sig2])
+    left = combined * 0.75
+    right = np.roll(left, int(sr * 0.008))
+    return left, right
+
+
+def _sfx_radar_double_ping(sr: int) -> Tuple[Any, Any]:
+    duration = 0.32
+    t = np.linspace(0, duration, int(sr * duration), endpoint=False)
+    pulse1 = (t < 0.08) * np.exp(-t * 22.0) * np.sin(2 * np.pi * 1500 * t)
+    t_sub = np.maximum(0, t - 0.10)
+    pulse2 = (t >= 0.10) * np.exp(-t_sub * 14.0) * np.sin(2 * np.pi * 1800 * t_sub)
+    sig = (pulse1 + pulse2) * 0.8
+    return sig, sig
+
+
+def _sfx_downward_fade(sr: int) -> Tuple[Any, Any]:
+    duration = 0.22
+    t = np.linspace(0, duration, int(sr * duration), endpoint=False)
+    env = np.exp(-t * 12.0)
+    freq = 1200.0 - (1200.0 - 600.0) * (t / duration)
+    sig = np.sin(2 * np.pi * freq * t) * env * 0.6
+    left = sig
+    right = np.roll(sig, int(sr * 0.004))
+    return left, right
+
+
+def _sfx_neutral_tick(sr: int) -> Tuple[Any, Any]:
+    duration = 0.05
+    t = np.linspace(0, duration, int(sr * duration), endpoint=False)
+    sig = np.sin(2 * np.pi * 1000 * t) * np.exp(-t * 80.0) * 0.5
+    return sig, sig
+
+
+_SFX_GENERATORS: Dict[str, Any] = {
+    "ready": _sfx_crystalline_chime,
+    "listening": _sfx_crystalline_chime,
+    "mic_on": _sfx_crystalline_chime,
+    "confirm": _sfx_holographic_sweep,
+    "executing": _sfx_holographic_sweep,
+    "acknowledge": _sfx_holographic_sweep,
+    "complete": _sfx_dual_bell,
+    "done": _sfx_dual_bell,
+    "success": _sfx_dual_bell,
+    "alert": _sfx_radar_double_ping,
+    "ping": _sfx_radar_double_ping,
+    "warning": _sfx_radar_double_ping,
+    "dismiss": _sfx_downward_fade,
+    "stop": _sfx_downward_fade,
+    "mic_off": _sfx_downward_fade,
+}
+
+
 class VoiceSFX:
     """
     Mathematical synthesis of Cortana-grade UI chimes, alerts, and earcons.
@@ -60,7 +144,7 @@ class VoiceSFX:
     @classmethod
     def synthesize_sfx(cls, sfx_name: str) -> bytes:
         """
-        Generate crystalline audio cue by name.
+        Generate crystalline audio cue by name via O(1) generator dispatch.
         Available:
         - 'ready' / 'listening': Dual harmonic crystal chime (C6 + E6)
         - 'confirm' / 'executing': Upward FM holographic sweep
@@ -76,70 +160,8 @@ class VoiceSFX:
         if np is None:
             return b""
 
-        if name in ("ready", "listening", "mic_on"):
-            # Crystalline chime: C6 (1046.5 Hz) + E6 (1318.5 Hz) + G6 (1567.98 Hz)
-            duration = 0.38
-            t = np.linspace(0, duration, int(sr * duration), endpoint=False)
-            env = np.exp(-t * 9.5) * (1.0 - np.exp(-t * 400.0))  # 2.5ms attack, smooth ring decay
-            f1, f2, f3 = 1046.50, 1318.51, 1567.98
-            # Stereo Haas delay for spatial width
-            left = (0.50 * np.sin(2 * np.pi * f1 * t) + 0.35 * np.sin(2 * np.pi * f2 * t) + 0.15 * np.sin(2 * np.pi * f3 * t)) * env
-            right = (0.35 * np.sin(2 * np.pi * f1 * t) + 0.50 * np.sin(2 * np.pi * f2 * t) + 0.15 * np.sin(2 * np.pi * f3 * t)) * env
-
-        elif name in ("confirm", "executing", "acknowledge"):
-            # Upward holographic sweep (880 Hz -> 1760 Hz) with FM bell shimmer
-            duration = 0.28
-            t = np.linspace(0, duration, int(sr * duration), endpoint=False)
-            env = np.exp(-t * 8.0) * (1.0 - np.exp(-t * 300.0))
-            freq = 880.0 + (1760.0 - 880.0) * (t / duration) ** 1.5
-            mod = 0.2 * np.sin(2 * np.pi * 32.0 * t)  # 32Hz vibrato shimmer
-            left = np.sin(2 * np.pi * freq * t + mod) * env * 0.7
-            right = np.sin(2 * np.pi * freq * (t + 0.002) + mod) * env * 0.7
-
-        elif name in ("complete", "done", "success"):
-            # Warm dual bell cadence: Note 1 (D5 587.33 Hz) -> Note 2 (A5 880.00 Hz)
-            duration = 0.45
-            t = np.linspace(0, duration, int(sr * duration), endpoint=False)
-            t1 = t[t < 0.12]
-            t2 = t[t >= 0.12] - 0.12
-            env1 = np.exp(-t[t < 0.12] * 12.0)
-            env2 = np.exp(-t2 * 6.5)
-
-            sig1 = (0.6 * np.sin(2 * np.pi * 587.33 * t1) + 0.2 * np.sin(2 * np.pi * 1174.66 * t1)) * env1
-            sig2 = (0.7 * np.sin(2 * np.pi * 880.00 * t2) + 0.3 * np.sin(2 * np.pi * 1760.00 * t2)) * env2
-            combined = np.concatenate([sig1, sig2])
-            left = combined * 0.75
-            # Spatial widening
-            right = np.roll(left, int(sr * 0.008))
-
-        elif name in ("alert", "ping", "warning"):
-            # Tactical double-ping radar notification (1500 Hz)
-            duration = 0.32
-            t = np.linspace(0, duration, int(sr * duration), endpoint=False)
-            pulse1 = (t < 0.08) * np.exp(-t * 22.0) * np.sin(2 * np.pi * 1500 * t)
-            t_sub = np.maximum(0, t - 0.10)
-            pulse2 = (t >= 0.10) * np.exp(-t_sub * 14.0) * np.sin(2 * np.pi * 1800 * t_sub)
-            sig = (pulse1 + pulse2) * 0.8
-            left = sig
-            right = sig
-
-        elif name in ("dismiss", "stop", "mic_off"):
-            # Downward soft crystal fade (1200 Hz -> 600 Hz)
-            duration = 0.22
-            t = np.linspace(0, duration, int(sr * duration), endpoint=False)
-            env = np.exp(-t * 12.0)
-            freq = 1200.0 - (1200.0 - 600.0) * (t / duration)
-            sig = np.sin(2 * np.pi * freq * t) * env * 0.6
-            left = sig
-            right = np.roll(sig, int(sr * 0.004))
-
-        else:
-            # Neutral soft tick
-            duration = 0.05
-            t = np.linspace(0, duration, int(sr * duration), endpoint=False)
-            sig = np.sin(2 * np.pi * 1000 * t) * np.exp(-t * 80.0) * 0.5
-            left = sig
-            right = sig
+        gen = _SFX_GENERATORS.get(name, _sfx_neutral_tick)
+        left, right = gen(sr)
 
         # Interleave stereo int16 PCM
         stereo = np.column_stack((left, right))

@@ -43,7 +43,8 @@ import {
   Bookmark,
   Headphones,
   SlidersHorizontal,
-  Activity
+  Activity,
+  Brain
 } from 'lucide-react';
 
 import { useToast } from '../components/Toast';

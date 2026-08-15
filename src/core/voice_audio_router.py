@@ -22,51 +22,45 @@ class VoiceAudioRouter:
     _master_volume_pct: int = 100
 
     @classmethod
+    def _default_device_record(cls) -> Dict[str, str]:
+        return {
+            "name": "Default Windows Audio Endpoint",
+            "status": "OK",
+            "manufacturer": "Microsoft",
+            "device_id": "DEFAULT_AUDIO_RENDER"
+        }
+
+    @classmethod
     def list_audio_output_devices(cls) -> List[Dict[str, Any]]:
         """
         Enumerate all active audio rendering endpoints on the system.
         """
+        if sys.platform != "win32":
+            return [cls._default_device_record()]
+
         devices = []
-        if sys.platform == "win32":
-            try:
-                ps_script = """
-                Get-CimInstance Win32_SoundDevice | Select-Object Name, Status, Manufacturer, DeviceID | ConvertTo-Json
-                """
-                res = subprocess.run(
-                    ["powershell", "-NoProfile", "-Command", ps_script],
-                    capture_output=True,
-                    text=True,
-                    timeout=6
-                )
-                if res.stdout.strip():
-                    raw = json.loads(res.stdout.strip())
-                    if isinstance(raw, list):
-                        for item in raw:
-                            devices.append({
-                                "name": item.get("Name", "Unknown Audio Device"),
-                                "status": item.get("Status", "OK"),
-                                "manufacturer": item.get("Manufacturer", "Generic"),
-                                "device_id": item.get("DeviceID", "")
-                            })
-                    elif isinstance(raw, dict):
-                        devices.append({
-                            "name": raw.get("Name", "Unknown Audio Device"),
-                            "status": raw.get("Status", "OK"),
-                            "manufacturer": raw.get("Manufacturer", "Generic"),
-                            "device_id": raw.get("DeviceID", "")
-                        })
-            except Exception:
-                pass
+        try:
+            ps_script = "Get-CimInstance Win32_SoundDevice | Select-Object Name, Status, Manufacturer, DeviceID | ConvertTo-Json"
+            res = subprocess.run(
+                ["powershell", "-NoProfile", "-Command", ps_script],
+                capture_output=True,
+                text=True,
+                timeout=6
+            )
+            if stdout := res.stdout.strip():
+                raw = json.loads(stdout)
+                items = raw if isinstance(raw, list) else [raw] if isinstance(raw, dict) else []
+                for item in items:
+                    devices.append({
+                        "name": item.get("Name", "Unknown Audio Device"),
+                        "status": item.get("Status", "OK"),
+                        "manufacturer": item.get("Manufacturer", "Generic"),
+                        "device_id": item.get("DeviceID", "")
+                    })
+        except Exception:
+            pass
 
-        if not devices:
-            devices.append({
-                "name": "Default Windows Audio Endpoint",
-                "status": "OK",
-                "manufacturer": "Microsoft",
-                "device_id": "DEFAULT_AUDIO_RENDER"
-            })
-
-        return devices
+        return devices or [cls._default_device_record()]
 
     @classmethod
     def set_active_device(cls, device_name: str) -> Dict[str, Any]:

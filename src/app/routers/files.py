@@ -44,6 +44,7 @@ from src.domain.multimodal_ocr_parser import parse_multimodal_document_layout
 router = APIRouter()
 
 ACTIVE_DIR = "dumps"
+IGNORED_DIRS = frozenset({".git", "node_modules", "__pycache__", ".venv"})
 
 def get_active_dir():
     try:
@@ -346,15 +347,18 @@ def save_file_endpoint(req: FileSaveRequest):
 def _populate_db_tree_nodes(base: str, seen: set, tree: list):
     """Populate file tree with additional indexed database files not on disk."""
     try:
+        base_abs = os.path.abspath(base)
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT filepath, filename, file_size FROM files")
             for row in cursor.fetchall():
                 fp = row[0]
-                if not fp or os.path.abspath(fp) in seen:
+                if not fp:
                     continue
                 abs_p = os.path.abspath(fp)
-                rel = os.path.relpath(fp, base) if abs_p.startswith(os.path.abspath(base)) else (row[1] or os.path.basename(fp))
+                if abs_p in seen:
+                    continue
+                rel = os.path.relpath(fp, base) if abs_p.startswith(base_abs) else (row[1] or os.path.basename(fp))
                 sz = row[2] if row[2] is not None else (os.path.getsize(fp) if os.path.exists(fp) else 0)
                 tree.append({"filepath": fp, "relative_path": rel, "size": sz})
                 seen.add(abs_p)
@@ -372,7 +376,7 @@ def get_file_tree():
     tree = []
     seen = set()
     for root, dirs, files in os.walk(base):
-        dirs[:] = [d for d in dirs if d not in {".git", "node_modules", "__pycache__", ".venv"}]
+        dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
         for f in files:
             fp = os.path.join(root, f)
             abs_p = os.path.abspath(fp)

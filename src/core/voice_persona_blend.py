@@ -53,6 +53,44 @@ class VoicePersonaBlender:
     _blends_cache: Dict[str, Any] = {}
 
     @classmethod
+    def _try_load_voices_json(cls, path: str) -> Optional[Dict[str, Any]]:
+        """Attempt to load voices embedding dictionary from JSON format."""
+        if not os.path.exists(path):
+            return None
+        try:
+            import json
+            with open(path, "r", encoding="utf-8") as f:
+                raw_data = json.load(f)
+            if isinstance(raw_data, dict):
+                return {k: np.array(v, dtype=np.float32) for k, v in raw_data.items()}
+        except Exception:
+            pass
+        return None
+
+    @classmethod
+    def _try_load_voices_bin(cls, path: str) -> Optional[Dict[str, Any]]:
+        """Attempt to load voices embedding dictionary from binary pickle or npz format."""
+        if not os.path.exists(path):
+            return None
+        try:
+            import pickle
+            with open(path, "rb") as f:
+                data = pickle.load(f)
+            if isinstance(data, dict):
+                return {
+                    k: (np.array(v, dtype=np.float32) if not isinstance(v, np.ndarray) else v)
+                    for k, v in data.items()
+                }
+        except Exception:
+            pass
+        try:
+            data = np.load(path, allow_pickle=True)
+            return {k: np.array(data[k], dtype=np.float32) for k in data.files}
+        except Exception:
+            pass
+        return None
+
+    @classmethod
     def load_voices_embeddings(cls) -> Dict[str, Any]:
         """Load Kokoro voices from JSON or binary embedding pack with caching."""
         if cls._voices_cache is not None:
@@ -62,39 +100,13 @@ class VoicePersonaBlender:
         if np is None:
             return cls._voices_cache
 
-        # 1. First priority: Load from voices.json (full precision float32 tensors)
-        if os.path.exists(VOICES_JSON_PATH):
-            try:
-                import json
-                with open(VOICES_JSON_PATH, "r", encoding="utf-8") as f:
-                    raw_data = json.load(f)
-                if isinstance(raw_data, dict):
-                    cls._voices_cache = {
-                        k: np.array(v, dtype=np.float32) for k, v in raw_data.items()
-                    }
-                    return cls._voices_cache
-            except Exception:
-                pass
+        if json_cache := cls._try_load_voices_json(VOICES_JSON_PATH):
+            cls._voices_cache = json_cache
+            return cls._voices_cache
 
-        # 2. Second priority: Load from voices.bin
-        if os.path.exists(VOICES_BIN_PATH):
-            try:
-                import pickle
-                with open(VOICES_BIN_PATH, "rb") as f:
-                    data = pickle.load(f)
-                    if isinstance(data, dict):
-                        cls._voices_cache = {
-                            k: (np.array(v, dtype=np.float32) if not isinstance(v, np.ndarray) else v)
-                            for k, v in data.items()
-                        }
-                        return cls._voices_cache
-            except Exception:
-                try:
-                    data = np.load(VOICES_BIN_PATH, allow_pickle=True)
-                    cls._voices_cache = {k: np.array(data[k], dtype=np.float32) for k in data.files}
-                    return cls._voices_cache
-                except Exception:
-                    pass
+        if bin_cache := cls._try_load_voices_bin(VOICES_BIN_PATH):
+            cls._voices_cache = bin_cache
+            return cls._voices_cache
 
         return cls._voices_cache
 

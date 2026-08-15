@@ -77,6 +77,7 @@ export default function WorkspaceView() {
 function DirectoryTreeSidebar({ onSelectFile, selectedFile }: any) {
   const { activeWorkspace } = useApp();
   const [treeData, setTreeData] = useState<any[]>([]);
+  const [searchFilter, setSearchFilter] = useState<string>('');
   useEffect(() => {
     api.tags().catch(() => {});
     api.fileTree().then(data => {
@@ -104,9 +105,7 @@ function DirectoryTreeSidebar({ onSelectFile, selectedFile }: any) {
 
   const handleUpload = async (fileObj: File) => {
     try {
-      const fd = new FormData();
-      fd.append('file', fileObj);
-      await api.upload(fd);
+      await api.upload(fileObj);
     } catch (e) {
       console.error(e);
     }
@@ -1873,7 +1872,9 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
               ) : (
                 /* Non-PDF Markdown / Text Document View */
                 <div className="flex-1 flex flex-col h-full rounded-2xl overflow-hidden border border-slate-700/60 bg-slate-950/80 shadow-2xl p-6 overflow-auto">
-                  {renderMarkdown(content?.content || '')}
+                  <pre className="whitespace-pre-wrap font-mono text-sm text-slate-300 leading-relaxed select-text">
+                    {content?.content || ''}
+                  </pre>
                 </div>
               )}
             </div>

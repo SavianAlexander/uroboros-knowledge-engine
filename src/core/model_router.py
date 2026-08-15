@@ -68,10 +68,7 @@ def _pick_best_available(candidates: list, default_model: str = "qwen2.5:7b") ->
     """Selects the first candidate present in Ollama's model tags, with graceful fallback."""
     available = get_available_models()
     for c in candidates:
-        if c in available:
-            return c
-        # Match without :latest tag
-        if ":" in c and c.split(":")[0] in available:
+        if c in available or (":" in c and c.split(":", 1)[0] in available):
             return c
     return os.environ.get("OLLAMA_MODEL", default_model)
 

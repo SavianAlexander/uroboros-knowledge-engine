@@ -572,452 +572,533 @@ TOOLS_SCHEMA = [
 ]
 
 
-def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
-    """Execute Antigravity omniscient voice MCP tool calls."""
+def _handle_speak(args: Dict[str, Any]) -> Dict[str, Any]:
     t0 = time.time()
+    text = args.get("text", "")
+    persona = args.get("persona") or VOICE_CONFIG["default_persona"]
+    voice = KOKORO_PERSONAS.get(persona, persona)
+    speed = float(args.get("speed", VOICE_CONFIG["default_speed"]))
+    dsp_preset = args.get("dsp_preset") or VOICE_CONFIG["default_dsp"]
+    priority = args.get("priority", "NORMAL")
+    sfx_intro = args.get("sfx_intro", "")
+    blocking = bool(args.get("blocking", False))
 
-    if name == "antigravity_speak":
-        text = args.get("text", "")
-        persona = args.get("persona") or VOICE_CONFIG["default_persona"]
-        voice = KOKORO_PERSONAS.get(persona, persona)
-        speed = float(args.get("speed", VOICE_CONFIG["default_speed"]))
-        dsp_preset = args.get("dsp_preset") or VOICE_CONFIG["default_dsp"]
-        priority = args.get("priority", "NORMAL")
-        sfx_intro = args.get("sfx_intro", "")
-        blocking = bool(args.get("blocking", False))
+    clean_text = VoiceNormalizer.normalize_for_speech(text)
+    res = VoiceBridge.speak(
+        text=clean_text,
+        domain="GENERAL",
+        priority=priority,
+        voice=voice,
+        dsp_preset=dsp_preset,
+        sfx_intro=sfx_intro if sfx_intro else None
+    )
+    res["original_text"] = text
+    res["normalized_text"] = clean_text
+    res["speed"] = speed
 
-        clean_text = VoiceNormalizer.normalize_for_speech(text)
-        res = VoiceBridge.speak(
-            text=clean_text,
-            domain="GENERAL",
-            priority=priority,
-            voice=voice,
-            dsp_preset=dsp_preset,
-            sfx_intro=sfx_intro if sfx_intro else None
+    # Log into SQLite Conversational Memory
+    duration_ms = round((time.time() - t0) * 1000, 1)
+    VoiceMemoryLedger.log_turn(
+        speaker="Antigravity",
+        raw_text=text,
+        normalized_text=clean_text,
+        persona=persona,
+        duration_ms=duration_ms,
+        domain="GENERAL"
+    )
+    return res
+
+
+def _handle_announce_task(args: Dict[str, Any]) -> Dict[str, Any]:
+    task_name = args.get("task_name", "")
+    state = args.get("state", "COMPLETED").upper()
+    details = args.get("details", "")
+    persona = args.get("persona", "INDUSTRY_OVERSEER")
+    voice = KOKORO_PERSONAS.get(persona, "bm_george")
+
+    intro_sfx = "target_lock" if state == "COMPLETED" else "shield_critical" if state == "FAILED" else ""
+    priority = "CRITICAL" if state == "FAILED" else "HIGH" if state == "STARTED" else "NORMAL"
+
+    state_phrasing = {
+        "STARTED": f"Started working on {task_name}.",
+        "COMPLETED": f"Successfully completed {task_name}.",
+        "FAILED": f"Task failure alert on {task_name}.",
+        "PAUSED": f"Paused execution on {task_name}.",
+        "AWAITING_INPUT": f"Execution paused. Awaiting your decision on {task_name}."
+    }.get(state, f"Task update on {task_name}: {state}.")
+
+    full_text = f"{state_phrasing} {details}".strip()
+    clean_text = VoiceNormalizer.normalize_for_speech(full_text)
+
+    res = VoiceBridge.speak(
+        text=clean_text,
+        domain="DEV_OPS",
+        priority=priority,
+        voice=voice,
+        sfx_intro=intro_sfx if intro_sfx else None
+    )
+    res["task_name"] = task_name
+    res["state"] = state
+
+    VoiceMemoryLedger.log_turn(
+        speaker="Antigravity",
+        raw_text=full_text,
+        normalized_text=clean_text,
+        persona=persona,
+        domain="DEV_OPS"
+    )
+    return res
+
+
+def _handle_voice_brief(args: Dict[str, Any]) -> Dict[str, Any]:
+    title = args.get("title", "Executive Briefing")
+    items = args.get("items", [])
+    persona = args.get("persona", "CALM_OPERATIONS")
+    voice = KOKORO_PERSONAS.get(persona, "af_bella")
+
+    bullet_text = " ... ".join(items)
+    combined = f"{title}. ... {bullet_text} ... End of briefing."
+    clean_text = VoiceNormalizer.normalize_for_speech(combined)
+
+    res = VoiceBridge.speak(
+        text=clean_text,
+        domain="DAILY_BRIEF",
+        priority="NORMAL",
+        voice=voice
+    )
+    res["title"] = title
+    res["item_count"] = len(items)
+
+    VoiceMemoryLedger.log_turn(
+        speaker="Antigravity",
+        raw_text=combined,
+        normalized_text=clean_text,
+        persona=persona,
+        domain="DAILY_BRIEF"
+    )
+    return res
+
+
+def _handle_play_sfx(args: Dict[str, Any]) -> Dict[str, Any]:
+    sfx_name = args.get("sfx_name", "target_lock")
+    audio_bytes = VoiceBridge.play_sfx(sfx_name)
+    return {
+        "sfx_name": sfx_name,
+        "generated": audio_bytes is not None,
+        "bytes_len": len(audio_bytes) if audio_bytes else 0,
+        "status": "playing"
+    }
+
+
+def _handle_blend_persona(args: Dict[str, Any]) -> Dict[str, Any]:
+    weights = args.get("weights", {"bf_emma": 0.7, "af_bella": 0.3})
+    blend_name = args.get("blend_name", "custom_blend")
+    return VoicePersonaBlender.blend_personas(weights, custom_name=blend_name)
+
+
+def _handle_listen(args: Dict[str, Any]) -> Dict[str, Any]:
+    audio_path = args.get("audio_path", "")
+    if audio_path and os.path.exists(audio_path):
+        return VoiceEarTranscriber.transcribe_audio_file(audio_path)
+    dur = float(args.get("duration_seconds", 3.0))
+    rec = VoiceEarTranscriber.record_microphone_sample(duration_s=dur)
+    transcription = VoiceEarTranscriber.transcribe_audio_file(rec["output_path"])
+    transcription["recording_metadata"] = rec
+    return transcription
+
+
+def _handle_list_audio_devices(args: Dict[str, Any]) -> Dict[str, Any]:
+    devices = VoiceAudioRouter.list_audio_output_devices()
+    return {
+        "devices": devices,
+        "router_status": VoiceAudioRouter.get_router_status()
+    }
+
+
+def _handle_get_voice_history(args: Dict[str, Any]) -> Dict[str, Any]:
+    limit = int(args.get("limit", 10))
+    session_id = args.get("session_id")
+    turns = VoiceMemoryLedger.get_recent_turns(limit=limit, session_id=session_id)
+    metrics = VoiceMemoryLedger.get_voice_metrics()
+    return {
+        "turns": turns,
+        "metrics": metrics
+    }
+
+
+def _handle_get_spectrum(args: Dict[str, Any]) -> Dict[str, Any]:
+    num_bands = int(args.get("num_bands", 32))
+    return VoiceSpectrumAnalyzer.analyze_audio_buffer(None, num_bands=num_bands)
+
+
+def _handle_trigger_tududi_radar(args: Dict[str, Any]) -> Dict[str, Any]:
+    return TududiVoiceRadarDaemon.execute_radar_sweep()
+
+
+def _handle_start_call(args: Dict[str, Any]) -> Dict[str, Any]:
+    persona = args.get("persona", "AURA_SHIP_AI")
+    caller_name = args.get("caller_name", "Commander Savian Alexander")
+    return VoiceCallIntercomEngine.start_call(persona=persona, caller_name=caller_name)
+
+
+def _handle_call_respond(args: Dict[str, Any]) -> Dict[str, Any]:
+    text = args.get("text", "")
+    with_roger = bool(args.get("with_roger_beep", True))
+    return VoiceCallIntercomEngine.respond_in_call(response_text=text, with_roger_beep=with_roger)
+
+
+def _handle_barge_in_cut(args: Dict[str, Any]) -> Dict[str, Any]:
+    return VoiceActivityInterrupter.execute_instant_barge_in()
+
+
+def _handle_end_call(args: Dict[str, Any]) -> Dict[str, Any]:
+    return VoiceCallIntercomEngine.end_call()
+
+
+def _handle_get_call_status(args: Dict[str, Any]) -> Dict[str, Any]:
+    return VoiceCallIntercomEngine.get_call_status()
+
+
+def _handle_read_code(args: Dict[str, Any]) -> Dict[str, Any]:
+    code = args.get("code", "")
+    lang = args.get("language", "python")
+    spoken_text = CodeSyntaxNarrator.deconstruct_code_for_speech(code, language=lang)
+    res = {"language": lang, "spoken_narrative": spoken_text}
+    if args.get("speak", False):
+        voice_res = VoiceBridge.speak(
+            text=spoken_text,
+            domain="EXECUTIVE_BRIEF",
+            voice=KOKORO_PERSONAS.get(args.get("persona", "CALM_OPERATIONS"), "af_bella")
         )
-        res["original_text"] = text
-        res["normalized_text"] = clean_text
-        res["speed"] = speed
+        res["voice_dispatch"] = voice_res
+    return res
 
-        # Log into SQLite Conversational Memory
-        duration_ms = round((time.time() - t0) * 1000, 1)
-        VoiceMemoryLedger.log_turn(
-            speaker="Antigravity",
-            raw_text=text,
-            normalized_text=clean_text,
-            persona=persona,
-            duration_ms=duration_ms,
-            domain="GENERAL"
+
+def _handle_read_email(args: Dict[str, Any]) -> Dict[str, Any]:
+    raw_email = args.get("raw_email", "")
+    cleaned = DocumentVoiceReader.clean_email_for_speech(raw_email)
+    if args.get("speak", False):
+        voice_res = VoiceBridge.speak(
+            text=cleaned["speech_text"],
+            domain="EXECUTIVE_BRIEF",
+            voice=KOKORO_PERSONAS.get(args.get("persona", "CALM_OPERATIONS"), "af_bella")
         )
-        return res
+        cleaned["voice_dispatch"] = voice_res
+    return cleaned
 
-    elif name == "antigravity_announce_task":
-        task_name = args.get("task_name", "")
-        state = args.get("state", "COMPLETED").upper()
-        details = args.get("details", "")
-        persona = args.get("persona", "INDUSTRY_OVERSEER")
-        voice = KOKORO_PERSONAS.get(persona, "bm_george")
 
-        intro_sfx = "target_lock" if state == "COMPLETED" else "shield_critical" if state == "FAILED" else ""
-        priority = "CRITICAL" if state == "FAILED" else "HIGH" if state == "STARTED" else "NORMAL"
-
-        state_phrasing = {
-            "STARTED": f"Started working on {task_name}.",
-            "COMPLETED": f"Successfully completed {task_name}.",
-            "FAILED": f"Task failure alert on {task_name}.",
-            "PAUSED": f"Paused execution on {task_name}.",
-            "AWAITING_INPUT": f"Execution paused. Awaiting your decision on {task_name}."
-        }.get(state, f"Task update on {task_name}: {state}.")
-
-        full_text = f"{state_phrasing} {details}".strip()
-        clean_text = VoiceNormalizer.normalize_for_speech(full_text)
-
-        res = VoiceBridge.speak(
-            text=clean_text,
-            domain="DEV_OPS",
-            priority=priority,
-            voice=voice,
-            sfx_intro=intro_sfx if intro_sfx else None
-        )
-        res["task_name"] = task_name
-        res["state"] = state
-
-        VoiceMemoryLedger.log_turn(
-            speaker="Antigravity",
-            raw_text=full_text,
-            normalized_text=clean_text,
-            persona=persona,
-            domain="DEV_OPS"
-        )
-        return res
-
-    elif name == "antigravity_voice_brief":
-        title = args.get("title", "Executive Briefing")
-        items = args.get("items", [])
-        persona = args.get("persona", "CALM_OPERATIONS")
-        voice = KOKORO_PERSONAS.get(persona, "af_bella")
-
-        bullet_text = " ... ".join(items)
-        combined = f"{title}. ... {bullet_text} ... End of briefing."
-        clean_text = VoiceNormalizer.normalize_for_speech(combined)
-
-        res = VoiceBridge.speak(
-            text=clean_text,
-            domain="DAILY_BRIEF",
-            priority="NORMAL",
-            voice=voice
-        )
-        res["title"] = title
-        res["item_count"] = len(items)
-
-        VoiceMemoryLedger.log_turn(
-            speaker="Antigravity",
-            raw_text=combined,
-            normalized_text=clean_text,
-            persona=persona,
-            domain="DAILY_BRIEF"
-        )
-        return res
-
-    elif name == "antigravity_play_sfx":
-        sfx_name = args.get("sfx_name", "target_lock")
-        audio_bytes = VoiceBridge.play_sfx(sfx_name)
-        return {
-            "sfx_name": sfx_name,
-            "generated": audio_bytes is not None,
-            "bytes_len": len(audio_bytes) if audio_bytes else 0,
-            "status": "playing"
-        }
-
-    elif name == "antigravity_blend_persona":
-        weights = args.get("weights", {"bf_emma": 0.7, "af_bella": 0.3})
-        blend_name = args.get("blend_name", "custom_blend")
-        return VoicePersonaBlender.blend_personas(weights, custom_name=blend_name)
-
-    elif name == "antigravity_listen":
-        audio_path = args.get("audio_path", "")
-        if audio_path and os.path.exists(audio_path):
-            return VoiceEarTranscriber.transcribe_audio_file(audio_path)
-        dur = float(args.get("duration_seconds", 3.0))
-        rec = VoiceEarTranscriber.record_microphone_sample(duration_s=dur)
-        transcription = VoiceEarTranscriber.transcribe_audio_file(rec["output_path"])
-        transcription["recording_metadata"] = rec
-        return transcription
-
-    elif name == "antigravity_list_audio_devices":
-        devices = VoiceAudioRouter.list_audio_output_devices()
-        return {
-            "devices": devices,
-            "router_status": VoiceAudioRouter.get_router_status()
-        }
-
-    elif name == "antigravity_get_voice_history":
-        limit = int(args.get("limit", 10))
-        session_id = args.get("session_id")
-        turns = VoiceMemoryLedger.get_recent_turns(limit=limit, session_id=session_id)
-        metrics = VoiceMemoryLedger.get_voice_metrics()
-        return {
-            "turns": turns,
-            "metrics": metrics
-        }
-
-    elif name == "antigravity_get_spectrum":
-        num_bands = int(args.get("num_bands", 32))
-        return VoiceSpectrumAnalyzer.analyze_audio_buffer(None, num_bands=num_bands)
-
-    elif name == "antigravity_trigger_tududi_radar":
-        return TududiVoiceRadarDaemon.execute_radar_sweep()
-
-    elif name == "antigravity_start_call":
-        persona = args.get("persona", "AURA_SHIP_AI")
-        caller_name = args.get("caller_name", "Commander Savian Alexander")
-        return VoiceCallIntercomEngine.start_call(persona=persona, caller_name=caller_name)
-
-    elif name == "antigravity_call_respond":
-        text = args.get("text", "")
-        with_roger = bool(args.get("with_roger_beep", True))
-        return VoiceCallIntercomEngine.respond_in_call(response_text=text, with_roger_beep=with_roger)
-
-    elif name == "antigravity_barge_in_cut":
-        return VoiceActivityInterrupter.execute_instant_barge_in()
-
-    elif name == "antigravity_end_call":
-        return VoiceCallIntercomEngine.end_call()
-
-    elif name == "antigravity_get_call_status":
-        return VoiceCallIntercomEngine.get_call_status()
-
-    elif name == "antigravity_read_code":
-        code = args.get("code", "")
-        lang = args.get("language", "python")
-        spoken_text = CodeSyntaxNarrator.deconstruct_code_for_speech(code, language=lang)
-        res = {"language": lang, "spoken_narrative": spoken_text}
-        if args.get("speak", False):
-            voice_res = VoiceBridge.speak(
-                text=spoken_text,
-                domain="EXECUTIVE_BRIEF",
-                voice=KOKORO_PERSONAS.get(args.get("persona", "CALM_OPERATIONS"), "af_bella")
-            )
-            res["voice_dispatch"] = voice_res
-        return res
-
-    elif name == "antigravity_read_email":
-        raw_email = args.get("raw_email", "")
-        cleaned = DocumentVoiceReader.clean_email_for_speech(raw_email)
-        if args.get("speak", False):
-            voice_res = VoiceBridge.speak(
-                text=cleaned["speech_text"],
-                domain="EXECUTIVE_BRIEF",
-                voice=KOKORO_PERSONAS.get(args.get("persona", "CALM_OPERATIONS"), "af_bella")
-            )
-            cleaned["voice_dispatch"] = voice_res
-        return cleaned
-
-    elif name == "antigravity_showcase_personas":
-        persona = args.get("persona")
-        if persona:
-            custom_text = args.get("custom_text")
-            dsp_override = args.get("dsp_preset")
-            speak_now = args.get("speak", True)
-            return VoiceStudioShowcase.audition_persona(
-                persona_key=persona,
-                custom_text=custom_text,
-                dsp_override=dsp_override,
-                speak_now=speak_now
-            )
-        else:
-            return VoiceStudioShowcase.get_studio_catalog()
-
-    elif name == "antigravity_apply_studio_master":
-        text = args.get("text", "")
-        preset = args.get("preset", "SOVEREIGN_PRESENCE")
-        persona = args.get("persona", "SOVEREIGN_ORACLE")
-        voice = KOKORO_PERSONAS.get(persona, "af_sky")
-        return VoiceBridge.speak(
-            text=text,
-            domain="STUDIO_SHOWCASE",
-            priority="HIGH",
-            voice=voice,
-            dsp_preset=preset
-        )
-
-    elif name == "antigravity_verify_audit_hashchain":
-        limit = args.get("limit", 10)
-        integrity = GLOBAL_AUDIT_HASHCHAIN.verify_integrity()
-        recent = GLOBAL_AUDIT_HASHCHAIN.get_recent_blocks(limit=limit)
-        return {
-            "integrity": integrity,
-            "recent_blocks": recent
-        }
-
-    elif name == "antigravity_parse_voice_command":
-        cmd_text = args.get("command", "")
-        speak_fb = args.get("speak_feedback", True)
-        return VoiceCommandParser.execute_command(spoken_text=cmd_text, speak_feedback=speak_fb)
-
-    elif name == "antigravity_get_audio_telemetry":
-        fmt = args.get("format", "json")
-        if fmt == "prometheus":
-            return {"format": "prometheus", "metrics": AudioTelemetryExporter.export_prometheus_metrics()}
-        return AudioTelemetryExporter.get_telemetry_snapshot()
-
-    elif name == "antigravity_broadcast_fleet_alert":
-        alert_type = args.get("alert_type", "CYNO_BEACON_ACTIVE")
-        system = args.get("system", "G-EURJ")
+def _handle_showcase_personas(args: Dict[str, Any]) -> Dict[str, Any]:
+    persona = args.get("persona")
+    if persona:
+        custom_text = args.get("custom_text")
+        dsp_override = args.get("dsp_preset")
         speak_now = args.get("speak", True)
-        return EVEFleetTacticalVoice.broadcast_tactical_alert(alert_type=alert_type, system=system, speak_now=speak_now)
-
-    elif name == "antigravity_instant_speak":
-        from src.core.instant_audio_streamer import InstantVoiceClient
-        text = args.get("text", "")
-        persona = args.get("persona", "AURA_SHIP_AI")
-        voice = KOKORO_PERSONAS.get(persona, persona)
-        dsp_preset = args.get("dsp_preset", "TRANSCENDENTAL_AURA")
-        speed = float(args.get("speed", 1.0))
-        sync = bool(args.get("sync", False))
-        return InstantVoiceClient.speak_instant(text, voice=voice, dsp_preset=dsp_preset, speed=speed, sync=sync)
-
-    elif name == "antigravity_prewarm_voice_engine":
-        from src.core.instant_audio_streamer import InstantVoiceClient
-        InstantVoiceClient.pre_warm_tactical_phrases()
-        return {"status": "prewarmed", "message": "All neural ONNX weights and tactical phrase caches pinned in RAM."}
-
-    elif name == "antigravity_get_instant_streamer_stats":
-        from src.core.instant_audio_streamer import get_instant_streamer
-        return {"status": "ok", "streamer_stats": get_instant_streamer().stats}
-
-    elif name == "antigravity_configure_voice":
-        if "default_persona" in args:
-            VOICE_CONFIG["default_persona"] = args["default_persona"]
-            VOICE_CONFIG["default_voice"] = KOKORO_PERSONAS.get(args["default_persona"], "af_bella")
-        if "default_speed" in args:
-            VOICE_CONFIG["default_speed"] = float(args["default_speed"])
-        if "default_dsp" in args:
-            VOICE_CONFIG["default_dsp"] = args["default_dsp"]
-        return {"status": "updated", "config": VOICE_CONFIG}
-
-    elif name == "antigravity_voice_rag_query":
-        from src.core.voice_rag_bridge import VoiceRAGBridge
-        query = args.get("query", "")
-        persona = args.get("persona") or VOICE_CONFIG["default_persona"]
-        dsp = args.get("dsp_preset") or VOICE_CONFIG["default_dsp"]
-        max_sentences = int(args.get("max_sentences", 2))
-        return VoiceRAGBridge.query_rag_and_speak(
-            query=query,
-            persona=persona,
-            dsp_preset=dsp,
-            sync=True,
-            max_sentences=max_sentences
+        return VoiceStudioShowcase.audition_persona(
+            persona_key=persona,
+            custom_text=custom_text,
+            dsp_override=dsp_override,
+            speak_now=speak_now
         )
+    return VoiceStudioShowcase.get_studio_catalog()
 
-    elif name == "antigravity_synthesize_podcast_dialogue":
-        from src.core.voice_podcast_generator import VoicePodcastGenerator
-        turns = args.get("turns", [])
-        pause_s = float(args.get("pause_duration_s", 0.35))
-        play_live = bool(args.get("play_live", False))
-        return VoicePodcastGenerator.synthesize_dialogue(turns=turns, pause_duration_s=pause_s, play_live=play_live)
 
-    elif name == "antigravity_voice_telemetry_sweep":
-        from src.core.voice_fleet_telemetry_daemon import VoiceFleetTelemetryDaemon
-        speak_alert = bool(args.get("speak_alert", True))
-        return VoiceFleetTelemetryDaemon.execute_telemetry_sweep(speak_alert=speak_alert)
+def _handle_apply_studio_master(args: Dict[str, Any]) -> Dict[str, Any]:
+    text = args.get("text", "")
+    preset = args.get("preset", "SOVEREIGN_PRESENCE")
+    persona = args.get("persona", "SOVEREIGN_ORACLE")
+    voice = KOKORO_PERSONAS.get(persona, "af_sky")
+    return VoiceBridge.speak(
+        text=text,
+        domain="STUDIO_SHOWCASE",
+        priority="HIGH",
+        voice=voice,
+        dsp_preset=preset
+    )
 
-    elif name == "antigravity_voice_record_note":
-        from src.core.voice_knowledge_ingest import VoiceKnowledgeIngest
-        title = args.get("title", "Voice Note")
-        content = args.get("content", "")
-        tags = args.get("tags")
-        speak = bool(args.get("speak_confirmation", True))
-        return VoiceKnowledgeIngest.record_voice_note(title=title, content=content, tags=tags, speak_confirmation=speak)
 
-    elif name == "antigravity_voice_create_task":
-        from src.core.voice_knowledge_ingest import VoiceKnowledgeIngest
-        title = args.get("title", "Voice Task")
-        note = args.get("note", "")
-        priority = int(args.get("priority", 1))
-        project_id = int(args.get("project_id", 14))
-        return VoiceKnowledgeIngest.create_voice_task(title=title, note=note, priority=priority, project_id=project_id, speak_confirmation=True)
+def _handle_verify_audit_hashchain(args: Dict[str, Any]) -> Dict[str, Any]:
+    limit = args.get("limit", 10)
+    integrity = GLOBAL_AUDIT_HASHCHAIN.verify_integrity()
+    recent = GLOBAL_AUDIT_HASHCHAIN.get_recent_blocks(limit=limit)
+    return {
+        "integrity": integrity,
+        "recent_blocks": recent
+    }
 
-    elif name == "antigravity_check_threat_radar":
-        from src.domain.eve_threat_radar import EveTacticalThreatRadar
-        system = args.get("system", "G-EURJ")
-        speak = bool(args.get("speak_alert", True))
-        return EveTacticalThreatRadar.evaluate_system_threat(target_system=system, speak_alert=speak)
 
-    elif name == "antigravity_stream_pipeline_speak":
-        from src.core.voice_streaming_pipeline import VoiceStreamingPipeliner
-        text = args.get("text", "")
-        persona = args.get("persona") or VOICE_CONFIG["default_persona"]
-        # Split text into token chunks to simulate generator
-        tokens = [w + " " for w in text.split()]
-        return VoiceStreamingPipeliner.stream_and_speak(iter(tokens), persona=persona, sync=False)
+def _handle_parse_voice_command(args: Dict[str, Any]) -> Dict[str, Any]:
+    cmd_text = args.get("command", "")
+    speak_fb = args.get("speak_feedback", True)
+    return VoiceCommandParser.execute_command(spoken_text=cmd_text, speak_feedback=speak_fb)
 
-    elif name == "antigravity_check_market_arbitrage":
-        from src.domain.eve_market_arbitrage import EveMarketArbitrage
-        commodity = args.get("commodity", "Isogen")
-        source_reg = args.get("source_region", "The Forge")
-        target_reg = args.get("target_region", "Delve")
-        speak = bool(args.get("speak_report", True))
-        return EveMarketArbitrage.analyze_commodity_arbitrage(
-            commodity_name=commodity,
-            source_region=source_reg,
-            target_region=target_reg,
-            speak_report=speak
-        )
 
-    elif name == "antigravity_check_pi_sentinel":
-        from src.domain.eve_pi_sentinel import EvePISentinel
-        char = args.get("character", "Savian Alexander")
-        speak = bool(args.get("speak_alert", True))
-        return EvePISentinel.audit_planetary_colonies(character_name=char, speak_alert=speak)
+def _handle_get_audio_telemetry(args: Dict[str, Any]) -> Dict[str, Any]:
+    fmt = args.get("format", "json")
+    if fmt == "prometheus":
+        return {"format": "prometheus", "metrics": AudioTelemetryExporter.export_prometheus_metrics()}
+    return AudioTelemetryExporter.get_telemetry_snapshot()
 
-    elif name == "antigravity_scan_vault_auto_watcher":
-        from src.infrastructure.vault_auto_watcher import VaultAutoWatcher
-        watcher = VaultAutoWatcher()
-        return watcher.scan_and_index_delta()
 
-    elif name == "antigravity_listen_and_transcribe":
-        from src.core.voice_stt_ear import VoiceEarTranscriber
-        dur = float(args.get("duration_seconds", 3.0))
-        return VoiceEarTranscriber.listen_and_transcribe(duration_s=dur)
+def _handle_broadcast_fleet_alert(args: Dict[str, Any]) -> Dict[str, Any]:
+    alert_type = args.get("alert_type", "CYNO_BEACON_ACTIVE")
+    system = args.get("system", "G-EURJ")
+    speak_now = args.get("speak", True)
+    return EVEFleetTacticalVoice.broadcast_tactical_alert(alert_type=alert_type, system=system, speak_now=speak_now)
 
-    elif name == "antigravity_get_status":
-        copilot = VoiceBridge.get_copilot()
+
+def _handle_instant_speak(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.core.instant_audio_streamer import InstantVoiceClient
+    text = args.get("text", "")
+    persona = args.get("persona", "AURA_SHIP_AI")
+    voice = KOKORO_PERSONAS.get(persona, persona)
+    dsp_preset = args.get("dsp_preset", "TRANSCENDENTAL_AURA")
+    speed = float(args.get("speed", 1.0))
+    sync = bool(args.get("sync", False))
+    return InstantVoiceClient.speak_instant(text, voice=voice, dsp_preset=dsp_preset, speed=speed, sync=sync)
+
+
+def _handle_prewarm_voice_engine(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.core.instant_audio_streamer import InstantVoiceClient
+    InstantVoiceClient.pre_warm_tactical_phrases()
+    return {"status": "prewarmed", "message": "All neural ONNX weights and tactical phrase caches pinned in RAM."}
+
+
+def _handle_get_instant_streamer_stats(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.core.instant_audio_streamer import get_instant_streamer
+    return {"status": "ok", "streamer_stats": get_instant_streamer().stats}
+
+
+def _handle_configure_voice(args: Dict[str, Any]) -> Dict[str, Any]:
+    if "default_persona" in args:
+        VOICE_CONFIG["default_persona"] = args["default_persona"]
+        VOICE_CONFIG["default_voice"] = KOKORO_PERSONAS.get(args["default_persona"], "af_bella")
+    if "default_speed" in args:
+        VOICE_CONFIG["default_speed"] = float(args["default_speed"])
+    if "default_dsp" in args:
+        VOICE_CONFIG["default_dsp"] = args["default_dsp"]
+    return {"status": "updated", "config": VOICE_CONFIG}
+
+
+def _handle_voice_rag_query(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.core.voice_rag_bridge import VoiceRAGBridge
+    query = args.get("query", "")
+    persona = args.get("persona") or VOICE_CONFIG["default_persona"]
+    dsp = args.get("dsp_preset") or VOICE_CONFIG["default_dsp"]
+    max_sentences = int(args.get("max_sentences", 2))
+    return VoiceRAGBridge.query_rag_and_speak(
+        query=query,
+        persona=persona,
+        dsp_preset=dsp,
+        sync=True,
+        max_sentences=max_sentences
+    )
+
+
+def _handle_synthesize_podcast_dialogue(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.core.voice_podcast_generator import VoicePodcastGenerator
+    turns = args.get("turns", [])
+    pause_s = float(args.get("pause_duration_s", 0.35))
+    play_live = bool(args.get("play_live", False))
+    return VoicePodcastGenerator.synthesize_dialogue(turns=turns, pause_duration_s=pause_s, play_live=play_live)
+
+
+def _handle_voice_telemetry_sweep(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.core.voice_fleet_telemetry_daemon import VoiceFleetTelemetryDaemon
+    speak_alert = bool(args.get("speak_alert", True))
+    return VoiceFleetTelemetryDaemon.execute_telemetry_sweep(speak_alert=speak_alert)
+
+
+def _handle_voice_record_note(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.core.voice_knowledge_ingest import VoiceKnowledgeIngest
+    title = args.get("title", "Voice Note")
+    content = args.get("content", "")
+    tags = args.get("tags")
+    speak = bool(args.get("speak_confirmation", True))
+    return VoiceKnowledgeIngest.record_voice_note(title=title, content=content, tags=tags, speak_confirmation=speak)
+
+
+def _handle_voice_create_task(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.core.voice_knowledge_ingest import VoiceKnowledgeIngest
+    title = args.get("title", "Voice Task")
+    note = args.get("note", "")
+    priority = int(args.get("priority", 1))
+    project_id = int(args.get("project_id", 14))
+    return VoiceKnowledgeIngest.create_voice_task(title=title, note=note, priority=priority, project_id=project_id, speak_confirmation=True)
+
+
+def _handle_check_threat_radar(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.domain.eve_threat_radar import EveTacticalThreatRadar
+    system = args.get("system", "G-EURJ")
+    speak = bool(args.get("speak_alert", True))
+    return EveTacticalThreatRadar.evaluate_system_threat(target_system=system, speak_alert=speak)
+
+
+def _handle_stream_pipeline_speak(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.core.voice_streaming_pipeline import VoiceStreamingPipeliner
+    text = args.get("text", "")
+    persona = args.get("persona") or VOICE_CONFIG["default_persona"]
+    tokens = [w + " " for w in text.split()]
+    return VoiceStreamingPipeliner.stream_and_speak(iter(tokens), persona=persona, sync=False)
+
+
+def _handle_check_market_arbitrage(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.domain.eve_market_arbitrage import EveMarketArbitrage
+    commodity = args.get("commodity", "Isogen")
+    source_reg = args.get("source_region", "The Forge")
+    target_reg = args.get("target_region", "Delve")
+    speak = bool(args.get("speak_report", True))
+    return EveMarketArbitrage.analyze_commodity_arbitrage(
+        commodity_name=commodity,
+        source_region=source_reg,
+        target_region=target_reg,
+        speak_report=speak
+    )
+
+
+def _handle_check_pi_sentinel(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.domain.eve_pi_sentinel import EvePISentinel
+    char = args.get("character", "Savian Alexander")
+    speak = bool(args.get("speak_alert", True))
+    return EvePISentinel.audit_planetary_colonies(character_name=char, speak_alert=speak)
+
+
+def _handle_scan_vault_auto_watcher(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.infrastructure.vault_auto_watcher import VaultAutoWatcher
+    watcher = VaultAutoWatcher()
+    return watcher.scan_and_index_delta()
+
+
+def _handle_listen_and_transcribe(args: Dict[str, Any]) -> Dict[str, Any]:
+    from src.core.voice_stt_ear import VoiceEarTranscriber
+    dur = float(args.get("duration_seconds", 3.0))
+    return VoiceEarTranscriber.listen_and_transcribe(duration_s=dur)
+
+
+def _handle_get_status(args: Dict[str, Any]) -> Dict[str, Any]:
+    copilot = VoiceBridge.get_copilot()
+    return {
+        "engine": "Kokoro-82M ONNX Omniscient Suite",
+        "supported_personas": KOKORO_PERSONAS,
+        "preset_blends": VoicePersonaBlender.get_preset_blends(),
+        "config": VOICE_CONFIG,
+        "active_instance": copilot._local_kokoro_instance is not None if copilot else False,
+        "sample_rate": 24000,
+        "playback_engine": "Native In-Memory Win32 C-Level winsound (<15ms)",
+        "call_status": VoiceCallIntercomEngine.get_call_status(),
+        "normalizer": "VoiceNormalizer v2.0 Active",
+        "memory_ledger": "SQLite Persistent Active",
+        "router": VoiceAudioRouter.get_router_status()
+    }
+
+
+_TOOL_HANDLERS: Dict[str, Any] = {
+    "antigravity_speak": _handle_speak,
+    "antigravity_announce_task": _handle_announce_task,
+    "antigravity_voice_brief": _handle_voice_brief,
+    "antigravity_play_sfx": _handle_play_sfx,
+    "antigravity_blend_persona": _handle_blend_persona,
+    "antigravity_listen": _handle_listen,
+    "antigravity_list_audio_devices": _handle_list_audio_devices,
+    "antigravity_get_voice_history": _handle_get_voice_history,
+    "antigravity_get_spectrum": _handle_get_spectrum,
+    "antigravity_trigger_tududi_radar": _handle_trigger_tududi_radar,
+    "antigravity_start_call": _handle_start_call,
+    "antigravity_call_respond": _handle_call_respond,
+    "antigravity_barge_in_cut": _handle_barge_in_cut,
+    "antigravity_end_call": _handle_end_call,
+    "antigravity_get_call_status": _handle_get_call_status,
+    "antigravity_read_code": _handle_read_code,
+    "antigravity_read_email": _handle_read_email,
+    "antigravity_showcase_personas": _handle_showcase_personas,
+    "antigravity_apply_studio_master": _handle_apply_studio_master,
+    "antigravity_verify_audit_hashchain": _handle_verify_audit_hashchain,
+    "antigravity_parse_voice_command": _handle_parse_voice_command,
+    "antigravity_get_audio_telemetry": _handle_get_audio_telemetry,
+    "antigravity_broadcast_fleet_alert": _handle_broadcast_fleet_alert,
+    "antigravity_instant_speak": _handle_instant_speak,
+    "antigravity_prewarm_voice_engine": _handle_prewarm_voice_engine,
+    "antigravity_get_instant_streamer_stats": _handle_get_instant_streamer_stats,
+    "antigravity_configure_voice": _handle_configure_voice,
+    "antigravity_voice_rag_query": _handle_voice_rag_query,
+    "antigravity_synthesize_podcast_dialogue": _handle_synthesize_podcast_dialogue,
+    "antigravity_voice_telemetry_sweep": _handle_voice_telemetry_sweep,
+    "antigravity_voice_record_note": _handle_voice_record_note,
+    "antigravity_voice_create_task": _handle_voice_create_task,
+    "antigravity_check_threat_radar": _handle_check_threat_radar,
+    "antigravity_stream_pipeline_speak": _handle_stream_pipeline_speak,
+    "antigravity_check_market_arbitrage": _handle_check_market_arbitrage,
+    "antigravity_check_pi_sentinel": _handle_check_pi_sentinel,
+    "antigravity_scan_vault_auto_watcher": _handle_scan_vault_auto_watcher,
+    "antigravity_listen_and_transcribe": _handle_listen_and_transcribe,
+    "antigravity_get_status": _handle_get_status,
+}
+
+
+def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    """Execute Antigravity omniscient voice MCP tool calls via O(1) table dispatch."""
+    handler = _TOOL_HANDLERS.get(name)
+    if handler is None:
+        return {"error": f"Unknown tool: {name}"}
+    return handler(args)
+
+
+def _process_jsonrpc_request(req: Dict[str, Any]) -> Dict[str, Any]:
+    """Process single JSON-RPC MCP request with early exit."""
+    req_id = req.get("id")
+    method = req.get("method")
+    params = req.get("params", {})
+
+    if method == "initialize":
         return {
-            "engine": "Kokoro-82M ONNX Omniscient Suite",
-            "supported_personas": KOKORO_PERSONAS,
-            "preset_blends": VoicePersonaBlender.get_preset_blends(),
-            "config": VOICE_CONFIG,
-            "active_instance": copilot._local_kokoro_instance is not None if copilot else False,
-            "sample_rate": 24000,
-            "playback_engine": "Native In-Memory Win32 C-Level winsound (<15ms)",
-            "call_status": VoiceCallIntercomEngine.get_call_status(),
-            "normalizer": "VoiceNormalizer v2.0 Active",
-            "memory_ledger": "SQLite Persistent Active",
-            "router": VoiceAudioRouter.get_router_status()
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {"tools": {}},
+                "serverInfo": {
+                    "name": "antigravity-voice-mcp",
+                    "version": "2.2.0"
+                }
+            }
         }
-
-    return {"error": f"Unknown tool: {name}"}
+    if method == "tools/list":
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {"tools": TOOLS_SCHEMA}
+        }
+    if method == "tools/call":
+        tool_name = params.get("name")
+        tool_args = params.get("arguments", {})
+        tool_result = handle_tool_call(tool_name, tool_args)
+        return {
+            "jsonrpc": "2.0",
+            "id": req_id,
+            "result": {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": json.dumps(tool_result, indent=2)
+                    }
+                ]
+            }
+        }
+    return {
+        "jsonrpc": "2.0",
+        "id": req_id,
+        "error": {"code": -32601, "message": f"Method {method} not found"}
+    }
 
 
 def main():
-    """Main JSON-RPC stdio MCP server loop."""
-    while True:
+    """Main JSON-RPC stdio MCP server loop with flat control flow."""
+    for line in sys.stdin:
+        line_str = line.strip()
+        if not line_str:
+            continue
         try:
-            line = sys.stdin.readline()
-            if not line:
-                break
-            line_str = line.strip()
-            if not line_str:
-                continue
-
             req = json.loads(line_str)
-            req_id = req.get("id")
-            method = req.get("method")
-            params = req.get("params", {})
-
-            if method == "initialize":
-                res = {
-                    "jsonrpc": "2.0",
-                    "id": req_id,
-                    "result": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {"tools": {}},
-                        "serverInfo": {
-                            "name": "antigravity-voice-mcp",
-                            "version": "2.2.0"
-                        }
-                    }
-                }
-            elif method == "tools/list":
-                res = {
-                    "jsonrpc": "2.0",
-                    "id": req_id,
-                    "result": {"tools": TOOLS_SCHEMA}
-                }
-            elif method == "tools/call":
-                tool_name = params.get("name")
-                tool_args = params.get("arguments", {})
-                tool_result = handle_tool_call(tool_name, tool_args)
-                res = {
-                    "jsonrpc": "2.0",
-                    "id": req_id,
-                    "result": {
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": json.dumps(tool_result, indent=2)
-                            }
-                        ]
-                    }
-                }
-            else:
-                res = {
-                    "jsonrpc": "2.0",
-                    "id": req_id,
-                    "error": {"code": -32601, "message": f"Method {method} not found"}
-                }
-
+            res = _process_jsonrpc_request(req)
             sys.stdout.write(json.dumps(res) + "\n")
             sys.stdout.flush()
         except Exception as e:

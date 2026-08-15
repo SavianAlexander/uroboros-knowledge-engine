@@ -708,13 +708,13 @@ class MiniVectorEngine:
             return candidates[:top_k]
 
         selected_indices = [0]
-        unselected_indices = list(range(1, len(valid_candidates)))
+        unselected_indices = set(range(1, len(valid_candidates)))
 
         while len(selected_indices) < min(top_k, len(valid_candidates)) and unselected_indices:
             best_mmr_score = -float("inf")
             best_idx = None
 
-            for i in unselected_indices:
+            for i in list(unselected_indices):
                 sim_to_query = valid_candidates[i].get("score", 0.0)
                 
                 max_sim_to_selected = max(
@@ -1979,14 +1979,17 @@ class MiniVectorEngine:
         """
         MiniVectorEngine._ensure_vector_matrix_cache()
         suggestions = []
+        seen_suggestions = set()
         p_lower = prefix.lower().strip()
 
         for chunk in MiniVectorEngine._cached_chunks:
             content = chunk.get("content", "")
             words = re.findall(r'\b[a-zA-Z0-9_-]{4,}\b', content)
             for w in words:
-                if w.lower().startswith(p_lower) and w.lower() not in suggestions:
-                    suggestions.append(w.lower())
+                w_lower = w.lower()
+                if w_lower.startswith(p_lower) and w_lower not in seen_suggestions:
+                    seen_suggestions.add(w_lower)
+                    suggestions.append(w_lower)
                 if len(suggestions) >= top_k:
                     break
             if len(suggestions) >= top_k:

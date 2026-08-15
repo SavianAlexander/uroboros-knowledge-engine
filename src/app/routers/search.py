@@ -54,7 +54,7 @@ def _get_global_cache():
 
 
 def _filter_by_excluded_tags(results, exc_val):
-    exc_tags = [t.lower() for t in (exc_val if isinstance(exc_val, list) else [exc_val])]
+    exc_tags_set = {t.lower() for t in (exc_val if isinstance(exc_val, list) else [exc_val])}
     file_ids = [r.get("id") for r in results if r.get("id")]
     tags_map = _batch_fetch_tags(file_ids)
     
@@ -62,8 +62,8 @@ def _filter_by_excluded_tags(results, exc_val):
     for r in results:
         fid = r.get("id")
         if fid:
-            f_tags = tags_map.get(fid, [])
-            if not any(t in f_tags for t in exc_tags):
+            f_tags = tags_map.get(fid, set())
+            if exc_tags_set.isdisjoint(f_tags):
                 filtered.append(r)
         else:
             filtered.append(r)
@@ -71,24 +71,23 @@ def _filter_by_excluded_tags(results, exc_val):
 
 
 def _filter_by_excluded_words(results, exc_val):
-    words_exc = exc_val if isinstance(exc_val, list) else [exc_val]
-    for w_exc in words_exc:
-        w_lower = str(w_exc).lower()
-        filtered = []
-        for r in results:
-            c_text = r.get("content")
-            if not c_text and r.get("filepath") and os.path.exists(r["filepath"]):
-                try:
-                    with open(r["filepath"], "r", encoding="utf-8", errors="ignore") as f:
-                        c_text = f.read()
-                except Exception:
-                    c_text = ""
-            c_text = (c_text or "").lower()
-            fn = r.get("filename", "").lower()
-            if w_lower not in c_text and w_lower not in fn:
-                filtered.append(r)
-        results = filtered
-    return results
+    words_exc = [str(w).lower() for w in (exc_val if isinstance(exc_val, list) else [exc_val])]
+    if not words_exc:
+        return results
+    filtered = []
+    for r in results:
+        c_text = r.get("content")
+        if not c_text and r.get("filepath") and os.path.exists(r["filepath"]):
+            try:
+                with open(r["filepath"], "r", encoding="utf-8", errors="ignore") as f:
+                    c_text = f.read()
+            except Exception:
+                c_text = ""
+        c_lower = (c_text or "").lower()
+        fn_lower = r.get("filename", "").lower()
+        if not any(w in c_lower or w in fn_lower for w in words_exc):
+            filtered.append(r)
+    return filtered
 
 
 @router.get("/api/search/rrf")
@@ -167,7 +166,7 @@ def search_post_endpoint(payload: Dict[str, Any] = Body(...)):
 
 
 def _batch_fetch_tags(file_ids):
-    tags_map = {fid: [] for fid in file_ids}
+    tags_map = {fid: set() for fid in file_ids}
     if not file_ids:
         return tags_map
     with get_db() as conn:
@@ -178,7 +177,7 @@ def _batch_fetch_tags(file_ids):
             placeholders = ",".join(["?"] * len(chunk))
             cursor.execute(f"SELECT file_id, tag FROM tags WHERE file_id IN ({placeholders})", tuple(chunk))
             for row in cursor.fetchall():
-                tags_map[row[0]].append(str(row[1]).lower())
+                tags_map[row[0]].add(str(row[1]).lower())
     return tags_map
 
 
@@ -247,31 +246,31 @@ def search_endpoint(
                 r["filename"] = os.path.basename(r.get("filepath", ""))
 
         if tag:
-            tag_list = [t.strip().lower() for t in tag.split(",") if t.strip()]
+            tag_set = {t.strip().lower() for t in tag.split(",") if t.strip()}
             filtered = []
             file_ids = [r.get("id") for r in results if r.get("id")]
             tags_map = _batch_fetch_tags(file_ids)
             for r in results:
                 fid = r.get("id")
                 if fid:
-                    f_tags = tags_map.get(fid, [])
+                    f_tags = tags_map.get(fid, set())
                     if tag_mode.upper() == "AND":
-                        if all(t in f_tags for t in tag_list):
+                        if tag_set.issubset(f_tags):
                             filtered.append(r)
                     else:
-                        if any(t in f_tags for t in tag_list):
+                        if not tag_set.isdisjoint(f_tags):
                             filtered.append(r)
             results = filtered
         elif operators.get("tag"):
-            req_tags = [t.lower() for t in (operators["tag"] if isinstance(operators["tag"], list) else [operators["tag"]])]
+            req_tags_set = {t.lower() for t in (operators["tag"] if isinstance(operators["tag"], list) else [operators["tag"]])}
             filtered = []
             file_ids = [r.get("id") for r in results if r.get("id")]
             tags_map = _batch_fetch_tags(file_ids)
             for r in results:
                 fid = r.get("id")
                 if fid:
-                    f_tags = tags_map.get(fid, [])
-                    if any(t in f_tags for t in req_tags):
+                    f_tags = tags_map.get(fid, set())
+                    if not req_tags_set.isdisjoint(f_tags):
                         filtered.append(r)
             results = filtered
 
@@ -303,8 +302,8 @@ def search_endpoint(
                     results = _filter_by_excluded_words(results, exc_val)
 
         if "tag" in operators:
-            target_tags = [t.strip() for t in str(operators["tag"]).split(",") if t.strip()]
-            if target_tags:
+            target_tags_set = {t.strip().lower() for t in str(operators["tag"]).split(",") if t.strip()}
+            if target_tags_set:
                 missing_id_filepaths = [r.get("filepath") for r in results if not r.get("id") and r.get("filepath")]
                 filepath_to_id = {}
                 if missing_id_filepaths:
@@ -324,10 +323,13 @@ def search_endpoint(
                 filtered_results = []
                 for r in results:
                     file_id = r.get("id")
-                    file_tags = tags_map.get(file_id, []) if file_id else []
+                    file_tags = tags_map.get(file_id, set()) if file_id else set()
                     
                     if tag_mode.upper() == "AND":
-                        if all(t in file_tags for t in target_tags):
+                        if target_tags_set.issubset(file_tags):
+                            filtered_results.append(r)
+                    else:
+                        if not target_tags_set.isdisjoint(file_tags):
                             filtered_results.append(r)
                 results = filtered_results
 
@@ -565,7 +567,7 @@ def _build_graph_cached(limit: int, include_wikilinks: bool, include_clusters: b
                 emb_rows = cursor.fetchall()
                 parsed_embs = []
                 for fid, emb_j in emb_rows:
-                    if fid in doc_nid_list:
+                    if 0 <= fid < len(doc_nid_list):
                         try:
                             parsed_embs.append((fid, json.loads(emb_j)))
                         except Exception:
