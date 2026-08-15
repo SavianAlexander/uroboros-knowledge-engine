@@ -19,37 +19,140 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 VOICES_BIN_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.bin")
+VOICES_JSON_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.json")
+
+# Signature Curated Vocal Timbre Persona Blends
+SIGNATURE_PERSONA_BLENDS: Dict[str, Dict[str, float]] = {
+    "CORTANA_PRIME": {"af_sky": 0.60, "af_bella": 0.25, "af_sarah": 0.15},       # Articulate, crystalline, warm Cortana AI
+    "AURA_SHIP_AI": {"bf_emma": 0.85, "bf_isabella": 0.15},                      # British crystalline starship bridge AI
+    "EXECUTIVE_ADVISOR": {"af_bella": 0.70, "af_nicole": 0.30},                  # Warm, engaging productivity & executive tone
+    "TACTICAL_OFFICER": {"am_adam": 0.70, "bm_george": 0.30},                    # Deep, resonant tactical commander
+    "CYBER_EXECUTIVE": {"bf_emma": 0.60, "af_bella": 0.40},                       # Polished, authoritative executive assistant
+    "TACTICAL_COMMANDER": {"am_adam": 0.70, "bm_george": 0.30},                  # Deep resonant leader
+    "COCKPIT_SYNTHESIS": {"bf_emma": 0.85, "af_sarah": 0.15},                     # Sharp, alert AURA AI
+    "CONVERSATIONAL_FLOW": {"af_bella": 0.60, "af_sky": 0.40}                     # Ultra-natural conversational narrator
+}
 
 
 class VoicePersonaBlender:
     """Zero-overhead Kokoro voice embedding vector interpolation engine."""
 
     _voices_cache: Optional[Dict[str, Any]] = None
+    _blends_cache: Dict[str, Any] = {}
 
     @classmethod
     def load_voices_embeddings(cls) -> Dict[str, Any]:
-        """Load Kokoro voices from binary embedding pack if available."""
+        """Load Kokoro voices from JSON or binary embedding pack with caching."""
         if cls._voices_cache is not None:
             return cls._voices_cache
 
         cls._voices_cache = {}
-        if np is None or not os.path.exists(VOICES_BIN_PATH):
+        if np is None:
             return cls._voices_cache
 
-        try:
-            # Kokoro voices.bin is typically a pickled or numpy npz/dict of float32 tensors
-            import pickle
-            with open(VOICES_BIN_PATH, "rb") as f:
-                data = pickle.load(f)
-                if isinstance(data, dict):
-                    cls._voices_cache = data
-        except Exception:
+        # 1. First priority: Load from voices.json (full precision float32 tensors)
+        if os.path.exists(VOICES_JSON_PATH):
             try:
-                data = np.load(VOICES_BIN_PATH, allow_pickle=True)
-                cls._voices_cache = {k: data[k] for k in data.files}
+                import json
+                with open(VOICES_JSON_PATH, "r", encoding="utf-8") as f:
+                    raw_data = json.load(f)
+                if isinstance(raw_data, dict):
+                    cls._voices_cache = {
+                        k: np.array(v, dtype=np.float32) for k, v in raw_data.items()
+                    }
+                    return cls._voices_cache
             except Exception:
                 pass
+
+        # 2. Second priority: Load from voices.bin
+        if os.path.exists(VOICES_BIN_PATH):
+            try:
+                import pickle
+                with open(VOICES_BIN_PATH, "rb") as f:
+                    data = pickle.load(f)
+                    if isinstance(data, dict):
+                        cls._voices_cache = {
+                            k: (np.array(v, dtype=np.float32) if not isinstance(v, np.ndarray) else v)
+                            for k, v in data.items()
+                        }
+                        return cls._voices_cache
+            except Exception:
+                try:
+                    data = np.load(VOICES_BIN_PATH, allow_pickle=True)
+                    cls._voices_cache = {k: np.array(data[k], dtype=np.float32) for k in data.files}
+                    return cls._voices_cache
+                except Exception:
+                    pass
+
         return cls._voices_cache
+
+    @classmethod
+    def get_blended_vector(cls, persona_or_weights: Any) -> Optional[Any]:
+        """
+        Get or compute a blended embedding vector (np.ndarray of shape (511, 1, 256))
+        for passing directly into kokoro.create(voice=vector).
+        """
+        if np is None:
+            return None
+
+        # If already a numpy array, return directly
+        if isinstance(persona_or_weights, np.ndarray):
+            return persona_or_weights
+
+        voices = cls.load_voices_embeddings()
+        if not voices:
+            return None
+
+        # Check if single base voice name
+        if isinstance(persona_or_weights, str):
+            clean_key = persona_or_weights.strip()
+            # Check cached computed blends
+            if clean_key in cls._blends_cache:
+                return cls._blends_cache[clean_key]
+            # Check preset signature blends
+            upper_key = clean_key.upper()
+            if upper_key in SIGNATURE_PERSONA_BLENDS:
+                weights = SIGNATURE_PERSONA_BLENDS[upper_key]
+                vec = cls.calculate_blend_tensor(weights, voices)
+                if vec is not None:
+                    cls._blends_cache[clean_key] = vec
+                    cls._blends_cache[upper_key] = vec
+                    return vec
+            # Check direct base voice
+            if clean_key in voices:
+                return voices[clean_key]
+            # Fallback check
+            if "af_sky" in voices:
+                return voices["af_sky"]
+            return None
+
+        # If dictionary of weights
+        if isinstance(persona_or_weights, dict):
+            return cls.calculate_blend_tensor(persona_or_weights, voices)
+
+        return None
+
+    @classmethod
+    def calculate_blend_tensor(cls, persona_weights: Dict[str, float], voices: Dict[str, Any]) -> Optional[Any]:
+        """Linearly interpolate voice embedding tensors using normalized weights."""
+        if not persona_weights or not voices or np is None:
+            return None
+
+        total_weight = sum(persona_weights.values())
+        if total_weight <= 0:
+            return None
+
+        norm_weights = {k: v / total_weight for k, v in persona_weights.items()}
+        blended_vec = None
+
+        for voice_name, weight in norm_weights.items():
+            if voice_name in voices:
+                vec = voices[voice_name]
+                if blended_vec is None:
+                    blended_vec = np.zeros_like(vec, dtype=np.float32)
+                blended_vec += float(weight) * vec
+
+        return blended_vec
 
     @classmethod
     def blend_personas(
@@ -59,29 +162,21 @@ class VoicePersonaBlender:
     ) -> Dict[str, Any]:
         """
         Linearly blend multiple voice embedding vectors.
-        Example: {"bf_emma": 0.7, "af_bella": 0.3} -> 70% British ship AI + 30% calm assistant.
+        Example: {"af_sky": 0.6, "af_bella": 0.25, "af_sarah": 0.15} -> Cortana Prime.
         """
-        # Normalize weights so sum equals 1.0
         total_weight = sum(persona_weights.values())
         if total_weight <= 0:
             return {"status": "error", "message": "Total weight must be greater than zero"}
 
         norm_weights = {k: v / total_weight for k, v in persona_weights.items()}
-
         voices = cls.load_voices_embeddings()
-        has_vectors = False
-        vector_dim = 0
+        blended_vec = cls.calculate_blend_tensor(norm_weights, voices)
 
-        if np is not None and voices:
-            blended_vec = None
-            for voice_name, weight in norm_weights.items():
-                if voice_name in voices:
-                    vec = voices[voice_name]
-                    if blended_vec is None:
-                        blended_vec = np.zeros_like(vec, dtype=np.float32)
-                    blended_vec += weight * vec
-                    has_vectors = True
-                    vector_dim = len(vec) if hasattr(vec, "__len__") else 512
+        has_vectors = blended_vec is not None
+        vector_dim = len(blended_vec) if has_vectors and hasattr(blended_vec, "__len__") else 0
+
+        if has_vectors and custom_name:
+            cls._blends_cache[custom_name] = blended_vec
 
         return {
             "status": "success",
@@ -95,9 +190,5 @@ class VoicePersonaBlender:
     @classmethod
     def get_preset_blends(cls) -> Dict[str, Dict[str, float]]:
         """Return curated signature vocal timbres."""
-        return {
-            "CYBER_EXECUTIVE": {"bf_emma": 0.60, "af_bella": 0.40},      # Polished, authoritative yet warm
-            "TACTICAL_COMMANDER": {"am_adam": 0.70, "bm_george": 0.30},  # Deep, resonant Anglo-American leader
-            "COCKPIT_SYNTHESIS": {"bf_emma": 0.85, "af_sarah": 0.15},    # Sharp, alert AURA AI
-            "CONVERSATIONAL_FLOW": {"af_bella": 0.60, "af_heart": 0.40}  # Ultra-natural conversational narrator
-        }
+        return SIGNATURE_PERSONA_BLENDS
+

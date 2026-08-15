@@ -40,8 +40,12 @@ import {
   CheckCircle2,
   Layers,
   Terminal,
-  Bookmark
+  Bookmark,
+  Headphones,
+  SlidersHorizontal,
+  Activity
 } from 'lucide-react';
+
 import { useToast } from '../components/Toast';
 import { useApp } from '../store/AppContext';
 
@@ -69,6 +73,13 @@ export default function ChatView() {
 
   // Audio & Interactive State
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
+  const [voicePersona, setVoicePersona] = useState<string>(() => localStorage.getItem('neuro_voice_persona') || 'CORTANA_PRIME');
+  const [dspPreset, setDspPreset] = useState<string>(() => localStorage.getItem('neuro_voice_dsp') || 'STUDIO_MASTER');
+  const [voiceSpeed, setVoiceSpeed] = useState<number>(() => parseFloat(localStorage.getItem('neuro_voice_speed') || '1.0'));
+  const [showVoiceStudio, setShowVoiceStudio] = useState<boolean>(false);
+  const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
   const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
   const [collapsedThoughts, setCollapsedThoughts] = useState<Record<string, boolean>>({});
   const [showScrollBottom, setShowScrollBottom] = useState(false);
@@ -85,6 +96,7 @@ export default function ChatView() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any | null>(null);
+
 
   const activeSessionObj = sessions.find(s => s.id === activeSession);
 
@@ -166,6 +178,10 @@ export default function ChatView() {
 
   useEffect(() => {
     return () => {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
@@ -174,6 +190,7 @@ export default function ChatView() {
       }
     };
   }, []);
+
 
   const handleNewSession = async () => {
     try {
@@ -214,10 +231,14 @@ export default function ChatView() {
   const handleClearMessages = () => {
     setMessages([]);
     setActiveArtifact(null);
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current = null;
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      setSpeakingMsgId(null);
     }
+    setSpeakingMsgId(null);
     toast('Chat Cleared', 'Conversation history cleared', 'info');
   };
 
@@ -228,36 +249,91 @@ export default function ChatView() {
     setTimeout(() => setCopiedMsgId(null), 2000);
   };
 
-  const handleToggleSpeak = (msgId: string, text: string) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      toast('TTS Unsupported', 'Web Speech API is not supported in this browser.', 'warning');
-      return;
-    }
-
+  const handleToggleSpeak = async (msgId: string, text: string) => {
     if (speakingMsgId === msgId) {
-      window.speechSynthesis.cancel();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       setSpeakingMsgId(null);
       toast('Speech Paused', 'Audio playback stopped', 'info');
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const cleanText = text
-      .replace(/```[\s\S]*?```/g, 'Code block omitted.')
-      .replace(/`([^`]+)`/g, '$1')
-      .replace(/[#*>\-_~]/g, ' ')
-      .trim();
+    // Stop active audio
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 1.05;
-    utterance.pitch = 1.0;
-    utterance.onend = () => setSpeakingMsgId(null);
-    utterance.onerror = () => setSpeakingMsgId(null);
-
-    window.speechSynthesis.speak(utterance);
     setSpeakingMsgId(msgId);
-    toast('Audio Playback', 'Reading AI response aloud...', 'info');
+    setIsAudioLoading(true);
+    toast('Synthesizing Neural Audio', `Broadcasting with ${voicePersona.replace('_', ' ')} (${dspPreset.replace('_', ' ')})...`, 'info');
+
+    try {
+      const res = await fetch('/v1/audio/speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: text,
+          voice: voicePersona,
+          speed: voiceSpeed,
+          dsp_preset: dspPreset,
+          response_format: 'wav'
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`TTS HTTP status: ${res.status}`);
+      }
+
+      const blob = await res.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      audioPlayerRef.current = audio;
+
+      audio.onended = () => {
+        setSpeakingMsgId(null);
+        audioPlayerRef.current = null;
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onerror = () => {
+        setSpeakingMsgId(null);
+        audioPlayerRef.current = null;
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      await audio.play();
+    } catch (err) {
+      console.warn('Neural audio playback failed, falling back to Web Speech API:', err);
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        const cleanText = text
+          .replace(/```[\s\S]*?```/g, 'Code block omitted.')
+          .replace(/`([^`]+)`/g, '$1')
+          .replace(/[#*>\-_~]/g, ' ')
+          .trim();
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = voiceSpeed;
+        utterance.onend = () => setSpeakingMsgId(null);
+        utterance.onerror = () => setSpeakingMsgId(null);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setSpeakingMsgId(null);
+        toast('TTS Error', 'Could not synthesize voice', 'error');
+      }
+    } finally {
+      setIsAudioLoading(false);
+    }
   };
+
 
   const handleRate = (msgId: string, rating: 'up' | 'down') => {
     setRatings(prev => ({
@@ -927,6 +1003,19 @@ export default function ChatView() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowVoiceStudio(!showVoiceStudio)}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all ${
+                showVoiceStudio
+                  ? 'bg-purple-500/20 border-purple-500/40 text-purple-600 dark:text-purple-300 shadow-xs'
+                  : 'bg-slate-100 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+              title="Voice Persona & DSP Studio Settings"
+            >
+              <Headphones className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
+              <span>Voice: {voicePersona === 'CORTANA_PRIME' ? 'Cortana' : voicePersona.split('_')[0]}</span>
+            </button>
+
+            <button
               onClick={() => setWebSearchEnabled(!webSearchEnabled)}
               className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all ${
                 webSearchEnabled
@@ -965,6 +1054,74 @@ export default function ChatView() {
             </button>
           </div>
         </div>
+
+        {/* Neural Voice Studio Toolbar */}
+        {showVoiceStudio && (
+          <div className="px-6 py-2.5 bg-slate-100/90 dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs">
+            <div className="flex items-center gap-3">
+              <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-purple-500" /> Neural Persona:
+              </span>
+              <select
+                value={voicePersona}
+                onChange={(e) => {
+                  setVoicePersona(e.target.value);
+                  localStorage.setItem('neuro_voice_persona', e.target.value);
+                }}
+                className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-slate-200 outline-none focus:border-purple-500"
+              >
+                <option value="CORTANA_PRIME">Cortana Prime (Halo AI Blend)</option>
+                <option value="AURA_SHIP_AI">Aura Ship AI (British Naval Blend)</option>
+                <option value="EXECUTIVE_ADVISOR">Executive Advisor (Warm Productivity)</option>
+                <option value="TACTICAL_OFFICER">Tactical Officer (Command)</option>
+                <option value="af_sky">Kokoro Sky (Clear US Female)</option>
+                <option value="af_bella">Kokoro Bella (Warm US Female)</option>
+                <option value="bf_emma">Kokoro Emma (British Female)</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-emerald-500" /> DSP Mastering:
+              </span>
+              <select
+                value={dspPreset}
+                onChange={(e) => {
+                  setDspPreset(e.target.value);
+                  localStorage.setItem('neuro_voice_dsp', e.target.value);
+                }}
+                className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-slate-200 outline-none focus:border-emerald-500"
+              >
+                <option value="STUDIO_MASTER">Studio Master (4-Band EQ + Comp + De-Esser)</option>
+                <option value="HOLOGRAPHIC_AI">Holographic AI (3D Haas Spatial Width)</option>
+                <option value="AURA_COCKPIT">Aura Cockpit (Bridge Reverb)</option>
+                <option value="TACTICAL_RADIO">Tactical Radio (VHF Bandpass)</option>
+                <option value="STUDIO_DIRECT">Studio Direct (Uncolored)</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-slate-500">Speed:</span>
+              <input
+                type="range"
+                min="0.8"
+                max="1.4"
+                step="0.05"
+                value={voiceSpeed}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setVoiceSpeed(val);
+                  localStorage.setItem('neuro_voice_speed', val.toString());
+                }}
+                className="w-20 accent-purple-600 cursor-pointer h-1.5"
+              />
+              <span className="font-mono text-slate-600 dark:text-slate-400 text-[11px] w-8">
+                {voiceSpeed.toFixed(2)}x
+              </span>
+            </div>
+          </div>
+        )}
+
 
         {/* Message Bubble Feed */}
         <div
@@ -1121,12 +1278,31 @@ export default function ChatView() {
 
                         <button
                           onClick={() => handleToggleSpeak(msg.id, msg.content)}
-                          className={`p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md transition-colors flex items-center gap-1 text-[11px] ${speakingMsgId === msg.id ? 'text-emerald-500 font-medium' : 'hover:text-emerald-500'}`}
-                          title="Read Aloud (Text-to-Speech)"
+                          className={`p-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md transition-colors flex items-center gap-1.5 text-[11px] ${
+                            speakingMsgId === msg.id
+                              ? 'text-purple-600 dark:text-purple-300 font-medium bg-purple-500/10'
+                              : 'hover:text-purple-500 dark:hover:text-purple-400'
+                          }`}
+                          title="Read Aloud with Studio Neural Voice"
                         >
-                          {speakingMsgId === msg.id ? <VolumeX className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> : <Volume2 className="w-3.5 h-3.5" />}
-                          <span>{speakingMsgId === msg.id ? 'Stop' : 'Read'}</span>
+                          {speakingMsgId === msg.id ? (
+                            <>
+                              <div className="flex items-center gap-0.5 h-3">
+                                <span className="w-0.5 h-2 bg-purple-500 animate-pulse" />
+                                <span className="w-0.5 h-3.5 bg-purple-500 animate-bounce" />
+                                <span className="w-0.5 h-2 bg-purple-500 animate-pulse" />
+                              </div>
+                              <VolumeX className="w-3.5 h-3.5 text-purple-500" />
+                              <span>Stop</span>
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="w-3.5 h-3.5" />
+                              <span>{isAudioLoading && speakingMsgId === msg.id ? 'Buffering...' : 'Read'}</span>
+                            </>
+                          )}
                         </button>
+
 
                         <button
                           onClick={handleRegenerate}

@@ -1,5 +1,5 @@
 """
-Autonomous EVE Online Voice Co-Pilot & Kokoro-82M High-Performance Audio Engine.
+Universal Neural Voice Engine & In-Memory Audio Queue.
 Standard: Pure Python Standard Library + Local ONNX Runtime / SoundFile.
 Ponytail Senior Dev Principle: Ultra-low latency (<15ms) in-memory C-level Win32 playback, zero disk I/O, streaming clause synthesizer, non-interrupting priority queue, and instant barge-in purge.
 """
@@ -9,6 +9,7 @@ import sys
 import json
 import time
 import queue
+import itertools
 import threading
 import subprocess
 import urllib.request
@@ -20,45 +21,13 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-# Local ONNX Engine Paths
 LOCAL_ONNX_MODEL_PATH = os.path.join(BASE_DIR, "models", "kokoro", "kokoro-v0_19.onnx")
 LOCAL_VOICES_BIN_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.bin")
-SCRATCH_DIR = os.path.join(BASE_DIR, "docs", "scratch")
-os.makedirs(SCRATCH_DIR, exist_ok=True)
 
 DEFAULT_KOKORO_TTS_URL = "http://localhost:8880/v1/audio/speech"
 DEFAULT_VOICE_MODEL = "kokoro"
-DEFAULT_VOICE_NAME = "CORTANA_PRIME"  # Cortana Prime Neural Default
+DEFAULT_VOICE_NAME = "bf_emma"
 
-KOKORO_PERSONAS = {
-    "CORTANA_PRIME": "CORTANA_PRIME",
-    "AURA_SHIP_AI": "AURA_SHIP_AI",
-    "EXECUTIVE_ADVISOR": "EXECUTIVE_ADVISOR",
-    "TACTICAL_OFFICER": "TACTICAL_OFFICER",
-    "KOKORO_SKY": "af_sky",
-    "KOKORO_BELLA": "af_bella",
-    "KOKORO_SARAH": "af_sarah",
-    "KOKORO_EMMA": "bf_emma",
-    "KOKORO_ADAM": "am_adam",
-    "KOKORO_GEORGE": "bm_george"
-}
-
-
-# Tactical Alert Voice Templates
-TACTICAL_VOICE_TEMPLATES = {
-    "WARP_DRIVE_ACTIVE": "Warp drive active. Destination: {destination}.",
-    "DOCKING_ACCEPTED": "Docking request accepted. Welcome to {station}.",
-    "SHIELD_WARNING": "Warning! Shield integrity at {percent} percent.",
-    "ARMOR_WARNING": "Warning! Armor integrity at {percent} percent.",
-    "HULL_CRITICAL": "Emergency! Structural integrity compromised. Hull at {percent} percent.",
-    "HOSTILE_DETECTED": "Hostile contact detected in local space. Pilot: {pilot}.",
-    "FLEET_WARP": "Fleet warp initiated to {target}.",
-    "CARGO_FULL": "Mining hold capacity reached at {percent} percent.",
-    "CYNO_BEACON_LIT": "Cynosural field beacon lit in {system}. Capital jump transit clear."
-}
-
-
-import itertools
 
 class NonInterruptingAudioQueue:
     """
@@ -67,7 +36,7 @@ class NonInterruptingAudioQueue:
     - Direct in-memory C-level Win32 playback (<1ms latency)
     - Zero temporary disk I/O
     - Priority preemption (CRITICAL emergency alerts cancel lower-priority backlog)
-    - Instant barge-in audio purge
+    - Instant barge-in audio purge (<0.5ms)
     """
 
     def __init__(self):
@@ -85,11 +54,9 @@ class NonInterruptingAudioQueue:
         Add speech item to queue.
         Priority levels: 0 = CRITICAL (Emergency Preemption), 1 = URGENT, 2 = NORMAL/CONVERSATIONAL, 3 = LOW/INFO.
         """
-        # If CRITICAL, preempt and flush lower-priority pending items
         if priority_level == 0:
             self.purge_and_interrupt()
 
-        # PriorityQueue sorts by (priority_level, counter, item)
         self._queue.put((priority_level, next(self._counter), item))
 
     def play_raw_pcm_wav(self, wav_bytes: bytes, priority_level: int = 2):
@@ -138,7 +105,7 @@ class NonInterruptingAudioQueue:
         """Background worker that executes audio playback sequentially."""
         while True:
             try:
-                priority_level, ts, item = self._queue.get(timeout=0.5)
+                priority_level, count, item = self._queue.get(timeout=0.5)
             except queue.Empty:
                 continue
 
@@ -160,7 +127,6 @@ class NonInterruptingAudioQueue:
             try:
                 import winsound
                 if audio_bytes:
-                    # Direct in-memory C-level Win32 playback (<1ms latency, zero disk write)
                     winsound.PlaySound(audio_bytes, winsound.SND_MEMORY | winsound.SND_SYNC | winsound.SND_NODEFAULT)
                     played = True
                 elif audio_file and os.path.exists(audio_file):
@@ -189,9 +155,9 @@ class NonInterruptingAudioQueue:
         self.dispatched_history.append(item)
 
 
-class KokoroVoiceCopilot:
+class KokoroVoiceEngine:
     """
-    High-performance Kokoro-82M neural voice engine & streaming conversational synthesizer.
+    Universal High-Performance Kokoro-82M neural voice engine & streaming conversational synthesizer.
     """
 
     def __init__(
@@ -217,28 +183,19 @@ class KokoroVoiceCopilot:
             except Exception:
                 self._local_kokoro_instance = None
 
-    def format_alert(self, template_key: str, **kwargs) -> str:
-        """Format tactical alert message using template key."""
-        template = TACTICAL_VOICE_TEMPLATES.get(template_key, "Tactical alert notification.")
-        return template.format(**kwargs)
-
     def synthesize_neural_audio(
         self,
         text: str,
         voice: Optional[str] = None,
         speed: float = 1.0,
         response_format: str = "wav",
-        dsp_preset: Optional[str] = "STUDIO_MASTER"
+        dsp_preset: str = "STUDIO_DIRECT"
     ) -> Optional[bytes]:
         """
         Synthesize audio via Local In-Process ONNX -> Containerized HTTP -> SAPI.
         """
         voice = voice or self.default_voice
-        selected_lang = "en-gb" if isinstance(voice, str) and voice.startswith("b") else "en-us"
-        cache_key = f"{text}_{voice}_{speed}_{dsp_preset}"
-
-        if cache_key in self.audio_cache:
-            return self.audio_cache[cache_key]
+        selected_lang = "en-gb" if voice.startswith("b") else "en-us"
 
         # Tier 1: In-Process Local Kokoro-ONNX (Zero-latency direct synthesis)
         if self._local_kokoro_instance is not None:
@@ -246,46 +203,27 @@ class KokoroVoiceCopilot:
                 import soundfile as sf
                 try:
                     from src.core.voice_normalizer import VoiceNormalizer
-                    clean_text = VoiceNormalizer.normalize_for_speech(text)
-                except Exception:
-                    clean_text = text
-
-                # Resolve voice vector embedding if persona blend or name
-                voice_target = voice
-                try:
-                    from src.core.voice_persona_blend import VoicePersonaBlender
-                    vec = VoicePersonaBlender.get_blended_vector(voice)
-                    if vec is not None:
-                        voice_target = vec
+                    text = VoiceNormalizer.normalize_for_speech(text)
                 except Exception:
                     pass
-
                 samples, sample_rate = self._local_kokoro_instance.create(
-                    clean_text,
-                    voice=voice_target,
+                    text,
+                    voice=voice,
                     speed=speed,
                     lang=selected_lang
                 )
-
-                # Studio DSP Broadcast Mastering (EQ, Compression, De-esser, Spatial Widener)
                 try:
-                    from src.core.voice_normalizer import VoiceNormalizer
-                    samples = VoiceNormalizer.master_audio_buffer(
-                        samples,
-                        sample_rate=sample_rate,
-                        dsp_preset=dsp_preset or "STUDIO_MASTER"
-                    )
+                    from src.core.voice_dsp import VoiceDSP
+                    samples = VoiceDSP.apply_dsp_preset(samples, preset=dsp_preset, fs=sample_rate)
                 except Exception:
                     pass
-
                 buf = io.BytesIO()
                 sf.write(buf, samples, sample_rate, format="WAV", subtype="PCM_16")
                 audio_bytes = buf.getvalue()
-                self.audio_cache[cache_key] = audio_bytes
+                self.audio_cache[text] = audio_bytes
                 return audio_bytes
             except Exception:
                 pass
-
 
         # Tier 2: OpenAI-Compatible Container Endpoint
         payload = {
@@ -317,7 +255,6 @@ class KokoroVoiceCopilot:
         try:
             import numpy as np
             import soundfile as sf
-            # Generate speech-length synthetic audio tone
             duration_s = max(0.5, min(5.0, len(text) * 0.05))
             n_samples = int(24000 * duration_s)
             t = np.linspace(0, duration_s, n_samples, endpoint=False)
@@ -339,7 +276,6 @@ class KokoroVoiceCopilot:
 
         for token in token_stream:
             clause_buffer += token
-            # Check if token ends clause
             if any(d in token for d in delimiters) and len(clause_buffer.strip()) > 10:
                 clause_text = clause_buffer.strip()
                 t0 = time.time()
@@ -357,7 +293,6 @@ class KokoroVoiceCopilot:
                 clause_buffer = ""
                 clause_index += 1
 
-        # Emit trailing tokens
         if clause_buffer.strip():
             clause_text = clause_buffer.strip()
             t0 = time.time()
@@ -381,11 +316,12 @@ class KokoroVoiceCopilot:
         text: str,
         priority: str = "HIGH",
         voice: Optional[str] = None,
+        dsp_preset: str = "STUDIO_DIRECT",
         force_sapi: bool = False,
         blocking: bool = False
     ) -> Dict[str, Any]:
         """
-        Dispatch tactical alert through non-interrupting sequential queue.
+        Dispatch alert through non-interrupting sequential queue.
         Zero-disk in-memory playback path for maximum responsiveness.
         """
         selected_voice = voice or self.default_voice
@@ -396,7 +332,7 @@ class KokoroVoiceCopilot:
         engine_used = "Windows_SAPI"
 
         if not force_sapi:
-            audio_bytes = self.synthesize_neural_audio(text, voice=selected_voice)
+            audio_bytes = self.synthesize_neural_audio(text, voice=selected_voice, dsp_preset=dsp_preset)
             if audio_bytes:
                 engine_used = f"Kokoro_82M_Neural ({selected_voice})"
 
@@ -412,7 +348,6 @@ class KokoroVoiceCopilot:
             "dispatched": True
         }
 
-        # Enqueue item in non-interrupting in-memory worker
         self.audio_queue.enqueue(item, priority_level=priority_val)
 
         if blocking and audio_bytes and sys.platform == "win32":

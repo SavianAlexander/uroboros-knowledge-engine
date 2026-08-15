@@ -286,6 +286,8 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
   const [ttsSpeaking, setTtsSpeaking] = useState(false);
   const [ttsRate, setTtsRate] = useState<number>(1.0);
   const ttsUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+
 
   // Text Selection Action State
   const [selectedText, setSelectedText] = useState<string>('');
@@ -716,28 +718,82 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     return { headers, rows };
   }, [content, isCsv, csvFilter]);
 
-  const handleToggleTts = (paragraphs: string[]) => {
-    if (!('speechSynthesis' in window)) {
-      toast('TTS Not Supported', 'Web Speech API is not available in this browser', 'info');
-      return;
-    }
+  const handleToggleTts = async (paragraphs: string[]) => {
     if (ttsSpeaking) {
-      window.speechSynthesis.cancel();
+      if (ttsAudioRef.current) {
+        ttsAudioRef.current.pause();
+        ttsAudioRef.current = null;
+      }
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       setTtsSpeaking(false);
       return;
     }
 
     const fullText = paragraphs.join('. ');
-    const utterance = new SpeechSynthesisUtterance(fullText);
-    utterance.rate = ttsRate;
-    utterance.onstart = () => setTtsSpeaking(true);
-    utterance.onend = () => setTtsSpeaking(false);
-    utterance.onerror = () => setTtsSpeaking(false);
-    ttsUtteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    if (!fullText.trim()) return;
+
+    if (ttsAudioRef.current) {
+      ttsAudioRef.current.pause();
+      ttsAudioRef.current = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+
     setTtsSpeaking(true);
-    toast('Audio Read-Aloud Started', `${paragraphs.length} paragraphs queued (${ttsRate}x speed)`, 'info');
+    toast('Synthesizing Neural Audio', `Reading aloud with Cortana Prime studio audio (${paragraphs.length} paragraphs)...`, 'info');
+
+    try {
+      const res = await fetch('/v1/audio/speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: fullText,
+          voice: 'CORTANA_PRIME',
+          speed: ttsRate,
+          dsp_preset: 'STUDIO_MASTER',
+          response_format: 'wav'
+        })
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const blob = await res.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      ttsAudioRef.current = audio;
+
+      audio.onended = () => {
+        setTtsSpeaking(false);
+        ttsAudioRef.current = null;
+        URL.revokeObjectURL(audioUrl);
+      };
+      audio.onerror = () => {
+        setTtsSpeaking(false);
+        ttsAudioRef.current = null;
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      await audio.play();
+    } catch (err) {
+      console.warn('Neural audio failed, falling back to Web Speech API:', err);
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(fullText);
+        utterance.rate = ttsRate;
+        utterance.onstart = () => setTtsSpeaking(true);
+        utterance.onend = () => setTtsSpeaking(false);
+        utterance.onerror = () => setTtsSpeaking(false);
+        ttsUtteranceRef.current = utterance;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setTtsSpeaking(false);
+        toast('TTS Error', 'Could not synthesize speech', 'error');
+      }
+    }
   };
+
 
   const handleMouseUpSelection = () => {
     const selection = window.getSelection();

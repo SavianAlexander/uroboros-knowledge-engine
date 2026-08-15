@@ -15,36 +15,49 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 try:
-    from src.infrastructure.eve_voice_copilot import KokoroVoiceCopilot
+    from src.core.voice_engine import KokoroVoiceEngine
+    KokoroVoiceCopilot = KokoroVoiceEngine  # Backward compatibility alias
 except Exception:
+    KokoroVoiceEngine = None
     KokoroVoiceCopilot = None
 
 KOKORO_PERSONAS = {
-    "AURA_SHIP_AI": "bf_emma",
-    "TACTICAL_ADVISOR": "af_sarah",
-    "FLEET_COMMANDER": "am_adam",
-    "INDUSTRY_OVERSEER": "bm_george",
-    "CALM_OPERATIONS": "af_bella"
+    "CORTANA_PRIME": "CORTANA_PRIME",
+    "AURA_SHIP_AI": "AURA_SHIP_AI",
+    "EXECUTIVE_ADVISOR": "EXECUTIVE_ADVISOR",
+    "TACTICAL_OFFICER": "TACTICAL_OFFICER",
+    "KOKORO_SKY": "af_sky",
+    "KOKORO_BELLA": "af_bella",
+    "KOKORO_SARAH": "af_sarah",
+    "KOKORO_EMMA": "bf_emma",
+    "KOKORO_ADAM": "am_adam",
+    "KOKORO_GEORGE": "bm_george"
 }
 
 
 DOMAIN_PROFILES = {
+    "CORTANA_AI": {
+        "voice": "CORTANA_PRIME",
+        "speed": 1.02,
+        "dsp_preset": "STUDIO_MASTER",
+        "description": "Cortana-Grade Neural AI Assistant & Master Broadcaster"
+    },
     "DEV_OPS": {
-        "voice": "bm_george",
+        "voice": "TACTICAL_OFFICER",
         "speed": 1.05,
-        "dsp_preset": "STUDIO_DIRECT",
+        "dsp_preset": "STUDIO_MASTER",
         "description": "Concise Developer & CI/CD Terminal Broadcaster"
     },
     "DAILY_BRIEF": {
-        "voice": "af_bella",
+        "voice": "EXECUTIVE_ADVISOR",
         "speed": 1.00,
-        "dsp_preset": "AURA_COCKPIT",
+        "dsp_preset": "STUDIO_MASTER",
         "description": "Warm, engaging Task Master & Tududi Productivity Speaker"
     },
     "EXECUTIVE_ASSISTANT": {
-        "voice": "bf_emma",
+        "voice": "CORTANA_PRIME",
         "speed": 1.00,
-        "dsp_preset": "AURA_COCKPIT",
+        "dsp_preset": "STUDIO_MASTER",
         "description": "Authoritative, crystalline Executive Intelligence Voice"
     },
     "TACTICAL_COCKPIT": {
@@ -54,18 +67,19 @@ DOMAIN_PROFILES = {
         "description": "Military-grade Tactical Radar & Combat Alert Voice"
     },
     "CALL_INTERCOM": {
-        "voice": "bf_emma",
+        "voice": "CORTANA_PRIME",
         "speed": 1.05,
-        "dsp_preset": "COCKPIT_ACOUSTIC",
+        "dsp_preset": "STUDIO_MASTER",
         "description": "Real-Time Full-Duplex Phone Call & Radio Intercom Voice"
     },
     "GENERAL": {
-        "voice": "bf_emma",
+        "voice": "CORTANA_PRIME",
         "speed": 1.00,
-        "dsp_preset": "STUDIO_DIRECT",
+        "dsp_preset": "STUDIO_MASTER",
         "description": "Universal Multi-Purpose Neural Synthesizer"
     }
 }
+
 
 
 class VoiceBridge:
@@ -142,15 +156,23 @@ class VoiceBridge:
     def synthesize_bytes(
         cls,
         text: str,
-        voice: str = "bf_emma",
+        voice: str = "CORTANA_PRIME",
         speed: float = 1.0,
-        response_format: str = "wav"
+        response_format: str = "wav",
+        dsp_preset: Optional[str] = "STUDIO_MASTER"
     ) -> Optional[bytes]:
         """Synthesize raw audio bytes (OpenAI compatible)."""
         copilot = cls.get_copilot()
         if copilot:
-            return copilot.synthesize_neural_audio(text, voice=voice, speed=speed, response_format=response_format)
+            return copilot.synthesize_neural_audio(
+                text,
+                voice=voice,
+                speed=speed,
+                response_format=response_format,
+                dsp_preset=dsp_preset
+            )
         return None
+
 
     @classmethod
     def play_sfx(cls, sfx_name: str) -> Optional[bytes]:

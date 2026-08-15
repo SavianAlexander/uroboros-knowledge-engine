@@ -17,9 +17,10 @@ router = APIRouter(tags=["Universal Voice Bridge"])
 class OpenAISpeechRequest(BaseModel):
     model: Optional[str] = "kokoro"
     input: str
-    voice: Optional[str] = "bf_emma"
+    voice: Optional[str] = "CORTANA_PRIME"
     response_format: Optional[str] = "wav"
     speed: Optional[float] = 1.0
+    dsp_preset: Optional[str] = "STUDIO_MASTER"
 
 
 class UniversalSpeakRequest(BaseModel):
@@ -37,15 +38,16 @@ class UniversalSpeakRequest(BaseModel):
 @router.post("/v1/audio/speech")
 def openai_speech_endpoint(req: OpenAISpeechRequest):
     """
-    Standard OpenAI-compatible Audio API drop-in endpoint.
+    Standard OpenAI-compatible Audio API drop-in endpoint with Studio DSP Mastering.
     Accepts OpenAI TTS JSON and returns binary streaming audio.
     """
     try:
         audio_bytes = VoiceBridge.synthesize_bytes(
             text=req.input,
-            voice=req.voice or "bf_emma",
+            voice=req.voice or "CORTANA_PRIME",
             speed=req.speed or 1.0,
-            response_format=req.response_format or "wav"
+            response_format=req.response_format or "wav",
+            dsp_preset=req.dsp_preset or "STUDIO_MASTER"
         )
         if not audio_bytes:
             raise HTTPException(status_code=500, detail="Voice synthesis failed.")
@@ -59,15 +61,42 @@ def openai_speech_endpoint(req: OpenAISpeechRequest):
 
 
 @router.get("/v1/audio/voices")
+@router.get("/api/voice/personas")
 def list_voices_endpoint():
-    """List available voice personas and domain profiles."""
+    """List available signature voice personas and DSP mastering presets."""
+    try:
+        from src.core.voice_persona_blend import SIGNATURE_PERSONA_BLENDS
+    except Exception:
+        SIGNATURE_PERSONA_BLENDS = {}
+
+    dsp_presets = [
+        {"id": "STUDIO_MASTER", "name": "Studio Master (Cortana Broadcast)", "description": "4-Band Mastering EQ, Studio Compressor, De-Esser & Subtle Holographic Presence"},
+        {"id": "HOLOGRAPHIC_AI", "name": "Holographic AI (3D Spatial)", "description": "Air Presence EQ with Haas 3D Spatial Stereo Widener"},
+        {"id": "AURA_COCKPIT", "name": "Aura Cockpit (Starship Bridge)", "description": "Naval AI Crystalline Voice with Multi-Tap Bridge Reverb"},
+        {"id": "TACTICAL_RADIO", "name": "Tactical Radio (Military Comms)", "description": "VHF Bandpass Filter with Tactical Start Chirp and End Squelch Burst"},
+        {"id": "STUDIO_DIRECT", "name": "Studio Direct (Raw Neural)", "description": "Uncolored Direct Neural PCM Audio"}
+    ]
+
+    personas = [
+        {"id": "CORTANA_PRIME", "name": "Cortana Prime (Halo AI)", "category": "Signature", "description": "Articulate, crystalline, warm Cortana AI persona"},
+        {"id": "AURA_SHIP_AI", "name": "Aura Ship AI (British Naval)", "category": "Signature", "description": "Authoritative crystalline starship bridge AI"},
+        {"id": "EXECUTIVE_ADVISOR", "name": "Executive Advisor (Warm Productivity)", "category": "Signature", "description": "Engaging, natural executive briefing tone"},
+        {"id": "TACTICAL_OFFICER", "name": "Tactical Officer (Command)", "category": "Signature", "description": "Deep, resonant tactical commanding officer"},
+        {"id": "af_sky", "name": "Kokoro Sky (Clear US Female)", "category": "Base", "description": "Base Kokoro clear American female"},
+        {"id": "af_bella", "name": "Kokoro Bella (Warm US Female)", "category": "Base", "description": "Base Kokoro warm American female"},
+        {"id": "bf_emma", "name": "Kokoro Emma (British Female)", "category": "Base", "description": "Base Kokoro British female"}
+    ]
+
     return {
-        "voices": [
-            {"id": code, "name": name, "model": "kokoro-82m"}
-            for name, code in KOKORO_PERSONAS.items()
-        ],
+        "status": "success",
+        "default_voice": "CORTANA_PRIME",
+        "default_dsp": "STUDIO_MASTER",
+        "personas": personas,
+        "signature_blends": SIGNATURE_PERSONA_BLENDS,
+        "dsp_presets": dsp_presets,
         "domain_profiles": DOMAIN_PROFILES
     }
+
 
 
 # ----------------------------------------------------------------------

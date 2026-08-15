@@ -17,7 +17,9 @@ except ImportError:
 
 # Comprehensive Technical, EVE Online & DevOps Lexical Phonetic Dictionary
 LEXICAL_PHONETIC_REPLACEMENTS: List[Tuple[re.Pattern, str]] = [
-    # DevOps & Infrastructure
+    # DevOps & Infrastructure & Algorithms
+    (re.compile(r"\bLLMs?\b", re.IGNORECASE), "L-L-M"),
+    (re.compile(r"\bRAG\b", re.IGNORECASE), "rag"),
     (re.compile(r"\bCI/CD\b", re.IGNORECASE), "C-I C-D"),
     (re.compile(r"\bAPI\b", re.IGNORECASE), "A-P-I"),
     (re.compile(r"\bAPIs\b", re.IGNORECASE), "A-P-Eyes"),
@@ -51,6 +53,7 @@ LEXICAL_PHONETIC_REPLACEMENTS: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\bWSL\b", re.IGNORECASE), "W-S-L"),
     (re.compile(r"\bSAPI\b", re.IGNORECASE), "Sap-ee"),
     (re.compile(r"\bTTS\b", re.IGNORECASE), "T-T-S"),
+    (re.compile(r"\bSTT\b", re.IGNORECASE), "S-T-T"),
     (re.compile(r"\bONNX\b", re.IGNORECASE), "on-ix"),
     (re.compile(r"\bOllama\b", re.IGNORECASE), "Oh-lah-ma"),
     (re.compile(r"\bKokoro\b", re.IGNORECASE), "Koh-koh-roh"),
@@ -60,6 +63,34 @@ LEXICAL_PHONETIC_REPLACEMENTS: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\bFastAPI\b", re.IGNORECASE), "Fast A-P-I"),
     (re.compile(r"\bGitHub\b", re.IGNORECASE), "Git-Hub"),
     (re.compile(r"\bPytest\b", re.IGNORECASE), "Pie-test"),
+    (re.compile(r"\bCortana\b", re.IGNORECASE), "Cor-tah-nah"),
+    (re.compile(r"\bGPU\b", re.IGNORECASE), "G-P-U"),
+    (re.compile(r"\bCPU\b", re.IGNORECASE), "C-P-U"),
+    (re.compile(r"\bRAM\b", re.IGNORECASE), "ram"),
+    (re.compile(r"\bUI\b", re.IGNORECASE), "U-I"),
+    (re.compile(r"\bUX\b", re.IGNORECASE), "U-X"),
+    (re.compile(r"\bGUI\b", re.IGNORECASE), "gooey"),
+    (re.compile(r"\bSHA-?256\b", re.IGNORECASE), "Shaw 256"),
+    (re.compile(r"\bAES\b", re.IGNORECASE), "A-E-S"),
+    (re.compile(r"\bRSA\b", re.IGNORECASE), "R-S-A"),
+    (re.compile(r"\bRegex\b", re.IGNORECASE), "reg-ex"),
+    (re.compile(r"\bAsync\b", re.IGNORECASE), "ay-sync"),
+
+    # Complexity Notation
+    (re.compile(r"O\(1\)", re.IGNORECASE), "O of 1"),
+    (re.compile(r"O\(n\)", re.IGNORECASE), "O of N"),
+    (re.compile(r"O\(n\s*\^\s*2\)", re.IGNORECASE), "O of N squared"),
+    (re.compile(r"O\(log\s*n\)", re.IGNORECASE), "O of log N"),
+    (re.compile(r"O\(n\s*log\s*n\)", re.IGNORECASE), "O of N log N"),
+
+    # Common Programming Symbols
+    (re.compile(r"\s*!=\s*"), " is not equal to "),
+    (re.compile(r"\s*==\s*"), " equals "),
+    (re.compile(r"\s*>=\s*"), " greater than or equal to "),
+    (re.compile(r"\s*<=\s*"), " less than or equal to "),
+    (re.compile(r"\s*=>\s*"), " yields "),
+    (re.compile(r"\s*->\s*"), " transforms to "),
+
 
     # EVE Online Canonical Jargon
     (re.compile(r"\bISK\b", re.IGNORECASE), "I-S-K"),
@@ -176,30 +207,19 @@ class VoiceNormalizer:
         return cadence.strip()
 
     @staticmethod
-    def master_audio_buffer(samples: Any, sample_rate: int = 24000, target_dbfs: float = -1.0) -> Any:
+    def master_audio_buffer(
+        samples: Any,
+        sample_rate: int = 24000,
+        target_dbfs: float = -1.0,
+        dsp_preset: str = "STUDIO_MASTER"
+    ) -> Any:
         """
-        Professional EBU R128 True-Peak Audio Mastering & Soft Saturation Limiter.
-        Prevents clipping and ensures clear audio reproduction on all DACs and speakers.
+        Studio Broadcast Audio Mastering Pipeline & True-Peak Limiter.
+        Delegates directly to unified VoiceDSP engine.
         """
-        if np is None or not isinstance(samples, np.ndarray) or samples.size == 0:
+        try:
+            from src.core.voice_dsp import VoiceDSP
+            return VoiceDSP.master_audio_buffer(samples, target_dbfs=target_dbfs, sample_rate=sample_rate)
+        except Exception:
             return samples
 
-        # 1. Remove DC Offset
-        samples = samples - np.mean(samples)
-
-        # 2. Peak normalization to target_dbfs
-        peak = np.max(np.abs(samples))
-        if peak > 1e-6:
-            target_linear = 10.0 ** (target_dbfs / 20.0)
-            gain = target_linear / peak
-            samples = samples * gain
-
-        # 3. Soft hyperbolic tangent saturation limiter for any peaks exceeding 0.98
-        threshold = 0.95
-        over_idx = np.abs(samples) > threshold
-        if np.any(over_idx):
-            samples[over_idx] = np.sign(samples[over_idx]) * (
-                threshold + (1.0 - threshold) * np.tanh((np.abs(samples[over_idx]) - threshold) / (1.0 - threshold))
-            )
-
-        return np.clip(samples, -1.0, 1.0).astype(np.float32)
