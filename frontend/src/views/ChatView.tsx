@@ -49,6 +49,8 @@ import {
 import { useToast } from '../components/Toast';
 import { useApp } from '../store/AppContext';
 import { CortanaOrb, playCortanaSFX } from '../components/CortanaOrb';
+import { AudioVisualizer } from '../components/AudioVisualizer';
+
 
 
 interface ActiveArtifact {
@@ -540,6 +542,16 @@ export default function ChatView() {
       return;
     }
 
+    // Conversational Barge-In: Immediately interrupt any active AI voice speech
+    if (speakingMsgId || audioPlayerRef.current) {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+      setSpeakingMsgId(null);
+      playCortanaSFX('dismiss');
+    }
+
     if (isRecordingVoice) {
       playCortanaSFX('confirm');
       recognitionRef.current?.stop();
@@ -557,8 +569,15 @@ export default function ChatView() {
 
       recognition.onstart = () => {
         setIsRecordingVoice(true);
-        toast('Voice Active', 'Listening... Speak your question now', 'info');
+        // Secondary barge-in interrupt guarantee
+        if (audioPlayerRef.current) {
+          audioPlayerRef.current.pause();
+          audioPlayerRef.current = null;
+          setSpeakingMsgId(null);
+        }
+        toast('Voice Active', 'Listening... (Barge-In Active)', 'info');
       };
+
 
 
       recognition.onresult = (event: any) => {
@@ -1282,9 +1301,20 @@ export default function ChatView() {
                 </span>
               </div>
 
+              {/* Real-Time Audio Visualizer */}
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-slate-950/60 rounded-xl border border-white/5">
+                <AudioVisualizer
+                  isPlaying={!!speakingMsgId || isPreviewPlaying || isRecordingVoice}
+                  colorTheme={isRecordingVoice ? 'emerald' : 'purple'}
+                  barCount={24}
+                  height={24}
+                />
+              </div>
+
               <button
                 type="button"
                 onClick={() => setShowCustomBuilder(!showCustomBuilder)}
+
                 className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   showCustomBuilder
                     ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-xs'

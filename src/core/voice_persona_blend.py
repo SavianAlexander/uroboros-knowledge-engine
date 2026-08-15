@@ -144,6 +144,10 @@ class VoicePersonaBlender:
 
         return None
 
+    # Alias for tensor access
+    get_persona_tensor = get_blended_vector
+
+
     @classmethod
     def calculate_blend_tensor(cls, persona_weights: Dict[str, float], voices: Dict[str, Any]) -> Optional[Any]:
         """Linearly interpolate voice embedding tensors using normalized weights."""

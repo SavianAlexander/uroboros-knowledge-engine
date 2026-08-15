@@ -583,3 +583,72 @@ def kill_zombie_processes_endpoint():
     except Exception as e:
         import logging; logging.getLogger(__name__).exception(f"Swallowed error reaping zombies: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/system/health/stability")
+@router.get("/api/health/stability")
+def get_system_stability_vitals_endpoint():
+    """Returns comprehensive real-time stability vitals: memory, threads, DB connections, jobs, and processes."""
+    try:
+        from src.core.stability_governor import StabilityGovernor
+        return StabilityGovernor.get_system_vitals()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error gathering stability vitals: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/system/reap")
+def master_zombie_reaper_endpoint(truncate_wal: bool = True):
+    """Executes master 1-shot zombie reclamation sweep across processes, threads, DB, jobs, and memory."""
+    try:
+        from src.core.stability_governor import StabilityGovernor
+        return StabilityGovernor.reap_all_zombies(truncate_wal=truncate_wal)
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error in master zombie reaper: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/system/audit/verify")
+def verify_audit_hashchain_endpoint():
+    """Cryptographically verifies the SHA-256 block hashchain of the system audit ledger."""
+    try:
+        from src.domain.audit_hashchain import AuditHashchain
+        return AuditHashchain.verify_chain_integrity()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error verifying audit hashchain: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/system/cache/semantic")
+def get_semantic_cache_stats_endpoint():
+    """Retrieves L1 semantic RAG query cache statistics."""
+    try:
+        from src.domain.semantic_cache import SemanticQueryCache
+        return SemanticQueryCache.get_cache_stats()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error getting semantic cache stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/system/cache/semantic/clear")
+def clear_semantic_cache_endpoint():
+    """Clears L1 semantic RAG query cache."""
+    try:
+        from src.domain.semantic_cache import SemanticQueryCache
+        cleared = SemanticQueryCache.clear()
+        return {"status": "success", "cleared_entries": cleared}
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error clearing semantic cache: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+

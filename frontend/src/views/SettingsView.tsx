@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { glassCardClasses, emeraldButtonClasses, emeraldBadgeClasses, goldBadgeClasses, wineBadgeClasses } from '../lib/utils';
-import { ShieldCheck, HardDrive, Cpu, Terminal, Moon, Sun, KeyRound, Server, AlertTriangle, RefreshCw, Download, FileText, Sparkles, Database } from 'lucide-react';
+import { ShieldCheck, HardDrive, Cpu, Terminal, Moon, Sun, KeyRound, Server, AlertTriangle, RefreshCw, Download, FileText, Sparkles, Database, Zap, Activity } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { api } from '../lib/api';
 import { useApp } from '../store/AppContext';
@@ -10,10 +10,19 @@ export default function SettingsView() {
   const { theme, setTheme } = useApp();
   const [envData, setEnvData] = useState<any>({});
   const [dbStats, setDbStats] = useState<any>(null);
+  const [stabilityVitals, setStabilityVitals] = useState<any>(null);
+  const [isReaping, setIsReaping] = useState(false);
 
   const [openaiKey, setOpenaiKey] = useState('');
   const [anthropicKey, setAnthropicKey] = useState('');
   const [ollamaHost, setOllamaHost] = useState('');
+
+  const fetchStability = () => {
+    fetch('/api/system/health/stability')
+      .then(res => res.json())
+      .then(data => setStabilityVitals(data))
+      .catch(() => {});
+  };
 
   useEffect(() => {
     const savedOpenAI = localStorage.getItem('uroboros_openai_key') || '';
@@ -33,7 +42,9 @@ export default function SettingsView() {
     }).catch(console.error);
 
     api.stats().then(res => setDbStats(res)).catch(console.error);
+    fetchStability();
   }, []);
+
 
   const handleReindex = async () => {
     toast('Re-indexing Scheduled', 'Rebuilding vector indices in background', 'info');
@@ -79,6 +90,28 @@ export default function SettingsView() {
     }
   };
 
+  const handleReapZombies = async () => {
+    setIsReaping(true);
+    try {
+      const res = await fetch('/api/system/reap?truncate_wal=true', { method: 'POST' });
+      const data = await res.json();
+      if (data.status === 'success') {
+        toast(
+          'Zombie Sweep Complete',
+          `Reaped ${data.reaped_children_count} processes, ${data.reaped_db_connections} dead DB conns, ${data.reaped_jobs_count} stale jobs in ${data.elapsed_ms}ms`,
+          'success'
+        );
+        fetchStability();
+      } else {
+        toast('Reap Error', data.error || 'Failed to complete sweep', 'error');
+      }
+    } catch {
+      toast('Reap Error', 'Network error triggering zombie sweep', 'error');
+    } finally {
+      setIsReaping(false);
+    }
+  };
+
   const handleUpdateCredentials = () => {
     localStorage.setItem('uroboros_openai_key', openaiKey);
     localStorage.setItem('uroboros_anthropic_key', anthropicKey);
@@ -98,7 +131,68 @@ export default function SettingsView() {
       </header>
 
       <div className="space-y-6 max-w-5xl">
+        {/* System Stability & Zombie Reaper Governor */}
+        <div className={`${glassCardClasses} p-6 space-y-5 border-emerald-500/20 shadow-md`}>
+          <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-white/10 pb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 font-serif-claude">
+                <ShieldCheck className="w-4 h-4 text-emerald-500" /> System Stability Governor & Process Reaper
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Windows Job Object kernel guard, dead-thread connection buster & memory governor.
+              </p>
+            </div>
+            <button
+              onClick={handleReapZombies}
+              disabled={isReaping}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              <Zap className={`w-3.5 h-3.5 ${isReaping ? 'animate-spin' : ''}`} />
+              <span>{isReaping ? 'Reaping Zombies...' : 'Sweep Zombies & Clean RAM'}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-3.5 bg-slate-100/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-white/10">
+              <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
+                <Cpu className="w-3.5 h-3.5 text-cyan-400" /> Process Memory RSS:
+              </div>
+              <div className="text-base font-bold font-mono text-cyan-300">
+                {stabilityVitals?.memory?.rss_mb ? `${stabilityVitals.memory.rss_mb} MB` : 'Active'}
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-100/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-white/10">
+              <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
+                <Activity className="w-3.5 h-3.5 text-purple-400" /> Worker Threads:
+              </div>
+              <div className="text-base font-bold font-mono text-purple-300">
+                {stabilityVitals?.threads?.total_python_threads ?? 'Active'} threads
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-100/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-white/10">
+              <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
+                <Database className="w-3.5 h-3.5 text-emerald-400" /> DB Connections:
+              </div>
+              <div className="text-base font-bold font-mono text-emerald-300">
+                {stabilityVitals?.database?.connections?.thread_local_connections_count ?? '1'} locked
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-100/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-white/10">
+              <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" /> Job Object Guard:
+              </div>
+              <div className="text-base font-bold font-mono text-amber-300">
+                {stabilityVitals?.process_supervisor?.job_object_active ? 'Kernel Guard ON' : 'Active'}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* LLM API Credentials */}
+
         <div className={`${glassCardClasses} p-6 space-y-5`}>
           <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-white/10 pb-4">
             <div>

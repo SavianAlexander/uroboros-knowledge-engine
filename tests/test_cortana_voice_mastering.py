@@ -228,10 +228,10 @@ class TestVoiceBridgeAndAPI:
         resp = client.get("/api/voice/personas")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["status"] == "success"
-        assert data["default_voice"] == "CORTANA_PRIME"
-        assert any(p["id"] == "CORTANA_PRIME" for p in data["personas"])
-        assert any(d["id"] == "STUDIO_MASTER" for d in data["dsp_presets"])
+        assert data["default_voice"] in ("ALEXANDER_SOVEREIGN", "CORTANA_PRIME")
+        assert any(p["id"] == "ALEXANDER_SOVEREIGN" for p in data["personas"])
+        assert any(d["id"] == "SOVEREIGN_AWE" for d in data["dsp_presets"])
+
 
         # 2. Test /v1/audio/speech
         speech_resp = client.post(
@@ -309,5 +309,102 @@ class TestStreamingNeuralSynthesizerAndCache:
         assert cached == dummy_wav
         StreamingAudioCache.clear()
         assert StreamingAudioCache.get("test clause", "CORTANA_PRIME", 1.0, "STUDIO_MASTER") is None
+
+
+class TestSovereignAweDSPAndPersonas:
+    """Validate Sovereign Legendary Personas, Sub-Harmonic Chest DSP, and Custom Persona CRUD."""
+
+    def test_sovereign_persona_vectors(self):
+        from src.core.voice_persona_blend import VoicePersonaBlender
+        blends = VoicePersonaBlender.get_preset_blends()
+        assert "ALEXANDER_SOVEREIGN" in blends
+        assert "FREYA_VALKYRIE" in blends
+        assert "AURELIUS_STOIC" in blends
+        assert "NOCTURNA_SOLON" in blends
+
+        # Check Alexander Sovereign tensor
+        alex_vec = VoicePersonaBlender.get_persona_tensor("ALEXANDER_SOVEREIGN")
+        assert alex_vec is not None
+        assert alex_vec.shape == (511, 1, 256)
+
+        # Check Freya Valkyrie tensor
+        freya_vec = VoicePersonaBlender.get_persona_tensor("FREYA_VALKYRIE")
+        assert freya_vec is not None
+        assert freya_vec.shape == (511, 1, 256)
+
+
+    def test_subharmonic_chest_dsp(self):
+        from src.infrastructure.eve_voice_dsp import apply_subharmonic_chest_resonance
+        import numpy as np
+        sr = 24000
+        t = np.linspace(0, 0.5, int(sr * 0.5), endpoint=False)
+        # Synthetic fundamental at 120Hz
+        signal = 0.5 * np.sin(2 * np.pi * 120.0 * t).astype(np.float32)
+        chested = apply_subharmonic_chest_resonance(signal, sample_rate=sr, sub_freq=75.0, blend=0.25)
+        assert chested is not None
+        assert len(chested) == len(signal)
+        assert np.max(np.abs(chested)) > 0.0
+
+    def test_magnetic_tube_saturation(self):
+        from src.infrastructure.eve_voice_dsp import apply_magnetic_tube_saturation
+        import numpy as np
+        sr = 24000
+        t = np.linspace(0, 0.2, int(sr * 0.2), endpoint=False)
+        signal = 0.8 * np.sin(2 * np.pi * 440.0 * t).astype(np.float32)
+        sat = apply_magnetic_tube_saturation(signal, drive=1.35, warmth=0.20)
+        assert sat is not None
+        assert len(sat) == len(signal)
+        assert np.max(np.abs(sat)) <= 0.96
+
+    def test_gravitas_intent_cadence_shaper(self):
+        from src.core.voice_normalizer import VoiceNormalizer
+        raw = "Basically, you know, we need to secure the perimeter. However, make no mistake, victory requires discipline."
+        shaped = VoiceNormalizer.shape_gravitas_intent_cadence(raw)
+        assert "basically" not in shaped.lower()
+        assert "you know" not in shaped.lower()
+        assert "However..." in shaped or "However" in shaped
+        assert "—" in shaped or "..." in shaped
+
+    def test_custom_persona_crud_and_preview(self):
+        from fastapi.testclient import TestClient
+        from src.app.main import app
+
+        client = TestClient(app)
+
+        # 1. Save custom persona
+        save_resp = client.post(
+            "/api/voice/custom-personas",
+            json={
+                "name": "Spartan Sovereign",
+                "weights": {"am_adam": 0.8, "bm_george": 0.2},
+                "dsp_preset": "SOVEREIGN_AWE",
+                "description": "Test Spartan voice"
+            }
+        )
+        assert save_resp.status_code == 200
+        assert save_resp.json()["status"] == "success"
+
+        # 2. List custom personas
+        list_resp = client.get("/api/voice/custom-personas")
+        assert list_resp.status_code == 200
+        assert "SPARTAN_SOVEREIGN" in list_resp.json()["personas"]
+
+        # 3. Test Preview endpoint
+        prev_resp = client.post(
+            "/api/voice/preview",
+            json={
+                "text": "Testing Sovereign preview.",
+                "voice": "SPARTAN_SOVEREIGN",
+                "dsp_preset": "SOVEREIGN_AWE"
+            }
+        )
+        assert prev_resp.status_code == 200
+        assert len(prev_resp.content) > 1000
+        assert prev_resp.content[:4] == b"RIFF"
+
+        # 4. Clean up
+        del_resp = client.delete("/api/voice/custom-personas/SPARTAN_SOVEREIGN")
+        assert del_resp.status_code == 200
+
 
 

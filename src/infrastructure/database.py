@@ -89,7 +89,7 @@ def get_pool(db_path: str) -> SQLiteConnectionPool:
         return _db_pools[db_path]
 
 def reset_db_connections():
-    """Clear the connection pools. Useful during init_db."""
+    """Clear the connection pools and close all thread-local connections. Useful during init_db and teardown."""
     with _pool_lock:
         for pool in _db_pools.values():
             while not pool.pool.empty():
@@ -103,9 +103,11 @@ def reset_db_connections():
     
     # Close ALL thread-local connections
     with _local_connections_lock:
-        for c in _local_connections:
+        for entry in _local_connections.values():
             try:
-                c.close()
+                c = entry.get("conn") if isinstance(entry, dict) else entry
+                if c:
+                    c.close()
             except Exception:
                 pass
         _local_connections.clear()
@@ -115,6 +117,7 @@ def reset_db_connections():
     _local.connection_path = None
     global _initialized_dbs
     _initialized_dbs.clear()
+
 
 _db_write_lock = threading.Lock()
 
@@ -194,15 +197,100 @@ def get_active_dir() -> str:
         import logging; logging.warning(f"Swallowed error in database.py: {e}")
     return os.getcwd()
 
-_local_connections = []
-
+_local_connections: Dict[int, Dict[str, Any]] = {}
 _local_connections_lock = threading.Lock()
+
+
+def reap_zombie_connections(idle_timeout_seconds: float = 1800.0) -> Dict[str, Any]:
+    """
+    Scans all registered thread-local SQLite connections.
+    Forcefully closes and cleans up:
+    1. Connections originating from dead/terminated Python threads.
+    2. Connections idle for longer than idle_timeout_seconds (excluding current thread).
+    Returns count and metadata of reaped zombie connections.
+    """
+    now = time.time()
+    current_ident = threading.get_ident()
+    alive_idents = set(t.ident for t in threading.enumerate() if t.ident)
+    reaped = []
+
+    with _local_connections_lock:
+        stale_idents = []
+        for ident, entry in list(_local_connections.items()):
+            conn = entry.get("conn")
+            created_at = entry.get("created_at", now)
+            last_used = entry.get("last_used", now)
+            is_dead_thread = ident not in alive_idents
+            is_idle_stale = (now - last_used > idle_timeout_seconds) and (ident != current_ident)
+
+            if is_dead_thread or is_idle_stale:
+                stale_idents.append(ident)
+                reason = "dead_thread" if is_dead_thread else "idle_timeout"
+                if conn:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                reaped.append({
+                    "thread_ident": ident,
+                    "reason": reason,
+                    "idle_seconds": round(now - last_used, 1)
+                })
+
+        for ident in stale_idents:
+            if ident in _local_connections:
+                del _local_connections[ident]
+
+    return {
+        "status": "success",
+        "reaped_count": len(reaped),
+        "reaped_connections": reaped
+    }
+
+
+def get_database_connection_stats() -> Dict[str, Any]:
+    """Returns real-time connection pool, thread-local registry, and WAL status."""
+    now = time.time()
+    with _local_connections_lock:
+        thread_conn_count = len(_local_connections)
+        connections_detail = [
+            {
+                "thread_ident": ident,
+                "idle_seconds": round(now - entry.get("last_used", now), 1)
+            }
+            for ident, entry in _local_connections.items()
+        ]
+    with _pool_lock:
+        pool_stats = {
+            p_path: {"created": pool.created, "available": pool.pool.qsize()}
+            for p_path, pool in _db_pools.items()
+        }
+
+    wal_size_bytes = 0
+    wal_path = f"{DB_FILE}-wal"
+    if os.path.exists(wal_path):
+        try:
+            wal_size_bytes = os.path.getsize(wal_path)
+        except Exception:
+            pass
+
+    return {
+        "db_file": DB_FILE,
+        "thread_local_connections_count": thread_conn_count,
+        "thread_connections": connections_detail,
+        "connection_pools": pool_stats,
+        "wal_size_bytes": wal_size_bytes
+    }
+
 
 def get_db():
     """Get or establish thread-local SQLite database connection."""
     conn = getattr(_local, "connection", None)
     cached_path = getattr(_local, "connection_path", None)
     current_path = os.path.abspath(DB_FILE)
+    current_ident = threading.get_ident()
+    now = time.time()
+
     if conn is not None:
         if cached_path != current_path:
             try:
@@ -215,6 +303,10 @@ def get_db():
         else:
             try:
                 conn.cursor().execute("SELECT 1")
+                # Update last used timestamp
+                with _local_connections_lock:
+                    if current_ident in _local_connections:
+                        _local_connections[current_ident]["last_used"] = now
             except Exception:
                 try:
                     conn.close()
@@ -241,8 +333,13 @@ def get_db():
                 _local.connection = conn
                 _local.connection_path = current_path
                 with _local_connections_lock:
-                    _local_connections.append(conn)
+                    _local_connections[current_ident] = {
+                        "conn": conn,
+                        "created_at": now,
+                        "last_used": now
+                    }
                 break
+
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 if conn:
                     try:
@@ -610,8 +707,9 @@ def init_db():
     _initialized_dbs.add(DB_FILE)
     print("Database initialized successfully.")
 
-def run_maintenance(truncate_wal: bool = False):
-    """Execute WAL checkpoint (PASSIVE or TRUNCATE) and incremental vacuum maintenance."""
+def run_maintenance(truncate_wal: bool = False) -> Dict[str, Any]:
+    """Execute WAL checkpoint (PASSIVE or TRUNCATE), incremental vacuum, and reap zombie connections."""
+    reap_report = reap_zombie_connections()
     if DB_FILE and os.path.dirname(DB_FILE):
         os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
     with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
@@ -621,6 +719,12 @@ def run_maintenance(truncate_wal: bool = False):
             cursor.execute(f"PRAGMA wal_checkpoint({mode})")
             cursor.execute("PRAGMA incremental_vacuum(100)")
             cursor.execute("PRAGMA optimize")
+    return {
+        "status": "success",
+        "checkpoint_mode": mode,
+        "zombie_reap": reap_report
+    }
+
 
 def db_status() -> Dict[str, Any]:
     """Retrieve database metrics, page count, freelist, and table stats."""

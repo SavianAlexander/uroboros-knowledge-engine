@@ -21,7 +21,21 @@ def execute_clean_shutdown():
         return
     _SHUTDOWN_EXECUTED = True
 
-    # 1. Close database connections and checkpoint WAL
+    # 1. Terminate any active child subprocesses (Windows Job Object handles crash case, this handles graceful)
+    try:
+        from src.infrastructure.process_supervisor import ProcessSupervisor
+        ProcessSupervisor.kill_all_child_processes(timeout=0.5)
+    except Exception as e:
+        logger.debug(f"Shutdown child process note: {e}")
+
+    # 2. Stop job manager executor
+    try:
+        from src.core.jobs import get_job_manager
+        get_job_manager().shutdown(wait=False)
+    except Exception as e:
+        logger.debug(f"Shutdown job manager note: {e}")
+
+    # 3. Close database connections, reap zombie thread connections, and checkpoint WAL
     try:
         from src.infrastructure.database import reset_db_connections, run_maintenance
         reset_db_connections()
@@ -29,12 +43,13 @@ def execute_clean_shutdown():
     except Exception as e:
         logger.debug(f"Shutdown db maintenance note: {e}")
 
-    # 2. Stop thread workers
+    # 4. Stop thread workers
     try:
         from src.domain.thread_watchdog import shutdown_all_workers
         shutdown_all_workers(timeout=0.5)
     except Exception as e:
         logger.debug(f"Shutdown worker note: {e}")
+
 
 
 def register_shutdown_handlers():

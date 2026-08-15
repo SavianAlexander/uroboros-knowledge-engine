@@ -46,6 +46,7 @@ from src.core.voice_code_narrator import CodeSyntaxNarrator
 from src.core.voice_document_reader import DocumentVoiceReader
 from src.core.voice_studio_showcase import VoiceStudioShowcase
 from src.core.voice_dsp import VoiceDSP
+from src.core.audit_hashchain import GLOBAL_AUDIT_HASHCHAIN
 
 
 # Global Voice Configuration State
@@ -337,6 +338,16 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_verify_audit_hashchain",
+        "description": "Cryptographically verify the SHA-256 Merkle audit hashchain for all voice, RAG, and AI operations.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer", "description": "Number of recent blocks to inspect.", "default": 10}
+            }
+        }
+    },
+    {
         "name": "antigravity_configure_voice",
         "description": "Configure global default voice settings for Antigravity assistant.",
         "inputSchema": {
@@ -587,6 +598,15 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             voice=voice,
             dsp_preset=preset
         )
+
+    elif name == "antigravity_verify_audit_hashchain":
+        limit = args.get("limit", 10)
+        integrity = GLOBAL_AUDIT_HASHCHAIN.verify_integrity()
+        recent = GLOBAL_AUDIT_HASHCHAIN.get_recent_blocks(limit=limit)
+        return {
+            "integrity": integrity,
+            "recent_blocks": recent
+        }
 
     elif name == "antigravity_configure_voice":
         if "default_persona" in args:

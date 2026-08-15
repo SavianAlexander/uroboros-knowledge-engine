@@ -32,6 +32,8 @@ from scripts.verify_zero_assumptions import run_zero_assumption_audit
 
 from src.core.voice_studio_showcase import VoiceStudioShowcase
 from src.core.voice_dsp import VoiceDSP
+from src.core.rag_query_cache import SemanticRAGQueryCache, GLOBAL_RAG_CACHE
+from src.core.audit_hashchain import AuditHashchainLedger, GLOBAL_AUDIT_HASHCHAIN
 
 
 class TestVoiceOmniscientMatrix(unittest.TestCase):
@@ -61,6 +63,41 @@ class TestVoiceOmniscientMatrix(unittest.TestCase):
                 self.assertLessEqual(np.max(np.abs(filtered)), 1.0)
         except ImportError:
             pass
+
+    def test_semantic_rag_cache_and_deduplication(self):
+        """Test LRU semantic RAG query cache and cosine similarity deduplication."""
+        cache = SemanticRAGQueryCache(max_entries=10, similarity_threshold=0.95)
+        vec_a = [0.1, 0.2, 0.3, 0.4]
+        vec_b = [0.105, 0.202, 0.298, 0.401] # Near identical (>0.99 cos sim)
+
+        cache.put("How many SP does Savian have?", {"sp": 74225867}, embedding=vec_a)
+        
+        # Exact match test
+        res_exact = cache.get("How many SP does Savian have?")
+        self.assertIsNotNone(res_exact)
+        self.assertEqual(res_exact["hit_type"], "exact")
+        self.assertEqual(res_exact["results"]["sp"], 74225867)
+
+        # Semantic match test with rephrased query and vector
+        res_sim = cache.get("What is Savian's total SP count?", embedding=vec_b)
+        self.assertIsNotNone(res_sim)
+        self.assertEqual(res_sim["hit_type"], "semantic_similarity")
+        self.assertGreaterEqual(res_sim["similarity"], 0.95)
+
+    def test_cryptographic_audit_hashchain(self):
+        """Test SHA-256 Merkle audit hashchain tamper-evidence."""
+        ledger = AuditHashchainLedger()
+        b1 = ledger.append_event("VOICE_ALERT", {"text": "Warp drive active"}, actor="AURA")
+        b2 = ledger.append_event("RAG_QUERY", {"query": "Solar systems in Verge Vendor"}, actor="USER")
+
+        self.assertEqual(b1["index"], 0)
+        self.assertEqual(b2["index"], 1)
+        self.assertEqual(b2["prev_hash"], b1["block_hash"])
+
+        integrity = ledger.verify_integrity()
+        self.assertTrue(integrity["valid"])
+        self.assertEqual(integrity["total_blocks"], 2)
+        self.assertIsNotNone(integrity["merkle_root"])
 
     def test_code_syntax_narrator(self):
         """Test translation of code syntax, SQL, and CLI into executive spoken narrative."""
@@ -217,8 +254,8 @@ Sent from my iPhone
         self.assertEqual(cut["status"], "barge_in_executed")
         self.assertLess(cut["interruption_latency_ms"], 50.0)
 
-    def test_all_21_antigravity_mcp_tools(self):
-        """Test all 21 tools in the dedicated Antigravity Voice MCP server."""
+    def test_all_22_antigravity_mcp_tools(self):
+        """Test all 22 tools in the dedicated Antigravity Voice MCP server."""
         expected_tools = [
             "antigravity_speak", "antigravity_announce_task", "antigravity_voice_brief",
             "antigravity_play_sfx", "antigravity_blend_persona", "antigravity_listen",
@@ -228,6 +265,7 @@ Sent from my iPhone
             "antigravity_end_call", "antigravity_get_call_status",
             "antigravity_read_code", "antigravity_read_email",
             "antigravity_showcase_personas", "antigravity_apply_studio_master",
+            "antigravity_verify_audit_hashchain",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]
@@ -237,6 +275,10 @@ Sent from my iPhone
         status = handle_tool_call("antigravity_get_status", {})
         self.assertIn("engine", status)
         self.assertIn("playback_engine", status)
+
+        chain_res = handle_tool_call("antigravity_verify_audit_hashchain", {"limit": 5})
+        self.assertIn("integrity", chain_res)
+        self.assertTrue(chain_res["integrity"]["valid"])
 
     def test_zero_assumptions_integrity(self):
         """Test strict 38-assertion zero-assumption validation suite."""
