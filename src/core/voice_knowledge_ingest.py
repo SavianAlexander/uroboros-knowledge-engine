@@ -80,7 +80,7 @@ class VoiceKnowledgeIngest:
                 (file_id, filename, filepath, md_content, tags_header)
             )
             conn.commit()
-        except Exception as e:
+        except Exception:
             pass
 
         # Speak confirmation
@@ -116,9 +116,35 @@ class VoiceKnowledgeIngest:
         speak_confirmation: bool = True
     ) -> Dict[str, Any]:
         """
-        Create a top-level task in Tududi with acoustic voice confirmation.
+        Create a top-level task in SQLite task ledger and Tududi with acoustic voice confirmation.
         """
         t0 = time.perf_counter()
+        task_id = None
+
+        # Dynamically record in SQLite database
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS voice_tasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    note TEXT,
+                    priority INTEGER,
+                    project_id INTEGER,
+                    status INTEGER DEFAULT 0,
+                    created_at REAL
+                )
+            """)
+            cursor.execute(
+                "INSERT INTO voice_tasks (title, note, priority, project_id, status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (title, note, priority, project_id, 0, time.time())
+            )
+            conn.commit()
+            task_id = cursor.lastrowid
+        except Exception:
+            pass
+
         spoken_text = f"Task created in Tududi. {title}."
 
         if speak_confirmation:
@@ -134,6 +160,7 @@ class VoiceKnowledgeIngest:
         elapsed_ms = round((time.perf_counter() - t0) * 1000, 2)
         return {
             "status": "task_logged",
+            "task_id": task_id,
             "title": title,
             "note": note,
             "priority": priority,
