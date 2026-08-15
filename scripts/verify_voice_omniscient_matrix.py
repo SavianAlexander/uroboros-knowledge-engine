@@ -361,12 +361,26 @@ Sent from my iPhone
         self.assertEqual(stats_res["status"], "ok")
 
     def test_eve_market_arbitrage(self):
-        """Test live CCP ESI market arbitrage calculation."""
+        """Test live CCP ESI market arbitrage calculation with dynamic requests."""
         from src.domain.eve_market_arbitrage import EveMarketArbitrage
+        # 1. Default request
         arb = EveMarketArbitrage.analyze_commodity_arbitrage(commodity_name="Isogen", speak_report=False)
         self.assertEqual(arb["status"], "arbitrage_calculated")
         self.assertEqual(arb["commodity"], "Isogen")
-        self.assertGreater(arb["jita_sell_isk"], 0.0)
+        self.assertGreater(arb["source_sell_isk"], 0.0)
+
+        # 2. Dynamic commodity and custom regions from request
+        arb_custom = EveMarketArbitrage.analyze_commodity_arbitrage(
+            commodity_name="PLEX",
+            source_region="Domain",
+            target_region="Delve",
+            speak_report=False
+        )
+        self.assertEqual(arb_custom["status"], "arbitrage_calculated")
+        self.assertEqual(arb_custom["commodity"], "PLEX")
+        self.assertEqual(arb_custom["source_region"], "Domain")
+        self.assertEqual(arb_custom["target_region"], "Delve")
+        self.assertEqual(arb_custom["type_id"], 44992)
 
     def test_eve_pi_sentinel(self):
         """Test planetary interaction colony audit."""
@@ -411,11 +425,17 @@ Sent from my iPhone
         self.assertEqual(task_res["status"], "task_logged")
 
     def test_eve_tactical_threat_radar(self):
-        """Test nullsec tactical threat radar evaluation."""
+        """Test nullsec tactical threat radar evaluation with dynamic system resolution."""
         from src.domain.eve_threat_radar import EveTacticalThreatRadar
-        sweep = EveTacticalThreatRadar.evaluate_system_threat(target_system="G-EURJ", speak_alert=False)
-        self.assertEqual(sweep["status"], "sweep_completed")
-        self.assertIn(sweep["threat_level"], ["NOMINAL_GREEN", "ELEVATED_AMBER", "CRITICAL_RED"])
+        sweep_geurj = EveTacticalThreatRadar.evaluate_system_threat(target_system="G-EURJ", speak_alert=False)
+        self.assertEqual(sweep_geurj["status"], "sweep_completed")
+        self.assertEqual(sweep_geurj["system_id"], 30001155)
+        self.assertIn(sweep_geurj["threat_level"], ["NOMINAL_GREEN", "ELEVATED_AMBER", "CRITICAL_RED"])
+
+        # Dynamic system resolution
+        sweep_jita = EveTacticalThreatRadar.evaluate_system_threat(target_system="Jita", speak_alert=False)
+        self.assertEqual(sweep_jita["status"], "sweep_completed")
+        self.assertEqual(sweep_jita["system_id"], 30000142)
 
     def test_voice_fleet_telemetry_daemon(self):
         """Test autonomous ESI fleet telemetry sweep."""
