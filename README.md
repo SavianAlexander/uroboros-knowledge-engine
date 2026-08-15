@@ -212,10 +212,10 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as FastAPI / Model Manager
-    participant OS as Windows Task Manager (PS)
-    participant Llama as Llama Server Process
-    participant RAM as System RAM / VRAM Pool
+    participant App as "FastAPI / Model Manager"
+    participant OS as "Windows Task Manager (PowerShell)"
+    participant Llama as "Llama Server Process"
+    participant RAM as "System RAM / VRAM Pool"
 
     App->>OS: Query Running Processes (`llama-server.exe`)
     OS-->>App: Return Active Process List & PIDs
@@ -239,30 +239,30 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    User[User / Client App] --> API[FastAPI Server Layer]
-    API --> Intent[Intent Classifier & PII Guard]
-    Intent --> Bandit[Multi-Armed Bandit Query Router]
+    User["User / Client App"] --> API["FastAPI Server Layer"]
+    API --> Intent["Intent Classifier & PII Guard"]
+    Intent --> Bandit["Multi-Armed Bandit Query Router"]
     
-    subgraph Retrieval Engines
-        Bandit --> FTS[FTS5 Lexical Search (BM25)]
-        Bandit --> Vector[Ollama Nomic Vector Search]
-        Bandit --> HyDE[HyDE Contextual Expansion]
-        Bandit --> Graph[GraphRAG Wikilink 2-Hop]
+    subgraph Retrieval_Engines ["Retrieval Engines"]
+        Bandit --> FTS["FTS5 Lexical Search (BM25)"]
+        Bandit --> Vector["Ollama Nomic Vector Search"]
+        Bandit --> HyDE["HyDE Contextual Expansion"]
+        Bandit --> Graph["GraphRAG Wikilink 2-Hop"]
     end
 
-    FTS --> RRF[Reciprocal Rank Fusion & Time-Decay]
+    FTS --> RRF["Reciprocal Rank Fusion & Time-Decay"]
     Vector --> RRF
     HyDE --> RRF
     Graph --> RRF
 
-    RRF --> ACL[ACL Security Permission Trimming]
-    ACL --> Compress[MinHash Context Deduplication]
-    Compress --> Debate[Multi-Agent Adversarial Debate]
-    Debate --> Speculative[Speculative Draft Generator]
-    Speculative --> Guard{Hallucination Refusal Guard}
+    RRF --> ACL["ACL Security Permission Trimming"]
+    ACL --> Compress["MinHash Context Deduplication"]
+    Compress --> Debate["Multi-Agent Adversarial Debate"]
+    Debate --> Speculative["Speculative Draft Generator"]
+    Speculative --> Guard{"Hallucination Refusal Guard"}
 
-    Guard -- Confidence < 0.65 --> Refusal[Refusal & Missing Knowledge Gap Report]
-    Guard -- Confidence >= 0.65 --> Response[Final Answer + Source Line Citations]
+    Guard -- "Confidence < 0.65" --> Refusal["Refusal & Missing Knowledge Gap Report"]
+    Guard -- "Confidence >= 0.65" --> Response["Final Answer + Source Line Citations"]
 
     Response --> User
     Refusal --> User
@@ -273,13 +273,13 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     autonumber
-    participant File as Workspace File
-    participant Parser as Infrastructure Parsers
-    participant Dedupe as SHA-256 Hash Check
-    participant Chunker as Entropy Chunker
-    participant Embed as Ollama Nomic Embeddings
-    participant DB as SQLite WAL Database
-    participant FTS as FTS5 Virtual Table
+    participant File as "Workspace File"
+    participant Parser as "Infrastructure Parsers"
+    participant Dedupe as "SHA-256 Hash Check"
+    participant Chunker as "Entropy Chunker"
+    participant Embed as "Ollama Nomic Embeddings"
+    participant DB as "SQLite WAL Database"
+    participant FTS as "FTS5 Virtual Table"
 
     File->>Parser: Submit Document (PDF/DOCX/Audio/Image)
     Parser->>Parser: Validate Header & Structural Layout
@@ -302,13 +302,13 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant User as Client Web SPA
-    participant Router as Intent Router
-    participant FTS as FTS5 Lexical Search
-    participant Vec as Vector Cosine Store
-    participant RRF as Reciprocal Rank Fusion
-    participant Guard as Self-RAG Grounding Guard
-    participant LLM as Local LLM (Qwen 7B/14B)
+    participant User as "Client Web SPA"
+    participant Router as "Intent Router"
+    participant FTS as "FTS5 Lexical Search"
+    participant Vec as "Vector Cosine Store"
+    participant RRF as "Reciprocal Rank Fusion"
+    participant Guard as "Self-RAG Grounding Guard"
+    participant LLM as "Local LLM (Qwen 7B/14B)"
 
     User->>Router: Send Query ("What is revenue recognition?")
     Router->>Router: Classify Intent & Extract Query Operators (`ext:`, `tag:`)
@@ -856,16 +856,16 @@ Uroboros Knowledge Engine integrates natively with AI Agent skill protocols ([`n
 
 ```mermaid
 graph LR
-    Agent[AI Agent / Antigravity] --> Neuro[Neuro MCP Server]
-    Agent --> Tududi[Tududi Task Master MCP]
-    Neuro --> VectorDB[(SQLite Knowledge DB)]
-    Tududi --> Audit[Audit Trail & Habit Synchronization]
+    Agent["AI Agent / Antigravity"] --> Neuro["Neuro MCP Server"]
+    Agent --> Tududi["Tududi Task Master MCP"]
+    Neuro --> VectorDB[("SQLite Knowledge DB")]
+    Tududi --> Audit["Audit Trail & Habit Synchronization"]
     
-    subgraph Execution Loop
-        Neuro -- 1. Query Knowledge Context --> Agent
-        Agent -- 2. Log Execution Plan [PLAN, BUILD, TEST, AUDIT] --> Tududi
-        Agent -- 3. Ingest New Documents --> Neuro
-        Tududi -- 4. Mark Task Status Complete --> Audit
+    subgraph Execution_Loop ["Execution Loop"]
+        Neuro -- "1. Query Knowledge Context" --> Agent
+        Agent -- "2. Log Execution Plan (PLAN, BUILD, TEST, AUDIT)" --> Tududi
+        Agent -- "3. Ingest New Documents" --> Neuro
+        Tududi -- "4. Mark Task Status Complete" --> Audit
     end
 ```
 
@@ -887,10 +887,10 @@ The application supports containerized single-command deployment via `docker-com
 
 ```mermaid
 graph TD
-    Client[Host Browser / Desktop Client] -->|Port 8000| FastAPI[FastAPI App Server Container]
-    FastAPI -->|Port 11434| Ollama[Ollama Local LLM Container]
-    FastAPI -->|WAL Mode| DB[(Volume: ./know.db SQLite)]
-    FastAPI -->|Volume Mount| Workspace[(Volume: ./workspace Files)]
+    Client["Host Browser / Desktop Client"] -->|"Port 8000"| FastAPI["FastAPI App Server Container"]
+    FastAPI -->|"Port 11434"| Ollama["Ollama Local LLM Container"]
+    FastAPI -->|"WAL Mode"| DB[("Volume: ./know.db SQLite")]
+    FastAPI -->|"Volume Mount"| Workspace[("Volume: ./workspace Files")]
 ```
 
 ### Deployment Commands
@@ -927,16 +927,16 @@ Built in `frontend/` using React 19, Vite 6, and Tailwind CSS v4:
 
 ```mermaid
 graph TD
-    App[App.tsx Router] --> Dash[DashboardView.tsx]
-    App --> Workspace[WorkspaceView.tsx]
-    App --> Search[SearchView.tsx]
-    App --> Ingest[IngestionView.tsx]
-    App --> Graph[GraphView.tsx - 3D Force Graph]
-    App --> Chat[ChatView.tsx - RAG Assistant]
-    App --> Config[ConfigView.tsx]
-    App --> Settings[SettingsView.tsx]
-    App --> Login[LoginView.tsx]
-    App --> Cmd[CommandPalette.tsx - Ctrl+K Modal]
+    App["App.tsx Router"] --> Dash["DashboardView.tsx"]
+    App --> Workspace["WorkspaceView.tsx"]
+    App --> Search["SearchView.tsx"]
+    App --> Ingest["IngestionView.tsx"]
+    App --> Graph["GraphView.tsx - 3D Force Graph"]
+    App --> Chat["ChatView.tsx - RAG Assistant"]
+    App --> Config["ConfigView.tsx"]
+    App --> Settings["SettingsView.tsx"]
+    App --> Login["LoginView.tsx"]
+    App --> Cmd["CommandPalette.tsx - Ctrl+K Modal"]
 ```
 
 ### UI View Showcase

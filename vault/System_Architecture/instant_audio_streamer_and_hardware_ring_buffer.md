@@ -14,14 +14,14 @@ Traditional text-to-speech pipelines incur noticeable latency ($200\text{ms}-600
 
 ```mermaid
 flowchart TD
-    A[Spoken Alert Request] --> B{In-Memory LRU Cache?}
-    B -- Hit (<0.02ms) --> C[Direct In-Memory WAV Bytes]
-    B -- Miss (<20ms) --> D[Pre-Warmed Kokoro ONNX Session]
-    D --> E[Acoustic DSP Presets Master]
-    E --> F[Update In-Memory LRU Cache]
+    A["Spoken Alert Request"] --> B{"In-Memory LRU Cache?"}
+    B -- "Hit (<0.02ms)" --> C["Direct In-Memory WAV Bytes"]
+    B -- "Miss (<20ms)" --> D["Pre-Warmed Kokoro ONNX Session"]
+    D --> E["Acoustic DSP Presets Master"]
+    E --> F["Update In-Memory LRU Cache"]
     F --> C
-    C --> G[Persistent WASAPI Ring-Buffer Streamer]
-    G --> H[Speakers / Gaming Headset Output (<1ms)]
+    C --> G["Persistent WASAPI Ring-Buffer Streamer"]
+    G --> H["Speakers / Gaming Headset Output (<1ms)"]
 ```
 
 ---
