@@ -12,7 +12,7 @@ from src.domain.universal_crawler.vector_semantic_matrix import FastSemanticVect
 
 class TestOmniCrawler(unittest.TestCase):
     """
-    Unit test suite for Omni-Sovereign Deep Neural Harvester & Cross-Examination Matrix.
+    Unit test suite for Universal Deep Neural Harvester & Cross-Examination Matrix.
     """
 
     def test_neuromorphic_keystroke_dynamics(self):
@@ -24,7 +24,7 @@ class TestOmniCrawler(unittest.TestCase):
             self.assertGreater(d, 0.0)
 
     def test_omni_stealth_headers(self):
-        """Verify canonical TLS 1.3 headers for Omni-Sovereign session."""
+        """Verify canonical TLS 1.3 headers for Universal session."""
         session = OmniStealthSession(session_seed="test_omni_seed")
         headers = session.get_omni_headers("https://sutra.oslpr.org/api/medidas")
         self.assertEqual(headers["Host"], "sutra.oslpr.org")

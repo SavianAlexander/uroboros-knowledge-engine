@@ -264,7 +264,7 @@ def apply_spatial_panning(samples: np.ndarray, pan: float = 0.0) -> np.ndarray:
 
 
 # ----------------------------------------------------------------------
-# 5. Sovereign Awe & Magnetic Gravitas Harmonic DSP
+# 5. Executive Precision & Magnetic Gravitas Harmonic DSP
 # ----------------------------------------------------------------------
 def apply_subharmonic_chest_resonance(
     samples: np.ndarray,
@@ -332,7 +332,7 @@ def process_tactical_dsp_pipeline(
     """
     Master Audio DSP Processing Pipeline.
     Presets:
-    - 'SOVEREIGN_AWE': Sub-harmonic chest drive + Magnetic tube warmth + 4-band mastering EQ + 3D spatial air.
+    - 'EXECUTIVE_PRECISION': Sub-harmonic chest drive + Magnetic tube warmth + 4-band mastering EQ + 3D spatial air.
     - 'STOIC_GRAVITAS': Maximum sub-bass chest thump + Analog tube drive + Proximity compressor (Kratos / Master Chief).
     - 'MAGNETIC_INTIMATE': Velvet tube saturation + De-esser + Vocal presence + Haas 3D stereo widener.
     - 'STUDIO_MASTER' / 'CORTANA_MASTER': Full 4-band mastering EQ + Studio compressor + De-esser + Holographic presence.
@@ -346,7 +346,7 @@ def process_tactical_dsp_pipeline(
 
     p_upper = (preset or "STUDIO_MASTER").upper()
 
-    if p_upper in ("SOVEREIGN_AWE", "ALEXANDER_SOVEREIGN", "FREYA_VALKYRIE", "SOVEREIGN"):
+    if p_upper in ("EXECUTIVE_PRECISION", "ALEXANDER_SOVEREIGN", "FREYA_VALKYRIE", "SOVEREIGN"):
         # 1. 4-Band Mastering EQ
         eq = apply_parametric_mastering_eq(raw_samples, sample_rate)
         # 2. Sub-harmonic chest resonance (physical thump)

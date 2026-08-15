@@ -190,7 +190,7 @@ class EveTacticalThreatRadar:
             spoken_alert = f"Caution. Elevated traffic in solar system {target_system}. {jumps_count} stargate jumps and {ship_kills} combat losses recorded."
         else:
             threat_level = "NOMINAL_GREEN"
-            dsp = "TRANSCENDENTAL_AURA"
+            dsp = "HOLOGRAPHIC_AURA"
             cue = "wake"
             spoken_alert = f"Tactical radar sweep for solar system {target_system} is clear. Zero hostile losses in the past hour. Industrial operations nominal."
 

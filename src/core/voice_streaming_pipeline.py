@@ -67,7 +67,7 @@ class VoiceStreamingPipeliner:
         cls,
         token_generator: Iterator[str],
         persona: str = "AURA_SHIP_AI",
-        dsp_preset: str = "TRANSCENDENTAL_AURA",
+        dsp_preset: str = "HOLOGRAPHIC_AURA",
         sync: bool = False
     ) -> Dict[str, Any]:
         """

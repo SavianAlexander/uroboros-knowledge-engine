@@ -28,7 +28,7 @@ graph TD
 | **`CYNO_BEACON_ACTIVE`** | *"Alert. Cynosural beacon lit in solar system G-EURJ. Hostile capital jump bridge signature detected."* | `TACTICAL_ADVISOR` | `COMMANDER_TACTICAL` |
 | **`INTERDICTOR_BUBBLE_DROP`** | *"Warp disruption field deployed. Bubble radius 20 kilometers. Align to celestial exit vector."* | `TACTICAL_ADVISOR` | `COMMANDER_TACTICAL` |
 | **`MINING_COMPRESSION_CYCLE`**| *"Pillar of Autumn industrial core active in G-EURJ. Asteroid ore compression cycle complete."* | `INDUSTRY_OVERSEER` | `STUDIO_MASTER` |
-| **`FLEET_ANCHOR_COMMAND`** | *"All fleet wings: anchor on Fleet Commander flagship. Overheat propulsion modules."* | `FLEET_COMMANDER` | `SOVEREIGN_PRESENCE` |
+| **`FLEET_ANCHOR_COMMAND`** | *"All fleet wings: anchor on Fleet Commander flagship. Overheat propulsion modules."* | `FLEET_COMMANDER` | `EXECUTIVE_PRESENCE` |
 
 ---
 

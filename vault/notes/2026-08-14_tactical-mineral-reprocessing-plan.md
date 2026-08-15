@@ -8,4 +8,4 @@
 Refining 100k m3 of Spodumain in G-EURJ.
 
 ---
-*Captured via Sovereign Voice Ingest Engine*
+*Captured via Executive Voice Ingest Engine*

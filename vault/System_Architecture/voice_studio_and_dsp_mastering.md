@@ -20,7 +20,7 @@ graph TD
     Kokoro --> DSP["VoiceDSP Mastering Rack (Single-Pass Biquad)"]
     
     subgraph DSP_Presets["Acoustic DSP Presets"]
-        Sovereign["SOVEREIGN_PRESENCE (180Hz Warmth + 3.8kHz Crystal Presence)"]
+        Sovereign["EXECUTIVE_PRESENCE (180Hz Warmth + 3.8kHz Crystal Presence)"]
         Studio["STUDIO_MASTER (4.5kHz Broadcast Sheen)"]
         Tactical["COMMANDER_TACTICAL (2.8kHz Midrange Vocal Punch)"]
         Aura["HOLOGRAPHIC_AURA (3.4kHz & 8.5kHz Shimmer)"]
@@ -39,12 +39,12 @@ graph TD
 |---|---|---|---|
 | **`AURA_SHIP_AI`** | `bf_emma` | `HOLOGRAPHIC_AURA` | Holographic AI shipboard assistant. |
 | **`TACTICAL_ADVISOR`** | `af_sarah` | `COMMANDER_TACTICAL` | High-intelligibility combat warnings and threat vectors. |
-| **`FLEET_COMMANDER`** | `am_adam` | `SOVEREIGN_PRESENCE` | Flagship fleet broadcasts and anchoring orders. |
+| **`FLEET_COMMANDER`** | `am_adam` | `EXECUTIVE_PRESENCE` | Flagship fleet broadcasts and anchoring orders. |
 | **`INDUSTRY_OVERSEER`** | `bm_george` | `STUDIO_MASTER` | Broadcast telemetry for mining and planetary reactions. |
 | **`CALM_OPERATIONS`** | `af_bella` | `STUDIO_DIRECT` | Linear speech for DevOps, CI/CD, and SQLite operations. |
-| **`EXECUTIVE_DIRECTOR`** | `af_heart` | `SOVEREIGN_PRESENCE` | Executive briefings, business metrics, and stakeholder summaries. |
+| **`EXECUTIVE_DIRECTOR`** | `af_heart` | `EXECUTIVE_PRESENCE` | Executive briefings, business metrics, and stakeholder summaries. |
 | **`WARP_NAVIGATOR`** | `bf_isabella` | `HOLOGRAPHIC_AURA` | Lowsec route plotting and transit coordinates. |
-| **`ORACLE_ADVISOR`** | `af_sky` | `SOVEREIGN_PRESENCE` | Cryptographic and SOC 2 attestation memos. |
+| **`ORACLE_ADVISOR`** | `af_sky` | `EXECUTIVE_PRESENCE` | Cryptographic and SOC 2 attestation memos. |
 
 ---
 

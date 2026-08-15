@@ -308,7 +308,7 @@ class InstantVoiceClient:
         cls,
         text: str,
         voice: str = "bf_emma",
-        dsp_preset: str = "TRANSCENDENTAL_AURA",
+        dsp_preset: str = "HOLOGRAPHIC_AURA",
         speed: float = 1.0,
         sync: bool = False
     ) -> Dict[str, Any]:

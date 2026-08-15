@@ -70,7 +70,7 @@ class TestM2AdversarialVoiceMatrix(unittest.TestCase):
         """Test DSP filters and mastering on boundary audio buffers."""
         # 1. Empty buffer
         empty = np.array([], dtype=np.float32)
-        out_empty = VoiceDSP.apply_dsp_preset(empty, preset="SOVEREIGN_PRESENCE")
+        out_empty = VoiceDSP.apply_dsp_preset(empty, preset="EXECUTIVE_PRESENCE")
         self.assertEqual(len(out_empty), 0)
 
         # 2. All zeros buffer (silent)

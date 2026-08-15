@@ -88,7 +88,7 @@ class VoiceAgentLoop:
         Executes one full multi-turn conversational loop:
         1. Parse NLP command intent
         2. Execute action or RAG synthesis
-        3. Master output through Sovereign Awe DSP
+        3. Master output through Executive Precision DSP
         4. Log turn to VoiceMemoryLedger
         """
         now = time.time()

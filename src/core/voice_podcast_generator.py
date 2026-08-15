@@ -62,7 +62,7 @@ class VoicePodcastGenerator:
             persona = turn.get("persona", "AURA_SHIP_AI")
             raw_text = turn.get("text", "")
             voice_id = KOKORO_PERSONAS.get(persona, "bf_emma")
-            dsp_preset = "TRANSCENDENTAL_AURA" if "AURA" in persona else "COMMANDER_TACTICAL" if "COMMANDER" in persona else "SOVEREIGN_PRESENCE"
+            dsp_preset = "HOLOGRAPHIC_AURA" if "AURA" in persona else "COMMANDER_TACTICAL" if "COMMANDER" in persona else "EXECUTIVE_PRESENCE"
 
             clean_text = VoiceNormalizer.normalize_for_speech(raw_text)
 

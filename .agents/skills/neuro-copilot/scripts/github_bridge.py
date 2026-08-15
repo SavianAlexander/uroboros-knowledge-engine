@@ -139,6 +139,17 @@ def check_health():
     else:
         print("[EVE Bridge] Fleet Telemetry: Not Initialized")
 
+    # 8. Nomenclature & Lexical Clarity Bridge
+    try:
+        import nomenclature_bridge
+        findings = nomenclature_bridge.scan_repository(repo_root)
+        if not findings:
+            print("[Nomenclature] Lexical Clarity: OK (100% Clean)")
+        else:
+            print(f"[Nomenclature] Lexical Clarity: WARNING ({len(findings)} non-transparent terms detected)")
+    except Exception:
+        pass
+
     print("=================================================")
     return 0
 

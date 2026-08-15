@@ -113,7 +113,7 @@ class VoiceRAGBridge:
         cls,
         query: str,
         persona: str = "AURA_SHIP_AI",
-        dsp_preset: str = "TRANSCENDENTAL_AURA",
+        dsp_preset: str = "HOLOGRAPHIC_AURA",
         sync: bool = True,
         max_sentences: int = 2
     ) -> Dict[str, Any]:

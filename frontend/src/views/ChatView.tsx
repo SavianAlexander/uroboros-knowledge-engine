@@ -79,7 +79,7 @@ export default function ChatView() {
   // Audio & Interactive State
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const [voicePersona, setVoicePersona] = useState<string>(() => localStorage.getItem('neuro_voice_persona') || 'ALEXANDER_SOVEREIGN');
-  const [dspPreset, setDspPreset] = useState<string>(() => localStorage.getItem('neuro_voice_dsp') || 'SOVEREIGN_AWE');
+  const [dspPreset, setDspPreset] = useState<string>(() => localStorage.getItem('neuro_voice_dsp') || 'EXECUTIVE_PRECISION');
   const [voiceSpeed, setVoiceSpeed] = useState<number>(() => parseFloat(localStorage.getItem('neuro_voice_speed') || '0.92'));
   const [showVoiceStudio, setShowVoiceStudio] = useState<boolean>(false);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
@@ -94,7 +94,7 @@ export default function ChatView() {
   const [customEmma, setCustomEmma] = useState(0.10);
   const [customBella, setCustomBella] = useState(0.0);
   const [customSarah, setCustomSarah] = useState(0.0);
-  const [customDsp, setCustomDsp] = useState('SOVEREIGN_AWE');
+  const [customDsp, setCustomDsp] = useState('EXECUTIVE_PRECISION');
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
 
 
@@ -1271,7 +1271,7 @@ export default function ChatView() {
                   }}
                   className="bg-slate-800 border border-emerald-500/30 rounded-xl px-3 py-1.5 text-xs text-slate-100 outline-none focus:border-emerald-400 font-medium cursor-pointer"
                 >
-                  <option value="SOVEREIGN_AWE">Acoustic Warmth (Sub-Harmonic Chest + Tube Depth)</option>
+                  <option value="EXECUTIVE_PRECISION">Acoustic Warmth (Sub-Harmonic Chest + Tube Depth)</option>
                   <option value="STOIC_GRAVITAS">Gravitas (Deep Presence & Low-End Control)</option>
                   <option value="MAGNETIC_INTIMATE">Magnetic Intimate (Velvet Tube Warmth)</option>
                   <option value="STUDIO_MASTER">Studio Master (4-Band EQ + Compressor + De-Esser)</option>
@@ -1365,7 +1365,7 @@ export default function ChatView() {
                       onChange={(e) => setCustomDsp(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-amber-400"
                     >
-                      <option value="SOVEREIGN_AWE">Acoustic Warmth (Sub-Harmonic Chest Drive)</option>
+                      <option value="EXECUTIVE_PRECISION">Acoustic Warmth (Sub-Harmonic Chest Drive)</option>
                       <option value="STOIC_GRAVITAS">Gravitas (Deep Presence)</option>
                       <option value="MAGNETIC_INTIMATE">Magnetic Intimate (Velvet Warmth)</option>
                       <option value="STUDIO_MASTER">Studio Master (Broadcast Polish)</option>

@@ -77,7 +77,7 @@ class EvePISentinel:
             InstantVoiceClient.speak_instant(
                 text=spoken_report,
                 voice="bf_emma",
-                dsp_preset="TRANSCENDENTAL_AURA",
+                dsp_preset="HOLOGRAPHIC_AURA",
                 sync=False
             )
 

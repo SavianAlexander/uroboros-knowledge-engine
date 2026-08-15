@@ -230,7 +230,7 @@ class TestVoiceBridgeAndAPI:
         data = resp.json()
         assert data["default_voice"] in ("ALEXANDER_SOVEREIGN", "CORTANA_PRIME")
         assert any(p["id"] == "ALEXANDER_SOVEREIGN" for p in data["personas"])
-        assert any(d["id"] == "SOVEREIGN_AWE" for d in data["dsp_presets"])
+        assert any(d["id"] == "EXECUTIVE_PRECISION" for d in data["dsp_presets"])
 
 
         # 2. Test /v1/audio/speech
@@ -377,7 +377,7 @@ class TestExecutiveDSPAndPersonas:
             json={
                 "name": "Spartan Sovereign",
                 "weights": {"am_adam": 0.8, "bm_george": 0.2},
-                "dsp_preset": "SOVEREIGN_AWE",
+                "dsp_preset": "EXECUTIVE_PRECISION",
                 "description": "Test Spartan voice"
             }
         )
@@ -395,7 +395,7 @@ class TestExecutiveDSPAndPersonas:
             json={
                 "text": "Testing Sovereign preview.",
                 "voice": "SPARTAN_SOVEREIGN",
-                "dsp_preset": "SOVEREIGN_AWE"
+                "dsp_preset": "EXECUTIVE_PRECISION"
             }
         )
         assert prev_resp.status_code == 200

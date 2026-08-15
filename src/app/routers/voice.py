@@ -97,7 +97,7 @@ def clear_voice_cache_endpoint():
 class CustomPersonaRequest(BaseModel):
     name: str
     weights: Dict[str, float]
-    dsp_preset: Optional[str] = "SOVEREIGN_AWE"
+    dsp_preset: Optional[str] = "EXECUTIVE_PRECISION"
     description: Optional[str] = ""
 
 
@@ -105,7 +105,7 @@ class VoicePreviewRequest(BaseModel):
     text: Optional[str] = "Command recognized. Power and intent online."
     voice: Optional[str] = None
     weights: Optional[Dict[str, float]] = None
-    dsp_preset: Optional[str] = "SOVEREIGN_AWE"
+    dsp_preset: Optional[str] = "EXECUTIVE_PRECISION"
     speed: Optional[float] = 0.92
 
 
@@ -120,7 +120,7 @@ def list_voices_endpoint():
         all_blends = {}
 
     dsp_presets = [
-        {"id": "SOVEREIGN_AWE", "name": "Sovereign Awe (Sub-Harmonic Chest & Tube Warmth)", "description": "Visceral chest thump, magnetic tube saturation, dynamic limiter & 3D spatial air."},
+        {"id": "EXECUTIVE_PRECISION", "name": "Executive Precision (Sub-Harmonic Chest & Tube Warmth)", "description": "Visceral chest thump, magnetic tube saturation, dynamic limiter & 3D spatial air."},
         {"id": "STOIC_GRAVITAS", "name": "Stoic Gravitas (Kratos / Master Chief)", "description": "Maximum sub-bass chest resonance, analog tube drive & intimate proximity leveler."},
         {"id": "MAGNETIC_INTIMATE", "name": "Magnetic Intimate (Velvet Warmth)", "description": "Velvet mid-range tube saturation, vocal presence & Haas 3D stereo widener."},
         {"id": "STUDIO_MASTER", "name": "Studio Master (Cortana Broadcast)", "description": "4-Band Mastering EQ, Studio Compressor, De-Esser & Subtle Holographic Presence."},
@@ -154,7 +154,7 @@ def list_voices_endpoint():
     return {
         "status": "success",
         "default_voice": "ALEXANDER_SOVEREIGN",
-        "default_dsp": "SOVEREIGN_AWE",
+        "default_dsp": "EXECUTIVE_PRECISION",
         "personas": personas,
         "signature_blends": all_blends,
         "dsp_presets": dsp_presets,
@@ -184,7 +184,7 @@ def save_custom_persona_endpoint(req: CustomPersonaRequest):
         res = VoicePersonaBlender.save_custom_persona(
             name=req.name,
             weights=req.weights,
-            dsp_preset=req.dsp_preset or "SOVEREIGN_AWE",
+            dsp_preset=req.dsp_preset or "EXECUTIVE_PRECISION",
             description=req.description or ""
         )
         return res
@@ -217,7 +217,7 @@ def preview_voice_endpoint(req: VoicePreviewRequest):
             voice=target_voice,
             speed=req.speed or 0.92,
             response_format="wav",
-            dsp_preset=req.dsp_preset or "SOVEREIGN_AWE"
+            dsp_preset=req.dsp_preset or "EXECUTIVE_PRECISION"
         )
         if not audio_bytes:
             raise HTTPException(status_code=500, detail="Preview synthesis failed.")
@@ -277,7 +277,7 @@ def get_profiles_endpoint():
 class VoiceIntercomTurnRequest(BaseModel):
     prompt: str
     persona: Optional[str] = "AURA_SHIP_AI"
-    dsp_preset: Optional[str] = "TRANSCENDENTAL_AURA"
+    dsp_preset: Optional[str] = "HOLOGRAPHIC_AURA"
     use_rag: Optional[bool] = True
 
 
@@ -312,7 +312,7 @@ def voice_intercom_turn_endpoint(req: VoiceIntercomTurnRequest):
             voice=voice_id,
             speed=1.0,
             response_format="wav",
-            dsp_preset=req.dsp_preset or "TRANSCENDENTAL_AURA"
+            dsp_preset=req.dsp_preset or "HOLOGRAPHIC_AURA"
         )
 
         audio_b64 = base64.b64encode(audio_bytes).decode("ascii") if audio_bytes else ""

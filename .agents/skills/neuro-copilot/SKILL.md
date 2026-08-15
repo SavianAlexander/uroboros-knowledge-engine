@@ -25,7 +25,8 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 ├── workflow_hub_bridge.py   # 7. Master Multi-Phase Engineering Pipeline Orchestrator
 ├── eve_bridge.py            # 8. EVE Online Tactical Intelligence & Live Telemetry Bridge
 ├── system_recovery_bridge.py# 9. Windows System Resilience & Zero-Reboot Crash Recovery Bridge
-└── process_hygiene_bridge.py# 10. OS Process Hygiene, Zombie Elimination & System Perfection Bridge
+├── process_hygiene_bridge.py# 10. OS Process Hygiene, Zombie Elimination & System Perfection Bridge
+└── nomenclature_bridge.py   # 11. Nomenclature, Lexical Clarity & Automated Anti-Hype Normalization Bridge
 ```
 
 
@@ -101,6 +102,20 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../system_recovery_bridge.py flush_dns`: Flush DNS resolver cache and reset network stack state.
 - `python .../system_recovery_bridge.py clear_hung`: Identify and terminate unresponsive/hung background processes.
 - `python .../system_recovery_bridge.py self_test`: Run automated contract assertions for system recovery bridge.
+
+### 10. OS Process Hygiene & System Perfection Bridge (`scripts/process_hygiene_bridge.py`)
+- `python .../process_hygiene_bridge.py scan`: Run complete OS process hygiene audit, scanning for orphan Playwright browsers, headless workers, and dead console hosts.
+- `python .../process_hygiene_bridge.py clean`: Surgically eliminate orphan worker processes and reclaim leaked RAM/VRAM pools.
+- `python .../process_hygiene_bridge.py preflight`: Execute automated pre-flight process sanitization before executing test suites or builds.
+- `python .../process_hygiene_bridge.py postflight`: Execute post-flight cleanup sweep to ensure zero zombie processes persist.
+- `python .../process_hygiene_bridge.py self_test`: Run automated contract assertions for process hygiene bridge.
+
+### 11. Nomenclature & Lexical Clarity Bridge (`scripts/nomenclature_bridge.py`)
+- `python .../nomenclature_bridge.py scan`: Scan repository across code, UI, tests, and documentation for ostentatious or non-transparent wording.
+- `python .../nomenclature_bridge.py auto_fix`: Batch-normalize non-transparent words across all files with context-aware lore preservation.
+- `python .../nomenclature_bridge.py check`: Run continuous verification gate (exits with code 1 if any non-transparent terms are detected).
+- `python .../nomenclature_bridge.py normalize_readme`: Rebuild and validate master `README.md` and `README.es.md` files.
+- `python .../nomenclature_bridge.py self_test`: Run automated verification assertions for nomenclature bridge.
 
 ---
 
@@ -285,6 +300,10 @@ To ensure immediate readability, executive clarity, and frictionless collaborati
 | **51** | `clean` (Hygiene) | `process_hygiene_bridge.py`| Surgical Elimination of Orphan & Zombie Processes |
 | **52** | `preflight` | `process_hygiene_bridge.py`| Automated Pre-Flight Process Sanitization Sweep |
 | **53** | `postflight` | `process_hygiene_bridge.py`| Automated Post-Flight Process Cleanup Sweep |
+| **54** | `scan` (Nomenclature) | `nomenclature_bridge.py` | Full Repository Anti-Hype & Lexical Clarity Scan |
+| **55** | `auto_fix` (Nomenclature) | `nomenclature_bridge.py` | Automated Deterministic Nomenclature Normalization |
+| **56** | `check` (Nomenclature) | `nomenclature_bridge.py` | Continuous Verification Gate for Clean Nomenclature |
+| **57** | `normalize_readme` | `nomenclature_bridge.py` | Regenerate and Validate Master README Files |
 
 ---
 
@@ -299,4 +318,5 @@ To ensure immediate readability, executive clarity, and frictionless collaborati
 - Workflow Hub Bridge: [`scripts/workflow_hub_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/workflow_hub_bridge.py)
 - System Recovery Bridge: [`scripts/system_recovery_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/system_recovery_bridge.py)
 - Process Hygiene Bridge: [`scripts/process_hygiene_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/process_hygiene_bridge.py)
+- Nomenclature Bridge: [`scripts/nomenclature_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/nomenclature_bridge.py)
 

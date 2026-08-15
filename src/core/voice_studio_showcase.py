@@ -21,7 +21,7 @@ from src.core.voice_normalizer import VoiceNormalizer
 PERSONA_SHOWCASE_DEMOS = {
     "AURA_SHIP_AI": {
         "voice": "bf_emma",
-        "dsp": "TRANSCENDENTAL_AURA",
+        "dsp": "HOLOGRAPHIC_AURA",
         "demo_text": "Aura Shipboard Intelligence active. All starship defensive shields and warp drives are fully operational."
     },
     "TACTICAL_ADVISOR": {
@@ -31,7 +31,7 @@ PERSONA_SHOWCASE_DEMOS = {
     },
     "FLEET_COMMANDER": {
         "voice": "am_adam",
-        "dsp": "SOVEREIGN_PRESENCE",
+        "dsp": "EXECUTIVE_PRESENCE",
         "demo_text": "Fleet Commander on deck. Anchor on the flagship and align to the primary cynosural beacon."
     },
     "INDUSTRY_OVERSEER": {
@@ -46,7 +46,7 @@ PERSONA_SHOWCASE_DEMOS = {
     },
     "EXECUTIVE_DIRECTOR": {
         "voice": "af_heart",
-        "dsp": "SOVEREIGN_PRESENCE",
+        "dsp": "EXECUTIVE_PRESENCE",
         "demo_text": "Executive Director briefing. Quarterly revenue projections and asset reserves have exceeded target thresholds."
     },
     "WARP_NAVIGATOR": {

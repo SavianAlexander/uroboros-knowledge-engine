@@ -40,13 +40,13 @@ FLEET_TACTICAL_TEMPLATES = {
     "FLEET_ANCHOR_COMMAND": {
         "text": "All fleet wings in {system}: anchor on {ship} flagship. Overheat propulsion modules and lock primary broadcast target.",
         "persona": "FLEET_COMMANDER",
-        "dsp": "SOVEREIGN_PRESENCE",
+        "dsp": "EXECUTIVE_PRESENCE",
         "priority": "HIGH"
     },
     "GATECAMP_THREAT_INTERCEPT": {
         "text": "Directional scan warning in {system}. Heavy interdictor and recon cruiser signatures at stargate perimeter.",
         "persona": "AURA_SHIP_AI",
-        "dsp": "TRANSCENDENTAL_AURA",
+        "dsp": "HOLOGRAPHIC_AURA",
         "priority": "HIGH"
     }
 }

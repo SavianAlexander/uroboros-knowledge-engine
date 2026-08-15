@@ -520,14 +520,50 @@ def execute_process_hygiene_contract(bus: InterBridgeEventBus) -> BridgeContract
     return contract
 
 
+def execute_nomenclature_contract(bus: InterBridgeEventBus) -> BridgeContract:
+    """Executes Nomenclature and Lexical Clarity scan, publishing Contract I."""
+    t0 = time.time()
+    c_id = f"contract_nomenclature_{int(time.time() * 1000)}"
+    try:
+        import nomenclature_bridge
+        findings = nomenclature_bridge.scan_repository(search_root=bus.repo_root)
+        outputs = {
+            "nomenclature_status": "CLEAN" if len(findings) == 0 else "WARNING",
+            "findings_count": len(findings),
+            "findings": findings[:5]
+        }
+        shared_context = {
+            "nomenclature_clean": len(findings) == 0,
+            "nomenclature_violations_count": len(findings)
+        }
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="nomenclature_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="SUCCESS" if len(findings) == 0 else "WARNING",
+            outputs=outputs,
+            shared_context=shared_context
+        )
+    except Exception as e:
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="nomenclature_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="WARNING",
+            outputs={"error": str(e)}
+        )
+    bus.publish_contract(contract)
+    return contract
+
+
 # -------------------------------------------------------------------------
 # Parallel Asynchronous DAG Orchestrator
 # -------------------------------------------------------------------------
 
 async def run_parallel_bridge_pipeline_async(repo_root: str = ".") -> Dict[str, Any]:
     """
-    Executes all 10 bridges concurrently using an asynchronous DAG pipeline:
-    - Stage 1 (Parallel Independent Execution): Architecture, Tududi, GitHub, Visual Audit, Process Hygiene
+    Executes all 11 bridges concurrently using an asynchronous DAG pipeline:
+    - Stage 1 (Parallel Independent Execution): Architecture, Tududi, GitHub, Visual Audit, Process Hygiene, Nomenclature
     - Stage 2 (Parallel Context-Informed Execution): Snapshot Showcase, Neuro Vault, EVE Bridge
     - Stage 3 (Ledger Compilation & Audit Verification): Persist cryptographically signed ledger
     """
@@ -541,13 +577,14 @@ async def run_parallel_bridge_pipeline_async(repo_root: str = ".") -> Dict[str, 
 
     # Stage 1: Run Independent Bridges in Parallel ThreadPool
     print("[Stage 1/3] Launching Independent Bridges in Parallel (Async Gather)...")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
         stage_1_tasks = [
             loop.run_in_executor(executor, execute_architecture_contract, bus),
             loop.run_in_executor(executor, execute_tududi_contract, bus),
             loop.run_in_executor(executor, execute_github_contract, bus),
             loop.run_in_executor(executor, execute_visual_audit_contract, bus),
-            loop.run_in_executor(executor, execute_process_hygiene_contract, bus)
+            loop.run_in_executor(executor, execute_process_hygiene_contract, bus),
+            loop.run_in_executor(executor, execute_nomenclature_contract, bus)
         ]
         s1_results = await asyncio.gather(*stage_1_tasks)
 

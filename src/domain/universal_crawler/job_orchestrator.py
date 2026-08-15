@@ -46,7 +46,7 @@ from src.infrastructure.crawler_repository import (
 )
 
 """
-Unified Omni-Sovereign Job Orchestrator.
+Unified Universal Job Orchestrator.
 Coordinates single-runner execution with full DeepKnowledgeHarvester,
 Rule 902 Forensic Multi-Hashes, Hierarchical Merkle DAG, and In-Database Vectors.
 """

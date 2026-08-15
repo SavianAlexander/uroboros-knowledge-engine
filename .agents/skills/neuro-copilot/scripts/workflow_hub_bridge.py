@@ -53,6 +53,12 @@ def run_phase_audit(repo_root="."):
     except Exception as e:
         results["eve_empirical_audit"] = {"status": "skipped", "message": str(e)}
 
+    try:
+        import nomenclature_bridge
+        results["nomenclature"] = nomenclature_bridge.scan_repository(repo_root)
+    except Exception as e:
+        results["nomenclature"] = {"status": "skipped", "message": str(e)}
+
     return results
 
 

@@ -219,7 +219,7 @@ class EveMarketArbitrage:
             InstantVoiceClient.speak_instant(
                 text=spoken_brief,
                 voice="bf_emma",
-                dsp_preset="TRANSCENDENTAL_AURA",
+                dsp_preset="HOLOGRAPHIC_AURA",
                 sync=False
             )
 

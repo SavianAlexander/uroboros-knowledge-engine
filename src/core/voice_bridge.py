@@ -165,7 +165,7 @@ class VoiceBridge:
         """Ultra-low latency instant voice dispatch (<1ms cached, <25ms fresh)."""
         from src.core.instant_audio_streamer import InstantVoiceClient
         v = voice or "bf_emma"
-        d = dsp_preset or "TRANSCENDENTAL_AURA"
+        d = dsp_preset or "HOLOGRAPHIC_AURA"
         return InstantVoiceClient.speak_instant(text, voice=v, dsp_preset=d, speed=speed, sync=sync)
 
     @classmethod

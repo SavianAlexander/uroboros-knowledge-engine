@@ -11,7 +11,7 @@ import urllib.parse
 from typing import Dict, Any, Optional, Tuple, List
 
 """
-Omni-Sovereign Neuromorphic Stealth & Sub-Zero Flow Shaping Subsystem.
+Universal Neuromorphic Stealth & Sub-Zero Flow Shaping Subsystem.
 Features:
 1. Neuromorphic Keystroke & Typo Flight Dynamics (60-140ms flight time, error-correction backspaces)
 2. Sub-Zero Packet Flow Inter-Arrival Jitter (Gamma/Poisson probability distributions)
@@ -106,7 +106,7 @@ class OmniStealthSession:
         timeout: int = 15
     ) -> Tuple[Optional[bytes], Optional[str], int, Optional[str], Dict[str, Any]]:
         """
-        Execute Omni-Sovereign fetch with neuromorphic flow shaping and reading pauses.
+        Execute Universal fetch with neuromorphic flow shaping and reading pauses.
         """
         self.request_count += 1
         t_start = time.time()
@@ -152,7 +152,7 @@ class OmniStealthSession:
                     "latency_ms": (time.time() - t_start) * 1000.0,
                     "flow_jitter_sec": jitter_sec,
                     "reading_pause_sec": dwell_sec,
-                    "stealth_tier": "OMNI_SOVEREIGN"
+                    "stealth_tier": "UNIVERSAL"
                 }
                 return raw_data, content_type, status_code, None, telemetry
 

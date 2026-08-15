@@ -239,7 +239,7 @@ class VoicePersonaBlender:
         cls,
         name: str,
         weights: Dict[str, float],
-        dsp_preset: str = "SOVEREIGN_AWE",
+        dsp_preset: str = "EXECUTIVE_PRECISION",
         description: str = ""
     ) -> Dict[str, Any]:
         """Save a new custom persona persistently to disk and cache."""

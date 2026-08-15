@@ -173,7 +173,7 @@ def main():
         print("Commands:")
         print("  python know.py init                  - Initialize SQLite knowledge & crawler vaults")
         print("  python know.py search <query>        - Execute hybrid RRF search across entire corpus")
-        print("  python know.py crawl create ...      - Create an Omni-Sovereign crawler job")
+        print("  python know.py crawl create ...      - Create an Universal crawler job")
         print("  python know.py crawl swarm ...       - Launch concurrent worker swarm")
         print("  python know.py crawl list            - List active jobs and extraction telemetry")
         print("  python know.py crawl certificate ... - Generate Rule 902 FRE Evidence Certificate")
