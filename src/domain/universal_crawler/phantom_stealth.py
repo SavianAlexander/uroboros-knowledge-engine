@@ -55,17 +55,16 @@ class SyntheticBiometrics:
         """
         if persona == "Speed_Reader":
             words = char_count / 5.0
-            dwell = max(0.3, words / 35.0)
-            return random.lognormvariate(math.log(dwell + 0.1), 0.25)
+            dwell = min(1.0, max(0.2, (words / 1500.0) * 0.4))
+            return dwell
         elif persona == "Legal_Scholar":
-            # Deep analytical reading: ~180 words/min with frequent pauses on legal terms
             words = char_count / 5.5
-            dwell = max(1.2, words / 12.0)
-            return random.lognormvariate(math.log(dwell + 0.5), 0.35)
+            dwell = min(2.0, max(0.65, (words / 800.0) * 0.8))
+            return dwell
         else:
             words = char_count / 5.2
-            dwell = max(0.8, words / 20.0)
-            return random.lognormvariate(math.log(dwell + 0.2), 0.3)
+            dwell = min(1.5, max(0.4, (words / 1000.0) * 0.5))
+            return dwell
 
 class PersonaProfileManager:
     """Manages simulated human browsing personas with distinct operational profiles."""
@@ -73,27 +72,27 @@ class PersonaProfileManager:
     PERSONAS = {
         "Legal_Scholar": {
             "name": "Legal Scholar / Researcher",
-            "base_delay": (1.8, 4.0),
+            "base_delay": (0.05, 0.2),
             "burst_size": 15,
-            "burst_pause": (10.0, 22.0),
+            "burst_pause": (0.2, 0.5),
             "headers_profile": "Chrome_Win11_ES",
-            "dwell_multiplier": 1.4
+            "dwell_multiplier": 1.0
         },
         "Academic_Auditor": {
-            "name": "Academic Auditor",
-            "base_delay": (1.2, 2.8),
-            "burst_size": 22,
-            "burst_pause": (6.0, 14.0),
-            "headers_profile": "Safari_macOS_ES",
-            "dwell_multiplier": 1.1
+            "name": "Academic Compliance Auditor",
+            "base_delay": (0.05, 0.2),
+            "burst_size": 20,
+            "burst_pause": (0.2, 0.5),
+            "headers_profile": "Firefox_MacOS_ES",
+            "dwell_multiplier": 1.0
         },
-        "Phantom_Stealth": {
-            "name": "Apex Phantom (Maximum Stealth)",
-            "base_delay": (2.5, 5.5),
-            "burst_size": 10,
-            "burst_pause": (15.0, 30.0),
-            "headers_profile": "Firefox_Win11_ES",
-            "dwell_multiplier": 2.0
+        "Investigative_Journalist": {
+            "name": "Investigative Data Journalist",
+            "base_delay": (0.05, 0.2),
+            "burst_size": 25,
+            "burst_pause": (0.2, 0.5),
+            "headers_profile": "Edge_Win11_EN",
+            "dwell_multiplier": 1.0
         }
     }
 
@@ -101,15 +100,13 @@ class PersonaProfileManager:
     def get_persona(cls, name: str = "Legal_Scholar") -> Dict[str, Any]:
         return cls.PERSONAS.get(name, cls.PERSONAS["Legal_Scholar"])
 
-class PhantomStealthEngine:
-    """
-    Apex Phantom-Tier Network Engine.
-    Emulates canonical HTTP/2 headers, TLS 1.3 handshakes, and synthetic biometrics.
-    """
+class PhantomStealthSession:
+    """Enterprise stealth session implementing full synthetic biometrics & TLS evasion."""
 
-    def __init__(self, persona_name: str = "Phantom_Stealth"):
-        self.persona = PersonaProfileManager.get_persona(persona_name)
+    def __init__(self, persona_name: str = "Legal_Scholar", session_seed: Optional[str] = None):
         self.persona_name = persona_name
+        self.persona = PersonaProfileManager.get_persona(persona_name)
+        self.session_seed = session_seed or f"phantom_{time.time()}_{random.randint(1000, 9999)}"
         self.cookie_jar = http.cookiejar.CookieJar()
         self.ssl_context = self._create_ja4_ssl_context()
         self.opener = urllib.request.build_opener(
@@ -120,13 +117,11 @@ class PhantomStealthEngine:
         self.history_chain: List[str] = []
 
     def _create_ja4_ssl_context(self) -> ssl.SSLContext:
-        """Create high-entropy TLS 1.3 context matching modern browser JA4 fingerprints."""
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
         try:
-            # TLS 1.3 ciphers with ECDHE fallback
-            ctx.set_ciphers('TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384')
+            ctx.set_ciphers('TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256')
         except Exception:
             pass
         return ctx
@@ -150,7 +145,7 @@ class PhantomStealthEngine:
             "Sec-Fetch-User": "?1",
             "Sec-Fetch-Dest": "empty" if is_json else "document",
             "Referer": referer,
-            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "es-PR,es;q=0.9,es-419;q=0.8,en-US;q=0.7,en;q=0.6"
         }
         return headers
@@ -158,7 +153,7 @@ class PhantomStealthEngine:
     def phantom_fetch(
         self,
         url: str,
-        timeout: int = 25
+        timeout: int = 15
     ) -> Tuple[Optional[bytes], Optional[str], int, Optional[str], Dict[str, Any]]:
         """
         Execute Apex Phantom fetch with synthetic biometric dwell and human journey recording.
@@ -173,7 +168,9 @@ class PhantomStealthEngine:
             time.sleep(burst_delay)
 
         headers = self.get_canonical_headers(url, is_json=is_json)
-        req = urllib.request.Request(url, headers=headers)
+        req_headers = dict(headers)
+        req_headers.pop("Host", None) # Let urllib manage Host across redirects
+        req = urllib.request.Request(url, headers=req_headers)
 
         try:
             with self.opener.open(req, timeout=timeout) as res:
@@ -181,10 +178,16 @@ class PhantomStealthEngine:
                 content_type = res.headers.get("Content-Type", "").split(";")[0].strip()
                 raw_data = res.read()
 
-                # Decompress gzip
-                if res.headers.get("Content-Encoding") == "gzip":
+                enc = res.headers.get("Content-Encoding", "").lower()
+                if "gzip" in enc:
                     try:
                         raw_data = gzip.decompress(raw_data)
+                    except Exception:
+                        pass
+                elif "deflate" in enc:
+                    try:
+                        import zlib
+                        raw_data = zlib.decompress(raw_data)
                     except Exception:
                         pass
 
@@ -211,3 +214,6 @@ class PhantomStealthEngine:
             return None, "", e.code, f"HTTP {e.code}: {e.reason}", {"latency_ms": (time.time() - t_start) * 1000.0}
         except Exception as ex:
             return None, "", 0, str(ex), {"latency_ms": (time.time() - t_start) * 1000.0}
+
+# Backwards compatibility alias
+PhantomStealthEngine = PhantomStealthSession

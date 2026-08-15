@@ -1057,8 +1057,8 @@ def blast_radius(target_file: str):
         "blast_radius_severity": "HIGH" if len(impacted_files) >= 5 else ("MEDIUM" if len(impacted_files) >= 2 else "LOW")
     }, indent=2)
 
-def crucible(target_file: str = None):
-    """The Crucible: Multi-agent Red Team vs Blue Team adversarial fuzzing & security arena."""
+def security_fuzzing(target_file: str = None):
+    """Adversarial Fuzzing & Security Audit Engine."""
     attack_vectors = [
         {"name": "SQL Injection FTS5 Diacritics", "payload": "' OR '1'='1' UNION SELECT * FROM files --", "type": "INJECTION"},
         {"name": "Null-Byte String Poisoning", "payload": "filename\x00.png.exe", "type": "POISONING"},
@@ -1097,8 +1097,10 @@ def crucible(target_file: str = None):
         "results": results
     }, indent=2)
 
+crucible = security_fuzzing
+
 def darwin_optimize(target_path: str = "."):
-    """The Darwin Engine: Zero-dependency AST-level algorithmic complexity analyzer & auto-optimizer."""
+    """Zero-dependency AST-level algorithmic complexity analyzer & auto-optimizer."""
     src_dir = "src" if os.path.isdir("src") else "."
     optimizations = []
     
@@ -1721,7 +1723,10 @@ def main():
     blast_p = subparsers.add_parser("blast_radius", help="AST-level cognitive dependency & blast radius mapping")
     blast_p.add_argument("--file", "--target", dest="file", default="know.py", help="Target Python file path")
 
-    cruc_p = subparsers.add_parser("crucible", help="Red Team vs Blue Team adversarial fuzzing & exploit arena")
+    fuzz_p = subparsers.add_parser("security_fuzzing", help="Adversarial fuzzing and security vulnerability audit")
+    fuzz_p.add_argument("--file", "--target", dest="file", default="know.py", help="Optional target file to audit")
+
+    cruc_p = subparsers.add_parser("crucible", help="Adversarial fuzzing and security vulnerability audit (alias)")
     cruc_p.add_argument("--file", "--target", dest="file", default="know.py", help="Optional target file to audit")
 
     darw_p = subparsers.add_parser("darwin_optimize", help="Zero-dependency AST algorithmic complexity evolver")
@@ -1777,8 +1782,8 @@ def main():
     elif args.command == "blast_radius":
         print(blast_radius(args.file))
         sys.exit(0)
-    elif args.command == "crucible":
-        print(crucible(args.file))
+    elif args.command in ("security_fuzzing", "crucible"):
+        print(security_fuzzing(args.file))
         sys.exit(0)
     elif args.command == "darwin_optimize":
         print(darwin_optimize(args.path))

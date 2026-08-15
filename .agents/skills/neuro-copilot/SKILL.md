@@ -152,7 +152,7 @@ Whenever executing multi-step work or in planning mode:
 1. **Pre-Push Local Gate**:
    - Run domain tests: `python run_domain_tests.py` (Must report `0 failed, 0 errors`).
    - Run architecture doctor: `python scripts/architecture_cli.py doctor .`.
-   - Run security fuzzing: `python .agents/skills/neuro-copilot/scripts/github_bridge.py crucible`.
+   - Run security fuzzing: `python .agents/skills/neuro-copilot/scripts/github_bridge.py security_fuzzing`.
 2. **Post-Push Remote Monitoring & Confirmation**:
    - Immediately after `git push`, invoke `python .agents/skills/neuro-copilot/scripts/github_bridge.py verify_ci --wait`.
    - Actively watch all 4 remote GitHub Actions workflows:

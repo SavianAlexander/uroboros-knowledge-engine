@@ -1,5 +1,5 @@
 """
-Self-check unit test suite for SOTA Knowledge Engine features:
+Unit test suite for Multimodal Retrieval and Memory features:
 1. 2-Phase Matryoshka Vector Search
 2. Cognitive Swarm RAG Engine
 3. Agentic Long-Term Memory

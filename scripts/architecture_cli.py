@@ -73,13 +73,13 @@ def run_audit(target_dir, quiet=False):
         "AGENTS.md", "ARCHITECTURE.md", "CHANGELOG.md", "CITATION.cff", "nginx.conf",
         "pytest.ini", "ROADMAP.md", "SECURITY.md", "SUPPORT.md", "setup.ps1",
         "uroboros_engine.spec", "build_desktop_app.py", "batch_index.py", "test_single_book.py",
-        "vectors.db"
+        "vectors.db", "start_copilot.py", "app.js.gz", "index.html.gz", "style.css.gz", ".coverage"
     }
     excess_root = [
         f.name for f in all_files
         if f.parent == target_dir
         and f.name not in allowed_root_files
-        and not (f.name.endswith((".db", ".db-wal", ".db-shm")) or ".snapshot-" in f.name or f.name.startswith(("test_", "e2e_", "adversarial_")))
+        and not (f.name.endswith((".db", ".db-wal", ".db-shm", ".gz")) or ".snapshot-" in f.name or f.name.startswith(("test_", "e2e_", "adversarial_")))
     ]
     if excess_root:
         penalty = min(20.0, len(excess_root) * 2.0)

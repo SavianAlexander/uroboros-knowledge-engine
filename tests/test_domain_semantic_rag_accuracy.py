@@ -21,14 +21,16 @@ from src.domain.self_rag_critique import evaluate_relevance, evaluate_support, c
 from src.domain.legal_accuracy_engine import LegalAccuracyEngine
 
 
-class TestDomainSOTARAG(unittest.TestCase):
-    """Domain test suite for SOTA RAG, semantic entropy chunking, temporal decay, cross-lingual aligners, and legal accuracy."""
+class TestDomainSemanticRAGAccuracy(unittest.TestCase):
+    """Domain test suite for semantic RAG, entropy chunking, temporal decay, cross-lingual aligners, and legal accuracy."""
 
     def setUp(self):
-        self.test_dir = tempfile.mkdtemp(prefix="test_domain_sota_")
+        self.test_dir = tempfile.mkdtemp(prefix="test_domain_semantic_")
         self.db_backup = db.DB_FILE
+        self.know_db_backup = getattr(know, "DB_FILE", db.DB_FILE)
         self.active_backup = config.ACTIVE_DIR
         db.DB_FILE = os.path.join(self.test_dir, "test_know.db")
+        know.DB_FILE = db.DB_FILE
         config.ACTIVE_DIR = self.test_dir
         know.reset_db_connections()
         know.init_db()
@@ -36,6 +38,7 @@ class TestDomainSOTARAG(unittest.TestCase):
     def tearDown(self):
         know.reset_db_connections()
         db.DB_FILE = self.db_backup
+        know.DB_FILE = self.know_db_backup
         config.ACTIVE_DIR = self.active_backup
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)

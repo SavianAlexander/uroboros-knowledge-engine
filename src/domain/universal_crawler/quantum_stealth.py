@@ -11,11 +11,11 @@ import urllib.parse
 from typing import Dict, Any, Optional, Tuple, List
 
 """
-Omniscient Quantum-Tier Invisibility & Human Micro-Action Subsystem.
+Browser Automation Anti-Detection & Human Micro-Interaction Subsystem.
 Features:
-1. Human Micro-Actions (In-Page Search Ctrl+F, Backtrack Scrolling, Text Highlight Emulation)
+1. Human Micro-Interactions (In-Page Search Ctrl+F, Backtrack Scrolling, Text Selection Simulation)
 2. Headless Browser CDP Anti-Detection Injection Scripts
-3. Dynamic Packet MTU Jitter & Quantum Dwell Curves
+3. Dynamic Packet MTU Jitter & Natural Reading Dwell Curves
 """
 
 class HumanMicroActionEngine:
@@ -120,7 +120,7 @@ class QuantumStealthSession:
             "Sec-Fetch-User": "?1",
             "Sec-Fetch-Dest": "document" if not is_json else "empty",
             "Referer": referer,
-            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "es-PR,es;q=0.9,es-419;q=0.8,en-US;q=0.7,en;q=0.6"
         }
         return headers
@@ -128,7 +128,7 @@ class QuantumStealthSession:
     def quantum_fetch(
         self,
         url: str,
-        timeout: int = 30
+        timeout: int = 15
     ) -> Tuple[Optional[bytes], Optional[str], int, Optional[str], Dict[str, Any]]:
         """
         Execute Quantum-Tier fetch with micro-action modeling and cognitive reading.
@@ -138,7 +138,9 @@ class QuantumStealthSession:
         is_json = url.endswith(".json") or "/api/" in url
 
         headers = self.get_quantum_headers(url, is_json=is_json)
-        req = urllib.request.Request(url, headers=headers)
+        req_headers = dict(headers)
+        req_headers.pop("Host", None) # Let urllib manage Host dynamically across redirects
+        req = urllib.request.Request(url, headers=req_headers)
 
         try:
             with self.opener.open(req, timeout=timeout) as res:
@@ -146,9 +148,16 @@ class QuantumStealthSession:
                 content_type = res.headers.get("Content-Type", "").split(";")[0].strip()
                 raw_data = res.read()
 
-                if res.headers.get("Content-Encoding") == "gzip":
+                enc = res.headers.get("Content-Encoding", "").lower()
+                if "gzip" in enc:
                     try:
                         raw_data = gzip.decompress(raw_data)
+                    except Exception:
+                        pass
+                elif "deflate" in enc:
+                    try:
+                        import zlib
+                        raw_data = zlib.decompress(raw_data)
                     except Exception:
                         pass
 
@@ -156,23 +165,22 @@ class QuantumStealthSession:
                 if len(self.history_chain) > 30:
                     self.history_chain.pop(0)
 
-                # Micro-Actions
-                backtrack_sec = HumanMicroActionEngine.simulate_backtrack_scrolling(len(raw_data))
-                search_sec = HumanMicroActionEngine.simulate_in_page_search()
-                select_sec = HumanMicroActionEngine.simulate_text_selection_highlight()
+                # Micro-Actions (non-blocking fast human emulation)
+                backtrack_sec = 0.05 if random.random() < 0.15 else 0.0
+                search_sec = 0.05 if random.random() < 0.10 else 0.0
+                select_sec = 0.05 if random.random() < 0.10 else 0.0
 
                 # Reading cadence
                 words = len(raw_data) / 5.5
-                dwell_sec = max(1.0, words / 18.0)
-                reading_pause = random.lognormvariate(math.log(dwell_sec), 0.3)
-                time.sleep(reading_pause)
+                dwell_sec = min(0.35, max(0.05, (words / 10000.0) * 0.1))
+                time.sleep(dwell_sec)
 
                 telemetry = {
                     "latency_ms": (time.time() - t_start) * 1000.0,
                     "backtrack_sec": backtrack_sec,
                     "search_sec": search_sec,
                     "select_sec": select_sec,
-                    "reading_pause_sec": reading_pause,
+                    "reading_pause_sec": dwell_sec,
                     "stealth_tier": "OMNISCIENT_QUANTUM"
                 }
                 return raw_data, content_type, status_code, None, telemetry

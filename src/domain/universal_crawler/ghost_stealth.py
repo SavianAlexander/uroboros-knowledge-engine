@@ -184,7 +184,7 @@ class GhostStealthSession:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
             "Accept": "application/json, text/plain, */*" if is_json else "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
             "Accept-Language": "es-PR,es;q=0.9,es-419;q=0.8,en-US;q=0.7,en;q=0.6",
-            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Encoding": "gzip, deflate",
             "Connection": "keep-alive",
             "Upgrade-Insecure-Requests": "1" if not is_json else "0",
             "Sec-Fetch-Dest": "empty" if is_json else "document",
@@ -209,7 +209,7 @@ class GhostStealthSession:
     def ghost_fetch(
         self,
         url: str,
-        timeout: int = 25
+        timeout: int = 15
     ) -> Tuple[Optional[bytes], Optional[str], int, Optional[str], Dict[str, Any]]:
         """
         Execute ghost-tier invisible fetch with cognitive dwell timing and journey recording.
@@ -219,7 +219,9 @@ class GhostStealthSession:
         is_json = url.endswith(".json") or "/api/" in url
 
         headers = self.get_ghost_headers(url, is_json=is_json)
-        req = urllib.request.Request(url, headers=headers)
+        req_headers = dict(headers)
+        req_headers.pop("Host", None) # Let urllib manage Host dynamically across redirects
+        req = urllib.request.Request(url, headers=req_headers)
 
         try:
             with self.opener.open(req, timeout=timeout) as res:
@@ -227,10 +229,17 @@ class GhostStealthSession:
                 content_type = res.headers.get("Content-Type", "").split(";")[0].strip()
                 raw_data = res.read()
 
-                # Gzip decompression
-                if res.headers.get("Content-Encoding") == "gzip":
+                # Decompress
+                enc = res.headers.get("Content-Encoding", "").lower()
+                if "gzip" in enc:
                     try:
                         raw_data = gzip.decompress(raw_data)
+                    except Exception:
+                        pass
+                elif "deflate" in enc:
+                    try:
+                        import zlib
+                        raw_data = zlib.decompress(raw_data)
                     except Exception:
                         pass
 
@@ -238,12 +247,9 @@ class GhostStealthSession:
                 html_sample = raw_data.decode('utf-8', errors='ignore') if "html" in content_type else None
                 self.journey.record_visit(url, html_sample)
 
-                # Cognitive dwell pause based on content volume
-                dwell_sec = CognitiveDwellModel.calculate_dwell_seconds(
-                    len(raw_data),
-                    content_type=content_type,
-                    stealth_level=self.mode
-                )
+                # Cognitive dwell pause based on content volume (subtle 50-250ms)
+                words = len(raw_data) / 5.5
+                dwell_sec = min(0.35, max(0.05, (words / 10000.0) * 0.1))
                 self.last_dwell = dwell_sec
                 time.sleep(dwell_sec)
 

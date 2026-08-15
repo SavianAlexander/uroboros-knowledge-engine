@@ -1398,7 +1398,7 @@ async def stream_rag_pipeline_endpoint(q: str = "", query: str = "", top_k: int 
 
         # 2. Sub-Query Decomposition
         try:
-            from src.domain.sota_rag_engine import decompose_query
+            from src.domain.decomposed_hybrid_rag import decompose_query, execute_hybrid_decomposed_search
             sub_queries = decompose_query(search_q)
         except Exception:
             sub_queries = [search_q]
@@ -1408,7 +1408,7 @@ async def stream_rag_pipeline_endpoint(q: str = "", query: str = "", top_k: int 
 
         # 3. Retrieve & Compress Candidates
         try:
-            rag_res = execute_sota_rag_search(search_q, top_k=top_k)
+            rag_res = execute_hybrid_decomposed_search(search_q, top_k=top_k)
         except Exception:
             rag_res = {"top_candidates": [], "compressed_context": "", "compression_ratio_pct": 0}
 

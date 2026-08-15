@@ -95,7 +95,7 @@ class OmniStealthSession:
             "Sec-Fetch-User": "?1",
             "Sec-Fetch-Dest": "document" if not is_json else "empty",
             "Referer": referer,
-            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "es-PR,es;q=0.9,es-419;q=0.8,en-US;q=0.7,en;q=0.6"
         }
         return headers
@@ -103,7 +103,7 @@ class OmniStealthSession:
     def omni_fetch(
         self,
         url: str,
-        timeout: int = 30
+        timeout: int = 15
     ) -> Tuple[Optional[bytes], Optional[str], int, Optional[str], Dict[str, Any]]:
         """
         Execute Omni-Sovereign fetch with neuromorphic flow shaping and reading pauses.
@@ -112,11 +112,13 @@ class OmniStealthSession:
         t_start = time.time()
         is_json = url.endswith(".json") or "/api/" in url
 
-        # Flow Jitter
+        # Flow Jitter (subtle biological jitter 20-80ms)
         jitter_sec = NeuromorphicCognitiveEngine.simulate_flow_jitter()
 
         headers = self.get_omni_headers(url, is_json=is_json)
-        req = urllib.request.Request(url, headers=headers)
+        req_headers = dict(headers)
+        req_headers.pop("Host", None) # Let urllib manage Host dynamically across redirects
+        req = urllib.request.Request(url, headers=req_headers)
 
         try:
             with self.opener.open(req, timeout=timeout) as res:
@@ -124,9 +126,16 @@ class OmniStealthSession:
                 content_type = res.headers.get("Content-Type", "").split(";")[0].strip()
                 raw_data = res.read()
 
-                if res.headers.get("Content-Encoding") == "gzip":
+                enc = res.headers.get("Content-Encoding", "").lower()
+                if "gzip" in enc:
                     try:
                         raw_data = gzip.decompress(raw_data)
+                    except Exception:
+                        pass
+                elif "deflate" in enc:
+                    try:
+                        import zlib
+                        raw_data = zlib.decompress(raw_data)
                     except Exception:
                         pass
 
@@ -134,16 +143,15 @@ class OmniStealthSession:
                 if len(self.history_chain) > 30:
                     self.history_chain.pop(0)
 
-                # Cognitive Reading Dwell
+                # Cognitive Reading Dwell (subtle 50ms-250ms cadence)
                 words = len(raw_data) / 5.5
-                dwell_sec = max(1.0, words / 16.0)
-                reading_pause = random.lognormvariate(math.log(dwell_sec), 0.28)
-                time.sleep(reading_pause)
+                dwell_sec = min(0.35, max(0.05, (words / 10000.0) * 0.1))
+                time.sleep(dwell_sec)
 
                 telemetry = {
                     "latency_ms": (time.time() - t_start) * 1000.0,
                     "flow_jitter_sec": jitter_sec,
-                    "reading_pause_sec": reading_pause,
+                    "reading_pause_sec": dwell_sec,
                     "stealth_tier": "OMNI_SOVEREIGN"
                 }
                 return raw_data, content_type, status_code, None, telemetry

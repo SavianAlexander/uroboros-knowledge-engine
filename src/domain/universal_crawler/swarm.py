@@ -97,7 +97,7 @@ class CrawlSwarm:
             session = VoidStealthSession()
             fetch_fn = session.void_fetch
         elif mode in ("browser_automation", "phantom"):
-            session = PhantomStealthEngine()
+            session = PhantomStealthSession()
             fetch_fn = session.phantom_fetch
         elif mode in ("rotating_headers", "ghost"):
             session = GhostStealthSession()
@@ -122,7 +122,7 @@ class CrawlSwarm:
                 is_target_file = UrlFrontier.is_target_file_asset(url, config.file_extensions)
 
                 # Acquire per-domain polite rate limit slot
-                min_delay = 2.0 if config.stealth_mode in ("phantom", "ghost") else (0.5 if config.stealth_mode == "balanced" else 0.1)
+                min_delay = 0.5 if config.stealth_mode in ("phantom", "ghost") else (0.2 if config.stealth_mode == "balanced" else 0.05)
                 self.rate_limiter.acquire(url, min_delay=min_delay)
 
                 # Fetch via Stealth Engine

@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-08-15T05:04:51Z",
-  "total_views_discovered": 19,
+  "timestamp": "2026-08-15T05:29:59Z",
+  "total_views_discovered": 22,
   "categories": [
     "Configuration & Maintenance",
     "Core Application",
@@ -25,6 +25,30 @@
     "Light Theme"
   ],
   "views": [
+    {
+      "id": "tab_visual",
+      "title": "Visual Studio",
+      "path": "/?tab=visual",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Interactive view mode for Visual"
+    },
+    {
+      "id": "tab_mermaid",
+      "title": "Mermaid Studio",
+      "path": "/?tab=mermaid",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Interactive view mode for Mermaid"
+    },
+    {
+      "id": "tab_specs",
+      "title": "Specs Studio",
+      "path": "/?tab=specs",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Interactive view mode for Specs"
+    },
     {
       "id": "modal_logs",
       "title": "Logs Modal Overlay",

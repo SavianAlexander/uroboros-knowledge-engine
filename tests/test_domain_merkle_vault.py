@@ -36,8 +36,10 @@ class TestDomainMerkleVault(unittest.TestCase):
         self.docs_dir = os.path.join(self.test_dir, "vault_docs")
         os.makedirs(self.docs_dir, exist_ok=True)
         self.db_backup = db.DB_FILE
+        self.know_db_backup = getattr(know, "DB_FILE", db.DB_FILE)
         self.active_backup = config.ACTIVE_DIR
         db.DB_FILE = os.path.join(self.test_dir, "test_know.db")
+        know.DB_FILE = db.DB_FILE
         config.ACTIVE_DIR = self.docs_dir
         know.reset_db_connections()
         know.init_db()
@@ -53,6 +55,7 @@ class TestDomainMerkleVault(unittest.TestCase):
     def tearDown(self):
         know.reset_db_connections()
         db.DB_FILE = self.db_backup
+        know.DB_FILE = self.know_db_backup
         config.ACTIVE_DIR = self.active_backup
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)

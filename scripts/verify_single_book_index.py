@@ -5,14 +5,15 @@ and performing empirical RAG query verification.
 """
 import os, sys, time, json, sqlite3, logging
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
 
 from batch_index import index_single_file, norm_path
 from src.infrastructure.database import get_db, DB_FILE
 
 TEST_BOOK = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
+    root_dir,
     "Triage (Support)",
     "6369. Intermediate Accounting, 17th Edition_ Donald E. Kieso & Jerry J. Weygandt & Terry D. Warfield.pdf"
 )

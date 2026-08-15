@@ -1,9 +1,9 @@
 import unittest
-from src.domain.sota_rag_engine import decompose_query, compress_context_chunks, execute_sota_rag_search
+from src.domain.decomposed_hybrid_rag import decompose_query, compress_context_chunks, execute_hybrid_decomposed_search
 from fastapi.testclient import TestClient
 from src.app.main import app
 
-class TestSotaRagEngine(unittest.TestCase):
+class TestDecomposedHybridRagEngine(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
 
@@ -21,13 +21,20 @@ class TestSotaRagEngine(unittest.TestCase):
         compressed = compress_context_chunks(chunks, similarity_threshold=0.8)
         self.assertEqual(len(compressed), 2)
 
-    def test_03_execute_sota_rag_search(self):
-        res = execute_sota_rag_search("accounting standards", top_k=3)
+    def test_03_execute_hybrid_decomposed_search(self):
+        res = execute_hybrid_decomposed_search("accounting standards", top_k=3)
         self.assertEqual(res["status"], "success")
         self.assertIn("top_candidates", res)
         self.assertIn("compression_stats", res)
 
-    def test_04_sota_rag_endpoint(self):
+    def test_04_decomposed_rag_endpoint(self):
+        res = self.client.get("/api/search/decomposed-rag?query=accounting&top_k=3")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["status"], "success")
+        self.assertIn("sub_queries", data)
+
+    def test_05_legacy_sota_rag_endpoint_alias(self):
         res = self.client.get("/api/search/sota-rag?query=accounting&top_k=3")
         self.assertEqual(res.status_code, 200)
         data = res.json()

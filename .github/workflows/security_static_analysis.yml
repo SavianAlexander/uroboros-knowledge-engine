@@ -30,7 +30,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt || true
 
-      - name: Run The Crucible Adversarial Exploit Fuzzer
+      - name: Run Adversarial Security Fuzzer
         run: |
           python .agents/skills/neuro-copilot/scripts/github_bridge.py crucible
 
@@ -38,7 +38,7 @@ jobs:
         run: |
           python .agents/skills/neuro-copilot/scripts/github_bridge.py blast_radius --target know.py
 
-      - name: Run Darwin Complexity & Bloat Scanner
+      - name: Run Code Complexity & Bloat Scanner
         run: |
           python .agents/skills/neuro-copilot/scripts/github_bridge.py detect_bloat
           python .agents/skills/neuro-copilot/scripts/github_bridge.py darwin_optimize --target know.py

@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from src.domain.sota_rag_engine import execute_sota_rag_search
+from src.domain.decomposed_hybrid_rag import execute_hybrid_decomposed_search as execute_sota_rag_search
 from src.core.voice_bridge import VoiceBridge, KOKORO_PERSONAS
 from src.core.voice_normalizer import VoiceNormalizer
 from src.core.instant_audio_streamer import InstantVoiceClient, get_instant_streamer

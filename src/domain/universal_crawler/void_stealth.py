@@ -11,12 +11,12 @@ import urllib.parse
 from typing import Dict, Any, Optional, Tuple, List
 
 """
-Sovereign Void-Tier Invisibility & Behavioral Entropy Subsystem.
+Adaptive Network Session & Archival Fallback Subsystem.
 Features:
-1. Behavioral Entropy & Human Distraction Engine (Micro-idling, Tab-Switching pauses, Mouse jitters)
+1. Behavioral Timing & Interaction Simulation (Micro-idling, Tab-Switching pauses)
 2. Deterministic Canvas & WebGL Entropy Masking
-3. Autonomous Wayback Machine & Mirror Archive Fallback Resolver (Zero Dead Links)
-4. Full TLS 1.3 JA4 + HTTP/2 Pseudo-Ordering Pipeline
+3. Archival Wayback Machine & Mirror Archive Fallback Resolver (Resilient Retrieval)
+4. Full TLS 1.3 + HTTP/2 Pseudo-Ordering Pipeline
 """
 
 class BehavioralEntropyEngine:
@@ -127,7 +127,7 @@ class VoidStealthSession:
             "Sec-Fetch-User": "?1",
             "Sec-Fetch-Dest": "document" if not is_json else "empty",
             "Referer": referer,
-            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "es-PR,es;q=0.9,es-419;q=0.8,en-US;q=0.7,en;q=0.6"
         }
         return headers
@@ -135,7 +135,7 @@ class VoidStealthSession:
     def void_fetch(
         self,
         url: str,
-        timeout: int = 30
+        timeout: int = 15
     ) -> Tuple[Optional[bytes], Optional[str], int, Optional[str], Dict[str, Any]]:
         """
         Execute Void-Tier fetch with behavioral entropy and autonomous archival failover.
@@ -144,11 +144,13 @@ class VoidStealthSession:
         t_start = time.time()
         is_json = url.endswith(".json") or "/api/" in url
 
-        # 1. Behavioral entropy distraction pause
-        distraction_delay = BehavioralEntropyEngine.simulate_micro_distraction(frequency=0.10)
+        # 1. Behavioral entropy distraction pause (subtle 10-30ms)
+        distraction_delay = 0.02 if random.random() < 0.05 else 0.0
 
         headers = self.get_void_headers(url, is_json=is_json)
-        req = urllib.request.Request(url, headers=headers)
+        req_headers = dict(headers)
+        req_headers.pop("Host", None) # Let urllib manage Host dynamically across redirects
+        req = urllib.request.Request(url, headers=req_headers)
 
         used_fallback = False
         final_url = url
@@ -159,9 +161,16 @@ class VoidStealthSession:
                 content_type = res.headers.get("Content-Type", "").split(";")[0].strip()
                 raw_data = res.read()
 
-                if res.headers.get("Content-Encoding") == "gzip":
+                enc = res.headers.get("Content-Encoding", "").lower()
+                if "gzip" in enc:
                     try:
                         raw_data = gzip.decompress(raw_data)
+                    except Exception:
+                        pass
+                elif "deflate" in enc:
+                    try:
+                        import zlib
+                        raw_data = zlib.decompress(raw_data)
                     except Exception:
                         pass
 
@@ -171,14 +180,13 @@ class VoidStealthSession:
 
                 # Reading saccade pause
                 words = len(raw_data) / 5.5
-                dwell_sec = max(1.0, words / 15.0)
-                reading_pause = random.lognormvariate(math.log(dwell_sec), 0.3)
-                time.sleep(reading_pause)
+                dwell_sec = min(0.35, max(0.05, (words / 10000.0) * 0.1))
+                time.sleep(dwell_sec)
 
                 telemetry = {
                     "latency_ms": (time.time() - t_start) * 1000.0,
                     "distraction_sec": distraction_delay,
-                    "reading_pause_sec": reading_pause,
+                    "reading_pause_sec": dwell_sec,
                     "stealth_tier": "SOVEREIGN_VOID",
                     "wayback_fallback": used_fallback,
                     "canvas_mask": self.entropy_mask["webgl_renderer"]
@@ -210,3 +218,8 @@ class VoidStealthSession:
             return None, "", e.code, f"HTTP {e.code}: {e.reason}", {"latency_ms": (time.time() - t_start) * 1000.0}
         except Exception as ex:
             return None, "", 0, str(ex), {"latency_ms": (time.time() - t_start) * 1000.0}
+
+
+# Domain-driven session alias
+AdaptiveStealthSession = VoidStealthSession
+

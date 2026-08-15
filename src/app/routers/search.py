@@ -21,7 +21,7 @@ from src.core.domain.models import ValidateQueryRequest
 from src.domain.wikilink_parser import parse_wikilinks, slugify_title, normalize_target_title
 from src.domain.louvain_clustering import apply_louvain_communities
 from src.domain.graph_export import export_graph_to_graphml
-from src.domain.sota_rag_engine import execute_sota_rag_search
+from src.domain.decomposed_hybrid_rag import execute_hybrid_decomposed_search, execute_sota_rag_search
 from src.domain.self_rag_critique import critique_rag_passages
 from src.domain.reranker import compute_rrf_scores
 from src.domain.intent_classifier import classify_query_intent
@@ -869,14 +869,16 @@ def delete_query_bookmark_endpoint(name: Optional[str] = None, id: Optional[int]
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/api/search/decomposed-rag")
+@router.post("/api/search/decomposed-rag")
 @router.get("/api/search/sota-rag")
 @router.post("/api/search/sota-rag")
 def execute_sota_rag_endpoint(query: str = "", q: str = "", top_k: int = 5):
-    """Executes SOTA Sub-Query Decomposition, RRF-PageRank Hybrid Fusion, and Context Compression."""
+    """Executes Decomposed Sub-Query Decomposition, RRF-PageRank Hybrid Fusion, and Context Compression."""
     search_q = query or q or ""
     try:
-        from src.domain.sota_rag_engine import execute_sota_rag_search
-        return execute_sota_rag_search(search_q, top_k=top_k)
+        from src.domain.decomposed_hybrid_rag import execute_hybrid_decomposed_search
+        return execute_hybrid_decomposed_search(search_q, top_k=top_k)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
