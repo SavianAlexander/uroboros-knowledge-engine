@@ -323,6 +323,8 @@ Sent from my iPhone
             "antigravity_instant_speak", "antigravity_prewarm_voice_engine",
             "antigravity_get_instant_streamer_stats", "antigravity_voice_rag_query",
             "antigravity_synthesize_podcast_dialogue", "antigravity_voice_telemetry_sweep",
+            "antigravity_voice_record_note", "antigravity_voice_create_task",
+            "antigravity_check_threat_radar", "antigravity_stream_pipeline_speak",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]
@@ -355,6 +357,40 @@ Sent from my iPhone
 
         stats_res = handle_tool_call("antigravity_get_instant_streamer_stats", {})
         self.assertEqual(stats_res["status"], "ok")
+
+    def test_voice_streaming_pipeline(self):
+        """Test streaming clause pipeliner with token generator."""
+        from src.core.voice_streaming_pipeline import VoiceStreamingPipeliner
+        tokens = ["Commander, ", "all ", "starships ", "are ", "aligned. ", "Warp ", "drive ", "active."]
+        res = VoiceStreamingPipeliner.stream_and_speak(iter(tokens), persona="AURA_SHIP_AI", sync=False)
+        self.assertEqual(res["status"], "stream_completed")
+        self.assertGreater(res["clauses_count"], 0)
+
+    def test_voice_knowledge_ingest(self):
+        """Test voice note and task ingestion."""
+        from src.core.voice_knowledge_ingest import VoiceKnowledgeIngest
+        note_res = VoiceKnowledgeIngest.record_voice_note(
+            title="Tactical Mineral Reprocessing Plan",
+            content="Refining 100k m3 of Spodumain in G-EURJ.",
+            tags=["mining", "nullsec"],
+            speak_confirmation=False
+        )
+        self.assertEqual(note_res["status"], "note_recorded")
+        self.assertTrue(os.path.exists(note_res["filepath"]))
+
+        task_res = VoiceKnowledgeIngest.create_voice_task(
+            title="Refine Spodumain Batch",
+            priority=1,
+            speak_confirmation=False
+        )
+        self.assertEqual(task_res["status"], "task_logged")
+
+    def test_eve_tactical_threat_radar(self):
+        """Test nullsec tactical threat radar evaluation."""
+        from src.domain.eve_threat_radar import EveTacticalThreatRadar
+        sweep = EveTacticalThreatRadar.evaluate_system_threat(target_system="G-EURJ", speak_alert=False)
+        self.assertEqual(sweep["status"], "sweep_completed")
+        self.assertEqual(sweep["threat_level"], "NOMINAL_GREEN")
 
     def test_voice_fleet_telemetry_daemon(self):
         """Test autonomous ESI fleet telemetry sweep."""

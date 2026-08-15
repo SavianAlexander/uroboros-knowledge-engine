@@ -469,6 +469,57 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_voice_record_note",
+        "description": "Ingest a spoken brain dump note directly into vault/Notes and index into SQLite FTS5 database.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Note title."},
+                "content": {"type": "string", "description": "Transcript content of the note."},
+                "tags": {"type": "array", "items": {"type": "string"}, "description": "Categorization tags."},
+                "speak_confirmation": {"type": "boolean", "description": "Whether to speak acoustic confirmation."}
+            },
+            "required": ["title", "content"]
+        }
+    },
+    {
+        "name": "antigravity_voice_create_task",
+        "description": "Create a top-level task in Tududi with acoustic voice confirmation.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Task name/title."},
+                "note": {"type": "string", "description": "Detailed description."},
+                "priority": {"type": "integer", "description": "Task priority level."},
+                "project_id": {"type": "integer", "description": "Tududi project ID (default 14)."}
+            },
+            "required": ["title"]
+        }
+    },
+    {
+        "name": "antigravity_check_threat_radar",
+        "description": "Evaluate nullsec threat radar metrics in G-EURJ or adjacent systems and dispatch klaxon warnings.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "system": {"type": "string", "description": "Solar system to sweep (default G-EURJ)."},
+                "speak_alert": {"type": "boolean", "description": "Whether to speak tactical alert aloud."}
+            }
+        }
+    },
+    {
+        "name": "antigravity_stream_pipeline_speak",
+        "description": "Synthesize and stream text clauses with ultra-low perceived latency (<180ms TTFS).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "Full text stream to chunk and synthesize."},
+                "persona": {"type": "string", "description": "Voice persona."}
+            },
+            "required": ["text"]
+        }
+    },
+    {
         "name": "antigravity_get_status",
         "description": "Retrieve active neural voice engine status, available personas, memory footprint, and audio history.",
         "inputSchema": {
@@ -788,6 +839,36 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         from src.core.voice_fleet_telemetry_daemon import VoiceFleetTelemetryDaemon
         speak_alert = bool(args.get("speak_alert", True))
         return VoiceFleetTelemetryDaemon.execute_telemetry_sweep(speak_alert=speak_alert)
+
+    elif name == "antigravity_voice_record_note":
+        from src.core.voice_knowledge_ingest import VoiceKnowledgeIngest
+        title = args.get("title", "Voice Note")
+        content = args.get("content", "")
+        tags = args.get("tags")
+        speak = bool(args.get("speak_confirmation", True))
+        return VoiceKnowledgeIngest.record_voice_note(title=title, content=content, tags=tags, speak_confirmation=speak)
+
+    elif name == "antigravity_voice_create_task":
+        from src.core.voice_knowledge_ingest import VoiceKnowledgeIngest
+        title = args.get("title", "Voice Task")
+        note = args.get("note", "")
+        priority = int(args.get("priority", 1))
+        project_id = int(args.get("project_id", 14))
+        return VoiceKnowledgeIngest.create_voice_task(title=title, note=note, priority=priority, project_id=project_id, speak_confirmation=True)
+
+    elif name == "antigravity_check_threat_radar":
+        from src.domain.eve_threat_radar import EveTacticalThreatRadar
+        system = args.get("system", "G-EURJ")
+        speak = bool(args.get("speak_alert", True))
+        return EveTacticalThreatRadar.evaluate_system_threat(target_system=system, speak_alert=speak)
+
+    elif name == "antigravity_stream_pipeline_speak":
+        from src.core.voice_streaming_pipeline import VoiceStreamingPipeliner
+        text = args.get("text", "")
+        persona = args.get("persona") or VOICE_CONFIG["default_persona"]
+        # Split text into token chunks to simulate generator
+        tokens = [w + " " for w in text.split()]
+        return VoiceStreamingPipeliner.stream_and_speak(iter(tokens), persona=persona, sync=False)
 
     elif name == "antigravity_get_status":
         copilot = VoiceBridge.get_copilot()

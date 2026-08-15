@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sovereign Holographic Voice HUD</title>
+  <style>
+    :root {
+      --bg: rgba(7, 10, 18, 0.92);
+      --card-border: rgba(56, 189, 248, 0.3);
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.5);
+      --success: #22c55e;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      width: 420px;
+      min-height: 520px;
+      margin: 20px auto;
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px var(--accent-glow);
+      backdrop-filter: blur(25px);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .hud-top {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+    .hud-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    
+    /* Arc Reactor Visualizer */
+    .orb-box {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .arc-reactor {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #38bdf8 0%, #0284c7 50%, transparent 80%);
+      box-shadow: 0 0 40px #38bdf8, inset 0 0 20px #ffffff;
+      animation: pulse-hud 2.2s infinite ease-in-out;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .arc-reactor.listening {
+      background: radial-gradient(circle, #22c55e 0%, #15803d 50%, transparent 80%);
+      box-shadow: 0 0 50px #22c55e, inset 0 0 25px #ffffff;
+      animation: pulse-fast 1s infinite ease-in-out;
+    }
+    .arc-reactor.speaking {
+      background: radial-gradient(circle, #a855f7 0%, #7e22ce 50%, transparent 80%);
+      box-shadow: 0 0 60px #a855f7, inset 0 0 30px #ffffff;
+    }
+    @keyframes pulse-hud {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.12); opacity: 1; }
+    }
+    @keyframes pulse-fast {
+      0%, 100% { transform: scale(1.05); }
+      50% { transform: scale(1.25); }
+    }
+
+    /* Live Telemetry Panel */
+    .telemetry-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+    .stat-val { font-size: 0.85rem; font-weight: 700; color: var(--accent); margin-top: 3px; }
+
+    /* Dialogue Log */
+    .hud-log {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.8rem;
+      min-height: 60px;
+      max-height: 80px;
+      overflow-y: auto;
+      color: #cbd5e1;
+      line-height: 1.3;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-action {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: #0284c7;
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 14px;
+      box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+      transition: all 0.2s ease;
+    }
+    .btn-action:hover { background: #0369a1; }
+  </style>
+</head>
+<body>
+
+  <div class="hud-top">
+    <div class="hud-title">⚡ SOVEREIGN HUD</div>
+    <div class="badge" id="threatBadge">G-EURJ: NOMINAL</div>
+  </div>
+
+  <div class="orb-box">
+    <div class="arc-reactor" id="arcCore" onclick="toggleListening()"></div>
+  </div>
+
+  <div class="hud-log" id="hudLog">
+    Channel Standby. Click Arc Reactor to speak or ingest notes.
+  </div>
+
+  <div class="telemetry-grid">
+    <div class="stat-card">
+      <div class="stat-label">Pilot SP</div>
+      <div class="stat-val">74.2M Allocated</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Liquid ISK</div>
+      <div class="stat-val">281.8M ISK</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Ship</div>
+      <div class="stat-val">Porpoise (Mining)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Audio Streamer</div>
+      <div class="stat-val">0.01ms WASAPI</div>
+    </div>
+  </div>
+
+  <button class="btn-action" id="actionBtn" onclick="toggleListening()">🎙️ Open Mic Conversation</button>
+
+  <script>
+    let isListening = false;
+    let rec = null;
+    const orb = document.getElementById('arcCore');
+    const log = document.getElementById('hudLog');
+    const btn = document.getElementById('actionBtn');
+
+    function toggleListening() {
+      if (!isListening) {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+          log.innerText = "Speech recognition unsupported in browser.";
+          return;
+        }
+        rec = new SpeechRec();
+        rec.continuous = true;
+        rec.interimResults = false;
+        rec.lang = 'en-US';
+
+        rec.onstart = () => {
+          orb.className = 'arc-reactor listening';
+          log.innerText = "🟢 Listening... Speak into headset";
+          btn.innerText = "⏹️ Stop Listening";
+        };
+
+        rec.onresult = (e) => {
+          const transcript = e.results[e.results.length - 1][0].transcript.trim();
+          if (transcript) {
+            log.innerText = `🗣️ "${transcript}"`;
+            speakReply(transcript);
+          }
+        };
+
+        rec.start();
+        isListening = true;
+      } else {
+        if (rec) rec.stop();
+        orb.className = 'arc-reactor';
+        log.innerText = "Channel Standby.";
+        btn.innerText = "🎙️ Open Mic Conversation";
+        isListening = false;
+      }
+    }
+
+    function speakReply(text) {
+      orb.className = 'arc-reactor speaking';
+      const utter = new SpeechSynthesisUtterance("Acknowledged Commander. All systems in G-EURJ nominal.");
+      utter.onend = () => {
+        if (isListening) orb.className = 'arc-reactor listening';
+        else orb.className = 'arc-reactor';
+      };
+      window.speechSynthesis.speak(utter);
+    }
+  </script>
+</body>
+</html>
