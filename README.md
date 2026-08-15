@@ -1,27 +1,20 @@
 # Uroboros Knowledge Database Engine (Neuro Alexander)
 
 <p align="center">
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v2.1.0-blue.svg?style=flat-square" alt="Release v2.1.0" /></a>
-  <a href="https://savianalexander.github.io/uroboros-knowledge-engine/"><img src="https://img.shields.io/badge/Live%20Showcase-GitHub%20Pages-blueviolet?style=flat-square&logo=github" alt="Live Client Showcase" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml/badge.svg" alt="CI Pipeline" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml/badge.svg" alt="Domain Integration CI Suite" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/security_static_analysis.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/security_static_analysis.yml/badge.svg" alt="Security & Static Analysis Audit" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml/badge.svg" alt="Build & Package" /></a>
-  <img src="https://img.shields.io/badge/Security%20Audit-100%25%20Verified-emerald?style=flat-square" alt="Security Audit Passed" />
-  <img src="https://img.shields.io/badge/Tududi%20Task%20Master-Connected%20Project%20%2313-blue?style=flat-square" alt="Tududi Project #13" />
-  <a href="docs/soc2_type2_attestation.md"><img src="https://img.shields.io/badge/SOC%202%20Type%20II-Verified-green.svg?style=flat-square" alt="SOC 2 Type II" /></a>
+  <img src="https://img.shields.io/github/actions/workflow/status/SavianAlexander/uroboros-knowledge-engine/tests.yml?branch=master&style=flat-square" alt="Build Status" />
   <img src="https://img.shields.io/github/license/SavianAlexander/uroboros-knowledge-engine?style=flat-square" alt="License" />
   <img src="https://img.shields.io/badge/python-3.12-blue.svg?style=flat-square" alt="Python Version" />
-  <img src="https://img.shields.io/badge/FastAPI-0.141.1-teal.svg?style=flat-square" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/React-19.2.8-61dafb.svg?style=flat-square" alt="React" />
+  <img src="https://img.shields.io/badge/FastAPI-0.111.0-teal.svg?style=flat-square" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-19.0.1-61dafb.svg?style=flat-square" alt="React" />
   <img src="https://img.shields.io/badge/SQLite-FTS5-orange.svg?style=flat-square" alt="SQLite" />
+  <img src="https://img.shields.io/badge/Retrieval%20Subsystems-32-purple.svg?style=flat-square" alt="32 Retrieval Subsystems" />
+  <img src="https://img.shields.io/badge/Advanced%20Strategies-13-magenta.svg?style=flat-square" alt="13 Advanced Strategies" />
+  <img src="https://img.shields.io/badge/Architecture%20Optimizations-21-indigo.svg?style=flat-square" alt="21 Optimizations" />
+  <img src="https://img.shields.io/badge/Domain%20Modules-141-blue.svg?style=flat-square" alt="141 Domain Modules" />
   <img src="https://img.shields.io/badge/Test%20Suites-99-emerald.svg?style=flat-square" alt="99 Test Suites" />
   <img src="https://img.shields.io/badge/test%20pass%20rate-100%25-brightgreen.svg?style=flat-square" alt="Test Pass Rate" />
   <img src="https://img.shields.io/badge/code%20style-ponytail-indigo?style=flat-square" alt="Code Style" />
 </p>
-
-> [!TIP]
-> 🌐 **Interactive Client Showcase & UX Deck**: Explore the live interactive application showcase, multi-viewport UI captures, and architectural flow diagrams at **[savianalexander.github.io/uroboros-knowledge-engine](https://savianalexander.github.io/uroboros-knowledge-engine/)**.
 
 ---
 
@@ -35,40 +28,38 @@ Featuring **32 Core Retrieval Subsystems**, **13 Advanced Retrieval Strategies**
 
 ## Table of Contents
 
-- [1. Mathematical Foundations, Formal Proofs & Retrieval Algorithms](#1-mathematical-foundations-formal-proofs-retrieval-algorithms)
-- [2. Core Retrieval & Ranking Subsystems](#2-core-retrieval--ranking-subsystems)
-- [3. Advanced Retrieval & Synthesis Strategies](#3-advanced-retrieval--synthesis-strategies)
-- [4. Local Architecture & Optimization Matrix](#4-local-architecture--optimization-matrix)
+- [1. Mathematical Foundations, Formal Proofs & Retrieval Algorithms](#1-mathematical-foundations-formal-proofs--retrieval-algorithms)
+- [2. The 32 State-of-the-Art (SOTA) Architectural Engines](#2-the-32-state-of-the-art-sota-architectural-engines)
+- [3. The 13 Incomparable Frontier RAG Paradigms](#3-the-13-incomparable-frontier-rag-paradigms)
+- [4. The 21 Single-Node RAG Innovations Matrix](#4-the-21-single-node-rag-innovations-matrix)
 - [5. Hardware Single-Instance Process Memory Guard](#5-hardware-single-instance-process-memory-guard)
-- [6. End-to-End System Pipeline & Sequence Architecture](#6-end-to-end-system-pipeline-sequence-architecture)
+- [6. End-to-End System Pipeline & Sequence Architecture](#6-end-to-end-system-pipeline--sequence-architecture)
 - [7. Complete Codebase Directory Layout](#7-complete-codebase-directory-layout)
-- [8. API Router Architecture & Specifications (`src/app/routers/`)](#8-api-router-architecture-specifications-srcapprouters)
-- [9. Complete REST API Specifications & Curl Reference](#9-complete-rest-api-specifications-curl-reference)
+- [8. API Router Architecture & Specifications (`src/app/routers/`)](#8-api-router-architecture--specifications-srcapprouters)
+- [9. Complete REST API Specifications & Curl Reference](#9-complete-rest-api-specifications--curl-reference)
 - [10. Complete Taxonomy of All 135 Domain Modules (`src/domain/`)](#10-complete-taxonomy-of-all-135-domain-modules-srcdomain)
-- [11. Operations & Benchmark Utility Scripts Reference (`scripts/`)](#11-operations-benchmark-utility-scripts-reference-scripts)
-- [12. Document File Format Parsers & Extraction Pipeline](#12-document-file-format-parsers-extraction-pipeline)
-- [13. Complete SQLite Database DDL & Storage Schema](#13-complete-sqlite-database-ddl-storage-schema)
+- [11. Operations & Benchmark Utility Scripts Reference (`scripts/`)](#11-operations--benchmark-utility-scripts-reference-scripts)
+- [12. Document File Format Parsers & Extraction Pipeline](#12-document-file-format-parsers--extraction-pipeline)
+- [13. Complete SQLite Database DDL & Storage Schema](#13-complete-sqlite-database-ddl--storage-schema)
 - [14. Infrastructure Core Subsystems](#14-infrastructure-core-subsystems)
-- [15. Multi-Tenancy & Access Control (ACL) Security Architecture](#15-multi-tenancy-access-control-acl-security-architecture)
-- [16. Peer-to-Peer (P2P) LAN Mesh & Synchronization Protocol](#16-peer-to-peer-p2p-lan-mesh-synchronization-protocol)
-- [17. Performance SLA & Microsecond Latency Benchmarks](#17-performance-sla-microsecond-latency-benchmarks)
-- [18. RAG Triad Evaluation & Accuracy Benchmarking](#18-rag-triad-evaluation-accuracy-benchmarking)
-- [19. Advanced Query Filter & Operator Syntax Guide](#19-advanced-query-filter-operator-syntax-guide)
-- [20. Configuration Parameters & Environment Variables Reference](#20-configuration-parameters-environment-variables-reference)
+- [15. Multi-Tenancy & Access Control (ACL) Security Architecture](#15-multi-tenancy--access-control-acl-security-architecture)
+- [16. Peer-to-Peer (P2P) LAN Mesh & Synchronization Protocol](#16-peer-to-peer-p2p-lan-mesh--synchronization-protocol)
+- [17. Performance SLA & Microsecond Latency Benchmarks](#17-performance-sla--microsecond-latency-benchmarks)
+- [18. RAG Triad Evaluation & Accuracy Benchmarking](#18-rag-triad-evaluation--accuracy-benchmarking)
+- [19. Advanced Query Filter & Operator Syntax Guide](#19-advanced-query-filter--operator-syntax-guide)
+- [20. Configuration Parameters & Environment Variables Reference](#20-configuration-parameters--environment-variables-reference)
 - [21. Command Line Interface (CLI) Master Reference](#21-command-line-interface-cli-master-reference)
-- [22. Autonomous Co-Pilot & Task Master Integration (Tududi)](#22-autonomous-co-pilot-task-master-integration-tududi)
-- [23. Multilingual Tokenization & CJK Search Processing](#23-multilingual-tokenization-cjk-search-processing)
-- [24. Containerized Multi-Service Topology & Docker Orchestration](#24-containerized-multi-service-topology-docker-orchestration)
-- [25. Executive Trust & SOC 2 Type II Controls Matrix](#25-executive-trust-soc-2-type-ii-controls-matrix)
-- [26. Claude-Inspired Frontend Architecture & UI View Showcase](#26-claude-inspired-frontend-architecture-ui-view-showcase)
-- [27. Troubleshooting Matrix & Diagnostic Workflows](#27-troubleshooting-matrix-diagnostic-workflows)
-- [28. Security, PII Redaction, Zero-Knowledge & SOC 2 Compliance](#28-security-pii-redaction-zero-knowledge-soc-2-compliance)
-- [29. Quality Assurance, Testing & Compliance Framework](#29-quality-assurance-testing-compliance-framework)
-- [30. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol](#30-disaster-recovery-snapshot-migration-cold-restore-protocol)
-- [31. Hardware Sizing, GPU Allocation & VRAM Tuning Matrix](#31-hardware-sizing-gpu-allocation-vram-tuning-matrix)
-- [32. Code of Conduct & Technical Governance Framework](#32-code-of-conduct-technical-governance-framework)
-- [33. License](#33-license)
-- [📸 Comprehensive Visual Showcase & Client Journey](#-comprehensive-visual-showcase-client-journey)
+- [22. Autonomous Co-Pilot & Task Master Integration (Tududi)](#22-autonomous-co-pilot--task-master-integration-tududi)
+- [23. Multilingual Tokenization & CJK Search Processing](#23-multilingual-tokenization--cjk-search-processing)
+- [24. Containerized Multi-Service Topology & Docker Orchestration](#24-containerized-multi-service-topology--docker-orchestration)
+- [25. Executive Trust & SOC 2 Type II Controls Matrix](#25-executive-trust--soc-2-type-ii-controls-matrix)
+- [26. Frontend Architecture & React SPA View Showcase](#26-frontend-architecture--react-spa-view-showcase)
+- [27. Troubleshooting Matrix & Diagnostic Workflows](#27-troubleshooting-matrix--diagnostic-workflows)
+- [28. Security, PII Redaction, Zero-Knowledge & SOC 2 Compliance](#28-security-pii-redaction-zero-knowledge--soc-2-compliance)
+- [29. Quality Assurance, Testing & Compliance Framework](#29-quality-assurance-testing--compliance-framework)
+- [30. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol](#30-disaster-recovery-snapshot-migration--cold-restore-protocol)
+- [31. Hardware Sizing, GPU Allocation & VRAM Tuning Matrix](#31-hardware-sizing-gpu-allocation--vram-tuning-matrix)
+- [32. License](#32-license)
 
 ---
 
@@ -137,9 +128,9 @@ $$RE = 206.835 - 1.015 \left( \frac{\text{total words}}{\text{total sentences}} 
 
 ---
 
-## 2. Core Retrieval & Ranking Subsystems
+## 2. The 32 State-of-the-Art (SOTA) Architectural Engines
 
-Uroboros incorporates 32 complete modular subsystems divided into Core Acceleration, Code-Graph Analysis, Audio Processing, Fusion RAG, Privacy & Compliance, Telemetry, and Advanced Retrieval Strategies:
+Uroboros incorporates 32 complete architectural engines divided into Core Acceleration, Code-Graph Analysis, Fine-Tuning & Audio, Fusion RAG, Privacy & Compliance, Telemetry, and Frontier Paradigms:
 
 ### Core Acceleration & Swarm RAG
 1. **2-Phase Matryoshka Vector Search** ([`src/domain/vector_store.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/vector_store.py)): Coarse-to-fine vector retrieval (32-dim fast pass $\to$ 128-dim rescore).
@@ -166,15 +157,11 @@ Uroboros incorporates 32 complete modular subsystems divided into Core Accelerat
 16. **Autonomous SOC 2 & HIPAA Privacy Compliance Inspector** ([`src/domain/compliance_inspector.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/compliance_inspector.py)): PII (SSN, Email, API Key) auditing and automated masking.
 17. **Knowledge Graph Reasoning Path Visualizer** ([`src/domain/reasoning_visualizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/reasoning_visualizer.py)): Generates Mermaid.js graph markup for multi-hop pathways.
 18. **Incremental SHA-256 Vector Cache Guard** ([`src/domain/cache_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cache_guard.py)): Avoids redundant re-embedding using content SHA-256 hashes.
-19. **Dynamic Vault SQLite HyperGraph Router** ([`src/domain/hypergraph.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/hypergraph.py)): $N$-ary multi-entity relational hyper-edges enabling cross-domain graph search.
-20. **Louvain Modularity Community Clustering** ([`src/domain/graph_reasoning.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_reasoning.py)): Modularity-driven concept hub clustering and gap discovery.
-21. **Statutory Legal Compliance & Citation Audit** ([`src/domain/legal_audit.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/legal_audit.py)): Automated legal contract risk, statutory citations, and liability scoring.
-22. **Semantic Proposition-Level Document Diff** ([`src/domain/semantic_diff.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/semantic_diff.py)): Statement-level semantic delta comparison across revisions.
-23. **Master System Telemetry Scoreboard** ([`src/domain/system_scoreboard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/system_scoreboard.py)): Aggregates health metrics across all engines.
+19. **Master System Telemetry Scoreboard** ([`src/domain/system_scoreboard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/system_scoreboard.py)): Aggregates health metrics across all engines.
 
 ---
 
-## 3. Advanced Retrieval & Synthesis Strategies
+## 3. The 13 Incomparable Frontier RAG Paradigms
 
 1. **⚔️ Counterfactual RAG & Multi-Scenario Stress Testing** ([`src/domain/counterfactual_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/counterfactual_rag.py)): Generates counter-hypotheses and searches for refutations or edge cases before output.
 2. **🌲 RAPTOR Tree Indexer** ([`src/domain/raptor_tree_indexer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/raptor_tree_indexer.py)): Recursive Abstractive Processing constructing hierarchical multi-level summary trees.
@@ -183,7 +170,7 @@ Uroboros incorporates 32 complete modular subsystems divided into Core Accelerat
 5. **🛠️ Inline Self-Correction Grounding Guard** ([`src/domain/auto_correct_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/auto_correct_rag.py)): Identifies ungrounded claims during text generation and patches them with verified context in real time.
 6. **🧹 Semantic Entropy Context Compressor** ([`src/domain/adaptive_context_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/adaptive_context_compressor.py)): Strips filler prose while preserving numbers, code, and entities (saving up to 60% prompt tokens).
 7. **🌐 Zero-Shot Cross-Lingual RAG Fusion** ([`src/domain/cross_lingual_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cross_lingual_fusion.py)): Queries English against multi-lingual document vaults (Spanish, German, French) with zero translation latency.
-8. **🔐 Cryptographic Data Masker** ([`src/domain/zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py)): Salt-hashed zero-knowledge verification proofs for sensitive document payloads.
+8. **🔐 Quantum-Safe Zero-Knowledge Data Masker** ([`src/domain/zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py)): Salt-hashed zero-knowledge verification proofs for sensitive document payloads.
 9. **🎯 Sub-1ms Speculative Query Intent Router** ([`src/domain/intent_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/intent_router.py)): Classifies intent in sub-1ms and routes execution to the optimal RAG pipeline.
 10. **🔗 Knowledge Graph Self-Healing & Wikilink Synthesizer** ([`src/domain/graph_link_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_link_synthesizer.py)): Scans unlinked concept nodes across raw vault files and automatically inserts missing semantic `[[wikilinks]]`.
 11. **🌊 Specular Speculative Context Streaming Guard** ([`src/domain/speculative_streamer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_streamer.py)): Pre-tokenizes and speculative-streams retrieved context in parallel with decoding (< 10ms $TTFT$).
@@ -192,9 +179,9 @@ Uroboros incorporates 32 complete modular subsystems divided into Core Accelerat
 
 ---
 
-## 4. Local Architecture & Optimization Matrix
+## 4. The 21 Single-Node RAG Innovations Matrix
 
-| # | Feature Subsystem | Module File Path | API Endpoint | Technical Description & Performance |
+| # | Innovation Pillar | Module File Path | API Endpoint | Incomparable Moat over Cloud Services |
 |---| :--- | :--- | :--- | :--- |
 | **1** | **Speculative RAG Synthesizer** | [`src/domain/speculative_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_rag.py) | `POST /api/search/speculative-rag` | Synthesizes and scores 3 candidate draft representations in parallel, cutting context latency by **~78%**. |
 | **2** | **Temporal Knowledge Lineage** | [`src/domain/temporal_rag_lineage.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/temporal_rag_lineage.py) | `GET/POST /api/knowledge/temporal-lineage` | Tracks document version history and relationship evolution across time ($t_0 \to t_1 \to t_2$). |
@@ -244,23 +231,6 @@ sequenceDiagram
     Note over Llama,RAM: Auto-Unload Model Weights after 5m Inactivity (`OLLAMA_KEEP_ALIVE=5m`)
 ```
 
-### 5.1 Intelligent 4-Tier Neural Model Router
-
-```mermaid
-flowchart TD
-    Prompt["Incoming Prompt / Inference Request"] --> Router["src/core/model_router.py 4-Tier Neural Router"]
-
-    Router -- "Task: Micro / Intent / Keywords / HyDE" --> Micro["Micro Tier: qwen2.5:0.5b / smollm2:1.7b<br/>Latency: < 50ms | Temp: 0.1 | Context: 4k"]
-    Router -- "Task: Code / AST / Refactor / SQL" --> Coder["Coder Tier: qwen2.5-coder:14b / 7b<br/>Deep Programming Reasoning | Temp: 0.2"]
-    Router -- "Task: Long Doc Digest > 8k Tokens" --> LongCtx["Long-Context Tier: phi4-mini:latest<br/>128k Token Dynamic Context Window"]
-    Router -- "Task: Conversational RAG / Briefing" --> Master["Master RAG Tier: qwen2.5:7b<br/>32k Context | ~90 tok/s | Temp: 0.3-0.7"]
-
-    Micro --> OllamaClient["src/core/model_manager.py OllamaClient<br/>Dynamic num_ctx Scaling + format:json"]
-    Coder --> OllamaClient
-    LongCtx --> OllamaClient
-    Master --> OllamaClient
-```
-
 ---
 
 ## 6. End-to-End System Pipeline & Sequence Architecture
@@ -269,30 +239,30 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    User["User / Client App"] --> API["FastAPI Server Layer"]
-    API --> Intent["Intent Classifier & PII Guard"]
-    Intent --> Bandit["Multi-Armed Bandit Query Router"]
+    User[User / Client App] --> API[FastAPI Server Layer]
+    API --> Intent[Intent Classifier & PII Guard]
+    Intent --> Bandit[Multi-Armed Bandit Query Router]
     
-    subgraph Retrieval_Engines ["Retrieval Engines"]
-        Bandit --> FTS["FTS5 Lexical Search (BM25)"]
-        Bandit --> Vector["Ollama Nomic Vector Search"]
-        Bandit --> HyDE["HyDE Contextual Expansion"]
-        Bandit --> Graph["GraphRAG Wikilink 2-Hop"]
+    subgraph Retrieval Engines
+        Bandit --> FTS[FTS5 Lexical Search (BM25)]
+        Bandit --> Vector[Ollama Nomic Vector Search]
+        Bandit --> HyDE[HyDE Contextual Expansion]
+        Bandit --> Graph[GraphRAG Wikilink 2-Hop]
     end
 
-    FTS --> RRF["Reciprocal Rank Fusion & Time-Decay"]
+    FTS --> RRF[Reciprocal Rank Fusion & Time-Decay]
     Vector --> RRF
     HyDE --> RRF
     Graph --> RRF
 
-    RRF --> ACL["ACL Security Permission Trimming"]
-    ACL --> Compress["MinHash Context Deduplication"]
-    Compress --> Debate["Multi-Agent Adversarial Debate"]
-    Debate --> Speculative["Speculative Draft Generator"]
-    Speculative --> Guard{"Hallucination Refusal Guard"}
+    RRF --> ACL[ACL Security Permission Trimming]
+    ACL --> Compress[MinHash Context Deduplication]
+    Compress --> Debate[Multi-Agent Adversarial Debate]
+    Debate --> Speculative[Speculative Draft Generator]
+    Speculative --> Guard{Hallucination Refusal Guard}
 
-    Guard -- "Confidence < 0.65" --> Refusal["Refusal & Missing Knowledge Gap Report"]
-    Guard -- "Confidence >= 0.65" --> Response["Final Answer + Source Line Citations"]
+    Guard -- Confidence < 0.65 --> Refusal[Refusal & Missing Knowledge Gap Report]
+    Guard -- Confidence >= 0.65 --> Response[Final Answer + Source Line Citations]
 
     Response --> User
     Refusal --> User
@@ -554,14 +524,10 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 | Script File Path | Target Operation & Execution Syntax | Description |
 | :--- | :--- | :--- |
 | [`scripts/architecture_cli.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/architecture_cli.py) | `python scripts/architecture_cli.py audit .` | Verifies clean architecture layer boundaries & imports |
-| [`scripts/crawler_cli.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/crawler_cli.py) | `python scripts/crawler_cli.py crawl --url <URL>` | High-concurrency crawler with multi-format parsing |
 | [`scripts/backup_db.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/backup_db.py) | `python scripts/backup_db.py --output snapshot.db` | Executes non-blocking online SQLite WAL backup |
 | [`scripts/update_test_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/update_test_ledger.py) | `python scripts/update_test_ledger.py --soc2` | Generates SOC 2 Type II attestation & coverage ledger |
 | [`scripts/benchmark_engine.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/benchmark_engine.py) | `python scripts/benchmark_engine.py --runs 100` | Benchmarks retrieval latency, QPS, & precision |
-| [`scripts/fault_injection_harness.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/fault_injection_harness.py) | `python scripts/fault_injection_harness.py --duration 30` | Injects fault concurrency & resilience testing |
-| [`scripts/verify_system_integrity.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/verify_system_integrity.py) | `python scripts/verify_system_integrity.py` | Full end-to-end system and vault integrity check |
-| [`scripts/verify_voice_audio_matrix.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/verify_voice_audio_matrix.py) | `python scripts/verify_voice_audio_matrix.py` | Voice synthesis & audio routing verification |
-| [`scripts/verify_empirical_models.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/verify_empirical_models.py) | `python scripts/verify_empirical_models.py` | Empirical retrieval accuracy and invariant scoring |
+| [`scripts/chaos_monkey.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/chaos_monkey.py) | `python scripts/chaos_monkey.py --duration 30` | Injects fault concurrency & memory stress |
 | [`scripts/audit_ui_playwright.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/audit_ui_playwright.py) | `python scripts/audit_ui_playwright.py` | Automated Playwright end-to-end UI audit |
 | [`scripts/capture_showcase.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/capture_showcase.py) | `python scripts/capture_showcase.py` | Captures HD application screenshots |
 | [`scripts/stress_test_domain.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/stress_test_domain.py) | `python scripts/stress_test_domain.py` | Multithreaded domain algorithm stress test |
@@ -570,20 +536,17 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 
 ## 12. Document File Format Parsers & Extraction Pipeline
 
-Uroboros features a zero-dependency, multi-format document parsing engine ([`src/infrastructure/parsers.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/parsers.py)):
+Uroboros features a multi-format document parsing engine ([`src/infrastructure/parsers.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/infrastructure/parsers.py)):
 
 | Extension / Format | Underlying Library | Structural Extraction Features |
 | :--- | :--- | :--- |
-| **`.ipynb`** (Jupyter) | Native `json` / stdlib | Markdown narrative cells, LaTeX equations, Python code blocks, and stdout/stderr execution outputs. |
-| **`.md` / `.markdown`** (Obsidian) | Native stdlib regex | YAML frontmatter (`tags`, `aliases`, `date`), Dataview fields (`[key:: value]`), `#tag` taxonomy, and `[[wikilinks]]`. |
-| **`.pptx`** (PowerPoint) | `zipfile` + `xml.etree` | Slide titles, text boxes, bullet lists, shapes, and hidden speaker notes (`notesSlide*.xml`). |
-| **`.csv` / `.tsv` / `.tab`** | Native `csv` / `csv.Sniffer` | Delimiter detection, column data type inference (`Integer`, `Float`, `Date/ISO`, `String`), and Markdown preview table. |
-| **`.pdf`** | `fitz` / `pypdf` / OCR | PyMuPDF text extraction, page number indexing, PDF form field parsing, and Tesseract OCR fallback. |
+| **`.pdf`** | `pypdf` | Text extraction, page number indexing, PDF form field parsing. |
 | **`.docx`** | `python-docx` | Paragraph extraction, XML table cell mapping, header/footer parsing. |
 | **`.xlsx` / `.xls`** | `openpyxl` | Spreadsheet sheet-by-sheet text mapping, cell coordinate formulas. |
 | **`.rtf`** | `striprtf` | Control-word stripping, formatted rich text plain text conversion. |
-| **`.mp3` / `.wav` / `.m4a`** | `wave` / `whisper` | Audio duration, channel metadata, sample rate validation, and Whisper local transcription. |
+| **`.mp3` / `.wav`** | `mutagen` / stdlib | Audio duration, bitrate, sample rate metadata & ID3 tag extraction. |
 | **`.zip` / `.tar`** | `zipfile` / `tarfile` | In-memory archive extraction and recursive sub-document indexing. |
+| **`.md` / `.txt`** | Native stdlib | Markdown heading hierarchy, code fence parsing, `[[wikilink]]` extraction. |
 
 ---
 
@@ -864,7 +827,7 @@ python know.py reset
 ### 21.2 Resumable Job Batch Indexer (`batch_index.py`)
 ```bash
 # Index a directory with 4 parallel worker threads and a 50-file job limit
-python batch_index.py "C:\Users\Admin\Documents" -n 50 -w 4
+python batch_index.py "./docs" -n 50 -w 4
 ```
 
 ### 21.3 Developer Operations & Audit CLI Scripts (`scripts/`)
@@ -882,7 +845,7 @@ python scripts/update_test_ledger.py --soc2
 python scripts/benchmark_engine.py --runs 100
 
 # Execute fault injection and memory stress tests
-python scripts/fault_injection_harness.py --duration 30
+python scripts/chaos_monkey.py --duration 30
 ```
 
 ---
@@ -893,85 +856,18 @@ Uroboros Knowledge Engine integrates natively with AI Agent skill protocols ([`n
 
 ```mermaid
 graph LR
-    Agent["AI Agent / Antigravity"] --> Neuro["Neuro MCP Server"]
-    Agent --> Tududi["Tududi Task Master MCP"]
-    Agent --> Git["GitHub CLI & Provenance Bridge"]
-    Neuro --> VectorDB[("SQLite Knowledge DB")]
-    Tududi --> Audit["Audit Trail & Habit Synchronization"]
+    Agent[AI Agent / Antigravity] --> Neuro[Neuro MCP Server]
+    Agent --> Tududi[Tududi Task Master MCP]
+    Neuro --> VectorDB[(SQLite Knowledge DB)]
+    Tududi --> Audit[Audit Trail & Habit Synchronization]
     
-    subgraph Execution_Loop ["Execution Loop"]
-        Neuro -- "1. Query Knowledge Context" --> Agent
-        Agent -- "2. Log Execution Plan [PLAN, BUILD, TEST, AUDIT]" --> Tududi
-        Agent -- "3. Ingest New Documents & Git Commits" --> Neuro
-        Agent -- "4. Compute Merkle Provenance & Auto-Commit" --> Git
-        Tududi -- "5. Mark Task Status Complete" --> Audit
+    subgraph Execution Loop
+        Neuro -- 1. Query Knowledge Context --> Agent
+        Agent -- 2. Log Execution Plan [PLAN, BUILD, TEST, AUDIT] --> Tududi
+        Agent -- 3. Ingest New Documents --> Neuro
+        Tududi -- 4. Mark Task Status Complete --> Audit
     end
 ```
-
-### The 10 Dedicated Modular Bridges (`.agents/skills/neuro-copilot/scripts/`)
-
-| # | Bridge Script | Domain & Responsibility |
-| :-: | :--- | :--- |
-| **0** | [`contract_bus.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/contract_bus.py) | Inter-Bridge Contract Bus & Asynchronous Parallel Orchestrator (SHA-256 Merkle contracts) |
-| **1** | [`neuro_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/neuro_bridge.py) | Local Vector Vault, Knowledge Ingestion & Ollama HyDE RAG |
-| **2** | [`tududi_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/tududi_bridge.py) | Tududi Task Master Tracking, Burndown & 4-Tier Auditing (Project #13) |
-| **3** | [`github_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/github_bridge.py) | GitHub CLI, Git Merkle Root Provenance, Remote CI Verification & Ghost Loop |
-| **4** | [`snapshot_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/snapshot_bridge.py) | Enterprise Client Snapshot Showcases & Interactive Decks |
-| **5** | [`visual_audit_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/visual_audit_bridge.py) | Automated PDF Page Rendering & Layout QA Engine |
-| **6** | [`architecture_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/architecture_bridge.py) | Universal Polyglot Clean Architecture Engine (0–100% Score) |
-| **7** | [`workflow_hub_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/workflow_hub_bridge.py) | Master Multi-Phase Engineering Pipeline Orchestrator |
-| **8** | [`eve_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/eve_bridge.py) | EVE Online Live ESI Fleet Telemetry, Refinement & Physics Engine |
-| **9** | [`system_recovery_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/system_recovery_bridge.py) | Zero-Reboot Windows Recovery & Subsystem Process Hygiene |
-
-> 📐 **System Diagrams Reference**: For complete high-resolution topological and sequence diagrams across all subsystems, visit [`docs/system_architecture_diagrams.md`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/docs/system_architecture_diagrams.md).
-
-### Tri-Engine 43-Operation Enterprise Command Matrix
-
-| # | Command | Engine / Bridge | Purpose |
-| :-: | :--- | :--- | :--- |
-| **1** | `copilot --prompt "..."` | `github_bridge.py` | Generate Tri-Engine Flight Plan |
-| **2** | `tri_engine_health` | `github_bridge.py` | 4-Engine Health Scorecard |
-| **3** | `auto_commit` | `github_bridge.py` | SHA-256 Provenance Commit |
-| **4** | `create_pr` | `github_bridge.py` | Auto-generate GitHub PR with Tududi links |
-| **5** | `sync_issues` | `github_bridge.py` | Bidirectional Issue & Task Sync |
-| **6** | `diagnose_ci` | `github_bridge.py` | Download & Diagnose CI Failure Logs |
-| **7** | `verify_ci [--wait]` | `github_bridge.py` | Verify Remote CI Workflows & 100% Green Health |
-| **8** | `install_hooks` | `github_bridge.py` | Install `commit-msg` Merkle Verification Hook |
-| **9** | `install_ci_workflow` | `github_bridge.py` | Install GitHub Actions CI Workflow |
-| **10** | `audit_pr_diff` | `github_bridge.py` | Security & Anti-Pattern Diff Audit |
-| **11** | `repo_map` | `github_bridge.py` | Generate Clean ASCII Codebase Tree |
-| **12** | `resolve_conflicts` | `github_bridge.py` | Scan & Resolve Merge Conflicts |
-| **13** | `format_history` | `github_bridge.py` | Format Git History as Markdown Audit Table |
-| **14** | `export_architecture_mermaid`| `github_bridge.py` | Generate Mermaid JS Dependency Graph |
-| **15** | `benchmark_audit` | `github_bridge.py` | Benchmark Test Suite Execution Duration |
-| **16** | `audit_skills` | `github_bridge.py` | Validate All Active Skills Frontmatter & Health |
-| **17** | `audit_security_dependencies`| `github_bridge.py`| Scan `requirements.txt` & `package.json` for Unpinned Deps |
-| **18** | `detect_bloat` | `github_bridge.py` | Audit Codebase for Overly Nested Functions & Bloat |
-| **19** | `visual_showcase_audit` | `github_bridge.py` | Audit Screenshot Assets, README Links & Orphans |
-| **20** | `dashboard` | `github_bridge.py` | Executive Terminal Dashboard with Live Burndown |
-| **21** | `generate_release_notes` | `github_bridge.py` | Generate Markdown Release Notes & Tag Release |
-| **22** | `query --text "..."` | `neuro_bridge.py` | Semantic Query Local Vector Brain |
-| **23** | `ingest --path "..."` | `neuro_bridge.py` | Ingest Documents / Code into Vault |
-| **24** | `ingest_git_history` | `neuro_bridge.py` | Index Git Commit Provenance into Vault |
-| **25** | `ingest_tududi_roadmap`| `neuro_bridge.py` | Index Live Tududi Roadmap into Vector Vault |
-| **26** | `export_note` | `neuro_bridge.py` | Save Architecture Markdown Note into Vault |
-| **27** | `stats` | `neuro_bridge.py` | Vault Size, Chunks & Embedding Statistics |
-| **28** | `list` | `tududi_bridge.py` | Fetch Active Tasks for Project #13 |
-| **29** | `metrics` | `tududi_bridge.py` | Query Project Completion Stats |
-| **30** | `burndown` | `tududi_bridge.py` | Render ASCII Sprint Burndown Meter |
-| **31** | `export_roadmap` | `tududi_bridge.py` | Export Structured Markdown Roadmap |
-| **32** | `scan` | `snapshot_bridge.py` | Full AST & Route Discovery Sweep |
-| **33** | `generate_script` | `snapshot_bridge.py` | Generate Playwright Capture Engine |
-| **34** | `render_deck` | `snapshot_bridge.py` | Render Glassmorphic Client Showcase Deck |
-| **35** | `sync_readme` | `snapshot_bridge.py` | Sync README Visual Tables |
-| **36** | `export_package` | `snapshot_bridge.py` | Package Client Distribution Bundle (ZIP) |
-| **37** | `serve` | `snapshot_bridge.py` | Launch Local Preview Server |
-| **38** | `full_showcase` | `snapshot_bridge.py` | 1-Click End-to-End Client Showcase Suite |
-| **39** | `audit` (PDF QA) | `visual_audit_bridge.py`| Automated PDF Page Rendering & Layout QA |
-| **40** | `audit` (Clean Arch) | `architecture_bridge.py`| Universal Polyglot Clean Architecture Audit |
-| **41** | `run` (Pipeline) | `workflow_hub_bridge.py`| Master Multi-Phase Pipeline Execution |
-| **42** | `run --parallel` | `workflow_hub_bridge.py`| Parallel Asynchronous Inter-Bridge Execution |
-| **43** | `run_parallel` | `contract_bus.py` | Low-Level Parallel Inter-Bridge DAG Runner |
 
 ---
 
@@ -987,33 +883,25 @@ Uroboros provides native zero-shot multilingual tokenization and diacritic chara
 
 ## 24. Containerized Multi-Service Topology & Docker Orchestration
 
-The application supports hardened, containerized deployment via a self-contained 3-stage multi-stage Docker build and `docker-compose.yml`:
+The application supports containerized single-command deployment via `docker-compose.yml`:
 
 ```mermaid
 graph TD
-    Client["Host Browser / Desktop Client"] -->|Port 8000| App["Uroboros FastAPI + React 19 Container"]
-    App -->|Port 11434| Ollama["Local Ollama LLM Container"]
-    App -->|WAL Mode| DB[("Volume: ./know.db SQLite")]
-    App -->|Volume Mount| Workspace[("Volume: ./vault Files")]
+    Client[Host Browser / Desktop Client] -->|Port 8000| FastAPI[FastAPI App Server Container]
+    FastAPI -->|Port 11434| Ollama[Ollama Local LLM Container]
+    FastAPI -->|WAL Mode| DB[(Volume: ./know.db SQLite)]
+    FastAPI -->|Volume Mount| Workspace[(Volume: ./workspace Files)]
 ```
 
-### Self-Contained 3-Stage Container Architecture
-1. **Stage 1 (`frontend-builder`)**: Compiles the React 19 / Vite single-page application into optimized static assets (`dist/`).
-2. **Stage 2 (`python-builder`)**: Compiles C-extensions and pre-builds isolated Python wheels.
-3. **Stage 3 (`runner`)**: Stripped unprivileged runtime container running as `appuser:10001` with SQLite WAL `SIGINT` flush checkpointing and a 15-second grace period.
-
-### Deployment & Container Registry
+### Deployment Commands
 ```bash
-# 1. Pull directly from GitHub Container Registry (GHCR)
-docker pull ghcr.io/savianalexander/uroboros-knowledge-engine:master
-
-# 2. Start multi-service stack with local Ollama
+# Build and start all multi-service containers in detached mode
 docker-compose up -d --build
 
-# 3. Inspect container health telemetry
+# Inspect container health telemetry
 docker-compose ps
 
-# 4. View unified server logs
+# View unified server logs
 docker-compose logs -f
 ```
 
@@ -1033,64 +921,64 @@ Uroboros enforces strict enterprise trust controls validated by automated audit 
 
 ---
 
-## 26. Claude-Inspired Frontend Architecture & UI View Showcase
+## 26. Frontend Architecture & React SPA View Showcase
 
-Built in `frontend/` using **React 19**, **Vite 6**, and **Tailwind CSS v4**, the user interface features a Claude-inspired editorial aesthetic engineered around an ocular-comfort palette: **Emerald Green** (Primary Luxury Accent), **Slate Grey / Obsidian Charcoal** (Foundation Neutrals `#0B0F17`), **Wine Red** (Deep Action Accent), and **Mustard Gold** (Warm Humanist / AI Reasoning Accent).
+Built in `frontend/` using React 19, Vite 6, and Tailwind CSS v4:
 
 ```mermaid
 graph TD
-    App["App.tsx Hash Router"] --> Dash["DashboardView.tsx - Analytics & Telemetry"]
-    App --> Workspace["WorkspaceView.tsx - Workstation & Document Intelligence"]
-    App --> Search["SearchView.tsx - Hybrid RRF Omnibar & Lineage"]
-    App --> Ingest["IngestionView.tsx - Pipeline Visualizer & Console"]
-    App --> Graph["GraphView.tsx - 3D Force-Directed WebGL Graph"]
-    App --> Chat["ChatView.tsx - AI Studio & Split Artifacts Canvas"]
-    App --> Config["ConfigView.tsx - P2P Mesh & Chunk Orchestration"]
-    App --> Settings["SettingsView.tsx - Provider Keys & WAL Tools"]
-    App --> Login["LoginView.tsx - Authentication Modal"]
-    App --> Cmd["CommandPalette.tsx - Spotlight Modal (Cmd+K)"]
+    App[App.tsx Router] --> Dash[DashboardView.tsx]
+    App --> Workspace[WorkspaceView.tsx]
+    App --> Search[SearchView.tsx]
+    App --> Ingest[IngestionView.tsx]
+    App --> Graph[GraphView.tsx - 3D Force Graph]
+    App --> Chat[ChatView.tsx - RAG Assistant]
+    App --> Config[ConfigView.tsx]
+    App --> Settings[SettingsView.tsx]
+    App --> Login[LoginView.tsx]
+    App --> Cmd[CommandPalette.tsx - Ctrl+K Modal]
 ```
 
-### Complete UI View Showcase
+### UI View Showcase
 
-#### 1. System Analytics & Telemetry Dashboard
-Real-time database status metrics, ingestion velocity area charts with emerald/teal gradients, luxury storage donut distribution, tag breakdowns, and 1-click WAL maintenance.
+#### 1. Dashboard View
+Real-time database status metrics, ingestion velocity, storage distribution, tag breakdowns, and system health telemetry.
 ![Main Dashboard](docs/ux_journey/01_dashboard.png)
 
-#### 2. Claude AI Chat Studio & Side-by-Side Artifacts Canvas
-Conversational split-pane studio with mustard gold reasoning process trace accordion, verified citation badges with excerpt popovers, side-by-side live artifacts canvas (code, markdown, HTML previews), and floating prompt enhancer dock.
-![Chat Studio](docs/ux_journey/02_chat_studio.png)
+#### 2. Workspace View
+Provides a file browser interface for managing local directories, inspecting corpus metadata, and triggering manual re-indexing.
+![Workspace](docs/ux_journey/02_workspace.png)
 
-#### 3. Workspace Explorer & Absorbed Document Intelligence Workstation
-Hierarchical vault tree, Acrobat/Foxit tool dock (pointer, highlighter, sticky notes, rotate), multi-page PDF canvas with in-document OCR word highlight layer, and live synced Document Intelligence panel with grounded takeaways and interactive Q&A assistant.
-![Workspace Studio](docs/ux_journey/03_workspace_studio.png)
+#### 3. Search & Exploration View
+Offers hybrid search with real-time similarity threshold sliders, document content previews, tag filtering, and syntax highlighting.
+![Explorer](docs/ux_journey/03_search.png)
 
-#### 4. Semantic Search & Discovery Omnibar
-Unified search omnibar with auto-routing vector chips (NomIC HNSW + FTS5 RRF), circular match percentage rings, live tag filters, and RAG Lineage drawer.
-![Search Explorer](docs/ux_journey/04_search_explorer.png)
+#### 4. Ingestion Pipeline View
+Monitors background document extraction, web URL scraping, and SSE progress tracking for active batch jobs.
+![Ingestion Pipeline](docs/ux_journey/04_ingestion.png)
 
-#### 5. Ingestion Pipeline & Live Stream
-Monitors document extraction (Ingest ➔ Parse ➔ Chunk ➔ Embed), ShareGPT fine-tuning dataset exporter, and real-time SSE progress console.
-![Ingestion Pipeline](docs/ux_journey/05_ingestion_pipeline.png)
+#### 5. 3D Interactive Knowledge Graph
+Interactive 3D graph view (`react-force-graph-3d`) rendering connections between document nodes, extracted entities, and wikilinks.
+![Knowledge Graph](docs/ux_journey/05_graph.png)
 
-#### 6. 3D Force-Directed Vector Knowledge Graph
-Interactive 3D graph view (`react-force-graph-3d`) rendering force-directed cluster topologies connecting emerald document nodes, mustard gold concept nodes, and wine red tag nodes.
-![Knowledge Graph](docs/ux_journey/06_knowledge_graph.png)
+#### 6. Conversational RAG Assistant
+AI chat interface supporting source citation deep-linking, context budget allocation controls, and multi-turn dialog memory.
+![Conversational Assistant](docs/ux_journey/06_chat.png)
 
-#### 7. Process Configuration & Cluster Orchestration
-Manages RAG chunk sizes and overlap sliders, point-in-time database snapshot backups, and P2P LAN mesh synchronization.
-![Config Orchestration](docs/ux_journey/07_config_orchestration.png)
+#### 7. Process Configuration View
+Manages auto-tagging rules, custom FTS synonyms, P2P network sync parameters, and database snapshot schedules.
+![Process Config](docs/ux_journey/07_config.png)
 
-#### 8. System Settings & Database Integrity
-Provides provider API key management (Claude Sonnet/Opus, OpenAI, Ollama), SQLite WAL optimization tools, vacuuming, and re-indexing utilities.
-![System Settings](docs/ux_journey/08_settings_maintenance.png)
+#### 8. System Settings View
+Provides system diagnostic controls, API key management, database WAL optimization tools, and logs inspection.
+![System Settings](docs/ux_journey/08_settings.png)
 
-#### 9. Spotlight Command Palette (`⌘K`)
-Keyboard-driven modal providing instant navigation across all application views, quick actions, and deep search shortcuts.
+#### 9. Spotlight Command Palette (`Ctrl+K`)
+Keyboard-driven modal providing quick navigation across all application views, instant search execution, and ingestion actions.
 ![Command Palette](docs/ux_journey/09_command_palette.png)
 
-#### 10. WCAG AA Ocular-Comfort Light & Dark Themes
-High-contrast glassmorphic dark (`#0B0F17`) and light themes with responsive UI elements complying with WCAG AA accessibility standards.
+#### 10. WCAG AA Glassmorphism Themes
+High-contrast glassmorphic dark and light themes with responsive UI elements complying with WCAG AA accessibility standards.
 ![Light Mode UI](docs/ux_journey/10_light_mode.png)
 
 ---
@@ -1143,27 +1031,22 @@ python run_domain_tests.py
 
 ## 30. Disaster Recovery, Snapshot Migration & Cold-Restore Protocol
 
-Uroboros incorporates zero-downtime database snapshot backup and cold-restore capabilities across both the Neuro Vector Vault (`knowledge.db`) and the Tududi Task Master (`production.sqlite3`):
+Uroboros incorporates zero-downtime database snapshot backup and cold-restore capabilities:
 
-1. **Live Dual-Database Non-Blocking Backup with Auto-Rotation**:
-   Executes `PRAGMA wal_checkpoint(TRUNCATE);` before streaming online snapshots and automatically rotates out old snapshots (maintaining the latest 7):
+1. **Non-Blocking WAL Snapshot**:
    ```bash
-   # Live snapshot of both Knowledge DB and Tududi DB
-   python scripts/backup_db.py backup
+   python scripts/backup_db.py --output backups/snapshot_$(date +%Y%m%d).db
    ```
 2. **Cold-Restore & Virtual Index Rebuild**:
    ```bash
-   # Restore Knowledge DB from snapshot
-   python scripts/backup_db.py restore backups/knowledge_backup_20260814_104749.db
-
-   # Restore Tududi Task Master DB from snapshot
-   python scripts/backup_db.py restore backups/tududi_backup_20260814_104749.sqlite3
-
+   # Replace corrupt database file
+   cp backups/snapshot_20260812.db know.db
+   
    # Re-initialize FTS5 virtual tables and vacuum WAL
    python know.py init
    ```
 3. **Cross-Machine Corpus Migration**:
-   - Copy `knowledge.db` and the target workspace folder to the new machine.
+   - Copy `know.db` and the target workspace folder to the new machine.
    - Execute `python know.py index "C:\path\to\workspace"` to verify SHA-256 chunk digests without redundant re-indexing.
 
 ---
@@ -1178,60 +1061,6 @@ Uroboros incorporates zero-downtime database snapshot backup and cold-restore ca
 
 ---
 
-## 32. Code of Conduct & Technical Governance Framework
-
-Uroboros Knowledge Engine enforces strict standards for community interaction, technical ethics, air-gapped data privacy, and autonomous AI agent governance. See [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) for full guidelines.
-
-### Summary of Governance Standards
-- **100% Zero-Cloud Data Sovereignty**: All model inference, vector embeddings, and search indexing execute strictly on local hardware (Ollama / GGUF) without third-party API tracking.
-- **Deterministic Security & Cryptographic Integrity**: Enforces automated PII redaction ([`pii_privacy_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/pii_privacy_guard.py)), Zero-Knowledge verification proofs ([`zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py)), and SHA-256 audit ledger logging.
-- **Ponytail Minimalist Engineering**: Standard library first, zero speculative abstractions, and shortest working diffs.
-- **Autonomous Agent Interaction**: AI assistants must log all multi-step execution plans to Tududi Task Master (`tududi`) and inspect un-truncated logs before diagnosing errors.
-
----
-
-## 33. License
+## 32. License
 
 This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) file for complete details.
-
-
-
-## 📸 Comprehensive Visual Showcase & Client Journey
-
-> 💡 **Client Showcase**: Launch [`docs/ux_journey/client_showcase.html`](file:///docs/ux_journey/client_showcase.html) for the interactive presentation deck.
-
-| **Dashboard** | **Chat Studio** |
-| :---: | :---: |
-| ![Dashboard](docs/ux_journey/01_dashboard.png) | ![Chat Studio](docs/ux_journey/02_chat_studio.png) |
-
-| **Workspace** | **Search** |
-| :---: | :---: |
-| ![Workspace](docs/ux_journey/02_workspace.png) | ![Search](docs/ux_journey/03_search.png) |
-
-| **Workspace Studio** | **Ingestion** |
-| :---: | :---: |
-| ![Workspace Studio](docs/ux_journey/03_workspace_studio.png) | ![Ingestion](docs/ux_journey/04_ingestion.png) |
-
-| **Search Explorer** | **Graph** |
-| :---: | :---: |
-| ![Search Explorer](docs/ux_journey/04_search_explorer.png) | ![Graph](docs/ux_journey/05_graph.png) |
-
-| **Ingestion Pipeline** | **Chat** |
-| :---: | :---: |
-| ![Ingestion Pipeline](docs/ux_journey/05_ingestion_pipeline.png) | ![Chat](docs/ux_journey/06_chat.png) |
-
-| **Knowledge Graph** | **Config** |
-| :---: | :---: |
-| ![Knowledge Graph](docs/ux_journey/06_knowledge_graph.png) | ![Config](docs/ux_journey/07_config.png) |
-
-| **Config Orchestration** | **Settings** |
-| :---: | :---: |
-| ![Config Orchestration](docs/ux_journey/07_config_orchestration.png) | ![Settings](docs/ux_journey/08_settings.png) |
-
-| **Settings Maintenance** | **Command Palette** |
-| :---: | :---: |
-| ![Settings Maintenance](docs/ux_journey/08_settings_maintenance.png) | ![Command Palette](docs/ux_journey/09_command_palette.png) |
-
-| **Light Mode** |
-| :---: |
-| ![Light Mode](docs/ux_journey/10_light_mode.png) |

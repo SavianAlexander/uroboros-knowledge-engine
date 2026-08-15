@@ -1,27 +1,20 @@
 # Motor de Base de Datos de Conocimiento Uroboros (Neuro Alexander)
 
 <p align="center">
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/releases"><img src="https://img.shields.io/badge/Release-v2.1.0-blue.svg?style=flat-square" alt="Release v2.1.0" /></a>
-  <a href="https://savianalexander.github.io/uroboros-knowledge-engine/"><img src="https://img.shields.io/badge/Showcase%20en%20Vivo-GitHub%20Pages-blueviolet?style=flat-square&logo=github" alt="Showcase en Vivo" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/ci.yml/badge.svg" alt="CI Pipeline" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/neuro_copilot_ci.yml/badge.svg" alt="Domain Integration CI Suite" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/security_static_analysis.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/security_static_analysis.yml/badge.svg" alt="Auditoria de Seguridad y Analisis Estatico" /></a>
-  <a href="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml"><img src="https://github.com/SavianAlexander/uroboros-knowledge-engine/actions/workflows/build.yml/badge.svg" alt="Build & Package" /></a>
-  <img src="https://img.shields.io/badge/Auditoria%20de%20Seguridad-100%25%20Verificada-emerald?style=flat-square" alt="Auditoria de Seguridad Verificada" />
-  <img src="https://img.shields.io/badge/Tududi%20Task%20Master-Conectado%20Proyecto%20%2313-blue?style=flat-square" alt="Tududi Proyecto #13" />
-  <a href="docs/soc2_type2_attestation.md"><img src="https://img.shields.io/badge/SOC%202%20Type%20II-Verificado-green.svg?style=flat-square" alt="SOC 2 Type II" /></a>
+  <img src="https://img.shields.io/github/actions/workflow/status/SavianAlexander/uroboros-knowledge-engine/tests.yml?branch=master&style=flat-square" alt="Estado de Compilacion" />
   <img src="https://img.shields.io/github/license/SavianAlexander/uroboros-knowledge-engine?style=flat-square" alt="Licencia" />
   <img src="https://img.shields.io/badge/python-3.12-blue.svg?style=flat-square" alt="Version de Python" />
-  <img src="https://img.shields.io/badge/FastAPI-0.141.1-teal.svg?style=flat-square" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/React-19.2.8-61dafb.svg?style=flat-square" alt="React" />
+  <img src="https://img.shields.io/badge/FastAPI-0.111.0-teal.svg?style=flat-square" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-19.0.1-61dafb.svg?style=flat-square" alt="React" />
   <img src="https://img.shields.io/badge/SQLite-FTS5-orange.svg?style=flat-square" alt="SQLite" />
+  <img src="https://img.shields.io/badge/Subsistemas%20de%20Recuperacion-32-purple.svg?style=flat-square" alt="32 Subsistemas de Recuperacion" />
+  <img src="https://img.shields.io/badge/Estrategias%20Avanzadas-13-magenta.svg?style=flat-square" alt="13 Estrategias Avanzadas" />
+  <img src="https://img.shields.io/badge/Optimizaciones%20de%20Arquitectura-21-indigo.svg?style=flat-square" alt="21 Optimizaciones" />
+  <img src="https://img.shields.io/badge/Modulos%20de%20Dominio-141-blue.svg?style=flat-square" alt="141 Modulos de Dominio" />
   <img src="https://img.shields.io/badge/Suites%20de%20Prueba-99-emerald.svg?style=flat-square" alt="99 Suites de Prueba" />
   <img src="https://img.shields.io/badge/Tasa%20de%20Aprobacion-100%25-brightgreen.svg?style=flat-square" alt="Tasa de Aprobacion 100%" />
   <img src="https://img.shields.io/badge/Estilo%20de%20Codigo-ponytail-indigo?style=flat-square" alt="Estilo Ponytail" />
 </p>
-
-> [!TIP]
-> 🌐 **Showcase Interactivo y Guía Visual de UX**: Explore la demostración interactiva en vivo con capturas de pantalla de alta resolución y diagramas de flujo arquitectónico en **[savianalexander.github.io/uroboros-knowledge-engine](https://savianalexander.github.io/uroboros-knowledge-engine/)**.
 
 ---
 
@@ -36,9 +29,9 @@ Con **32 Subsistemas Principales de Recuperacion**, **13 Estrategias Avanzadas d
 ## Tabla de Contenidos
 
 - [1. Fundamentos Matematicos, Pruebas Formales y Algoritmos de Recuperacion](#1-fundamentos-matematicos-pruebas-formales-y-algoritmos-de-recuperacion)
-- [2. Subsistemas Principales de Recuperacion y Ranking](#2-subsistemas-principales-de-recuperacion-y-ranking)
-- [3. Estrategias Avanzadas de Recuperacion y Sintesis](#3-estrategias-avanzadas-de-recuperacion-y-sintesis)
-- [4. Matriz de Optimizaciones y Arquitectura Local](#4-matriz-de-optimizaciones-y-arquitectura-local)
+- [2. Los 32 Motores Arquitectonicos de Ultima Generacion (SOTA)](#2-los-32-motores-arquitectonicos-de-ultima-generacion-sota)
+- [3. Los 13 Paradigmas RAG de Frontera Incomparables](#3-los-13-paradigmas-rag-de-frontera-incomparables)
+- [4. Matriz de las 21 Innovaciones RAG de Nodo Unico](#4-matriz-de-las-21-innovaciones-rag-de-nodo-unico)
 - [5. Guardián de Memoria de Proceso Unico en Hardware](#5-guardian-de-memoria-de-proceso-unico-en-hardware)
 - [6. Arquitectura del Pipeline y Secuencias del Sistema](#6-arquitectura-del-pipeline-y-secuencias-del-sistema)
 - [7. Estructura Completa del Directorio del Codigo Fuente](#7-estructura-completa-del-directorio-del-codigo-fuente)
@@ -85,9 +78,9 @@ $$\text{Score}_{Final}(d) = \text{Score}_{RRF}(d) \cdot e^{-\lambda \cdot \Delta
 
 ---
 
-## 4. Matriz de Optimizaciones y Arquitectura Local
+## 4. Matriz de las 21 Innovaciones RAG de Nodo Unico
 
-| # | Subsistema | Archivo | Endpoint API | Descripcion Tecnica |
+| # | Pilar de Innovacion | Archivo | Endpoint API | Ventaja Competitiva |
 |---| :--- | :--- | :--- | :--- |
 | **1** | **Sintetizador RAG Especulativo** | [`src/domain/speculative_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_rag.py) | `POST /api/search/speculative-rag` | Sintetiza 3 borradores candidatos en paralelo, reduciendo latencia en **~78%**. |
 | **2** | **Linaje Temporal de Conocimiento** | [`src/domain/temporal_rag_lineage.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/temporal_rag_lineage.py) | `GET/POST /api/knowledge/temporal-lineage` | Rastra el historial de versiones a lo largo del tiempo ($t_0 \to t_1 \to t_2$). |
