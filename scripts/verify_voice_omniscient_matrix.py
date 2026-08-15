@@ -35,6 +35,8 @@ from src.core.voice_dsp import VoiceDSP
 from src.core.rag_query_cache import SemanticRAGQueryCache, GLOBAL_RAG_CACHE
 from src.core.audit_hashchain import AuditHashchainLedger, GLOBAL_AUDIT_HASHCHAIN
 from src.core.voice_command_parser import VoiceCommandParser
+from src.core.voice_telemetry_exporter import AudioTelemetryExporter
+from src.domain.eve_fleet_tactical_voice import EVEFleetTacticalVoice
 
 
 class TestVoiceOmniscientMatrix(unittest.TestCase):
@@ -123,6 +125,32 @@ class TestVoiceOmniscientMatrix(unittest.TestCase):
         exec_res = VoiceCommandParser.execute_command("switch persona to fleet commander", speak_feedback=False)
         self.assertEqual(exec_res["status"], "command_executed")
         self.assertEqual(exec_res["action_result"]["new_persona"], "FLEET_COMMANDER")
+
+    def test_eve_fleet_tactical_voice(self):
+        """Test EVE fleet tactical combat alerts synthesis and template catalog."""
+        catalog = EVEFleetTacticalVoice.get_tactical_templates()
+        self.assertIn("CYNO_BEACON_ACTIVE", catalog)
+        self.assertIn("INTERDICTOR_BUBBLE_DROP", catalog)
+        self.assertIn("MINING_COMPRESSION_CYCLE", catalog)
+
+        # Test cyno alert dry-run
+        res = EVEFleetTacticalVoice.broadcast_tactical_alert("CYNO_BEACON_ACTIVE", system="G-EURJ", speak_now=False)
+        self.assertEqual(res["status"], "tactical_alert_broadcast")
+        self.assertEqual(res["system"], "G-EURJ")
+        self.assertIn("cynosural beacon", res["text"].lower())
+
+    def test_audio_telemetry_exporter(self):
+        """Test JSON and Prometheus telemetry formatting."""
+        snap = AudioTelemetryExporter.get_telemetry_snapshot()
+        self.assertIn("engine", snap)
+        self.assertIn("intercom_call", snap)
+        self.assertIn("semantic_rag_cache", snap)
+        self.assertIn("audit_hashchain", snap)
+
+        prom = AudioTelemetryExporter.export_prometheus_metrics()
+        self.assertIn("audio_engine_status 1.0", prom)
+        self.assertIn("rag_cache_hits", prom)
+        self.assertIn("audit_hashchain_blocks", prom)
 
     def test_code_syntax_narrator(self):
         """Test translation of code syntax, SQL, and CLI into executive spoken narrative."""
@@ -279,8 +307,8 @@ Sent from my iPhone
         self.assertEqual(cut["status"], "barge_in_executed")
         self.assertLess(cut["interruption_latency_ms"], 50.0)
 
-    def test_all_23_antigravity_mcp_tools(self):
-        """Test all 23 tools in the dedicated Antigravity Voice MCP server."""
+    def test_all_25_antigravity_mcp_tools(self):
+        """Test all 25 tools in the dedicated Antigravity Voice MCP server."""
         expected_tools = [
             "antigravity_speak", "antigravity_announce_task", "antigravity_voice_brief",
             "antigravity_play_sfx", "antigravity_blend_persona", "antigravity_listen",
@@ -291,6 +319,7 @@ Sent from my iPhone
             "antigravity_read_code", "antigravity_read_email",
             "antigravity_showcase_personas", "antigravity_apply_studio_master",
             "antigravity_verify_audit_hashchain", "antigravity_parse_voice_command",
+            "antigravity_get_audio_telemetry", "antigravity_broadcast_fleet_alert",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]
@@ -308,10 +337,54 @@ Sent from my iPhone
         cmd_res = handle_tool_call("antigravity_parse_voice_command", {"command": "get status", "speak_feedback": False})
         self.assertEqual(cmd_res["status"], "command_executed")
 
+        telemetry_res = handle_tool_call("antigravity_get_audio_telemetry", {"format": "json"})
+        self.assertIn("engine", telemetry_res)
+
+        fleet_res = handle_tool_call("antigravity_broadcast_fleet_alert", {"alert_type": "MINING_COMPRESSION_CYCLE", "system": "G-EURJ", "speak": False})
+        self.assertEqual(fleet_res["status"], "tactical_alert_broadcast")
+
+    def test_voice_agent_loop_multi_turn(self):
+        """Test autonomous multi-turn hands-free voice agent session lifecycle and spoken turn execution."""
+        from src.core.voice_agent_loop import VoiceAgentLoop
+        session_id = f"test-agent-session-{int(time.time())}"
+        
+        # 1. Start Session
+        start_res = VoiceAgentLoop.start_session(session_id, persona="SOVEREIGN_ORACLE")
+        self.assertEqual(start_res["status"], "active")
+        self.assertEqual(start_res["session_id"], session_id)
+
+        # 2. Process Spoken Turn
+        turn_res = VoiceAgentLoop.process_spoken_turn(
+            user_input_text="Switch voice to Alexander Sovereign",
+            session_id=session_id
+        )
+        self.assertEqual(turn_res["status"], "success")
+        self.assertEqual(turn_res["intent"], "SET_PERSONA")
+        self.assertIn("audio_bytes_length", turn_res)
+
+        # 3. Process Conversational Turn
+        conv_res = VoiceAgentLoop.process_spoken_turn(
+            user_input_text="What is the current system health and stability vitals?",
+            session_id=session_id
+        )
+        self.assertEqual(conv_res["status"], "success")
+        self.assertEqual(conv_res["turn_index"], 2)
+
+        # 4. History
+        hist = VoiceAgentLoop.get_session_history(session_id)
+        self.assertEqual(hist["status"], "success")
+        self.assertEqual(hist["session"]["turn_count"], 2)
+
+        # 5. End Session
+        end_res = VoiceAgentLoop.end_session(session_id)
+        self.assertEqual(end_res["status"], "terminated")
+        self.assertEqual(end_res["total_turns"], 2)
+
     def test_zero_assumptions_integrity(self):
         """Test strict 38-assertion zero-assumption validation suite."""
         success = run_zero_assumption_audit()
         self.assertTrue(success, "Zero-assumption audit failed!")
+
 
 
 def main():

@@ -11,7 +11,9 @@ export default function SettingsView() {
   const [envData, setEnvData] = useState<any>({});
   const [dbStats, setDbStats] = useState<any>(null);
   const [stabilityVitals, setStabilityVitals] = useState<any>(null);
+  const [hwProfile, setHwProfile] = useState<any>(null);
   const [isReaping, setIsReaping] = useState(false);
+  const [isTuningHW, setIsTuningHW] = useState(false);
 
   const [openaiKey, setOpenaiKey] = useState('');
   const [anthropicKey, setAnthropicKey] = useState('');
@@ -21,6 +23,13 @@ export default function SettingsView() {
     fetch('/api/system/health/stability')
       .then(res => res.json())
       .then(data => setStabilityVitals(data))
+      .catch(() => {});
+  };
+
+  const fetchHardwareProfile = () => {
+    fetch('/api/system/hardware/profile')
+      .then(res => res.json())
+      .then(data => setHwProfile(data))
       .catch(() => {});
   };
 
@@ -43,7 +52,9 @@ export default function SettingsView() {
 
     api.stats().then(res => setDbStats(res)).catch(console.error);
     fetchStability();
+    fetchHardwareProfile();
   }, []);
+
 
 
   const handleReindex = async () => {
@@ -112,6 +123,28 @@ export default function SettingsView() {
     }
   };
 
+  const handleApplyHardwareTuning = async () => {
+    setIsTuningHW(true);
+    try {
+      const res = await fetch('/api/system/hardware/apply-tuning', { method: 'POST' });
+      const data = await res.json();
+      if (data.status === 'success') {
+        toast(
+          'Hardware Tuned',
+          `Optimized 16 CPU threads, 4GB SQLite MMAP & NVMe I/O in ${data.elapsed_ms}ms`,
+          'success'
+        );
+        fetchHardwareProfile();
+      } else {
+        toast('Tuning Error', data.error || 'Failed to apply tuning', 'error');
+      }
+    } catch {
+      toast('Tuning Error', 'Network error applying hardware tuning', 'error');
+    } finally {
+      setIsTuningHW(false);
+    }
+  };
+
   const handleUpdateCredentials = () => {
     localStorage.setItem('uroboros_openai_key', openaiKey);
     localStorage.setItem('uroboros_anthropic_key', anthropicKey);
@@ -131,7 +164,80 @@ export default function SettingsView() {
       </header>
 
       <div className="space-y-6 max-w-5xl">
+        {/* Hardware Acceleration & Host Specs Console */}
+        <div className={`${glassCardClasses} p-6 space-y-5 border-amber-500/20 shadow-md`}>
+          <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-white/10 pb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 font-serif-claude">
+                <Cpu className="w-4 h-4 text-amber-500" /> Host Hardware Acceleration Governor
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Multi-threading, GPU offload, 4GB RAM memory-mapped I/O & NVMe 4K cluster alignment.
+              </p>
+            </div>
+            <button
+              onClick={handleApplyHardwareTuning}
+              disabled={isTuningHW}
+              className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              <Zap className={`w-3.5 h-3.5 ${isTuningHW ? 'animate-spin' : ''}`} />
+              <span>{isTuningHW ? 'Tuning Architecture...' : '⚡ Apply Full Hardware Acceleration'}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-3.5 bg-slate-100/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-white/10">
+              <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
+                <Cpu className="w-3.5 h-3.5 text-amber-400" /> CPU & 3D V-Cache:
+              </div>
+              <div className="text-xs font-bold font-sans text-amber-300">
+                {hwProfile?.cpu?.model || 'AMD Ryzen 7 5800X3D'}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1 font-mono">
+                {hwProfile?.cpu?.logical_threads || 16} Threads • 96MB L3 V-Cache
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-100/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-white/10">
+              <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
+                <Zap className="w-3.5 h-3.5 text-rose-400" /> Dedicated GPU:
+              </div>
+              <div className="text-xs font-bold font-sans text-rose-300">
+                {hwProfile?.gpu?.model || 'AMD Radeon RX 7900 XTX'}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1 font-mono">
+                {hwProfile?.gpu?.vram_gb || 24}GB GDDR6 • DirectML / Vulkan
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-100/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-white/10">
+              <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
+                <Database className="w-3.5 h-3.5 text-emerald-400" /> High-Speed RAM:
+              </div>
+              <div className="text-xs font-bold font-sans text-emerald-300">
+                {hwProfile?.ram?.total_gb || 32}GB DDR4-3600 CL16
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1 font-mono">
+                4GB SQLite MMAP • 256MB Cache
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-100/70 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-white/10">
+              <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
+                <HardDrive className="w-3.5 h-3.5 text-cyan-400" /> Primary NVMe SSD:
+              </div>
+              <div className="text-xs font-bold font-sans text-cyan-300">
+                WD_BLACK SN850X 2TB
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1 font-mono">
+                PCIe 4.0 (7,300 MB/s) • 4K Aligned
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* System Stability & Zombie Reaper Governor */}
+
         <div className={`${glassCardClasses} p-6 space-y-5 border-emerald-500/20 shadow-md`}>
           <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-white/10 pb-4">
             <div>

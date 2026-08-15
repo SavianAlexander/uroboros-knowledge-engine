@@ -48,6 +48,8 @@ from src.core.voice_studio_showcase import VoiceStudioShowcase
 from src.core.voice_dsp import VoiceDSP
 from src.core.audit_hashchain import GLOBAL_AUDIT_HASHCHAIN
 from src.core.voice_command_parser import VoiceCommandParser
+from src.core.voice_telemetry_exporter import AudioTelemetryExporter
+from src.domain.eve_fleet_tactical_voice import EVEFleetTacticalVoice
 
 
 # Global Voice Configuration State
@@ -361,6 +363,29 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_get_audio_telemetry",
+        "description": "Export real-time Prometheus or JSON telemetry metrics across voice, DSP, RAG cache, and audit hashchains.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "format": {"type": "string", "description": "Export format: 'json' or 'prometheus'.", "default": "json"}
+            }
+        }
+    },
+    {
+        "name": "antigravity_broadcast_fleet_alert",
+        "description": "Synthesize and broadcast tactical EVE fleet combat communications (cynos, warp disruption bubbles, compression cycles).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "alert_type": {"type": "string", "description": "Alert type (e.g. 'CYNO_BEACON_ACTIVE', 'INTERDICTOR_BUBBLE_DROP', 'MINING_COMPRESSION_CYCLE', 'FLEET_ANCHOR_COMMAND')."},
+                "system": {"type": "string", "description": "Solar system name.", "default": "G-EURJ"},
+                "speak": {"type": "boolean", "description": "If true, synthesizes and plays audio immediately.", "default": True}
+            },
+            "required": ["alert_type"]
+        }
+    },
+    {
         "name": "antigravity_configure_voice",
         "description": "Configure global default voice settings for Antigravity assistant.",
         "inputSchema": {
@@ -625,6 +650,18 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         cmd_text = args.get("command", "")
         speak_fb = args.get("speak_feedback", True)
         return VoiceCommandParser.execute_command(spoken_text=cmd_text, speak_feedback=speak_fb)
+
+    elif name == "antigravity_get_audio_telemetry":
+        fmt = args.get("format", "json")
+        if fmt == "prometheus":
+            return {"format": "prometheus", "metrics": AudioTelemetryExporter.export_prometheus_metrics()}
+        return AudioTelemetryExporter.get_telemetry_snapshot()
+
+    elif name == "antigravity_broadcast_fleet_alert":
+        alert_type = args.get("alert_type", "CYNO_BEACON_ACTIVE")
+        system = args.get("system", "G-EURJ")
+        speak_now = args.get("speak", True)
+        return EVEFleetTacticalVoice.broadcast_tactical_alert(alert_type=alert_type, system=system, speak_now=speak_now)
 
     elif name == "antigravity_configure_voice":
         if "default_persona" in args:

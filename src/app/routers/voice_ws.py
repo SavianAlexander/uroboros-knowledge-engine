@@ -1,102 +1,123 @@
 """
-Real-Time Conversational Voice & Audio Spectrum WebSocket Router.
-Endpoint: /ws/voice/call
-Standard: Pure FastAPI WebSocket + VoiceActivityInterrupter + VoiceDSP + AuditHashchain.
+WebSocket & Real-Time Audio Stream Router.
+Standard: Pure Python Standard Library + FastAPI WebSockets.
+Ponytail Senior Dev Principle: Ultra low-latency 60FPS binary telemetry and streaming audio chunks.
 """
 
-import json
+import os
+import sys
 import time
-from typing import Dict, Any
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+import json
+import asyncio
+from typing import Dict, Any, Optional
 
-from src.core.voice_dsp import VoiceDSP
-from src.core.voice_vad_interrupter import VoiceActivityInterrupter
-from src.core.voice_call_intercom import VoiceCallIntercomEngine
-from src.core.audit_hashchain import GLOBAL_AUDIT_HASHCHAIN
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from starlette.websockets import WebSocketState
 
-router = APIRouter(tags=["voice-ws"])
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+from src.core.voice_agent_loop import VoiceAgentLoop
+from src.core.voice_spectrum_stream import VoiceSpectrumAnalyzer
+
+router = APIRouter()
+logger = logging = __import__("logging").getLogger(__name__)
 
 
-@router.websocket("/ws/voice/call")
-async def voice_call_websocket(websocket: WebSocket):
-    """Full-duplex real-time audio WebSocket for live call sessions, VAD barge-in, and FFT spectral feeds."""
+@router.websocket("/ws/voice/stream")
+async def voice_streaming_websocket_endpoint(websocket: WebSocket):
+    """
+    Full-duplex WebSocket stream for hands-free neural voice conversations and FFT visualizer telemetry.
+    """
     await websocket.accept()
-    session_id = f"ws_call_{int(time.time())}"
-    
-    GLOBAL_AUDIT_HASHCHAIN.append_event(
-        event_type="WS_CALL_CONNECTED",
-        payload={"session_id": session_id},
-        actor="CLIENT_WEBSOCKET"
-    )
+    session_id = f"ws-voice-{int(time.time() * 1000)}"
+    VoiceAgentLoop.start_session(session_id)
 
     try:
+        # Send initial connected handshake
         await websocket.send_json({
-            "event": "CONNECTED",
+            "event": "connected",
             "session_id": session_id,
-            "status": "ready",
-            "sample_rate": 24000,
-            "available_presets": list(VoiceDSP.get_available_presets().keys())
+            "timestamp": time.time()
         })
 
         while True:
-            # Handle incoming WebSocket message (text or binary)
+            # Receive message (JSON text command or binary PCM audio)
             message = await websocket.receive()
-            
-            if "text" in message:
+            if "text" in message and message["text"]:
                 try:
-                    data = json.loads(message["text"])
+                    payload = json.loads(message["text"])
                 except Exception:
-                    data = {"action": message["text"]}
+                    payload = {"action": "say", "text": message["text"]}
 
-                action = data.get("action", "")
+                action = payload.get("action", "turn")
+                text = payload.get("text", "")
+                persona = payload.get("persona")
+                dsp_preset = payload.get("dsp_preset")
 
-                if action == "ping":
-                    await websocket.send_json({"event": "PONG", "timestamp": time.time()})
-
-                elif action == "barge_in":
-                    cut = VoiceActivityInterrupter.execute_instant_barge_in()
-                    GLOBAL_AUDIT_HASHCHAIN.append_event(
-                        event_type="BARGE_IN_TRIGGERED",
-                        payload={"session_id": session_id, "cut": cut},
-                        actor="CLIENT_USER"
+                if action in ("turn", "say", "command"):
+                    turn_res = VoiceAgentLoop.process_spoken_turn(
+                        user_input_text=text,
+                        session_id=session_id,
+                        persona=persona,
+                        dsp_preset=dsp_preset
                     )
-                    await websocket.send_json({"event": "BARGE_IN_CONFIRMED", "result": cut})
+                    await websocket.send_json({
+                        "event": "turn_complete",
+                        "data": turn_res
+                    })
 
-                elif action == "get_spectrum":
-                    spectrum = VoiceDSP.get_latest_spectrum()
-                    await websocket.send_json({"event": "SPECTRUM_FRAME", "spectrum": spectrum})
+                elif action == "ping":
+                    await websocket.send_json({"event": "pong", "timestamp": time.time()})
 
-                elif action == "call_status":
-                    status = VoiceCallIntercomEngine.get_call_status()
-                    await websocket.send_json({"event": "CALL_STATUS", "status": status})
+                elif action == "history":
+                    hist = VoiceAgentLoop.get_session_history(session_id)
+                    await websocket.send_json({"event": "history", "data": hist})
 
-            elif "bytes" in message:
-                # Binary PCM audio frame received from user mic
-                raw_bytes = message["bytes"]
-                # Process audio chunk for VAD
-                cut_needed = False
+            elif "bytes" in message and message["bytes"]:
+                # Binary audio telemetry: compute FFT spectrum
                 try:
                     import numpy as np
-                    samples = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-                    vad_res = VoiceActivityInterrupter.get_vad().analyze_frame(samples)
-                    if vad_res["is_speech"] and VoiceCallIntercomEngine.get_call_status()["ai_speaking"]:
-                        VoiceActivityInterrupter.execute_instant_barge_in()
-                        cut_needed = True
+                    samples = np.frombuffer(message["bytes"], dtype=np.int16).astype(np.float32) / 32768.0
+                    fft_res = VoiceSpectrumAnalyzer.compute_spectrum_bins(samples)
+                    await websocket.send_json({
+                        "event": "spectrum_telemetry",
+                        "data": fft_res
+                    })
                 except Exception:
                     pass
 
-                if cut_needed:
-                    await websocket.send_json({"event": "VAD_BARGE_IN_CUT", "reason": "user_speech_detected"})
-
     except WebSocketDisconnect:
-        GLOBAL_AUDIT_HASHCHAIN.append_event(
-            event_type="WS_CALL_DISCONNECTED",
-            payload={"session_id": session_id},
-            actor="CLIENT_WEBSOCKET"
-        )
-    except Exception as exc:
-        GLOBAL_AUDIT_HASHCHAIN.append_event(
-            event_type="WS_CALL_ERROR",
-            payload={"session_id": session_id, "error": str(exc)},
-            actor="SERVER_EXCEPTION"
-        )
+        VoiceAgentLoop.end_session(session_id)
+        logger.debug(f"Voice WebSocket disconnected: {session_id}")
+    except Exception as e:
+        VoiceAgentLoop.end_session(session_id)
+        logger.debug(f"Voice WebSocket error: {e}")
+        if websocket.client_state == WebSocketState.CONNECTED:
+            await websocket.close()
+
+
+@router.get("/api/voice/agent/history/{session_id}")
+def get_voice_agent_session_history(session_id: str):
+    """Retrieves session history for a multi-turn voice agent session."""
+    return VoiceAgentLoop.get_session_history(session_id)
+
+
+@router.post("/api/voice/agent/turn")
+def execute_voice_agent_turn(payload: Dict[str, Any]):
+    """Executes a single conversational turn in the hands-free voice agent loop."""
+    text = payload.get("text", "")
+    session_id = payload.get("session_id", f"http-session-{int(time.time())}")
+    persona = payload.get("persona")
+    dsp_preset = payload.get("dsp_preset")
+
+    if not text:
+        raise HTTPException(status_code=400, detail="Missing text parameter.")
+
+    return VoiceAgentLoop.process_spoken_turn(
+        user_input_text=text,
+        session_id=session_id,
+        persona=persona,
+        dsp_preset=dsp_preset
+    )

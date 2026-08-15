@@ -652,3 +652,30 @@ def clear_semantic_cache_endpoint():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/api/system/hardware/profile")
+def get_hardware_profile_endpoint():
+    """Returns detected hardware specifications (Ryzen 7 5800X3D, RX 7900 XTX, RAM, NVMe) and tuning parameters."""
+    try:
+        from src.infrastructure.hardware_accelerator import HardwareAccelerator
+        return HardwareAccelerator.get_hardware_profile()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error getting hardware profile: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/system/hardware/apply-tuning")
+def apply_hardware_tuning_endpoint():
+    """Applies dynamic OS environment, SIMD, and NVMe 4GB mmap SQLite optimizations."""
+    try:
+        from src.infrastructure.hardware_accelerator import HardwareAccelerator
+        return HardwareAccelerator.apply_full_hardware_tuning()
+    except (KeyboardInterrupt, MemoryError, SystemExit):
+        raise
+    except Exception as e:
+        import logging; logging.getLogger(__name__).exception(f"Swallowed error applying hardware tuning: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+

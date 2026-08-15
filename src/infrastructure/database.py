@@ -57,10 +57,12 @@ class SQLiteConnectionPool:
                     conn.execute("PRAGMA busy_timeout = 30000")
                     conn.execute("PRAGMA synchronous = NORMAL")
                     conn.execute("PRAGMA temp_store = MEMORY")
-                    conn.execute("PRAGMA cache_size = -64000")
-                    conn.execute("PRAGMA mmap_size = 268435456")
+                    conn.execute("PRAGMA cache_size = -262144")
+                    conn.execute("PRAGMA mmap_size = 4294967296")
+                    conn.execute("PRAGMA wal_autocheckpoint = 2000")
                     conn.execute("PRAGMA journal_size_limit = 67108864")
                     return conn
+
             # Block until a connection is available if we are at max
             return self.pool.get()
 
@@ -327,10 +329,12 @@ def get_db():
                 conn.execute("PRAGMA busy_timeout = 5000")
                 conn.execute("PRAGMA synchronous = NORMAL")
                 conn.execute("PRAGMA temp_store = MEMORY")
-                conn.execute("PRAGMA cache_size = -64000")
-                conn.execute("PRAGMA mmap_size = 268435456")
+                conn.execute("PRAGMA cache_size = -262144")
+                conn.execute("PRAGMA mmap_size = 4294967296")
+                conn.execute("PRAGMA wal_autocheckpoint = 2000")
                 conn.execute("PRAGMA foreign_keys = ON")
                 _local.connection = conn
+
                 _local.connection_path = current_path
                 with _local_connections_lock:
                     _local_connections[current_ident] = {

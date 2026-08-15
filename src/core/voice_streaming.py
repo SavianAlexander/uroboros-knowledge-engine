@@ -35,8 +35,9 @@ class StreamingAudioCache:
     """
     _cache: Dict[str, bytes] = {}
     _order: List[str] = []
-    _max_entries: int = 512
+    _max_entries: int = 2048
     _lock = threading.Lock()
+
 
     @classmethod
     def _compute_key(cls, text: str, voice: str, speed: float, dsp_preset: str) -> str:
