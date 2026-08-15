@@ -34,6 +34,7 @@ from src.core.voice_studio_showcase import VoiceStudioShowcase
 from src.core.voice_dsp import VoiceDSP
 from src.core.rag_query_cache import SemanticRAGQueryCache, GLOBAL_RAG_CACHE
 from src.core.audit_hashchain import AuditHashchainLedger, GLOBAL_AUDIT_HASHCHAIN
+from src.core.voice_command_parser import VoiceCommandParser
 
 
 class TestVoiceOmniscientMatrix(unittest.TestCase):
@@ -98,6 +99,30 @@ class TestVoiceOmniscientMatrix(unittest.TestCase):
         self.assertTrue(integrity["valid"])
         self.assertEqual(integrity["total_blocks"], 2)
         self.assertIsNotNone(integrity["merkle_root"])
+
+    def test_spoken_voice_command_parser(self):
+        """Test zero-dependency regex & NLP spoken command intent parser."""
+        # 1. Persona switch test
+        p1 = VoiceCommandParser.parse_intent("switch voice to aura ship ai")
+        self.assertEqual(p1["intent"], "SET_PERSONA")
+        self.assertIn("aura ship ai", p1["extracted_param"].lower())
+
+        # 2. DSP switch test
+        p2 = VoiceCommandParser.parse_intent("apply dsp preset sovereign presence")
+        self.assertEqual(p2["intent"], "SET_DSP_PRESET")
+
+        # 3. Radar test
+        p3 = VoiceCommandParser.parse_intent("check tududi radar deadlines")
+        self.assertEqual(p3["intent"], "CHECK_RADAR")
+
+        # 4. Audit test
+        p4 = VoiceCommandParser.parse_intent("audit hashchain security")
+        self.assertEqual(p4["intent"], "VERIFY_AUDIT")
+
+        # 5. Execution dry-run test
+        exec_res = VoiceCommandParser.execute_command("switch persona to fleet commander", speak_feedback=False)
+        self.assertEqual(exec_res["status"], "command_executed")
+        self.assertEqual(exec_res["action_result"]["new_persona"], "FLEET_COMMANDER")
 
     def test_code_syntax_narrator(self):
         """Test translation of code syntax, SQL, and CLI into executive spoken narrative."""
@@ -254,8 +279,8 @@ Sent from my iPhone
         self.assertEqual(cut["status"], "barge_in_executed")
         self.assertLess(cut["interruption_latency_ms"], 50.0)
 
-    def test_all_22_antigravity_mcp_tools(self):
-        """Test all 22 tools in the dedicated Antigravity Voice MCP server."""
+    def test_all_23_antigravity_mcp_tools(self):
+        """Test all 23 tools in the dedicated Antigravity Voice MCP server."""
         expected_tools = [
             "antigravity_speak", "antigravity_announce_task", "antigravity_voice_brief",
             "antigravity_play_sfx", "antigravity_blend_persona", "antigravity_listen",
@@ -265,7 +290,7 @@ Sent from my iPhone
             "antigravity_end_call", "antigravity_get_call_status",
             "antigravity_read_code", "antigravity_read_email",
             "antigravity_showcase_personas", "antigravity_apply_studio_master",
-            "antigravity_verify_audit_hashchain",
+            "antigravity_verify_audit_hashchain", "antigravity_parse_voice_command",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]
@@ -279,6 +304,9 @@ Sent from my iPhone
         chain_res = handle_tool_call("antigravity_verify_audit_hashchain", {"limit": 5})
         self.assertIn("integrity", chain_res)
         self.assertTrue(chain_res["integrity"]["valid"])
+
+        cmd_res = handle_tool_call("antigravity_parse_voice_command", {"command": "get status", "speak_feedback": False})
+        self.assertEqual(cmd_res["status"], "command_executed")
 
     def test_zero_assumptions_integrity(self):
         """Test strict 38-assertion zero-assumption validation suite."""

@@ -47,6 +47,7 @@ from src.core.voice_document_reader import DocumentVoiceReader
 from src.core.voice_studio_showcase import VoiceStudioShowcase
 from src.core.voice_dsp import VoiceDSP
 from src.core.audit_hashchain import GLOBAL_AUDIT_HASHCHAIN
+from src.core.voice_command_parser import VoiceCommandParser
 
 
 # Global Voice Configuration State
@@ -348,6 +349,18 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_parse_voice_command",
+        "description": "Parse natural spoken command text and execute the corresponding action with spoken feedback.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "command": {"type": "string", "description": "Spoken natural language command string."},
+                "speak_feedback": {"type": "boolean", "description": "If true, speaks synthesized confirmation audio.", "default": True}
+            },
+            "required": ["command"]
+        }
+    },
+    {
         "name": "antigravity_configure_voice",
         "description": "Configure global default voice settings for Antigravity assistant.",
         "inputSchema": {
@@ -607,6 +620,11 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             "integrity": integrity,
             "recent_blocks": recent
         }
+
+    elif name == "antigravity_parse_voice_command":
+        cmd_text = args.get("command", "")
+        speak_fb = args.get("speak_feedback", True)
+        return VoiceCommandParser.execute_command(spoken_text=cmd_text, speak_feedback=speak_fb)
 
     elif name == "antigravity_configure_voice":
         if "default_persona" in args:

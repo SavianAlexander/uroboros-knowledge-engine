@@ -23,9 +23,16 @@ except Exception:
 
 KOKORO_PERSONAS = {
     "CORTANA_PRIME": "CORTANA_PRIME",
-    "AURA_SHIP_AI": "AURA_SHIP_AI",
+    "AURA_SHIP_AI": "bf_emma",
     "EXECUTIVE_ADVISOR": "EXECUTIVE_ADVISOR",
     "TACTICAL_OFFICER": "TACTICAL_OFFICER",
+    "TACTICAL_ADVISOR": "af_sarah",
+    "FLEET_COMMANDER": "am_adam",
+    "INDUSTRY_OVERSEER": "bm_george",
+    "CALM_OPERATIONS": "af_bella",
+    "EXECUTIVE_DIRECTOR": "af_heart",
+    "WARP_NAVIGATOR": "bf_isabella",
+    "SOVEREIGN_ORACLE": "af_sky",
     "KOKORO_SKY": "af_sky",
     "KOKORO_BELLA": "af_bella",
     "KOKORO_SARAH": "af_sarah",
