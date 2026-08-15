@@ -153,12 +153,12 @@ class TestAdvancedFeatures(unittest.TestCase):
 
     def test_10_adaptive_rrf_scoring(self):
         """Verify Adaptive RRF auto-tuning calculation across short and long queries."""
-        from src.domain.sota_rag_engine import execute_sota_rag_search
-        short_res = execute_sota_rag_search("quantum")
+        from src.domain.decomposed_hybrid_rag import execute_hybrid_decomposed_search
+        short_res = execute_hybrid_decomposed_search("quantum")
         self.assertEqual(short_res["status"], "success")
         self.assertIn("top_candidates", short_res)
 
-        long_res = execute_sota_rag_search("what are the latest advancements in quantum error correction and topology")
+        long_res = execute_hybrid_decomposed_search("what are the latest advancements in quantum error correction and topology")
         self.assertEqual(long_res["status"], "success")
         self.assertIn("top_candidates", long_res)
 
