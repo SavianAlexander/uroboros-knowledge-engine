@@ -412,3 +412,33 @@ def pi_audit_endpoint(req: PIAuditRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class STTListenRequest(BaseModel):
+    duration_seconds: Optional[float] = 3.0
+    language: Optional[str] = "en"
+
+
+@router.post("/api/voice/stt/listen")
+def stt_listen_endpoint(req: STTListenRequest):
+    """Record live microphone audio and transcribe speech into text."""
+    from src.core.voice_stt_ear import VoiceEarTranscriber
+    try:
+        return VoiceEarTranscriber.listen_and_transcribe(
+            duration_s=req.duration_seconds or 3.0,
+            language=req.language or "en"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/voice/vault/scan")
+def vault_scan_endpoint():
+    """Trigger incremental filesystem delta scan and auto-index into SQLite FTS5."""
+    from src.infrastructure.vault_auto_watcher import VaultAutoWatcher
+    try:
+        watcher = VaultAutoWatcher()
+        return watcher.scan_and_index_delta()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+

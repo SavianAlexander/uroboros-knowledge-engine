@@ -533,6 +533,35 @@ Sent from my iPhone
         self.assertEqual(end_res["status"], "terminated")
         self.assertEqual(end_res["total_turns"], 2)
 
+    def test_voice_router_endpoints(self):
+        """Test voice REST router endpoints."""
+        from src.app.routers.voice import (
+            evaluate_radar_endpoint, RadarEvaluateRequest,
+            market_arbitrage_endpoint, MarketArbitrageRequest,
+            pi_audit_endpoint, PIAuditRequest,
+            stt_listen_endpoint, STTListenRequest,
+            vault_scan_endpoint
+        )
+        # 1. Radar Endpoint
+        radar = evaluate_radar_endpoint(RadarEvaluateRequest(system="G-EURJ", speak_alert=False))
+        self.assertEqual(radar["system_id"], 30001155)
+
+        # 2. Market Arbitrage Endpoint
+        arb = market_arbitrage_endpoint(MarketArbitrageRequest(commodity="PLEX", source_region="Domain", target_region="Delve", speak_report=False))
+        self.assertEqual(arb["commodity"], "PLEX")
+
+        # 3. PI Audit Endpoint
+        pi = pi_audit_endpoint(PIAuditRequest(character="all", speak_alert=False))
+        self.assertEqual(pi["character"], "Fleet Total")
+
+        # 4. STT Listen Endpoint
+        stt = stt_listen_endpoint(STTListenRequest(duration_seconds=0.5))
+        self.assertIn("status", stt)
+
+        # 5. Vault Scan Endpoint
+        scan = vault_scan_endpoint()
+        self.assertEqual(scan["status"], "scan_complete")
+
     def test_zero_assumptions_integrity(self):
         """Test strict 38-assertion zero-assumption validation suite."""
         success = run_zero_assumption_audit()
