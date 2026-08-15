@@ -1756,7 +1756,7 @@ def main():
     brain_parser = subparsers.add_parser("query_local_brain", help="Query local Uroboros Knowledge Engine & RAG brain")
     brain_parser.add_argument("--query", required=True, help="Search query string for local RAG brain")
     ingest_parser = subparsers.add_parser("neuro_ingest_cli", help="Ingest a file or directory into local Neuro Knowledge Engine")
-    vci_p = subparsers.add_parser("verify_ci", help="Verify GitHub Actions remote CI workflow execution & 100% green health")
+    vci_p = subparsers.add_parser("verify_ci", help="Verify GitHub Actions remote CI workflow execution & 100%% green health")
     vci_p.add_argument("--wait", action="store_true", help="Wait and poll until all workflows complete")
     vci_p.add_argument("--timeout", type=int, default=300, help="Max wait duration in seconds")
 
