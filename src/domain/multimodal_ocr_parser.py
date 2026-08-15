@@ -1,14 +1,19 @@
 """
 Zero-dependency Multimodal Document Layout & Form Parser Engine.
-Extracts structured tables, key-value form pairs, and checkbox states ([x] / [ ]) from document text.
+Extracts structured tables (Markdown & HTML), key-value form pairs, checkbox states ([x] / [ ]), and formats vision payloads for local Ollama VL models.
 """
 import re
-from typing import Dict, Any, List
+import json
+import base64
+from typing import Dict, Any, List, Optional
 
 RE_TABLE_SEPARATOR = re.compile(r'^[|\s:-]+$')
 RE_KEY_VALUE_PAIR = re.compile(r'^([A-Za-z0-9_\s#.\-]{2,30})\s*:\s*(.+)$', flags=re.MULTILINE)
 RE_CHECKBOX_CHECKED = re.compile(r'^\s*[-*]\s*\[[xX]\]\s*(.+)$', flags=re.MULTILINE)
 RE_CHECKBOX_UNCHECKED = re.compile(r'^\s*[-*]\s*\[\s*\]\s*(.+)$', flags=re.MULTILINE)
+RE_HTML_TABLE = re.compile(r'<table[^>]*>(.*?)</table>', flags=re.DOTALL | re.IGNORECASE)
+RE_HTML_ROW = re.compile(r'<tr[^>]*>(.*?)</tr>', flags=re.DOTALL | re.IGNORECASE)
+RE_HTML_CELL = re.compile(r'<(?:th|td)[^>]*>(.*?)</(?:th|td)>', flags=re.DOTALL | re.IGNORECASE)
 
 
 def parse_markdown_tables(text: str) -> List[Dict[str, Any]]:
@@ -34,6 +39,52 @@ def parse_markdown_tables(text: str) -> List[Dict[str, Any]]:
     if len(current_table_lines) >= 2:
         tables.append(_build_table_structure(current_table_lines))
 
+    # Also parse HTML tables if present
+    html_tables = parse_html_tables(text)
+    tables.extend(html_tables)
+
+    return tables
+
+
+def parse_html_tables(html_text: str) -> List[Dict[str, Any]]:
+    """
+    Extracts structured rows and columns from raw HTML table markup.
+    """
+    if not html_text or "<table" not in html_text.lower():
+        return []
+
+    tables = []
+    for table_match in RE_HTML_TABLE.finditer(html_text):
+        table_html = table_match.group(1)
+        row_matches = RE_HTML_ROW.findall(table_html)
+        if not row_matches:
+            continue
+
+        raw_rows = []
+        for r_html in row_matches:
+            cells = [re.sub(r'<[^>]+>', '', c).strip() for c in RE_HTML_CELL.findall(r_html)]
+            if cells:
+                raw_rows.append(cells)
+
+        if not raw_rows:
+            continue
+
+        headers = raw_rows[0]
+        data_rows = []
+        for r in raw_rows[1:]:
+            row_dict = {}
+            for idx, cell in enumerate(r):
+                key = headers[idx] if idx < len(headers) else f"col_{idx}"
+                row_dict[key] = cell
+            data_rows.append(row_dict)
+
+        tables.append({
+            "headers": headers,
+            "rows": data_rows,
+            "row_count": len(data_rows),
+            "format": "html"
+        })
+
     return tables
 
 
@@ -54,7 +105,8 @@ def _build_table_structure(table_lines: List[str]) -> Dict[str, Any]:
     return {
         "headers": header_cells,
         "rows": data_rows,
-        "row_count": len(data_rows)
+        "row_count": len(data_rows),
+        "format": "markdown"
     }
 
 
@@ -85,6 +137,30 @@ def parse_checkbox_states(text: str) -> Dict[str, List[str]]:
     }
 
 
+def prepare_vision_model_payload(
+    image_base64_or_path: str,
+    prompt: str = "Extract all text, tables, and form fields accurately.",
+    model: str = "qwen2-vl:7b"
+) -> Dict[str, Any]:
+    """
+    Constructs an Ollama-compatible Vision Model JSON payload for local visual document analysis.
+    """
+    raw_img = str(image_base64_or_path or "").strip()
+    # Strip data URI header if present
+    if raw_img.startswith("data:image"):
+        raw_img = raw_img.split(",", 1)[-1]
+
+    return {
+        "model": model,
+        "prompt": prompt,
+        "images": [raw_img] if raw_img else [],
+        "stream": False,
+        "options": {
+            "temperature": 0.0
+        }
+    }
+
+
 def parse_multimodal_document_layout(text: str) -> Dict[str, Any]:
     """
     Executes full multimodal document layout, form field, and table extraction.
@@ -101,3 +177,4 @@ def parse_multimodal_document_layout(text: str) -> Dict[str, Any]:
         "kv_pair_count": len(kv_pairs),
         "status": "success"
     }
+

@@ -5,11 +5,11 @@ description: The master integration and orchestration skill for bridging the Uro
 
 # Neuro Co-Pilot (Master Autonomous Engineering & Orchestration Suite)
 
-This skill equips the agent with the definitive 9-bridge engineering architecture, uniting the **Neuro Local Knowledge Vault** (`neuro-mcp`), the **Tududi Task Master** (`tududi`), the **GitHub CLI / Git Merkle Provenance Subsystem** (`gh` CLI & standard git commands), and the **EVE Online Tactical Telemetry & Intelligence Engine** into a unified, zero-dependency, parallel asynchronous closed loop.
+This skill equips the agent with the definitive 10-bridge engineering architecture, uniting the **Neuro Local Knowledge Vault** (`neuro-mcp`), the **Tududi Task Master** (`tududi`), the **GitHub CLI / Git Merkle Provenance Subsystem** (`gh` CLI & standard git commands), the **EVE Online Tactical Telemetry Engine**, and the **OS Process Hygiene & System Perfection Engine** into a unified, zero-dependency, parallel asynchronous closed loop.
 
 ---
 
-## The 9 Dedicated Modular CLI Bridges
+## The 10 Dedicated Modular CLI Bridges
 
 All bridges are zero-dependency standard library Python scripts located in `scripts/`:
 
@@ -24,8 +24,10 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 ├── architecture_bridge.py   # 6. Universal Polyglot Clean Architecture Engine (0-100% Score)
 ├── workflow_hub_bridge.py   # 7. Master Multi-Phase Engineering Pipeline Orchestrator
 ├── eve_bridge.py            # 8. EVE Online Tactical Intelligence & Live Telemetry Bridge
-└── system_recovery_bridge.py# 9. Windows System Resilience & Zero-Reboot Crash Recovery Bridge
+├── system_recovery_bridge.py# 9. Windows System Resilience & Zero-Reboot Crash Recovery Bridge
+└── process_hygiene_bridge.py# 10. OS Process Hygiene, Zombie Elimination & System Perfection Bridge
 ```
+
 
 ### 0. Inter-Bridge Contract Bus (`scripts/contract_bus.py`)
 - `python .../contract_bus.py run_parallel`: Execute all bridges concurrently using asynchronous DAG scheduling with cryptographic SHA-256 Merkle contracts.
@@ -175,21 +177,24 @@ Whenever executing multi-step work or in planning mode:
    - Execute `python .../github_bridge.py audit_pr_diff` before merging any PR to ensure zero API key leaks or anti-patterns.
 4. **Master Branch Protection Invariant**:
    - `master` is strictly protected: All 5 CI workflows (`CI Pipeline`, `Crucible Security Matrix`, `Neuro CI Suite`, `Build & Package`, `GitHub Pages`) must be 100% Green before merging.
-5. **Semantic Release Publishing (`vX.Y.Z`)**:
-   - Publish tagged production milestones: `python .../github_bridge.py generate_release_notes --tag <vX.Y.Z> --publish`.
-
-### VIII. Windows System Resilience & Zero-Reboot Recovery Protocol
-When the user reports desktop freezes, taskbar stalls, display corruption, audio loss, or system instability:
-1. **Zero-Reboot Recovery First**: Never suggest a full reboot before executing the 5-stage non-reboot recovery cascade.
-2. **Automated Recovery Execution**:
-   - `python .../system_recovery_bridge.py restore_all` (Executes Explorer shell restart, DWM refresh, Audio service restart, DNS flush, and hung process cleanup).
-3. **Hardware GPU Hotkey Diagnostic**:
-   - For stubborn visual/display driver hangs, remind the user of the instant GPU driver reload hotkey: `Win + Ctrl + Shift + B`.
-4. **Pre-Authorized Administrative Escalation**: Execute recovery and service restart commands directly without interactive prompts per workspace permissions.
+### IX. Automated OS Process Hygiene & System Perfection Protocol
+To maintain a high-performance, clutter-free operating system environment:
+1. **Automated Dual-Hook Guarantee**: Process hygiene executes automatically as a **Pre-Flight sweep** before any Neuro workflow begins, and as a **Post-Flight sweep** upon pipeline conclusion.
+2. **Surgical Orphan Elimination**:
+   - Detects and terminates orphaned WebKit/browser test workers (`WebKitNetworkProcess.exe`, `MiniBrowser.exe`, `playwright.exe`).
+   - Clears orphaned background `conhost.exe` consoles and dead `cmd.exe` process trees.
+   - Cleans duplicate server instances (`llama-server.exe`) to reclaim VRAM/RAM.
+3. **Core OS Whitelist Protection**:
+   - Preserves critical OS kernel services, Desktop Window Manager, Explorer shell, active IDE sessions (`Antigravity.exe`, `language_server.exe`), Discord, WSL2 VM hosts (`vmmemWSL`), Docker Desktop, and active hardware driver daemons (AMD Adrenalin, Corsair iCUE, Logitech Options+).
+4. **Standalone Invocation**:
+   - Audit: `python .../process_hygiene_bridge.py scan`
+   - Clean: `python .../process_hygiene_bridge.py clean`
+   - Pre-Flight: `python .../process_hygiene_bridge.py preflight`
+   - Post-Flight: `python .../process_hygiene_bridge.py postflight`
 
 ---
 
-## Tri-Engine Unified Command Matrix (49 Operations)
+## Tri-Engine Unified Command Matrix (53 Operations)
 
 | # | Command | Engine / Bridge | Purpose |
 | :-: | :--- | :--- | :--- |
@@ -242,6 +247,10 @@ When the user reports desktop freezes, taskbar stalls, display corruption, audio
 | **47** | `restart_audio` | `system_recovery_bridge.py`| Restart Windows Audio Services |
 | **48** | `flush_dns` | `system_recovery_bridge.py`| Flush Windows DNS Resolver Cache |
 | **49** | `clear_hung` | `system_recovery_bridge.py`| Terminate Unresponsive Windows Processes |
+| **50** | `scan` (Hygiene) | `process_hygiene_bridge.py`| Full OS Process Hygiene Audit & Orphan Scan |
+| **51** | `clean` (Hygiene) | `process_hygiene_bridge.py`| Surgical Elimination of Orphan & Zombie Processes |
+| **52** | `preflight` | `process_hygiene_bridge.py`| Automated Pre-Flight Process Sanitization Sweep |
+| **53** | `postflight` | `process_hygiene_bridge.py`| Automated Post-Flight Process Cleanup Sweep |
 
 ---
 
@@ -255,3 +264,5 @@ When the user reports desktop freezes, taskbar stalls, display corruption, audio
 - Clean Architecture Bridge: [`scripts/architecture_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/architecture_bridge.py)
 - Workflow Hub Bridge: [`scripts/workflow_hub_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/workflow_hub_bridge.py)
 - System Recovery Bridge: [`scripts/system_recovery_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/system_recovery_bridge.py)
+- Process Hygiene Bridge: [`scripts/process_hygiene_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/process_hygiene_bridge.py)
+

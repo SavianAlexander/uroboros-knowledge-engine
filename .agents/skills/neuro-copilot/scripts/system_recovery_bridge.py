@@ -99,14 +99,27 @@ def flush_dns() -> Dict[str, Any]:
 
 
 def clear_hung_processes() -> Dict[str, Any]:
-    """Identifies and terminates unresponsive processes."""
+    """Identifies and terminates unresponsive processes as well as orphaned WebKit and background test workers."""
     try:
-        cmd = "Get-Process | Where-Object { -not $_.Responding } | Stop-Process -Force -ErrorAction SilentlyContinue"
-        subprocess.run(["powershell", "-NoProfile", "-Command", cmd], capture_output=True, timeout=15)
+        # 1. Terminate hung/unresponsive processes
+        cmd_hung = "Get-Process | Where-Object { -not $_.Responding } | Stop-Process -Force -ErrorAction SilentlyContinue"
+        subprocess.run(["powershell", "-NoProfile", "-Command", cmd_hung], capture_output=True, timeout=15)
+
+        # 2. Terminate orphaned WebKit / Playwright processes whose parents have died
+        cmd_orphaned = """
+        Get-CimInstance Win32_Process | Where-Object { $_.Name -match "WebKitNetworkProcess|WebKitWebProcess|MiniBrowser" } | ForEach-Object {
+            $parent = Get-Process -Id $_.ParentProcessId -ErrorAction SilentlyContinue
+            if (-not $parent) {
+                Invoke-CimMethod -InputObject $_ -MethodName Terminate | Out-Null
+            }
+        }
+        """
+        subprocess.run(["powershell", "-NoProfile", "-Command", cmd_orphaned], capture_output=True, timeout=15)
+
         return {
             "status": "success",
             "action": "clear_hung_processes",
-            "message": "Scanned and terminated any unresponsive Windows processes.",
+            "message": "Scanned and terminated unresponsive Windows processes and orphaned WebKit background workers.",
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
         }
     except Exception as e:
@@ -116,6 +129,7 @@ def clear_hung_processes() -> Dict[str, Any]:
             "error": str(e),
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
         }
+
 
 
 def restore_all() -> Dict[str, Any]:
