@@ -26,7 +26,8 @@ LOCAL_VOICES_BIN_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.bin")
 
 DEFAULT_KOKORO_TTS_URL = "http://localhost:8880/v1/audio/speech"
 DEFAULT_VOICE_MODEL = "kokoro"
-DEFAULT_VOICE_NAME = "bf_emma"
+DEFAULT_VOICE_NAME = "CORTANA_PRIME"
+
 
 
 class NonInterruptingAudioQueue:
@@ -135,21 +136,13 @@ class NonInterruptingAudioQueue:
             except Exception:
                 played = False
 
-            if not played:
-                # Fallback to SoundPlayer / SAPI
-                if audio_file and os.path.exists(audio_file):
-                    try:
-                        ps_cmd = f"(New-Object System.Media.SoundPlayer '{audio_file}').PlaySync()"
-                        subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
-                    except Exception:
-                        pass
-                else:
-                    text = item.get("text", "")
-                    try:
-                        ps_cmd = f"Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Speak('{text}')"
-                        subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
-                    except Exception:
-                        pass
+            if not played and audio_file and os.path.exists(audio_file):
+                try:
+                    ps_cmd = f"(New-Object System.Media.SoundPlayer '{audio_file}').PlaySync()"
+                    subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+                except Exception:
+                    pass
+
 
         item["playback_completed_at"] = time.time()
         self.dispatched_history.append(item)
@@ -316,25 +309,21 @@ class KokoroVoiceEngine:
         text: str,
         priority: str = "HIGH",
         voice: Optional[str] = None,
-        dsp_preset: str = "STUDIO_DIRECT",
-        force_sapi: bool = False,
+        dsp_preset: str = "STUDIO_MASTER",
         blocking: bool = False
     ) -> Dict[str, Any]:
         """
         Dispatch alert through non-interrupting sequential queue.
         Zero-disk in-memory playback path for maximum responsiveness.
+        100% Kokoro-82M Neural synthesis.
         """
         selected_voice = voice or self.default_voice
         priority_map = {"CRITICAL": 0, "URGENT": 1, "HIGH": 2, "NORMAL": 2, "INFO": 3}
         priority_val = priority_map.get(priority.upper(), 2)
 
-        audio_bytes = None
-        engine_used = "Windows_SAPI"
+        audio_bytes = self.synthesize_neural_audio(text, voice=selected_voice, dsp_preset=dsp_preset)
+        engine_used = f"Kokoro_82M_Neural ({selected_voice})"
 
-        if not force_sapi:
-            audio_bytes = self.synthesize_neural_audio(text, voice=selected_voice, dsp_preset=dsp_preset)
-            if audio_bytes:
-                engine_used = f"Kokoro_82M_Neural ({selected_voice})"
 
         item = {
             "timestamp": time.time(),

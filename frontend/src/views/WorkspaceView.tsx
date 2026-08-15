@@ -778,21 +778,13 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
 
       await audio.play();
     } catch (err) {
-      console.warn('Neural audio failed, falling back to Web Speech API:', err);
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(fullText);
-        utterance.rate = ttsRate;
-        utterance.onstart = () => setTtsSpeaking(true);
-        utterance.onend = () => setTtsSpeaking(false);
-        utterance.onerror = () => setTtsSpeaking(false);
-        ttsUtteranceRef.current = utterance;
-        window.speechSynthesis.speak(utterance);
-      } else {
-        setTtsSpeaking(false);
-        toast('TTS Error', 'Could not synthesize speech', 'error');
-      }
+      console.warn('Kokoro neural audio playback failed:', err);
+      setTtsSpeaking(false);
+      ttsAudioRef.current = null;
+      toast('Voice Error', 'Kokoro neural audio playback encountered an error', 'error');
     }
   };
+
 
 
   const handleMouseUpSelection = () => {

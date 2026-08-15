@@ -279,32 +279,31 @@ def get_log_stream_endpoint():
 
 @router.post("/voice/alert")
 def trigger_voice_alert_endpoint(payload: Dict[str, Any]):
-    """Dispatch text-to-speech alert to local audio output using Kokoro-82M or SAPI."""
+    """Dispatch text-to-speech alert to local audio output using Kokoro-82M Neural Audio."""
     try:
         from src.infrastructure.eve_voice_copilot import KokoroVoiceCopilot
         copilot = KokoroVoiceCopilot()
         msg = payload.get("message", "Tactical alert.")
         priority = payload.get("priority", "HIGH")
-        voice = payload.get("voice", "bf_emma")
-        force_sapi = payload.get("force_sapi", False)
-        return copilot.speak(msg, priority=priority, voice=voice, force_sapi=force_sapi)
+        voice = payload.get("voice", "CORTANA_PRIME")
+        return copilot.speak(msg, priority=priority, voice=voice)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/voice/synthesize")
-def synthesize_voice_audio_endpoint(text: str = "Tactical alert notification.", voice: Optional[str] = "bf_emma"):
-    """Synthesize text into Kokoro-82M neural audio binary stream (MP3/WAV) or fallback status."""
+def synthesize_voice_audio_endpoint(text: str = "Tactical alert notification.", voice: Optional[str] = "CORTANA_PRIME"):
+    """Synthesize text into Kokoro-82M neural audio binary stream (WAV/MP3)."""
     try:
         from src.infrastructure.eve_voice_copilot import KokoroVoiceCopilot
         copilot = KokoroVoiceCopilot()
         audio_bytes = copilot.synthesize_neural_audio(text, voice=voice)
         if audio_bytes:
-            return Response(content=audio_bytes, media_type="audio/mpeg")
-        # If neural container is offline, return fallback status record
-        return {"status": "fallback_sapi", "message": "Kokoro-82M container offline, falling back to OS SAPI", "text": text, "voice": voice}
+            return Response(content=audio_bytes, media_type="audio/wav")
+        return {"status": "error", "message": "Kokoro neural synthesis unavailable", "text": text, "voice": voice}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @router.get("/sp-farm/roi")

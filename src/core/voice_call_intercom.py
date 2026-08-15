@@ -258,6 +258,14 @@ class VoiceCallIntercomEngine:
         }
 
     @classmethod
+    def barge_in_cut(cls) -> Dict[str, Any]:
+        """Instantly purge audio playback and mark session state."""
+        from src.core.voice_vad_interrupter import VoiceActivityInterrupter
+        if cls._active_call:
+            cls._active_call["state"] = "USER_SPEAKING"
+        return VoiceActivityInterrupter.execute_instant_barge_in()
+
+    @classmethod
     def end_call(cls) -> Dict[str, Any]:
         """Terminate the active voice call session and play disconnect chime."""
         if not cls._active_call:

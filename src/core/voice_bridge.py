@@ -178,15 +178,15 @@ class VoiceBridge:
     def play_sfx(cls, sfx_name: str) -> Optional[bytes]:
         """Synthesize and return procedural SFX audio bytes."""
         try:
-            from src.infrastructure.eve_voice_soundboard import render_sfx_to_wav_bytes
-            sfx_bytes = render_sfx_to_wav_bytes(sfx_name)
-            if sfx_bytes:
-                copilot = cls.get_copilot()
-                if copilot:
-                    copilot.audio_queue.play_raw_pcm_wav(sfx_bytes)
+            from src.core.voice_sfx import VoiceSFX
+            sfx_bytes = VoiceSFX.synthesize_sfx(sfx_name)
+            if not sfx_bytes:
+                from src.infrastructure.eve_voice_soundboard import render_sfx_to_wav_bytes
+                sfx_bytes = render_sfx_to_wav_bytes(sfx_name)
             return sfx_bytes
         except Exception:
             return None
+
 
     @classmethod
     def announce_ci_pipeline_status(cls, workflow_name: str, passed: bool = True) -> Dict[str, Any]:

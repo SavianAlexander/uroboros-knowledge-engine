@@ -48,6 +48,8 @@ import {
 
 import { useToast } from '../components/Toast';
 import { useApp } from '../store/AppContext';
+import { CortanaOrb, playCortanaSFX } from '../components/CortanaOrb';
+
 
 interface ActiveArtifact {
   title: string;
@@ -255,9 +257,7 @@ export default function ChatView() {
         audioPlayerRef.current.pause();
         audioPlayerRef.current = null;
       }
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      playCortanaSFX('dismiss');
       setSpeakingMsgId(null);
       toast('Speech Paused', 'Audio playback stopped', 'info');
       return;
@@ -268,13 +268,12 @@ export default function ChatView() {
       audioPlayerRef.current.pause();
       audioPlayerRef.current = null;
     }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
 
+    playCortanaSFX('confirm');
     setSpeakingMsgId(msgId);
     setIsAudioLoading(true);
     toast('Synthesizing Neural Audio', `Broadcasting with ${voicePersona.replace('_', ' ')} (${dspPreset.replace('_', ' ')})...`, 'info');
+
 
     try {
       const res = await fetch('/v1/audio/speech', {
@@ -312,24 +311,12 @@ export default function ChatView() {
 
       await audio.play();
     } catch (err) {
-      console.warn('Neural audio playback failed, falling back to Web Speech API:', err);
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        const cleanText = text
-          .replace(/```[\s\S]*?```/g, 'Code block omitted.')
-          .replace(/`([^`]+)`/g, '$1')
-          .replace(/[#*>\-_~]/g, ' ')
-          .trim();
-
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.rate = voiceSpeed;
-        utterance.onend = () => setSpeakingMsgId(null);
-        utterance.onerror = () => setSpeakingMsgId(null);
-        window.speechSynthesis.speak(utterance);
-      } else {
-        setSpeakingMsgId(null);
-        toast('TTS Error', 'Could not synthesize voice', 'error');
-      }
+      console.warn('Neural audio playback failed:', err);
+      setSpeakingMsgId(null);
+      audioPlayerRef.current = null;
+      toast('Voice Error', 'Kokoro neural voice streaming encountered a network error', 'error');
     } finally {
+
       setIsAudioLoading(false);
     }
   };
@@ -427,6 +414,7 @@ export default function ChatView() {
     }
 
     if (isRecordingVoice) {
+      playCortanaSFX('confirm');
       recognitionRef.current?.stop();
       setIsRecordingVoice(false);
       toast('Voice Stopped', 'Audio dictation stopped.', 'info');
@@ -434,6 +422,7 @@ export default function ChatView() {
     }
 
     try {
+      playCortanaSFX('ready');
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
@@ -443,6 +432,7 @@ export default function ChatView() {
         setIsRecordingVoice(true);
         toast('Voice Active', 'Listening... Speak your question now', 'info');
       };
+
 
       recognition.onresult = (event: any) => {
         let transcript = '';
@@ -559,9 +549,13 @@ export default function ChatView() {
             }
           }
         }
-        if (done) break;
+        if (done) {
+          playCortanaSFX('complete');
+          break;
+        }
       }
     } catch (err: any) {
+
       if (err.name !== 'AbortError') {
         console.error('Chat stream error:', err);
         toast('Stream Error', 'Failed to complete RAG response stream', 'error');
@@ -1001,7 +995,22 @@ export default function ChatView() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <CortanaOrb
+              state={speakingMsgId ? 'speaking' : isRecordingVoice ? 'listening' : isAudioLoading ? 'buffering' : 'idle'}
+              onClick={() => {
+                if (speakingMsgId) {
+                  handleToggleSpeak(speakingMsgId, '');
+                } else if (isRecordingVoice) {
+                  handleToggleVoiceRecording();
+                } else {
+                  handleToggleVoiceRecording();
+                }
+              }}
+              size="sm"
+              showLabel={true}
+            />
+
             <button
               onClick={() => setShowVoiceStudio(!showVoiceStudio)}
               className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all ${
@@ -1012,8 +1021,9 @@ export default function ChatView() {
               title="Voice Persona & DSP Studio Settings"
             >
               <Headphones className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
-              <span>Voice: {voicePersona === 'CORTANA_PRIME' ? 'Cortana' : voicePersona.split('_')[0]}</span>
+              <span>Studio: {dspPreset.replace('_', ' ')}</span>
             </button>
+
 
             <button
               onClick={() => setWebSearchEnabled(!webSearchEnabled)}

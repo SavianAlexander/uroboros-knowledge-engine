@@ -1,7 +1,7 @@
 """
 Universal Voice Omniscient Matrix Verification Suite & System Diagnostic.
 Standard: Pure Python Standard Library (unittest, json, os, sys, time).
-Ponytail Senior Dev Principle: Single unified verification entrypoint for the complete neural audio stack (Kokoro-82M TTS, STT Ear, Persona Blending, DSP Acoustics, Procedural Soundboard, SQLite Memory, FFT Spectrum, Tududi Radar, Full-Duplex Call Intercom, VAD Barge-In, and 17-Tool MCP Server).
+Ponytail Senior Dev Principle: Single unified verification entrypoint for the complete neural audio stack (Kokoro-82M TTS, STT Ear, Persona Blending, DSP Acoustics, Procedural Soundboard, SQLite Memory, FFT Spectrum, Tududi Radar, Full-Duplex Call Intercom, VAD Barge-In, Code Syntax Narrator, Email Reader, and 19-Tool MCP Server).
 """
 
 import os
@@ -24,12 +24,52 @@ from src.core.voice_spectrum_stream import VoiceSpectrumAnalyzer
 from src.core.voice_tududi_radar import TududiVoiceRadarDaemon
 from src.core.voice_call_intercom import VoiceCallIntercomEngine
 from src.core.voice_vad_interrupter import VoiceActivityInterrupter
+from src.core.voice_code_narrator import CodeSyntaxNarrator
+from src.core.voice_document_reader import DocumentVoiceReader
 from src.antigravity_voice_mcp import handle_tool_call, TOOLS_SCHEMA
 from scripts.verify_zero_assumptions import run_zero_assumption_audit
 
 
 class TestVoiceOmniscientMatrix(unittest.TestCase):
     """Complete system test suite for Uroboros Neural Voice & Audio Matrix."""
+
+    def test_code_syntax_narrator(self):
+        """Test translation of code syntax, SQL, and CLI into executive spoken narrative."""
+        code_fn = "def calculate_risk(threat_level: int, shield_hp: float) -> Optional[Dict[str, Any]]:"
+        narrative_fn = CodeSyntaxNarrator.deconstruct_code_for_speech(code_fn)
+        self.assertIn("Function calculate risk", narrative_fn)
+        self.assertIn("threat level", narrative_fn)
+
+        sql = "SELECT id, system_name FROM solar_systems WHERE security < 0.0 ORDER BY kills DESC LIMIT 10;"
+        narrative_sql = CodeSyntaxNarrator.deconstruct_code_for_speech(sql, language="sql")
+        self.assertTrue("sequel query" in narrative_sql.lower() or "sql query" in narrative_sql.lower())
+        self.assertIn("solar systems", narrative_sql)
+
+        cli = 'git commit -m "feat(voice): deploy ultra-low-latency in-memory playback"'
+        narrative_cli = CodeSyntaxNarrator.deconstruct_code_for_speech(cli)
+        self.assertIn("Git commit with message", narrative_cli)
+
+    def test_document_voice_reader(self):
+        """Test cleaning and extraction of long-form emails and briefing memos."""
+        raw_email = """From: Alexander Command <admiral@uroboros.internal>
+Subject: Phase 43 Deployment Briefing
+Date: Fri, 14 Aug 2026 20:00:00 -0400
+
+Commander,
+
+All mining operations in G-EURJ are operating at 100% capacity.
+Please review the telemetry report at https://telemetry.internal/report.
+
+CONFIDENTIALITY NOTICE: This message is intended solely for the recipient.
+Sent from my iPhone
+"""
+        cleaned = DocumentVoiceReader.clean_email_for_speech(raw_email)
+        self.assertEqual(cleaned["sender"], "Alexander Command")
+        self.assertEqual(cleaned["subject"], "Phase 43 Deployment Briefing")
+        self.assertIn("Email from Alexander Command", cleaned["speech_text"])
+        self.assertIn("mining operations", cleaned["speech_text"])
+        self.assertNotIn("CONFIDENTIALITY NOTICE", cleaned["speech_text"])
+        self.assertNotIn("Sent from my iPhone", cleaned["speech_text"])
 
     def test_voice_normalizer_phonetics(self):
         """Test technical acronym expansion, markdown stripping, and cadence pacing."""
@@ -92,9 +132,16 @@ class TestVoiceOmniscientMatrix(unittest.TestCase):
 
     def test_fft_spectrum_analyzer(self):
         """Test 32-band log FFT spectrum bins computation."""
-        spectrum = VoiceSpectrumAnalyzer.analyze_audio_buffer(None, num_bands=32)
-        self.assertEqual(len(spectrum["spectrum_32_bands"]), 32)
-        self.assertIn("rms_energy", spectrum)
+        try:
+            import numpy as np
+            samples = np.random.uniform(-0.5, 0.5, 2048).astype(np.float32)
+            spec = VoiceSpectrumAnalyzer.analyze_audio_buffer(samples, sample_rate=24000, num_bands=32)
+            self.assertEqual(len(spec["spectrum_32_bands"]), 32)
+            self.assertIn("rms_energy", spec)
+            self.assertIn("peak_amplitude", spec)
+        except ImportError:
+            spec = VoiceSpectrumAnalyzer.analyze_audio_buffer(None, num_bands=32)
+            self.assertEqual(len(spec["spectrum_32_bands"]), 32)
 
     def test_tududi_radar_sweep(self):
         """Test autonomous Tududi radar deadline check."""
@@ -117,7 +164,11 @@ class TestVoiceOmniscientMatrix(unittest.TestCase):
         self.assertEqual(resp_res["status"], "responded")
         self.assertTrue(resp_res["with_roger_beep"])
 
-        # 4. End Call
+        # 4. Barge-In Interruption
+        cut_res = VoiceCallIntercomEngine.barge_in_cut()
+        self.assertEqual(cut_res["status"], "barge_in_executed")
+
+        # 5. End Call
         end_res = VoiceCallIntercomEngine.end_call()
         self.assertEqual(end_res["status"], "call_ended")
         self.assertFalse(VoiceCallIntercomEngine.get_call_status()["active"])
@@ -125,7 +176,6 @@ class TestVoiceOmniscientMatrix(unittest.TestCase):
     def test_voice_vad_barge_in(self):
         """Test real-time VAD speech detection and instant audio purge."""
         vad = VoiceActivityInterrupter(energy_threshold=0.01)
-        # Synthetic speech frame
         try:
             import numpy as np
             sine_wave = (0.2 * np.sin(2 * np.pi * 440.0 * np.linspace(0, 0.02, 480))).astype(np.float32)
@@ -134,13 +184,12 @@ class TestVoiceOmniscientMatrix(unittest.TestCase):
         except ImportError:
             pass
 
-        # Barge-in cutoff
         cut = VoiceActivityInterrupter.execute_instant_barge_in()
         self.assertEqual(cut["status"], "barge_in_executed")
         self.assertLess(cut["interruption_latency_ms"], 50.0)
 
-    def test_all_17_antigravity_mcp_tools(self):
-        """Test all 17 tools in the dedicated Antigravity Voice MCP server."""
+    def test_all_19_antigravity_mcp_tools(self):
+        """Test all 19 tools in the dedicated Antigravity Voice MCP server."""
         expected_tools = [
             "antigravity_speak", "antigravity_announce_task", "antigravity_voice_brief",
             "antigravity_play_sfx", "antigravity_blend_persona", "antigravity_listen",
@@ -148,6 +197,7 @@ class TestVoiceOmniscientMatrix(unittest.TestCase):
             "antigravity_get_spectrum", "antigravity_trigger_tududi_radar",
             "antigravity_start_call", "antigravity_call_respond", "antigravity_barge_in_cut",
             "antigravity_end_call", "antigravity_get_call_status",
+            "antigravity_read_code", "antigravity_read_email",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]

@@ -144,6 +144,63 @@ class TestVoiceNormalizerPhonetics:
         assert np.all(np.isfinite(mastered))
         assert np.max(np.abs(mastered)) <= 1.0
 
+    def test_code_to_spoken_english(self):
+        code_snip = """def authenticate_user(username, password=None) -> bool:
+    if username == 'admin' and password != '':
+        return True
+    return False"""
+        spoken = VoiceNormalizer.convert_code_to_spoken_english(code_snip)
+        assert "Defining function authenticate user" in spoken
+        assert "with arguments username, password=None returning bool" in spoken
+        assert "If username == 'admin' and password != ''" in spoken
+        assert "Returns True" in spoken
+
+    def test_email_memo_normalization(self):
+        email_text = """From: Sarah Connor <sarah@cyber.com>
+To: John <john@pm.me>
+Subject: Urgent Security Patch
+Date: 2026-08-15 14:30:00
+
+Hi John,
+FYI, we noticed an issue w/ the database SLA.
+Best regards,
+Sarah Connor
+Sent from my iPhone"""
+        spoken = VoiceNormalizer.normalize_for_speech(email_text)
+        assert "Email from Sarah Connor" in spoken
+        assert "sarah at cyber dot com" in spoken
+        assert "Addressed to John" in spoken
+        assert "john at pm dot me" in spoken
+        assert "August 15, 2026" in spoken
+        assert "2:30 P-M" in spoken
+        assert "For your information" in spoken
+        assert "with the database S-L-A" in spoken
+        assert "Sent from my iPhone" not in spoken
+
+    def test_markdown_table_spoken_summary(self):
+        table_text = """Here is the status:
+| Service | Status | Port |
+|---|---|---|
+| FastAPI | Online | 8085 |
+| SQLite | Active | 0 |
+"""
+        spoken = VoiceNormalizer.normalize_for_speech(table_text)
+        assert "Table with columns: Service, Status, Port" in spoken
+        assert "Row 1: Service: Fast A-P-I, Status: Online, Port: 8085" in spoken
+        assert "Row 2: Service: Sequel Light, Status: Active, Port: 0" in spoken
+
+    def test_daily_business_lexicon(self):
+        text = "Our Q3 MRR reached $1,250,500.50 and ARR is $15M. Check - [x] task A and - [ ] task B ASAP."
+        spoken = VoiceNormalizer.normalize_for_speech(text)
+        assert "third quarter" in spoken
+        assert "M-R-R" in spoken
+        assert "1250500 dollars and 50 cents" in spoken
+        assert "15 million dollars" in spoken
+        assert "Completed task: task A" in spoken
+        assert "Pending task: task B" in spoken
+        assert "as soon as possible" in spoken
+
+
 
 class TestVoiceBridgeAndAPI:
     """Validate high-level VoiceBridge synthesis and FastAPI endpoints."""
@@ -191,3 +248,66 @@ class TestVoiceBridgeAndAPI:
         assert speech_resp.headers["content-type"] in ("audio/wav", "audio/x-wav")
         assert len(speech_resp.content) > 1000
         assert speech_resp.content[:4] == b"RIFF"
+
+        # 3. Test /api/voice/sfx/{sfx_name}
+        for sfx_name in ["ready", "confirm", "complete", "alert", "dismiss"]:
+            sfx_resp = client.get(f"/api/voice/sfx/{sfx_name}")
+            assert sfx_resp.status_code == 200
+            assert sfx_resp.headers["content-type"] in ("audio/wav", "audio/x-wav")
+            assert len(sfx_resp.content) > 500
+            assert sfx_resp.content[:4] == b"RIFF"
+
+        # 4. Test /v1/audio/speech/stream
+        stream_resp = client.post(
+            "/v1/audio/speech/stream",
+            json={
+                "input": "First clause here. Second clause follows.",
+                "voice": "CORTANA_PRIME",
+                "dsp_preset": "STUDIO_MASTER"
+            }
+        )
+        assert stream_resp.status_code == 200
+        lines = [line for line in stream_resp.text.split("\n") if line.strip()]
+        assert len(lines) >= 2
+
+
+class TestVoiceSFXAndEarcons:
+    """Validate procedural mathematical synthesis of Cortana UI sound cues."""
+
+    def test_synthesize_all_sfx(self):
+        from src.core.voice_sfx import VoiceSFX
+        for sfx in ["ready", "confirm", "complete", "alert", "dismiss"]:
+            wav = VoiceSFX.synthesize_sfx(sfx)
+            assert wav is not None
+            assert len(wav) > 1000
+            assert wav[:4] == b"RIFF"
+            assert b"WAVE" in wav[:16]
+
+    def test_voice_bridge_play_sfx(self):
+        wav = VoiceBridge.play_sfx("ready")
+        assert wav is not None
+        assert len(wav) > 1000
+        assert wav[:4] == b"RIFF"
+
+
+class TestStreamingNeuralSynthesizerAndCache:
+    """Validate clause splitting, streaming generation, and LRU cache."""
+
+    def test_clause_splitting(self):
+        from src.core.voice_streaming import StreamingNeuralSynthesizer
+        text = "Hello world. This is sentence two! And here is three?"
+        clauses = StreamingNeuralSynthesizer.split_into_acoustic_clauses(text)
+        assert len(clauses) == 3
+        assert "Hello world." in clauses[0]
+
+    def test_lru_audio_cache(self):
+        from src.core.voice_streaming import StreamingAudioCache
+        StreamingAudioCache.clear()
+        dummy_wav = b"RIFF" + b"\x00" * 100
+        StreamingAudioCache.put("test clause", "CORTANA_PRIME", 1.0, "STUDIO_MASTER", dummy_wav)
+        cached = StreamingAudioCache.get("test clause", "CORTANA_PRIME", 1.0, "STUDIO_MASTER")
+        assert cached == dummy_wav
+        StreamingAudioCache.clear()
+        assert StreamingAudioCache.get("test clause", "CORTANA_PRIME", 1.0, "STUDIO_MASTER") is None
+
+

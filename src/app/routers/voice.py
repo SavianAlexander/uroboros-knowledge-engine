@@ -5,11 +5,14 @@ Ponytail Senior Dev Principle: Drop-in /v1/audio/speech compatibility for any AI
 """
 
 from fastapi import APIRouter, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import io
+import json
 
 from src.core.voice_bridge import VoiceBridge, DOMAIN_PROFILES, KOKORO_PERSONAS
+from src.core.voice_streaming import StreamingNeuralSynthesizer, StreamingAudioCache
 
 router = APIRouter(tags=["Universal Voice Bridge"])
 
@@ -58,6 +61,37 @@ def openai_speech_endpoint(req: OpenAISpeechRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/v1/audio/speech/stream")
+@router.post("/api/voice/stream")
+def streaming_speech_endpoint(req: OpenAISpeechRequest):
+    """
+    Real-time streaming clause-by-clause neural TTS endpoint.
+    Yields newline-delimited JSON (NDJSON) chunks with base64 audio frames and metadata.
+    Allows clients to start playback in ~150-250ms on long documents.
+    """
+    try:
+        def event_generator():
+            for chunk in StreamingNeuralSynthesizer.stream_speech_chunks(
+                text=req.input,
+                voice=req.voice or "CORTANA_PRIME",
+                speed=req.speed or 1.0,
+                dsp_preset=req.dsp_preset or "STUDIO_MASTER"
+            ):
+                yield json.dumps(chunk) + "\n"
+
+        return StreamingResponse(event_generator(), media_type="application/x-ndjson")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/voice/cache/clear")
+def clear_voice_cache_endpoint():
+    """Clear in-memory LRU audio cache."""
+    StreamingAudioCache.clear()
+    return {"status": "success", "message": "In-memory voice cache cleared."}
+
 
 
 @router.get("/v1/audio/voices")

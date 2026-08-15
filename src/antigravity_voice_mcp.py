@@ -42,6 +42,8 @@ from src.core.voice_spectrum_stream import VoiceSpectrumAnalyzer
 from src.core.voice_tududi_radar import TududiVoiceRadarDaemon
 from src.core.voice_call_intercom import VoiceCallIntercomEngine
 from src.core.voice_vad_interrupter import VoiceActivityInterrupter
+from src.core.voice_code_narrator import CodeSyntaxNarrator
+from src.core.voice_document_reader import DocumentVoiceReader
 
 
 # Global Voice Configuration State
@@ -280,6 +282,33 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_read_code",
+        "description": "Deconstruct complex code snippets, git diffs, SQL queries, or CLI commands into smooth, human-like spoken narrative.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "description": "The raw code snippet, diff, or SQL statement to narrate."},
+                "language": {"type": "string", "description": "Programming language (e.g. 'python', 'sql', 'bash', 'diff').", "default": "python"},
+                "speak": {"type": "boolean", "description": "If true, speaks the narrative audio immediately.", "default": False},
+                "persona": {"type": "string", "description": "Persona to speak narrative with.", "default": "CALM_OPERATIONS"}
+            },
+            "required": ["code"]
+        }
+    },
+    {
+        "name": "antigravity_read_email",
+        "description": "Clean long-form emails, strip boilerplates/disclaimers/links, and synthesize executive voice briefing.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "raw_email": {"type": "string", "description": "Raw email text including optional headers."},
+                "speak": {"type": "boolean", "description": "If true, speaks the executive summary immediately.", "default": False},
+                "persona": {"type": "string", "description": "Persona to speak briefing with.", "default": "CALM_OPERATIONS"}
+            },
+            "required": ["raw_email"]
+        }
+    },
+    {
         "name": "antigravity_configure_voice",
         "description": "Configure global default voice settings for Antigravity assistant.",
         "inputSchema": {
@@ -476,6 +505,32 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
 
     elif name == "antigravity_get_call_status":
         return VoiceCallIntercomEngine.get_call_status()
+
+    elif name == "antigravity_read_code":
+        code = args.get("code", "")
+        lang = args.get("language", "python")
+        spoken_text = CodeSyntaxNarrator.deconstruct_code_for_speech(code, language=lang)
+        res = {"language": lang, "spoken_narrative": spoken_text}
+        if args.get("speak", False):
+            voice_res = VoiceBridge.speak(
+                text=spoken_text,
+                domain="EXECUTIVE_BRIEF",
+                voice=KOKORO_PERSONAS.get(args.get("persona", "CALM_OPERATIONS"), "af_bella")
+            )
+            res["voice_dispatch"] = voice_res
+        return res
+
+    elif name == "antigravity_read_email":
+        raw_email = args.get("raw_email", "")
+        cleaned = DocumentVoiceReader.clean_email_for_speech(raw_email)
+        if args.get("speak", False):
+            voice_res = VoiceBridge.speak(
+                text=cleaned["speech_text"],
+                domain="EXECUTIVE_BRIEF",
+                voice=KOKORO_PERSONAS.get(args.get("persona", "CALM_OPERATIONS"), "af_bella")
+            )
+            cleaned["voice_dispatch"] = voice_res
+        return cleaned
 
     elif name == "antigravity_configure_voice":
         if "default_persona" in args:
