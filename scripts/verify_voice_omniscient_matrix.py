@@ -562,6 +562,12 @@ Sent from my iPhone
         scan = vault_scan_endpoint()
         self.assertEqual(scan["status"], "scan_complete")
 
+        # 6. Fleet Tactical Alert Endpoint
+        from src.app.routers.voice import fleet_alert_endpoint, FleetAlertRequest
+        fleet = fleet_alert_endpoint(FleetAlertRequest(alert_type="MINING_COMPRESSION_CYCLE", system="G-EURJ", ship="Pillar of Autumn", speak_now=False))
+        self.assertEqual(fleet["status"], "tactical_alert_broadcast")
+        self.assertIn("Pillar of Autumn", fleet["text"])
+
     def test_zero_assumptions_integrity(self):
         """Test strict 38-assertion zero-assumption validation suite."""
         success = run_zero_assumption_audit()

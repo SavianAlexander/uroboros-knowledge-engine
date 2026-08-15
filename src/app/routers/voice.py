@@ -441,4 +441,27 @@ def vault_scan_endpoint():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class FleetAlertRequest(BaseModel):
+    alert_type: Optional[str] = "MINING_COMPRESSION_CYCLE"
+    system: Optional[str] = "G-EURJ"
+    ship: Optional[str] = "Pillar of Autumn"
+    speak_now: Optional[bool] = False
+
+
+@router.post("/api/voice/fleet/alert")
+def fleet_alert_endpoint(req: FleetAlertRequest):
+    """Dispatch and synthesize tactical combat and industrial fleet voice alerts."""
+    from src.domain.eve_fleet_tactical_voice import EVEFleetTacticalVoice
+    try:
+        return EVEFleetTacticalVoice.broadcast_tactical_alert(
+            alert_type=req.alert_type or "MINING_COMPRESSION_CYCLE",
+            system=req.system or "G-EURJ",
+            ship=req.ship or "Pillar of Autumn",
+            speak_now=req.speak_now or False
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 

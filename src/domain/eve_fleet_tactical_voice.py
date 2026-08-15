@@ -1,7 +1,7 @@
 """
 EVE Fleet Tactical Voice Broadcast Matrix & Combat Comms Synthesizer.
 Standard: Pure Python Standard Library (json, os, sys, time, typing).
-Ponytail Senior Dev Principle: Generates tactical combat, cyno, warp bubble, and fleet compression voice alerts with acoustic DSP mastering.
+Ponytail Senior Dev Principle: Generates dynamic tactical combat, cyno, warp bubble, and fleet compression voice alerts with acoustic DSP mastering and arbitrary kwargs formatting.
 """
 
 import os
@@ -26,19 +26,19 @@ FLEET_TACTICAL_TEMPLATES = {
         "priority": "CRITICAL"
     },
     "INTERDICTOR_BUBBLE_DROP": {
-        "text": "Warp disruption field deployed. Bubble radius 20 kilometers. Align to celestial exit vector.",
+        "text": "Warp disruption field deployed in {system}. Bubble radius 20 kilometers. Align to celestial exit vector.",
         "persona": "TACTICAL_ADVISOR",
         "dsp": "COMMANDER_TACTICAL",
         "priority": "CRITICAL"
     },
     "MINING_COMPRESSION_CYCLE": {
-        "text": "Pillar of Autumn industrial core active in G-EURJ. Asteroid ore compression cycle complete. Capacity available.",
+        "text": "{ship} industrial core active in {system}. Asteroid ore compression cycle complete. Capacity available.",
         "persona": "INDUSTRY_OVERSEER",
         "dsp": "AWE_STUDIO_MASTER",
         "priority": "NORMAL"
     },
     "FLEET_ANCHOR_COMMAND": {
-        "text": "All fleet wings: anchor on Fleet Commander flagship. Overheat propulsion modules and lock primary broadcast target.",
+        "text": "All fleet wings in {system}: anchor on {ship} flagship. Overheat propulsion modules and lock primary broadcast target.",
         "persona": "FLEET_COMMANDER",
         "dsp": "SOVEREIGN_PRESENCE",
         "priority": "HIGH"
@@ -65,11 +65,21 @@ class EVEFleetTacticalVoice:
         cls,
         alert_type: str,
         system: str = "G-EURJ",
-        speak_now: bool = True
+        ship: str = "Pillar of Autumn",
+        speak_now: bool = True,
+        **kwargs
     ) -> Dict[str, Any]:
         """Synthesize and broadcast tactical voice alert with tailored DSP mastering."""
         template = FLEET_TACTICAL_TEMPLATES.get(alert_type.upper(), FLEET_TACTICAL_TEMPLATES["CYNO_BEACON_ACTIVE"])
-        raw_text = template["text"].format(system=system)
+        format_dict = {"system": system, "ship": ship, **kwargs}
+        
+        raw_text_template = template["text"]
+        # Safe format with defaults for any missing format key
+        try:
+            raw_text = raw_text_template.format(**format_dict)
+        except KeyError:
+            raw_text = raw_text_template.replace("{system}", system).replace("{ship}", ship)
+
         clean_text = VoiceNormalizer.normalize_for_speech(raw_text)
         
         voice_id = KOKORO_PERSONAS.get(template["persona"], "af_sarah")
@@ -89,7 +99,7 @@ class EVEFleetTacticalVoice:
 
         GLOBAL_AUDIT_HASHCHAIN.append_event(
             event_type="EVE_TACTICAL_BROADCAST",
-            payload={"alert_type": alert_type, "system": system, "text": clean_text},
+            payload={"alert_type": alert_type, "system": system, "ship": ship, "text": clean_text},
             actor="FLEET_TACTICAL_VOICE"
         )
 
@@ -97,10 +107,10 @@ class EVEFleetTacticalVoice:
             "status": "tactical_alert_broadcast",
             "alert_type": alert_type,
             "system": system,
+            "ship": ship,
             "text": clean_text,
             "persona": template["persona"],
             "dsp_preset": dsp_preset,
             "priority": priority,
-            "latency_ms": round((time.time() - t0) * 1000, 1),
-            "dispatch": dispatch_res
+            "dispatch_res": dispatch_res
         }
