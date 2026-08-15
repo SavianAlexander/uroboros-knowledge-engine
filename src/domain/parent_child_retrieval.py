@@ -43,14 +43,14 @@ def expand_child_chunks_to_parents(file_ids: List[int], max_chars_per_parent: in
         parent_contexts = []
         for r in rows:
             content = r["content"] or ""
-            truncated_content = content[:max_chars_per_parent] if len(content) > max_chars_per_parent else content
+            truncated_content = content[:safe_max_chars] if len(content) > safe_max_chars else content
             parent_contexts.append({
                 "parent_id": r["id"],
                 "filename": r["filename"],
                 "filepath": r["filepath"],
                 "full_parent_context": truncated_content,
                 "total_chars": len(content),
-                "is_truncated": len(content) > max_chars_per_parent
+                "is_truncated": len(content) > safe_max_chars
             })
 
         return parent_contexts

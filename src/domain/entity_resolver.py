@@ -28,7 +28,28 @@ def resolve_canonical_entity(entity_name: str, custom_map: Dict[str, str] = None
     norm_name = unicodedata.normalize("NFC", str(entity_name))
     clean = norm_name.strip().lower()
     mapping = {**DEFAULT_ALIAS_MAP, **(custom_map or {})}
-    return mapping.get(clean, norm_name.strip())
+    if clean in mapping:
+        return mapping[clean]
+
+    import os
+    import sqlite3
+    from src.infrastructure.database import DB_FILE, get_db_connection
+    if os.path.exists(DB_FILE):
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT target_tag FROM tag_aliases WHERE alias = ? LIMIT 1", (clean,))
+                row = cursor.fetchone()
+                if row:
+                    return str(row[0])
+                cursor.execute("SELECT synonym FROM synonyms WHERE word = ? LIMIT 1", (clean,))
+                row2 = cursor.fetchone()
+                if row2:
+                    return str(row2[0])
+        except Exception:
+            pass
+
+    return norm_name.strip()
 
 
 def batch_resolve_entities(entities: List[str]) -> Dict[str, Any]:

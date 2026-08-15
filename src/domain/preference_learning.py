@@ -36,4 +36,20 @@ def log_user_feedback(
 
 def get_document_preference_weight(document_id: str) -> float:
     """Returns stored preference weight for document_id."""
-    return _PREFERENCE_WEIGHTS.get(document_id, 1.0)
+    if document_id in _PREFERENCE_WEIGHTS:
+        return _PREFERENCE_WEIGHTS[document_id]
+
+    import os
+    import sqlite3
+    from src.infrastructure.database import DB_FILE, get_db_connection
+    if os.path.exists(DB_FILE):
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT id FROM query_bookmarks WHERE title LIKE ? OR query LIKE ? LIMIT 1", (f"%{document_id}%", f"%{document_id}%"))
+                if cursor.fetchone():
+                    return 1.25
+        except Exception:
+            pass
+
+    return 1.0

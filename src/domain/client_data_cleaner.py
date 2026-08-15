@@ -174,7 +174,7 @@ def cleanse_client_dataset(dataset_name: str) -> Dict[str, Any]:
                 deduped_rows.append(r)
 
         # 2. Identify Categorical Grouping Column for Conditioned Imputation
-        group_col = next((c for c, t in cols_schema.items() if c != "id" and t == "TEXT" and any(k in c.lower() for k in ["dept", "category", "status", "role", "group"])), None)
+        group_col = next((c for c, t in cols_schema.items() if c != "id" and t == "TEXT" and any(k in c.lower() for k in ["dept", "depart", "department", "category", "status", "role", "group", "division", "segment"])), None)
 
         group_means: Dict[Tuple[str, Any], float] = {}
         global_stats: Dict[str, Any] = {}
