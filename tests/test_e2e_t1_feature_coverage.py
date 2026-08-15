@@ -204,7 +204,7 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
     def test_v2_fts5_vs_bm25_search_switcher(self):
         """T1.2.4 — FTS5 Keyword vs BM25 Semantic Search Switcher."""
         filepath = self.sandbox_dir / "search_target.txt"
-        filepath.write_text("Quantum supremacy and neural network optimization.", encoding="utf-8")
+        filepath.write_text("Quantum computing algorithms and neural network optimization.", encoding="utf-8")
         self.client.post("/api/index", json={"dir_path": self.sandbox_dir_str})
 
         resp_kw = self.client.get("/api/search", params={"q": "quantum", "mode": "keyword"})

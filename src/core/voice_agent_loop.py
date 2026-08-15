@@ -39,8 +39,8 @@ class VoiceAgentLoop:
     def start_session(
         cls,
         session_id: Optional[str] = None,
-        persona: str = "SOVEREIGN_ORACLE",
-        dsp_preset: str = "SOVEREIGN_PRESENCE"
+        persona: str = "ORACLE_ADVISOR",
+        dsp_preset: str = "EXECUTIVE_PRESENCE"
     ) -> Dict[str, Any]:
         """Initializes a new hands-free conversational voice session."""
         sid = session_id or f"voice-session-{uuid.uuid4().hex[:8]}"
@@ -95,7 +95,7 @@ class VoiceAgentLoop:
         with _SESSIONS_LOCK:
             session = _ACTIVE_SESSIONS.get(session_id)
             if not session:
-                cls.start_session(session_id, persona or "SOVEREIGN_ORACLE", dsp_preset or "SOVEREIGN_PRESENCE")
+                cls.start_session(session_id, persona or "ORACLE_ADVISOR", dsp_preset or "EXECUTIVE_PRESENCE")
                 session = _ACTIVE_SESSIONS[session_id]
 
             active_persona = persona or session["persona"]

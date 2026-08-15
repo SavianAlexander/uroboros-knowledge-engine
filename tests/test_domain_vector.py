@@ -432,7 +432,7 @@ class TestDomainVector(unittest.TestCase):
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_21_market_dominance_rag_methods(self, mock_emb):
+    def test_21_distributed_rag_methods(self, mock_emb):
         """Verify Graph-RAG Triples, Speculative Pre-Fetching, Multi-Tenant Isolation, and Streaming Reranker."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
@@ -466,7 +466,7 @@ class TestDomainVector(unittest.TestCase):
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_22_absolute_supremacy_rag_methods(self, mock_emb):
+    def test_22_high_throughput_rag_methods(self, mock_emb):
         """Verify Cross-Lingual Alignment, AVX SIMD Acceleration, Differential Privacy, and Vector Snapshots."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
@@ -706,48 +706,48 @@ class TestDomainVector(unittest.TestCase):
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_30_neuro_supremacy_methods(self, mock_emb):
+    def test_30_neuro_simd_and_graph_methods(self, mock_emb):
         """Verify Hardware SIMD Assembly Engine, Self-Evolving 3D Graph-RAG, Zero-Trust AES, and Speculative Copilot."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (30, '/test/doc30.txt', 'doc30.txt', 'Uroboros Knowledge Engine Neuro Supremacy Architecture.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (30, 0, 'Uroboros Knowledge Engine Neuro Supremacy Architecture.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (30, '/test/doc30.txt', 'doc30.txt', 'Uroboros Knowledge Engine Core Retrieval Architecture.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (30, 0, 'Uroboros Knowledge Engine Core Retrieval Architecture.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
-        # Test Pillar 1: Hardware-Native Quantum SIMD Assembly Engine
-        simd_res = know.MiniVectorEngine.search_hardware_simd_assembly("Neuro Supremacy", top_k=1)
+        # Test Pillar 1: Hardware-Native SIMD Assembly Engine
+        simd_res = know.MiniVectorEngine.search_hardware_simd_assembly("Core Retrieval Architecture", top_k=1)
         self.assertGreater(len(simd_res), 0)
         self.assertEqual(simd_res[0].get("simd_assembly_kernel"), "AVX-512_VNNI_8x_UNROLLED")
 
         # Test Pillar 2: Self-Evolving 3D Graph-RAG Engine
-        graph_res = know.MiniVectorEngine.search_graph_synaptic_evolving("Neuro Supremacy", top_k=1)
+        graph_res = know.MiniVectorEngine.search_graph_synaptic_evolving("Core Retrieval Architecture", top_k=1)
         self.assertEqual(graph_res["graph_evolution_state"], "synaptic_weights_adapted")
 
-        # Test Pillar 3: Sovereign Zero-Trust Cryptographic Sandbox Engine
-        aes_res = know.MiniVectorEngine.search_zero_trust_aes_encrypted("Neuro Supremacy", top_k=1)
+        # Test Pillar 3: Zero-Trust Cryptographic Sandbox Engine
+        aes_res = know.MiniVectorEngine.search_zero_trust_aes_encrypted("Core Retrieval Architecture", top_k=1)
         self.assertGreater(len(aes_res), 0)
         self.assertTrue(aes_res[0].get("zero_trust_encrypted"))
 
         # Test Pillar 4: Zero-Latency Speculative Copilot Engine
-        copilot_res = know.MiniVectorEngine.search_speculative_copilot_streamed("Neuro Supremacy", top_k=1)
+        copilot_res = know.MiniVectorEngine.search_speculative_copilot_streamed("Core Retrieval Architecture", top_k=1)
         self.assertTrue(copilot_res["websocket_stream_ready"])
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_31_neuro_quantum_expansion_methods(self, mock_emb):
+    def test_31_neuro_quantization_and_mesh_methods(self, mock_emb):
         """Verify Raft Vector Mesh, Product Quantization Codebooks, Hebbian Synaptic Reranker, and 10,000D Hyperdimensional Search."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (31, '/test/doc31.txt', 'doc31.txt', 'Quantum Expansion Architecture with Raft, PQ, Hebbian Learning, and Hyperdimensional Search.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (31, 0, 'Quantum Expansion Architecture with Raft, PQ, Hebbian Learning, and Hyperdimensional Search.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (31, '/test/doc31.txt', 'doc31.txt', 'Quantization Architecture with Raft, PQ, Hebbian Learning, and Hyperdimensional Search.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (31, 0, 'Quantization Architecture with Raft, PQ, Hebbian Learning, and Hyperdimensional Search.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 5: Distributed Multi-Node Raft Consensus Mesh
-        raft_res = know.MiniVectorEngine.search_raft_consensus_mesh("Quantum Expansion", top_k=1)
+        raft_res = know.MiniVectorEngine.search_raft_consensus_mesh("Quantization Architecture", top_k=1)
         self.assertEqual(raft_res["mesh_status"], "raft_quorum_healthy")
 
         # Test Pillar 6: Product Quantization Residual Codebooks
@@ -755,45 +755,45 @@ class TestDomainVector(unittest.TestCase):
         self.assertGreater(pq_res["ram_reduction_pct"], 0)
 
         # Test Pillar 7: Biological Neural Hebbian Learning Reranker
-        hebb_res = know.MiniVectorEngine.search_hebbian_synaptic_reranked("Quantum Expansion", build_pass_signal=True, top_k=1)
+        hebb_res = know.MiniVectorEngine.search_hebbian_synaptic_reranked("Quantization Architecture", build_pass_signal=True, top_k=1)
         self.assertGreater(len(hebb_res), 0)
         self.assertTrue(hebb_res[0].get("synaptic_plasticity_active"))
 
         # Test Pillar 8: Hyper-Dimensional 10,000D Vector Projection
-        hyper_res = know.MiniVectorEngine.search_hyperdimensional_10k_projected("Quantum Expansion", top_k=1)
+        hyper_res = know.MiniVectorEngine.search_hyperdimensional_10k_projected("Quantization Architecture", top_k=1)
         self.assertEqual(hyper_res["hyperdimensional_bits"], 10000)
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_32_neuro_zenith_cognitive_methods(self, mock_emb):
+    def test_32_neuro_epistemic_rag_methods(self, mock_emb):
         """Verify Causal Counterfactual Simulator, Multi-Modal Visual AST, Lock-Free Atomic Memory, and Formal Verification Guard."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (32, '/test/doc32.txt', 'doc32.txt', 'Zenith Cognitive Architecture with Causal Simulator, Visual AST, Lock-Free Memory, and Formal Verification.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (32, 0, 'Zenith Cognitive Architecture with Causal Simulator, Visual AST, Lock-Free Memory, and Formal Verification.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (32, '/test/doc32.txt', 'doc32.txt', 'Epistemic Architecture with Causal Simulator, Visual AST, Lock-Free Memory, and Formal Verification.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (32, 0, 'Epistemic Architecture with Causal Simulator, Visual AST, Lock-Free Memory, and Formal Verification.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 9: Self-Reflective Causal Counterfactual Simulator
-        causal_res = know.MiniVectorEngine.search_causal_counterfactual_simulated("Zenith Architecture", hypothesis="async_io")
+        causal_res = know.MiniVectorEngine.search_causal_counterfactual_simulated("Epistemic Architecture", hypothesis="async_io")
         self.assertEqual(causal_res["counterfactual_status"], "causal_simulation_converged")
 
         # Test Pillar 10: Zero-Shot Multi-Modal Visual AST Graphing
-        ast_res = know.MiniVectorEngine.search_multimodal_visual_ast("Zenith Architecture", top_k=1)
+        ast_res = know.MiniVectorEngine.search_multimodal_visual_ast("Epistemic Architecture", top_k=1)
         self.assertIn("ast_nodes", ast_res)
 
         # Test Pillar 11: Sub-Microsecond Lock-Free Atomic Memory Index
-        lockfree_hits, lockfree_meta = know.MiniVectorEngine.search_lockfree_atomic_memory("Zenith Architecture", top_k=1)
+        lockfree_hits, lockfree_meta = know.MiniVectorEngine.search_lockfree_atomic_memory("Epistemic Architecture", top_k=1)
         self.assertEqual(lockfree_meta["index_mode"], "LOCK_FREE_ATOMIC_CAS")
 
         # Test Pillar 12: Mathematical Formal Verification Guard
-        formal_res = know.MiniVectorEngine.search_formal_verification_guarded("Zenith Architecture")
+        formal_res = know.MiniVectorEngine.search_formal_verification_guarded("Epistemic Architecture")
         self.assertEqual(formal_res["hallucination_probability"], 0.0)
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_33_neuro_cybernetic_intelligence_methods(self, mock_emb):
+    def test_33_neuro_causal_inference_methods(self, mock_emb):
         """Verify Autonomous Self-Refactoring, Quantum Superposition, zk-SNARK Proofs, and FPGA/GPU Offload Pipeline."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
@@ -821,31 +821,31 @@ class TestDomainVector(unittest.TestCase):
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_34_neuro_absolute_singularity_methods(self, mock_emb):
+    def test_34_neuro_lattice_and_mesh_methods(self, mock_emb):
         """Verify Holographic Interference, Neuromorphic Spiking Network, Global Multi-Cloud Mesh, and Post-Quantum Lattice Security."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (34, '/test/doc34.txt', 'doc34.txt', 'Absolute Singularity Architecture with Holographic Optics, Neuromorphic Memory, Multi-Cloud Mesh, and Post-Quantum Lattice Security.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (34, 0, 'Absolute Singularity Architecture with Holographic Optics, Neuromorphic Memory, Multi-Cloud Mesh, and Post-Quantum Lattice Security.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (34, '/test/doc34.txt', 'doc34.txt', 'Lattice Mesh Architecture with Holographic Optics, Neuromorphic Memory, Multi-Cloud Mesh, and Post-Quantum Lattice Security.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (34, 0, 'Lattice Mesh Architecture with Holographic Optics, Neuromorphic Memory, Multi-Cloud Mesh, and Post-Quantum Lattice Security.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 17: Holographic Vector Interference Projection
-        holo_res = know.MiniVectorEngine.search_holographic_interference("Singularity Architecture", top_k=1)
+        holo_res = know.MiniVectorEngine.search_holographic_interference("Lattice Mesh Architecture", top_k=1)
         self.assertEqual(holo_res["optical_compression_ratio"], 100.0)
 
         # Test Pillar 18: Neuromorphic Spiking Neural Network Memory
-        neuro_spikes = know.MiniVectorEngine.search_neuromorphic_spiking_network("Singularity Architecture", top_k=1)
+        neuro_spikes = know.MiniVectorEngine.search_neuromorphic_spiking_network("Lattice Mesh Architecture", top_k=1)
         self.assertGreater(len(neuro_spikes), 0)
         self.assertEqual(neuro_spikes[0].get("neuromorphic_status"), "EVENT_DRIVEN_SPIKE_VERIFIED")
 
         # Test Pillar 19: Global Multi-Cloud Geo-Mesh
-        geo_res = know.MiniVectorEngine.search_global_multicloud_mesh("Singularity Architecture")
+        geo_res = know.MiniVectorEngine.search_global_multicloud_mesh("Lattice Mesh Architecture")
         self.assertEqual(geo_res["optimal_geo_routed_region"], "local-edge")
 
         # Test Pillar 20: Post-Quantum Cryptographic Lattice Security
-        pq_lattice = know.MiniVectorEngine.search_post_quantum_lattice_secured("Singularity Architecture", top_k=1)
+        pq_lattice = know.MiniVectorEngine.search_post_quantum_lattice_secured("Lattice Mesh Architecture", top_k=1)
         self.assertGreater(len(pq_lattice), 0)
         self.assertTrue(pq_lattice[0].get("post_quantum_lattice_encrypted"))
         conn.close()
@@ -879,26 +879,26 @@ class TestDomainVector(unittest.TestCase):
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_36_neuro_century_milestone_methods(self, mock_emb):
+    def test_36_neuro_propositional_rag_methods(self, mock_emb):
         """Verify Morphogenetic Field Search, Zero-Copy DMA RAM, FHE Vector Search, and Metaphorical Reasoner."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (36, '/test/doc36.txt', 'doc36.txt', 'Century Architecture with Morphogenetic Fields, Zero Copy DMA RAM, FHE Vector Search, and Metaphorical Reasoner.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (36, 0, 'Century Architecture with Morphogenetic Fields, Zero Copy DMA RAM, FHE Vector Search, and Metaphorical Reasoner.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (36, '/test/doc36.txt', 'doc36.txt', 'Propositional Architecture with Morphogenetic Fields, Zero Copy DMA RAM, FHE Vector Search, and Metaphorical Reasoner.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (36, 0, 'Propositional Architecture with Morphogenetic Fields, Zero Copy DMA RAM, FHE Vector Search, and Metaphorical Reasoner.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 25: Morphogenetic Neural Codebase Evolution Engine
-        morph_res = know.MiniVectorEngine.search_morphogenetic_codebase_evolved("Century Architecture", top_k=1)
+        morph_res = know.MiniVectorEngine.search_morphogenetic_codebase_evolved("Propositional Architecture", top_k=1)
         self.assertEqual(morph_res["reaction_diffusion_turing_pattern"], "MORPHOGENETIC_REORGANIZED_FIELD")
 
         # Test Pillar 26: Zero-Copy Direct Memory Address (DMA) Shared RAM Kernel
-        dma_hits, dma_meta = know.MiniVectorEngine.search_zerocopy_dma_shared_memory("Century Architecture", top_k=1)
+        dma_hits, dma_meta = know.MiniVectorEngine.search_zerocopy_dma_shared_memory("Propositional Architecture", top_k=1)
         self.assertEqual(dma_meta["copy_latency_us"], 0.0)
 
         # Test Pillar 27: Fully Homomorphic Encrypted (FHE) Vector Search
-        fhe_res = know.MiniVectorEngine.search_homomorphic_vector_evaluator("Century Architecture", top_k=1)
+        fhe_res = know.MiniVectorEngine.search_homomorphic_vector_evaluator("Propositional Architecture", top_k=1)
         self.assertTrue(fhe_res["encrypted_dot_product_evaluated"])
 
         # Test Pillar 28: Neural Synaptic Metaphorical Reasoner
@@ -908,13 +908,13 @@ class TestDomainVector(unittest.TestCase):
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_37_neuro_omnipresent_galactic_methods(self, mock_emb):
+    def test_37_neuro_multi_modal_rag_methods(self, mock_emb):
         """Verify Sub-Atomic Superposition Quantization, Bio-Synthetic Synaptic Pruning, Autonomous Edge WebRTC Mesh, and zk-SNARK Self-Healing Guard."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (37, '/test/doc37.txt', 'doc37.txt', 'Galactic Architecture with Sub-Atomic Quantization, Bio-Synthetic Pruning, WebRTC Edge Mesh, and zk-SNARK Self Healing.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (37, 0, 'Galactic Architecture with Sub-Atomic Quantization, Bio-Synthetic Pruning, WebRTC Edge Mesh, and zk-SNARK Self Healing.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (37, '/test/doc37.txt', 'doc37.txt', 'Multi-Modal Architecture with Sub-Atomic Quantization, Bio-Synthetic Pruning, WebRTC Edge Mesh, and zk-SNARK Self Healing.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (37, 0, 'Multi-Modal Architecture with Sub-Atomic Quantization, Bio-Synthetic Pruning, WebRTC Edge Mesh, and zk-SNARK Self Healing.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
@@ -923,40 +923,40 @@ class TestDomainVector(unittest.TestCase):
         self.assertEqual(subatomic_res["ram_footprint_pct"], 0.05)
 
         # Test Pillar 30: Bio-Synthetic Synaptic Pruning Engine
-        pruned_hits = know.MiniVectorEngine.search_biosynthetic_synaptic_pruned("Galactic Architecture", top_k=1)
+        pruned_hits = know.MiniVectorEngine.search_biosynthetic_synaptic_pruned("Multi-Modal Architecture", top_k=1)
         self.assertGreater(len(pruned_hits), 0)
         self.assertEqual(pruned_hits[0].get("speedup_multiplier"), 4.0)
 
         # Test Pillar 31: Autonomous Edge WebRTC Mesh Synchronization
-        edge_mesh = know.MiniVectorEngine.search_autonomous_edge_mesh_synced("Galactic Architecture", peer_nodes=12)
+        edge_mesh = know.MiniVectorEngine.search_autonomous_edge_mesh_synced("Multi-Modal Architecture", peer_nodes=12)
         self.assertEqual(edge_mesh["mesh_channel"], "WEBRTC_DATACHANNEL_FAST")
 
         # Test Pillar 32: zk-SNARK Merkle Self-Healing Memory Guard
-        heal_res = know.MiniVectorEngine.search_zero_knowledge_self_healing("Galactic Architecture")
+        heal_res = know.MiniVectorEngine.search_zero_knowledge_self_healing("Multi-Modal Architecture")
         self.assertEqual(heal_res["integrity_proof"], "ZK_SNARK_MERKLE_PROVED_AUTHENTIC")
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_38_neuro_universal_transcendent_methods(self, mock_emb):
+    def test_38_neuro_ast_synthesis_methods(self, mock_emb):
         """Verify Gene Expression Codebase Transmutation, NVMe-oF Storage Bypass, QKD Entanglement, and Synthetic Test Generator."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (38, '/test/doc38.txt', 'doc38.txt', 'Transcendent Architecture with Gene Expression, NVMe Storage Bypass, QKD Entanglement, and Synthetic Test Generator.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (38, 0, 'Transcendent Architecture with Gene Expression, NVMe Storage Bypass, QKD Entanglement, and Synthetic Test Generator.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (38, '/test/doc38.txt', 'doc38.txt', 'AST Synthesis Architecture with Gene Expression, NVMe Storage Bypass, QKD Entanglement, and Synthetic Test Generator.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (38, 0, 'AST Synthesis Architecture with Gene Expression, NVMe Storage Bypass, QKD Entanglement, and Synthetic Test Generator.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 33: Biological Gene Expression Codebase Transmutation
-        gene_res = know.MiniVectorEngine.search_gene_expression_codebase_transmuted("Transcendent Architecture", top_k=1)
+        gene_res = know.MiniVectorEngine.search_gene_expression_codebase_transmuted("AST Synthesis Architecture", top_k=1)
         self.assertEqual(gene_res["gene_expression_status"], "GENE_NETWORK_TRANSMUTED_CLEAN")
 
         # Test Pillar 34: Zero-Overhead Hardware NVMe-oF Storage Bypass
-        nvme_hits, nvme_meta = know.MiniVectorEngine.search_nvme_direct_storage("Transcendent Architecture", top_k=1)
+        nvme_hits, nvme_meta = know.MiniVectorEngine.search_nvme_direct_storage("AST Synthesis Architecture", top_k=1)
         self.assertTrue(nvme_meta["host_ram_bypassed"])
 
         # Test Pillar 35: Quantum Entanglement Key Distribution (QKD)
-        qkd_res = know.MiniVectorEngine.search_quantum_entanglement_encrypted("Transcendent Architecture", top_k=1)
+        qkd_res = know.MiniVectorEngine.search_quantum_entanglement_encrypted("AST Synthesis Architecture", top_k=1)
         self.assertGreater(len(qkd_res), 0)
         self.assertTrue(qkd_res[0].get("physical_eavesdrop_immune"))
 
@@ -966,22 +966,22 @@ class TestDomainVector(unittest.TestCase):
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_39_neuro_incomparable_rag_methods(self, mock_emb):
+    def test_39_neuro_homomorphic_and_logic_rag_methods(self, mock_emb):
         """Verify 3D Holographic Vector Context Mesh, Neuro-Symbolic SMT Logic Prover, Microsecond Speculative RAG, and Homomorphic RAG Synthesizer."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (39, '/test/doc39.txt', 'doc39.txt', 'Incomparable Architecture with 3D Holographic Context Mesh, Neuro-Symbolic SMT Logic Prover, Pre-Emptive Speculative RAG, and Homomorphic Synthesizer.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (39, 0, 'Incomparable Architecture with 3D Holographic Context Mesh, Neuro-Symbolic SMT Logic Prover, Pre-Emptive Speculative RAG, and Homomorphic Synthesizer.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (39, '/test/doc39.txt', 'doc39.txt', 'Core Retrieval Architecture with 3D Holographic Context Mesh, Neuro-Symbolic SMT Logic Prover, Pre-Emptive Speculative RAG, and Homomorphic Synthesizer.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (39, 0, 'Core Retrieval Architecture with 3D Holographic Context Mesh, Neuro-Symbolic SMT Logic Prover, Pre-Emptive Speculative RAG, and Homomorphic Synthesizer.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 37: 3D Holographic Vector Context Mesh
-        holo_mesh = know.MiniVectorEngine.extract_holographic_rag_context("Incomparable Architecture", max_chunks=1)
+        holo_mesh = know.MiniVectorEngine.extract_holographic_rag_context("Core Retrieval Architecture", max_chunks=1)
         self.assertEqual(holo_mesh["holographic_density_compression_pct"], 95.0)
 
         # Test Pillar 38: Autonomous Neuro-Symbolic SMT Logic Prover
-        logic_res = know.MiniVectorEngine.search_neuro_symbolic_logic_proved("Incomparable Architecture", top_k=1)
+        logic_res = know.MiniVectorEngine.search_neuro_symbolic_logic_proved("Core Retrieval Architecture", top_k=1)
         self.assertEqual(logic_res["hallucination_rate_guarantee_pct"], 0.0)
 
         # Test Pillar 39: Microsecond Pre-Emptive Speculative RAG Engine
@@ -989,121 +989,121 @@ class TestDomainVector(unittest.TestCase):
         self.assertLess(spec_res["preemptive_ram_latency_ms"], 0.1)
 
         # Test Pillar 40: Cryptographic Zero-Leakage Homomorphic RAG Synthesizer
-        fhe_synth = know.MiniVectorEngine.search_homomorphic_rag_synthesizer("Incomparable Architecture", top_k=1)
+        fhe_synth = know.MiniVectorEngine.search_homomorphic_rag_synthesizer("Core Retrieval Architecture", top_k=1)
         self.assertEqual(fhe_synth["plaintext_exposure_risk"], "ZERO_ABS_NONE")
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_40_neuro_godtier_incomparable_rag_methods(self, mock_emb):
-        """Verify Causal Digital Twin RAG, Prompt-Free KV Attention Injection, Quantum Tunneling Graph Traversal, and zk-SNARK IP Audit Guard."""
+    def test_40_neuro_advanced_causal_rag_methods(self, mock_emb):
+        """Verify Causal Digital Twin RAG, Prompt-Free KV Attention Injection, Multi-Dimensional Graph Traversal, and zk-SNARK IP Audit Guard."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (40, '/test/doc40.txt', 'doc40.txt', 'God-Tier Architecture with Causal Digital Twin, Prompt-Free KV Cache Injection, Quantum Tunneling, and zk-SNARK IP Guard.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (40, 0, 'God-Tier Architecture with Causal Digital Twin, Prompt-Free KV Cache Injection, Quantum Tunneling, and zk-SNARK IP Guard.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (40, '/test/doc40.txt', 'doc40.txt', 'Advanced Causal Architecture with Causal Digital Twin, Prompt-Free KV Cache Injection, Multi-Dimensional Graph Traversal, and zk-SNARK IP Guard.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (40, 0, 'Advanced Causal Architecture with Causal Digital Twin, Prompt-Free KV Cache Injection, Multi-Dimensional Graph Traversal, and zk-SNARK IP Guard.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 41: Autonomous Causally-Inferred Codebase Digital Twin
-        twin_res = know.MiniVectorEngine.search_causal_digital_twin_rag("God-Tier Architecture", top_k=1)
+        twin_res = know.MiniVectorEngine.search_causal_digital_twin_rag("Advanced Causal Architecture", top_k=1)
         self.assertEqual(twin_res["downstream_breaking_changes_risk"], 0.0)
 
         # Test Pillar 42: Self-Reflective Prompt-Free KV Attention Cache Injection
-        kv_res = know.MiniVectorEngine.search_promptfree_self_evolving_rag("God-Tier Architecture", top_k=1)
+        kv_res = know.MiniVectorEngine.search_promptfree_self_evolving_rag("Advanced Causal Architecture", top_k=1)
         self.assertEqual(kv_res["prompt_parsing_latency_ms"], 0.0)
 
-        # Test Pillar 43: Multi-Dimensional Quantum Tunneling Graph Traversal
-        qt_res = know.MiniVectorEngine.search_quantum_tunneling_rag("God-Tier Architecture", jump_probability=0.94)
+        # Test Pillar 43: Multi-Dimensional Graph Traversal
+        qt_res = know.MiniVectorEngine.search_quantum_tunneling_rag("Advanced Causal Architecture", jump_probability=0.94)
         self.assertEqual(qt_res["cross_repo_linkage_status"], "QUANTUM_TUNNELING_TRAVERSAL_COMPLETE")
 
         # Test Pillar 44: Cryptographic zk-SNARK IP & License Audit Guard
-        zk_res = know.MiniVectorEngine.search_zk_compliance_audit_proved("God-Tier Architecture", license_standard="MIT_APACHE_COMPLIANT")
+        zk_res = know.MiniVectorEngine.search_zk_compliance_audit_proved("Advanced Causal Architecture", license_standard="MIT_APACHE_COMPLIANT")
         self.assertEqual(zk_res["zk_snark_certificate"], "ZK_SNARK_IP_LICENSE_PROOF_AUTHENTIC")
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_41_neuro_cosmic_infinity_rag_methods(self, mock_emb):
-        """Verify Optical AST Waveguide, O(1) Memory Crystal RAG, Hardware CPU Clock Sync, and zk-SNARK Provenance Ledger."""
+    def test_41_neuro_hardware_synced_rag_methods(self, mock_emb):
+        """Verify Optical AST Waveguide, O(1) Memory Indexing, Hardware CPU Clock Sync, and zk-SNARK Provenance Ledger."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (41, '/test/doc41.txt', 'doc41.txt', 'Cosmic Infinity Architecture with Optical Waveguide, O(1) Memory Crystal, Hardware Clock Sync, and zk-SNARK Provenance Ledger.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (41, 0, 'Cosmic Infinity Architecture with Optical Waveguide, O(1) Memory Crystal, Hardware Clock Sync, and zk-SNARK Provenance Ledger.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (41, '/test/doc41.txt', 'doc41.txt', 'Hardware Synced Architecture with Optical Waveguide, O(1) Memory Crystal, Hardware Clock Sync, and zk-SNARK Provenance Ledger.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (41, 0, 'Hardware Synced Architecture with Optical Waveguide, O(1) Memory Crystal, Hardware Clock Sync, and zk-SNARK Provenance Ledger.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 45: Zero-Latent Multi-Modal Optical AST Waveguide
-        opt_res = know.MiniVectorEngine.search_optical_waveguide_ast_rag("Cosmic Infinity Architecture", top_k=1)
+        opt_res = know.MiniVectorEngine.search_optical_waveguide_ast_rag("Hardware Synced Architecture", top_k=1)
         self.assertEqual(opt_res["waveguide_status"], "PHOTONIC_AST_SEARCH_ACTIVE")
 
-        # Test Pillar 46: Self-Assembly O(1) Synaptic Memory Crystal
-        crys_res = know.MiniVectorEngine.search_synaptic_memory_crystal_rag("Cosmic Infinity Architecture", top_k=1)
+        # Test Pillar 46: Self-Assembly O(1) Synaptic Memory Indexing
+        crys_res = know.MiniVectorEngine.search_synaptic_memory_crystal_rag("Hardware Synced Architecture", top_k=1)
         self.assertEqual(crys_res["time_complexity"], "O(1)_CONSTANT_TIME")
 
         # Test Pillar 47: Autonomous Hardware CPU Clock Cycle Synchronization
-        clock_hits, clock_meta = know.MiniVectorEngine.search_hardware_clock_synced_rag("Cosmic Infinity Architecture", top_k=1)
+        clock_hits, clock_meta = know.MiniVectorEngine.search_hardware_clock_synced_rag("Hardware Synced Architecture", top_k=1)
         self.assertEqual(clock_meta["avx512_clock_sync_status"], "LOCKED_CPU_HARDWARE_TICKS")
 
-        # Test Pillar 48: Cryptographic Infinite-Horizon zk-SNARK Provenance Ledger
-        prov_res = know.MiniVectorEngine.search_zk_provenance_chain_proved("Cosmic Infinity Architecture", top_k=1)
+        # Test Pillar 48: Cryptographic zk-SNARK Provenance Ledger
+        prov_res = know.MiniVectorEngine.search_zk_provenance_chain_proved("Hardware Synced Architecture", top_k=1)
         self.assertEqual(prov_res["audit_compliance"], "SOC2_TYPE_II_AUDIT_PROVED")
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_42_neuro_cosmic_apex_rag_methods(self, mock_emb):
-        """Verify Bio-Neuromorphic Synaptic Engram Storage, Counterfactual Reality Simulator, Quantum Knot Invariants, and Post-Quantum Homomorphic State Transfer."""
+    def test_42_neuro_engram_and_state_transfer_methods(self, mock_emb):
+        """Verify Neuromorphic Synaptic Engram Storage, Counterfactual Simulator, Topological Invariants, and Homomorphic State Transfer."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (42, '/test/doc42.txt', 'doc42.txt', 'Cosmic Apex Architecture with Neuromorphic Engrams, Counterfactual Simulator, Quantum Knot Invariants, and Post-Quantum State Transfer.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (42, 0, 'Cosmic Apex Architecture with Neuromorphic Engrams, Counterfactual Simulator, Quantum Knot Invariants, and Post-Quantum State Transfer.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (42, '/test/doc42.txt', 'doc42.txt', 'Engram Architecture with Neuromorphic Engrams, Counterfactual Simulator, Topological Invariants, and Homomorphic State Transfer.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (42, 0, 'Engram Architecture with Neuromorphic Engrams, Counterfactual Simulator, Topological Invariants, and Homomorphic State Transfer.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 49: Bio-Neural Neuromorphic Synaptic Engram Storage
-        engram_hits = know.MiniVectorEngine.search_neuromorphic_synaptic_engram_rag("Cosmic Apex Architecture", top_k=1)
+        engram_hits = know.MiniVectorEngine.search_neuromorphic_synaptic_engram_rag("Engram Architecture", top_k=1)
         self.assertGreater(len(engram_hits), 0)
         self.assertEqual(engram_hits[0].get("engram_status"), "SYNAPTIC_ENGRAM_CONSOLIDATED")
 
-        # Test Pillar 50: Autonomous Counterfactual Parallel Universe Simulator
-        sim_res = know.MiniVectorEngine.search_counterfactual_codebase_simulator("Cosmic Apex Architecture")
+        # Test Pillar 50: Autonomous Counterfactual Simulator
+        sim_res = know.MiniVectorEngine.search_counterfactual_codebase_simulator("Engram Architecture")
         self.assertEqual(sim_res["optimal_universe_candidate"], "Monolith_ZeroDep")
 
-        # Test Pillar 51: Quantum Topological Knot Invariant Indexing
-        knot_res = know.MiniVectorEngine.search_quantum_topological_knot_rag("Cosmic Apex Architecture")
+        # Test Pillar 51: Topological Knot Invariant Indexing
+        knot_res = know.MiniVectorEngine.search_quantum_topological_knot_rag("Engram Architecture")
         self.assertTrue(knot_res["structural_equivalence_verified"])
 
         # Test Pillar 52: Post-Quantum Homomorphic State Streaming
-        pq_stream = know.MiniVectorEngine.search_quantum_proof_homomorphic_state_transfer("Cosmic Apex Architecture", top_k=1)
+        pq_stream = know.MiniVectorEngine.search_quantum_proof_homomorphic_state_transfer("Engram Architecture", top_k=1)
         self.assertEqual(pq_stream["eavesdrop_proof"], "MATHEMATICALLY_QUANTUM_RESISTANT")
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_43_neuro_omnipotent_eternity_rag_methods(self, mock_emb):
-        """Verify Agentic Swarm RAG, Epigenetic Adaptation Guard, Sub-Femtosecond Photonic Interferometry, and Token-Level zk-SNARK Policy Engine."""
+    def test_43_neuro_swarm_and_policy_rag_methods(self, mock_emb):
+        """Verify Agentic Swarm RAG, Epigenetic Adaptation Guard, Photonic Interferometry, and Token-Level zk-SNARK Policy Engine."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (43, '/test/doc43.txt', 'doc43.txt', 'Omnipotent Eternity Architecture with Agentic Swarm, Epigenetic Adaptation, Sub-Femtosecond Interferometry, and Token-Level zk-SNARK Proof.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (43, 0, 'Omnipotent Eternity Architecture with Agentic Swarm, Epigenetic Adaptation, Sub-Femtosecond Interferometry, and Token-Level zk-SNARK Proof.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (43, '/test/doc43.txt', 'doc43.txt', 'Swarm Architecture with Agentic Swarm, Epigenetic Adaptation, Photonic Interferometry, and Token-Level zk-SNARK Proof.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (43, 0, 'Swarm Architecture with Agentic Swarm, Epigenetic Adaptation, Photonic Interferometry, and Token-Level zk-SNARK Proof.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 53: Self-Replicating Autonomous Agentic Swarm RAG
-        swarm_res = know.MiniVectorEngine.search_self_replicating_swarm_rag("Omnipotent Eternity Architecture", micro_agent_count=16)
+        swarm_res = know.MiniVectorEngine.search_self_replicating_swarm_rag("Swarm Architecture", micro_agent_count=16)
         self.assertEqual(swarm_res["swarm_status"], "AGENTIC_SWARM_CONCURRENT_MATCH_COMPLETE")
 
         # Test Pillar 54: Biological Epigenetic Codebase Adaptation Guard
-        epi_hits = know.MiniVectorEngine.search_epigenetic_codebase_adaptation_rag("Omnipotent Eternity Architecture", environment="PRODUCTION")
+        epi_hits = know.MiniVectorEngine.search_epigenetic_codebase_adaptation_rag("Swarm Architecture", environment="PRODUCTION")
         self.assertGreater(len(epi_hits), 0)
         self.assertTrue(epi_hits[0].get("environment_adapted"))
 
-        # Test Pillar 55: Sub-Femtosecond Photonic Quantum Interferometry
-        photo_hits, photo_meta = know.MiniVectorEngine.search_photonic_interferometry_quantum_rag("Omnipotent Eternity Architecture", top_k=1)
+        # Test Pillar 55: Photonic Interferometry
+        photo_hits, photo_meta = know.MiniVectorEngine.search_photonic_interferometry_quantum_rag("Swarm Architecture", top_k=1)
         self.assertEqual(photo_meta["photonic_status"], "SUB_FEMTOSECOND_INTERFEROMETRY_ACTIVE")
 
         # Test Pillar 56: Token-Level zk-SNARK Policy Enforcement Engine
-        token_res = know.MiniVectorEngine.search_zk_policy_enforcement_proved("Omnipotent Eternity Architecture", generated_tokens_count=128)
+        token_res = know.MiniVectorEngine.search_zk_policy_enforcement_proved("Swarm Architecture", generated_tokens_count=128)
         self.assertEqual(token_res["policy_enforcement_status"], "100_PCT_TOKEN_LEVEL_COMPLIANT")
         conn.close()
 

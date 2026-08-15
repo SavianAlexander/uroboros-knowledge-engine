@@ -108,7 +108,7 @@ DOMAIN_TEST_MODULES = [
     "tests.test_domain_rag",
     "tests.test_domain_desktop",
     "tests.test_domain_expanded_coverage",
-    "tests.test_fundamental_adversarial_matrix",
+    "tests.test_fundamental_adversarial_validation",
     "tests.test_deep_fuzzing_and_concurrency",
     "tests.test_domain_metamorphic",
     "tests.test_domain_accessibility",

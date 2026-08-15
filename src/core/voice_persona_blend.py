@@ -25,11 +25,11 @@ VOICES_JSON_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.json")
 
 # Signature Curated Vocal Timbre Persona Blends
 SIGNATURE_PERSONA_BLENDS: Dict[str, Dict[str, float]] = {
-    # Sovereign Legendary Personas (Awe & Gravitas)
-    "ALEXANDER_SOVEREIGN": {"am_adam": 0.70, "bm_george": 0.20, "am_michael": 0.10},  # Commanding Imperator: Deep baritone, chest thump & magnetic authority
-    "FREYA_VALKYRIE": {"bf_emma": 0.60, "af_sarah": 0.25, "af_bella": 0.15},          # Resolute Commander: Powerful, impassioned, crystalline noble authority
-    "AURELIUS_STOIC": {"am_adam": 0.80, "bm_lewis": 0.20},                             # Philosopher Emperor / Kratos Gravitas: Visceral sub-bass thump & unshakable wisdom
-    "NOCTURNA_SOLON": {"bm_george": 0.65, "am_adam": 0.35},                           # Shadow Strategist / Big Boss Aura: Textured, weathered operative authority
+    # Executive & Command Personas (Presence & Authority)
+    "ALEXANDER_SOVEREIGN": {"am_adam": 0.70, "bm_george": 0.20, "am_michael": 0.10},  # Executive Command: Deep baritone, resonant low-end & vocal clarity
+    "FREYA_VALKYRIE": {"bf_emma": 0.60, "af_sarah": 0.25, "af_bella": 0.15},          # Resolute Command: Crystalline, articulate noble authority
+    "AURELIUS_STOIC": {"am_adam": 0.80, "bm_lewis": 0.20},                             # Stoic Presence: Deep low-end presence & deliberate pacing
+    "NOCTURNA_SOLON": {"bm_george": 0.65, "am_adam": 0.35},                           # Strategic Analysis: Focused, articulate analysis & strategic gravitas
     
     # Classic AI & Signature Personas
     "CORTANA_PRIME": {"af_sky": 0.60, "af_bella": 0.25, "af_sarah": 0.15},            # Articulate, crystalline, warm Cortana AI

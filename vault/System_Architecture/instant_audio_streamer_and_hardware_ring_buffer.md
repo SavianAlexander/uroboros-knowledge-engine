@@ -37,7 +37,7 @@ flowchart TD
 - Pre-synthesizes key tactical and operational alerts (*"Warp drive active"*, *"Shields at twenty five percent"*, *"Cynosural beacon is active in G-EURJ"*, *"Hostile signature detected"*, *"Affirmative"*, *"Sovereign architecture certified"*).
 - Measures empirical **0.01ms - 0.02ms** Time-To-First-Sound (TTFS) on cached phrase dispatches.
 
-### C. Antigravity MCP Expansion (28 Omniscient Tools)
+### C. Antigravity MCP Expansion (28 Dedicated Voice & Telemetry Tools)
 1. `antigravity_instant_speak`: Instant $<1\text{ms}$ voice synthesis and direct streaming.
 2. `antigravity_prewarm_voice_engine`: Pre-warms weights and populates high-speed phrase cache.
 3. `antigravity_get_instant_streamer_stats`: Telemetry querying cache hit ratios and total bytes streamed.

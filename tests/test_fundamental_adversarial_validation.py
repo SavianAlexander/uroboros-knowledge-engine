@@ -112,7 +112,7 @@ class TestFundamentalAdversarialMatrix(unittest.TestCase):
                         )
                         conn.commit()
             except Exception as e:
-                import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_fundamental_adversarial_matrix.py: {e}")
+                import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_fundamental_adversarial_validation.py: {e}")
                 errors.append(f"Thread {thread_id} error: {e}")
 
         threads = []

@@ -100,6 +100,7 @@ def apply_iir_filter(samples: Any, b: Any, a: Any) -> Any:
 
 _DSP_PIPELINES: Dict[str, List[Tuple[str, float, float, float]]] = {
     # format: (filter_type, freq, q, gain_db)
+    "EXECUTIVE_PRESENCE": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
     "SOVEREIGN_PRESENCE": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
     "SOVEREIGN_AWE": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
     "AWE_STUDIO_MASTER": [("hp", 60.0, 0.707, 0.0), ("pk", 4500.0, 0.9, 3.0)],
@@ -160,10 +161,10 @@ class VoiceDSP:
         """List all available high-fidelity DSP acoustic mastering presets."""
         return {
             "STUDIO_DIRECT": "Bit-accurate direct linear output with True-Peak -1.0 dBFS limiter.",
-            "SOVEREIGN_PRESENCE": "Deep chest warmth (180Hz) + crystal presence (3.8kHz) for commanding executive authority.",
-            "AWE_STUDIO_MASTER": "Polished high-end sheen (4.5kHz) and transparent dynamic range for broadcast narratives.",
+            "EXECUTIVE_PRESENCE": "Deep chest warmth (180Hz) + crystal presence (3.8kHz) for commanding executive authority.",
+            "STUDIO_MASTER": "Polished high-end sheen (4.5kHz) and transparent dynamic range for broadcast narratives.",
             "COMMANDER_TACTICAL": "Aggressive vocal punch (2.8kHz) with tight low-cut (120Hz) for fleet combat and alert clarity.",
-            "TRANSCENDENTAL_AURA": "Ethereal high-frequency shimmer (3.4kHz & 8.5kHz) for holographic shipboard AI persona.",
+            "HOLOGRAPHIC_AURA": "Crystalline high-frequency shimmer (3.4kHz & 8.5kHz) for holographic shipboard AI persona.",
             "COCKPIT_ACOUSTIC": "Classic ship cockpit acoustic resonance with air presence boost.",
             "RADIO_BANDPASS_300_3400HZ": "NASA Apollo / Military 300Hz-3400Hz frequency bandpass comms filter.",
             "LONG_RANGE_SQUELCH": "Narrow 500Hz-2800Hz long-range deep space radio intercom filter."

@@ -131,11 +131,11 @@ def list_voices_endpoint():
     ]
 
     personas = [
-        # Sovereign Legendary Tier
-        {"id": "ALEXANDER_SOVEREIGN", "name": "Alexander Sovereign (The Commanding Imperator)", "category": "Sovereign", "description": "Deep baritone, sub-harmonic chest power & magnetic authority."},
-        {"id": "FREYA_VALKYRIE", "name": "Freya Valkyrie (The Resolute Commander)", "category": "Sovereign", "description": "Powerful, impassioned, crystalline noble authority & grace."},
-        {"id": "AURELIUS_STOIC", "name": "Aurelius Stoic (The Philosopher Emperor)", "category": "Sovereign", "description": "Visceral sub-bass thump, deliberate pauses & unshakable wisdom (Kratos grade)."},
-        {"id": "NOCTURNA_SOLON", "name": "Nocturna Solon (The Shadow Strategist)", "category": "Sovereign", "description": "Textured, weathered operative authority & magnetic gravitas (Big Boss aura)."},
+        # Executive & Command Tier
+        {"id": "ALEXANDER_SOVEREIGN", "name": "Alexander (Executive Command)", "category": "Executive", "description": "Deep baritone, resonant chest power & vocal authority."},
+        {"id": "FREYA_VALKYRIE", "name": "Freya (Resolute Command)", "category": "Executive", "description": "Crystalline, articulate noble authority & clarity."},
+        {"id": "AURELIUS_STOIC", "name": "Aurelius (Stoic Presence)", "category": "Executive", "description": "Resonant low-end presence, deliberate pacing & philosophical depth."},
+        {"id": "NOCTURNA_SOLON", "name": "Nocturna (Strategic Analysis)", "category": "Executive", "description": "Focused, articulate analysis & strategic gravitas."},
         
         # Classic AI & Signature Tier
         {"id": "CORTANA_PRIME", "name": "Cortana Prime (Halo AI)", "category": "Signature", "description": "Articulate, crystalline, warm Cortana AI persona."},

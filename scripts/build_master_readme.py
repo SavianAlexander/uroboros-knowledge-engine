@@ -31,8 +31,8 @@ Featuring **32 Core Retrieval Subsystems**, **13 Advanced Retrieval Strategies**
 ## Table of Contents
 
 - [1. Mathematical Foundations, Formal Proofs & Retrieval Algorithms](#1-mathematical-foundations-formal-proofs--retrieval-algorithms)
-- [2. The 32 State-of-the-Art (SOTA) Architectural Engines](#2-the-32-state-of-the-art-sota-architectural-engines)
-- [3. The 13 Incomparable Frontier RAG Paradigms](#3-the-13-incomparable-frontier-rag-paradigms)
+- [2. The 32 Core Architectural Engines](#2-the-32-core-architectural-engines)
+- [3. The 13 Core RAG Retrieval Paradigms](#3-the-13-core-rag-retrieval-paradigms)
 - [4. The 21 Single-Node RAG Innovations Matrix](#4-the-21-single-node-rag-innovations-matrix)
 - [5. Hardware Single-Instance Process Memory Guard](#5-hardware-single-instance-process-memory-guard)
 - [6. End-to-End System Pipeline & Sequence Architecture](#6-end-to-end-system-pipeline--sequence-architecture)
@@ -130,7 +130,7 @@ $$RE = 206.835 - 1.015 \left( \frac{\text{total words}}{\text{total sentences}} 
 
 ---
 
-## 2. The 32 State-of-the-Art (SOTA) Architectural Engines
+## 2. The 32 Core Architectural Engines
 
 Uroboros incorporates 32 complete architectural engines divided into Core Acceleration, Code-Graph Analysis, Fine-Tuning & Audio, Fusion RAG, Privacy & Compliance, Telemetry, and Frontier Paradigms:
 
@@ -163,7 +163,7 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 
 ---
 
-## 3. The 13 Incomparable Frontier RAG Paradigms
+## 3. The 13 Core RAG Retrieval Paradigms
 
 1. **⚔️ Counterfactual RAG & Multi-Scenario Stress Testing** ([`src/domain/counterfactual_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/counterfactual_rag.py)): Generates counter-hypotheses and searches for refutations or edge cases before output.
 2. **🌲 RAPTOR Tree Indexer** ([`src/domain/raptor_tree_indexer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/raptor_tree_indexer.py)): Recursive Abstractive Processing constructing hierarchical multi-level summary trees.
@@ -183,7 +183,7 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 
 ## 4. The 21 Single-Node RAG Innovations Matrix
 
-| # | Innovation Pillar | Module File Path | API Endpoint | Incomparable Moat over Cloud Services |
+| # | Innovation Pillar | Module File Path | API Endpoint | Architectural Advantage over External Cloud APIs |
 |---| :--- | :--- | :--- | :--- |
 | **1** | **Speculative RAG Synthesizer** | [`src/domain/speculative_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_rag.py) | `POST /api/search/speculative-rag` | Synthesizes and scores 3 candidate draft representations in parallel, cutting context latency by **~78%**. |
 | **2** | **Temporal Knowledge Lineage** | [`src/domain/temporal_rag_lineage.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/temporal_rag_lineage.py) | `GET/POST /api/knowledge/temporal-lineage` | Tracks document version history and relationship evolution across time ($t_0 \to t_1 \to t_2$). |

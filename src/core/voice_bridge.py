@@ -32,6 +32,7 @@ KOKORO_PERSONAS = {
     "CALM_OPERATIONS": "af_bella",
     "EXECUTIVE_DIRECTOR": "af_heart",
     "WARP_NAVIGATOR": "bf_isabella",
+    "ORACLE_ADVISOR": "af_sky",
     "SOVEREIGN_ORACLE": "af_sky",
     "KOKORO_SKY": "af_sky",
     "KOKORO_BELLA": "af_bella",

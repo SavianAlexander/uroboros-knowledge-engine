@@ -377,7 +377,7 @@ def extract_advanced_rag_context(
     jaccard_threshold: float = 0.70
 ) -> Tuple[str, List[Dict[str, Any]]]:
     """
-    Orchestrates full Advanced RAG pipeline with 5 Mechanical Super-Upgrades:
+    Orchestrates full Advanced RAG pipeline with core algorithmic stages:
     1. SQL Metadata Filter Pushdown (tag:, ext: filters)
     2. Multi-hop query decomposition into sub-queries
     3. Technical synonym expansion & Porter stemming

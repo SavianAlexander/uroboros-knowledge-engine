@@ -27,13 +27,13 @@ PERSONA_PRESENTATIONS = [
     (
         "AURA_SHIP_AI",
         "bf_emma",
-        "TRANSCENDENTAL_AURA",
+        "HOLOGRAPHIC_AURA",
         "Greetings Commander. I am Aura, your shipboard neural intelligence. I monitor starship defensive shields, warp envelope harmonics, and navigational telemetry across New Eden."
     ),
     (
         "FLEET_COMMANDER",
         "am_adam",
-        "SOVEREIGN_PRESENCE",
+        "EXECUTIVE_PRESENCE",
         "Fleet Commander speaking. I coordinate sovereign battle wings, cynosural jump bridges, and capital fleet engagements. Anchor on the flagship and prepare for warp."
     ),
     (
@@ -45,7 +45,7 @@ PERSONA_PRESENTATIONS = [
     (
         "INDUSTRY_OVERSEER",
         "bm_george",
-        "AWE_STUDIO_MASTER",
+        "STUDIO_MASTER",
         "Industry Overseer reporting. I manage deep-space mining fleets, planetary reactions, and industrial ore compression aboard the Pillar of Autumn in G-EURJ."
     ),
     (
@@ -57,20 +57,20 @@ PERSONA_PRESENTATIONS = [
     (
         "EXECUTIVE_DIRECTOR",
         "af_heart",
-        "SOVEREIGN_PRESENCE",
+        "EXECUTIVE_PRESENCE",
         "Executive Director here. I analyze high-level strategic intelligence, asset reserves, and organizational milestones across all active operational projects."
     ),
     (
         "WARP_NAVIGATOR",
         "bf_isabella",
-        "TRANSCENDENTAL_AURA",
+        "HOLOGRAPHIC_AURA",
         "Warp Navigator online. Plotting celestial transit vectors and safe navigational routes through Jita 4-4 and nullsec stargate perimeters."
     ),
     (
-        "SOVEREIGN_ORACLE",
+        "ORACLE_ADVISOR",
         "af_sky",
-        "SOVEREIGN_PRESENCE",
-        "I am the Sovereign Oracle. I certify deterministic truth, canonical game physics, and immutable cryptographic audit hashchains with zero assumptions."
+        "EXECUTIVE_PRESENCE",
+        "I am the Oracle Advisor. I certify deterministic truth, canonical game mechanics, and immutable cryptographic audit hashchains with zero assumptions."
     )
 ]
 

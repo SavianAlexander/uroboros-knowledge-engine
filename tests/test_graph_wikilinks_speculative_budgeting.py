@@ -1,5 +1,5 @@
 """
-Self-check unit test suite for God-Tier Comparative RAG Frontier Paradigms v3:
+Self-check unit test suite for Core RAG Retrieval Paradigms v3:
 1. Knowledge Graph Self-Healing & Wikilink Synthesizer
 2. Specular Speculative Context Streaming Guard
 3. Multi-Document Semantic Diff & Evolution Tracker

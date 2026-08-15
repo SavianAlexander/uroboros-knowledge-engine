@@ -329,13 +329,13 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "antigravity_apply_studio_master",
-        "description": "Speak text processed through the Sovereign Awe high-fidelity studio mastering rack.",
+        "description": "Speak text processed through the high-fidelity studio mastering DSP pipeline.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "text": {"type": "string", "description": "Text to master and speak."},
-                "preset": {"type": "string", "description": "Acoustic preset ('SOVEREIGN_PRESENCE', 'AWE_STUDIO_MASTER', 'COMMANDER_TACTICAL', 'TRANSCENDENTAL_AURA').", "default": "SOVEREIGN_PRESENCE"},
-                "persona": {"type": "string", "description": "Persona identifier.", "default": "SOVEREIGN_ORACLE"}
+                "preset": {"type": "string", "description": "Acoustic preset ('STUDIO_MASTER', 'EXECUTIVE_PRESENCE', 'COMMANDER_TACTICAL', 'HOLOGRAPHIC_AURA').", "default": "EXECUTIVE_PRESENCE"},
+                "persona": {"type": "string", "description": "Persona identifier.", "default": "ORACLE_ADVISOR"}
             },
             "required": ["text"]
         }
@@ -393,7 +393,7 @@ TOOLS_SCHEMA = [
             "properties": {
                 "text": {"type": "string", "description": "Text to speak."},
                 "persona": {"type": "string", "description": "Voice persona (e.g. 'AURA_SHIP_AI', 'FLEET_COMMANDER', 'CALM_OPERATIONS').", "default": "AURA_SHIP_AI"},
-                "dsp_preset": {"type": "string", "description": "Acoustic DSP Preset.", "default": "TRANSCENDENTAL_AURA"},
+                "dsp_preset": {"type": "string", "description": "Acoustic DSP Preset.", "default": "HOLOGRAPHIC_AURA"},
                 "speed": {"type": "number", "description": "Playback speed multiplier.", "default": 1.0},
                 "sync": {"type": "boolean", "description": "If true, blocks until audio playback finishes.", "default": False}
             },

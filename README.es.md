@@ -29,8 +29,8 @@ Con **32 Subsistemas Principales de Recuperacion**, **13 Estrategias Avanzadas d
 ## Tabla de Contenidos
 
 - [1. Fundamentos Matematicos, Pruebas Formales y Algoritmos de Recuperacion](#1-fundamentos-matematicos-pruebas-formales-y-algoritmos-de-recuperacion)
-- [2. Los 32 Motores Arquitectonicos de Ultima Generacion (SOTA)](#2-los-32-motores-arquitectonicos-de-ultima-generacion-sota)
-- [3. Los 13 Paradigmas RAG de Frontera Incomparables](#3-los-13-paradigmas-rag-de-frontera-incomparables)
+- [2. Los 32 Motores Arquitectonicos Principales](#2-los-32-motores-arquitectonicos-principales)
+- [3. Los 13 Paradigmas RAG Principales de Recuperacion](#3-los-13-paradigmas-rag-principales-de-recuperacion)
 - [4. Matriz de las 21 Innovaciones RAG de Nodo Unico](#4-matriz-de-las-21-innovaciones-rag-de-nodo-unico)
 - [5. Guardián de Memoria de Proceso Unico en Hardware](#5-guardian-de-memoria-de-proceso-unico-en-hardware)
 - [6. Arquitectura del Pipeline y Secuencias del Sistema](#6-arquitectura-del-pipeline-y-secuencias-del-sistema)

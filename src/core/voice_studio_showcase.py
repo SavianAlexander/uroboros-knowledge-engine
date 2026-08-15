@@ -51,13 +51,18 @@ PERSONA_SHOWCASE_DEMOS = {
     },
     "WARP_NAVIGATOR": {
         "voice": "bf_isabella",
-        "dsp": "TRANSCENDENTAL_AURA",
+        "dsp": "HOLOGRAPHIC_AURA",
         "demo_text": "Warp trajectory calculated. Safe transit vector plotted through Jita 4-4 with zero gatecamp interference."
+    },
+    "ORACLE_ADVISOR": {
+        "voice": "af_sky",
+        "dsp": "EXECUTIVE_PRESENCE",
+        "demo_text": "The knowledge architecture remains verified. Deterministic verification certifies zero-assumption integrity."
     },
     "SOVEREIGN_ORACLE": {
         "voice": "af_sky",
-        "dsp": "SOVEREIGN_PRESENCE",
-        "demo_text": "The sovereign architecture remains uncompromised. Deterministic verification certifies zero-assumption integrity."
+        "dsp": "EXECUTIVE_PRESENCE",
+        "demo_text": "The knowledge architecture remains verified. Deterministic verification certifies zero-assumption integrity."
     }
 }
 

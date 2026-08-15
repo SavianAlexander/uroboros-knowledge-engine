@@ -47,20 +47,20 @@ class TestVoiceAudioMatrix(unittest.TestCase):
         catalog = VoiceStudioShowcase.get_studio_catalog()
         self.assertIn("personas", catalog)
         self.assertIn("dsp_presets", catalog)
-        self.assertIn("SOVEREIGN_PRESENCE", catalog["dsp_presets"])
-        self.assertIn("TRANSCENDENTAL_AURA", catalog["dsp_presets"])
+        self.assertIn("EXECUTIVE_PRESENCE", catalog["dsp_presets"])
+        self.assertIn("HOLOGRAPHIC_AURA", catalog["dsp_presets"])
 
         # Test audition dry-run
-        audition = VoiceStudioShowcase.audition_persona("SOVEREIGN_ORACLE", speak_now=False)
+        audition = VoiceStudioShowcase.audition_persona("ORACLE_ADVISOR", speak_now=False)
         self.assertEqual(audition["status"], "auditioned")
-        self.assertEqual(audition["persona"], "SOVEREIGN_ORACLE")
-        self.assertEqual(audition["dsp_preset"], "SOVEREIGN_PRESENCE")
+        self.assertEqual(audition["persona"], "ORACLE_ADVISOR")
+        self.assertEqual(audition["dsp_preset"], "EXECUTIVE_PRESENCE")
 
         # Test DSP filtering
         try:
             import numpy as np
             samples = np.random.uniform(-0.5, 0.5, 4800).astype(np.float32)
-            for preset in ["SOVEREIGN_PRESENCE", "AWE_STUDIO_MASTER", "COMMANDER_TACTICAL", "TRANSCENDENTAL_AURA"]:
+            for preset in ["EXECUTIVE_PRESENCE", "STUDIO_MASTER", "COMMANDER_TACTICAL", "HOLOGRAPHIC_AURA"]:
                 filtered = VoiceDSP.apply_dsp_preset(samples, preset=preset, fs=24000)
                 self.assertEqual(len(filtered), len(samples))
                 self.assertLessEqual(np.max(np.abs(filtered)), 1.0)
@@ -502,7 +502,7 @@ Sent from my iPhone
         session_id = f"test-agent-session-{int(time.time())}"
         
         # 1. Start Session
-        start_res = VoiceAgentLoop.start_session(session_id, persona="SOVEREIGN_ORACLE")
+        start_res = VoiceAgentLoop.start_session(session_id, persona="ORACLE_ADVISOR")
         self.assertEqual(start_res["status"], "active")
         self.assertEqual(start_res["session_id"], session_id)
 
