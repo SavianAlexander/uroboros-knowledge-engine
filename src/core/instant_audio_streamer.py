@@ -66,6 +66,23 @@ class InstantAudioStreamer:
         self._worker_thread = threading.Thread(target=self._stream_worker, daemon=True, name="InstantAudioWorker")
         self._worker_thread.start()
 
+    @staticmethod
+    def _get_active_output_device() -> Optional[int]:
+        """Auto-detect active gaming headset or default WASAPI endpoint."""
+        try:
+            import sounddevice as sd
+            devices = sd.query_devices()
+            # Prioritize connected headset keywords
+            for idx, dev in enumerate(devices):
+                if dev.get("max_output_channels", 0) > 0:
+                    name = dev.get("name", "").lower()
+                    if "onn" in name or "headset" in name or "gaming" in name:
+                        return idx
+            # Fallback to default system output
+            return sd.default.device[1]
+        except Exception:
+            return None
+
     def _stream_worker(self):
         """Dedicated background audio worker with persistent audio stream."""
         has_sd = False
@@ -96,7 +113,8 @@ class InstantAudioStreamer:
             if has_sd and audio_data is not None:
                 try:
                     import sounddevice as sd
-                    sd.play(audio_data, sample_rate)
+                    target_dev = self._get_active_output_device()
+                    sd.play(audio_data, sample_rate, device=target_dev)
                     sd.wait()
                     played = True
                 except Exception:
@@ -121,6 +139,23 @@ class InstantAudioStreamer:
                     pass
 
             self._audio_queue.task_done()
+
+    def play_hud_cue(self, cue_name: str = "wake"):
+        """Play instant high-tech acoustic HUD chime in <1ms."""
+        try:
+            from src.infrastructure.eve_voice_soundboard import render_sfx_to_wav_bytes
+            sfx_map = {
+                "wake": "target_lock",
+                "acknowledge": "shield_boost",
+                "warp": "warp_drive_active",
+                "chime": "chime_two_tone"
+            }
+            sfx_key = sfx_map.get(cue_name, cue_name)
+            sfx_bytes = render_sfx_to_wav_bytes(sfx_key)
+            if sfx_bytes:
+                self.play_wav_bytes(sfx_bytes, sync=False)
+        except Exception:
+            pass
 
     def play_instant_pcm(self, pcm_samples, sample_rate: int = SAMPLE_RATE_HZ, raw_wav_bytes: Optional[bytes] = None, sync: bool = False):
         """

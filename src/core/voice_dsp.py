@@ -81,8 +81,11 @@ def apply_iir_filter(samples: Any, b: Any, a: Any) -> Any:
     if np is None or len(samples) == 0:
         return samples
     try:
-        from scipy.signal import lfilter
-        return lfilter(b, a, samples).astype(np.float32)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            from scipy.signal import lfilter
+            return lfilter(b, a, samples).astype(np.float32)
     except Exception:
         # High-speed pure NumPy IIR loop
         y = np.zeros_like(samples)
