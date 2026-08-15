@@ -325,6 +325,8 @@ Sent from my iPhone
             "antigravity_synthesize_podcast_dialogue", "antigravity_voice_telemetry_sweep",
             "antigravity_voice_record_note", "antigravity_voice_create_task",
             "antigravity_check_threat_radar", "antigravity_stream_pipeline_speak",
+            "antigravity_check_market_arbitrage", "antigravity_check_pi_sentinel",
+            "antigravity_scan_vault_auto_watcher",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]
@@ -357,6 +359,29 @@ Sent from my iPhone
 
         stats_res = handle_tool_call("antigravity_get_instant_streamer_stats", {})
         self.assertEqual(stats_res["status"], "ok")
+
+    def test_eve_market_arbitrage(self):
+        """Test live CCP ESI market arbitrage calculation."""
+        from src.domain.eve_market_arbitrage import EveMarketArbitrage
+        arb = EveMarketArbitrage.analyze_commodity_arbitrage(commodity_name="Isogen", speak_report=False)
+        self.assertEqual(arb["status"], "arbitrage_calculated")
+        self.assertEqual(arb["commodity"], "Isogen")
+        self.assertGreater(arb["jita_sell_isk"], 0.0)
+
+    def test_eve_pi_sentinel(self):
+        """Test planetary interaction colony audit."""
+        from src.domain.eve_pi_sentinel import EvePISentinel
+        pi = EvePISentinel.audit_planetary_colonies(character_name="Savian Alexander", speak_alert=False)
+        self.assertEqual(pi["status"], "pi_audit_completed")
+        self.assertIn("Savian Alexander", pi["character"])
+
+    def test_vault_auto_watcher(self):
+        """Test autonomous vault filesystem delta scanner."""
+        from src.infrastructure.vault_auto_watcher import VaultAutoWatcher
+        watcher = VaultAutoWatcher()
+        res = watcher.scan_and_index_delta()
+        self.assertEqual(res["status"], "scan_complete")
+        self.assertIn("scan_ms", res)
 
     def test_voice_streaming_pipeline(self):
         """Test streaming clause pipeliner with token generator."""

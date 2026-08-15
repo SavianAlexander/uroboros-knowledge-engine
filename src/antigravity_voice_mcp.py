@@ -520,6 +520,36 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_check_market_arbitrage",
+        "description": "Calculate live CCP ESI market arbitrage and regional spread between Jita 4-4 and Delve.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "commodity": {"type": "string", "description": "Commodity name (e.g. Isogen, Tritanium, Morphite)."},
+                "speak_report": {"type": "boolean", "description": "Whether to speak acoustic briefing."}
+            }
+        }
+    },
+    {
+        "name": "antigravity_check_pi_sentinel",
+        "description": "Audit planetary interaction colony status, extractor cycles, and customs offices.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "character": {"type": "string", "description": "Pilot name (default Savian Alexander)."},
+                "speak_alert": {"type": "boolean", "description": "Whether to speak acoustic report."}
+            }
+        }
+    },
+    {
+        "name": "antigravity_scan_vault_auto_watcher",
+        "description": "Trigger an incremental filesystem delta scan and auto-index new vault documents into SQLite FTS5.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
         "name": "antigravity_get_status",
         "description": "Retrieve active neural voice engine status, available personas, memory footprint, and audio history.",
         "inputSchema": {
@@ -869,6 +899,23 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         # Split text into token chunks to simulate generator
         tokens = [w + " " for w in text.split()]
         return VoiceStreamingPipeliner.stream_and_speak(iter(tokens), persona=persona, sync=False)
+
+    elif name == "antigravity_check_market_arbitrage":
+        from src.domain.eve_market_arbitrage import EveMarketArbitrage
+        commodity = args.get("commodity", "Isogen")
+        speak = bool(args.get("speak_report", True))
+        return EveMarketArbitrage.analyze_commodity_arbitrage(commodity_name=commodity, speak_report=speak)
+
+    elif name == "antigravity_check_pi_sentinel":
+        from src.domain.eve_pi_sentinel import EvePISentinel
+        char = args.get("character", "Savian Alexander")
+        speak = bool(args.get("speak_alert", True))
+        return EvePISentinel.audit_planetary_colonies(character_name=char, speak_alert=speak)
+
+    elif name == "antigravity_scan_vault_auto_watcher":
+        from src.infrastructure.vault_auto_watcher import VaultAutoWatcher
+        watcher = VaultAutoWatcher()
+        return watcher.scan_and_index_delta()
 
     elif name == "antigravity_get_status":
         copilot = VoiceBridge.get_copilot()
