@@ -23,7 +23,8 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 ├── visual_audit_bridge.py   # 5. Automated PDF Page Rendering & Layout QA Engine
 ├── architecture_bridge.py   # 6. Universal Polyglot Clean Architecture Engine (0-100% Score)
 ├── workflow_hub_bridge.py   # 7. Master Multi-Phase Engineering Pipeline Orchestrator
-└── eve_bridge.py            # 8. EVE Online Tactical Intelligence & Live Telemetry Bridge
+├── eve_bridge.py            # 8. EVE Online Tactical Intelligence & Live Telemetry Bridge
+└── system_recovery_bridge.py# 9. Windows System Resilience & Zero-Reboot Crash Recovery Bridge
 ```
 
 ### 0. Inter-Bridge Contract Bus (`scripts/contract_bus.py`)
@@ -89,6 +90,15 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../eve_bridge.py remap`: Calculate optimal neural attribute remaps (+45% training acceleration).
 - `python .../eve_bridge.py audit`: Execute 38-assertion zero-assumption mathematical and ESI validation suite.
 - `python .../eve_bridge.py self_test`: Run automated contract assertions for EVE Online tactical bridge.
+
+### 9. Windows System Resilience & Zero-Reboot Recovery Bridge (`scripts/system_recovery_bridge.py`)
+- `python .../system_recovery_bridge.py restore_all`: Execute 5-stage non-reboot recovery cascade (Explorer shell, DWM, Audio services, DNS flush, hung processes).
+- `python .../system_recovery_bridge.py restart_shell`: Restart Windows Explorer shell (`explorer.exe`) to resolve taskbar/Start menu/desktop freeze.
+- `python .../system_recovery_bridge.py restart_dwm`: Refresh Desktop Window Manager (`dwm.exe`) for window rendering/display glitch recovery.
+- `python .../system_recovery_bridge.py restart_audio`: Restart Windows Audio services (`Audiosrv` & `AudioEndpointBuilder`).
+- `python .../system_recovery_bridge.py flush_dns`: Flush DNS resolver cache and reset network stack state.
+- `python .../system_recovery_bridge.py clear_hung`: Identify and terminate unresponsive/hung background processes.
+- `python .../system_recovery_bridge.py self_test`: Run automated contract assertions for system recovery bridge.
 
 ---
 
@@ -168,9 +178,18 @@ Whenever executing multi-step work or in planning mode:
 5. **Semantic Release Publishing (`vX.Y.Z`)**:
    - Publish tagged production milestones: `python .../github_bridge.py generate_release_notes --tag <vX.Y.Z> --publish`.
 
+### VIII. Windows System Resilience & Zero-Reboot Recovery Protocol
+When the user reports desktop freezes, taskbar stalls, display corruption, audio loss, or system instability:
+1. **Zero-Reboot Recovery First**: Never suggest a full reboot before executing the 5-stage non-reboot recovery cascade.
+2. **Automated Recovery Execution**:
+   - `python .../system_recovery_bridge.py restore_all` (Executes Explorer shell restart, DWM refresh, Audio service restart, DNS flush, and hung process cleanup).
+3. **Hardware GPU Hotkey Diagnostic**:
+   - For stubborn visual/display driver hangs, remind the user of the instant GPU driver reload hotkey: `Win + Ctrl + Shift + B`.
+4. **Pre-Authorized Administrative Escalation**: Execute recovery and service restart commands directly without interactive prompts per workspace permissions.
+
 ---
 
-## Tri-Engine Unified Command Matrix (43 Operations)
+## Tri-Engine Unified Command Matrix (49 Operations)
 
 | # | Command | Engine / Bridge | Purpose |
 | :-: | :--- | :--- | :--- |
@@ -217,6 +236,12 @@ Whenever executing multi-step work or in planning mode:
 | **41** | `run` (Pipeline) | `workflow_hub_bridge.py`| Master Multi-Phase Pipeline Execution |
 | **42** | `run --parallel` | `workflow_hub_bridge.py`| Parallel Asynchronous Inter-Bridge Execution |
 | **43** | `run_parallel` | `contract_bus.py` | Low-Level Parallel Inter-Bridge DAG Runner |
+| **44** | `restore_all` | `system_recovery_bridge.py`| 5-Stage Zero-Reboot Windows Recovery Cascade |
+| **45** | `restart_shell` | `system_recovery_bridge.py`| Restart Windows Explorer Desktop Shell |
+| **46** | `restart_dwm` | `system_recovery_bridge.py`| Refresh Desktop Window Manager (DWM) |
+| **47** | `restart_audio` | `system_recovery_bridge.py`| Restart Windows Audio Services |
+| **48** | `flush_dns` | `system_recovery_bridge.py`| Flush Windows DNS Resolver Cache |
+| **49** | `clear_hung` | `system_recovery_bridge.py`| Terminate Unresponsive Windows Processes |
 
 ---
 
@@ -229,3 +254,4 @@ Whenever executing multi-step work or in planning mode:
 - Visual Layout Audit Bridge: [`scripts/visual_audit_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/visual_audit_bridge.py)
 - Clean Architecture Bridge: [`scripts/architecture_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/architecture_bridge.py)
 - Workflow Hub Bridge: [`scripts/workflow_hub_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/workflow_hub_bridge.py)
+- System Recovery Bridge: [`scripts/system_recovery_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/system_recovery_bridge.py)

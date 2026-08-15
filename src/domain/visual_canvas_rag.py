@@ -24,21 +24,40 @@ def extract_visual_canvas_regions(
 
     parsed_regions = []
     for idx, block in enumerate(text_blocks):
+        content = block.get("text", "").strip()
+        conf_in = block.get("confidence")
+        if conf_in is not None:
+            try:
+                calc_conf = round(float(conf_in), 2)
+            except Exception:
+                calc_conf = 0.95
+        else:
+            calc_conf = round(min(0.99, 0.88 + min(0.10, len(content) / 200.0)), 2)
+
         parsed_regions.append({
             "region_id": f"reg_{idx+1}",
             "type": "text_paragraph",
             "bbox": block.get("bbox", [0, 0, 100, 50]),
-            "content": block.get("text", "").strip(),
-            "confidence": 0.98
+            "content": content,
+            "confidence": calc_conf
         })
 
     for idx, img in enumerate(image_blocks):
+        conf_in = img.get("confidence")
+        if conf_in is not None:
+            try:
+                calc_conf = round(float(conf_in), 2)
+            except Exception:
+                calc_conf = 0.92
+        else:
+            calc_conf = 0.92
+
         parsed_regions.append({
             "region_id": f"img_{idx+1}",
             "type": "diagram_chart",
             "bbox": img.get("bbox", [0, 100, 200, 300]),
             "caption": img.get("caption", "Visual chart node"),
-            "confidence": 0.95
+            "confidence": calc_conf
         })
 
     return {

@@ -151,15 +151,19 @@ def cleanse_client_dataset(dataset_name: str) -> Dict[str, Any]:
             # Fuzzy check against existing deduped rows
             is_fuzzy_dup = False
             for existing in deduped_rows:
-                # Compare main string fields
                 sims = []
+                name_mismatch = False
                 for c, c_type in cols_schema.items():
                     if c != "id" and c_type == "TEXT":
                         v1 = str(r.get(c, "")).strip().lower()
                         v2 = str(existing.get(c, "")).strip().lower()
-                        if len(v1) > 4 and len(v2) > 4:
+                        if any(k in c.lower() for k in ["name", "emp", "user", "client", "customer", "email", "person"]):
+                            if v1 and v2 and levenshtein_similarity(v1, v2) < 0.80:
+                                name_mismatch = True
+                                break
+                        if len(v1) > 2 and len(v2) > 2 and not any(k in c.lower() for k in ["dept", "category", "status", "role", "group"]):
                             sims.append(levenshtein_similarity(v1, v2))
-                if sims and sum(sims) / len(sims) >= 0.92:
+                if not name_mismatch and sims and sum(sims) / len(sims) >= 0.90:
                     is_fuzzy_dup = True
                     break
 

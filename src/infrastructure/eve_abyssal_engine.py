@@ -70,12 +70,15 @@ FILAMENT_TIERS = {
 def simulate_mutaplasmid_roll(
     module_name: str,
     mutaplasmid_tier: str = "Unstable",
-    attributes: Dict[str, Tuple[float, float, float]] = None
+    attributes: Dict[str, Tuple[float, float, float]] = None,
+    seed: Optional[int] = None
 ) -> Dict[str, Any]:
     """
     Simulate Mutaplasmid stat mutation roll.
     Attributes dictionary maps attr_name -> (base_val, min_mult, max_mult).
     """
+    rng = random.Random(seed) if seed is not None else random
+
     if not attributes:
         # Default: Unstable 50MN Microwarpdrive mutation attributes
         attributes = {
@@ -90,7 +93,7 @@ def simulate_mutaplasmid_roll(
     total_rating = 0.0
 
     for attr, (base, min_m, max_m) in attributes.items():
-        roll_mult = random.uniform(min_m, max_m)
+        roll_mult = rng.uniform(min_m, max_m)
         mutated_val = base * roll_mult
         percent_change = (roll_mult - 1.0) * 100.0
         rolls[attr] = {

@@ -55,6 +55,21 @@ def expand_cross_lingual_query(query: str) -> str:
             for t in MULTILINGUAL_CONCEPT_MAP[w][:2]:
                 if t not in expanded_terms:
                     expanded_terms.append(t)
+        else:
+            import os
+            import sqlite3
+            from src.infrastructure.database import DB_FILE, get_db_connection
+            if os.path.exists(DB_FILE):
+                try:
+                    with get_db_connection() as conn:
+                        cursor = conn.cursor()
+                        cursor.execute("SELECT synonym FROM synonyms WHERE word = ? LIMIT 2", (w,))
+                        for row in cursor.fetchall():
+                            syn = str(row[0])
+                            if syn not in expanded_terms:
+                                expanded_terms.append(syn)
+                except Exception:
+                    pass
 
     return " OR ".join(expanded_terms) if len(expanded_terms) > 1 else norm_query
 

@@ -2,7 +2,7 @@
 FastAPI Router for EVE Online SSO Authentication, Character Management, and ESI Knowledge Sync.
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Response
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Response, Query
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import time
@@ -269,12 +269,25 @@ def parse_eft_endpoint(payload: Dict[str, str]):
 
 
 @router.get("/logs/stream")
-def get_log_stream_endpoint():
-    """Retrieve simulated/live log streamer event buffer."""
+def get_log_stream_endpoint(
+    pilot_name: Optional[str] = Query(None, description="Filter log events by pilot name"),
+    event_type: Optional[str] = Query(None, description="Filter by event type (e.g. combat, intel, navigation)"),
+    max_events: int = Query(50, ge=1, le=200, description="Max events to return")
+):
+    """Retrieve simulated/live log streamer event buffer with dynamic filtering."""
     try:
         from src.infrastructure.eve_log_streamer import EveLogStreamer
         streamer = EveLogStreamer()
-        return {"status": "success", "events": streamer.stream_events()}
+        events = streamer.stream_events()
+        if pilot_name and isinstance(events, list):
+            p_norm = pilot_name.strip().lower()
+            events = [e for e in events if p_norm in str(e.get("pilot", "")).lower() or p_norm in str(e.get("raw_text", "")).lower()]
+        if event_type and isinstance(events, list):
+            e_norm = event_type.strip().lower()
+            events = [e for e in events if e_norm in str(e.get("type", "")).lower() or e_norm in str(e.get("category", "")).lower()]
+        if isinstance(events, list) and max_events:
+            events = events[:max_events]
+        return {"status": "success", "events": events, "total_events": len(events) if isinstance(events, list) else 0}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

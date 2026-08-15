@@ -80,13 +80,17 @@ def get_analytics_search_activity_endpoint():
 
 
 @router.get("/api/sync/events/stream")
-def get_sync_events_stream_endpoint(job_id: str = "default_sync"):
+def get_sync_events_stream_endpoint(
+    job_id: str = "default_sync",
+    total_steps: int = 3,
+    delay_ms: float = 0.0
+):
     """Streams live SSE events for background knowledge synchronization."""
     try:
         from fastapi.responses import StreamingResponse
         from src.domain.sse_sync_stream import generate_knowledge_sync_sse_stream
         return StreamingResponse(
-            generate_knowledge_sync_sse_stream(sync_job_id=job_id),
+            generate_knowledge_sync_sse_stream(sync_job_id=job_id, total_steps=total_steps, delay_ms=delay_ms),
             media_type="text/event-stream"
         )
     except (KeyboardInterrupt, MemoryError, SystemExit):

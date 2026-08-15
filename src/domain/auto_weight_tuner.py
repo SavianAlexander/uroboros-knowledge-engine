@@ -18,6 +18,27 @@ def optimize_search_parameters(
     weights = current_weights or {"vector_weight": 0.50, "keyword_weight": 0.30, "colbert_weight": 0.20, "chunk_size": 512}
 
     if not historical_feedback or not isinstance(historical_feedback, list):
+        import os
+        import sqlite3
+        from src.infrastructure.database import DB_FILE, get_db_connection
+        if os.path.exists(DB_FILE):
+            try:
+                with get_db_connection() as conn:
+                    conn.row_factory = sqlite3.Row
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT results_count, latency_ms FROM search_history ORDER BY id DESC LIMIT 50")
+                    rows = cursor.fetchall()
+                    if rows:
+                        historical_feedback = []
+                        for r in rows:
+                            count = r["results_count"] or 0
+                            latency = r["latency_ms"] or 10.0
+                            satisfaction = min(1.0, max(0.2, (1.0 if count > 0 else 0.3) * (1.0 if latency < 100.0 else 0.6)))
+                            historical_feedback.append({"score": satisfaction})
+            except Exception:
+                pass
+
+    if not historical_feedback or not isinstance(historical_feedback, list):
         return {"optimized_weights": weights, "status": "no_feedback_data", "adjustment_applied": False}
 
     valid_feedback = [f for f in historical_feedback if isinstance(f, dict)]

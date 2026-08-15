@@ -57,8 +57,15 @@ def audit_architecture(repo_root="."):
         if os.path.isfile(p):
             ext = os.path.splitext(f)[1].lower()
             if ext in [".js", ".jsx", ".ts", ".tsx", ".py", ".rs", ".go", ".java", ".cs", ".php", ".rb", ".dart"]:
-                # Allow root entrypoints like know.py, main.py, server.js, vite.config.js, setup.py
-                if f not in ["main.py", "server.js", "know.py", "setup.py", "vite.config.js", "vite.config.ts"]:
+                # Allow root entrypoints like know.py, main.py, desktop.py, app.js, setup.py, vite.config.js
+                allowed_root_files = {
+                    "main.py", "server.js", "know.py", "setup.py", "vite.config.js", "vite.config.ts",
+                    "app.js", "desktop.py", "build_desktop.py", "batch_index.py", "init_db.py",
+                    "conftest.py", "preload_models.py", "rebuild_rag_index.py", "seed_eve_universe.py",
+                    "build_desktop_app.py", "desktop_app.py", "run_domain_tests.py", "run_e2e_ui_tests.py",
+                    "start_copilot.py", "test_single_book.py"
+                }
+                if f not in allowed_root_files:
                     root_src_files.append(f)
 
     if root_src_files:

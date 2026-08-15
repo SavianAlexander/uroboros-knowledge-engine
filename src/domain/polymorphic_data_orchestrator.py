@@ -15,7 +15,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from src.infrastructure.database import get_db
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
-CURRENCY_REGEX = re.compile(r'^[\$\€\£\¥]?\s*-?\d{1,3}(?:,\d{3})*(?:\.\d+)?\s*[\$\€\£\¥]?$')
+CURRENCY_REGEX = re.compile(r'^[\$\€\£\¥]?\s*-?(?:\d+|\d{1,3}(?:,\d{3})*)(?:\.\d+)?\s*[\$\€\£\¥]?$')
 ISO_DATE_REGEX = re.compile(r'^\d{4}[-/](?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12]\d|3[01])(?:[T\s]\d{2}:\d{2}(?::\d{2})?)?$')
 
 

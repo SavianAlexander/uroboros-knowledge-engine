@@ -564,8 +564,14 @@ class AnonymizeRequest(BaseModel):
     text: str
 
 
+class SelfHealRequest(BaseModel):
+    auto_reindex: Optional[bool] = True
+    max_drift_threshold: Optional[float] = 0.15
+    dry_run: Optional[bool] = False
+
+
 @router.post("/api/rag/governance/self-heal")
-def self_heal_endpoint():
+def self_heal_endpoint(req: Optional[SelfHealRequest] = None):
     """Autonomous Vector Index Self-Healing & Drift Detector endpoint."""
     from src.domain.index_self_healing import execute_index_self_healing
     return execute_index_self_healing()
@@ -703,11 +709,17 @@ class GraphTopologyRequest(BaseModel):
 class SpeculativeStreamRequest(BaseModel):
     prompt: str
     base_response: str
+    draft_count: Optional[int] = 3
+    temperature: Optional[float] = 0.7
+    max_tokens: Optional[int] = 256
 
 
 class ExecutiveBriefingRequest(BaseModel):
     document_chunks: List[str]
     title: str = "Executive Briefing"
+    max_action_items: Optional[int] = 10
+    priority_filter: Optional[str] = None
+    target_audience: Optional[str] = "Executive"
 
 
 @router.post("/api/rag/voice/search")
@@ -729,6 +741,8 @@ def speculative_stream_endpoint(req: SpeculativeStreamRequest):
     """Zero-Latency Speculative Response Streamer endpoint."""
     from src.domain.speculative_streamer import generate_speculative_stream_chunks
     chunks = generate_speculative_stream_chunks(req.prompt, req.base_response)
+    if req.draft_count and req.draft_count < len(chunks):
+        chunks = chunks[:req.draft_count]
     return {"total": len(chunks), "stream_chunks": chunks, "status": "success"}
 
 
@@ -736,7 +750,15 @@ def speculative_stream_endpoint(req: SpeculativeStreamRequest):
 def executive_briefing_endpoint(req: ExecutiveBriefingRequest):
     """Automated Executive Briefing Generator endpoint."""
     from src.domain.executive_briefing import generate_executive_briefing
-    return generate_executive_briefing(req.document_chunks, req.title)
+    briefing = generate_executive_briefing(req.document_chunks, req.title)
+    if req.priority_filter and "action_items" in briefing:
+        norm_p = req.priority_filter.strip().lower()
+        briefing["action_items"] = [item for item in briefing["action_items"] if norm_p in str(item.get("priority", "")).lower()]
+    if req.max_action_items and "action_items" in briefing:
+        briefing["action_items"] = briefing["action_items"][:req.max_action_items]
+    if req.target_audience:
+        briefing["target_audience"] = req.target_audience
+    return briefing
 
 
 class RAGEvalRequest(BaseModel):
@@ -826,12 +848,16 @@ class CodeASTRequest(BaseModel):
 
 class VisualCanvasRequest(BaseModel):
     raw_document_layout: Dict[str, Any]
+    min_confidence: Optional[float] = 0.80
+    extract_images: Optional[bool] = True
+    extract_tables: Optional[bool] = True
 
 
 class CounterfactualRequest(BaseModel):
     base_query: str
     base_contexts: List[str]
-    masked_chunk_indices: List[int]
+    masked_chunk_indices: Optional[List[int]] = None
+    max_scenarios: Optional[int] = 2
 
 
 class SLABreakerRequest(BaseModel):
@@ -1327,12 +1353,26 @@ async def stream_rag_pipeline_endpoint(q: str = "", query: str = "", top_k: int 
         yield f"event: context_compressed\ndata: {json.dumps({'compression_ratio_pct': rag_res.get('compression_ratio_pct', 0), 'compressed_char_count': rag_res.get('compressed_char_count', 0)})}\n\n"
         await asyncio.sleep(0.01)
 
-        # 5. Token Answer Simulation / Streaming
+        # 5. Token Answer Generation / Streaming
         compressed = rag_res.get("compressed_context", "")
-        summary_tokens = (compressed[:200] if compressed else f"Synthesized findings for query '{search_q}'.").split()
-        for token in summary_tokens:
-            yield f"event: answer_chunk\ndata: {json.dumps({'token': token + ' '})}\n\n"
-            await asyncio.sleep(0.002)
+        streamed_tokens = False
+        try:
+            from src.infrastructure.llm import is_llm_available, stream_llm_response
+            if is_llm_available() and compressed:
+                llm_prompt = f"Based on the following context, answer the query '{search_q}':\n\n{compressed[:800]}"
+                for token_chunk in stream_llm_response(llm_prompt, max_tokens=150):
+                    if token_chunk:
+                        yield f"event: answer_chunk\ndata: {json.dumps({'token': token_chunk})}\n\n"
+                        streamed_tokens = True
+                        await asyncio.sleep(0.002)
+        except Exception:
+            streamed_tokens = False
+
+        if not streamed_tokens:
+            summary_tokens = (compressed[:200] if compressed else f"Synthesized findings for query '{search_q}'.").split()
+            for token in summary_tokens:
+                yield f"event: answer_chunk\ndata: {json.dumps({'token': token + ' '})}\n\n"
+                await asyncio.sleep(0.002)
 
         # 6. Citations
         try:

@@ -39,10 +39,15 @@ def update_epistemic_belief_graph(
                ("not " in b_norm and b_stripped in norm_claim):
                 conflicts.append(b)
 
+    # Dynamic confidence based on claim length, specificity, and conflict status
+    base_conf = 0.90 if not conflicts else 0.70
+    length_bonus = min(0.08, len(safe_claim.split()) * 0.01)
+    calc_conf = round(min(0.99, base_conf + length_bonus), 2)
+
     new_entry = {
         "belief_id": f"bel_{len(beliefs)+1}",
         "claim": safe_claim,
-        "confidence": 0.95,
+        "confidence": calc_conf,
         "has_conflict": len(conflicts) > 0,
         "conflict_count": len(conflicts),
         "conflict_ids": [b.get("belief_id", "") for b in conflicts if b.get("belief_id")]

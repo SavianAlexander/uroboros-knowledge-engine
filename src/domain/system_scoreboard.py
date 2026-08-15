@@ -20,6 +20,14 @@ def generate_system_scoreboard(root_dir: str = "src") -> Dict[str, Any]:
     bench = benchmark_vector_retrieval(num_queries=3)
     privacy = inspect_privacy_compliance("System status check. Clean telemetry.")
 
+    checks = [
+        arch.get("average_architecture_health", 100.0) >= 80.0,
+        bench.get("sub_10ms_guarantee", True),
+        privacy.get("status") == "compliant",
+        bench.get("p99_latency_ms", 1.2) < 50.0
+    ]
+    pass_rate = round((sum(1 for c in checks if c) / float(len(checks))) * 100.0, 1)
+
     return {
         "status": "success",
         "system_name": "Uroboros Supremacy Knowledge Engine",
@@ -28,5 +36,5 @@ def generate_system_scoreboard(root_dir: str = "src") -> Dict[str, Any]:
         "vector_search_p99_latency_ms": bench.get("p99_latency_ms", 1.2),
         "privacy_compliance_status": privacy.get("status", "compliant"),
         "sub_10ms_latency_sla": bench.get("sub_10ms_guarantee", True),
-        "master_pass_rate_percentage": 100.0
+        "master_pass_rate_percentage": pass_rate
     }

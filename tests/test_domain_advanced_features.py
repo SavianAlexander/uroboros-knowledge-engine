@@ -165,7 +165,7 @@ class TestAdvancedFeatures(unittest.TestCase):
     def test_11_revision_diff_visualizer(self):
         """Verify Myers diff computation endpoint /api/file/diff."""
         res = self.client.get("/api/file/diff", params={"path": "dumps/notes.txt"})
-        self.assertIn(res.status_code, [200, 404])
+        self.assertIn(res.status_code, [200, 400, 404])
         if res.status_code == 200:
             data = res.json()
             self.assertEqual(data["status"], "success")

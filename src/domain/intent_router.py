@@ -3,11 +3,11 @@ Sub-1ms Speculative Query Intent Router Engine.
 Classifies query intent and dynamically routes execution to the optimal RAG pipeline.
 Zero-dependency, stdlib implementation.
 """
+import time
 import unicodedata
+from functools import lru_cache
 from typing import Dict, Any, List, Tuple
 
-
-from functools import lru_cache
 
 @lru_cache(maxsize=1024)
 def classify_query_intent(query: str) -> str:
@@ -44,12 +44,14 @@ def route_query_intent(query: str) -> Dict[str, Any]:
     Classifies query intent in sub-1ms and recommends the optimal RAG pipeline handler.
     # ponytail: sub-1ms speculative query intent router; ceiling: keyword/pattern rule classification; upgrade: use zero-shot intent classifier if dynamic multi-domain intent routing is added
     """
+    t0 = time.perf_counter()
     intent, recommended_pipeline = _route_query_intent_cached(query)
+    elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 4)
 
     return {
         "status": "success",
         "query": query,
         "classified_intent": intent,
         "recommended_pipeline": recommended_pipeline,
-        "routing_latency_ms": 0.15
+        "routing_latency_ms": max(0.001, elapsed_ms)
     }
