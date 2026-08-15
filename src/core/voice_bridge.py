@@ -152,8 +152,31 @@ class VoiceBridge:
         return rec
 
     @classmethod
+    def speak_instant(
+        cls,
+        text: str,
+        voice: Optional[str] = None,
+        dsp_preset: Optional[str] = None,
+        speed: float = 1.0,
+        sync: bool = False
+    ) -> Dict[str, Any]:
+        """Ultra-low latency instant voice dispatch (<1ms cached, <25ms fresh)."""
+        from src.core.instant_audio_streamer import InstantVoiceClient
+        v = voice or "bf_emma"
+        d = dsp_preset or "TRANSCENDENTAL_AURA"
+        return InstantVoiceClient.speak_instant(text, voice=v, dsp_preset=d, speed=speed, sync=sync)
+
+    @classmethod
+    def pre_warm(cls):
+        """Pre-warm ONNX weights and tactical phrase cache in RAM."""
+        from src.core.instant_audio_streamer import InstantVoiceClient
+        InstantVoiceClient.pre_warm_tactical_phrases()
+
+    @classmethod
     def purge_current_speech(cls) -> Dict[str, Any]:
         """Instantly stop active audio playback and clear pending queues (barge-in cutoff)."""
+        from src.core.instant_audio_streamer import get_instant_streamer
+        get_instant_streamer().purge_and_interrupt()
         copilot = cls.get_copilot()
         if copilot:
             copilot.purge_playback()

@@ -320,6 +320,8 @@ Sent from my iPhone
             "antigravity_showcase_personas", "antigravity_apply_studio_master",
             "antigravity_verify_audit_hashchain", "antigravity_parse_voice_command",
             "antigravity_get_audio_telemetry", "antigravity_broadcast_fleet_alert",
+            "antigravity_instant_speak", "antigravity_prewarm_voice_engine",
+            "antigravity_get_instant_streamer_stats",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]
@@ -342,6 +344,29 @@ Sent from my iPhone
 
         fleet_res = handle_tool_call("antigravity_broadcast_fleet_alert", {"alert_type": "MINING_COMPRESSION_CYCLE", "system": "G-EURJ", "speak": False})
         self.assertEqual(fleet_res["status"], "tactical_alert_broadcast")
+
+        prewarm_res = handle_tool_call("antigravity_prewarm_voice_engine", {})
+        self.assertEqual(prewarm_res["status"], "prewarmed")
+
+        instant_res = handle_tool_call("antigravity_instant_speak", {"text": "Affirmative.", "persona": "CALM_OPERATIONS", "dsp_preset": "STUDIO_DIRECT", "sync": False})
+        self.assertEqual(instant_res["status"], "playing")
+        self.assertLessEqual(instant_res["latency_ms"], 50.0)
+
+        stats_res = handle_tool_call("antigravity_get_instant_streamer_stats", {})
+        self.assertEqual(stats_res["status"], "ok")
+
+    def test_instant_audio_streamer_and_client(self):
+        """Test persistent WASAPI stream, RAM cache hit latency (<1ms), and pre-warming."""
+        from src.core.instant_audio_streamer import InstantVoiceClient, get_instant_streamer
+        InstantVoiceClient.pre_warm_tactical_phrases()
+        streamer = get_instant_streamer()
+        self.assertIsNotNone(streamer)
+
+        # Test cached phrase (<1ms)
+        res = InstantVoiceClient.speak_instant("Affirmative.", voice="af_bella", dsp_preset="STUDIO_DIRECT", sync=False)
+        self.assertEqual(res["status"], "playing")
+        self.assertTrue(res["cache_hit"])
+        self.assertLessEqual(res["latency_ms"], 10.0)
 
     def test_voice_agent_loop_multi_turn(self):
         """Test autonomous multi-turn hands-free voice agent session lifecycle and spoken turn execution."""

@@ -386,6 +386,37 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_instant_speak",
+        "description": "Speak text with ultra-low latency (<1ms cached, <25ms fresh) directly to the persistent hardware stream.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "Text to speak."},
+                "persona": {"type": "string", "description": "Voice persona (e.g. 'AURA_SHIP_AI', 'FLEET_COMMANDER', 'CALM_OPERATIONS').", "default": "AURA_SHIP_AI"},
+                "dsp_preset": {"type": "string", "description": "Acoustic DSP Preset.", "default": "TRANSCENDENTAL_AURA"},
+                "speed": {"type": "number", "description": "Playback speed multiplier.", "default": 1.0},
+                "sync": {"type": "boolean", "description": "If true, blocks until audio playback finishes.", "default": False}
+            },
+            "required": ["text"]
+        }
+    },
+    {
+        "name": "antigravity_prewarm_voice_engine",
+        "description": "Pre-warm neural ONNX model tensors and render essential tactical phrases into high-speed RAM cache.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
+        "name": "antigravity_get_instant_streamer_stats",
+        "description": "Retrieve performance telemetry, cache hits, and streaming metrics from the Instant Audio Streamer.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+    {
         "name": "antigravity_configure_voice",
         "description": "Configure global default voice settings for Antigravity assistant.",
         "inputSchema": {
@@ -662,6 +693,25 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         system = args.get("system", "G-EURJ")
         speak_now = args.get("speak", True)
         return EVEFleetTacticalVoice.broadcast_tactical_alert(alert_type=alert_type, system=system, speak_now=speak_now)
+
+    elif name == "antigravity_instant_speak":
+        from src.core.instant_audio_streamer import InstantVoiceClient
+        text = args.get("text", "")
+        persona = args.get("persona", "AURA_SHIP_AI")
+        voice = KOKORO_PERSONAS.get(persona, persona)
+        dsp_preset = args.get("dsp_preset", "TRANSCENDENTAL_AURA")
+        speed = float(args.get("speed", 1.0))
+        sync = bool(args.get("sync", False))
+        return InstantVoiceClient.speak_instant(text, voice=voice, dsp_preset=dsp_preset, speed=speed, sync=sync)
+
+    elif name == "antigravity_prewarm_voice_engine":
+        from src.core.instant_audio_streamer import InstantVoiceClient
+        InstantVoiceClient.pre_warm_tactical_phrases()
+        return {"status": "prewarmed", "message": "All neural ONNX weights and tactical phrase caches pinned in RAM."}
+
+    elif name == "antigravity_get_instant_streamer_stats":
+        from src.core.instant_audio_streamer import get_instant_streamer
+        return {"status": "ok", "streamer_stats": get_instant_streamer().stats}
 
     elif name == "antigravity_configure_voice":
         if "default_persona" in args:
