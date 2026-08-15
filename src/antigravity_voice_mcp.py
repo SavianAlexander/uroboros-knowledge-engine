@@ -521,11 +521,13 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "antigravity_check_market_arbitrage",
-        "description": "Calculate live CCP ESI market arbitrage and regional spread between Jita 4-4 and Delve.",
+        "description": "Calculate live CCP ESI market arbitrage and regional spread between any source and target regions.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "commodity": {"type": "string", "description": "Commodity name (e.g. Isogen, Tritanium, Morphite)."},
+                "commodity": {"type": "string", "description": "Commodity, item, or mineral name (e.g. Isogen, Tritanium, Morphite, PLEX)."},
+                "source_region": {"type": "string", "description": "Source market region (e.g. 'The Forge' / Jita, 'Domain' / Amarr, 'Sinq Laison'). Default 'The Forge'."},
+                "target_region": {"type": "string", "description": "Target market region (e.g. 'Delve', 'Fountain', 'Catch'). Default 'Delve'."},
                 "speak_report": {"type": "boolean", "description": "Whether to speak acoustic briefing."}
             }
         }
@@ -903,8 +905,15 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     elif name == "antigravity_check_market_arbitrage":
         from src.domain.eve_market_arbitrage import EveMarketArbitrage
         commodity = args.get("commodity", "Isogen")
+        source_reg = args.get("source_region", "The Forge")
+        target_reg = args.get("target_region", "Delve")
         speak = bool(args.get("speak_report", True))
-        return EveMarketArbitrage.analyze_commodity_arbitrage(commodity_name=commodity, speak_report=speak)
+        return EveMarketArbitrage.analyze_commodity_arbitrage(
+            commodity_name=commodity,
+            source_region=source_reg,
+            target_region=target_reg,
+            speak_report=speak
+        )
 
     elif name == "antigravity_check_pi_sentinel":
         from src.domain.eve_pi_sentinel import EvePISentinel

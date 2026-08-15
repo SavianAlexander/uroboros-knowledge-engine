@@ -28,6 +28,17 @@ def get_rag_lineage_telemetry(
     is_sup = grounding.get("overall_status") == "grounded"
     is_use = len(safe_answer) > 20 and is_sup
 
+    orig_chars = sum(len(c) for c in safe_chunks)
+    ans_chars = len(safe_answer)
+    
+    if orig_chars > ans_chars and orig_chars > 0:
+        prompt_reduction_pct = round((1.0 - (ans_chars / float(orig_chars))) * 100.0, 1)
+    else:
+        prompt_reduction_pct = 0.0
+
+    approx_tokens_in = max(1, orig_chars // 4)
+    approx_tokens_out = max(1, ans_chars // 4)
+
     return {
         "query": query,
         "active_strategy": active_strategy,
@@ -38,8 +49,12 @@ def get_rag_lineage_telemetry(
             "IS_USE": "[IS_USE: ✓]" if is_use else "[IS_USE: ✗]"
         },
         "compression": {
-            "prompt_reduction_pct": 68.0,
-            "vram_savings": "6x Matryoshka Compression"
+            "prompt_reduction_pct": prompt_reduction_pct,
+            "original_characters": orig_chars,
+            "answer_characters": ans_chars,
+            "tokens_input": approx_tokens_in,
+            "tokens_output": approx_tokens_out,
+            "vram_savings": "6x Matryoshka 256d Compression"
         },
         "entitlement_guard": {
             "user_role": "Admin / Granted",

@@ -20,10 +20,10 @@ This document establishes the dynamic auto-discovery architecture enabling Neuro
 - **Tulorn Alexander** (`ID: 2124540480`): `High-Yield Strip Harvester (Exhumer / Barge)`
 - **Vulcastra Alexander** (`ID: 2124540474`): `High-Yield Strip Harvester (Exhumer / Barge)`
 
-### Logistics & Industrial Wing (4 Pilots)
-- **Saigan Alexander** (`ID: 2124540489`): `Industrial Transport & Planetary Industry Lead`
-- **Tila Alexander** (`ID: 2124540497`): `Industrial Transport & Planetary Industry Lead`
-- **Rataghast Alexander** (`ID: 2124540504`): `Industrial Transport & Planetary Industry Lead`
-- **Targon Alexander** (`ID: 2124540495`): `Industrial Transport & Planetary Industry Lead`
+### Logistics & Industrial Wing (0 Pilots)
 
-### Cynosural & Forward Recon Wing (0 Pilots)
+### Cynosural & Forward Recon Wing (4 Pilots)
+- **Saigan Alexander** (`ID: 2124540489`): `Cynosural Beacon / Covert Scout Specialist`
+- **Tila Alexander** (`ID: 2124540497`): `Cynosural Beacon / Covert Scout Specialist`
+- **Rataghast Alexander** (`ID: 2124540504`): `Cynosural Beacon / Covert Scout Specialist`
+- **Targon Alexander** (`ID: 2124540495`): `Cynosural Beacon / Covert Scout Specialist`

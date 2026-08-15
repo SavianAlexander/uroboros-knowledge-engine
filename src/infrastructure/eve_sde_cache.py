@@ -27,6 +27,63 @@ ESI_BASE = "https://esi.evetech.net/latest"
 _MEM_CACHE = {}
 
 
+_STATIC_SDE_LOOKUP = {
+    # Core Solar Systems & Trade Hubs
+    30000142: "Jita",
+    30002187: "Amarr",
+    30002659: "Dodixie",
+    30002510: "Rens",
+    30002053: "Hek",
+    30004759: "1DQ1-A",
+    30000144: "Perimeter",
+    30000137: "New Caldari",
+    30002700: "Alikvita",
+    30002661: "Villore",
+    30002188: "Hedion",
+    30000001: "Taisy",
+    30000180: "Uedama",
+    30002768: "Ahbazon",
+    30003001: "Tama",
+    30003429: "Rancer",
+    30000141: "Muvolailen",
+    # Factions & Major NPC Entities
+    500001: "Caldari State",
+    500002: "Minmatar Republic",
+    500003: "Amarr Empire",
+    500004: "Gallente Federation",
+    500010: "Guristas Pirates",
+    500011: "Blood Raiders",
+    500012: "Angel Cartel",
+    500013: "Sansha's Nation",
+    500014: "Serpentis",
+    500020: "Triglavian Collective",
+    500021: "EDENCOM",
+    1000002: "Caldari Navy",
+    1000084: "CONCORD Police Division",
+    # Popular Ships & Mining Vessels
+    587: "Rifter",
+    621: "Caracal",
+    645: "Dominix",
+    12005: "Ishtar",
+    17918: "Gila",
+    28661: "Kronos",
+    28659: "Paladin",
+    28665: "Vargur",
+    28667: "Golem",
+    28352: "Rorqual",
+    11567: "Hulk",
+    12044: "Mackinaw",
+    12042: "Skiff",
+    17478: "Retriever",
+    17476: "Covetor",
+    17480: "Procurer",
+    29984: "Tengu",
+    29986: "Loki",
+    29988: "Legion",
+    29990: "Proteus",
+}
+
+
 def get_cache_db():
     os.makedirs(os.path.dirname(CACHE_DB_PATH), exist_ok=True)
     conn = sqlite3.connect(CACHE_DB_PATH)
@@ -46,6 +103,8 @@ def populate_mem_cache():
     global _MEM_CACHE
     if _MEM_CACHE:
         return
+    # Pre-populate from static SDE dictionary
+    _MEM_CACHE.update(_STATIC_SDE_LOOKUP)
     with get_cache_db() as conn:
         cur = conn.cursor()
         cur.execute("SELECT id, name FROM entities")
@@ -54,7 +113,7 @@ def populate_mem_cache():
 
 
 def resolve_ids_fast(ids: list) -> dict:
-    """Resolve a list of IDs using memory cache -> local SQLite -> ESI bulk fallback."""
+    """Resolve a list of IDs using memory cache -> static SDE -> local SQLite -> ESI bulk fallback."""
     populate_mem_cache()
     global _MEM_CACHE
     results = {}
@@ -65,6 +124,9 @@ def resolve_ids_fast(ids: list) -> dict:
             continue
         if entity_id in _MEM_CACHE:
             results[entity_id] = _MEM_CACHE[entity_id]
+        elif entity_id in _STATIC_SDE_LOOKUP:
+            results[entity_id] = _STATIC_SDE_LOOKUP[entity_id]
+            _MEM_CACHE[entity_id] = _STATIC_SDE_LOOKUP[entity_id]
         else:
             missing.append(entity_id)
 

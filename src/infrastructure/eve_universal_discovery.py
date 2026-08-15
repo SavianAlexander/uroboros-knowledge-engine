@@ -58,13 +58,43 @@ def build_universal_fleet_dag(pilots_roster: List[Dict[str, Any]]) -> Dict[str, 
     }
 
 
+import re
+
+def discover_local_roster() -> List[Dict[str, Any]]:
+    """Dynamically scan character overview dossiers in the vault."""
+    char_root = os.path.join(BASE_DIR, "vault", "Eve Online", "Characters")
+    roster = []
+    if os.path.isdir(char_root):
+        try:
+            for entry in sorted(os.listdir(char_root)):
+                p = os.path.join(char_root, entry, "overview.md")
+                if os.path.isfile(p):
+                    with open(p, "r", encoding="utf-8") as f:
+                        text = f.read()
+                    sp_match = re.search(r'Total Trained SP\*\*:\s*\*\*([\d,]+)\s*SP\*\*(?:\s*\*\(\+([\d,]+)\s*unallocated\*\))?', text)
+                    sp = int(sp_match.group(1).replace(",", "")) if sp_match else 0
+                    unallocated = int(sp_match.group(2).replace(",", "")) if sp_match and sp_match.group(2) else 0
+                    id_match = re.search(r'Character ID\*\*:\s*[`\*]?(\d+)[`\*]?', text)
+                    char_id = int(id_match.group(1)) if id_match else 0
+                    roster.append({
+                        "name": entry,
+                        "id": char_id,
+                        "sp": sp,
+                        "unallocated_sp": unallocated
+                    })
+        except Exception:
+            pass
+    return roster
+
+
 def generate_universal_discovery_markdown() -> List[str]:
     """Generate Universal Player Portability DAG reference document."""
     os.makedirs(VAULT_SYS_DIR, exist_ok=True)
     out_file = os.path.join(VAULT_SYS_DIR, "universal_player_portability_dag.md")
 
-    # Sample universal roster compilation
-    mock_roster = [
+    # Discover local character dossiers dynamically with sample fallback
+    local_roster = discover_local_roster()
+    active_roster = local_roster if local_roster else [
         {"name": "Savian Alexander", "id": 2122349505, "sp": 74225867, "unallocated_sp": 241613},
         {"name": "Thena Alexander", "id": 2124540459, "sp": 3272860, "unallocated_sp": 0},
         {"name": "Vulcastra Alexander", "id": 2124540474, "sp": 3234190, "unallocated_sp": 0},
@@ -74,7 +104,7 @@ def generate_universal_discovery_markdown() -> List[str]:
         {"name": "Tila Alexander", "id": 2124540497, "sp": 424002, "unallocated_sp": 1000000},
         {"name": "Rataghast Alexander", "id": 2124540504, "sp": 423998, "unallocated_sp": 1000000}
     ]
-    dag = build_universal_fleet_dag(mock_roster)
+    dag = build_universal_fleet_dag(active_roster)
 
     doc_md = f"""---
 title: Autonomous EVE Online Universal Player Portability & Fleet Discovery DAG

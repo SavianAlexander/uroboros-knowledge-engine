@@ -1,7 +1,7 @@
 """
 Nullsec Tactical Threat Radar & Cynosural Acoustic Alerter.
 Standard: Pure Python Standard Library (urllib, json, time) + Kokoro-82M Voice Bridge.
-Ponytail Senior Dev Principle: Dynamic CCP ESI telemetry polling, deterministic threat scoring, and procedural klaxon audio dispatch.
+Ponytail Senior Dev Principle: Dynamic CCP ESI telemetry polling, universal solar system name resolution, deterministic threat scoring, and procedural klaxon audio dispatch.
 """
 
 import os
@@ -21,22 +21,57 @@ from src.core.instant_audio_streamer import InstantVoiceClient, get_instant_stre
 
 class EveTacticalThreatRadar:
     """
-    Nullsec threat sentinel monitoring G-EURJ and adjacent constellation systems via live CCP ESI.
+    Nullsec threat sentinel monitoring G-EURJ, Delve, or ANY Eve solar system via live CCP ESI.
     """
 
-    SYSTEM_IDS = {
+    SYSTEM_IDS: Dict[str, int] = {
         "G-EURJ": 30001155,
         "M-OEE8": 30001156,
         "Q-S7D1": 30001157,
         "319-3D": 30001158,
         "PR-8CA": 30001159,
-        "YZ-LQL": 30001160
+        "YZ-LQL": 30001160,
+        "1DQ1-A": 30004975,
+        "JITA": 30000142,
+        "AMARR": 30002187,
+        "TAMA": 30002813,
+        "RANCER": 30002142
     }
 
     _kills_cache: Dict[int, Dict[str, int]] = {}
     _jumps_cache: Dict[int, int] = {}
     _last_fetch_ts: float = 0.0
     _CACHE_TTL_S: float = 60.0
+
+    @classmethod
+    def resolve_solar_system_id(cls, system_name: str) -> int:
+        """
+        Dynamically resolve ANY solar system name from request to its CCP ESI system_id.
+        """
+        clean = system_name.strip()
+        if clean.upper() in cls.SYSTEM_IDS:
+            return cls.SYSTEM_IDS[clean.upper()]
+
+        # Query CCP ESI /universe/ids/ endpoint dynamically
+        try:
+            url = "https://esi.evetech.net/latest/universe/ids/?datasource=tranquility"
+            payload = json.dumps([clean]).encode("utf-8")
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                headers={"Content-Type": "application/json", "User-Agent": "NeuroAlexander-DynamicRadar/1.0"}
+            )
+            with urllib.request.urlopen(req, timeout=2.0) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                systems = data.get("systems", [])
+                if systems:
+                    sys_id = systems[0]["id"]
+                    cls.SYSTEM_IDS[clean.upper()] = sys_id
+                    return sys_id
+        except Exception:
+            pass
+
+        return cls.SYSTEM_IDS.get(clean.upper(), 30001155)
 
     @classmethod
     def _fetch_esi_universe_stats(cls):
@@ -94,7 +129,7 @@ class EveTacticalThreatRadar:
         streamer = get_instant_streamer()
         cls._fetch_esi_universe_stats()
 
-        system_id = cls.SYSTEM_IDS.get(target_system.upper(), 30001155)
+        system_id = cls.resolve_solar_system_id(target_system)
         kills_info = cls._kills_cache.get(system_id, {"ship_kills": 0, "pod_kills": 0, "npc_kills": 0})
         jumps_count = cls._jumps_cache.get(system_id, 0)
 
