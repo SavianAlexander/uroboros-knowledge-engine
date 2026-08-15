@@ -223,9 +223,9 @@ Sent from my iPhone
         self.assertAlmostEqual(res["weights"]["bf_emma"], 0.70)
 
     def test_stt_transcriber_and_recorder(self):
-        """Test speech recognition and mic buffer allocation."""
-        rec = VoiceEarTranscriber.record_microphone_sample(duration_s=1.0)
-        self.assertEqual(rec["status"], "ready")
+        """Test speech recognition and real mic buffer allocation."""
+        rec = VoiceEarTranscriber.record_microphone_sample(duration_s=0.5)
+        self.assertIn(rec["status"], ["recorded", "ready"])
         res = VoiceEarTranscriber.transcribe_audio_file(rec["output_path"])
         self.assertIn(res["status"], ["success", "error"])
 
@@ -326,7 +326,7 @@ Sent from my iPhone
             "antigravity_voice_record_note", "antigravity_voice_create_task",
             "antigravity_check_threat_radar", "antigravity_stream_pipeline_speak",
             "antigravity_check_market_arbitrage", "antigravity_check_pi_sentinel",
-            "antigravity_scan_vault_auto_watcher",
+            "antigravity_scan_vault_auto_watcher", "antigravity_listen_and_transcribe",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]
@@ -432,17 +432,27 @@ Sent from my iPhone
         self.assertEqual(task_res["status"], "task_logged")
 
     def test_eve_tactical_threat_radar(self):
-        """Test nullsec tactical threat radar evaluation with dynamic system resolution."""
+        """Test nullsec tactical threat radar evaluation with dynamic system resolution and constellation sweep."""
         from src.domain.eve_threat_radar import EveTacticalThreatRadar
         sweep_geurj = EveTacticalThreatRadar.evaluate_system_threat(target_system="G-EURJ", speak_alert=False)
         self.assertEqual(sweep_geurj["status"], "sweep_completed")
         self.assertEqual(sweep_geurj["system_id"], 30001155)
         self.assertIn(sweep_geurj["threat_level"], ["NOMINAL_GREEN", "ELEVATED_AMBER", "CRITICAL_RED"])
+        self.assertGreater(len(sweep_geurj["adjacent_systems_checked"]), 0)
 
         # Dynamic system resolution
         sweep_jita = EveTacticalThreatRadar.evaluate_system_threat(target_system="Jita", speak_alert=False)
         self.assertEqual(sweep_jita["status"], "sweep_completed")
         self.assertEqual(sweep_jita["system_id"], 30000142)
+
+    def test_voice_ear_transcriber_and_listen(self):
+        """Test native winmm microphone recording and STT ear."""
+        from src.core.voice_stt_ear import VoiceEarTranscriber
+        rec_res = VoiceEarTranscriber.record_microphone_sample(duration_s=0.5, output_filename="test_ear_sample.wav")
+        self.assertIn("status", rec_res)
+        self.assertIn("output_path", rec_res)
+        trans_res = VoiceEarTranscriber.transcribe_audio_file(rec_res["output_path"])
+        self.assertEqual(trans_res["status"], "success")
 
     def test_voice_fleet_telemetry_daemon(self):
         """Test autonomous ESI fleet telemetry sweep."""

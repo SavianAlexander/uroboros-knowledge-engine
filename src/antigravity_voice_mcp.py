@@ -552,6 +552,16 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_listen_and_transcribe",
+        "description": "Record audio sample from the headset microphone and transcribe speech into text in real-time.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "duration_seconds": {"type": "number", "description": "Microphone recording duration in seconds (default 3.0)."}
+            }
+        }
+    },
+    {
         "name": "antigravity_get_status",
         "description": "Retrieve active neural voice engine status, available personas, memory footprint, and audio history.",
         "inputSchema": {
@@ -925,6 +935,11 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         from src.infrastructure.vault_auto_watcher import VaultAutoWatcher
         watcher = VaultAutoWatcher()
         return watcher.scan_and_index_delta()
+
+    elif name == "antigravity_listen_and_transcribe":
+        from src.core.voice_stt_ear import VoiceEarTranscriber
+        dur = float(args.get("duration_seconds", 3.0))
+        return VoiceEarTranscriber.listen_and_transcribe(duration_s=dur)
 
     elif name == "antigravity_get_status":
         copilot = VoiceBridge.get_copilot()
