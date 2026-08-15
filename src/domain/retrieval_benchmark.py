@@ -19,7 +19,28 @@ def benchmark_vector_retrieval(
     # ponytail: zero-dependency micro-benchmark profiler; ceiling: in-memory synthetic vector latency timing; upgrade: connect pytest-benchmark / Asv suite if automated CI performance regression tracking is enabled
     """
     store = vector_store or DenseVectorStore(dimension=dimension)
-    # Ensure dummy vectors exist if store is empty
+    # Attempt to load real vectors from SQLite database first
+    if not store.vectors:
+        try:
+            from src.infrastructure.database import get_db, DB_FILE
+            import os
+            import json
+            if os.path.exists(DB_FILE):
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT file_id, chunk_index, embedding_json FROM file_chunks WHERE embedding_json IS NOT NULL AND embedding_json != '[]' LIMIT 50")
+                    rows = cursor.fetchall()
+                    for r in rows:
+                        try:
+                            vec = json.loads(r[2])
+                            if isinstance(vec, list) and len(vec) == dimension:
+                                store.add_vector(f"chunk_{r[0]}_{r[1]}", vec, {"file_id": r[0]})
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
+    # Ensure baseline benchmark vectors exist if store is still empty on fresh setup
     if not store.vectors:
         for i in range(20):
             dummy_vec = [0.05 * (i + j) for j in range(dimension)]

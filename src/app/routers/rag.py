@@ -65,6 +65,7 @@ def rag_stream_endpoint(req: RAGStreamRequest):
     - Context via HyDE + RRF Hybrid Ranking
     - SSE streaming tokens
     """
+    import re
     q_str = req.get_query()
     context, sources = extract_rag_context(q_str)
 
@@ -72,8 +73,10 @@ def rag_stream_endpoint(req: RAGStreamRequest):
         yield f"data: {json.dumps({'type': 'sources', 'sources': sources})}\n\n"
         time.sleep(0.01)
 
-        answer_tokens = ["Based ", "on ", "the ", "provided ", "context: ", "Quantum ", "mechanics ", "and ", "relativity ", "principles."]
-        if not context:
+        if context:
+            words = re.findall(r'\S+\s*', context[:400])
+            answer_tokens = ["Based ", "on ", "retrieved ", "vault ", "context:\n\n"] + (words if words else [context[:100]])
+        else:
             answer_tokens = ["No ", "direct ", "document ", "context ", "found ", "in ", "the ", "vault."]
 
         for tok in answer_tokens:
@@ -343,7 +346,7 @@ def legal_rag_search_endpoint(req: LegalRAGRequest):
 
 @router.post("/api/contemplate")
 def contemplate_endpoint(req: ContemplateRequest):
-    """Contemplate / analysis endpoint with safe 501 check if llama_cpp is missing."""
+    """Contemplate / analysis endpoint with dynamic prompt reflection and risk classification."""
     llm = get_fallback_llm()
     if not is_llm_available() and llm is None:
         try:
@@ -353,12 +356,44 @@ def contemplate_endpoint(req: ContemplateRequest):
         except ImportError:
             raise HTTPException(status_code=501, detail="llama-cpp-python is not installed. LLM runner disabled.")
 
+    prompt_text = (req.get_prompt() or "").strip()
+    p_lower = prompt_text.lower()
+
+    # Dynamic risk assessment
+    if any(k in p_lower for k in ("security", "pii", "auth", "token", "key", "delete", "drop", "critical", "vulnerability")):
+        risk = "Elevated risk - requires compliance verification"
+    elif any(k in p_lower for k in ("database", "migration", "schema", "wal", "update", "refactor", "table")):
+        risk = "Moderate risk - state modification potential"
+    else:
+        risk = "Low operational risk"
+
+    # Dynamic friction and velocity assessment
+    word_count = len(prompt_text.split()) if prompt_text else 0
+    if word_count > 50:
+        friction = f"Moderate ({word_count} words in specification)"
+        velocity = "Analytical throughput"
+    elif word_count > 10:
+        friction = f"Minimal ({word_count} words)"
+        velocity = "High throughput"
+    else:
+        friction = "Minimal"
+        velocity = "High throughput"
+
+    # Core problem extraction
+    if prompt_text:
+        first_line = prompt_text.split("\n")[0].strip()
+        core_problem = first_line if len(first_line) < 120 else first_line[:117] + "..."
+    else:
+        core_problem = "Knowledge base reflection and state audit"
+
+    raw_analysis = f"Contemplation of intent: '{core_problem}'. Assessed risk: {risk}. Operational velocity: {velocity}."
+
     return ContemplateResponse(
-        core_problem="Sample core problem reflection",
-        risk_profile="Low risk",
-        friction_cost="Minimal",
-        velocity="High",
-        raw_analysis="Analysis reflection"
+        core_problem=core_problem,
+        risk_profile=risk,
+        friction_cost=friction,
+        velocity=velocity,
+        raw_analysis=raw_analysis
     )
 
 # ---------------------------------------------------------------------------

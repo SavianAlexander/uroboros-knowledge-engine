@@ -30,10 +30,32 @@ def generate_executive_briefing(
     norm_chunks = [unicodedata.normalize("NFC", str(c)) for c in document_chunks if c]
     combined = " ".join(norm_chunks[:5])
     
-    key_takeaways = [
-        f"Core Focus: {document_chunks[0][:120]}...",
-        f"Contextual Depth: Analyzed across {len(document_chunks)} document sections.",
-        "Grounding Attestation: 100% verified against internal vault sources."
+    # Dynamic Key Takeaways Extraction
+    extracted_takeaways = []
+    re_heading_or_key = re.compile(r'^(?:#+\s*|\*\*\s*)([^\n\*#]{8,120})', re.MULTILINE)
+    for chunk in norm_chunks:
+        for match in re_heading_or_key.finditer(chunk):
+            heading_text = match.group(1).strip()
+            if heading_text and heading_text.lower() not in [t.lower() for t in extracted_takeaways]:
+                extracted_takeaways.append(heading_text)
+                if len(extracted_takeaways) >= 3:
+                    break
+        if len(extracted_takeaways) >= 3:
+            break
+
+    if not extracted_takeaways:
+        for chunk in norm_chunks:
+            sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', chunk) if len(s.strip()) > 20]
+            for s in sentences:
+                if s not in extracted_takeaways:
+                    extracted_takeaways.append(s[:140])
+                    if len(extracted_takeaways) >= 3:
+                        break
+            if len(extracted_takeaways) >= 3:
+                break
+
+    key_takeaways = extracted_takeaways if extracted_takeaways else [
+        f"Contextual Depth: Analyzed across {len(document_chunks)} document sections."
     ]
 
     # Dynamic Action Items Extraction

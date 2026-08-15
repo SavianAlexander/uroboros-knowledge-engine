@@ -37,13 +37,26 @@ def get_temporal_knowledge_lineage(filename: str = "") -> Dict[str, Any]:
     except Exception:
         rows = []
 
+    import os
+    from datetime import datetime, timezone
+
     timeline = []
     for idx, r in enumerate(rows):
+        ts = r["created_at"]
+        if not ts and r["filepath"] and os.path.exists(r["filepath"]):
+            try:
+                mtime = os.path.getmtime(r["filepath"])
+                ts = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+            except Exception:
+                ts = datetime.now(timezone.utc).isoformat()
+        elif not ts:
+            ts = datetime.now(timezone.utc).isoformat()
+
         timeline.append({
             "version_id": f"v{r['id']}",
             "filename": unicodedata.normalize("NFC", str(r["filename"] or "")),
             "filepath": r["filepath"],
-            "timestamp": r["created_at"] or "2026-08-12T00:00:00Z",
+            "timestamp": ts,
             "change_type": "UPDATED" if idx > 0 else "INITIAL"
         })
 

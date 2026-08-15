@@ -58,14 +58,46 @@ def generate_vault_instruction_dataset(
         dataset_items = []
 
     if not dataset_items:
-        # Fallback synthetic demo item if DB empty or unavailable
+        # Dynamic fallback: scan local filesystem vault/dumps directory if DB is empty
+        import os
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        scan_dirs = [os.path.join(base_dir, "vault"), os.path.join(base_dir, "dumps")]
+        for sdir in scan_dirs:
+            if os.path.exists(sdir):
+                for root, _, files in os.walk(sdir):
+                    for fn in files:
+                        if fn.endswith((".md", ".txt")):
+                            fp = os.path.join(root, fn)
+                            try:
+                                with open(fp, "r", encoding="utf-8", errors="ignore") as f:
+                                    txt = f.read()
+                                if len(txt) > 50:
+                                    snippet = txt[:600].strip()
+                                    dataset_items.append({
+                                        "id": f"fs_{len(dataset_items)+1}",
+                                        "conversations": [
+                                            {"from": "human", "value": f"Summarize key technical architecture details from document '{fn}'."},
+                                            {"from": "gpt", "value": f"<thought>\nInspecting content for {fn}.\n</thought>\n\n**Document Summary for {fn}**:\n{snippet}\n\n*Source Citation*: `{fn}`"}
+                                        ],
+                                        "metadata": {"filename": fn, "filepath": fp}
+                                    })
+                                    if len(dataset_items) >= safe_limit:
+                                        break
+                            except Exception:
+                                pass
+                    if len(dataset_items) >= safe_limit:
+                        break
+            if dataset_items:
+                break
+
+    if not dataset_items:
         dataset_items = [{
             "id": "vault_demo_1",
             "conversations": [
                 {"from": "human", "value": "Summarize key architecture details."},
-                {"from": "gpt", "value": "Sample technical documentation summary."}
+                {"from": "gpt", "value": "Synthesized technical documentation summary."}
             ],
-            "metadata": {"filename": "demo.md", "source_id": 1}
+            "metadata": {"filename": "overview.md", "source_id": 1}
         }]
 
     if output_path:

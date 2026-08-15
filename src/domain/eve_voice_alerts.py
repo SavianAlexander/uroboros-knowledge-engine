@@ -34,9 +34,17 @@ class EVEVoiceAlertManager:
 
     @classmethod
     def format_alert(cls, template_key: str, **kwargs) -> str:
-        """Format tactical alert message using template key."""
+        """Format tactical alert message using template key with safe kwargs fallback."""
         template = TACTICAL_VOICE_TEMPLATES.get(template_key, "Tactical alert notification.")
-        return template.format(**kwargs)
+        try:
+            return template.format(**kwargs)
+        except KeyError:
+            msg = template
+            for k, v in kwargs.items():
+                msg = msg.replace(f"{{{k}}}", str(v))
+            import re
+            return re.sub(r'\{[a-zA-Z0-9_]+\}', 'designated target', msg)
+
 
     @classmethod
     def speak_alert(
