@@ -83,7 +83,7 @@ class WaybackFallbackResolver:
 
 class VoidStealthSession:
     """
-    Sovereign Void-Tier Network Session.
+    Adaptive Void-Tier Network Session.
     Combines JA4 TLS 1.3, Behavioral Entropy, and Autonomous Wayback failover.
     """
 

@@ -35,6 +35,7 @@ TERM_RULES = [
     (r"\bGod-Tier\b", "Enterprise-Grade", "Replace God-Tier with Enterprise-Grade"),
     (r"\bgod-tier\b", "enterprise-grade", "Replace god-tier with enterprise-grade"),
     (r"\bGOD_TIER\b", "ENTERPRISE_GRADE", "Replace GOD_TIER with ENTERPRISE_GRADE"),
+    (r"\bGod Roll\b", "Optimal Roll", "Replace God Roll with Optimal Roll"),
     (r"\bMagic Wand\b", "Prompt Optimizer", "Replace Magic Wand with Prompt Optimizer"),
     (r"\bmagic wand\b", "prompt optimizer", "Replace magic wand with prompt optimizer"),
     (r"\bTranscendent Aura\b", "Holographic Aura", "Replace Transcendent Aura with Holographic Aura"),
@@ -47,26 +48,63 @@ TERM_RULES = [
     (r"\bSovereign Voice\b", "Executive Voice", "Replace Sovereign Voice with Executive Voice"),
     (r"\bSovereign Studio\b", "Voice Studio", "Replace Sovereign Studio with Voice Studio"),
     (r"\bSovereign Architecture\b", "Core Architecture", "Replace Sovereign Architecture with Core Architecture"),
+    (r"\bSovereign Tri-Engine\b", "Tri-Engine", "Replace Sovereign Tri-Engine with Tri-Engine"),
+    (r"\bSovereign Crawler\b", "Crawler", "Replace Sovereign Crawler with Crawler"),
+    (r"\bSovereign Harvester\b", "Deep Harvester", "Replace Sovereign Harvester with Deep Harvester"),
+    (r"\bSovereign Engine\b", "Core Engine", "Replace Sovereign Engine with Core Engine"),
+    (r"\bSovereign Knowledge Graph\b", "Knowledge Graph Engine", "Replace Sovereign Knowledge Graph with Knowledge Graph Engine"),
+    (r"\bSovereign Knowledge Vault\b", "Knowledge Vault", "Replace Sovereign Knowledge Vault with Knowledge Vault"),
+    (r"\bSovereign Ingestion Vault\b", "Core Ingestion Vault", "Replace Sovereign Ingestion Vault with Core Ingestion Vault"),
+    (r"\bSovereign Void-Tier\b", "Adaptive Void-Tier", "Replace Sovereign Void-Tier with Adaptive Void-Tier"),
+    (r"\bSovereign neural assistant\b", "Assistant", "Replace Sovereign neural assistant with Assistant"),
+    (r"\bSovereign Authority\b", "Executive Authority", "Replace Sovereign Authority with Executive Authority"),
     (r"\bSuper-Upgrades\b", "System Upgrades", "Replace Super-Upgrades with System Upgrades"),
     (r"\bsuper-upgrades\b", "system upgrades", "Replace super-upgrades with system upgrades"),
     (r"\bApex Phantom\b", "Phantom Stealth", "Replace Apex Phantom with Phantom Stealth"),
     (r"\bAPEX_PHANTOM\b", "BROWSER_AUTOMATION", "Replace APEX_PHANTOM with BROWSER_AUTOMATION"),
     (r"\bApex Yield\b", "Max-Yield", "Replace Apex Yield with Max-Yield"),
     (r"\bApex Farm\b", "High-Yield Farm", "Replace Apex Farm with High-Yield Farm"),
+    (r"\bApex Fusion\b", "High-Throughput Fusion", "Replace Apex Fusion with High-Throughput Fusion"),
+    (r"\bApex Absorption\b", "Deep Absorption", "Replace Apex Absorption with Deep Absorption"),
+    (r"\bUltra-Apex Validation\b", "Extended Platform Validation", "Replace Ultra-Apex Validation with Extended Platform Validation"),
+    (r"\bPlatform Apex Validation\b", "Platform Integration Validation", "Replace Platform Apex Validation with Platform Integration Validation"),
 ]
 
 # Canonical patterns to protect (do NOT replace)
 WHITELIST_CONTEXT_PATTERNS = [
     r"vault[\\/]Eve Online[\\/]News",    # Historical CCP EVE news chronicles
-    r"god object",                        # Standard CS anti-pattern
-    r"god-object",
+    r"data sovereignty",                 # Standard data sovereignty
     r"sovereignty warfare",               # EVE nullsec game mechanic
     r"sov warfare",
     r"sov nullsec",
+    r"Sovereign staging",                 # EVE nullsec staging
+    r"Sovereign Capital",                 # EVE alliance nullsec capital
+    r"Sovereignty Upgrades",              # EVE structure upgrade
     r"Singularity test server",           # EVE test server
     r"Max Singularity",                   # EVE character lore
     r"Zenith Quadrant",                   # EVE Quadrant lore
     r"Quantum Cores",                     # EVE structure mechanic
+    r"god object",                        # Standard CS anti-pattern
+    r"god-object",
+    r"superuser",
+    r"superclass",
+    r"super\(\)",
+    r"super\.",
+    r"__init__",
+    r"supervisor",
+    r"magic byte",
+    r"magic number",
+    r"magic string",
+    r"magic header",
+    r"magic signature",
+    r"magic cookie",
+    r"Unmatched double quotes",
+    r"Unmatched quotes",
+    r"Unmatched prefix",
+    r"Unmatched search",
+    r"\+15% Flawless",                   # EVE Ore tier
+    r"Flawless Jaspet",
+    r"Flawless Arkonor",
 ]
 
 

@@ -508,7 +508,7 @@ Sent from my iPhone
 
         # 2. Process Spoken Turn
         turn_res = VoiceAgentLoop.process_spoken_turn(
-            user_input_text="Switch voice to Alexander Sovereign",
+            user_input_text="Switch voice to Alexander Executive",
             session_id=session_id
         )
         self.assertEqual(turn_res["status"], "success")

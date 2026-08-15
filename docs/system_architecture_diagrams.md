@@ -4,9 +4,9 @@ This document contains architectural diagrams rendered natively via GitHub Flavo
 
 ---
 
-## Table of Contents
-1. [Sovereign Tri-Engine Autonomous Orchestration](#1-sovereign-tri-engine-autonomous-orchestration)
-2. [10-Bridge Neuro Co-Pilot Asynchronous DAG Pipeline](#2-10-bridge-neuro-co-pilot-asynchronous-dag-pipeline)
+### Table of Contents
+1. [Tri-Engine Autonomous Orchestration](#1-tri-engine-autonomous-orchestration)
+2. [11-Bridge Neuro Co-Pilot Asynchronous DAG Pipeline](#2-11-bridge-neuro-copilot-asynchronous-dag-pipeline)
 3. [Universal Crawler & Legal Intelligence Subsystem](#3-universal-crawler--legal-intelligence-subsystem)
 4. [5-Pass Hybrid Retrieval Pipeline](#4-5-pass-hybrid-retrieval-pipeline)
 5. [Zero-Knowledge Privacy, PII Redaction & SOC 2 Ledger](#5-zero-knowledge-privacy-pii-redaction--soc-2-ledger)
@@ -16,7 +16,7 @@ This document contains architectural diagrams rendered natively via GitHub Flavo
 
 ---
 
-## 1. Sovereign Tri-Engine Autonomous Orchestration
+## 1. Tri-Engine Autonomous Orchestration
 
 The Uroboros Knowledge Engine is powered by a synchronized Tri-Engine architecture binding local semantic intelligence, autonomous task management, and cryptographic source control:
 
@@ -30,13 +30,13 @@ graph TB
     end
 
     subgraph Engine2["2. Tududi Task Master"]
-        TaskDB[("PostgreSQL / SQLite Task Store")]
+        TaskDB[("Task Store & Burndown")]
         SprintEngine["Project #13 Sprint Tracker"]
         Habits["Habit & Goal Synchronizer"]
-        AuditTrail["Autonomous Execution Audit Trail"]
+        AuditLedger["4-Tier Subtask Auditor"]
     end
 
-    subgraph Engine3["3. GitHub & Merkle Provenance"]
+    subgraph Engine3["3. Git & Provenance Subsystem"]
         GitCLI["GitHub CLI Bridge"]
         MerkleEngine["SHA-256 Merkle Provenance Engine"]
         CIWorkflows["GitHub Actions Automated Matrix"]
@@ -54,9 +54,9 @@ graph TB
 
 ---
 
-## 2. 10-Bridge Neuro Co-Pilot Asynchronous DAG Pipeline
+## 2. 11-Bridge Neuro Co-Pilot Asynchronous DAG Pipeline
 
-The Neuro Co-Pilot executes an asynchronous 3-stage dependency graph to validate code, contracts, visual assets, and system hygiene in parallel:
+The Neuro Co-Pilot executes an asynchronous 3-stage dependency graph to validate code, contracts, visual assets, nomenclature, and system hygiene in parallel:
 
 ```mermaid
 graph TD
@@ -66,6 +66,7 @@ graph TD
         B3["GitHub Bridge<br/>(Git & Merkle Hash)"]
         B4["Visual Audit Bridge<br/>(Layout QA & CSS Sync)"]
         B5["Process Hygiene Bridge<br/>(OS Memory & Process Audit)"]
+        B6["Nomenclature Bridge<br/>(Lexical Clarity & Normalization)"]
     end
 
     subgraph Stage2["Stage 2: Context-Informed Verification (Parallel Async)"]

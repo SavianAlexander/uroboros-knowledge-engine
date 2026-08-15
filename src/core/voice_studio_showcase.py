@@ -1,5 +1,5 @@
 """
-Sovereign Magnetic Voice Studio & Full Persona Showcase Generator.
+Voice Studio & Full Persona Showcase Generator.
 Standard: Pure Python Standard Library (json, os, sys, time).
 Ponytail Senior Dev Principle: Generates full persona demonstration showcases across all 10 neural voice profiles with matching acoustic DSP mastering presets.
 """

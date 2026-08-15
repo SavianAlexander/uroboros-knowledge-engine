@@ -55,7 +55,7 @@ class TestFusionEngine(unittest.TestCase):
             # Verify tags linkage
             cur = conn.execute("SELECT tag FROM tags WHERE file_id = ?", (file_id,))
             tag_names = [r[0] for r in cur.fetchall()]
-            self.assertIn("SovereignCrawler", tag_names)
+            self.assertIn("CrawlerHarvester", tag_names)
             self.assertIn("Job:99", tag_names)
             self.assertIn("Rule902-Certified", tag_names)
 

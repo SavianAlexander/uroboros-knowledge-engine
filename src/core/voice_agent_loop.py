@@ -59,7 +59,7 @@ class VoiceAgentLoop:
 
         # Play welcome chime earcon
         welcome_audio = VoiceBridge.synthesize_bytes(
-            "Voice link established. Sovereign neural assistant online and listening.",
+            "Voice link established. Assistant online and listening.",
             voice=persona,
             speed=1.0,
             dsp_preset=dsp_preset

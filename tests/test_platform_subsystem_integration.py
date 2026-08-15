@@ -1,5 +1,5 @@
 """
-50-Subsystem Platform Apex Validation Verification Suite.
+50-Subsystem Platform Integration Validation Verification Suite.
 Covers Multi-Agent Consensus Orchestrator, Autonomous Vector Drift Agent, Streaming Token Compressor, and System Health Telemetry Dashboard API.
 """
 
@@ -12,7 +12,7 @@ from src.domain.streaming_token_compressor import compress_streaming_tokens
 from src.domain.system_health_telemetry import compute_system_health_telemetry
 
 
-class TestPlatformApexValidation(unittest.TestCase):
+class TestPlatformIntegrationValidation(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
 

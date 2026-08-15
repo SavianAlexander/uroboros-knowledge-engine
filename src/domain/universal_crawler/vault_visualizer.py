@@ -72,7 +72,7 @@ class KnowledgeVaultVisualizer:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{job_name} - Sovereign Knowledge Vault</title>
+    <title>{job_name} - Knowledge Vault</title>
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }}
         body {{ background: #0b0f19; color: #f3f4f6; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }}
@@ -102,7 +102,7 @@ class KnowledgeVaultVisualizer:
     <header>
         <div class="title-area">
             <h1>⬡ {job_name}</h1>
-            <p>Sovereign Knowledge Vault Interactive Topology</p>
+            <p>Knowledge Vault Interactive Topology</p>
         </div>
         <div class="controls">
             <input type="text" id="search" class="search" placeholder="Filter entities / statutes...">

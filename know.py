@@ -149,7 +149,7 @@ def main():
         from src.infrastructure.crawler_repository import init_crawler_schema
         with get_db() as conn:
             init_crawler_schema(conn)
-        print("[OK] Uroboros Knowledge Vault & Sovereign Crawler Matrix Initialized Successfully.")
+        print("[OK] Uroboros Knowledge Vault & Crawler Matrix Initialized Successfully.")
     elif len(sys.argv) > 1 and sys.argv[1] in ("crawl", "crawler"):
         import subprocess
         # Forward arguments to crawler_cli.py
@@ -168,7 +168,7 @@ def main():
             print(f" - [{score:.4f}] {title} ({r.get('path', '')})")
     else:
         print("=====================================================================")
-        print("[APEX] UROBOROS KNOWLEDGE ENGINE & SOVEREIGN HARVESTER (APEX FUSION)")
+        print("[CORE] UROBOROS KNOWLEDGE ENGINE & DEEP HARVESTER")
         print("=====================================================================")
         print("Commands:")
         print("  python know.py init                  - Initialize SQLite knowledge & crawler vaults")

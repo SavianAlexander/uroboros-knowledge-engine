@@ -69,13 +69,13 @@ class TestAbsorptionPerfection(unittest.TestCase):
         # 9. Genesis
         self.assertGreater(result["genesis"]["milestones_count"], 0)
 
-    def test_job_orchestrator_apex_absorption_cycle(self):
+    def test_job_orchestrator_deep_absorption_cycle(self):
         """Verify that single runner executes full DeepKnowledgeHarvester pipeline."""
         conn = sqlite3.connect(":memory:")
         init_crawler_schema(conn)
 
         job = CrawlJob(
-            name="Test Apex Absorption Job",
+            name="Test Deep Absorption Job",
             seed_urls=["https://example.com/test_doc"],
             config=CrawlConfig(max_pages=1, stealth_mode="fast")
         )

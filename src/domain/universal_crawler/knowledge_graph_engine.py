@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Tuple, Optional, Set
 from datetime import datetime, timezone
 
 """
-Sovereign Knowledge Graph Engine & Statutory AST Deconstructor.
+Knowledge Graph Engine & Statutory AST Deconstructor.
 Features:
 1. Deep Statutory AST Deconstruction (Libro -> Título -> Capítulo -> Artículo -> Sección -> Inciso)
 2. GraphML & Cytoscape.js Cross-Document Knowledge Graph Exporter
@@ -203,7 +203,7 @@ class ExecutiveBriefingGenerator:
 
         md = []
         md.append(f"# Executive Intelligence Briefing: {job_name}")
-        md.append(f"**Generated:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')} | **Classification:** Sovereign Ingestion Vault\n")
+        md.append(f"**Generated:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')} | **Classification:** Core Ingestion Vault\n")
         md.append("## 1. Executive Summary")
         md.append(f"- **Total Documents Ingested:** {total_docs}")
         md.append(f"- **Total Corpus Volume:** {total_chars:,} characters (~{total_chars//5:,} words)")

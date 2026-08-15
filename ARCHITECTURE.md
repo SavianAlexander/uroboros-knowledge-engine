@@ -113,7 +113,7 @@ os.environ["OLLAMA_KEEP_ALIVE"] = "5m"
 
 ---
 
-## 5. Sovereign Tri-Engine Autonomous Orchestration
+## 5. Tri-Engine Autonomous Orchestration
 
 ```mermaid
 graph TB

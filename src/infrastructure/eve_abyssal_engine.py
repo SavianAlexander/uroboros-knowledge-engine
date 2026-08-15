@@ -105,7 +105,7 @@ def simulate_mutaplasmid_roll(
         total_rating += roll_mult
 
     avg_roll = total_rating / len(attributes)
-    quality = "God Roll" if avg_roll > 1.15 else "Brick Roll" if avg_roll < 0.90 else "Usable Mutation"
+    quality = "Optimal Roll" if avg_roll > 1.15 else "Brick Roll" if avg_roll < 0.90 else "Usable Mutation"
 
     return {
         "module_name": module_name,

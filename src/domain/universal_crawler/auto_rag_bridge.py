@@ -33,7 +33,7 @@ class AutoRAGBridge:
         file_size = doc.file_size_bytes or len(doc.content_text.encode('utf-8'))
         now_ts = time.time()
 
-        tags_list = ["SovereignCrawler", f"Job:{doc.job_id}", "Rule902-Certified"]
+        tags_list = ["CrawlerHarvester", f"Job:{doc.job_id}", "Rule902-Certified"]
         if hasattr(doc, "entities") and isinstance(doc.entities, dict):
             for ley in doc.entities.get("leyes", [])[:5]:
                 tags_list.append(f"Ley:{ley}")

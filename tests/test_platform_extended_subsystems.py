@@ -1,5 +1,5 @@
 """
-54-Subsystem Ultra-Apex Validation Verification Suite.
+54-Subsystem Extended Platform Validation Verification Suite.
 Covers Autonomous Code Self-Refactoring, Agent Swarm Manager, Docstring Harmonizer, and ZK Data Masker.
 """
 
@@ -12,7 +12,7 @@ from src.domain.code_doc_aligner import check_code_docstring_alignment
 from src.domain.zk_data_masker import mask_payload_with_zk_proof
 
 
-class TestUltraApexValidation(unittest.TestCase):
+class TestExtendedPlatformValidation(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
 

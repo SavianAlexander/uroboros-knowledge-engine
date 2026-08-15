@@ -13,7 +13,7 @@ from src.domain.universal_crawler.knowledge_graph_engine import (
 
 class TestVoidCrawler(unittest.TestCase):
     """
-    Unit test suite for Sovereign Void-Tier Invisibility & Knowledge Graph Matrix.
+    Unit test suite for Adaptive Void-Tier Invisibility & Knowledge Graph Matrix.
     """
 
     def test_behavioral_entropy_canvas_mask(self):

@@ -503,7 +503,7 @@ class VoiceNormalizer:
     def shape_gravitas_intent_cadence(cls, text: str) -> str:
 
         """
-        Gravitas & Intent Prosody Shaper (Kratos / Master Chief / Sovereign Authority):
+        Gravitas & Intent Prosody Shaper (Executive & Tactical Authority):
         - Strips frivolous filler words ('basically', 'you know', 'sort of', 'kind of').
         - Injects deliberate reflective micro-pauses at consequential transition boundaries.
         - Structures sentence conclusions with downward pitch drop.
