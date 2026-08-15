@@ -93,8 +93,8 @@ def generate_fw_markdown(output_dir: str = FW_DIR) -> list:
         contested_rows.append(f"| **{sname}** | **{occupier}** | {owner} | **`{contest_pct:.1f}%`** | `{status}` | {vp:,} / {vp_thresh:,} VP |")
 
     table_md = "\n".join(contested_rows)
-    fw_file = os.path.join(output_dir, "fw_warzone_matrix.md")
-    fw_md = f"""# EVE Online: Faction Warfare Warzone & Contestation Matrix
+    fw_file = os.path.join(output_dir, "fw_warzone_overview.md")
+    fw_md = f"""# EVE Online: Faction Warfare Direct Enlistment & Warzone Overview
 
 Live tactical intelligence across the Caldari/Gallente, Amarr/Minmatar, and Pirate Insurgency warzones.
 

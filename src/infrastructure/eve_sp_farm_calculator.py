@@ -65,7 +65,7 @@ def calculate_sp_farming_roi(
 def generate_sp_farming_markdown() -> List[str]:
     """Generate Skill Farming & PLEX Arbitrage reference document."""
     os.makedirs(VAULT_FLEET_DIR, exist_ok=True)
-    out_file = os.path.join(VAULT_FLEET_DIR, "skill_farming_plex_arbitrage_matrix.md")
+    out_file = os.path.join(VAULT_FLEET_DIR, "skill_farming_plex_arbitrage.md")
 
     farm_calc = calculate_sp_farming_roi()
 

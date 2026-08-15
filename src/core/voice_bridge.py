@@ -136,7 +136,8 @@ class VoiceBridge:
             rec = copilot.speak(
                 text=text,
                 priority=priority,
-                voice=selected_voice
+                voice=selected_voice,
+                dsp_preset=selected_dsp
             )
         else:
             rec = {

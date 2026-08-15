@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Standardized & Hardened
 - **Domain-Driven Technical Precision Standardization**: System-wide overhaul replacing creative, informal, and marketing terminology with domain-driven technical language across 38 renamed test suites, operational scripts, domain models, and documentation.
 - **Universal Crawler Session Aliasing**: Introduced self-descriptive session aliases (`adaptive_session`, `browser_automation`, `proxy_rotation`, `async_pool`, `rotating_headers`, `direct`) in `src/domain/universal_crawler/`.
-- **Operational Script Standardization**: Renamed core utility tools (`fault_injection_harness.py`, `verify_system_integrity.py`, `verify_voice_audio_matrix.py`, `verify_empirical_models.py`).
+- **Operational Script Standardization**: Renamed core utility tools (`fault_injection_harness.py`, `verify_system_integrity.py`, `verify_voice_audio_pipeline.py`, `verify_empirical_models.py`).
 - **Global Neuro Co-Pilot Skill Synchronization**: Synchronized `SKILL.md` (Protocol X) and 10 bridge scripts across workspace and global configurations.
 - **Expanded Domain Test Coverage**: Expanded to 48 domain test modules (419 verification tests) with 100% pass rate.
 

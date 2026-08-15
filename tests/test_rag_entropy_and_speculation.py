@@ -1,5 +1,5 @@
 """
-Phase 2 RAG Supremacy Verification Suite.
+RAG Entropy & Speculative Synthesis Verification Suite.
 Covers Dynamic Entropy-Based Semantic Boundary Chunking and Speculative Multi-Hypothesis Synthesis.
 """
 
@@ -10,7 +10,7 @@ from src.domain.entropy_chunker import chunk_by_semantic_entropy
 from src.domain.speculative_rag import synthesize_speculative_rag, generate_hypotheses_from_chunks
 
 
-class TestPhase2RAGSupremacy(unittest.TestCase):
+class TestRAGEntropyAndSpeculation(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
 

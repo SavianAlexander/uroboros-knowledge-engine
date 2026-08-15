@@ -98,8 +98,8 @@ def generate_anomalies_markdown(output_dir: str = ANOMALY_DIR) -> list:
         ded_rows.append(f"| **{d['ded_level']}** | **{d['name']}** | `{d['security']}` | `{d['ship_class']}` | {d['dmg_dealt']} | **{d['top_drops']}** |")
 
     ded_table = "\n".join(ded_rows)
-    ded_file = os.path.join(output_dir, "ded_complex_matrix.md")
-    ded_md = f"""# EVE Online: Master DED Combat Complex Matrix (1/10 to 10/10)
+    ded_file = os.path.join(output_dir, "ded_complex_overview.md")
+    ded_md = f"""# EVE Online: Master DED Combat Complex Overview (1/10 to 10/10)
 
 Comprehensive guide to combat complex escalations, ship class restrictions, incoming damage profiles, and deadspace loot yields.
 

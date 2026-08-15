@@ -77,7 +77,7 @@ class BrowserEvasionHooks:
 
 class QuantumStealthSession:
     """
-    Omniscient Quantum-Tier Network Session.
+    Automated Stealth Network Session.
     Combines Micro-Action simulation, Backtrack Scrolling, and Zero-Fingerprint TLS 1.3.
     """
 
@@ -181,7 +181,7 @@ class QuantumStealthSession:
                     "search_sec": search_sec,
                     "select_sec": select_sec,
                     "reading_pause_sec": dwell_sec,
-                    "stealth_tier": "OMNISCIENT_QUANTUM"
+                    "stealth_tier": "ADVANCED_STEALTH"
                 }
                 return raw_data, content_type, status_code, None, telemetry
 
@@ -189,3 +189,5 @@ class QuantumStealthSession:
             return None, "", e.code, f"HTTP {e.code}: {e.reason}", {"latency_ms": (time.time() - t_start) * 1000.0}
         except Exception as ex:
             return None, "", 0, str(ex), {"latency_ms": (time.time() - t_start) * 1000.0}
+
+BrowserStealthSession = QuantumStealthSession

@@ -56,14 +56,14 @@ def generate_clone_status_markdown(output_dir: str = CLONE_STATUS_DIR) -> list:
     created_files = []
     sync_time_str = time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())
 
-    # 1. ALPHA VS OMEGA SPECIFICATION MATRIX
+    # 1. ALPHA VS OMEGA STATIC GUIDE
     spec_rows = []
     for feature, data in ALPHA_OMEGA_RULES.items():
         spec_rows.append(f"| **{feature}** | {data['alpha']} | **{data['omega']}** |")
 
     spec_table = "\n".join(spec_rows)
-    spec_file = os.path.join(output_dir, "alpha_vs_omega_matrix.md")
-    spec_md = f"""# EVE Online: Technical Specification — Alpha vs Omega Clone States
+    spec_file = os.path.join(output_dir, "alpha_vs_omega_comparison.md")
+    spec_md = f"""# EVE Online: Alpha vs Omega Clone State Comparison
 
 Comprehensive rule matrix comparing Free-to-Play Alpha Clones against Subscription Omega Clones.
 

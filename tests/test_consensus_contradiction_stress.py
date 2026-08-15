@@ -5,7 +5,7 @@ Empirically executed by challenger_m3.
 
 import pytest
 import math
-from src.domain.consensus_matrix import (
+from src.domain.consensus_engine import (
     evaluate_cross_document_consensus,
     extract_document_assertions,
     compute_consensus_boost,

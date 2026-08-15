@@ -135,7 +135,7 @@ def calculate_pochven_ofp_yield(
 def generate_celestial_markdown() -> List[str]:
     """Generate Wormhole J-Space & Pochven reference document."""
     os.makedirs(VAULT_WH_DIR, exist_ok=True)
-    out_file = os.path.join(VAULT_WH_DIR, "wormhole_pochven_celestial_matrix.md")
+    out_file = os.path.join(VAULT_WH_DIR, "wormhole_pochven_celestials.md")
 
     wh_calc = calculate_wormhole_mass_state(total_capacity_gg=3200.0, max_jump_mass_gg=300.0, mass_jumped_gg=2400.0)
     ofp_calc = calculate_pochven_ofp_yield(pilots_in_fleet=15, sites_per_hour=2.0)

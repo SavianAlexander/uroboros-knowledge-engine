@@ -144,7 +144,7 @@ def simulate_fax_triage_cycle(
 def generate_supercapital_markdown() -> List[str]:
     """Generate Supercapital Warfare & Doomsday reference document."""
     os.makedirs(VAULT_SUPERCAP_DIR, exist_ok=True)
-    out_file = os.path.join(VAULT_SUPERCAP_DIR, "supercapital_doomsday_fighter_matrix.md")
+    out_file = os.path.join(VAULT_SUPERCAP_DIR, "supercapital_doomsday_fighters.md")
 
     dd_titan_vs_dread = calculate_doomsday_applied_damage("Judgement (Avatar)", target_sig_radius=2200, target_resist=0.75)
     dd_boson_vs_fleet = calculate_doomsday_applied_damage("Bosonic Field Generator (AoE)", target_sig_radius=350, target_resist=0.60)

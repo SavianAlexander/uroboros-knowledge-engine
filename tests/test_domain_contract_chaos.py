@@ -31,8 +31,12 @@ class TestDomainContractChaos(unittest.TestCase):
     def setUpClass(cls):
         cls.test_dir = tempfile.mkdtemp(prefix="test_contract_chaos_")
         cls.db_path = os.path.join(cls.test_dir, "test_contract.db")
+        cls.orig_db_file = db_module.DB_FILE
+        cls.orig_know_db_file = getattr(know, "DB_FILE", db_module.DB_FILE)
         db_module.DB_FILE = cls.db_path
+        know.DB_FILE = cls.db_path
         reset_db_connections()
+        know.reset_db_connections()
         init_db()
 
         # Seed sample documents
@@ -45,11 +49,15 @@ class TestDomainContractChaos(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         reset_db_connections()
+        know.reset_db_connections()
+        db_module.DB_FILE = cls.orig_db_file
+        know.DB_FILE = cls.orig_know_db_file
         if os.path.exists(cls.test_dir):
             shutil.rmtree(cls.test_dir, ignore_errors=True)
 
     def setUp(self):
         db_module.DB_FILE = self.db_path
+        know.DB_FILE = self.db_path
 
     def tearDown(self):
         pass

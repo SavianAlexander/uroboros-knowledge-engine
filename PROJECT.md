@@ -6,7 +6,7 @@ Decoupled Clean Architecture in Python (stdlib-first, zero unneeded dependencies
 - `src/core/`: Embeddings (`embeddings.py`), Model Manager (`model_manager.py`), Model Router (`model_router.py`), Job Queue (`jobs.py`), Voice Subsystems (`voice_audio_router.py`, `voice_command_parser.py`, `voice_dsp.py`, `voice_persona_blend.py`, `voice_rag_bridge.py`, `voice_sfx.py`, `voice_streaming_pipeline.py`, `voice_normalizer.py`, `voice_tududi_radar.py`, `voice_engine.py`).
 - `src/infrastructure/`: Vector search engine & MMR (`vector_engine.py`), document parsers (`parsers.py`).
 - `src/antigravity_voice_mcp.py` & `src/mcp_server.py`: FastMCP / JSON-RPC voice & knowledge tool protocol servers.
-- `tests/` & `scripts/`: Master domain test runner (`run_domain_tests.py`), inter-bridge contract bus (`contract_bus.py`), architecture hygiene CLI (`architecture_cli.py`), voice audio test matrix (`verify_voice_audio_matrix.py`).
+- `tests/` & `scripts/`: Master domain test runner (`run_domain_tests.py`), inter-bridge contract bus (`contract_bus.py`), architecture hygiene CLI (`architecture_cli.py`), voice audio test suite (`verify_voice_audio_pipeline.py`).
 
 ## Feature Inventory
 | # | Feature | Description | Milestone | Source |
@@ -26,9 +26,9 @@ Decoupled Clean Architecture in Python (stdlib-first, zero unneeded dependencies
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Darwinian AST Algorithmic Optimization (O(N^2) -> O(1)) | F1, F2, F3, F4, F5 | none | IN_PROGRESS |
-| M2 | Codebase Bloat & Nesting Flattening (Ponytail Rule) | F6, F7, F8 | none | PLANNED |
-| M3 | Zero-Regression Master Matrix & Contract Certification | F9, F10, F11 | M1, M2 | PLANNED |
+| M1 | Darwinian AST Algorithmic Optimization (O(N^2) -> O(1)) | F1, F2, F3, F4, F5 | none | DONE |
+| M2 | Codebase Bloat & Nesting Flattening (Ponytail Rule) | F6, F7, F8 | none | DONE |
+| M3 | Zero-Regression Master Matrix & Contract Certification | F9, F10, F11 | M1, M2 | DONE |
 
 ## Interface Contracts & Invariant Guarantees
 

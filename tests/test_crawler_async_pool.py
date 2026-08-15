@@ -1,16 +1,17 @@
 import unittest
 import json
-from src.domain.universal_crawler.quantum_stealth import (
+from src.domain.universal_crawler.browser_stealth import (
     HumanMicroActionEngine,
     BrowserEvasionHooks,
-    QuantumStealthSession
+    QuantumStealthSession,
+    BrowserStealthSession
 )
 from src.domain.universal_crawler.concordance_engine import StatutoryConcordanceEngine
 from src.domain.universal_crawler.vault_visualizer import KnowledgeVaultVisualizer
 
 class TestQuantumCrawler(unittest.TestCase):
     """
-    Unit test suite for Omniscient Quantum-Tier Invisibility & Knowledge Vault Matrix.
+    Unit test suite for Crawler Invisibility & Knowledge Vault Visualizer.
     """
 
     def test_human_micro_actions(self):

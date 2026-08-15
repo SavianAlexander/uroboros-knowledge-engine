@@ -586,14 +586,49 @@ def run_ledger_audit(target_modules=None, parallel=False, max_workers=None):
     tree.write(os.path.join(root_dir, "tests", "test_results.xml"), encoding="utf-8", xml_declaration=True)
 
     # Write Markdown ledger
-    md_content = f"# Uroboros Domain Audit Ledger & Defect Matrix v8.0\n**Timestamp**: `{start_timestamp}`\n**Duration**: `{total_duration}s`\n"
+    pass_rate = round((total_passed / max(1, total_passed + total_failed + total_errors)) * 100, 1)
+    status_label = "PASSING" if (total_failed == 0 and total_errors == 0) else "FAILED"
+
+    md_lines = [
+        f"# Uroboros Master Test Ledger & Defect Matrix v8.0",
+        f"",
+        f"**Timestamp**: `{start_timestamp}`  ",
+        f"**Duration**: `{total_duration}s`  ",
+        f"**Status**: `{status_label}` ({pass_rate}%)  ",
+        f"**Total Domains**: `{len(modules_to_run)}`  ",
+        f"**Total Passed**: `{total_passed}`  ",
+        f"**Total Failed**: `{total_failed}`  ",
+        f"**Total Errors**: `{total_errors}`  ",
+        f"**Total Skipped**: `{total_skipped}`  ",
+        f"",
+        f"## Domain Test Execution Breakdown",
+        f"",
+        f"| Domain Module | Tests Run | Passed | Failed | Errors | Skipped | Duration (s) |",
+        f"|---|---|---|---|---|---|---|"
+    ]
+    for d_name, d_info in results_by_domain.items():
+        md_lines.append(f"| `{d_name}` | {d_info['tests_run']} | {d_info['passed']} | {d_info['failures']} | {d_info['errors']} | {d_info['skipped']} | {d_info['duration_seconds']}s |")
+
+    md_content = "\n".join(md_lines) + "\n"
+
     with open(os.path.join(root_dir, "docs", "test_audit_ledger.md"), "w", encoding="utf-8") as f:
+        f.write(md_content)
+
+    # Sync Master Test Ledgers to .agents/audits/
+    agents_audits_dir = os.path.join(root_dir, ".agents", "audits")
+    os.makedirs(agents_audits_dir, exist_ok=True)
+    with open(os.path.join(agents_audits_dir, "MASTER_TEST_LEDGER.json"), "w", encoding="utf-8") as f:
+        json.dump(ledger_data, f, indent=2)
+    with open(os.path.join(agents_audits_dir, "MASTER_TEST_LEDGER.csv"), "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Domain Module", "Tests Run", "Passed", "Failed", "Errors", "Skipped", "Duration (s)"])
+        for d_name, d_info in results_by_domain.items():
+            writer.writerow([d_name, d_info['tests_run'], d_info['passed'], d_info['failures'], d_info['errors'], d_info['skipped'], d_info['duration_seconds']])
+    with open(os.path.join(agents_audits_dir, "MASTER_TEST_LEDGER.md"), "w", encoding="utf-8") as f:
         f.write(md_content)
 
     # Write HTML visual dashboard
     html_path = os.path.join(root_dir, "docs", "test_audit_dashboard.html")
-    pass_rate = round((total_passed / max(1, total_passed + total_failed + total_errors)) * 100, 1)
-    status_label = "PASSING" if (total_failed == 0 and total_errors == 0) else "FAILED"
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(f"<!DOCTYPE html><html><head><title>Audit Dashboard</title></head><body><h1>Uroboros Audit Dashboard</h1><p>Status: {status_label} ({pass_rate}%)</p></body></html>")
 

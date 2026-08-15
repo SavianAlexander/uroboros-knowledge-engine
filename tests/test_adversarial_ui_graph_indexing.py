@@ -77,7 +77,11 @@ class TestAdversarialI3(unittest.TestCase):
                     except Exception:
                         threading.Event().wait(0.05)
 
+        cls.orig_db_file = db.DB_FILE
+        cls.orig_know_db_file = getattr(know, "DB_FILE", db.DB_FILE)
+        cls.orig_active_dir = config.ACTIVE_DIR
         db.DB_FILE = "adversarial_i3.db"
+        know.DB_FILE = "adversarial_i3.db"
         config.ACTIVE_DIR = str(cls.sandbox)
         know.init_db()
 
@@ -129,7 +133,9 @@ class TestAdversarialI3(unittest.TestCase):
                     import logging; logging.getLogger(__name__).exception("Swallowed error in test_adversarial_i3.py")
                     threading.Event().wait(0.05)
 
-        config.ACTIVE_DIR = "dumps"
+        db.DB_FILE = cls.orig_db_file
+        know.DB_FILE = cls.orig_know_db_file
+        config.ACTIVE_DIR = cls.orig_active_dir
 
     def setUp(self):
         db.DB_FILE = "adversarial_i3.db"

@@ -30,10 +30,14 @@ class TestFundamentalAdversarialMatrix(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="test_fundamental_matrix_")
         self.db_path = os.path.join(self.test_dir, "test_adversarial.db")
+        self.orig_db_file = db_module.DB_FILE
         db_module.DB_FILE = self.db_path
+        db_module.reset_db_connections()
         init_db()
 
     def tearDown(self):
+        db_module.reset_db_connections()
+        db_module.DB_FILE = self.orig_db_file
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 

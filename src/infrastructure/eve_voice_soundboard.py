@@ -126,19 +126,19 @@ def render_sfx_to_wav_bytes(sfx_name: str, sample_rate: int = 24000) -> Optional
 
 
 def generate_soundscape_markdown() -> List[str]:
-    """Generate Full-Duplex Soundscape & Voice Matrix architecture reference document."""
+    """Generate Full-Duplex Soundscape & Voice Architecture reference document."""
     vault_sys_dir = os.path.join(BASE_DIR, "vault", "Eve Online", "System_Architecture")
     os.makedirs(vault_sys_dir, exist_ok=True)
-    out_file = os.path.join(vault_sys_dir, "full_duplex_soundscape_voice_matrix.md")
+    out_file = os.path.join(vault_sys_dir, "full_duplex_soundscape_voice_architecture.md")
 
     doc_md = """---
-title: Autonomous EVE Online Full-Duplex VAD Voice Loop & Tactical Soundscape Matrix
+title: Autonomous EVE Online Full-Duplex VAD Voice Loop & Tactical Soundscape Architecture
 category: System Architecture
 tags: [EVE, VoiceAI, Soundboard, ProceduralAudio, VAD, FullDuplex, AudioDucking, CockpitAcoustics]
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 ---
 
-# 🛸 Autonomous Full-Duplex VAD Voice Loop & Procedural Soundscape Matrix
+# Autonomous Full-Duplex VAD Voice Loop & Procedural Soundscape Architecture
 
 This document establishes the procedural tactical sound effects generator, mathematical audio ducking engine, and full-duplex voice activity detection (VAD) state machine.
 

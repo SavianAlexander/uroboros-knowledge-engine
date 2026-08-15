@@ -9,7 +9,7 @@ import sys
 import math
 import struct
 import io
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 try:
     import numpy as np

@@ -66,21 +66,36 @@ class InstantAudioStreamer:
         self._worker_thread = threading.Thread(target=self._stream_worker, daemon=True, name="InstantAudioWorker")
         self._worker_thread.start()
 
-    @staticmethod
-    def _get_active_output_device() -> Optional[int]:
-        """Auto-detect active gaming headset or default WASAPI endpoint."""
+    _cached_device_idx: Optional[int] = None
+    _device_last_checked: float = 0.0
+
+    @classmethod
+    def _get_active_output_device(cls, force_refresh: bool = False) -> Optional[int]:
+        """Auto-detect active gaming headset or default WASAPI endpoint with TTL caching."""
+        now = time.time()
+        if not force_refresh and cls._cached_device_idx is not None and (now - cls._device_last_checked < 60.0):
+            return cls._cached_device_idx
+
         try:
             import sounddevice as sd
             devices = sd.query_devices()
+            selected = None
             # Prioritize connected headset keywords
             for idx, dev in enumerate(devices):
                 if dev.get("max_output_channels", 0) > 0:
                     name = dev.get("name", "").lower()
                     if "onn" in name or "headset" in name or "gaming" in name:
-                        return idx
-            # Fallback to default system output
-            return sd.default.device[1]
+                        selected = idx
+                        break
+            if selected is None:
+                # Fallback to default system output
+                selected = sd.default.device[1] if isinstance(sd.default.device, (list, tuple)) else None
+            cls._cached_device_idx = selected
+            cls._device_last_checked = now
+            return selected
         except Exception:
+            cls._cached_device_idx = None
+            cls._device_last_checked = now
             return None
 
     def _stream_worker(self):
@@ -113,12 +128,19 @@ class InstantAudioStreamer:
             if has_sd and audio_data is not None:
                 try:
                     import sounddevice as sd
-                    target_dev = self._get_active_output_device()
+                    target_dev = self._get_active_output_device(force_refresh=False)
                     sd.play(audio_data, sample_rate, device=target_dev)
                     sd.wait()
                     played = True
                 except Exception:
-                    played = False
+                    # Retry once with refreshed device
+                    try:
+                        target_dev = self._get_active_output_device(force_refresh=True)
+                        sd.play(audio_data, sample_rate, device=target_dev)
+                        sd.wait()
+                        played = True
+                    except Exception:
+                        played = False
 
             if not played:
                 # Fallback to direct winsound if sounddevice has collision

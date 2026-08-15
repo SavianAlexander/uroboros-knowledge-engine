@@ -46,7 +46,7 @@ from src.domain.temporal_validity import (
     detect_temporal_validity,
     compute_temporal_decay
 )
-from src.domain.consensus_matrix import (
+from src.domain.consensus_engine import (
     evaluate_cross_document_consensus,
     CONTRADICTION_DETECTED,
     CONTRADICTION_UNRESOLVED,

@@ -88,9 +88,9 @@ def discover_local_roster() -> List[Dict[str, Any]]:
 
 
 def generate_universal_discovery_markdown() -> List[str]:
-    """Generate Universal Player Portability DAG reference document."""
+    """Generate Player Portability Data Flow reference document."""
     os.makedirs(VAULT_SYS_DIR, exist_ok=True)
-    out_file = os.path.join(VAULT_SYS_DIR, "universal_player_portability_dag.md")
+    out_file = os.path.join(VAULT_SYS_DIR, "player_portability_data_flow.md")
 
     # Discover local character dossiers dynamically with sample fallback
     local_roster = discover_local_roster()

@@ -1,5 +1,5 @@
 """
-Antigravity Dedicated Omniscient Neural Voice MCP Server.
+Antigravity Neural Voice MCP Server.
 Standard: Pure Python Standard Library (json, sys, os, time, threading).
 Ponytail Senior Dev Principle: Complete, zero-dependency JSON-RPC stdio MCP server for Antigravity AI featuring:
 1. Master Neural Speech with Acoustic DSP Rack (`antigravity_speak`)
@@ -977,7 +977,7 @@ def _handle_listen_and_transcribe(args: Dict[str, Any]) -> Dict[str, Any]:
 def _handle_get_status(args: Dict[str, Any]) -> Dict[str, Any]:
     copilot = VoiceBridge.get_copilot()
     return {
-        "engine": "Kokoro-82M ONNX Omniscient Suite",
+        "engine": "Kokoro-82M ONNX Neural Suite",
         "supported_personas": KOKORO_PERSONAS,
         "preset_blends": VoicePersonaBlender.get_preset_blends(),
         "config": VOICE_CONFIG,
@@ -1035,7 +1035,7 @@ _TOOL_HANDLERS: Dict[str, Any] = {
 
 
 def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
-    """Execute Antigravity omniscient voice MCP tool calls via O(1) table dispatch."""
+    """Execute Antigravity voice MCP tool calls via O(1) table dispatch."""
     handler = _TOOL_HANDLERS.get(name)
     if handler is None:
         return {"error": f"Unknown tool: {name}"}

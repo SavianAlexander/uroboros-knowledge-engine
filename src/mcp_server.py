@@ -267,98 +267,129 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
     ]
 
+async def _mcp_tool_search(args: dict) -> list[types.TextContent]:
+    res = await make_request("POST", "/api/search", json={
+        "query": args.get("query"),
+        "limit": args.get("limit", 5),
+        "search_type": args.get("search_type", "hybrid")
+    })
+    text_out = f"Search Results for '{args.get('query')}':\n\n"
+    for doc in res.get("results", []):
+        text_out += f"- [{doc.get('score', 0):.2f}] {doc.get('content', '')[:300]}...\n"
+    return [types.TextContent(type="text", text=text_out)]
+
+
+async def _mcp_tool_ingest(args: dict) -> list[types.TextContent]:
+    url = args.get("url", "")
+    if url.startswith("http"):
+        res = await make_request("POST", "/api/file/ingest-url", json={"url": url})
+        return [types.TextContent(type="text", text=f"Successfully ingested: {url}\nResponse: {res}")]
+    res = await make_request("POST", "/api/file/index", json={"directory": url})
+    return [types.TextContent(type="text", text=f"Local file ingestion / Indexed directory {url}:\nResponse: {res}")]
+
+
+async def _mcp_tool_trigger_workflow(args: dict) -> list[types.TextContent]:
+    res = await make_request("POST", "/api/workflows/trigger", json={
+        "event_type": args.get("event_type"),
+        "payload": args.get("payload", {})
+    })
+    return [types.TextContent(type="text", text=f"Triggered {args.get('event_type')} workflow.\nResponse: {res}")]
+
+
+async def _mcp_tool_stats(args: dict) -> list[types.TextContent]:
+    from know import db_status
+    stats = db_status()
+    return [types.TextContent(type="text", text=json.dumps(stats, indent=2))]
+
+
+async def _mcp_tool_hyde_query(args: dict) -> list[types.TextContent]:
+    from src.domain.services import generate_hyde
+    hyde = generate_hyde(args.get("query"))
+    return [types.TextContent(type="text", text=json.dumps({"query": args.get("query"), "hyde_expansion": hyde}, indent=2))]
+
+
+async def _mcp_tool_graph_query(args: dict) -> list[types.TextContent]:
+    from know import get_graph_data
+    graph = get_graph_data()
+    return [types.TextContent(type="text", text=json.dumps(graph, indent=2))]
+
+
+async def _mcp_tool_compress_ast(args: dict) -> list[types.TextContent]:
+    from .agents.skills.neuro_copilot.scripts.neuro_bridge import compress_ast
+    res = compress_ast(args.get("path"))
+    return [types.TextContent(type="text", text=res)]
+
+
+async def _mcp_tool_self_patch(args: dict) -> list[types.TextContent]:
+    from .agents.skills.neuro_copilot.scripts.github_bridge import self_patch
+    res = self_patch(args.get("error"), args.get("file"))
+    return [types.TextContent(type="text", text=res)]
+
+
+async def _mcp_tool_call_graph(args: dict) -> list[types.TextContent]:
+    from .agents.skills.neuro_copilot.scripts.github_bridge import call_graph
+    res = call_graph(args.get("target", "know.py"))
+    return [types.TextContent(type="text", text=res)]
+
+
+async def _mcp_tool_release_certificate(args: dict) -> list[types.TextContent]:
+    from .agents.skills.neuro_copilot.scripts.github_bridge import generate_certificate
+    res = generate_certificate()
+    return [types.TextContent(type="text", text=res)]
+
+
+async def _mcp_tool_speak(args: dict) -> list[types.TextContent]:
+    from src.core.voice_bridge import VoiceBridge
+    raw_text = args.get("text", "")
+    try:
+        from src.core.voice_normalizer import VoiceNormalizer
+        clean_text = VoiceNormalizer.normalize_for_speech(raw_text)
+    except Exception:
+        clean_text = raw_text
+    res = VoiceBridge.speak(
+        text=clean_text,
+        domain=args.get("domain", "GENERAL"),
+        priority=args.get("priority", "NORMAL"),
+        voice=args.get("voice")
+    )
+    return [types.TextContent(type="text", text=f"Spoken via VoiceBridge ({res.get('engine')}): '{clean_text}' [Dispatched: {res.get('dispatched')}]")]
+
+
+async def _mcp_tool_play_sfx(args: dict) -> list[types.TextContent]:
+    from src.core.voice_bridge import VoiceBridge
+    sfx = args.get("sfx_name", "target_lock")
+    wav_bytes = VoiceBridge.play_sfx(sfx)
+    if wav_bytes:
+        return [types.TextContent(type="text", text=f"Procedural SFX '{sfx}' synthesized successfully ({len(wav_bytes):,} bytes).")]
+    return [types.TextContent(type="text", text=f"SFX '{sfx}' failed to generate.")]
+
+
+_MCP_TOOL_HANDLERS = {
+    "neuro_search": _mcp_tool_search,
+    "neuro_ingest": _mcp_tool_ingest,
+    "neuro_trigger_workflow": _mcp_tool_trigger_workflow,
+    "neuro_stats": _mcp_tool_stats,
+    "neuro_hyde_query": _mcp_tool_hyde_query,
+    "neuro_graph_query": _mcp_tool_graph_query,
+    "neuro_compress_ast": _mcp_tool_compress_ast,
+    "neuro_self_patch": _mcp_tool_self_patch,
+    "neuro_call_graph": _mcp_tool_call_graph,
+    "neuro_release_certificate": _mcp_tool_release_certificate,
+    "neuro_speak": _mcp_tool_speak,
+    "neuro_play_sfx": _mcp_tool_play_sfx,
+}
+
+
 @server.call_tool()
 async def handle_call_tool(
     name: str, arguments: dict | None
 ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
     args = arguments or {}
     try:
-        if name == "neuro_search":
-            res = await make_request("POST", "/api/search", json={
-                "query": args.get("query"),
-                "limit": args.get("limit", 5),
-                "search_type": args.get("search_type", "hybrid")
-            })
-            text_out = f"Search Results for '{args.get('query')}':\n\n"
-            for doc in res.get("results", []):
-                text_out += f"- [{doc.get('score', 0):.2f}] {doc.get('content', '')[:300]}...\n"
-            return [types.TextContent(type="text", text=text_out)]
-            
-        if name == "neuro_ingest":
-            url = args.get("url", "")
-            if url.startswith("http"):
-                res = await make_request("POST", "/api/file/ingest-url", json={"url": url})
-                return [types.TextContent(type="text", text=f"Successfully ingested: {url}\nResponse: {res}")]
-            res = await make_request("POST", "/api/file/index", json={"directory": url})
-            return [types.TextContent(type="text", text=f"Local file ingestion / Indexed directory {url}:\nResponse: {res}")]
-            
-        if name == "neuro_trigger_workflow":
-            res = await make_request("POST", "/api/workflows/trigger", json={
-                "event_type": args.get("event_type"),
-                "payload": args.get("payload", {})
-            })
-            return [types.TextContent(type="text", text=f"Triggered {args.get('event_type')} workflow.\nResponse: {res}")]
-            
-        if name == "neuro_stats":
-            from know import db_status
-            stats = db_status()
-            return [types.TextContent(type="text", text=json.dumps(stats, indent=2))]
-            
-        if name == "neuro_hyde_query":
-            from src.domain.services import generate_hyde
-            hyde = generate_hyde(args.get("query"))
-            return [types.TextContent(type="text", text=json.dumps({"query": args.get("query"), "hyde_expansion": hyde}, indent=2))]
-
-        if name == "neuro_graph_query":
-            from know import get_graph_data
-            graph = get_graph_data()
-            return [types.TextContent(type="text", text=json.dumps(graph, indent=2))]
-
-        if name == "neuro_compress_ast":
-            from .agents.skills.neuro_copilot.scripts.neuro_bridge import compress_ast
-            res = compress_ast(args.get("path"))
-            return [types.TextContent(type="text", text=res)]
-
-        if name == "neuro_self_patch":
-            from .agents.skills.neuro_copilot.scripts.github_bridge import self_patch
-            res = self_patch(args.get("error"), args.get("file"))
-            return [types.TextContent(type="text", text=res)]
-
-        if name == "neuro_call_graph":
-            from .agents.skills.neuro_copilot.scripts.github_bridge import call_graph
-            res = call_graph(args.get("target", "know.py"))
-            return [types.TextContent(type="text", text=res)]
-
-        if name == "neuro_release_certificate":
-            from .agents.skills.neuro_copilot.scripts.github_bridge import generate_certificate
-            res = generate_certificate()
-            return [types.TextContent(type="text", text=res)]
-
-        if name == "neuro_speak":
-            from src.core.voice_bridge import VoiceBridge
-            raw_text = args.get("text", "")
-            try:
-                from src.core.voice_normalizer import VoiceNormalizer
-                clean_text = VoiceNormalizer.normalize_for_speech(raw_text)
-            except Exception:
-                clean_text = raw_text
-            res = VoiceBridge.speak(
-                text=clean_text,
-                domain=args.get("domain", "GENERAL"),
-                priority=args.get("priority", "NORMAL"),
-                voice=args.get("voice")
-            )
-            return [types.TextContent(type="text", text=f"Spoken via VoiceBridge ({res.get('engine')}): '{clean_text}' [Dispatched: {res.get('dispatched')}]")]
-
-        if name == "neuro_play_sfx":
-            from src.core.voice_bridge import VoiceBridge
-            sfx = args.get("sfx_name", "target_lock")
-            wav_bytes = VoiceBridge.play_sfx(sfx)
-            if wav_bytes:
-                return [types.TextContent(type="text", text=f"Procedural SFX '{sfx}' synthesized successfully ({len(wav_bytes):,} bytes).")]
-            return [types.TextContent(type="text", text=f"SFX '{sfx}' failed to generate.")]
-
-        raise ValueError(f"Unknown tool: {name}")
+        handler = _MCP_TOOL_HANDLERS.get(name)
+        if handler is None:
+            raise ValueError(f"Unknown tool: {name}")
+        return await handler(args)
     except httpx.HTTPStatusError as e:
         return [types.TextContent(type="text", text=f"HTTP Error: {e.response.text}")]
     except Exception as e:

@@ -103,8 +103,8 @@ $$S(n) = e^{-\\frac{(n - 1)^2}{7.1289}} = e^{-\\frac{(n - 1)^2}{2 \\times (1.887
 
     # 3. EQUINOX SOVEREIGNTY POWER & REAGENT TOPOLOGY
     os.makedirs(SOV_DIR, exist_ok=True)
-    f3 = os.path.join(SOV_DIR, "equinox_sovereign_hub_power_reagents.md")
-    m3 = """# EVE Online: Equinox Sovereign Topology — Power, Workforce & Reagents
+    f3 = os.path.join(SOV_DIR, "equinox_sovereignty_hub_power_reagents.md")
+    m3 = """# EVE Online: Equinox Sovereignty Topology — Power, Workforce & Reagents
 
 Architectural planning for sovereign Nullsec solar systems under the Equinox resource paradigm.
 

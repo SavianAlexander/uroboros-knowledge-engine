@@ -1,17 +1,17 @@
 ---
-title: Ultra-Low-Latency Conversational Voice Call & Full-Duplex Intercom Matrix
+title: Full-Duplex Voice Call & Intercom Architecture
 category: System Architecture
 tags: [Voice, FullDuplex, CallMode, VAD, BargeIn, RogerBeep, DTMF, Winsound, Kokoro82M]
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 ---
 
-# 📞 Ultra-Low-Latency Conversational Voice Call & Full-Duplex Intercom Matrix
+# Full-Duplex Voice Call & Intercom Architecture
 
 This document defines the real-time full-duplex conversational voice call and radio intercom engine for Antigravity and the Uroboros Knowledge Engine.
 
 ---
 
-## 🏛️ 1. Architecture & Latency Profile
+## 1. Architecture & Latency Profile
 
 ```mermaid
 graph TD
@@ -22,24 +22,24 @@ graph TD
     Call --> Signaling["Procedural DTMF / Connect Chime / Roger Beep"]
     Call --> Filler["<50ms Conversational Filler Acknowledgment"]
     Call --> TTS["Kokoro-82M ONNX In-Memory Synthesizer"]
-    TTS --> Winsound["Win32 C-Level In-Memory Streamer (winsound.SND_MEMORY <15ms)"]
+    TTS --> Winsound["Win32 In-Memory Streamer (winsound.SND_MEMORY <15ms)"]
 ```
 
 ---
 
-## ⚡ 2. Latency Benchmarks (Before vs After)
+## 2. Latency Benchmarks (Before vs After)
 
 | Processing Stage | Legacy Architecture | Upgraded Call Engine | Improvement |
 |---|---|---|---|
 | **Audio Player Startup** | 250–600ms (PowerShell subprocess) | **<1ms** (Direct C Win32 `winsound`) | **99.8% reduction** |
 | **Disk I/O Temp Files** | 20–50ms (File creation & lock) | **0.0ms** (Pure RAM byte buffer) | **Eliminated** |
 | **Barge-In Speech Cutoff** | Impossible (Subprocess blocking) | **<0.5ms** (`SND_PURGE` instant halt) | **Instantaneous** |
-| **Query Acknowledgment** | 1200–3000ms (Waits on full LLM) | **<50ms** (Pre-warmed haptic fillers) | **96% faster** |
+| **Query Acknowledgment** | 1200–3000ms (Waits on full LLM) | **<50ms** (Pre-warmed fillers) | **96% faster** |
 | **First-Sound Latency** | ~750ms | **<18ms** | **97.6% lower latency** |
 
 ---
 
-## 🎛️ 3. Full-Duplex Call Lifecycle State Machine
+## 3. Full-Duplex Call Lifecycle State Machine
 
 1. **`antigravity_start_call`**:
    - Fires dual-tone multi-frequency rising connect chime (C5 $523\text{ Hz} \rightarrow$ E5 $659\text{ Hz}$).

@@ -38,7 +38,7 @@ interface DiagramItem {
 const DIAGRAMS: DiagramItem[] = [
   {
     id: 'tri-engine',
-    title: 'Sovereign Tri-Engine Orchestration',
+    title: 'Tri-Engine Orchestration',
     subtitle: 'Neuro Vector Vault + Tududi Task Master + GitHub Merkle Engine',
     category: 'TRI_ENGINE',
     icon: Cpu,

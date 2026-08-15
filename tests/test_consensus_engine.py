@@ -6,7 +6,7 @@ and the 4-Tier Contradiction Resolution Hierarchy.
 
 import pytest
 import math
-from src.domain.consensus_matrix import (
+from src.domain.consensus_engine import (
     evaluate_cross_document_consensus,
     extract_document_assertions,
     compute_consensus_boost,

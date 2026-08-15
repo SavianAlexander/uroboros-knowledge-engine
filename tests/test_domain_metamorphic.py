@@ -22,7 +22,9 @@ class TestDomainMetamorphic(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="test_domain_metamorphic_")
         self.db_path = os.path.join(self.test_dir, "test_metamorphic.db")
+        self.orig_db_file = db_module.DB_FILE
         db_module.DB_FILE = self.db_path
+        db_module.reset_db_connections()
         init_db()
 
         self.doc1 = os.path.join(self.test_dir, "doc1.txt")
@@ -36,6 +38,8 @@ class TestDomainMetamorphic(unittest.TestCase):
         index_directory(self.test_dir)
 
     def tearDown(self):
+        db_module.reset_db_connections()
+        db_module.DB_FILE = self.orig_db_file
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 

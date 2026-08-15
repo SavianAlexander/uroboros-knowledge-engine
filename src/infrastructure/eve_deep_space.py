@@ -99,8 +99,8 @@ Technical cartography of the 27 stellar systems severed from New Eden by the Tri
     # 3. ABYSSAL DEADSPACE
     abyssal_dir = os.path.join(VAULT_EVE_DIR, "Abyssal")
     os.makedirs(abyssal_dir, exist_ok=True)
-    abyssal_file = os.path.join(abyssal_dir, "abyssal_deadspace_matrix.md")
-    abyssal_md = """# EVE Online: Abyssal Deadspace T1-T6 Matrix & Threat Theory
+    abyssal_file = os.path.join(abyssal_dir, "abyssal_deadspace_guide.md")
+    abyssal_md = """# EVE Online: Abyssal Deadspace Tiers, Weathers, and Optimal Cruiser Fits Theory
 
 Survival protocols, environmental mutators, and ship fitting doctrines for solo cruiser and frigate abyssal runs.
 

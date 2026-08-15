@@ -851,30 +851,30 @@ class TestDomainVector(unittest.TestCase):
         conn.close()
 
     @unittest.mock.patch('src.core.embeddings.generate_embedding')
-    def test_35_neuro_omniscient_intelligence_methods(self, mock_emb):
+    def test_35_neuro_advanced_vector_methods(self, mock_emb):
         """Verify Topological TDA Mapper, RDMA Kernel-Bypass, Self-Governing Policy Guard, and Continuous Foundation Model."""
         mock_emb.return_value = [0.6, 0.8, 0.0, 0.0]
         conn = know.get_db()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (35, '/test/doc35.txt', 'doc35.txt', 'Omniscient Architecture with Topological TDA, RDMA Kernel Bypass, Self-Governing Policy Guard, and Continuous Foundation Model.')")
-        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (35, 0, 'Omniscient Architecture with Topological TDA, RDMA Kernel Bypass, Self-Governing Policy Guard, and Continuous Foundation Model.', '[0.6, 0.8, 0.0, 0.0]')")
+        cursor.execute("INSERT INTO files (id, filepath, filename, content) VALUES (35, '/test/doc35.txt', 'doc35.txt', 'Vector Architecture with Topological TDA, RDMA Kernel Bypass, Self-Governing Policy Guard, and Continuous Foundation Model.')")
+        cursor.execute("INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json) VALUES (35, 0, 'Vector Architecture with Topological TDA, RDMA Kernel Bypass, Self-Governing Policy Guard, and Continuous Foundation Model.', '[0.6, 0.8, 0.0, 0.0]')")
         conn.commit()
         db._db_version += 1
 
         # Test Pillar 21: Topological Data Analysis Manifold Mapper
-        tda_res = know.MiniVectorEngine.search_topological_manifold_mapped("Omniscient Architecture", top_k=1)
+        tda_res = know.MiniVectorEngine.search_topological_manifold_mapped("Vector Architecture", top_k=1)
         self.assertEqual(tda_res["manifold_topology_status"], "HOMOLOGY_INVARIANTS_MAPPED")
 
         # Test Pillar 22: Sub-Nanosecond RDMA Kernel-Bypass Engine
-        rdma_hits, rdma_meta = know.MiniVectorEngine.search_rdma_direct_memory_bypass("Omniscient Architecture", top_k=1)
+        rdma_hits, rdma_meta = know.MiniVectorEngine.search_rdma_direct_memory_bypass("Vector Architecture", top_k=1)
         self.assertTrue(rdma_meta["os_stack_bypassed"])
 
         # Test Pillar 23: Autonomous Self-Governing Policy Guard
-        policy_res = know.MiniVectorEngine.search_autonomous_policy_governed("Omniscient Architecture", top_k=1)
+        policy_res = know.MiniVectorEngine.search_autonomous_policy_governed("Vector Architecture", top_k=1)
         self.assertEqual(policy_res["governance_status"], "100_PCT_COMPLIANT_ZERO_VIOLATION")
 
         # Test Pillar 24: Continuous Self-Training Vector Foundation Model
-        foundation_res = know.MiniVectorEngine.search_continuous_selftrained_foundation("Omniscient Architecture")
+        foundation_res = know.MiniVectorEngine.search_continuous_selftrained_foundation("Vector Architecture")
         self.assertEqual(foundation_res["foundation_model_status"], "ONLINE_CONTINUOUS_TRAINING_ACTIVE")
         conn.close()
 

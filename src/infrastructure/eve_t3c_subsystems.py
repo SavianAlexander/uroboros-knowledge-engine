@@ -53,8 +53,8 @@ def generate_t3c_markdown() -> list:
     os.makedirs(DOCTRINES_DIR, exist_ok=True)
     created = []
 
-    # 1. T3C Matrix
-    f1 = os.path.join(DOCTRINES_DIR, "t3c_strategic_cruiser_matrix.md")
+    # 1. T3 Strategic Cruiser Subsystem Matrix
+    f1 = os.path.join(DOCTRINES_DIR, "t3c_strategic_cruisers.md")
     t3c_cards = []
     for hull, data in T3C_HULLS.items():
         t3c_cards.append(f"""### 🚀 **{hull}**

@@ -17,7 +17,7 @@ from src.domain.epistemic_tiering import (
     TIER_4_COMMENTARY
 )
 from src.domain.temporal_validity import detect_temporal_validity, compute_temporal_decay
-from src.domain.consensus_matrix import evaluate_cross_document_consensus, SINGLE_SOURCE
+from src.domain.consensus_engine import evaluate_cross_document_consensus, SINGLE_SOURCE
 from src.domain.boundary_invariants import evaluate_all_boundary_invariants
 
 # --- Scorecard Constants & Default Weights ---

@@ -7,6 +7,7 @@ Validates online SQLite database backups/restoration, configurable API key auth 
 
 import os
 import sys
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -25,12 +26,21 @@ class TestDomainBackupAuthTheme(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="test_domain_backup_auth_")
         self.db_path = os.path.join(self.test_dir, "test_backup.db")
+        self.orig_db_file = db.DB_FILE
+        self.orig_know_db_file = getattr(know, "DB_FILE", db.DB_FILE)
         db.DB_FILE = self.db_path
+        know.DB_FILE = self.db_path
+        db.reset_db_connections()
         know.reset_db_connections()
         know.init_db()
 
     def tearDown(self):
+        db.reset_db_connections()
         know.reset_db_connections()
+        db.DB_FILE = self.orig_db_file
+        know.DB_FILE = self.orig_know_db_file
+        if os.path.exists(self.test_dir):
+            shutil.rmtree(self.test_dir, ignore_errors=True)
 
     @pytest.mark.skip(reason="Legacy test skipped automatically")
     @unittest.skip("Legacy UI test skipped")

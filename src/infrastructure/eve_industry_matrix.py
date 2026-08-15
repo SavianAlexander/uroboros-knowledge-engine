@@ -155,7 +155,7 @@ def calculate_reaction_yield(
 def generate_industry_matrix_markdown() -> List[str]:
     """Generate industry and composite reactions reference document."""
     os.makedirs(VAULT_INDUSTRY_DIR, exist_ok=True)
-    out_file = os.path.join(VAULT_INDUSTRY_DIR, "t2_reaction_manufacturing_matrix.md")
+    out_file = os.path.join(VAULT_INDUSTRY_DIR, "t2_reaction_manufacturing_guide.md")
 
     # Sample Hulk Manufacturing calculation
     hulk_base_materials = {

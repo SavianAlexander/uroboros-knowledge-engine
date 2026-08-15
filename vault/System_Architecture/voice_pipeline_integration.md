@@ -1,17 +1,17 @@
 ---
-title: Voice Architecture Fusion & Fragmentation Optimization Matrix
+title: Voice Pipeline Architecture & Audio Integration
 category: System Architecture
 tags: [CleanArchitecture, VoiceDSP, VoiceEngine, AudioMastering, Decoupling, BiquadEQ, Kokoro82M]
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 ---
 
-# 🎼 Voice Architecture Fusion & Fragmentation Optimization Matrix
+# Voice Pipeline Architecture & Audio Integration
 
-This document defines the consolidated, clean-architecture voice subsystems for the Uroboros Knowledge Engine and Antigravity.
+This document defines the consolidated voice subsystems for the Uroboros Knowledge Engine and Antigravity.
 
 ---
 
-## 🏛️ 1. Architecture Topology (Post-Fusion)
+## 1. Architecture Topology
 
 ```mermaid
 graph TD
@@ -40,13 +40,13 @@ graph TD
 
 ---
 
-## 🧬 2. Fusion & Decoupling Benefits
+## 2. Pipeline Integration & Subsystems
 
 1. **Unified DSP Pipeline (`src/core/voice_dsp.py`)**:
    - Single-pass processing: Parametric Biquad EQ $\rightarrow$ Dynamic Ducking (-14dB) $\rightarrow$ True-Peak Limiter (-1.0 dBFS) $\rightarrow$ 32-Band FFT.
    - Eliminates redundant array copies and memory allocations.
-2. **Universal Neural Audio Engine (`src/core/voice_engine.py`)**:
+2. **Neural Audio Engine (`src/core/voice_engine.py`)**:
    - Fully decoupled from game domain specifics.
-   - Houses in-memory C Win32 `winsound` buffer queue with monotonic sequence counter and sub-0.5ms barge-in audio purge (`SND_PURGE`).
+   - Houses in-process Kokoro-82M ONNX inference and low-latency audio queue.
 3. **Dedicated Linguistic Normalizer (`src/core/voice_normalizer.py`)**:
-   - Strictly handles phonetic acronym expansion, tech terms, and breath pauses.
+   - Strictly handles phonetic acronym expansion, technical terms, and cadence pauses.

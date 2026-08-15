@@ -117,46 +117,65 @@ class NonInterruptingAudioQueue:
             self._execute_playback(item)
             self._queue.task_done()
 
+    @classmethod
+    def _play_tier1_sounddevice(cls, audio_bytes: Optional[bytes]) -> bool:
+        """Tier 1: Modern WASAPI/DirectSound via sounddevice and instant streamer."""
+        if not audio_bytes:
+            return False
+        try:
+            from src.core.instant_audio_streamer import get_instant_streamer
+            streamer = get_instant_streamer()
+            streamer.play_instant_pcm(audio_bytes, raw_wav_bytes=audio_bytes, sync=True)
+            return True
+        except Exception:
+            pass
+        try:
+            import sounddevice as sd
+            import soundfile as sf
+            data, fs = sf.read(io.BytesIO(audio_bytes))
+            sd.play(data, fs)
+            sd.wait()
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def _play_tier2_winsound(audio_bytes: Optional[bytes], audio_file: Optional[str]) -> bool:
+        """Tier 2: Win32 MME winsound fallback."""
+        if sys.platform != "win32":
+            return False
+        try:
+            import winsound
+            if audio_bytes:
+                winsound.PlaySound(audio_bytes, winsound.SND_MEMORY | winsound.SND_SYNC | winsound.SND_NODEFAULT)
+                return True
+            if audio_file and os.path.exists(audio_file):
+                winsound.PlaySound(audio_file, winsound.SND_FILENAME | winsound.SND_SYNC | winsound.SND_NODEFAULT)
+                return True
+        except Exception:
+            pass
+        return False
+
+    @staticmethod
+    def _play_tier3_powershell(audio_file: Optional[str]):
+        """Tier 3: PowerShell SoundPlayer fallback."""
+        if not (audio_file and os.path.exists(audio_file)):
+            return
+        try:
+            ps_cmd = f"(New-Object System.Media.SoundPlayer '{audio_file}').PlaySync()"
+            subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+        except Exception:
+            pass
+
     def _execute_playback(self, item: Dict[str, Any]):
         """Execute single speech item completely before returning with zero-overhead in-memory playback."""
         item["playback_started_at"] = time.time()
         audio_bytes = item.get("audio_bytes")
         audio_file = item.get("audio_file")
 
-        played = False
-
-        # Tier 1: Modern WASAPI/DirectSound via sounddevice (routes to active USB/Headset)
-        if audio_bytes:
-            try:
-                import sounddevice as sd
-                import soundfile as sf
-                data, fs = sf.read(io.BytesIO(audio_bytes))
-                sd.play(data, fs)
-                sd.wait()
-                played = True
-            except Exception:
-                played = False
-
-        # Tier 2: Win32 MME winsound fallback
-        if not played and sys.platform == "win32":
-            try:
-                import winsound
-                if audio_bytes:
-                    winsound.PlaySound(audio_bytes, winsound.SND_MEMORY | winsound.SND_SYNC | winsound.SND_NODEFAULT)
-                    played = True
-                elif audio_file and os.path.exists(audio_file):
-                    winsound.PlaySound(audio_file, winsound.SND_FILENAME | winsound.SND_SYNC | winsound.SND_NODEFAULT)
-                    played = True
-            except Exception:
-                played = False
-
-        # Tier 3: PowerShell SoundPlayer fallback
-        if not played and audio_file and os.path.exists(audio_file):
-            try:
-                ps_cmd = f"(New-Object System.Media.SoundPlayer '{audio_file}').PlaySync()"
-                subprocess.run(["powershell", "-Command", ps_cmd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
-            except Exception:
-                pass
+        if not self._play_tier1_sounddevice(audio_bytes):
+            if not self._play_tier2_winsound(audio_bytes, audio_file):
+                self._play_tier3_powershell(audio_file)
 
         item["playback_completed_at"] = time.time()
         self.dispatched_history.append(item)
@@ -193,37 +212,85 @@ class KokoroVoiceEngine:
     def synthesize_neural_audio(
         self,
         text: str,
-        voice: Optional[str] = None,
+        voice: Optional[Any] = None,
         speed: float = 1.0,
         response_format: str = "wav",
         dsp_preset: str = "STUDIO_DIRECT"
     ) -> Optional[bytes]:
         """
-        Synthesize audio via Local In-Process ONNX -> Containerized HTTP -> SAPI.
+        Synthesize audio via Local In-Process ONNX (with direct 512-D blended persona tensor resolution) -> Containerized HTTP -> SAPI.
         """
-        voice = voice or self.default_voice
-        selected_lang = "en-gb" if voice.startswith("b") else "en-us"
+        target_voice_arg = voice if voice is not None else self.default_voice
+        selected_lang = "en-us"
 
-        # Tier 1: In-Process Local Kokoro-ONNX (Zero-latency direct synthesis)
+        # Resolve persona string or weight dictionary to 512-D vector or base voice ID
+        voice_vec = None
+        resolved_voice_name = target_voice_arg if isinstance(target_voice_arg, str) else "custom_blend"
+        try:
+            from src.core.voice_persona_blend import VoicePersonaBlender, SIGNATURE_PERSONA_BLENDS
+            if isinstance(target_voice_arg, (dict, list)):
+                voice_vec = VoicePersonaBlender.get_blended_vector(target_voice_arg)
+            elif isinstance(target_voice_arg, str):
+                upper_key = target_voice_arg.strip().upper()
+                if upper_key in SIGNATURE_PERSONA_BLENDS or upper_key in VoicePersonaBlender.load_custom_personas():
+                    voice_vec = VoicePersonaBlender.get_blended_vector(upper_key)
+                    resolved_voice_name = upper_key
+                elif target_voice_arg.startswith("a") or target_voice_arg.startswith("b"):
+                    # Direct base voice string like af_sky, bf_emma, am_adam, bm_george
+                    resolved_voice_name = target_voice_arg
+                else:
+                    from src.core.voice_bridge import KOKORO_PERSONAS
+                    mapped = KOKORO_PERSONAS.get(target_voice_arg) or KOKORO_PERSONAS.get(upper_key)
+                    if mapped:
+                        if mapped in SIGNATURE_PERSONA_BLENDS or mapped in VoicePersonaBlender.load_custom_personas():
+                            voice_vec = VoicePersonaBlender.get_blended_vector(mapped)
+                            resolved_voice_name = mapped
+                        else:
+                            resolved_voice_name = mapped
+        except Exception:
+            pass
+
+        # Determine language: en-gb for British personas/voices
+        if isinstance(resolved_voice_name, str):
+            v_lower = resolved_voice_name.lower()
+            if v_lower.startswith("b") or "aura" in v_lower or "valkyrie" in v_lower or "nocturna" in v_lower or "george" in v_lower or "emma" in v_lower or "isabella" in v_lower:
+                selected_lang = "en-gb"
+
+        onnx_voice_param = voice_vec if voice_vec is not None else resolved_voice_name
+
+        # Tier 1: In-Process Local Kokoro-ONNX (Zero-latency direct neural synthesis)
         if self._local_kokoro_instance is not None:
             try:
+                import numpy as np
                 import soundfile as sf
                 try:
                     from src.core.voice_normalizer import VoiceNormalizer
                     text = VoiceNormalizer.normalize_for_speech(text)
                 except Exception:
                     pass
+
                 samples, sample_rate = self._local_kokoro_instance.create(
                     text,
-                    voice=voice,
+                    voice=onnx_voice_param,
                     speed=speed,
                     lang=selected_lang
                 )
+
+                # Apply DSP preset mastering
                 try:
                     from src.core.voice_dsp import VoiceDSP
                     samples = VoiceDSP.apply_dsp_preset(samples, preset=dsp_preset, fs=sample_rate)
                 except Exception:
                     pass
+
+                # Apply 2ms boundary micro-fade to eliminate zero-crossing clicks/pops
+                if len(samples) > 96:
+                    fade_len = min(48, len(samples) // 4)
+                    fade_in = 0.5 * (1.0 - np.cos(np.pi * np.arange(fade_len) / fade_len))
+                    fade_out = 0.5 * (1.0 + np.cos(np.pi * np.arange(fade_len) / fade_len))
+                    samples[:fade_len] *= fade_in
+                    samples[-fade_len:] *= fade_out
+
                 buf = io.BytesIO()
                 sf.write(buf, samples, sample_rate, format="WAV", subtype="PCM_16")
                 audio_bytes = buf.getvalue()

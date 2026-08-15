@@ -26,7 +26,7 @@ sys.path.insert(0, BASE_DIR)
 from src.infrastructure.eve_sso import token_manager
 from src.infrastructure.eve_realtime import generate_realtime_markdown
 from src.infrastructure.eve_vault_sync import sync_and_index_all_characters
-from src.infrastructure.eve_omni_tables import generate_omni_tables_markdown
+from src.infrastructure.eve_tactical_tables import generate_tactical_tables_markdown
 from src.infrastructure.eve_alpha_omega import generate_clone_status_markdown
 from batch_index import index_single_file
 from src.infrastructure.database import run_maintenance, get_db
@@ -103,9 +103,9 @@ class AutonomousEveEngine:
             for f in clone_files:
                 index_if_modified(f)
 
-            # 3. Omni-State Correlation Tables
-            omni_files = generate_omni_tables_markdown()
-            for f in omni_files:
+            # 3. Dynamic Tactical Reference Tables
+            tactical_files = generate_tactical_tables_markdown()
+            for f in tactical_files:
                 index_if_modified(f)
 
             # 4. Database Maintenance

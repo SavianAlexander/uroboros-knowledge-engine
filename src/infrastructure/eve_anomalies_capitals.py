@@ -30,10 +30,10 @@ COMBAT_DIR = os.path.join(VAULT_EVE_DIR, "Combat_Mechanics")
 def generate_anomalies_capitals_markdown() -> list:
     created_files = []
 
-    # 1. SOVEREIGN COMBAT & MINING ANOMALIES
+    # 1. NULLSEC COMBAT & MINING ANOMALIES
     os.makedirs(ANOMALY_DIR, exist_ok=True)
-    anom_file = os.path.join(ANOMALY_DIR, "sovereign_combat_mining_anomalies.md")
-    anom_md = """# EVE Online: Sovereign Null-Sec Combat & Mining Anomalies Compendium
+    anom_file = os.path.join(ANOMALY_DIR, "nullsec_combat_mining_anomalies.md")
+    anom_md = """# EVE Online: Null-Sec Combat & Mining Anomalies Compendium
 
 Tactical blueprints for sovereign anomaly farming, I-Hub upgrades, wave management, and capital escalation triggers.
 

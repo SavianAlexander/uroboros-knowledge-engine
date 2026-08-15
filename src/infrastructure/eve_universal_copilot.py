@@ -88,7 +88,7 @@ def generate_universal_copilot_markdown() -> list:
 
     # 1. Universal Fleet Role Matrix
     os.makedirs(FLEET_DIR, exist_ok=True)
-    matrix_file = os.path.join(FLEET_DIR, "universal_fleet_role_matrix.md")
+    matrix_file = os.path.join(FLEET_DIR, "fleet_roles_guide.md")
 
     rows = []
     for name, data in fleet_data.items():

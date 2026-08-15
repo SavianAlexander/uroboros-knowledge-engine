@@ -31,6 +31,26 @@ class VoiceAudioRouter:
         }
 
     @classmethod
+    def _parse_powershell_devices(cls, stdout: str) -> List[Dict[str, Any]]:
+        """Parse PowerShell JSON output into normalized device records."""
+        if not stdout:
+            return []
+        try:
+            raw = json.loads(stdout)
+            items = raw if isinstance(raw, list) else [raw] if isinstance(raw, dict) else []
+            return [
+                {
+                    "name": item.get("Name", "Unknown Audio Device"),
+                    "status": item.get("Status", "OK"),
+                    "manufacturer": item.get("Manufacturer", "Generic"),
+                    "device_id": item.get("DeviceID", "")
+                }
+                for item in items
+            ]
+        except Exception:
+            return []
+
+    @classmethod
     def list_audio_output_devices(cls) -> List[Dict[str, Any]]:
         """
         Enumerate all active audio rendering endpoints on the system.
@@ -38,7 +58,6 @@ class VoiceAudioRouter:
         if sys.platform != "win32":
             return [cls._default_device_record()]
 
-        devices = []
         try:
             ps_script = "Get-CimInstance Win32_SoundDevice | Select-Object Name, Status, Manufacturer, DeviceID | ConvertTo-Json"
             res = subprocess.run(
@@ -47,20 +66,10 @@ class VoiceAudioRouter:
                 text=True,
                 timeout=6
             )
-            if stdout := res.stdout.strip():
-                raw = json.loads(stdout)
-                items = raw if isinstance(raw, list) else [raw] if isinstance(raw, dict) else []
-                for item in items:
-                    devices.append({
-                        "name": item.get("Name", "Unknown Audio Device"),
-                        "status": item.get("Status", "OK"),
-                        "manufacturer": item.get("Manufacturer", "Generic"),
-                        "device_id": item.get("DeviceID", "")
-                    })
+            devices = cls._parse_powershell_devices(res.stdout.strip())
+            return devices or [cls._default_device_record()]
         except Exception:
-            pass
-
-        return devices or [cls._default_device_record()]
+            return [cls._default_device_record()]
 
     @classmethod
     def set_active_device(cls, device_name: str) -> Dict[str, Any]:

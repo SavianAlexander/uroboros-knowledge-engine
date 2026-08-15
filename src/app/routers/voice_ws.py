@@ -73,6 +73,21 @@ async def _handle_ws_bytes_message(websocket: WebSocket, raw_bytes: bytes):
         pass
 
 
+async def _dispatch_ws_message(websocket: WebSocket, message: dict, session_id: str):
+    """Dispatch WebSocket message to text or binary handler."""
+    if text := message.get("text"):
+        await _handle_ws_text_message(websocket, text, session_id)
+    elif raw_bytes := message.get("bytes"):
+        await _handle_ws_bytes_message(websocket, raw_bytes)
+
+
+async def _ws_stream_loop(websocket: WebSocket, session_id: str):
+    """Stream loop reading incoming WebSocket frames."""
+    while True:
+        message = await websocket.receive()
+        await _dispatch_ws_message(websocket, message, session_id)
+
+
 @router.websocket("/ws/voice/stream")
 async def voice_streaming_websocket_endpoint(websocket: WebSocket):
     """
@@ -89,14 +104,7 @@ async def voice_streaming_websocket_endpoint(websocket: WebSocket):
             "session_id": session_id,
             "timestamp": time.time()
         })
-
-        while True:
-            # Receive message (JSON text command or binary PCM audio)
-            message = await websocket.receive()
-            if text := message.get("text"):
-                await _handle_ws_text_message(websocket, text, session_id)
-            elif raw_bytes := message.get("bytes"):
-                await _handle_ws_bytes_message(websocket, raw_bytes)
+        await _ws_stream_loop(websocket, session_id)
 
     except WebSocketDisconnect:
         VoiceAgentLoop.end_session(session_id)

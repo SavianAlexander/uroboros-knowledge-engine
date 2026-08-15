@@ -41,6 +41,7 @@ class TestDomainMerkleVault(unittest.TestCase):
         db.DB_FILE = os.path.join(self.test_dir, "test_know.db")
         know.DB_FILE = db.DB_FILE
         config.ACTIVE_DIR = self.docs_dir
+        db.reset_db_connections()
         know.reset_db_connections()
         know.init_db()
 
@@ -53,6 +54,7 @@ class TestDomainMerkleVault(unittest.TestCase):
         know.index_directory(self.docs_dir)
 
     def tearDown(self):
+        db.reset_db_connections()
         know.reset_db_connections()
         db.DB_FILE = self.db_backup
         know.DB_FILE = self.know_db_backup

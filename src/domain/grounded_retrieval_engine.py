@@ -44,8 +44,8 @@ from src.domain.dense_propositions import (
     format_breadcrumb_scope
 )
 
-# Cross-Document Consensus & Contradiction Resolution Matrix (M3)
-from src.domain.consensus_matrix import (
+# Cross-Document Consensus & Contradiction Resolution Engine (M3)
+from src.domain.consensus_engine import (
     evaluate_cross_document_consensus,
     extract_document_assertions,
     compute_consensus_boost,

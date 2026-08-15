@@ -161,9 +161,9 @@ class StreamingNeuralSynthesizer:
 
             if audio_bytes:
                 b64_audio = base64.b64encode(audio_bytes).decode("ascii")
-                # Estimate duration in ms from PCM size: (bytes - 44) / (sample_rate * 2 bytes * 2 channels) * 1000
+                # Estimate duration in ms from PCM size: (bytes - 44) / (sample_rate * 2 bytes/sample * 1 channel) * 1000
                 raw_pcm_len = max(0, len(audio_bytes) - 44)
-                duration_ms = (raw_pcm_len / (cls.SAMPLE_RATE * 4)) * 1000.0
+                duration_ms = (raw_pcm_len / (cls.SAMPLE_RATE * 2)) * 1000.0
 
                 yield {
                     "index": idx,

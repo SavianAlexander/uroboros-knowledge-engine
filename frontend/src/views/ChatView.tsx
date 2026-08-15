@@ -345,7 +345,7 @@ export default function ChatView() {
         localStorage.setItem('neuro_voice_dsp', customDsp);
         setShowCustomBuilder(false);
         setCustomName('');
-        toast('Sovereign Voice Created', `Voice '${data.persona.name}' saved and set active!`, 'success');
+        toast('Custom Voice Created', `Voice '${data.persona.name}' saved and set active!`, 'success');
       }
     } catch {
       toast('Save Failed', 'Could not save custom persona', 'error');
@@ -1228,11 +1228,11 @@ export default function ChatView() {
                   }}
                   className="bg-slate-800 border border-purple-500/30 rounded-xl px-3 py-1.5 text-xs text-slate-100 outline-none focus:border-purple-400 font-medium cursor-pointer"
                 >
-                  <optgroup label="👑 Sovereign Legendary Tier (Awe & Gravitas)">
-                    <option value="ALEXANDER_SOVEREIGN">Alexander Sovereign (The Commanding Imperator)</option>
-                    <option value="FREYA_VALKYRIE">Freya Valkyrie (The Resolute Commander)</option>
-                    <option value="AURELIUS_STOIC">Aurelius Stoic (The Philosopher Emperor / Kratos Gravitas)</option>
-                    <option value="NOCTURNA_SOLON">Nocturna Solon (The Shadow Strategist / Big Boss Aura)</option>
+                  <optgroup label="🎙️ Executive & Command Tier (Authority & Depth)">
+                    <option value="ALEXANDER_SOVEREIGN">Alexander (Executive Command)</option>
+                    <option value="FREYA_VALKYRIE">Freya (Operations Lead)</option>
+                    <option value="AURELIUS_STOIC">Aurelius (Analytical Gravitas)</option>
+                    <option value="NOCTURNA_SOLON">Nocturna (Strategic Counsel)</option>
                   </optgroup>
                   <optgroup label="🎙️ Classic AI & Signature Blends">
                     <option value="CORTANA_PRIME">Cortana Prime (Halo AI Blend)</option>
@@ -1271,8 +1271,8 @@ export default function ChatView() {
                   }}
                   className="bg-slate-800 border border-emerald-500/30 rounded-xl px-3 py-1.5 text-xs text-slate-100 outline-none focus:border-emerald-400 font-medium cursor-pointer"
                 >
-                  <option value="SOVEREIGN_AWE">Sovereign Awe (Sub-Harmonic Chest + Tube Warmth)</option>
-                  <option value="STOIC_GRAVITAS">Stoic Gravitas (Kratos / Master Chief Chest Thump)</option>
+                  <option value="SOVEREIGN_AWE">Acoustic Warmth (Sub-Harmonic Chest + Tube Depth)</option>
+                  <option value="STOIC_GRAVITAS">Gravitas (Deep Presence & Low-End Control)</option>
                   <option value="MAGNETIC_INTIMATE">Magnetic Intimate (Velvet Tube Warmth)</option>
                   <option value="STUDIO_MASTER">Studio Master (4-Band EQ + Compressor + De-Esser)</option>
                   <option value="HOLOGRAPHIC_AI">Holographic AI (3D Haas Spatial Width)</option>
@@ -1327,18 +1327,18 @@ export default function ChatView() {
               </button>
             </div>
 
-            {/* Custom Sovereign Voice Designer Drawer */}
+            {/* Custom Voice Designer Drawer */}
             {showCustomBuilder && (
               <div className="px-6 py-4 bg-slate-950/80 border-t border-purple-500/20 space-y-4 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-amber-400" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                      Personal Sovereign Voice Creator
+                      Custom Voice Persona Builder
                     </h4>
                   </div>
                   <span className="text-[11px] text-slate-400">
-                    Combine 512-D neural embeddings with sub-harmonic analog mastering
+                    Combine 512-D neural embeddings with analog DSP mastering
                   </span>
                 </div>
 
@@ -1349,7 +1349,7 @@ export default function ChatView() {
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Imperator Savian, Athena, Solon..."
+                      placeholder="e.g. Executive Advisor, Athena, Atlas..."
                       value={customName}
                       onChange={(e) => setCustomName(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-400"
@@ -1365,10 +1365,10 @@ export default function ChatView() {
                       onChange={(e) => setCustomDsp(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white outline-none focus:border-amber-400"
                     >
-                      <option value="SOVEREIGN_AWE">Sovereign Awe (Sub-Harmonic Chest Drive)</option>
-                      <option value="STOIC_GRAVITAS">Stoic Gravitas (Kratos / Chief Presence)</option>
+                      <option value="SOVEREIGN_AWE">Acoustic Warmth (Sub-Harmonic Chest Drive)</option>
+                      <option value="STOIC_GRAVITAS">Gravitas (Deep Presence)</option>
                       <option value="MAGNETIC_INTIMATE">Magnetic Intimate (Velvet Warmth)</option>
-                      <option value="STUDIO_MASTER">Studio Master (Cortana Broadcast)</option>
+                      <option value="STUDIO_MASTER">Studio Master (Broadcast Polish)</option>
                     </select>
                   </div>
 

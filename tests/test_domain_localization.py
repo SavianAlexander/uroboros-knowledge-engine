@@ -28,13 +28,19 @@ class TestDomainLocalization(unittest.TestCase):
     def setUp(self):
         self.test_dir = tempfile.mkdtemp(prefix="test_domain_i18n_")
         self.db_path = os.path.join(self.test_dir, "test_i18n.db")
+        self.orig_db_file = db_module.DB_FILE
+        self.orig_know_db_file = getattr(know, "DB_FILE", db_module.DB_FILE)
         db_module.DB_FILE = self.db_path
-        db.DB_FILE = self.db_path
+        know.DB_FILE = self.db_path
         reset_db_connections()
+        know.reset_db_connections()
         init_db()
 
     def tearDown(self):
         reset_db_connections()
+        know.reset_db_connections()
+        db_module.DB_FILE = self.orig_db_file
+        know.DB_FILE = self.orig_know_db_file
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 

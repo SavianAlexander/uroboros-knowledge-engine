@@ -221,7 +221,7 @@ To ensure immediate readability, executive clarity, and frictionless collaborati
    - Pattern: `test_<subsystem>_<verification_type>.py`
    - Examples: `test_rag_metamorphic_validation.py`, `test_crawler_browser_automation.py`, `test_developer_ast_rag.py`, `test_voice_synthesis_audio_processing.py`.
 3. **Descriptive Operational Script Naming**: Operational utilities must use clear functional verbs and nouns:
-   - Examples: `scripts/fault_injection_harness.py`, `scripts/verify_system_integrity.py`, `scripts/verify_voice_audio_matrix.py`, `scripts/verify_empirical_models.py`.
+   - Examples: `scripts/fault_injection_harness.py`, `scripts/verify_system_integrity.py`, `scripts/verify_voice_audio_pipeline.py`, `scripts/verify_empirical_models.py`.
 4. **Self-Descriptive Domain & Crawler Mode Aliasing**: All multi-mode engines (e.g. web crawlers, RAG routers) must expose clear, human-understandable session mode aliases:
    - `adaptive_session`, `browser_automation`, `proxy_rotation`, `async_pool`, `rotating_headers`, `direct`.
 5. **Clean CI/CD Workflow & Documentation Nomenclature**: GitHub Actions workflows and documentation badges/headings must reflect clear technical operations (e.g. *Domain Integration CI Suite*, *Security & Static Analysis Audit*, *Core Retrieval Subsystems*).

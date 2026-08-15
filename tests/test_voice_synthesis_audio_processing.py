@@ -406,5 +406,69 @@ class TestSovereignAweDSPAndPersonas:
         del_resp = client.delete("/api/voice/custom-personas/SPARTAN_SOVEREIGN")
         assert del_resp.status_code == 200
 
+    def test_voice_engine_multi_persona_vector_synthesis(self):
+        """Verify in-process Kokoro synthesis resolves signature personas and blended vectors with zero timeout."""
+        from src.core.voice_engine import KokoroVoiceEngine
+        engine = KokoroVoiceEngine()
+
+        test_personas = [
+            "ALEXANDER_SOVEREIGN",
+            "CORTANA_PRIME",
+            "FREYA_VALKYRIE",
+            "AURA_SHIP_AI",
+            {"am_adam": 0.6, "bm_george": 0.4}
+        ]
+
+        for p in test_personas:
+            wav_bytes = engine.synthesize_neural_audio("Command confirmed. System online.", voice=p)
+            assert wav_bytes is not None, f"Failed to synthesize audio for persona {p}"
+            assert len(wav_bytes) > 2000, f"Synthesized audio for {p} too small"
+            assert wav_bytes[:4] == b"RIFF"
+
+    def test_instant_audio_streamer_device_caching(self):
+        """Verify output device detection is cached to prevent blocking COM queries per frame."""
+        from src.core.instant_audio_streamer import InstantAudioStreamer
+        InstantAudioStreamer._cached_device_idx = None
+        InstantAudioStreamer._device_last_checked = 0.0
+
+        dev1 = InstantAudioStreamer._get_active_output_device(force_refresh=False)
+        t_checked = InstantAudioStreamer._device_last_checked
+        assert t_checked > 0.0
+
+        # Second call within TTL should return immediately without re-querying
+        dev2 = InstantAudioStreamer._get_active_output_device(force_refresh=False)
+        assert dev2 == dev1
+        assert InstantAudioStreamer._device_last_checked == t_checked
+
+    def test_voice_streaming_pipeline_orphan_token_suppression(self):
+        """Verify orphan punctuation tokens are suppressed to eliminate sub-millisecond audio stutter."""
+        from src.core.voice_streaming_pipeline import VoiceStreamingPipeliner
+        clauses = []
+        ttfs = VoiceStreamingPipeliner._speak_clause_if_valid(
+            clause="..",
+            voice_id="bf_emma",
+            dsp_preset="TRANSCENDENTAL_AURA",
+            sync=False,
+            clauses_spoken=clauses,
+            t0=0.0,
+            first_clause_ttfs_ms=None
+        )
+        assert len(clauses) == 0
+        assert ttfs is None
+
+        # Valid clause should be spoken
+        ttfs_valid = VoiceStreamingPipeliner._speak_clause_if_valid(
+            clause="Warp drive active.",
+            voice_id="bf_emma",
+            dsp_preset="TRANSCENDENTAL_AURA",
+            sync=False,
+            clauses_spoken=clauses,
+            t0=0.0,
+            first_clause_ttfs_ms=None
+        )
+        assert len(clauses) == 1
+        assert clauses[0] == "Warp drive active."
+
+
 
 

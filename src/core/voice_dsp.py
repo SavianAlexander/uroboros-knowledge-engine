@@ -136,16 +136,21 @@ class VoiceDSP:
     """Unified audio signal processing, mastering, ducking, and spectral analysis."""
 
     @classmethod
+    def _apply_pipeline(cls, out: Any, pipeline: List[Tuple[str, float, float, float]], fs: int) -> Any:
+        """Apply all biquad filter stages in a preset pipeline."""
+        for ftype, freq, q, gain in pipeline:
+            out = _apply_dsp_filter_stage(out, ftype, freq, q, gain, fs)
+        return out
+
+    @classmethod
     def apply_dsp_preset(cls, samples: Any, preset: str = "STUDIO_DIRECT", fs: int = 24000) -> Any:
         """Apply acoustic EQ preset and filtering to float audio buffer via pipeline dispatch."""
         if np is None or len(samples) == 0:
             return samples
 
         out = samples.copy()
-        pipeline = _DSP_PIPELINES.get(preset.upper())
-        if pipeline:
-            for ftype, freq, q, gain in pipeline:
-                out = _apply_dsp_filter_stage(out, ftype, freq, q, gain, fs)
+        if pipeline := _DSP_PIPELINES.get(preset.upper()):
+            out = cls._apply_pipeline(out, pipeline, fs)
 
         # Apply final True-Peak Soft-Tanh Limiter
         return cls.master_audio_buffer(out, target_dbfs=-1.0)

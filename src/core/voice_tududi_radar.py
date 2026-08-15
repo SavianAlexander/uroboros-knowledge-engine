@@ -6,6 +6,8 @@ Ponytail Senior Dev Principle: Non-blocking background radar polling task deadli
 
 import os
 import sys
+import json
+import sqlite3
 import threading
 import time
 from typing import Dict, Any, List, Optional
@@ -26,6 +28,61 @@ class TududiVoiceRadarDaemon:
     _poll_interval_seconds = 300  # 5 minutes
 
     @classmethod
+    def _query_tududi_sqlite(cls, path: str, project_id: int, today_prefix: str) -> Optional[Dict[str, int]]:
+        """Query live SQLite database for task metrics."""
+        if not (path and os.path.isfile(path)):
+            return None
+        try:
+            with sqlite3.connect(path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT COUNT(*) FROM tasks WHERE (project_id=? OR ? IS NULL) AND status IN (0, 1)",
+                    (project_id, project_id)
+                )
+                pending = cursor.fetchone()[0]
+
+                cursor.execute(
+                    "SELECT COUNT(*) FROM tasks WHERE (project_id=? OR ? IS NULL) AND status=2 AND (completed_at LIKE ? OR updated_at LIKE ?)",
+                    (project_id, project_id, f"{today_prefix}%", f"{today_prefix}%")
+                )
+                completed_today = cursor.fetchone()[0]
+
+                cursor.execute(
+                    "SELECT COUNT(*) FROM tasks WHERE (project_id=? OR ? IS NULL) AND status IN (0, 1) AND due_date IS NOT NULL AND due_date != '' AND due_date < ?",
+                    (project_id, project_id, today_prefix)
+                )
+                overdue = cursor.fetchone()[0]
+
+                return {
+                    "pending_tasks": int(pending),
+                    "completed_today": int(completed_today),
+                    "overdue_tasks": int(overdue)
+                }
+        except Exception:
+            return None
+
+    @classmethod
+    def _query_tududi_cache(cls, cache_path: str, today_prefix: str) -> Optional[Dict[str, int]]:
+        """Query fallback JSON cache snapshot for task metrics."""
+        if not (cache_path and os.path.isfile(cache_path)):
+            return None
+        try:
+            with open(cache_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            tasks = data.get("tasks", [])
+            pending = sum(1 for t in tasks if t.get("status") in (0, 1))
+            completed_today = sum(1 for t in tasks if t.get("status") == 2 and str(t.get("completed_at", "")).startswith(today_prefix))
+            overdue = sum(1 for t in tasks if t.get("status") in (0, 1) and t.get("due_date") and str(t.get("due_date")) < today_prefix)
+            return {
+                "pending_tasks": pending,
+                "completed_today": completed_today,
+                "overdue_tasks": overdue
+            }
+        except Exception:
+            return None
+
+    @classmethod
     def _fetch_live_metrics(cls, project_id: int = 13) -> Dict[str, int]:
         """Query live Tududi SQLite database or cached snapshot for real task counts."""
         candidates = [
@@ -35,61 +92,17 @@ class TududiVoiceRadarDaemon:
             os.path.join(BASE_DIR, "tududi.sqlite"),
             os.path.join(BASE_DIR, "..", "tududi.sqlite")
         ]
-        
+
         today_prefix = time.strftime("%Y-%m-%d")
-        
+
         for path in candidates:
-            if path and os.path.isfile(path):
-                try:
-                    import sqlite3
-                    with sqlite3.connect(path) as conn:
-                        conn.row_factory = sqlite3.Row
-                        cursor = conn.cursor()
-                        # Total pending / in progress
-                        cursor.execute("SELECT COUNT(*) FROM tasks WHERE (project_id=? OR ? IS NULL) AND status IN (0, 1)", (project_id, project_id))
-                        pending = cursor.fetchone()[0]
-                        
-                        # Completed today
-                        cursor.execute(
-                            "SELECT COUNT(*) FROM tasks WHERE (project_id=? OR ? IS NULL) AND status=2 AND (completed_at LIKE ? OR updated_at LIKE ?)",
-                            (project_id, project_id, f"{today_prefix}%", f"{today_prefix}%")
-                        )
-                        completed_today = cursor.fetchone()[0]
-                        
-                        # Overdue tasks
-                        cursor.execute(
-                            "SELECT COUNT(*) FROM tasks WHERE (project_id=? OR ? IS NULL) AND status IN (0, 1) AND due_date IS NOT NULL AND due_date != '' AND due_date < ?",
-                            (project_id, project_id, today_prefix)
-                        )
-                        overdue = cursor.fetchone()[0]
-                        
-                        return {
-                            "pending_tasks": int(pending),
-                            "completed_today": int(completed_today),
-                            "overdue_tasks": int(overdue)
-                        }
-                except Exception:
-                    pass
+            if metrics := cls._query_tududi_sqlite(path, project_id, today_prefix):
+                return metrics
 
-        # Check cached snapshot
         cache_path = os.path.join(BASE_DIR, "vault", "roadmap", "tududi_cache.json")
-        if os.path.isfile(cache_path):
-            try:
-                with open(cache_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    tasks = data.get("tasks", [])
-                    pending = sum(1 for t in tasks if t.get("status") in (0, 1))
-                    completed_today = sum(1 for t in tasks if t.get("status") == 2 and str(t.get("completed_at", "")).startswith(today_prefix))
-                    overdue = sum(1 for t in tasks if t.get("status") in (0, 1) and t.get("due_date") and str(t.get("due_date")) < today_prefix)
-                    return {
-                        "pending_tasks": pending,
-                        "completed_today": completed_today,
-                        "overdue_tasks": overdue
-                    }
-            except Exception:
-                pass
+        if metrics := cls._query_tududi_cache(cache_path, today_prefix):
+            return metrics
 
-        # Graceful fallback
         return {"pending_tasks": 0, "completed_today": 0, "overdue_tasks": 0}
 
     @classmethod

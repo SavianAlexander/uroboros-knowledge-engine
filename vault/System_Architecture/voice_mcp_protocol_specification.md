@@ -1,17 +1,17 @@
 ---
-title: Antigravity Neural Voice MCP Server & Acoustic Perfection Matrix
+title: Voice Model Context Protocol Specification & Audio Processing
 category: System Architecture
 tags: [Antigravity, MCP, Kokoro82M, NeuralTTS, PhoneticNormalizer, AudioMastering, EBUR128, VoiceBridge]
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 ---
 
-# 🎙️ Antigravity Neural Voice MCP Server & Acoustic Perfection Matrix
+# Voice Model Context Protocol Specification & Audio Processing
 
-This document establishes the dedicated Antigravity Voice Model Context Protocol (MCP) server, the SSML phonetic normalizer dictionary, and the EBU R128 True-Peak dynamic audio mastering engine.
+This document specifies the Antigravity Voice Model Context Protocol (MCP) server, the phonetic normalizer dictionary, and the EBU R128 True-Peak audio mastering pipeline.
 
 ---
 
-## 🏛️ 1. Dedicated Antigravity Voice MCP Topology
+## 1. Voice MCP Topology
 
 ```mermaid
 graph TD
@@ -28,22 +28,22 @@ graph TD
 
 ---
 
-## 🛠️ 2. Antigravity MCP Tool Specifications
+## 2. Voice MCP Tool Specifications
 
 | Tool Identifier | Description | Key Parameters |
 |---|---|---|
-| `antigravity_speak` | Master speech dispatcher with persona & DSP presets | `text`, `persona`, `speed`, `dsp_preset`, `priority`, `sfx_intro` |
+| `antigravity_speak` | Speech dispatcher with persona & DSP presets | `text`, `persona`, `speed`, `dsp_preset`, `priority`, `sfx_intro` |
 | `antigravity_announce_task` | Engineering milestone & task state broadcaster | `task_name`, `state` (STARTED, COMPLETED, FAILED), `details` |
 | `antigravity_voice_brief` | Multi-bullet executive briefing with clause pauses | `title`, `items` (array of bullet strings), `persona` |
-| `antigravity_play_sfx` | Pure procedural tactical SFX generator | `sfx_name` (`target_lock`, `warp_spool`, `shield_critical`, etc.) |
+| `antigravity_play_sfx` | Procedural tactical SFX generator | `sfx_name` (`target_lock`, `warp_spool`, `shield_critical`, etc.) |
 | `antigravity_configure_voice` | Runtime configuration of default persona & speed | `default_persona`, `default_speed`, `default_dsp` |
 | `antigravity_get_status` | Query active engine health, personas, and memory | None |
 
 ---
 
-## 📖 3. Phonetic Pronunciation Normalizer Reference
+## 3. Phonetic Pronunciation Normalizer Reference
 
-| Technical Term / Syntax | Kokoro Raw Reading (Flawed) | Normalizer Phonetic Expansion (Perfect) |
+| Technical Term / Syntax | Raw Reading | Normalizer Phonetic Expansion |
 |---|---|---|
 | `CI/CD` | "c slash c d" | "C-I C-D" |
 | `API` | "ah-pee" | "A-P-I" |
@@ -59,11 +59,11 @@ graph TD
 
 ---
 
-## 🎛️ 4. EBU R128 True-Peak Audio Mastering Rack
+## 4. EBU R128 True-Peak Audio Mastering
 
-To prevent digital clipping and audio distortion across varying soundcards:
+To prevent digital clipping and audio distortion across soundcards:
 1. **DC Offset Removal**: $\tilde{x}[n] = x[n] - \mu_x$.
 2. **True-Peak Normalization**: Normalizes max sample peak to $-1.0\text{ dBFS}$ ($g = \frac{10^{-1.0/20.0}}{\max|x|}$).
 3. **Hyperbolic Tangent Soft Limiter**: Smoothly compresses high-energy transients above $0.95$ threshold:
    $$y[n] = \text{sgn}(x[n]) \cdot \left(0.95 + 0.05 \cdot \tanh\left(\frac{|x[n]| - 0.95}{0.05}\right)\right)$$
-4. **16-bit PCM Integer Encoding**: Direct quantization for native Windows `System.Media.SoundPlayer` compatibility.
+4. **16-bit PCM Integer Encoding**: Direct quantization for native 16-bit audio playback compatibility.

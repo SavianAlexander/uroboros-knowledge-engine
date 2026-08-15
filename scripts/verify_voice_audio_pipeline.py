@@ -39,11 +39,11 @@ from src.core.voice_telemetry_exporter import AudioTelemetryExporter
 from src.domain.eve_fleet_tactical_voice import EVEFleetTacticalVoice
 
 
-class TestVoiceOmniscientMatrix(unittest.TestCase):
+class TestVoiceAudioMatrix(unittest.TestCase):
     """Complete system test suite for Uroboros Neural Voice & Audio Matrix."""
 
-    def test_voice_studio_and_awe_dsp_presets(self):
-        """Test Sovereign Awe DSP mastering presets and studio showcase catalog."""
+    def test_voice_studio_and_dsp_presets(self):
+        """Test DSP mastering presets and studio showcase catalog."""
         catalog = VoiceStudioShowcase.get_studio_catalog()
         self.assertIn("personas", catalog)
         self.assertIn("dsp_presets", catalog)
@@ -577,14 +577,15 @@ Sent from my iPhone
 
 def main():
     print("\n" + "=" * 65)
-    print("🌐 RUNNING UNIVERSAL VOICE OMNISCIENT MATRIX VERIFICATION")
+    print("🌐 RUNNING UNIVERSAL VOICE AUDIO MATRIX VERIFICATION")
     print("=" * 65)
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestVoiceOmniscientMatrix)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestVoiceAudioMatrix)
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
     if not result.wasSuccessful():
-        raise SystemError("Voice verification failed!")
-    print("\n🎉 ALL VOICE OMNISCIENT MATRIX MODULES PASSED (100% GREEN)!\n")
+        sys.exit(1)
+    print("\n🎉 ALL VOICE AUDIO MATRIX MODULES PASSED (100% GREEN)!\n")
+    sys.exit(0)
 
 
 if __name__ == "__main__":

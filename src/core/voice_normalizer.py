@@ -196,6 +196,83 @@ class VoiceNormalizer:
     # 1. Code Syntax to Fluent Spoken English
     # ------------------------------------------------------------------
     @classmethod
+    def _translate_code_line(cls, line: str) -> Optional[str]:
+        """Classify and translate a single line of programming code or CLI command into spoken English."""
+        # Comments
+        if line.startswith("#") or line.startswith("//"):
+            comment = line.lstrip("#/ \t")
+            return f"Comment: {comment}."
+
+        # Python function definitions: def func(a, b=None):
+        if m_def := re.match(r"^def\s+([a-zA-Z_]\w*)\s*\((.*?)\)\s*(?:->\s*([^:]+))?:", line):
+            fn_name = m_def.group(1).replace("_", " ")
+            raw_args = m_def.group(2).strip()
+            ret_type = m_def.group(3)
+            args_str = f"with arguments {raw_args.replace('_', ' ')}" if raw_args else "taking no arguments"
+            ret_str = f" returning {ret_type.strip()}" if ret_type else ""
+            return f"Defining function {fn_name}, {args_str}{ret_str}."
+
+        # JS/TS function: function name(a, b)
+        if m_fn := re.match(r"^(?:export\s+)?(?:async\s+)?function\s+([a-zA-Z_]\w*)\s*\((.*?)\)", line):
+            fn_name = m_fn.group(1).replace("_", " ")
+            raw_args = m_fn.group(2).strip()
+            args_str = f"with parameters {raw_args}" if raw_args else "with no parameters"
+            return f"Defining function {fn_name}, {args_str}."
+
+        # React useState hook: const [data, setData] = useState(...)
+        if m_hook := re.match(r"^(?:const|let)\s+\[([a-zA-Z_]\w*),\s*set([a-zA-Z_]\w*)\]\s*=\s*useState\((.*?)\)", line):
+            state_name = m_hook.group(1)
+            init_val = m_hook.group(3) or "default"
+            return f"Declaring state variable {state_name}, initialized to {init_val}."
+
+        # Class definition: class ClassName(Base):
+        if m_cls := re.match(r"^class\s+([a-zA-Z_]\w*)(?:\((.*?)\))?:", line):
+            cls_name = m_cls.group(1)
+            base = m_cls.group(2)
+            base_str = f" extending {base}" if base else ""
+            return f"Defining class {cls_name}{base_str}."
+
+        # Imports: import x as y / from x import y
+        if line.startswith("import ") or line.startswith("from "):
+            clean_imp = line.replace(";", "").replace("{", "").replace("}", "").replace(",", " and ")
+            return f"{clean_imp}."
+
+        # CLI / Bash Commands
+        if re.match(r"^(?:git|npm|pip|docker|kubectl|pytest|cargo|go|curl|uvicorn|python)\b", line):
+            cmd_line = line
+            cmd_line = re.sub(r"-m\s+[\"'](.*?)[\"']", r"with message \1", cmd_line)
+            cmd_line = re.sub(r"--save-dev", "as developer dependency", cmd_line)
+            cmd_line = re.sub(r"-r\s+requirements\.txt", "from requirements file", cmd_line)
+            cmd_line = re.sub(r"-d\s+-p\s+(\d+):(\d+)", r"in background mapping port \1 to \2", cmd_line)
+            cmd_line = re.sub(r"-v\s+-s", "with verbose output", cmd_line)
+            cmd_line = re.sub(r"checkout\s+-b\s+", "checkout new branch ", cmd_line)
+            return f"Run command: {cmd_line}."
+
+        # Git Diffs: + line / - line
+        if line.startswith("+ "):
+            return f"Added line: {line[2:]}."
+        if line.startswith("- "):
+            return f"Removed line: {line[2:]}."
+
+        # Control flow: if / elif / else / for / while / return
+        if line.startswith("if ") or line.startswith("if("):
+            cond = re.sub(r"^if\s*\(?|\)?\s*\{?:?$", "", line)
+            return f"If {cond}:"
+        if line.startswith("elif ") or line.startswith("else if"):
+            cond = re.sub(r"^(?:elif|else\s+if)\s*\(?|\)?\s*\{?:?$", "", line)
+            return f"Else if {cond}:"
+        if line.startswith("else:") or line.startswith("else"):
+            return "Otherwise:"
+        if line.startswith("return "):
+            val = line[7:].rstrip(";").strip()
+            return f"Returns {val}."
+
+        # Generic fallback: clean punctuation and present clearly
+        clean_l = re.sub(r"[;\{\}\(\)\[\]]", " ", line)
+        clean_l = re.sub(r"\s+", " ", clean_l).strip()
+        return clean_l if clean_l else None
+
+    @classmethod
     def convert_code_to_spoken_english(cls, code_text: str, lang: str = "") -> str:
         """
         Deconstructs programming syntax into natural spoken developer English.
@@ -205,99 +282,9 @@ class VoiceNormalizer:
 
         lines = [line.strip() for line in code_text.strip().split("\n") if line.strip()]
         spoken_lines = []
-
         for line in lines:
-            # Skip pure comment lines or translate them
-            if line.startswith("#") or line.startswith("//"):
-                comment = line.lstrip("#/ \t")
-                spoken_lines.append(f"Comment: {comment}.")
-                continue
-
-            # Python function definitions: def func(a, b=None):
-            m_def = re.match(r"^def\s+([a-zA-Z_]\w*)\s*\((.*?)\)\s*(?:->\s*([^:]+))?:", line)
-            if m_def:
-                fn_name = m_def.group(1).replace("_", " ")
-                raw_args = m_def.group(2).strip()
-                ret_type = m_def.group(3)
-                args_str = f"with arguments {raw_args.replace('_', ' ')}" if raw_args else "taking no arguments"
-                ret_str = f" returning {ret_type.strip()}" if ret_type else ""
-                spoken_lines.append(f"Defining function {fn_name}, {args_str}{ret_str}.")
-                continue
-
-            # JS/TS function: function name(a, b)
-            m_fn = re.match(r"^(?:export\s+)?(?:async\s+)?function\s+([a-zA-Z_]\w*)\s*\((.*?)\)", line)
-            if m_fn:
-                fn_name = m_fn.group(1).replace("_", " ")
-                raw_args = m_fn.group(2).strip()
-                args_str = f"with parameters {raw_args}" if raw_args else "with no parameters"
-                spoken_lines.append(f"Defining function {fn_name}, {args_str}.")
-                continue
-
-            # React useState hook: const [data, setData] = useState(...)
-            m_hook = re.match(r"^(?:const|let)\s+\[([a-zA-Z_]\w*),\s*set([a-zA-Z_]\w*)\]\s*=\s*useState\((.*?)\)", line)
-            if m_hook:
-                state_name = m_hook.group(1)
-                init_val = m_hook.group(3) or "default"
-                spoken_lines.append(f"Declaring state variable {state_name}, initialized to {init_val}.")
-                continue
-
-            # Class definition: class ClassName(Base):
-            m_cls = re.match(r"^class\s+([a-zA-Z_]\w*)(?:\((.*?)\))?:", line)
-            if m_cls:
-                cls_name = m_cls.group(1)
-                base = m_cls.group(2)
-                base_str = f" extending {base}" if base else ""
-                spoken_lines.append(f"Defining class {cls_name}{base_str}.")
-                continue
-
-            # Imports: import x as y / from x import y
-            if line.startswith("import ") or line.startswith("from "):
-                clean_imp = line.replace(";", "").replace("{", "").replace("}", "").replace(",", " and ")
-                spoken_lines.append(f"{clean_imp}.")
-                continue
-
-            # CLI / Bash Commands
-            if re.match(r"^(?:git|npm|pip|docker|kubectl|pytest|cargo|go|curl|uvicorn|python)\b", line):
-                cmd_line = line
-                cmd_line = re.sub(r"-m\s+[\"'](.*?)[\"']", r"with message \1", cmd_line)
-                cmd_line = re.sub(r"--save-dev", "as developer dependency", cmd_line)
-                cmd_line = re.sub(r"-r\s+requirements\.txt", "from requirements file", cmd_line)
-                cmd_line = re.sub(r"-d\s+-p\s+(\d+):(\d+)", r"in background mapping port \1 to \2", cmd_line)
-                cmd_line = re.sub(r"-v\s+-s", "with verbose output", cmd_line)
-                cmd_line = re.sub(r"checkout\s+-b\s+", "checkout new branch ", cmd_line)
-                spoken_lines.append(f"Run command: {cmd_line}.")
-                continue
-
-            # Git Diffs: + line / - line
-            if line.startswith("+ "):
-                spoken_lines.append(f"Added line: {line[2:]}.")
-                continue
-            elif line.startswith("- "):
-                spoken_lines.append(f"Removed line: {line[2:]}.")
-                continue
-
-            # Control flow: if / elif / else / for / while / return
-            if line.startswith("if ") or line.startswith("if("):
-                cond = re.sub(r"^if\s*\(?|\)?\s*\{?:?$", "", line)
-                spoken_lines.append(f"If {cond}:")
-                continue
-            elif line.startswith("elif ") or line.startswith("else if"):
-                cond = re.sub(r"^(?:elif|else\s+if)\s*\(?|\)?\s*\{?:?$", "", line)
-                spoken_lines.append(f"Else if {cond}:")
-                continue
-            elif line.startswith("else:") or line.startswith("else"):
-                spoken_lines.append("Otherwise:")
-                continue
-            elif line.startswith("return "):
-                val = line[7:].rstrip(";").strip()
-                spoken_lines.append(f"Returns {val}.")
-                continue
-
-            # Generic fallback: clean punctuation and present clearly
-            clean_l = re.sub(r"[;\{\}\(\)\[\]]", " ", line)
-            clean_l = re.sub(r"\s+", " ", clean_l).strip()
-            if clean_l:
-                spoken_lines.append(clean_l)
+            if spoken := cls._translate_code_line(line):
+                spoken_lines.append(spoken)
 
         return " ".join(spoken_lines)
 

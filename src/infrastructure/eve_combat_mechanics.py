@@ -56,8 +56,8 @@ def generate_combat_mechanics_markdown(output_dir: str = COMBAT_DIR) -> list:
     imp_table = "\n".join(imp_rows)
     drug_table = "\n".join(drug_rows)
 
-    imp_file = os.path.join(output_dir, "implants_boosters_matrix.md")
-    imp_md = f"""# EVE Online: Master Pirate Implant Sets & Combat Boosters Matrix
+    imp_file = os.path.join(output_dir, "implants_boosters_guide.md")
+    imp_md = f"""# EVE Online: Implants & Combat Boosters Reference Guide
 
 Comprehensive guide to cybernetic implant sets (Slots 1-6 set effects + Slots 7-10 hardwirings) and combat drugs.
 
