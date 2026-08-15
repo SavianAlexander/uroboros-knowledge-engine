@@ -272,3 +272,84 @@ def get_profiles_endpoint():
         "domain_profiles": DOMAIN_PROFILES,
         "personas": KOKORO_PERSONAS
     }
+
+
+class VoiceIntercomTurnRequest(BaseModel):
+    prompt: str
+    persona: Optional[str] = "AURA_SHIP_AI"
+    dsp_preset: Optional[str] = "TRANSCENDENTAL_AURA"
+    use_rag: Optional[bool] = True
+
+
+@router.post("/api/voice/intercom/turn")
+def voice_intercom_turn_endpoint(req: VoiceIntercomTurnRequest):
+    """
+    Real-time full-duplex conversational turn endpoint.
+    Retrieves facts from SOTA RAG, normalizes text for speech, synthesizes Kokoro audio in RAM,
+    and returns base64 WAV payload + citations for instant browser/client playback.
+    """
+    import base64
+    from src.core.voice_rag_bridge import VoiceRAGBridge
+    from src.core.voice_normalizer import VoiceNormalizer
+
+    try:
+        t0 = time.perf_counter()
+        if req.use_rag:
+            summary = VoiceRAGBridge.query_and_summarize(req.prompt, max_sentences=2)
+            speech_text = summary["speech_text"]
+            citations = summary.get("citations", [])
+            retrieval_ms = summary.get("retrieval_ms", 0)
+        else:
+            speech_text = req.prompt
+            citations = []
+            retrieval_ms = 0
+
+        clean_text = VoiceNormalizer.normalize_for_speech(speech_text)
+        voice_id = KOKORO_PERSONAS.get(req.persona, "bf_emma")
+
+        audio_bytes = VoiceBridge.synthesize_bytes(
+            text=clean_text,
+            voice=voice_id,
+            speed=1.0,
+            response_format="wav",
+            dsp_preset=req.dsp_preset or "TRANSCENDENTAL_AURA"
+        )
+
+        audio_b64 = base64.b64encode(audio_bytes).decode("ascii") if audio_bytes else ""
+        turnaround_ms = round((time.perf_counter() - t0) * 1000, 2)
+
+        return {
+            "status": "success",
+            "prompt": req.prompt,
+            "speech_text": speech_text,
+            "normalized_text": clean_text,
+            "persona": req.persona,
+            "citations": citations,
+            "retrieval_ms": retrieval_ms,
+            "turnaround_ms": turnaround_ms,
+            "audio_base64": audio_b64
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class PodcastDialogueRequest(BaseModel):
+    turns: List[Dict[str, str]]
+    pause_duration_s: Optional[float] = 0.35
+    play_live: Optional[bool] = False
+
+
+@router.post("/api/voice/podcast/generate")
+def generate_podcast_endpoint(req: PodcastDialogueRequest):
+    """Synthesize multi-persona roundtable audio dialogue."""
+    from src.core.voice_podcast_generator import VoicePodcastGenerator
+    try:
+        res = VoicePodcastGenerator.synthesize_dialogue(
+            turns=req.turns,
+            pause_duration_s=req.pause_duration_s or 0.35,
+            play_live=req.play_live or False
+        )
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

@@ -322,6 +322,7 @@ Sent from my iPhone
             "antigravity_get_audio_telemetry", "antigravity_broadcast_fleet_alert",
             "antigravity_instant_speak", "antigravity_prewarm_voice_engine",
             "antigravity_get_instant_streamer_stats", "antigravity_voice_rag_query",
+            "antigravity_synthesize_podcast_dialogue", "antigravity_voice_telemetry_sweep",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
         tool_names = [t["name"] for t in TOOLS_SCHEMA]
@@ -354,6 +355,26 @@ Sent from my iPhone
 
         stats_res = handle_tool_call("antigravity_get_instant_streamer_stats", {})
         self.assertEqual(stats_res["status"], "ok")
+
+    def test_voice_fleet_telemetry_daemon(self):
+        """Test autonomous ESI fleet telemetry sweep."""
+        from src.core.voice_fleet_telemetry_daemon import VoiceFleetTelemetryDaemon
+        report = VoiceFleetTelemetryDaemon.execute_telemetry_sweep(speak_alert=False)
+        self.assertEqual(report["status"], "nominal")
+        self.assertIn("Savian Alexander", report["commander"])
+        self.assertIn("G-EURJ", report["system"])
+
+    def test_voice_podcast_generator(self):
+        """Test multi-speaker roundtable dialogue synthesizer."""
+        from src.core.voice_podcast_generator import VoicePodcastGenerator
+        turns = [
+            {"speaker": "Aura", "persona": "AURA_SHIP_AI", "text": "All starships aligned."},
+            {"speaker": "Commander", "persona": "FLEET_COMMANDER", "text": "Warp drive engaged."}
+        ]
+        res = VoicePodcastGenerator.synthesize_dialogue(turns, play_live=False)
+        self.assertEqual(res["status"], "podcast_synthesized")
+        self.assertEqual(res["turns_count"], 2)
+        self.assertGreater(res["total_bytes"], 1000)
 
     def test_voice_rag_bridge_retrieval(self):
         """Test direct Voice-RAG knowledge retrieval and speech summarization."""

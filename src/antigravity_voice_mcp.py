@@ -443,6 +443,32 @@ TOOLS_SCHEMA = [
         }
     },
     {
+        "name": "antigravity_synthesize_podcast_dialogue",
+        "description": "Synthesize a multi-speaker roundtable conversation across distinct Kokoro neural personas.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "turns": {
+                    "type": "array",
+                    "description": "Array of dialogue turn objects: [{'speaker': 'Aura', 'persona': 'AURA_SHIP_AI', 'text': '...'}, ...]"
+                },
+                "pause_duration_s": {"type": "number", "description": "Pause between speakers in seconds."},
+                "play_live": {"type": "boolean", "description": "Stream live audio to headset during synthesis."}
+            },
+            "required": ["turns"]
+        }
+    },
+    {
+        "name": "antigravity_voice_telemetry_sweep",
+        "description": "Execute an empirical ESI fleet telemetry sweep in G-EURJ and speak the acoustic tactical report.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "speak_alert": {"type": "boolean", "description": "Whether to speak the telemetry alert aloud."}
+            }
+        }
+    },
+    {
         "name": "antigravity_get_status",
         "description": "Retrieve active neural voice engine status, available personas, memory footprint, and audio history.",
         "inputSchema": {
@@ -750,6 +776,18 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
             sync=True,
             max_sentences=max_sentences
         )
+
+    elif name == "antigravity_synthesize_podcast_dialogue":
+        from src.core.voice_podcast_generator import VoicePodcastGenerator
+        turns = args.get("turns", [])
+        pause_s = float(args.get("pause_duration_s", 0.35))
+        play_live = bool(args.get("play_live", False))
+        return VoicePodcastGenerator.synthesize_dialogue(turns=turns, pause_duration_s=pause_s, play_live=play_live)
+
+    elif name == "antigravity_voice_telemetry_sweep":
+        from src.core.voice_fleet_telemetry_daemon import VoiceFleetTelemetryDaemon
+        speak_alert = bool(args.get("speak_alert", True))
+        return VoiceFleetTelemetryDaemon.execute_telemetry_sweep(speak_alert=speak_alert)
 
     elif name == "antigravity_get_status":
         copilot = VoiceBridge.get_copilot()
