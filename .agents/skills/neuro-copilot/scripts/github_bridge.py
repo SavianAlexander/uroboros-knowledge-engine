@@ -150,6 +150,17 @@ def check_health():
     except Exception:
         pass
 
+    # 9. File Allocation & Topology Bridge
+    try:
+        import file_allocation_bridge
+        alloc_res = file_allocation_bridge.scan_repository_allocation(repo_root)
+        if alloc_res.get("clean", False):
+            print("[Topology] File Allocation: OK (100% Compliant)")
+        else:
+            print(f"[Topology] File Allocation: WARNING ({alloc_res.get('total_violations')} violations detected)")
+    except Exception:
+        pass
+
     print("=================================================")
     return 0
 

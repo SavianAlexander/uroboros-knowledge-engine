@@ -26,7 +26,8 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 ├── eve_bridge.py            # 8. EVE Online Tactical Intelligence & Live Telemetry Bridge
 ├── system_recovery_bridge.py# 9. Windows System Resilience & Zero-Reboot Crash Recovery Bridge
 ├── process_hygiene_bridge.py# 10. OS Process Hygiene, Zombie Elimination & System Perfection Bridge
-└── nomenclature_bridge.py   # 11. Nomenclature, Lexical Clarity & Automated Anti-Hype Normalization Bridge
+├── nomenclature_bridge.py   # 11. Nomenclature, Lexical Clarity & Automated Anti-Hype Normalization Bridge
+└── file_allocation_bridge.py# 12. File Allocation, Clean Architecture Topology & Root Whitelist Bridge
 ```
 
 
@@ -117,6 +118,12 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../nomenclature_bridge.py check`: Run continuous verification gate (exits with code 1 if any non-transparent terms are detected).
 - `python .../nomenclature_bridge.py normalize_readme`: Rebuild and validate master `README.md` and `README.es.md` files.
 - `python .../nomenclature_bridge.py self_test`: Run automated verification assertions for nomenclature bridge.
+
+### 12. File Allocation & Repository Topology Bridge (`scripts/file_allocation_bridge.py`)
+- `python .../file_allocation_bridge.py scan`: Audit repository file allocation against Clean Architecture topology and root whitelist rules.
+- `python .../file_allocation_bridge.py clean`: Surgically eliminate orphan test databases, dead temporary files, and scratch artifacts.
+- `python .../file_allocation_bridge.py check`: Continuous verification gate for directory allocation and topology compliance.
+- `python .../file_allocation_bridge.py self_test`: Run automated contract assertions for file allocation bridge.
 
 ---
 
@@ -305,6 +312,10 @@ To ensure immediate readability, executive clarity, and frictionless collaborati
 | **55** | `auto_fix` (Nomenclature) | `nomenclature_bridge.py` | Automated Deterministic Nomenclature Normalization |
 | **56** | `check` (Nomenclature) | `nomenclature_bridge.py` | Continuous Verification Gate for Clean Nomenclature |
 | **57** | `normalize_readme` | `nomenclature_bridge.py` | Regenerate and Validate Master README Files |
+| **58** | `scan` (Allocation) | `file_allocation_bridge.py` | Audit Repository File Allocation & Root Whitelist |
+| **59** | `clean` (Allocation) | `file_allocation_bridge.py` | Surgically Eliminate Orphan Databases & Temp Artifacts |
+| **60** | `check` (Allocation) | `file_allocation_bridge.py` | Continuous Verification Gate for Clean Architecture Topology |
+| **61** | `self_test` (Allocation) | `file_allocation_bridge.py` | Run Automated Contract Assertions for Allocation Bridge |
 
 ---
 
@@ -320,4 +331,5 @@ To ensure immediate readability, executive clarity, and frictionless collaborati
 - System Recovery Bridge: [`scripts/system_recovery_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/system_recovery_bridge.py)
 - Process Hygiene Bridge: [`scripts/process_hygiene_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/process_hygiene_bridge.py)
 - Nomenclature Bridge: [`scripts/nomenclature_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/nomenclature_bridge.py)
+- File Allocation Bridge: [`scripts/file_allocation_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/file_allocation_bridge.py)
 

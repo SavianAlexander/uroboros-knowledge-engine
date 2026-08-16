@@ -59,6 +59,12 @@ def run_phase_audit(repo_root="."):
     except Exception as e:
         results["nomenclature"] = {"status": "skipped", "message": str(e)}
 
+    try:
+        import file_allocation_bridge
+        results["file_allocation"] = file_allocation_bridge.scan_repository_allocation(repo_root)
+    except Exception as e:
+        results["file_allocation"] = {"status": "skipped", "message": str(e)}
+
     return results
 
 
