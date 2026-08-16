@@ -101,6 +101,7 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../system_recovery_bridge.py restart_audio`: Restart Windows Audio services (`Audiosrv` & `AudioEndpointBuilder`).
 - `python .../system_recovery_bridge.py flush_dns`: Flush DNS resolver cache and reset network stack state.
 - `python .../system_recovery_bridge.py clear_hung`: Identify and terminate unresponsive/hung background processes.
+- `python .../system_recovery_bridge.py audit_hardening`: Audit Windows OS stability parameters (Fast Startup, TDR delay, Power Plan, Pagefile).
 - `python .../system_recovery_bridge.py self_test`: Run automated contract assertions for system recovery bridge.
 
 ### 10. OS Process Hygiene & System Perfection Bridge (`scripts/process_hygiene_bridge.py`)

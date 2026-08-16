@@ -167,6 +167,48 @@ def restore_all() -> Dict[str, Any]:
     return summary
 
 
+def audit_hardening() -> Dict[str, Any]:
+    """Audits OS stability parameters (Fast Startup, TDR, Power Plan, Pagefile)."""
+    audit = {}
+    try:
+        # Check Fast Startup
+        fs_res = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", "Get-ItemPropertyValue -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power' -Name 'HiberbootEnabled' -ErrorAction SilentlyContinue"],
+            capture_output=True, text=True, timeout=5
+        )
+        fs_val = fs_res.stdout.strip()
+        audit["fast_startup_disabled"] = (fs_val == "0")
+
+        # Check Power Plan
+        pp_res = subprocess.run(
+            ["powercfg", "/getactivescheme"],
+            capture_output=True, text=True, timeout=5
+        )
+        audit["power_plan"] = pp_res.stdout.strip()
+        audit["power_plan_balanced"] = "balanced" in pp_res.stdout.lower()
+
+        # Check TDR
+        tdr_res = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", "Get-ItemPropertyValue -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers' -Name 'TdrDelay' -ErrorAction SilentlyContinue"],
+            capture_output=True, text=True, timeout=5
+        )
+        audit["tdr_delay"] = tdr_res.stdout.strip()
+
+        return {
+            "status": "success",
+            "action": "audit_hardening",
+            "audit": audit,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "action": "audit_hardening",
+            "error": str(e),
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+
 def self_test() -> bool:
     """Automated bridge contract assertions."""
     print("Executing system_recovery_bridge self_test...")
@@ -183,7 +225,7 @@ def self_test() -> bool:
 def main():
     args = sys.argv[1:]
     if not args or args[0] in ("help", "--help", "-h"):
-        print("Usage: system_recovery_bridge.py [restore_all|restart_shell|restart_dwm|restart_audio|flush_dns|clear_hung|self_test]")
+        print("Usage: system_recovery_bridge.py [restore_all|restart_shell|restart_dwm|restart_audio|flush_dns|clear_hung|audit_hardening|self_test]")
         sys.exit(0)
 
     cmd = args[0].lower()
@@ -204,6 +246,9 @@ def main():
         print(json.dumps(res, indent=2))
     elif cmd in ("clear_hung", "kill_hung"):
         res = clear_hung_processes()
+        print(json.dumps(res, indent=2))
+    elif cmd in ("audit_hardening", "hardening"):
+        res = audit_hardening()
         print(json.dumps(res, indent=2))
     elif cmd == "self_test":
         success = self_test()
