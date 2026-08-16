@@ -7,8 +7,6 @@ echo ===================================================
 :: System & Hardware Performance Environment Flags
 set PYTHONOPTIMIZE=1
 set PYTHONPYCACHEPREFIX=%LOCALAPPDATA%\pycache
-set FORCE_CMAKE=1
-set CMAKE_ARGS=-DGGML_VULKAN=on
 if "%PORT%"=="" set PORT=8085
 
 set "PY_CMD="

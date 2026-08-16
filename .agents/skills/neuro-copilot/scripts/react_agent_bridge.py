@@ -140,6 +140,36 @@ def tool_run_command(command: str) -> str:
         return f"Command execution error: {e}"
 
 
+def tool_diagnose(traceback_text: str) -> str:
+    """Intelligently diagnose a Python traceback using AST symbol graph."""
+    try:
+        import ast_graph_bridge
+        res = ast_graph_bridge.diagnose_traceback(traceback_text, repo_root=PROJECT_ROOT)
+        if res.get("status") != "success":
+            return f"Diagnosis notice: {res.get('message', 'Unable to parse traceback')}"
+        
+        ff = res.get("failing_frame", {})
+        sym = res.get("symbol_info")
+        out = [
+            f"Traceback Diagnosis:",
+            f"  Failing Location: {ff.get('filepath')}:{ff.get('line')} (in {ff.get('function')})"
+        ]
+        if sym:
+            out.append(f"  Symbol Defined: {sym.get('symbol_type')} {sym.get('symbol_name')}({sym.get('args_spec', '')}) [Lines {sym.get('start_line')}-{sym.get('end_line')}]")
+        
+        callers = res.get("callers", [])
+        if callers:
+            out.append(f"  Direct Callers ({len(callers)}): " + ", ".join(f"{c.get('caller_file')}:{c.get('line')}" for c in callers[:3]))
+            
+        snippet = res.get("code_snippet", "")
+        if snippet:
+            out.append(f"\nContext Snippet:\n{snippet}")
+            
+        return "\n".join(out)
+    except Exception as e:
+        return f"Diagnosis error: {e}"
+
+
 def execute_parsed_action(action_str: str) -> Tuple[str, bool]:
     """
     Parses and executes an [ACTION: tool_name param="..."] string.
@@ -185,6 +215,14 @@ def execute_parsed_action(action_str: str) -> Tuple[str, bool]:
     if cmd_match:
         c = cmd_match.group(1)
         return tool_run_command(c), False
+
+    # 7. Check for diagnose
+    diag_match = re.search(r'\[ACTION:\s*diagnose\s+traceback=["\'](.*?)["\']\]', action_str, re.DOTALL | re.IGNORECASE)
+    if not diag_match:
+        diag_match = re.search(r'\[ACTION:\s*diagnose\]\s*(.*)', action_str, re.DOTALL | re.IGNORECASE)
+    if diag_match:
+        tb = diag_match.group(1).strip()
+        return tool_diagnose(tb), False
 
     # Fallback loose action parser
     if "[action:" in action_str.lower():

@@ -28,6 +28,25 @@ logger = logging = __import__("logging").getLogger(__name__)
 
 _SESSIONS_LOCK = threading.Lock()
 _ACTIVE_SESSIONS: Dict[str, Dict[str, Any]] = {}
+_MAX_VOICE_SESSIONS = 200
+_SESSION_TTL_SECONDS = 3600 * 4  # 4 hours
+
+
+def _purge_stale_sessions():
+    """Purge expired and overflow voice sessions to prevent process RAM growth."""
+    now = time.time()
+    stale_keys = [
+        sid for sid, s in _ACTIVE_SESSIONS.items()
+        if (now - s.get("last_active", now)) > _SESSION_TTL_SECONDS
+    ]
+    for sid in stale_keys:
+        _ACTIVE_SESSIONS.pop(sid, None)
+
+    if len(_ACTIVE_SESSIONS) > _MAX_VOICE_SESSIONS:
+        sorted_by_activity = sorted(_ACTIVE_SESSIONS.items(), key=lambda x: x[1].get("last_active", 0))
+        overflow_count = len(_ACTIVE_SESSIONS) - _MAX_VOICE_SESSIONS
+        for sid, _ in sorted_by_activity[:overflow_count]:
+            _ACTIVE_SESSIONS.pop(sid, None)
 
 
 class VoiceAgentLoop:
@@ -42,10 +61,11 @@ class VoiceAgentLoop:
         persona: str = "ORACLE_ADVISOR",
         dsp_preset: str = "EXECUTIVE_PRESENCE"
     ) -> Dict[str, Any]:
-        """Initializes a new hands-free conversational voice session."""
+        """Initializes a new hands-free conversational voice session with automatic stale session pruning."""
         sid = session_id or f"voice-session-{uuid.uuid4().hex[:8]}"
         now = time.time()
         with _SESSIONS_LOCK:
+            _purge_stale_sessions()
             _ACTIVE_SESSIONS[sid] = {
                 "session_id": sid,
                 "persona": persona,

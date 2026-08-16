@@ -116,6 +116,17 @@ def cmd_doctor(args):
         print(json.dumps(scorecard, indent=2))
     else:
         doctor_bridge.print_doctor_report(scorecard)
+
+    if getattr(args, "speak", False):
+        try:
+            import voice_operator_bridge
+            score = scorecard.get("score", "100%")
+            status = scorecard.get("status", "NOMINAL")
+            voice_text = f"Doctor diagnostic complete. System health is {score}, operating at status {status}."
+            voice_operator_bridge.speak_briefing(voice_text, preset="EXECUTIVE_PRECISION", async_mode=True)
+        except Exception:
+            pass
+
     return 0 if scorecard.get("status") in ["NOMINAL", "WARNING"] else 1
 
 
@@ -578,6 +589,7 @@ def main():
     # doctor
     doc_p = subparsers.add_parser("doctor", help="Run full system diagnostic & health verification")
     doc_p.add_argument("--json", action="store_true", help="Output JSON format")
+    doc_p.add_argument("--speak", action="store_true", help="Synthesize natural spoken voice debrief using Kokoro")
     doc_p.add_argument("--root", default=BASE_DIR, help="Target repository root")
 
     # run

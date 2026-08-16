@@ -15,6 +15,7 @@ import json
 import sqlite3
 import time
 import urllib.request
+from collections import OrderedDict
 
 VAULT_EVE_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -24,7 +25,25 @@ VAULT_EVE_DIR = os.path.join(
 CACHE_DB_PATH = os.path.join(VAULT_EVE_DIR, "sde_cache.sqlite")
 ESI_BASE = "https://esi.evetech.net/latest"
 
-_MEM_CACHE = {}
+_MAX_MEM_CACHE_SIZE = 10000
+_MEM_CACHE: OrderedDict = OrderedDict()
+
+
+def _cache_get(entity_id: int):
+    global _MEM_CACHE
+    if entity_id in _MEM_CACHE:
+        _MEM_CACHE.move_to_end(entity_id)
+        return _MEM_CACHE[entity_id]
+    return None
+
+
+def _cache_put(entity_id: int, name: str):
+    global _MEM_CACHE
+    if entity_id in _MEM_CACHE:
+        _MEM_CACHE.move_to_end(entity_id)
+    _MEM_CACHE[entity_id] = name
+    if len(_MEM_CACHE) > _MAX_MEM_CACHE_SIZE:
+        _MEM_CACHE.popitem(last=False)
 
 
 _STATIC_SDE_LOOKUP = {
@@ -104,29 +123,31 @@ def populate_mem_cache():
     if _MEM_CACHE:
         return
     # Pre-populate from static SDE dictionary
-    _MEM_CACHE.update(_STATIC_SDE_LOOKUP)
+    for k, v in _STATIC_SDE_LOOKUP.items():
+        _cache_put(k, v)
     with get_cache_db() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT id, name FROM entities")
+        cur.execute("SELECT id, name FROM entities LIMIT 2000")
         for row in cur.fetchall():
-            _MEM_CACHE[row[0]] = row[1]
+            _cache_put(row[0], row[1])
 
 
 def resolve_ids_fast(ids: list) -> dict:
     """Resolve a list of IDs using memory cache -> static SDE -> local SQLite -> ESI bulk fallback."""
     populate_mem_cache()
-    global _MEM_CACHE
     results = {}
     missing = []
 
     for entity_id in ids:
         if not isinstance(entity_id, int) or entity_id <= 0:
             continue
-        if entity_id in _MEM_CACHE:
-            results[entity_id] = _MEM_CACHE[entity_id]
+        cached_val = _cache_get(entity_id)
+        if cached_val:
+            results[entity_id] = cached_val
         elif entity_id in _STATIC_SDE_LOOKUP:
-            results[entity_id] = _STATIC_SDE_LOOKUP[entity_id]
-            _MEM_CACHE[entity_id] = _STATIC_SDE_LOOKUP[entity_id]
+            val = _STATIC_SDE_LOOKUP[entity_id]
+            results[entity_id] = val
+            _cache_put(entity_id, val)
         else:
             missing.append(entity_id)
 
@@ -155,9 +176,9 @@ def resolve_ids_fast(ids: list) -> dict:
                     item_name = item["name"]
                     item_cat = item.get("category", "unknown")
                     results[item_id] = item_name
-                    _MEM_CACHE[item_id] = item_name
+                    _cache_put(item_id, item_name)
                     newly_resolved.append((item_id, item_cat, item_name, time.time()))
-        except Exception as e:
+        except Exception:
             # Fallback placeholder
             for mid in chunk:
                 if mid not in results:

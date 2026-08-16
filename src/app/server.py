@@ -19,24 +19,29 @@ async def lifespan(app: FastAPI):
     register_shutdown_handlers()
     beacon = None
     worker = None
-    try:
-        import uuid
-        from src.infrastructure.p2p_sync import P2PPeerBeacon
-        port = int(os.environ.get("PORT", 8085))
-        beacon = P2PPeerBeacon(node_id=str(uuid.uuid4())[:8], http_port=port)
-        beacon.start()
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        import logging; logging.warning(f"Swallowed error in server.py beacon: {e}")
+    
+    # Opt-in P2P Sync Beacon (Disabled by default for instant lightweight startup)
+    if os.environ.get("ENABLE_P2P_BEACON", "").lower() in ("1", "true", "yes"):
+        try:
+            import uuid
+            from src.infrastructure.p2p_sync import P2PPeerBeacon
+            port = int(os.environ.get("PORT", 8085))
+            beacon = P2PPeerBeacon(node_id=str(uuid.uuid4())[:8], http_port=port)
+            beacon.start()
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.warning(f"Swallowed error in server.py beacon: {e}")
 
-    try:
-        from src.domain.background_worker import start_background_summarizer
-        worker = start_background_summarizer()
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        import logging; logging.warning(f"Swallowed error starting background summarizer: {e}")
+    # Opt-in GPU/CPU Background Summarizer (Disabled by default to prevent hardware lag)
+    if os.environ.get("ENABLE_BACKGROUND_SUMMARIZER", "").lower() in ("1", "true", "yes"):
+        try:
+            from src.domain.background_worker import start_background_summarizer
+            worker = start_background_summarizer()
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.warning(f"Swallowed error starting background summarizer: {e}")
 
     try:
         yield

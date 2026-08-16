@@ -24,6 +24,11 @@ from src.core.voice_spectrum_stream import VoiceSpectrumAnalyzer
 router = APIRouter()
 logger = logging = __import__("logging").getLogger(__name__)
 
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
 
 async def _handle_ws_text_message(websocket: WebSocket, raw_text: str, session_id: str):
     """Handle incoming JSON text message in voice WebSocket stream."""
@@ -61,8 +66,9 @@ async def _handle_ws_text_message(websocket: WebSocket, raw_text: str, session_i
 
 async def _handle_ws_bytes_message(websocket: WebSocket, raw_bytes: bytes):
     """Handle incoming binary PCM audio telemetry in voice WebSocket stream."""
+    if np is None:
+        return
     try:
-        import numpy as np
         samples = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
         fft_res = VoiceSpectrumAnalyzer.compute_spectrum_bins(samples)
         await websocket.send_json({

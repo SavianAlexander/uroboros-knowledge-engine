@@ -429,4 +429,65 @@ def process_vad_frame_endpoint(payload: Dict[str, Any]):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/alerts/templates")
+def get_eve_voice_alert_templates():
+    """Retrieve all available EVE Online cockpit tactical voice alert templates."""
+    try:
+        from src.domain.eve_voice_alerts import TACTICAL_VOICE_TEMPLATES
+        return {
+            "status": "success",
+            "templates": TACTICAL_VOICE_TEMPLATES
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/alerts/format")
+def format_eve_voice_alert(payload: Dict[str, Any]):
+    """Format an EVE cockpit tactical voice alert template with parameters."""
+    template_key = payload.get("template_key", "")
+    params = payload.get("params", {})
+    if not template_key:
+        raise HTTPException(status_code=400, detail="Missing template_key in request.")
+    try:
+        from src.domain.eve_voice_alerts import EVEVoiceAlertManager
+        formatted = EVEVoiceAlertManager.format_alert(template_key, **params)
+        return {
+            "status": "success",
+            "template_key": template_key,
+            "formatted_message": formatted
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/alerts/speak")
+def speak_eve_voice_alert(payload: Dict[str, Any]):
+    """Synthesize and dispatch an EVE cockpit tactical voice alert with SFX and Kokoro voice synthesis."""
+    template_key = payload.get("template_key", "")
+    params = payload.get("params", {})
+    persona = payload.get("persona", "AURA_SHIP_AI")
+    priority = payload.get("priority", "HIGH")
+    sfx_intro = payload.get("sfx_intro")
+
+    if not template_key:
+        raise HTTPException(status_code=400, detail="Missing template_key in request.")
+    try:
+        from src.domain.eve_voice_alerts import EVEVoiceAlertManager
+        dispatch = EVEVoiceAlertManager.speak_alert(
+            template_key=template_key,
+            priority=priority,
+            persona=persona,
+            sfx_intro=sfx_intro,
+            **params
+        )
+        return {
+            "status": "success",
+            "dispatch": dispatch
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 

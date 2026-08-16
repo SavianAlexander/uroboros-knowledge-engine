@@ -312,6 +312,17 @@ The Neuro Copilot is powered by a 5-tier dynamic model router minimizing VRAM to
 
 ---
 
+## Core Engineering Protocols & Invariants
+
+### 1. Mandatory Cooperative Zero-Stutter Background Worker Standard
+All background daemons, automated summarizers, indexers, watchers, and periodic analyzers must adhere to cooperative zero-stutter engineering:
+1. **OS Thread Deprioritization**: Background thread priority must be lowered to `THREAD_PRIORITY_IDLE` (`-15` on Windows via `ctypes.windll.kernel32.SetThreadPriority` or `os.nice(19)` on POSIX) so background work automatically yields to UI rendering, audio playback, and user input.
+2. **Cold-Start Boot Grace Period**: A minimum 30-second quiet period must elapse upon application launch before background compute initiates, ensuring the web backend, static assets, and browser load with 0% CPU/GPU contention.
+3. **Single-Item Throttling & Cooling Intervals**: Heavy background processing (e.g. SLM summarization or embeddings) must process exactly **1** item per step followed by an explicit cooling delay (minimum 10 seconds).
+4. **Infinite-Loop Database Guards**: Queries must strictly filter uncompleted tasks (`WHERE json_extract(metadata_json, '$.summary') IS NULL`), sleeping quietly when no items require processing.
+
+---
+
 ## References & Bridge Index
 - Master CLI: [`scripts/neuro_cli.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/neuro_cli.py)
 - Contract Bus Orchestrator: [`scripts/contract_bus.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/contract_bus.py)
