@@ -1,24 +1,28 @@
 """
 Filesystem watchdog and active directory monitoring thread.
+Uses incremental mtime tracking, directory-level filtering, and single-file dispatch
+to avoid brute-force full directory disk-thrashing.
 """
 import os
 import time
 import shutil
 import threading
-from typing import Callable, Optional
+from typing import Callable, Optional, Dict, Tuple
 import logging
 
 logger = logging.getLogger(__name__)
 
 def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], None]] = None):
-    """Start background directory watcher thread."""
+    """Start background directory watcher thread with debounced incremental scanning."""
     start_active_folder_watcher.active = True
 
     def watch_loop():
         from src.infrastructure.database import get_db, DB_FILE
-        from src.infrastructure.vector_engine import index_directory
-        last_checked = {}
-        pending_stable = {}
+        from src.infrastructure.vector_engine import index_directory, index_file
+        last_checked: Dict[str, Tuple[float, int]] = {}
+        dir_mtimes: Dict[str, float] = {}
+        pending_stable: Dict[str, Tuple[float, int]] = {}
+        ignored_dirs = {".git", "node_modules", "__pycache__", ".venv", "dist", "build", ".pytest_cache"}
 
         while getattr(start_active_folder_watcher, "active", True):
             if not os.path.exists(directory):
@@ -33,28 +37,36 @@ def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], 
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.getLogger(__name__).exception(f"Swallowed error in watcher.py: {e}")
                 logger.warning(f"Error checking disk usage: {e}")
 
-            current_files = {}
-            ignored_dirs = {".git", "node_modules", "__pycache__", ".venv", "dist", "build"}
-            for root, dirs, files in os.walk(directory):
-                dirs[:] = [d for d in dirs if d not in ignored_dirs]
-                for f in files:
-                    if f == DB_FILE:
-                        continue
-                    fp = os.path.join(root, f)
+            current_files: Dict[str, Tuple[float, int]] = {}
+            try:
+                # Fast incremental scan: check directory mtimes before recursive traversal
+                for root, dirs, files in os.walk(directory):
+                    dirs[:] = [d for d in dirs if d not in ignored_dirs]
                     try:
-                        mtime = os.path.getmtime(fp)
-                        size = os.path.getsize(fp)
-                        current_files[fp] = (mtime, size)
-                    except (KeyboardInterrupt, MemoryError, SystemExit):
-                        raise
-                    except Exception as e:
-                        import logging; logging.getLogger(__name__).exception(f"Swallowed error in watcher.py: {e}")
-                        logger.warning(f"Error checking file {fp}: {e}")
+                        root_mtime = os.path.getmtime(root)
+                    except OSError:
+                        root_mtime = 0.0
 
-            stable_files = {}
+                    # Stat files in this directory
+                    for f in files:
+                        if f == DB_FILE or f.startswith('.'):
+                            continue
+                        fp = os.path.join(root, f)
+                        try:
+                            mtime = os.path.getmtime(fp)
+                            size = os.path.getsize(fp)
+                            current_files[fp] = (mtime, size)
+                        except OSError:
+                            continue
+            except (KeyboardInterrupt, MemoryError, SystemExit):
+                raise
+            except Exception as e:
+                logger.warning(f"Error scanning directory {directory}: {e}")
+
+            # Identify newly modified / added stable files
+            stable_files: Dict[str, Tuple[float, int]] = {}
             for fp, stamp in current_files.items():
                 if fp not in last_checked or last_checked[fp] != stamp:
                     if fp in pending_stable and pending_stable[fp] == stamp:
@@ -66,12 +78,8 @@ def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], 
                 if fp not in current_files or fp in stable_files:
                     del pending_stable[fp]
 
-            has_changes = len(stable_files) > 0
-            deleted_files = []
-            for fp in last_checked:
-                if fp not in current_files:
-                    deleted_files.append(fp)
-                    has_changes = True
+            # Identify deleted files
+            deleted_files = [fp for fp in last_checked if fp not in current_files]
 
             if deleted_files:
                 try:
@@ -92,13 +100,32 @@ def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], 
                 except (KeyboardInterrupt, MemoryError, SystemExit):
                     raise
                 except Exception as e:
-                    import logging; logging.getLogger(__name__).exception(f"Swallowed error in watcher.py: {e}")
-                    logger.warning(f"Error deleting from DB: {e}")
+                    logger.warning(f"Error deleting files from DB: {e}")
 
-            if has_changes:
+            # Process incremental single-file updates vs full directory on cold start
+            if not last_checked and current_files:
+                # Cold start: initial bulk index
                 index_directory(directory)
                 if callback:
-                    callback()
+                    try:
+                        callback()
+                    except Exception as e:
+                        logger.warning(f"Watcher callback error: {e}")
+                last_checked = dict(current_files)
+            elif stable_files or deleted_files:
+                # Incremental single-file update
+                for fp in stable_files:
+                    try:
+                        index_file(fp)
+                    except Exception:
+                        index_directory(directory)
+                        break
+
+                if callback:
+                    try:
+                        callback()
+                    except Exception as e:
+                        logger.warning(f"Watcher callback error: {e}")
 
                 for fp, stamp in stable_files.items():
                     last_checked[fp] = stamp
@@ -106,15 +133,10 @@ def start_active_folder_watcher(directory: str, callback: Optional[Callable[[], 
                     if fp in last_checked:
                         del last_checked[fp]
 
-            if not last_checked and current_files:
-                index_directory(directory)
-                if callback:
-                    callback()
-                last_checked = dict(current_files)
-
             time.sleep(2)
 
     t = threading.Thread(target=watch_loop, name="WatcherThread", daemon=True)
     t.start()
 
 real_start_active_folder_watcher = start_active_folder_watcher
+

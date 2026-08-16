@@ -9,9 +9,23 @@ from typing import Any, Dict, List, Optional
 from fastapi import HTTPException
 import functools
 
-import msvcrt
-import ctypes
-from ctypes import wintypes
+if os.name == "nt":
+    try:
+        import msvcrt
+        import ctypes
+        from ctypes import wintypes
+    except ImportError:
+        msvcrt = None
+        ctypes = None
+        wintypes = None
+else:
+    msvcrt = None
+    ctypes = None
+    wintypes = None
+    try:
+        import fcntl
+    except ImportError:
+        fcntl = None
 
 try:
     import llama_cpp
@@ -38,42 +52,43 @@ _last_cleanup_time = 0.0
 JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
 JobObjectExtendedLimitInformation = 9
 
-class _JOBOBJECT_BASIC_LIMIT_INFORMATION(ctypes.Structure):
-    _fields_ = [
-        ("PerProcessUserTimeLimit", wintypes.LARGE_INTEGER),
-        ("PerJobUserTimeLimit", wintypes.LARGE_INTEGER),
-        ("LimitFlags", wintypes.DWORD),
-        ("MinimumWorkingSetSize", ctypes.c_size_t),
-        ("MaximumWorkingSetSize", ctypes.c_size_t),
-        ("ActiveProcessLimit", wintypes.DWORD),
-        ("Affinity", ctypes.c_size_t),
-        ("PriorityClass", wintypes.DWORD),
-        ("SchedulingClass", wintypes.DWORD),
-    ]
+if os.name == "nt" and ctypes and wintypes:
+    class _JOBOBJECT_BASIC_LIMIT_INFORMATION(ctypes.Structure):
+        _fields_ = [
+            ("PerProcessUserTimeLimit", wintypes.LARGE_INTEGER),
+            ("PerJobUserTimeLimit", wintypes.LARGE_INTEGER),
+            ("LimitFlags", wintypes.DWORD),
+            ("MinimumWorkingSetSize", ctypes.c_size_t),
+            ("MaximumWorkingSetSize", ctypes.c_size_t),
+            ("ActiveProcessLimit", wintypes.DWORD),
+            ("Affinity", ctypes.c_size_t),
+            ("PriorityClass", wintypes.DWORD),
+            ("SchedulingClass", wintypes.DWORD),
+        ]
 
-class _IO_COUNTERS(ctypes.Structure):
-    _fields_ = [
-        ("ReadOperationCount", ctypes.c_ulonglong),
-        ("WriteOperationCount", ctypes.c_ulonglong),
-        ("OtherOperationCount", ctypes.c_ulonglong),
-        ("ReadTransferCount", ctypes.c_ulonglong),
-        ("WriteTransferCount", ctypes.c_ulonglong),
-        ("OtherTransferCount", ctypes.c_ulonglong),
-    ]
+    class _IO_COUNTERS(ctypes.Structure):
+        _fields_ = [
+            ("ReadOperationCount", ctypes.c_ulonglong),
+            ("WriteOperationCount", ctypes.c_ulonglong),
+            ("OtherOperationCount", ctypes.c_ulonglong),
+            ("ReadTransferCount", ctypes.c_ulonglong),
+            ("WriteTransferCount", ctypes.c_ulonglong),
+            ("OtherTransferCount", ctypes.c_ulonglong),
+        ]
 
-class _JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
-    _fields_ = [
-        ("BasicLimitInformation", _JOBOBJECT_BASIC_LIMIT_INFORMATION),
-        ("IoInfo", _IO_COUNTERS),
-        ("ProcessMemoryLimit", ctypes.c_size_t),
-        ("JobMemoryLimit", ctypes.c_size_t),
-        ("PeakProcessMemoryLimit", ctypes.c_size_t),
-        ("PeakJobMemoryLimit", ctypes.c_size_t),
-    ]
+    class _JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
+        _fields_ = [
+            ("BasicLimitInformation", _JOBOBJECT_BASIC_LIMIT_INFORMATION),
+            ("IoInfo", _IO_COUNTERS),
+            ("ProcessMemoryLimit", ctypes.c_size_t),
+            ("JobMemoryLimit", ctypes.c_size_t),
+            ("PeakProcessMemoryLimit", ctypes.c_size_t),
+            ("PeakJobMemoryLimit", ctypes.c_size_t),
+        ]
 
 def enable_auto_kill_job_object() -> bool:
     """Attaches current process to a Windows Job Object with KILL_ON_JOB_CLOSE."""
-    if os.name != "nt":
+    if os.name != "nt" or not ctypes or not wintypes:
         return False
     try:
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -114,8 +129,10 @@ class GpuInferenceGuard:
         while time.time() - start < timeout:
             try:
                 cls._lock_handle = open(lock_path, "w")
-                if os.name == "nt":
+                if os.name == "nt" and msvcrt:
                     msvcrt.locking(cls._lock_handle.fileno(), msvcrt.LK_NBLCK, 1)
+                elif fcntl:
+                    fcntl.flock(cls._lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
                 return True
             except (IOError, OSError):
                 time.sleep(0.05)
@@ -125,9 +142,14 @@ class GpuInferenceGuard:
     def release(cls):
         try:
             if cls._lock_handle:
-                if os.name == "nt":
+                if os.name == "nt" and msvcrt:
                     try:
                         msvcrt.locking(cls._lock_handle.fileno(), msvcrt.LK_UNLCK, 1)
+                    except Exception:
+                        pass
+                elif fcntl:
+                    try:
+                        fcntl.flock(cls._lock_handle.fileno(), fcntl.LOCK_UN)
                     except Exception:
                         pass
                 cls._lock_handle.close()
