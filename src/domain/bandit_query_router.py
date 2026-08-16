@@ -1,73 +1,195 @@
 """
-Zero-dependency Multi-Armed Bandit Query Router Engine.
-Learns which retrieval strategy (FTS5, Vector, HyDE, GraphRAG) yields the highest Self-RAG reflection scores.
+Multi-Armed Bandit Query Router & Thompson Sampling Engine.
+Dynamically optimizes retrieval pipeline selection (Hybrid RRF, HyDE, Graph BFS, Parent-Child)
+using persistent SQLite-backed Beta distribution Thompson Sampling.
+Standard: Pure Python standard library (sqlite3, random, time, unicodedata, typing).
 """
-import unicodedata
+import time
 import random
-import threading
-from typing import Dict, Any, List
+import sqlite3
+import unicodedata
+from typing import Dict, Any, List, Optional
 
-_lock = threading.Lock()
+_DEFAULT_ARMS = [
+    ("hybrid_rrf_pagerank", 1.0, 1.0),
+    ("multihop_graph_bfs", 1.0, 1.0),
+    ("contextual_hyde", 1.0, 1.0),
+    ("parent_child_expand", 1.0, 1.0)
+]
 
-# Bandit arms state
-_BANDIT_ARMS = {
-    "hybrid_rrf_pagerank": {"successes": 15, "trials": 18, "weight": 0.83},
-    "multihop_graph_bfs": {"successes": 12, "trials": 15, "weight": 0.80},
-    "contextual_hyde": {"successes": 10, "trials": 14, "weight": 0.71},
-    "parent_child_expand": {"successes": 14, "trials": 16, "weight": 0.875}
-}
+
+def _init_bandit_table(conn: sqlite3.Connection):
+    """Initializes the persistent bandit pipeline rewards table in SQLite."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS bandit_pipeline_rewards (
+            pipeline_name TEXT NOT NULL,
+            intent TEXT NOT NULL DEFAULT 'FACTUAL',
+            trials INTEGER NOT NULL DEFAULT 0,
+            successes INTEGER NOT NULL DEFAULT 0,
+            alpha REAL NOT NULL DEFAULT 1.0,
+            beta REAL NOT NULL DEFAULT 1.0,
+            weight REAL NOT NULL DEFAULT 0.5,
+            updated_at REAL,
+            PRIMARY KEY (pipeline_name, intent)
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_bandit_intent ON bandit_pipeline_rewards(intent, weight DESC)")
+
+    # Seed baseline arms for default FACTUAL intent if fresh
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM bandit_pipeline_rewards")
+    if (cursor.fetchone() or [0])[0] == 0:
+        now = time.time()
+        for arm_name, a, b in _DEFAULT_ARMS:
+            cursor.execute("""
+                INSERT INTO bandit_pipeline_rewards (pipeline_name, intent, trials, successes, alpha, beta, weight, updated_at)
+                VALUES (?, 'FACTUAL', 0, 0, ?, ?, 0.5, ?)
+            """, (arm_name, a, b, now))
+        conn.commit()
 
 
 def bandit_select_pipeline(intent: str = "FACTUAL") -> Dict[str, Any]:
     """
-    Selects the optimal retrieval pipeline using Thompson Sampling / Epsilon-Greedy bandit learning.
-    Zero-dependency stdlib implementation.
+    Selects the optimal retrieval pipeline using Bayesian Thompson Sampling from SQLite.
+    Draws a random sample from Beta(alpha, beta) for each active pipeline arm.
     """
-    safe_intent = unicodedata.normalize("NFC", str(intent)) if intent and isinstance(intent, str) else "FACTUAL"
-    global _BANDIT_ARMS
-
-    best_arm = None
+    safe_intent = unicodedata.normalize("NFC", str(intent or "FACTUAL")).strip().upper()
+    best_arm = "hybrid_rrf_pagerank"
     best_score = -1.0
+    arms_state: Dict[str, Dict[str, Any]] = {}
 
-    with _lock:
-        for arm_name, stats in _BANDIT_ARMS.items():
-            # Beta(alpha, beta) sample approximation using stdlib random
-            alpha = max(1, stats["successes"] + 1)
-            beta = max(1, (stats["trials"] - stats["successes"]) + 1)
-            sample = random.betavariate(alpha, beta)
+    try:
+        from src.infrastructure.database import get_db
+        with get_db() as conn:
+            _init_bandit_table(conn)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT pipeline_name, trials, successes, alpha, beta, weight FROM bandit_pipeline_rewards WHERE intent = ?",
+                (safe_intent,)
+            )
+            rows = cursor.fetchall()
 
-            if sample > best_score:
-                best_score = sample
-                best_arm = arm_name
+            if not rows and safe_intent != "FACTUAL":
+                # Fall back to FACTUAL general arms if specific intent has no history
+                cursor.execute(
+                    "SELECT pipeline_name, trials, successes, alpha, beta, weight FROM bandit_pipeline_rewards WHERE intent = 'FACTUAL'"
+                )
+                rows = cursor.fetchall()
 
-        arms_snapshot = {k: dict(v) for k, v in _BANDIT_ARMS.items()}
+            for row in rows:
+                p_name, trials, successes, alpha, beta, weight = row
+                a = max(1.0, float(alpha))
+                b = max(1.0, float(beta))
+                # Real Thompson sampling from Beta distribution
+                sample = random.betavariate(a, b)
+                arms_state[p_name] = {
+                    "trials": trials,
+                    "successes": successes,
+                    "alpha": a,
+                    "beta": b,
+                    "sample": round(sample, 4),
+                    "weight": round(weight, 4)
+                }
+
+                if sample > best_score:
+                    best_score = sample
+                    best_arm = p_name
+
+    except Exception as e:
+        # Graceful fallback to deterministic default arm
+        arms_state["hybrid_rrf_pagerank"] = {"sample": 0.85, "error": str(e)}
+        best_arm = "hybrid_rrf_pagerank"
+        best_score = 0.85
 
     return {
-        "intent": intent,
+        "intent": safe_intent,
         "selected_pipeline": best_arm,
-        "bandit_confidence": round(best_score, 4),
-        "arms_state": arms_snapshot,
+        "bandit_confidence": round(best_score if best_score >= 0 else 0.80, 4),
+        "arms_state": arms_state,
         "status": "success"
     }
 
 
-def record_bandit_feedback(pipeline_name: str, is_successful: bool) -> Dict[str, Any]:
+def record_bandit_feedback(
+    pipeline_name: str,
+    is_successful: bool,
+    intent: str = "FACTUAL"
+) -> Dict[str, Any]:
     """
-    Records reward feedback ([IsSup] = 1.0 vs 0.0) to update bandit arm weights.
+    Updates the Bayesian reward distribution in SQLite for the selected pipeline.
+    Success increments alpha; failure increments beta.
     """
-    global _BANDIT_ARMS
-    with _lock:
-        if pipeline_name in _BANDIT_ARMS:
-            _BANDIT_ARMS[pipeline_name]["trials"] += 1
-            if is_successful:
-                _BANDIT_ARMS[pipeline_name]["successes"] += 1
-            s = _BANDIT_ARMS[pipeline_name]["successes"]
-            t = _BANDIT_ARMS[pipeline_name]["trials"]
-            _BANDIT_ARMS[pipeline_name]["weight"] = round(s / float(max(1, t)), 4)
+    if not pipeline_name:
+        return {"status": "error", "message": "pipeline_name is required"}
+
+    p_str = str(pipeline_name).strip()
+    safe_intent = unicodedata.normalize("NFC", str(intent or "FACTUAL")).strip().upper()
+    now = time.time()
+
+    try:
+        from src.infrastructure.database import get_db
+        with get_db() as conn:
+            _init_bandit_table(conn)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT trials, successes, alpha, beta FROM bandit_pipeline_rewards WHERE pipeline_name = ? AND intent = ?",
+                (p_str, safe_intent)
+            )
+            row = cursor.fetchone()
+
+            if row:
+                t = row[0] + 1
+                s = row[1] + (1 if is_successful else 0)
+                a = row[2] + (1.0 if is_successful else 0.0)
+                b = row[3] + (0.0 if is_successful else 1.0)
+            else:
+                t = 1
+                s = 1 if is_successful else 0
+                a = 2.0 if is_successful else 1.0
+                b = 1.0 if is_successful else 2.0
+
+            w = round(s / float(max(1, t)), 4)
+
+            cursor.execute("""
+                INSERT INTO bandit_pipeline_rewards (pipeline_name, intent, trials, successes, alpha, beta, weight, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(pipeline_name, intent) DO UPDATE SET
+                    trials = excluded.trials,
+                    successes = excluded.successes,
+                    alpha = excluded.alpha,
+                    beta = excluded.beta,
+                    weight = excluded.weight,
+                    updated_at = excluded.updated_at
+            """, (p_str, safe_intent, t, s, a, b, w, now))
+            conn.commit()
+
             return {
-                "pipeline": pipeline_name,
-                "updated_arm": dict(_BANDIT_ARMS[pipeline_name]),
+                "pipeline": p_str,
+                "intent": safe_intent,
+                "updated_arm": {
+                    "trials": t,
+                    "successes": s,
+                    "alpha": a,
+                    "beta": b,
+                    "weight": w
+                },
                 "status": "success"
             }
+    except Exception as e:
+        return {
+            "pipeline": p_str,
+            "status": "error",
+            "error": str(e)
+        }
 
-    return {"pipeline": pipeline_name, "status": "not_found"}
+
+class BanditQueryRouter:
+    """Facade for Thompson Sampling retrieval pipeline selection."""
+
+    @staticmethod
+    def select(intent: str = "FACTUAL") -> Dict[str, Any]:
+        return bandit_select_pipeline(intent)
+
+    @staticmethod
+    def record(pipeline_name: str, is_successful: bool, intent: str = "FACTUAL") -> Dict[str, Any]:
+        return record_bandit_feedback(pipeline_name, is_successful, intent)

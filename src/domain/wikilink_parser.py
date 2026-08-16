@@ -188,6 +188,12 @@ def _extract_implicit_entities_cached(content: str) -> Tuple[str, ...]:
 
 
 def extract_implicit_entities(content: str) -> List[str]:
-    """Extracts implicit entities, returning a fresh list copy to protect cache state."""
+    """
+    Extracts implicit high-value named entities for graph linking.
+    """
     return list(_extract_implicit_entities_cached(content))
 
+
+# Facade aliases
+extract_wikilinks = parse_wikilinks
+build_wikilink_graph = extract_target_titles

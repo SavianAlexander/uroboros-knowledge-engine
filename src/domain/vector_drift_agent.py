@@ -1,9 +1,9 @@
 """
-Autonomous Vector Drift & Index Re-Balancing Agent Engine.
-Monitors vector embedding distribution drift as new documents are ingested, triggering background re-indexing.
-Zero-dependency, stdlib implementation.
+Vector Distribution Drift & Re-Balancing Evaluation Engine.
+Monitors vector embedding centroid shift distance as new documents are ingested to determine when re-indexing is warranted.
+Standard: Pure Python standard library (math, typing).
 """
-
+import math
 from typing import Dict, Any, List
 
 
@@ -13,7 +13,7 @@ def audit_vector_index_drift(
     drift_threshold: float = 0.25
 ) -> Dict[str, Any]:
     """
-    Computes vector centroid shift distance to detect embedding distribution drift.
+    Computes Euclidean centroid shift distance between baseline centroids and newly ingested vector embeddings.
     """
     if not current_centroids or not isinstance(current_centroids, list):
         return {"drift_score": 0.0, "rebalance_needed": False, "status": "insufficient_vectors"}
@@ -25,21 +25,25 @@ def audit_vector_index_drift(
     if not valid_new or not valid_curr:
         return {"drift_score": 0.0, "rebalance_needed": False, "status": "insufficient_vectors"}
 
-    # Compute mean shift metric
     dim = min(len(valid_new[0]), len(valid_curr[0]))
     if dim == 0:
         return {"drift_score": 0.0, "rebalance_needed": False, "status": "zero_dimension"}
 
+    # Compute mean centroid vectors
     mean_new = [sum(emb[i] for emb in valid_new if len(emb) > i) / float(len(valid_new)) for i in range(dim)]
     mean_curr = [sum(cent[i] for cent in valid_curr if len(cent) > i) / float(len(valid_curr)) for i in range(dim)]
 
-    shift = sum(abs(mean_new[i] - mean_curr[i]) for i in range(dim)) / float(dim)
-    drift_score = round(shift, 4)
+    # Euclidean distance between centroids
+    euclidean_dist = math.sqrt(sum((mean_new[i] - mean_curr[i]) ** 2 for i in range(dim)))
+    drift_score = round(euclidean_dist, 4)
     rebalance_needed = drift_score >= drift_threshold
 
     return {
         "drift_score": drift_score,
+        "euclidean_shift": drift_score,
         "drift_threshold": drift_threshold,
+        "dimension": dim,
+        "sample_count": len(valid_new),
         "rebalance_needed": rebalance_needed,
         "recommended_action": "trigger_background_rebalance" if rebalance_needed else "index_optimal",
         "status": "success"

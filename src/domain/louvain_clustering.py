@@ -47,6 +47,8 @@ def apply_louvain_communities(nodes: List[Dict[str, Any]], edges: List[Dict[str,
 
     return nodes
 
+detect_louvain_communities = apply_louvain_communities
+
 def synthesize_community_summaries(nodes: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Synthesizes executive topical summaries and key concept terms for each Louvain cluster.

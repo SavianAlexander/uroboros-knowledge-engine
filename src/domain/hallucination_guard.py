@@ -1,6 +1,7 @@
 """
-Zero-dependency Hallucination-Guarded Refusal & Confidence Engine.
-Calculates mathematical Context Confidence Scores (0.00 - 1.00) and refuses low-confidence queries to prevent false info.
+Deterministic Lexical Context Coverage & Refusal Gating Engine.
+Evaluates query term representation across candidate passages and triggers refusal when evidence coverage is deficient.
+Standard: Pure Python standard library (re, unicodedata, typing).
 """
 import re
 import unicodedata
@@ -12,8 +13,7 @@ RE_QUERY_TERMS = re.compile(r'\b[\w-]{3,}\b')
 
 def evaluate_hallucination_risk(query: str, passages: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Evaluates context coverage and calculates confidence score. Refuses if confidence < 0.65.
-    Zero-dependency stdlib implementation.
+    Calculates deterministic token coverage and flags hallucination risk when coverage is below threshold.
     """
     str_query = str(query or "").strip()
     valid_passages = [p for p in passages if isinstance(p, dict)] if isinstance(passages, list) else []
@@ -34,6 +34,8 @@ def evaluate_hallucination_risk(query: str, passages: List[Dict[str, Any]]) -> D
             "query": str_query,
             "confidence_score": 1.0,
             "should_refuse": False,
+            "matched_terms": [],
+            "missing_terms": [],
             "status": "success"
         }
 
@@ -41,23 +43,28 @@ def evaluate_hallucination_risk(query: str, passages: List[Dict[str, Any]]) -> D
     total_length = 0
 
     for p in valid_passages:
-        content = (p.get("content") or p.get("text") or "").lower()
+        content = str(p.get("content") or p.get("text") or p.get("snippet") or "").lower()
         total_length += len(content)
         for w in query_words:
             if w in content:
                 matched_words.add(w)
 
     coverage_ratio = len(matched_words) / float(len(query_words))
-    confidence_score = round(min(1.0, coverage_ratio * 0.90 + (0.10 if total_length > 100 else 0.0)), 2)
+    # Grounding confidence: proportional to token coverage with minimum length floor
+    length_bonus = 0.10 if total_length >= 80 else (total_length / 800.0)
+    confidence_score = round(min(1.0, (coverage_ratio * 0.90) + length_bonus), 2)
 
     should_refuse = confidence_score < MIN_CONFIDENCE_THRESHOLD
 
     return {
         "query": str_query,
-        "matched_terms": list(matched_words),
-        "missing_terms": list(query_words - matched_words),
+        "matched_terms": sorted(list(matched_words)),
+        "missing_terms": sorted(list(query_words - matched_words)),
         "confidence_score": confidence_score,
         "should_refuse": should_refuse,
-        "refusal_reason": f"Context coverage ({confidence_score:.2f}) below threshold ({MIN_CONFIDENCE_THRESHOLD})" if should_refuse else None,
+        "refusal_reason": (
+            f"Query term coverage ({int(coverage_ratio * 100)}%) is below required threshold ({int(MIN_CONFIDENCE_THRESHOLD * 100)}%)."
+            if should_refuse else ""
+        ),
         "status": "refused" if should_refuse else "success"
     }

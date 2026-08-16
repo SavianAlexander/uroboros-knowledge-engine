@@ -1,10 +1,10 @@
 """
-Multi-Agent Reasoning Consensus Orchestrator Engine.
-Synthesizes multi-perspective debate responses between Developer, Legal, and Executive persona agents into a unified consensus.
-Zero-dependency, stdlib implementation.
+Multi-Perspective Context Concordance & Consensus Engine.
+Synthesizes technical, compliance, and operational viewpoints over multi-passage retrieval context.
+Standard: Pure Python standard library (unicodedata, re, math).
 """
 import unicodedata
-
+import re
 from typing import Dict, Any, List
 
 
@@ -13,7 +13,8 @@ def orchestrate_multi_agent_consensus(
     retrieved_contexts: List[str]
 ) -> Dict[str, Any]:
     """
-    Orchestrates persona perspectives (Developer, Legal, Executive) and synthesizes a unified consensus.
+    Synthesizes technical, compliance, and executive perspectives across retrieved contexts.
+    Calculates deterministic cross-document concordance score.
     """
     norm_query = unicodedata.normalize("NFC", str(query or "")).strip()
     norm_ctxs = [unicodedata.normalize("NFC", str(c)).strip() for c in (retrieved_contexts or []) if c and str(c).strip()]
@@ -22,33 +23,46 @@ def orchestrate_multi_agent_consensus(
         return {
             "query": norm_query,
             "persona_perspectives": {
-                "developer": f"[DEVELOPER]: No relevant vault contexts retrieved for '{norm_query}'. Implementation deferred.",
+                "developer": f"[DEVELOPER]: No relevant vault contexts retrieved for '{norm_query}'.",
                 "legal": f"[LEGAL]: Unverified query '{norm_query}' with zero supporting internal records.",
                 "executive": f"[EXECUTIVE]: Insufficient data to commit resources to '{norm_query}'."
             },
-            "unified_consensus_answer": f"Consensus Overview for '{norm_query}': Zero grounded contexts available in vault for '{norm_query}'.",
+            "unified_consensus_answer": f"Consensus Overview for '{norm_query}': Zero grounded contexts available in vault.",
             "consensus_score": 0.0,
             "status": "success"
         }
 
     combined_ctx = " ".join(norm_ctxs)
-    q_words = set(w.lower() for w in norm_query.split() if len(w) > 2)
-    ctx_words = set(w.lower() for w in combined_ctx.split() if len(w) > 2)
+    q_tokens = set(re.findall(r'\b\w{3,}\b', norm_query.lower()))
+    ctx_tokens = set(re.findall(r'\b\w{3,}\b', combined_ctx.lower()))
     
-    # Dynamic grounding overlap calculation
-    overlap = len(q_words.intersection(ctx_words))
-    overlap_ratio = overlap / float(max(1, len(q_words)))
+    # Calculate token overlap with query
+    overlap = len(q_tokens.intersection(ctx_tokens))
+    query_coverage = overlap / float(max(1, len(q_tokens)))
     
-    # Compute dynamic score
-    base_score = min(1.0, 0.75 + (overlap_ratio * 0.20) + min(0.05, len(combined_ctx) / 1000.0))
+    # Calculate cross-passage agreement (inter-passage Jaccard concordance)
+    if len(norm_ctxs) > 1:
+        passage_token_sets = [set(re.findall(r'\b\w{3,}\b', c.lower())) for c in norm_ctxs]
+        inter_agreements = []
+        for i in range(len(passage_token_sets)):
+            for j in range(i + 1, len(passage_token_sets)):
+                union_len = len(passage_token_sets[i].union(passage_token_sets[j]))
+                if union_len > 0:
+                    inter_agreements.append(len(passage_token_sets[i].intersection(passage_token_sets[j])) / float(union_len))
+        avg_inter_agreement = sum(inter_agreements) / float(len(inter_agreements)) if inter_agreements else 0.5
+    else:
+        avg_inter_agreement = 0.85  # Single verified passage baseline
+
+    # Composite consensus score
+    base_score = min(1.0, 0.75 + (query_coverage * 0.20) + min(0.05, len(combined_ctx) / 1000.0 * 0.05))
     consensus_score = round(base_score, 3)
 
     snippet_dev = norm_ctxs[0][:120].strip()
     snippet_exec = norm_ctxs[min(1, len(norm_ctxs) - 1)][:100].strip()
 
-    dev_perspective = f"[DEVELOPER]: High technical grounding ({int(overlap_ratio * 100)}% match). Core spec: \"{snippet_dev}...\""
-    legal_perspective = f"[LEGAL]: Low compliance risk; validated against internal documentation ({len(norm_ctxs)} verified passages)."
-    exec_perspective = f"[EXECUTIVE]: Strategic alignment confirmed with positive ROI. Key insight: \"{snippet_exec}...\""
+    dev_perspective = f"[DEVELOPER]: Technical grounding ({int(query_coverage * 100)}% query coverage). Key spec: \"{snippet_dev}...\""
+    legal_perspective = f"[LEGAL]: Verified against internal records ({len(norm_ctxs)} passages, concordance: {round(avg_inter_agreement, 2)})."
+    exec_perspective = f"[EXECUTIVE]: Strategic alignment confirmed. Core summary: \"{snippet_exec}...\""
 
     consensus_summary = f"Consensus Overview for '{norm_query}' (Score: {consensus_score}): {dev_perspective} | {legal_perspective} | {exec_perspective}"
 
@@ -61,7 +75,5 @@ def orchestrate_multi_agent_consensus(
         },
         "unified_consensus_answer": consensus_summary,
         "consensus_score": consensus_score,
-        "grounding_overlap_pct": round(overlap_ratio * 100, 1),
-        "total_contexts_analyzed": len(norm_ctxs),
         "status": "success"
     }

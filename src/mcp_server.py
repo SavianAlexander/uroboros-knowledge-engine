@@ -202,6 +202,33 @@ SFX_SCHEMA = {
     "required": ["sfx_name"],
 }
 
+ACT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "task": {"type": "string", "description": "High-level engineering task or question for autonomous ReAct agent to solve"},
+        "steps": {"type": "integer", "description": "Maximum reasoning steps (default: 6)", "default": 6},
+    },
+    "required": ["task"],
+}
+
+SYMBOL_GRAPH_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "symbol": {"type": "string", "description": "Function, class, or method name to query in SQLite AST graph"},
+    },
+    "required": ["symbol"],
+}
+
+DOCTOR_SCHEMA = {
+    "type": "object",
+    "properties": {},
+}
+
+REAP_ZOMBIES_SCHEMA = {
+    "type": "object",
+    "properties": {},
+}
+
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     return [
@@ -209,6 +236,26 @@ async def handle_list_tools() -> list[types.Tool]:
             name="neuro_search",
             description="Perform hybrid semantic search (ColBERT + FTS5) against Uroboros Knowledge Vault.",
             inputSchema=SEARCH_SCHEMA,
+        ),
+        types.Tool(
+            name="neuro_act",
+            description="Execute autonomous multi-step ReAct agent loop (Thought -> Action -> Observation -> Self-Correction) using local SLMs.",
+            inputSchema=ACT_SCHEMA,
+        ),
+        types.Tool(
+            name="neuro_symbol_graph",
+            description="Look up symbol definition, line ranges, upstream callers, downstream callees, and database table references in SQLite AST graph.",
+            inputSchema=SYMBOL_GRAPH_SCHEMA,
+        ),
+        types.Tool(
+            name="neuro_doctor",
+            description="Run unified 360° health diagnostic scorecard across OS RAM, process hygiene, SQLite invariants, Git Merkle, and Tududi burndown.",
+            inputSchema=DOCTOR_SCHEMA,
+        ),
+        types.Tool(
+            name="neuro_reap_zombies",
+            description="Surgically terminate orphaned background Python test workers, hung processes, and duplicate servers, executing 6-phase OS optimization cascade.",
+            inputSchema=REAP_ZOMBIES_SCHEMA,
         ),
         types.Tool(
             name="neuro_ingest",
@@ -364,8 +411,36 @@ async def _mcp_tool_play_sfx(args: dict) -> list[types.TextContent]:
     return [types.TextContent(type="text", text=f"SFX '{sfx}' failed to generate.")]
 
 
+async def _mcp_tool_act(args: dict) -> list[types.TextContent]:
+    import react_agent_bridge
+    res = react_agent_bridge.run_react_agent_loop(args.get("task", ""), max_steps=args.get("steps", 6))
+    return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
+
+
+async def _mcp_tool_symbol_graph(args: dict) -> list[types.TextContent]:
+    import ast_graph_bridge
+    res = ast_graph_bridge.query_symbol_graph(args.get("symbol", ""))
+    return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
+
+
+async def _mcp_tool_doctor(args: dict) -> list[types.TextContent]:
+    import doctor_bridge
+    res = doctor_bridge.generate_health_scorecard()
+    return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
+
+
+async def _mcp_tool_reap_zombies(args: dict) -> list[types.TextContent]:
+    import process_hygiene_bridge
+    res = process_hygiene_bridge.clean_process_hygiene()
+    return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
+
+
 _MCP_TOOL_HANDLERS = {
     "neuro_search": _mcp_tool_search,
+    "neuro_act": _mcp_tool_act,
+    "neuro_symbol_graph": _mcp_tool_symbol_graph,
+    "neuro_doctor": _mcp_tool_doctor,
+    "neuro_reap_zombies": _mcp_tool_reap_zombies,
     "neuro_ingest": _mcp_tool_ingest,
     "neuro_trigger_workflow": _mcp_tool_trigger_workflow,
     "neuro_stats": _mcp_tool_stats,

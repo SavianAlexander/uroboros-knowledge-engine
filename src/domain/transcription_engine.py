@@ -335,3 +335,11 @@ def transcribe_audio_memo(filepath: str, chunk_duration_sec: float = 10.0) -> Di
         "transcript": transcript_text
     }
 
+
+class TranscriptionEngine:
+    """Audio metadata extraction and offline transcription engine."""
+
+    @staticmethod
+    def transcribe(filepath: str, chunk_duration_sec: float = 10.0) -> Dict[str, Any]:
+        return transcribe_audio_memo(filepath, chunk_duration_sec)
+

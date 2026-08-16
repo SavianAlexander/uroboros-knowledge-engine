@@ -5,8 +5,13 @@ import time
 import subprocess
 import threading
 import logging
+from typing import Any, Dict, List, Optional
 from fastapi import HTTPException
 import functools
+
+import msvcrt
+import ctypes
+from ctypes import wintypes
 
 try:
     import llama_cpp
@@ -26,6 +31,109 @@ os.environ["OLLAMA_MAX_LOADED_MODELS"] = "1"
 _llm_semaphore = threading.Semaphore(1)
 _process_cleanup_lock = threading.Lock()
 _last_cleanup_time = 0.0
+
+# -------------------------------------------------------------------------
+# Windows OS Kernel Job Object & Process Supervisor
+# -------------------------------------------------------------------------
+JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
+JobObjectExtendedLimitInformation = 9
+
+class _JOBOBJECT_BASIC_LIMIT_INFORMATION(ctypes.Structure):
+    _fields_ = [
+        ("PerProcessUserTimeLimit", wintypes.LARGE_INTEGER),
+        ("PerJobUserTimeLimit", wintypes.LARGE_INTEGER),
+        ("LimitFlags", wintypes.DWORD),
+        ("MinimumWorkingSetSize", ctypes.c_size_t),
+        ("MaximumWorkingSetSize", ctypes.c_size_t),
+        ("ActiveProcessLimit", wintypes.DWORD),
+        ("Affinity", ctypes.c_size_t),
+        ("PriorityClass", wintypes.DWORD),
+        ("SchedulingClass", wintypes.DWORD),
+    ]
+
+class _IO_COUNTERS(ctypes.Structure):
+    _fields_ = [
+        ("ReadOperationCount", ctypes.c_ulonglong),
+        ("WriteOperationCount", ctypes.c_ulonglong),
+        ("OtherOperationCount", ctypes.c_ulonglong),
+        ("ReadTransferCount", ctypes.c_ulonglong),
+        ("WriteTransferCount", ctypes.c_ulonglong),
+        ("OtherTransferCount", ctypes.c_ulonglong),
+    ]
+
+class _JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
+    _fields_ = [
+        ("BasicLimitInformation", _JOBOBJECT_BASIC_LIMIT_INFORMATION),
+        ("IoInfo", _IO_COUNTERS),
+        ("ProcessMemoryLimit", ctypes.c_size_t),
+        ("JobMemoryLimit", ctypes.c_size_t),
+        ("PeakProcessMemoryLimit", ctypes.c_size_t),
+        ("PeakJobMemoryLimit", ctypes.c_size_t),
+    ]
+
+def enable_auto_kill_job_object() -> bool:
+    """Attaches current process to a Windows Job Object with KILL_ON_JOB_CLOSE."""
+    if os.name != "nt":
+        return False
+    try:
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+        kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+        kernel32.SetInformationJobObject.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD]
+        kernel32.SetInformationJobObject.restype = wintypes.BOOL
+        kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        kernel32.AssignProcessToJobObject.restype = wintypes.BOOL
+        kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+
+        h_job = kernel32.CreateJobObjectW(None, None)
+        if not h_job:
+            return False
+        info = _JOBOBJECT_EXTENDED_LIMIT_INFORMATION()
+        info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        res = kernel32.SetInformationJobObject(h_job, JobObjectExtendedLimitInformation, ctypes.byref(info), ctypes.sizeof(info))
+        if not res:
+            return False
+        h_proc = kernel32.GetCurrentProcess()
+        return bool(kernel32.AssignProcessToJobObject(h_job, h_proc))
+    except Exception:
+        return False
+
+# Initialize Job Object auto-cleanup on module load
+enable_auto_kill_job_object()
+
+class GpuInferenceGuard:
+    """Inter-process and inter-thread lock ensuring single-flight GPU execution."""
+    _lock_handle = None
+
+    @classmethod
+    def acquire(cls, timeout: float = 30.0) -> bool:
+        lock_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models")
+        os.makedirs(lock_dir, exist_ok=True)
+        lock_path = os.path.join(lock_dir, ".gpu_inference.lock")
+        start = time.time()
+        while time.time() - start < timeout:
+            try:
+                cls._lock_handle = open(lock_path, "w")
+                if os.name == "nt":
+                    msvcrt.locking(cls._lock_handle.fileno(), msvcrt.LK_NBLCK, 1)
+                return True
+            except (IOError, OSError):
+                time.sleep(0.05)
+        return False
+
+    @classmethod
+    def release(cls):
+        try:
+            if cls._lock_handle:
+                if os.name == "nt":
+                    try:
+                        msvcrt.locking(cls._lock_handle.fileno(), msvcrt.LK_UNLCK, 1)
+                    except Exception:
+                        pass
+                cls._lock_handle.close()
+                cls._lock_handle = None
+        except Exception:
+            pass
 
 def ensure_single_llama_server_instance():
     """
@@ -53,16 +161,29 @@ def ensure_single_llama_server_instance():
                         pid_str = parts[1].strip('"').strip()
                         if pid_str.isdigit():
                             pids.append(int(pid_str))
-                if len(pids) > 1:
-                    pids_to_kill = pids[:-1]
-                    logging.warning(f"Duplicate llama-server.exe processes detected ({pids}); terminating duplicate PIDs: {pids_to_kill}")
-                    for pid in pids_to_kill:
+                if len(pids) > 0:
+                    logging.info(f"Purging legacy llama-server.exe processes ({pids}) to preserve VRAM for Ollama.")
+                    for pid in pids:
                         try:
                             subprocess.run(["taskkill", "/F", "/PID", str(pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         except Exception as ke:
-                            logging.error(f"Failed to terminate duplicate llama-server PID {pid}: {ke}")
+                            logging.debug(f"Purge llama-server PID {pid}: {ke}")
         except Exception:
             pass
+
+
+def _sanitize_keep_alive(val: Any) -> Any:
+    """Sanitizes keep_alive to either integer (e.g. -1) or valid duration string ('3m', '5m', '30s')."""
+    if val is None:
+        return "3m"
+    if isinstance(val, (int, float)):
+        return int(val)
+    s = str(val).strip()
+    if s.lstrip("-").isdigit():
+        return int(s)
+    if any(s.endswith(unit) for unit in ("s", "m", "h", "d")):
+        return s
+    return "3m"
 
 
 class OllamaClient:
@@ -72,23 +193,27 @@ class OllamaClient:
 
     def _post_with_fallback(self, endpoint: str, data: dict, timeout: int = 45):
         ensure_single_llama_server_instance()
-        clean_ep = endpoint if endpoint.startswith("/") else f"/{endpoint}"
-        clean_base = self.base_url.rstrip("/")
-        endpoints = [
-            f"{clean_base}{clean_ep}",
-            f"http://127.0.0.1:11434/v1{clean_ep}",
-            f"http://localhost:11434/v1{clean_ep}",
-            f"http://127.0.0.1:11434{clean_ep.replace('/v1', '')}",
-            f"http://localhost:11434{clean_ep.replace('/v1', '')}"
-        ]
-        for url in endpoints:
-            try:
-                res = self.session.post(url, json=data, timeout=(1.0, timeout))
-                if res.status_code == 200:
-                    return res.json()
-            except Exception:
-                continue
-        return None
+        GpuInferenceGuard.acquire(timeout=float(timeout))
+        try:
+            clean_ep = endpoint if endpoint.startswith("/") else f"/{endpoint}"
+            clean_base = self.base_url.rstrip("/")
+            endpoints = [
+                f"{clean_base}{clean_ep}",
+                f"http://127.0.0.1:11434/v1{clean_ep}",
+                f"http://localhost:11434/v1{clean_ep}",
+                f"http://127.0.0.1:11434{clean_ep.replace('/v1', '')}",
+                f"http://localhost:11434{clean_ep.replace('/v1', '')}"
+            ]
+            for url in endpoints:
+                try:
+                    res = self.session.post(url, json=data, timeout=(1.0, timeout))
+                    if res.status_code == 200:
+                        return res.json()
+                except Exception:
+                    continue
+            return None
+        finally:
+            GpuInferenceGuard.release()
 
     def stream_chat(self, messages: list, model_name: str = None, temperature: float = 0.3, num_ctx: int = None, format_json: bool = False):
         """Yield token chunks from native Ollama /api/chat streaming endpoint with dynamic context scaling."""
@@ -109,10 +234,12 @@ class OllamaClient:
             max_limit = 131072 if "phi4" in model else 32768
             ctx_size = num_ctx or min(max(4096, token_est + 2048), max_limit)
 
+        keep_alive = _sanitize_keep_alive(os.environ.get("OLLAMA_KEEP_ALIVE", "3m"))
         payload = {
             "model": model,
             "messages": messages,
             "stream": True,
+            "keep_alive": keep_alive,
             "options": {"num_ctx": ctx_size, "temperature": temperature}
         }
         if format_json:
@@ -122,31 +249,39 @@ class OllamaClient:
         urls = ["http://127.0.0.1:11434/api/chat", "http://localhost:11434/api/chat"]
         
         tokens_yielded = 0
-        for u in urls:
-            try:
-                req = urllib.request.Request(u, data=data_bytes, headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(req, timeout=45) as resp:
-                    for line in resp:
-                        if not line:
-                            continue
-                        try:
-                            item = json.loads(line.decode("utf-8"))
-                            tok = item.get("message", {}).get("content", "")
-                            if tok:
-                                tokens_yielded += 1
-                                yield tok
-                            if item.get("done"):
-                                return
-                        except Exception:
-                            continue
-                if tokens_yielded > 0:
-                    return
-            except Exception as e:
-                logging.warning(f"Ollama stream_chat fallback on {u}: {e}")
-                continue
+        GpuInferenceGuard.acquire(timeout=45.0)
+        try:
+            for u in urls:
+                try:
+                    req = urllib.request.Request(u, data=data_bytes, headers={"Content-Type": "application/json"})
+                    with urllib.request.urlopen(req, timeout=45) as resp:
+                        for line in resp:
+                            if not line:
+                                continue
+                            try:
+                                item = json.loads(line.decode("utf-8"))
+                                tok = item.get("message", {}).get("content", "")
+                                if tok:
+                                    tokens_yielded += 1
+                                    yield tok
+                                if item.get("done"):
+                                    return
+                            except Exception:
+                                continue
+                    if tokens_yielded > 0:
+                        return
+                except urllib.error.HTTPError as e:
+                    err_msg = e.read().decode("utf-8", errors="ignore")
+                    logging.warning(f"Ollama stream_chat HTTPError {e.code} on {u}: {err_msg}")
+                    continue
+                except Exception as e:
+                    logging.warning(f"Ollama stream_chat fallback on {u}: {e}")
+                    continue
 
-        if tokens_yielded == 0:
-            raise ConnectionError("Ollama daemon unreachable on local endpoints")
+            if tokens_yielded == 0:
+                raise ConnectionError("Ollama daemon unreachable on local endpoints")
+        finally:
+            GpuInferenceGuard.release()
 
     def __call__(self, prompt, **kwargs):
         if not _llm_semaphore.acquire(blocking=False):
@@ -171,7 +306,7 @@ class OllamaClient:
                 ctx_size = kwargs.get("num_ctx") or min(max(4096, token_est + 2048), max_limit)
                 temp = kwargs.get("temperature", 0.3)
 
-            keep_alive = os.environ.get("OLLAMA_KEEP_ALIVE", "5m")
+            keep_alive = _sanitize_keep_alive(os.environ.get("OLLAMA_KEEP_ALIVE", "3m"))
             max_toks = min(kwargs.get("max_tokens", 1024), 4096)
             data = {
                 "model": model,
@@ -224,7 +359,7 @@ class OllamaClient:
                 ctx_size = kwargs.get("num_ctx") or min(max(4096, token_est + 2048), max_limit)
                 temp = kwargs.get("temperature", 0.3)
 
-            keep_alive = os.environ.get("OLLAMA_KEEP_ALIVE", "5m")
+            keep_alive = _sanitize_keep_alive(os.environ.get("OLLAMA_KEEP_ALIVE", "3m"))
             max_toks = min(kwargs.get("max_tokens", 1024), 4096)
             data = {
                 "model": model,
@@ -260,83 +395,19 @@ class OllamaClient:
 
 
 
-import multiprocessing as mp
-
-def _worker_loop(model_path, task_queue, result_queue):
-    try:
-        import llama_cpp
-        llm = llama_cpp.Llama(model_path=model_path, n_ctx=2048, verbose=False)
-        while True:
-            task = task_queue.get()
-            if task is None:
-                break
-            task_type, kwargs = task
-            try:
-                if task_type == 'completion':
-                    res = llm(**kwargs)
-                elif task_type == 'chat':
-                    res = llm.create_chat_completion(**kwargs)
-                result_queue.put({"success": True, "result": res})
-            except Exception as e:
-                result_queue.put({"success": False, "error": str(e)})
-    except Exception as e:
-        # Will crash early if model cannot load, preventing queue hangs
-        import logging
-        logging.error(f"LLM Worker crashed: {e}")
-
 class IsolatedLlamaClient:
-    def __init__(self, model_path):
-        self.model_path = model_path
-        self._ctx = mp.get_context("spawn")
-        self._task_queue = self._ctx.Queue()
-        self._result_queue = self._ctx.Queue()
-        self._process = self._ctx.Process(target=_worker_loop, args=(self.model_path, self._task_queue, self._result_queue), daemon=True)
-        self._process.start()
-        self._lock = threading.Lock()
-        
+    """Unified client routing cleanly to local Ollama inference without heavy multiprocessing GPU spawning."""
+    def __init__(self, model_path=None):
+        self._client = OllamaClient()
+
     def __call__(self, prompt, **kwargs):
-        kwargs["prompt"] = prompt
-        with self._lock:
-            self._task_queue.put(('completion', kwargs))
-            try:
-                res = self._result_queue.get(timeout=45)
-                if res.get("success"):
-                    return res["result"]
-                else:
-                    logging.error(f"LLM Process exception: {res.get('error')}")
-                    raise HTTPException(status_code=503, detail="LLM Engine Fault")
-            except Exception as e:
-                logging.error(f"LLM Process timeout or crash: {e}")
-                raise HTTPException(status_code=503, detail="LLM Engine Fault")
+        return self._client(prompt, **kwargs)
 
     def create_completion(self, prompt=None, **kwargs):
-        if prompt is not None:
-            kwargs["prompt"] = prompt
-        return self(prompt, **kwargs)
+        return self._client.create_completion(prompt, **kwargs)
 
     def create_chat_completion(self, messages, **kwargs):
-        kwargs["messages"] = messages
-        with self._lock:
-            self._task_queue.put(('chat', kwargs))
-            try:
-                res = self._result_queue.get(timeout=45)
-                if res.get("success"):
-                    return res["result"]
-                else:
-                    logging.error(f"LLM Chat Process exception: {res.get('error')}")
-                    raise HTTPException(status_code=503, detail="LLM Engine Fault")
-            except Exception as e:
-                logging.error(f"LLM Chat Process timeout or crash: {e}")
-                raise HTTPException(status_code=503, detail="LLM Engine Fault")
-                
-    def __del__(self):
-        try:
-            self._task_queue.put(None)
-            self._process.join(timeout=2)
-            if self._process.is_alive():
-                self._process.terminate()
-        except Exception:
-            pass
+        return self._client.create_chat_completion(messages, **kwargs)
 
 class ModelManager:
     _instance = None

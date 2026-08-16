@@ -21,7 +21,6 @@ import openpyxl
 logging.getLogger("pypdf").setLevel(logging.ERROR)
 
 from src.infrastructure.ocr import extract_ocr_text_structured, extract_pdf_ocr
-from src.domain.ocr_engine import extract_text_from_image
 
 RE_PRINTABLE_BYTES = re.compile(b'[\x20-\x7E]{4,}')
 RE_HTML_TAGS = re.compile(r'<[^>]+>')

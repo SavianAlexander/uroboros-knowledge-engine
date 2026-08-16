@@ -1,7 +1,7 @@
 """
-Sub-Linear LSH-HNSW Vector Indexer Engine.
-Zero-dependency Random Projection LSH graph structure for O(log N) vector retrieval.
-Zero-dependency, stdlib implementation (math, random, collections).
+Sub-Linear LSH Vector Indexer Engine.
+Random Projection Locality-Sensitive Hashing (LSH) for O(log N) vector candidate retrieval.
+Standard: Pure Python standard library (math, random, typing).
 """
 import math
 import random
@@ -58,6 +58,9 @@ class LSHVectorIndex:
 
         results.sort(key=lambda x: x["similarity"], reverse=True)
         return results[:top_k]
+
+
+SublinearANNIndex = LSHVectorIndex
 
 
 def search_sublinear_ann(

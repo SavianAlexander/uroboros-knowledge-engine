@@ -28,7 +28,11 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
-EXCLUDED_DIRS = {".git", "node_modules", ".venv", "__pycache__", "dist", "build", "coverage", ".pytest_cache"}
+EXCLUDED_DIRS = {
+    ".git", "node_modules", ".venv", "__pycache__", "dist", "build",
+    "coverage", ".pytest_cache", "vault", "chunks", "dumps", "backups",
+    "Triage (Support)", ".gemini"
+}
 
 SECRET_PATTERNS = [
     ("OpenAI API Key", r"sk-[a-zA-Z0-9]{20,T3BlbkFJ[a-zA-Z0-9]{20,}"),

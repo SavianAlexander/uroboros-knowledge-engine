@@ -1,41 +1,125 @@
 ---
 name: neuro-copilot
-description: The master integration and orchestration skill for bridging the Uroboros Knowledge Engine (Neuro), the Tududi Task Master, and GitHub CLI / Git Provenance into a unified, dependency-efficient automated engineering workflow. Incorporates universal polyglot clean architecture audits, multi-phase workflow pipeline chaining, parallel asynchronous inter-bridge contracts, PDF/visual layout QA, automated visual UI journeys, client showcase deck generation, security scanning, bloat detection, and executive dashboards.
+description: The master integration and orchestration skill for bridging the Uroboros Knowledge Engine (Neuro), the Tududi Task Master, and GitHub CLI / Git Provenance into a unified, dependency-efficient automated engineering workflow. Incorporates universal polyglot clean architecture audits, multi-phase workflow pipeline chaining, parallel asynchronous inter-bridge contracts, PDF/visual layout QA, automated visual UI journeys, client showcase deck generation, security scanning, bloat detection, executive dashboards, voice telemetry, system health diagnostics, latency benchmarks, and EVE fleet radar.
 ---
 
 # Neuro Co-Pilot (Master Autonomous Engineering & Orchestration Suite)
 
-This skill equips the agent with the definitive 10-bridge engineering architecture, uniting the **Neuro Local Knowledge Vault** (`neuro-mcp`), the **Tududi Task Master** (`tududi`), the **GitHub CLI / Git Merkle Provenance Subsystem** (`gh` CLI & standard git commands), the **EVE Online Tactical Telemetry Engine**, and the **OS Process Hygiene & System Perfection Engine** into a unified, zero-dependency, parallel asynchronous closed loop.
+This skill equips the agent with the definitive 16-bridge engineering architecture, uniting the **Neuro Local Knowledge Vault** (`neuro-mcp`), the **Tududi Task Master** (`tududi`), the **GitHub CLI / Git Merkle Provenance Subsystem** (`gh` CLI & standard git commands), the **Unified 360° Health Doctor**, the **Executive Voice Telemetry Intercom**, the **Sub-Millisecond Benchmark Watchdog**, and the **EVE Fleet Radar** into a unified, zero-dependency, parallel asynchronous closed loop.
+
+```mermaid
+graph TD
+    User["Developer / Agent Request"] --> MasterCLI["Unified Master CLI (scripts/neuro_cli.py)"]
+    MasterCLI --> ContractBus["Inter-Bridge Contract Bus (scripts/contract_bus.py)"]
+    
+    subgraph Stage1 ["Stage 1: Concurrent Independent DAG Execution"]
+        Arch["Architecture Bridge (0-100%)"]
+        Tududi["Tududi Task Master Bridge"]
+        Git["GitHub & Git Provenance Bridge"]
+        Doctor["360° System Health Doctor"]
+        Bench["Benchmark Latency Watchdog"]
+        Hygiene["OS Process Hygiene & Perfection"]
+        VisualQA["PDF Layout & Visual QA"]
+        Nomen["Nomenclature & Lexical Clarity"]
+        Alloc["File Allocation & Root Whitelist"]
+    end
+
+    subgraph Stage2 ["Stage 2: Context-Informed Parallel Execution"]
+        Snapshot["Snapshot & Visual Diff Showcase"]
+        NeuroVault["Neuro Local RAG Brain & Vault"]
+        EVE["EVE Tactical Telemetry & Physics"]
+        Fleet["Fleet Watchdog & PI Radar"]
+        Voice["Executive Voice Telemetry & SAPI"]
+    end
+
+    subgraph Stage3 ["Stage 3: Cryptographic Ledger & Audit Gate"]
+        Ledger["docs/bridge_contracts/execution_ledger.json"]
+        MDReport["docs/bridge_contracts/contract_audit_ledger.md"]
+    end
+
+    ContractBus --> Stage1
+    Stage1 --> Stage2
+    Stage2 --> Stage3
+```
 
 ---
 
-## The 10 Dedicated Modular CLI Bridges
+## The 16 Dedicated Modular CLI Bridges
 
 All bridges are zero-dependency standard library Python scripts located in `scripts/`:
 
 ```
 .agents/skills/neuro-copilot/scripts/
-├── contract_bus.py          # 0. Inter-Bridge Contract Bus & Asynchronous Parallel Orchestrator
-├── neuro_bridge.py          # 1. Local Vector Vault, Knowledge Ingestion & Ollama RAG
-├── tududi_bridge.py         # 2. Tududi Task Master Tracking, Burndown & 4-Tier Auditing
-├── github_bridge.py         # 3. GitHub CLI, Git Merkle Root Provenance & CI Audits
-├── snapshot_bridge.py       # 4. Enterprise Client Snapshot Showcases & Interactive Decks
-├── visual_audit_bridge.py   # 5. Automated PDF Page Rendering & Layout QA Engine
-├── architecture_bridge.py   # 6. Universal Polyglot Clean Architecture Engine (0-100% Score)
-├── workflow_hub_bridge.py   # 7. Master Multi-Phase Engineering Pipeline Orchestrator
-├── eve_bridge.py            # 8. EVE Online Tactical Intelligence & Live Telemetry Bridge
-├── system_recovery_bridge.py# 9. Windows System Resilience & Zero-Reboot Crash Recovery Bridge
-├── process_hygiene_bridge.py# 10. OS Process Hygiene, Zombie Elimination & System Perfection Bridge
-├── nomenclature_bridge.py   # 11. Nomenclature, Lexical Clarity & Automated Anti-Hype Normalization Bridge
-└── file_allocation_bridge.py# 12. File Allocation, Clean Architecture Topology & Root Whitelist Bridge
+├── neuro_cli.py              # Single Master CLI Entrypoint (act, graph_code, symbol, ask, context, doctor, run, ci, clean)
+├── contract_bus.py           # 0. Inter-Bridge Contract Bus & Asynchronous Parallel DAG Orchestrator
+├── react_agent_bridge.py     # 1. Autonomous ReAct Agent Loop (Thought -> Action -> Observe -> Self-Correct)
+├── ast_graph_bridge.py       # 2. Deterministic Codebase AST Call Graph & Symbol Topology in SQLite
+├── neuro_bridge.py           # 3. Local Vector Vault, Knowledge Ingestion & Ollama RAG
+├── tududi_bridge.py          # 4. Tududi Task Master Tracking, Burndown & 4-Tier Auditing
+├── github_bridge.py          # 5. GitHub CLI, Git Merkle Root Provenance & CI Audits
+├── snapshot_bridge.py        # 6. Enterprise Client Snapshot Showcases, Decks & Visual Diffing
+├── visual_audit_bridge.py    # 7. Automated PDF Page Rendering & Layout QA Engine
+├── architecture_bridge.py    # 8. Universal Polyglot Clean Architecture Engine (0-100% Score)
+├── workflow_hub_bridge.py    # 9. Master Multi-Phase Engineering Pipeline Orchestrator
+├── eve_bridge.py             # 10. EVE Online Tactical Intelligence & Live Telemetry Bridge
+├── system_recovery_bridge.py # 11. Windows System Resilience & Zero-Reboot Crash Recovery Bridge
+├── process_hygiene_bridge.py # 12. OS Process Hygiene, Zombie Elimination & System Perfection Bridge
+├── nomenclature_bridge.py    # 13. Nomenclature, Lexical Clarity & Anti-Hype Normalization Bridge
+├── file_allocation_bridge.py # 14. File Allocation, Clean Architecture Topology & Root Whitelist Bridge
+├── doctor_bridge.py          # 15. 360° System, Engine & Repository Diagnostic Doctor
+├── voice_operator_bridge.py  # 16. Executive Voice Telemetry, Spoken Briefings & Acoustic DSP Mastering
+└── benchmark_bridge.py       # 17. Empirical Latency Regression Watchdog & Benchmark Harness
 ```
 
+### Master CLI Entrypoint (`scripts/neuro_cli.py`)
+- `python .../neuro_cli.py act "<task>"` (or `agent`): **Autonomous ReAct Agent Loop** - Multi-step reasoning loop (Thought $\rightarrow$ Action $\rightarrow$ Observe $\rightarrow$ Self-Correct) using local SLMs to solve complex codebase tasks.
+- `python .../neuro_cli.py symbol "<name>"` (or `callers`, `call_graph`): **AST Symbol Topology** - Sub-millisecond lookup of symbol definitions, line spans, upstream callers, and DB tables.
+- `python .../neuro_cli.py graph_code` (or `ast_build`): **AST Code Graph Builder** - Indexes 4,600+ symbols and 32,000+ call edges into SQLite in ~1.5s.
+- `python .../neuro_cli.py ask "<question>"` (or `rag`): **Autonomous RAG Agent Assistant** - Hybrid retrieval + SLM answer synthesis with exact source citations.
+- `python .../neuro_cli.py context "<topic>"`: **Agent Context Extraction** - Pulls all relevant AST symbols, functions, schemas, and markdown notes.
+- `python .../neuro_cli.py summarize "<topic_or_file>"`: **Executive Summarizer** - Generates structured executive bullet points in ~1 second.
+- `python .../neuro_cli.py reap` (or `zombies`): **Automated Zombie Slayer** - Terminates orphaned background workers and runaway processes (>1.5 GB RAM).
+- `python .../neuro_cli.py heal` (or `fix`): 1-Click 5-Stage Autonomous System Self-Healing Cascade (process hygiene, WAL flush, orphan purge, nomenclature auto-fix, git hook invariant check).
+- `python .../neuro_cli.py review [--staged]`: Autonomous pre-commit code review, security leak guard, and stream safety audit.
+- `python .../neuro_cli.py search "..."`: Unified cognitive search across codebase AST and SQLite knowledge vault.
+- `python .../neuro_cli.py graph`: Generate live Mermaid architecture diagrams and SQLite database ER schema (`docs/architecture/system_diagrams.md`).
+- `python .../neuro_cli.py watch` (or `hud`): Launch real-time dynamic ASCII telemetry HUD (OS RAM, SQLite, Git Merkle, Tududi burndown).
+- `python .../neuro_cli.py blast <filepath>`: Calculate AST blast radius, touched tables, and downstream caller impact.
+- `python .../neuro_cli.py release [--tag <name>]`: Generate immutable SOC 2 Type II Merkle provenance release certificate.
+- `python .../neuro_cli.py recover` (or `restore`): 5-Stage zero-reboot Windows crash recovery cascade (Explorer, DWM, Audio, DNS, Tasks).
+- `python .../neuro_cli.py test` (or `test_all`): Run concurrent 13-bridge parallel self-test matrix in <2 seconds.
+- `python .../neuro_cli.py doctor [--json]`: Run unified 360° health diagnostic scorecard across OS, databases, Git, CI, and architecture.
+- `python .../neuro_cli.py status`: Display quick terminal scorecard with Tududi burndown and OS process hygiene.
+- `python .../neuro_cli.py run`: Execute full parallel asynchronous contract pipeline.
+- `python .../neuro_cli.py ci [--wait] [--diagnose]`: Monitor remote GitHub Actions CI gate until 100% Green.
+- `python .../neuro_cli.py clean`: Surgical dual-layer cleanup (orphan worker processes + temporary database/test artifacts).
+- `python .../neuro_cli.py voice "..." [--preset EXECUTIVE_PRECISION]`: Synthesize and speak executive alert or briefing.
+- `python .../neuro_cli.py bench [--json]`: Benchmark sub-millisecond retrieval, AST parsing, and contract bus throughput.
+- `python .../neuro_cli.py fleet [--json]`: Run live EVE fleet radar, skill queue expiry checks, and PI monitoring.
+- `python .../neuro_cli.py flight_plan "..." [--execute]`: 1-Click synthesize and initialize Tududi feature plan with 4-tier subtasks.
 
-### 0. Inter-Bridge Contract Bus (`scripts/contract_bus.py`)
-- `python .../contract_bus.py run_parallel`: Execute all bridges concurrently using asynchronous DAG scheduling with cryptographic SHA-256 Merkle contracts.
+---
+
+### 2026 Specialized SLM Model Lineup & Dynamic Router
+The Neuro Copilot is powered by a 5-tier dynamic model router minimizing VRAM to ~2–3 GB with `keep_alive: 3m` auto-eviction:
+- **`deepseek-r1:1.5b`** (1.1 GB): Chain-of-Thought reasoning & logic proof synthesis (240 tok/s).
+- **`qwen2.5-coder:3b`** (1.9 GB): Code AST generation, schema migrations, and diff reviews (165 tok/s).
+- **`phi4-mini:latest`** (2.5 GB): 128k context document digests and master RAG answer synthesis (146 tok/s).
+- **`qwen2.5:0.5b`** (397 MB): Sub-20ms micro-tagging, fast intent routing, and HyDE search terms (197 tok/s).
+- **`nomic-embed-text:latest`** (274 MB): 768-D dense vector semantic search.
+
+---
+
+### Bridge Index & Capabilities
+
+#### 0. Inter-Bridge Contract Bus (`scripts/contract_bus.py`)
+- `python .../contract_bus.py run_parallel`: Execute all 16 bridges concurrently using asynchronous DAG scheduling with cryptographic SHA-256 Merkle contracts.
 - `python .../contract_bus.py self_test`: Run contract bus self-tests.
 
-### 1. Neuro Knowledge Engine Bridge (`scripts/neuro_bridge.py`)
+#### 1. Neuro Knowledge Engine Bridge (`scripts/neuro_bridge.py`)
+- `python .../neuro_bridge.py ask "<question>"`: Query intelligent Agentic RAG Copilot with SLM answer synthesis.
+- `python .../neuro_bridge.py context "<topic>"`: Extract AST symbols, schema tables, and markdown notes for a topic.
+- `python .../neuro_bridge.py summarize "<topic_or_file>"`: Generate structured executive summary from vault target.
 - `python .../neuro_bridge.py query --text "..."`: Query local RAG brain with HyDE expansion.
 - `python .../neuro_bridge.py ingest --path "..."`: Ingest document or directory into vault.
 - `python .../neuro_bridge.py ingest_git_history --limit 20`: Index recent git commit provenance into vault.
@@ -44,14 +128,14 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../neuro_bridge.py stats`: Audit knowledge vault size & chunk metrics.
 - `python .../neuro_bridge.py self_test`: Run Neuro bridge self-tests.
 
-### 2. Tududi Task Master Bridge (`scripts/tududi_bridge.py`)
+#### 2. Tududi Task Master Bridge (`scripts/tududi_bridge.py`)
 - `python .../tududi_bridge.py list`: Fetch active Tududi tasks for Project #13.
 - `python .../tududi_bridge.py metrics`: Query project completion stats & audit metrics.
 - `python .../tududi_bridge.py burndown`: Render ASCII burndown meter and task velocity.
 - `python .../tududi_bridge.py export_roadmap`: Generate structured Markdown roadmap for vault indexing.
 - `python .../tududi_bridge.py self_test`: Run Tududi bridge self-tests.
 
-### 3. GitHub & Git Provenance Bridge (`scripts/github_bridge.py`)
+#### 3. GitHub & Git Provenance Bridge (`scripts/github_bridge.py`)
 - `python .../github_bridge.py copilot --prompt "..." [--execute]`: Synthesize and 1-click initialize Engineering Flight Plan.
 - `python .../github_bridge.py tri_engine_health`: Run unified health scorecard across all engines.
 - `python .../github_bridge.py auto_commit --scope feat --desc "..."`: Staged-files SHA-256 commit with provenance.
@@ -61,21 +145,22 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../github_bridge.py run_full_pipeline`: 1-click full Tri-Engine pipeline pass.
 - `python .../github_bridge.py self_test`: Run GitHub bridge self-tests.
 
-### 4. Snapshot & Client Showcase Bridge (`scripts/snapshot_bridge.py`)
+#### 4. Snapshot & Client Showcase Bridge (`scripts/snapshot_bridge.py`)
 - `python .../snapshot_bridge.py scan`: Perform full AST & routing sweep to map all views, modals, and tabs.
 - `python .../snapshot_bridge.py generate_script`: Generate Playwright `scripts/capture_ux_journey.mjs` tailored to views.
 - `python .../snapshot_bridge.py render_deck`: Generate interactive glassmorphic Client Showcase HTML presentation deck.
+- `python .../snapshot_bridge.py diff`: Pure-Python visual screenshot regression diffing against baseline assets.
 - `python .../snapshot_bridge.py sync_readme`: Synchronize README.md visual tables with screenshots in `docs/ux_journey/`.
 - `python .../snapshot_bridge.py export_package`: Compress HTML deck, view catalog, and all assets into a standalone ZIP package.
 - `python .../snapshot_bridge.py serve [--port 8088]`: Launch local lightweight preview server.
 - `python .../snapshot_bridge.py full_showcase`: 1-Click end-to-end client showcase sweep and packaging.
 - `python .../snapshot_bridge.py self_test`: Run Snapshot bridge self-tests.
 
-### 5. Visual Layout & PDF QA Bridge (`scripts/visual_audit_bridge.py`)
+#### 5. Visual Layout & PDF QA Bridge (`scripts/visual_audit_bridge.py`)
 - `python .../visual_audit_bridge.py audit [--pdf doc.pdf]`: Render PDF pages at 150 DPI into PNGs, check layout flaws (orphan headers, pagination leaks, table cuts, excessive blank space), and generate `docs/visual_audit/visual_page_audit.md`.
 - `python .../visual_audit_bridge.py self_test`: Run Visual Audit bridge self-tests.
 
-### 6. Universal Clean Architecture Bridge (`scripts/architecture_bridge.py`)
+#### 6. Universal Clean Architecture Bridge (`scripts/architecture_bridge.py`)
 - `python .../architecture_bridge.py audit`: Calculate clean architecture compliance score (0–100%) across 9 languages.
 - `python .../architecture_bridge.py doctor`: Run comprehensive architecture & root hygiene diagnostics.
 - `python .../architecture_bridge.py check-secrets`: Scan code for exposed OpenAI/Stripe/JWT/AWS/GitHub API keys and secrets.
@@ -83,19 +168,19 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../architecture_bridge.py deploy-check`: Production launch readiness scorecard.
 - `python .../architecture_bridge.py self_test`: Run Clean Architecture bridge self-tests.
 
-### 7. Workflow Hub Pipeline Orchestrator (`scripts/workflow_hub_bridge.py`)
+#### 7. Workflow Hub Pipeline Orchestrator (`scripts/workflow_hub_bridge.py`)
 - `python .../workflow_hub_bridge.py run [--phase all|audit|optimize|test|showcase]`: Coordinate and chain multi-phase engineering passes sequentially.
 - `python .../workflow_hub_bridge.py run --parallel`: Execute full parallel asynchronous contract pipeline.
 - `python .../workflow_hub_bridge.py self_test`: Run Workflow Hub bridge self-tests.
 
-### 8. EVE Online Tactical Bridge (`scripts/eve_bridge.py`)
+#### 8. EVE Online Tactical Bridge (`scripts/eve_bridge.py`)
 - `python .../eve_bridge.py telemetry`: Query live empirical telemetry for all 8 fleet pilots (SP, active ships, queues, ISK).
 - `python .../eve_bridge.py search --query "..."`: Sub-5ms Reciprocal Rank Fusion (RRF) search across 2,947 EVE intelligence vault files.
 - `python .../eve_bridge.py remap`: Calculate optimal neural attribute remaps (+45% training acceleration).
 - `python .../eve_bridge.py audit`: Execute 38-assertion zero-assumption mathematical and ESI validation suite.
 - `python .../eve_bridge.py self_test`: Run automated contract assertions for EVE Online tactical bridge.
 
-### 9. Windows System Resilience & Zero-Reboot Recovery Bridge (`scripts/system_recovery_bridge.py`)
+#### 9. Windows System Resilience & Zero-Reboot Recovery Bridge (`scripts/system_recovery_bridge.py`)
 - `python .../system_recovery_bridge.py restore_all`: Execute 5-stage non-reboot recovery cascade (Explorer shell, DWM, Audio services, DNS flush, hung processes).
 - `python .../system_recovery_bridge.py restart_shell`: Restart Windows Explorer shell (`explorer.exe`) to resolve taskbar/Start menu/desktop freeze.
 - `python .../system_recovery_bridge.py restart_dwm`: Refresh Desktop Window Manager (`dwm.exe`) for window rendering/display glitch recovery.
@@ -105,222 +190,135 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../system_recovery_bridge.py audit_hardening`: Audit Windows OS stability parameters (Fast Startup, TDR delay, Power Plan, Pagefile).
 - `python .../system_recovery_bridge.py self_test`: Run automated contract assertions for system recovery bridge.
 
-### 10. OS Process Hygiene & System Perfection Bridge (`scripts/process_hygiene_bridge.py`)
+#### 10. OS Process Hygiene & System Perfection Bridge (`scripts/process_hygiene_bridge.py`)
 - `python .../process_hygiene_bridge.py scan`: Run complete OS process hygiene audit, scanning for orphan Playwright browsers, headless workers, and dead console hosts.
 - `python .../process_hygiene_bridge.py clean`: Surgically eliminate orphan worker processes and reclaim leaked RAM/VRAM pools.
 - `python .../process_hygiene_bridge.py preflight`: Execute automated pre-flight process sanitization before executing test suites or builds.
 - `python .../process_hygiene_bridge.py postflight`: Execute post-flight cleanup sweep to ensure zero zombie processes persist.
 - `python .../process_hygiene_bridge.py self_test`: Run automated contract assertions for process hygiene bridge.
 
-### 11. Nomenclature & Lexical Clarity Bridge (`scripts/nomenclature_bridge.py`)
+#### 11. Nomenclature & Lexical Clarity Bridge (`scripts/nomenclature_bridge.py`)
 - `python .../nomenclature_bridge.py scan`: Scan repository across code, UI, tests, and documentation for ostentatious or non-transparent wording.
 - `python .../nomenclature_bridge.py auto_fix`: Batch-normalize non-transparent words across all files with context-aware lore preservation.
 - `python .../nomenclature_bridge.py check`: Run continuous verification gate (exits with code 1 if any non-transparent terms are detected).
 - `python .../nomenclature_bridge.py normalize_readme`: Rebuild and validate master `README.md` and `README.es.md` files.
 - `python .../nomenclature_bridge.py self_test`: Run automated verification assertions for nomenclature bridge.
 
-### 12. File Allocation & Repository Topology Bridge (`scripts/file_allocation_bridge.py`)
+#### 12. File Allocation & Repository Topology Bridge (`scripts/file_allocation_bridge.py`)
 - `python .../file_allocation_bridge.py scan`: Audit repository file allocation against Clean Architecture topology and root whitelist rules.
 - `python .../file_allocation_bridge.py clean`: Surgically eliminate orphan test databases, dead temporary files, and scratch artifacts.
 - `python .../file_allocation_bridge.py check`: Continuous verification gate for directory allocation and topology compliance.
 - `python .../file_allocation_bridge.py self_test`: Run automated contract assertions for file allocation bridge.
 
----
+#### 13. 360° Health Doctor Bridge (`scripts/doctor_bridge.py`)
+- `python .../doctor_bridge.py`: Run complete multi-layer diagnostic check across OS RAM/Pagefile, SQLite WAL pragma, Git Merkle provenance, and Clean Architecture.
+- `python .../doctor_bridge.py --json`: Output raw machine-readable JSON scorecard.
+- `python .../doctor_bridge.py self_test`: Run automated assertion self-test suite.
 
-## Integrated Execution Protocols
+#### 14. Voice Operator Bridge (`scripts/voice_operator_bridge.py`)
+- `python .../voice_operator_bridge.py "..." [--preset EXECUTIVE_PRECISION]`: Synthesize spoken alerts via Windows SAPI audio pipeline.
+- `python .../voice_operator_bridge.py --briefing`: Generate and speak live 360° health and Tududi burndown summary.
+- `python .../voice_operator_bridge.py --hud`: Launch terminal Holographic Voice HUD.
+- `python .../voice_operator_bridge.py self_test`: Run automated voice bridge self-tests.
 
-### I. Tududi Task Master Tracking & 4-Tier Audit Protocol
-Whenever executing multi-step work or in planning mode:
-1. **Zero `task.md` Rule**: Never create local markdown files for task tracking. Use the connected Tududi MCP server.
-2. **4-Tier Subtask Breakdown**:
-   - `[PLAN]` Requirements & Architectural Discovery
-   - `[BUILD]` Implementation & Source Code Edits
-   - `[TEST]` Unit & Hardware Verification Suite
-   - `[AUDIT]` E2E Visual & Documentation Audit
-3. **Rich Parameter Population**: Populate `note` with exact paths (`[FILES]`), test results (`[TESTS]`), and benchmark metrics (`[BENCHMARKS]`). Always tag with `Antigravity` and link to Project #13 (*Neuro Alexander*).
-4. **Mandatory Automatic Completion (`complete_task`)**: Immediately upon finishing any phase, call `complete_task` (`id: <task_id>, status: 2`) in real time.
+#### 15. Benchmark Watchdog Bridge (`scripts/benchmark_bridge.py`)
+- `python .../benchmark_bridge.py`: Run sub-millisecond SQLite WAL, AST symbol extraction, and contract bus throughput benchmarks.
+- `python .../benchmark_bridge.py --json`: Output raw JSON benchmark scorecard.
+- `python .../benchmark_bridge.py self_test`: Run automated benchmark bridge self-tests.
 
-### II. Universal Polyglot Clean Architecture Protocol
-1. **Pre-Edit Audit**: `python .../architecture_bridge.py audit` (Baseline score 0–100%).
-2. **Layer Assignment**: Core Domain (`src/core/domain`), Infrastructure (`src/infrastructure`), Presentation (`src/app`), Shared (`src/shared`), Assets (`public/`, `src/assets/`).
-3. **Minimal Edit & Root Hygiene**: Zero floating source files in the root folder.
-4. **Secret Scanning**: `python .../architecture_bridge.py check-secrets`.
-5. **Deployment Gate**: `python .../architecture_bridge.py deploy-check` (Must be 100% verified before shipping).
-
-### III. Automated Visual Showcase & UX Journey Protocol
-1. **Discovery Sweep**: Scan AST and routes (`snapshot_bridge.py scan`).
-2. **Playwright Capture Script**: Generate font-stabilized, clock-frozen screenshot runner (`snapshot_bridge.py generate_script`).
-3. **Multi-Viewport Retinas**: Capture Desktop (`1440x900`) and Mobile (`375x812`) viewports.
-4. **Interactive Client Deck**: Render glassmorphic presentation deck with category tabs, live search, and theme comparison slider (`snapshot_bridge.py render_deck`).
-5. **Client Distribution Package**: Package deck and assets into standalone ZIP archive (`snapshot_bridge.py export_package`).
-6. **README Parity**: Synchronize README.md tables with zero broken links (`snapshot_bridge.py sync_readme`).
-
-### IV. Visual Layout & PDF Document QA Protocol
-1. **Render Pages to PNG**: Extract pages at 150 DPI using `visual_audit_bridge.py`.
-2. **Report Card**: Compile `docs/visual_audit/visual_page_audit.md`.
-3. **Flaw Detection Matrix**:
-   - *Orphan Headers*: Section header at bottom of page without at least 3 lines of following text.
-   - *Pagination Leakage*: Single trailing sentence or 1-2 list items leaking onto a new page.
-   - *Table Page Cuts*: Table headers separated from data rows across page boundaries.
-   - *Excessive Blank Space*: Large white gaps from premature page breaks.
-
-### V. Parallel Asynchronous Inter-Bridge Contract Protocol
-1. **Contract Handshake**: Every bridge invocation produces a `BridgeContract` with duration, outputs, shared context, and SHA-256 Merkle hash.
-2. **Parallel DAG Scheduling**:
-   - **Stage 1 (Concurrent Independent Execution)**: Architecture, Tududi, GitHub, and Visual Audit execute simultaneously via `asyncio.gather` and thread pools.
-   - **Stage 2 (Context-Informed Parallel Execution)**: Snapshot Showcase (consuming architecture routes and sprint burndown) and Neuro Vault (consuming git commit hashes) execute concurrently.
-   - **Stage 3 (Ledger Compilation)**: Persistent audit trail written to `docs/bridge_contracts/execution_ledger.json` and `docs/bridge_contracts/contract_audit_ledger.md`.
-
-### VI. Continuous Integration & Remote CI Health Verification Protocol
-1. **Pre-Push Local Gate**:
-   - Run domain tests: `python run_domain_tests.py` (Must report `0 failed, 0 errors`).
-   - Run architecture doctor: `python scripts/architecture_cli.py doctor .`.
-   - Run security fuzzing: `python .agents/skills/neuro-copilot/scripts/github_bridge.py security_fuzzing`.
-2. **Post-Push Remote Monitoring & Confirmation**:
-   - Immediately after `git push`, invoke `python .agents/skills/neuro-copilot/scripts/github_bridge.py verify_ci --wait`.
-   - Actively watch all 4 remote GitHub Actions workflows:
-      - `CI Pipeline` (Matrix Test Python 3.11 & 3.12)
-      - `Domain Integration CI Suite` (Domain Test Matrix & Security Controls)
-      - `Security & Static Analysis Audit` (Static Blast Radius & Dependency Security Audit)
-      - `Build & Package` (Desktop Artifacts, Web Dist & GHCR Container Image)
-3. **Zero-Failure Completion Guarantee**:
-   - Never declare work complete or mark Tududi milestones done until 100% of remote workflows conclude with `SUCCESS (Green)`.
-   - If any workflow fails, immediately execute `github_bridge.py diagnose_ci --run-id <id>`, apply root-cause fixes, re-verify locally, push, and confirm all pipelines pass green.
-
-### VII. Branching, Pull Request & Semantic Release Protocol
-1. **Semantic Branch Naming Hierarchy**:
-   - `feat/<name>`: New capabilities or architectural expansions (e.g. `feat/graph-physics`).
-   - `fix/<name>`: Bug fixes, vulnerability patches, or lock resolutions (e.g. `fix/sqlite-timeout`).
-   - `perf/<name>`: Zero-dependency algorithmic speedups (e.g. `perf/fts5-bm25-cache`).
-   - `chore/<name>`: Maintenance, CI, and tooling upgrades (e.g. `chore/bump-deps`).
-2. **Autonomous Ghost Loop Flywheel**:
-   - For rapid end-to-end feature delivery: `python .../github_bridge.py ghost_loop --prompt "..." --pr`.
-   - Automatically creates branch, implements minimal diff, verifies domain tests, commits with SHA-256 Merkle root, and opens a linked Pull Request.
-3. **Pre-Merge PR Security & Diff Audit**:
-   - Execute `python .../github_bridge.py audit_pr_diff` before merging any PR to ensure zero API key leaks or anti-patterns.
-4. **Master Branch Protection Invariant**:
-   - `master` is strictly protected: All 5 CI workflows (`CI Pipeline`, `Domain Integration CI Suite`, `Security & Static Analysis Audit`, `Build & Package`, `GitHub Pages`) must be 100% Green before merging.
-
-### VIII. Dynamic, Autonomous & Self-Calibrating Engine Architecture Protocol
-All retrieval, domain, and bridge engines in the system are architected to operate on **dynamic, autonomous, and automatic values**, eliminating brittle hardcoded assumptions, static port binds, and manual calibration:
-
-1. **Dynamic Runtime Values & Adaptive Calibration**:
-   - **Dynamic Socket & Port Allocation**: Network and E2E servers bind to dynamic OS ephemeral ports (`socket.bind(('127.0.0.1', 0))` / `get_free_port()`) rather than static ports to guarantee zero collisions across parallel worker threads.
-   - **Dynamic Context Budgeting & Token Compression**: Context managers (`adaptive_context_compressor.py`, `context_budget_allocator.py`, `mrl_compressor.py`) dynamically calculate token capacity per active LLM context window limits and dynamically compress or truncate embeddings and prompts without hardcoded slice lengths.
-   - **Dynamic Retrieval Fusion ($\alpha$-Tuning)**: Hybrid retrieval engines (`auto_weight_tuner.py`, `sparse_dense_fusion.py`) balance dense semantic vectors and lexical BM25/FTS5 indexes via dynamically adjusted reciprocal rank fusion weights calculated from query entropy.
-   - **Dynamic Hardware Sizing**: Model management engines (`model_manager.py`) detect available GPU VRAM and CPU core topologies to size batching and select quantization tiers automatically; audio DSP pipelines dynamically calibrate sample rates, chunk sizes, and jitter buffers.
-
-2. **Autonomous Decision Loops & Self-Healing**:
-   - **Autonomous Multi-Tier Model Routing**: The model router (`model_router.py`) dynamically discovers available inference providers (local Ollama, vLLM, GGUF runtimes, or in-memory fallback embeddings) and routes queries without operator intervention.
-   - **Autonomous Storage & Index Healing**: Database health services (`database_self_healer.py`, `index_self_healing.py`, `knowledge_self_healing.py`) continuously monitor SQLite WAL states, detect deadlocks or corrupted virtual tables, and rebuild indexes automatically.
-   - **Autonomous Parallel DAG Scheduling**: The contract bus (`contract_bus.py`, `workflow_hub_bridge.py`) resolves bridge dependency graphs dynamically, scheduling independent bridges concurrently via asynchronous task groups with SHA-256 Merkle contract verification.
-   - **Autonomous OS Process Hygiene**: Process management engines (`process_hygiene_bridge.py`) execute automated pre-flight and post-flight sweeps to identify and terminate orphan browser workers and dead console hosts while protecting core OS whitelists.
-
-3. **Automatic Configuration & Invariant Preservation**:
-   - **Automatic Zero-Configuration Defaults**: All modular bridges and CLI commands auto-resolve project directories, task IDs, database paths, and environment settings.
-   - **Automatic Database Pragma Initialization**: SQLite managers (`know.py`) automatically ensure WAL mode, synchronous=NORMAL, cache sizing, FTS5 virtual table schemas, and indexing triggers on boot.
-   - **Automatic NFC Unicode Normalization**: Query parsers and legal retrieval engines automatically apply NFC Unicode normalization and word-boundary tokenization before database indexing.
-   - **Automatic Zero-Reboot System Recovery**: Recovery daemons (`system_recovery_bridge.py`) automatically cascade through non-reboot restorative phases (Explorer shell -> DWM -> Audio services -> DNS resolver -> process pruning) during platform degradation.
-
-### IX. Automated OS Process Hygiene & System Perfection Protocol
-To maintain a high-performance, clutter-free operating system environment:
-1. **Automated Dual-Hook Guarantee**: Process hygiene executes automatically as a **Pre-Flight sweep** before any Neuro workflow begins, and as a **Post-Flight sweep** upon pipeline conclusion.
-2. **Surgical Orphan Elimination**:
-   - Detects and terminates orphaned WebKit/browser test workers (`WebKitNetworkProcess.exe`, `MiniBrowser.exe`, `playwright.exe`).
-   - Clears orphaned background `conhost.exe` consoles and dead `cmd.exe` process trees.
-   - Cleans duplicate server instances (`llama-server.exe`) to reclaim VRAM/RAM.
-3. **Core OS Whitelist Protection**:
-   - Preserves critical OS kernel services, Desktop Window Manager, Explorer shell, active IDE sessions (`Antigravity.exe`, `language_server.exe`), Discord, WSL2 VM hosts (`vmmemWSL`), Docker Desktop, and active hardware driver daemons (AMD Adrenalin, Corsair iCUE, Logitech Options+).
-4. **Standalone Invocation**:
-   - Audit: `python .../process_hygiene_bridge.py scan`
-   - Clean: `python .../process_hygiene_bridge.py clean`
-   - Pre-Flight: `python .../process_hygiene_bridge.py preflight`
-   - Post-Flight: `python .../process_hygiene_bridge.py postflight`
-
-### X. Production-Grade Technical Precision & Domain-Driven Naming Standard
-To ensure immediate readability, executive clarity, and frictionless collaboration:
-1. **Strict Anti-Hyperbole Rule**: Never introduce or use marketing, hype-y, sensationalist, or fictional adjectives (e.g., *"supremacy"*, *"incomparable"*, *"singularity"*, *"omniscient"*, *"crucible matrix"*, *"omni-perfection"*, *"magic"*).
-2. **Self-Descriptive Test Naming Invariant**: Every test suite file must clearly name the exact subsystem and verification method being tested:
-   - Pattern: `test_<subsystem>_<verification_type>.py`
-   - Examples: `test_rag_metamorphic_validation.py`, `test_crawler_browser_automation.py`, `test_developer_ast_rag.py`, `test_voice_synthesis_audio_processing.py`.
-3. **Descriptive Operational Script Naming**: Operational utilities must use clear functional verbs and nouns:
-   - Examples: `scripts/fault_injection_harness.py`, `scripts/verify_system_integrity.py`, `scripts/verify_voice_audio_pipeline.py`, `scripts/verify_empirical_models.py`.
-4. **Self-Descriptive Domain & Crawler Mode Aliasing**: All multi-mode engines (e.g. web crawlers, RAG routers) must expose clear, human-understandable session mode aliases:
-   - `adaptive_session`, `browser_automation`, `proxy_rotation`, `async_pool`, `rotating_headers`, `direct`.
-5. **Clean CI/CD Workflow & Documentation Nomenclature**: GitHub Actions workflows and documentation badges/headings must reflect clear technical operations (e.g. *Domain Integration CI Suite*, *Security & Static Analysis Audit*, *Core Retrieval Subsystems*).
+#### 16. Fleet Watchdog Bridge (`scripts/fleet_watchdog_bridge.py`)
+- `python .../fleet_watchdog_bridge.py`: Run EVE Online multi-character skill queue monitor, Planetary Interaction (PI) hopper radar, and liquid ISK audit.
+- `python .../fleet_watchdog_bridge.py --json`: Output raw JSON telemetry scorecard.
+- `python .../fleet_watchdog_bridge.py self_test`: Run automated fleet watchdog self-tests.
 
 ---
 
-## Tri-Engine Unified Command Matrix (53 Operations)
+## Tri-Engine Unified Command Matrix (72 Operations)
 
 | # | Command | Engine / Bridge | Purpose |
 | :-: | :--- | :--- | :--- |
-| **1** | `copilot --prompt "..."` | `github_bridge.py` | Generate Tri-Engine Flight Plan |
-| **2** | `tri_engine_health` | `github_bridge.py` | 4-Engine Health Scorecard |
-| **3** | `auto_commit` | `github_bridge.py` | SHA-256 Provenance Commit |
-| **4** | `create_pr` | `github_bridge.py` | Auto-generate GitHub PR with Tududi links |
-| **5** | `sync_issues` | `github_bridge.py` | Bidirectional Issue & Task Sync |
-| **6** | `diagnose_ci` | `github_bridge.py` | Download & Diagnose CI Failure Logs |
-| **7** | `verify_ci [--wait]` | `github_bridge.py` | Verify Remote CI Workflows & 100% Green Health |
-| **8** | `install_hooks` | `github_bridge.py` | Install `commit-msg` Merkle Verification Hook |
-| **9** | `install_ci_workflow` | `github_bridge.py` | Install GitHub Actions CI Workflow |
-| **10** | `audit_pr_diff` | `github_bridge.py` | Security & Anti-Pattern Diff Audit |
-| **11** | `repo_map` | `github_bridge.py` | Generate Clean ASCII Codebase Tree |
-| **12** | `resolve_conflicts` | `github_bridge.py` | Scan & Resolve Merge Conflicts |
-| **13** | `format_history` | `github_bridge.py` | Format Git History as Markdown Audit Table |
-| **14** | `export_architecture_mermaid`| `github_bridge.py` | Generate Mermaid JS Dependency Graph |
-| **15** | `benchmark_audit` | `github_bridge.py` | Benchmark Test Suite Execution Duration |
-| **16** | `audit_skills` | `github_bridge.py` | Validate All Active Skills Frontmatter & Health |
-| **17** | `audit_security_dependencies`| `github_bridge.py`| Scan `requirements.txt` & `package.json` for Unpinned Deps |
-| **18** | `detect_bloat` | `github_bridge.py` | Audit Codebase for Overly Nested Functions & Bloat |
-| **19** | `visual_showcase_audit` | `github_bridge.py` | Audit Screenshot Assets, README Links & Orphans |
-| **20** | `dashboard` | `github_bridge.py` | Executive Terminal Dashboard with Live Burndown |
-| **21** | `generate_release_notes` | `github_bridge.py` | Generate Markdown Release Notes & Tag Release |
-| **22** | `query --text "..."` | `neuro_bridge.py` | Semantic Query Local Vector Brain |
-| **23** | `ingest --path "..."` | `neuro_bridge.py` | Ingest Documents / Code into Vault |
-| **24** | `ingest_git_history` | `neuro_bridge.py` | Index Git Commit Provenance into Vault |
-| **25** | `ingest_tududi_roadmap`| `neuro_bridge.py` | Index Live Tududi Roadmap into Vector Vault |
-| **26** | `export_note` | `neuro_bridge.py` | Save Architecture Markdown Note into Vault |
-| **27** | `stats` | `neuro_bridge.py` | Vault Size, Chunks & Embedding Statistics |
-| **28** | `list` | `tududi_bridge.py` | Fetch Active Tasks for Project #13 |
-| **29** | `metrics` | `tududi_bridge.py` | Query Project Completion Stats |
-| **30** | `burndown` | `tududi_bridge.py` | Render ASCII Sprint Burndown Meter |
-| **31** | `export_roadmap` | `tududi_bridge.py` | Export Structured Markdown Roadmap |
-| **32** | `scan` | `snapshot_bridge.py` | Full AST & Route Discovery Sweep |
-| **33** | `generate_script` | `snapshot_bridge.py` | Generate Playwright Capture Engine |
-| **34** | `render_deck` | `snapshot_bridge.py` | Render Glassmorphic Client Showcase Deck |
-| **35** | `sync_readme` | `snapshot_bridge.py` | Sync README Visual Tables |
-| **36** | `export_package` | `snapshot_bridge.py` | Package Client Distribution Bundle (ZIP) |
-| **37** | `serve` | `snapshot_bridge.py` | Launch Local Preview Server |
-| **38** | `full_showcase` | `snapshot_bridge.py` | 1-Click End-to-End Client Showcase Suite |
-| **39** | `audit` (PDF QA) | `visual_audit_bridge.py`| Automated PDF Page Rendering & Layout QA |
-| **40** | `audit` (Clean Arch) | `architecture_bridge.py`| Universal Polyglot Clean Architecture Audit |
-| **41** | `run` (Pipeline) | `workflow_hub_bridge.py`| Master Multi-Phase Pipeline Execution |
-| **42** | `run --parallel` | `workflow_hub_bridge.py`| Parallel Asynchronous Inter-Bridge Execution |
-| **43** | `run_parallel` | `contract_bus.py` | Low-Level Parallel Inter-Bridge DAG Runner |
-| **44** | `restore_all` | `system_recovery_bridge.py`| 5-Stage Zero-Reboot Windows Recovery Cascade |
-| **45** | `restart_shell` | `system_recovery_bridge.py`| Restart Windows Explorer Desktop Shell |
-| **46** | `restart_dwm` | `system_recovery_bridge.py`| Refresh Desktop Window Manager (DWM) |
-| **47** | `restart_audio` | `system_recovery_bridge.py`| Restart Windows Audio Services |
-| **48** | `flush_dns` | `system_recovery_bridge.py`| Flush Windows DNS Resolver Cache |
-| **49** | `clear_hung` | `system_recovery_bridge.py`| Terminate Unresponsive Windows Processes |
-| **50** | `scan` (Hygiene) | `process_hygiene_bridge.py`| Full OS Process Hygiene Audit & Orphan Scan |
-| **51** | `clean` (Hygiene) | `process_hygiene_bridge.py`| Surgical Elimination of Orphan & Zombie Processes |
-| **52** | `preflight` | `process_hygiene_bridge.py`| Automated Pre-Flight Process Sanitization Sweep |
-| **53** | `postflight` | `process_hygiene_bridge.py`| Automated Post-Flight Process Cleanup Sweep |
-| **54** | `scan` (Nomenclature) | `nomenclature_bridge.py` | Full Repository Anti-Hype & Lexical Clarity Scan |
-| **55** | `auto_fix` (Nomenclature) | `nomenclature_bridge.py` | Automated Deterministic Nomenclature Normalization |
-| **56** | `check` (Nomenclature) | `nomenclature_bridge.py` | Continuous Verification Gate for Clean Nomenclature |
-| **57** | `normalize_readme` | `nomenclature_bridge.py` | Regenerate and Validate Master README Files |
-| **58** | `scan` (Allocation) | `file_allocation_bridge.py` | Audit Repository File Allocation & Root Whitelist |
-| **59** | `clean` (Allocation) | `file_allocation_bridge.py` | Surgically Eliminate Orphan Databases & Temp Artifacts |
-| **60** | `check` (Allocation) | `file_allocation_bridge.py` | Continuous Verification Gate for Clean Architecture Topology |
-| **61** | `self_test` (Allocation) | `file_allocation_bridge.py` | Run Automated Contract Assertions for Allocation Bridge |
+| **1** | `doctor` | `neuro_cli.py` | 360° System, Engine & Repository Health Scorecard |
+| **2** | `status` | `neuro_cli.py` | Quick Executive Scorecard with Live Burndown & Hygiene |
+| **3** | `run` | `neuro_cli.py` | Launch 16-Bridge Parallel Asynchronous DAG Contract Bus |
+| **4** | `ci [--wait]` | `neuro_cli.py` | Verify Remote GitHub Actions CI Workflows & 100% Green Gate |
+| **5** | `clean` | `neuro_cli.py` | Surgical Dual-Layer Cleanup (Orphans + Temp Files) |
+| **6** | `voice "..."` | `neuro_cli.py` | Synthesize Spoken Executive Alert with Acoustic DSP Preset |
+| **7** | `bench` | `neuro_cli.py` | Run Sub-Millisecond Retrieval & Compute Latency Watchdog |
+| **8** | `fleet` | `neuro_cli.py` | Run EVE Tactical Radar & Planetary Interaction Watchdog |
+| **9** | `flight_plan "..."` | `neuro_cli.py` | 1-Click Feature Plan Generator with Tududi 4-Tier Subtasks |
+| **10** | `copilot --prompt "..."` | `github_bridge.py` | Generate Tri-Engine Flight Plan |
+| **11** | `tri_engine_health` | `github_bridge.py` | Multi-Engine Health Scorecard |
+| **12** | `auto_commit` | `github_bridge.py` | SHA-256 Provenance Commit |
+| **13** | `create_pr` | `github_bridge.py` | Auto-generate GitHub PR with Tududi links |
+| **14** | `sync_issues` | `github_bridge.py` | Bidirectional Issue & Task Sync |
+| **15** | `diagnose_ci` | `github_bridge.py` | Download & Diagnose CI Failure Logs |
+| **16** | `verify_ci [--wait]` | `github_bridge.py` | Verify Remote CI Workflows & 100% Green Health |
+| **17** | `install_hooks` | `github_bridge.py` | Install `commit-msg` Merkle Verification Hook |
+| **18** | `install_ci_workflow` | `github_bridge.py` | Install GitHub Actions CI Workflow |
+| **19** | `audit_pr_diff` | `github_bridge.py` | Security & Anti-Pattern Diff Audit |
+| **20** | `repo_map` | `github_bridge.py` | Generate Clean ASCII Codebase Tree |
+| **21** | `resolve_conflicts` | `github_bridge.py` | Scan & Resolve Merge Conflicts |
+| **22** | `format_history` | `github_bridge.py` | Format Git History as Markdown Audit Table |
+| **23** | `export_architecture_mermaid`| `github_bridge.py` | Generate Mermaid JS Dependency Graph |
+| **24** | `benchmark_audit` | `github_bridge.py` | Benchmark Test Suite Execution Duration |
+| **25** | `audit_skills` | `github_bridge.py` | Validate All Active Skills Frontmatter & Health |
+| **26** | `audit_security_dependencies`| `github_bridge.py`| Scan `requirements.txt` & `package.json` for Unpinned Deps |
+| **27** | `detect_bloat` | `github_bridge.py` | Audit Codebase for Overly Nested Functions & Bloat |
+| **28** | `visual_showcase_audit` | `github_bridge.py` | Audit Screenshot Assets, README Links & Orphans |
+| **29** | `dashboard` | `github_bridge.py` | Executive Terminal Dashboard with Live Burndown |
+| **30** | `generate_release_notes` | `github_bridge.py` | Generate Markdown Release Notes & Tag Release |
+| **31** | `query --text "..."` | `neuro_bridge.py` | Semantic Query Local Vector Brain |
+| **32** | `ingest --path "..."` | `neuro_bridge.py` | Ingest Documents / Code into Vault |
+| **33** | `ingest_git_history` | `neuro_bridge.py` | Index Git Commit Provenance into Vault |
+| **34** | `ingest_tududi_roadmap`| `neuro_bridge.py` | Index Live Tududi Roadmap into Vector Vault |
+| **35** | `export_note` | `neuro_bridge.py` | Save Architecture Markdown Note into Vault |
+| **36** | `stats` | `neuro_bridge.py` | Vault Size, Chunks & Embedding Statistics |
+| **37** | `list` | `tududi_bridge.py` | Fetch Active Tasks for Project #13 |
+| **38** | `metrics` | `tududi_bridge.py` | Query Project Completion Stats |
+| **39** | `burndown` | `tududi_bridge.py` | Render ASCII Sprint Burndown Meter |
+| **40** | `export_roadmap` | `tududi_bridge.py` | Export Structured Markdown Roadmap |
+| **41** | `scan` | `snapshot_bridge.py` | Full AST & Route Discovery Sweep |
+| **42** | `generate_script` | `snapshot_bridge.py` | Generate Playwright Capture Engine |
+| **43** | `render_deck` | `snapshot_bridge.py` | Render Glassmorphic Client Showcase Deck |
+| **44** | `diff` | `snapshot_bridge.py` | Pure-Python Visual Screenshot Regression Diff |
+| **45** | `sync_readme` | `snapshot_bridge.py` | Sync README Visual Tables |
+| **46** | `export_package` | `snapshot_bridge.py` | Package Client Distribution Bundle (ZIP) |
+| **47** | `serve` | `snapshot_bridge.py` | Launch Local Preview Server |
+| **48** | `full_showcase` | `snapshot_bridge.py` | 1-Click End-to-End Client Showcase Suite |
+| **49** | `audit` (PDF QA) | `visual_audit_bridge.py`| Automated PDF Page Rendering & Layout QA |
+| **50** | `audit` (Clean Arch) | `architecture_bridge.py`| Universal Polyglot Clean Architecture Audit |
+| **51** | `doctor` (Clean Arch) | `architecture_bridge.py`| Diagnostics on Envs, Secrets & Topology |
+| **52** | `check-secrets` | `architecture_bridge.py`| Scan Codebase for Exposed API Keys |
+| **53** | `run` (Pipeline) | `workflow_hub_bridge.py`| Master Multi-Phase Pipeline Execution |
+| **54** | `run --parallel` | `workflow_hub_bridge.py`| Parallel Asynchronous Inter-Bridge Execution |
+| **55** | `run_parallel` | `contract_bus.py` | Low-Level Parallel Inter-Bridge DAG Runner |
+| **56** | `restore_all` | `system_recovery_bridge.py`| 5-Stage Zero-Reboot Windows Recovery Cascade |
+| **57** | `restart_shell` | `system_recovery_bridge.py`| Restart Windows Explorer Desktop Shell |
+| **58** | `restart_dwm` | `system_recovery_bridge.py`| Refresh Desktop Window Manager (DWM) |
+| **59** | `restart_audio` | `system_recovery_bridge.py`| Restart Windows Audio Services |
+| **60** | `flush_dns` | `system_recovery_bridge.py`| Flush Windows DNS Resolver Cache |
+| **61** | `clear_hung` | `system_recovery_bridge.py`| Terminate Unresponsive Windows Processes |
+| **62** | `scan` (Hygiene) | `process_hygiene_bridge.py`| Full OS Process Hygiene Audit & Orphan Scan |
+| **63** | `clean` (Hygiene) | `process_hygiene_bridge.py`| Surgical Elimination of Orphan & Zombie Processes |
+| **64** | `preflight` | `process_hygiene_bridge.py`| Automated Pre-Flight Process Sanitization Sweep |
+| **65** | `postflight` | `process_hygiene_bridge.py`| Automated Post-Flight Process Cleanup Sweep |
+| **66** | `scan` (Nomenclature) | `nomenclature_bridge.py` | Full Repository Anti-Hype & Lexical Clarity Scan |
+| **67** | `auto_fix` (Nomenclature) | `nomenclature_bridge.py` | Automated Deterministic Nomenclature Normalization |
+| **68** | `check` (Nomenclature) | `nomenclature_bridge.py` | Continuous Verification Gate for Clean Nomenclature |
+| **69** | `normalize_readme` | `nomenclature_bridge.py` | Regenerate and Validate Master README Files |
+| **70** | `scan` (Allocation) | `file_allocation_bridge.py` | Audit Repository File Allocation & Root Whitelist |
+| **71** | `clean` (Allocation) | `file_allocation_bridge.py` | Surgically Eliminate Orphan Databases & Temp Artifacts |
+| **72** | `check` (Allocation) | `file_allocation_bridge.py` | Continuous Verification Gate for Clean Architecture Topology |
 
 ---
 
 ## References & Bridge Index
+- Master CLI: [`scripts/neuro_cli.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/neuro_cli.py)
 - Contract Bus Orchestrator: [`scripts/contract_bus.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/contract_bus.py)
+- Health Doctor: [`scripts/doctor_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/doctor_bridge.py)
+- Voice Operator: [`scripts/voice_operator_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/voice_operator_bridge.py)
+- Benchmark Watchdog: [`scripts/benchmark_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/benchmark_bridge.py)
+- Fleet Watchdog: [`scripts/fleet_watchdog_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/fleet_watchdog_bridge.py)
 - GitHub CLI Bridge: [`scripts/github_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/github_bridge.py)
 - Neuro Vault Bridge: [`scripts/neuro_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/neuro_bridge.py)
 - Tududi Master Bridge: [`scripts/tududi_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/tududi_bridge.py)
@@ -332,4 +330,3 @@ To ensure immediate readability, executive clarity, and frictionless collaborati
 - Process Hygiene Bridge: [`scripts/process_hygiene_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/process_hygiene_bridge.py)
 - Nomenclature Bridge: [`scripts/nomenclature_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/nomenclature_bridge.py)
 - File Allocation Bridge: [`scripts/file_allocation_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/file_allocation_bridge.py)
-

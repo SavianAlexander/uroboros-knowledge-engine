@@ -46,7 +46,10 @@ ALLOWED_ROOT_FILES = {
     ".gitignore", ".gitattributes", ".editorconfig", ".env.example", ".dockerignore",
     
     # Canonical Knowledge & Vector Databases
-    "knowledge.db", "vectors.db"
+    "knowledge.db",
+    "knowledge.db-shm",
+    "knowledge.db-wal",
+    "vectors.db"
 }
 
 ALLOWED_ROOT_DIRS = {
@@ -60,6 +63,8 @@ ALLOWED_ROOT_DIRS = {
 ORPHAN_FILE_PATTERNS = [
     r"^adversarial_.*\.db$",             # Stray test databases in root
     r"^test_.*\.db$",                    # Stray unit test databases
+    r"^e2e_.*\.db.*$",                   # Stray e2e test databases & snapshots
+    r".*\.snapshot-.*$",                 # Stray test database snapshots
     r".*\.db-journal$",                  # Dead rollback journals
     r".*\.tmp$",                         # Temporary files
     r".*~\$$",                           # Windows lock files
@@ -114,8 +119,8 @@ def scan_repository_allocation(repo_root: str = BASE_DIR) -> Dict[str, Any]:
 
     # 2. Audit Misallocated Tests Across Subdirectories
     for root, dirs, files in os.walk(repo_root):
-        # Exclude vendor and hidden directories
-        dirs[:] = [d for d in dirs if d not in {".git", ".venv", "node_modules", ".gemini", "dist", "build", "__pycache__"}]
+        # Exclude vendor, data vaults, and hidden directories
+        dirs[:] = [d for d in dirs if d not in {".git", ".venv", "node_modules", ".gemini", "dist", "build", "__pycache__", "vault", "chunks", "dumps", "backups", "Triage (Support)", ".pytest_cache"}]
         norm_root = os.path.relpath(root, repo_root).replace("\\", "/")
         
         # Check if test files are outside tests/ and scratch/

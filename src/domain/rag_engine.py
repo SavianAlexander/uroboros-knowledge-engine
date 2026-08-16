@@ -48,43 +48,17 @@ def sanitize_fts_query(query: str) -> str:
 def generate_hyde_expansion(query: str) -> str:
     """
     Produces hypothetical expanded document text with unescaped FTS character sanitization.
-    Combines input query with synthetic technical excerpt from LLM or fallback context.
+    Combines input query with synthetic technical excerpt from micro-tier SLM.
     """
     if not query or not str(query).strip():
         return ""
 
     raw_query = str(query).strip()
-    expanded = raw_query
-
     try:
-        import os
-        if is_testing or not os.environ.get("OPENAI_API_BASE"):
-            expanded = f"{raw_query} - technical answer context"
-        else:
-            llm = get_fallback_llm()
-            if llm:
-                prompt = (
-                    f"Write a concise 2-sentence technical excerpt answering this question: '{raw_query}'. "
-                    "Do not explain, provide only the factual excerpt."
-                )
-                completion = llm.create_chat_completion(
-                    messages=[
-                        {"role": "system", "content": "You are a concise technical excerpt generator."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=60,
-                    temperature=0.3
-                )
-                excerpt = completion["choices"][0]["message"]["content"].strip()
-                if excerpt:
-                    expanded = f"{raw_query}\n{excerpt}"
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
+        from src.core.model_manager import expand_query_with_llm
+        return expand_query_with_llm(raw_query)
     except Exception:
-        logger.exception("Swallowed error in rag_engine.py")
-        expanded = raw_query
-
-    return expanded
+        return raw_query
 
 from collections import defaultdict, Counter
 
@@ -540,6 +514,11 @@ def extract_advanced_rag_context(
     if graph_context_blocks:
         context_text = "\n".join(graph_context_blocks) + "\n\n" + context_text
     return context_text, citations
+
+
+def build_augmented_prompt(query: str, context: str) -> str:
+    """Formats retrieved context and user query into a grounded RAG prompt."""
+    return f"Context:\n{context}\n\nQuestion: {query}\n\nAnswer:"
 
 
 def get_rag_engine_capabilities() -> Dict[str, Any]:

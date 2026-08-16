@@ -76,3 +76,7 @@ def generate_source_citations(passages: List[Dict[str, Any]]) -> List[Dict[str, 
         })
 
     return citations
+
+
+# Facade alias
+generate_grounded_citations = generate_source_citations

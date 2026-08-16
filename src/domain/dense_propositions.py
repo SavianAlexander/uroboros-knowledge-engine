@@ -270,3 +270,7 @@ def expand_propositions_to_parent_context(
         prop["has_parent_context"] = bool(parent_snippet)
 
     return propositions
+
+
+# Facade alias
+extract_dense_propositions = decompose_into_propositions

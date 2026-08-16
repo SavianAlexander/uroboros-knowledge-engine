@@ -1,23 +1,17 @@
 """
-Zero-dependency Semantic Concept Drift Monitor Engine.
-Tracks term context shifts over time (e.g. term A meaning evolution between 2024 and 2026).
+Semantic Concept Drift & Term Context Evolution Monitor Engine.
+Tracks term context shifts and co-occurrence variations across document timestamps.
+Standard: Pure Python standard library (sqlite3, typing).
 """
-import os
-import sqlite3
 from typing import Dict, Any, List
 
 
 def audit_semantic_concept_drift(term: str = "") -> Dict[str, Any]:
     """
     Audits term concept drift across vault document timestamps.
-    Zero-dependency stdlib implementation.
     """
     try:
-        from src.infrastructure.database import get_db_connection, DB_FILE, init_db
-
-        init_db()
-        with get_db_connection(DB_FILE) as conn:
-            cursor = conn.cursor()
+        from src.infrastructure.database import get_db
 
         query_sql = "SELECT id, filename, content, created_at FROM files"
         params = []
@@ -26,8 +20,10 @@ def audit_semantic_concept_drift(term: str = "") -> Dict[str, Any]:
             params.extend([f"%{term}%", f"%{term}%"])
         query_sql += " ORDER BY id ASC LIMIT 20"
 
-        cursor.execute(query_sql, params)
-        rows = cursor.fetchall()
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute(query_sql, params)
+            rows = cursor.fetchall()
 
         if not rows:
             return {"term": term, "drift_detected": False, "drift_events": [], "status": "success"}
@@ -54,3 +50,7 @@ def audit_semantic_concept_drift(term: str = "") -> Dict[str, Any]:
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+# Facade alias
+track_semantic_drift = audit_semantic_concept_drift

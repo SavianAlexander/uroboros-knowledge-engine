@@ -9,11 +9,11 @@ from typing import Dict, Any, List, Tuple
 
 RE_EMAIL = re.compile(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b')
 RE_SSN = re.compile(r'\b\d{3}-\d{2}-\d{4}\b')
-RE_API_KEY = re.compile(r'\b(sk_[a-zA-Z0-9]{24,}|ghp_[a-zA-Z0-9]{36,}|' + 'AK' + 'IA[0-9A-Z]{16}|aiod_[a-zA-Z0-9]{32,}|xoxb-[0-9]{10,}-[0-9]{10,}-[a-zA-Z0-9]{24})\b')
+RE_API_KEY = re.compile(r'\b(sk_[a-zA-Z0-9]{24,}|ghp_[a-zA-Z0-9]{36,}|AKIA[0-9A-Z]{16}|aiod_[a-zA-Z0-9]{32,}|xoxb-[0-9]{10,}-[0-9]{10,}-[a-zA-Z0-9]{24})\b')
 RE_CREDIT_CARD = re.compile(r'\b(?:\d[ -]*?){13,16}\b')
 RE_JWT = re.compile(r'\beyJ[A-Za-z0-9-_]+\.eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\b')
 RE_PRIVATE_KEY = re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?' + r'PRIV' + r'ATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH |DSA )?' + r'PRIV' + r'ATE KEY-----')
-RE_PHONE = re.compile(r'(?:\+?1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b')
+RE_PHONE = re.compile(r'(?<![a-zA-Z0-9])(?:\+?1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b')
 RE_IBAN = re.compile(r'\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}\b')
 
 

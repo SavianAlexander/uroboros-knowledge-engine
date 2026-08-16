@@ -142,3 +142,7 @@ def analyze_readability(text: str) -> Dict[str, Any]:
         "avg_syllables_per_word": round(total_syllables / float(total_words), 2),
         "status": "success"
     }
+
+
+# Facade alias
+analyze_readability_metrics = analyze_readability

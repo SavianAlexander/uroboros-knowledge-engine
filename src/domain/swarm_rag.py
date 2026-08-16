@@ -1,34 +1,35 @@
 """
-Cognitive Swarm RAG Engine (Multi-Agent Tree-of-Thought RAG).
-Executes parallel specialized agents (Explorer, Graph, Adversarial Critic, Synthesizer)
-for deep multi-perspective reasoning over local document vaults.
+Concurrent Multi-Pathway Hybrid RAG Engine.
+Executes parallel multi-channel retrieval (lexical FTS5, graph Wikilink pathways, and grounding verification)
+for comprehensive context synthesis across local document vaults.
+Standard: Pure Python standard library (concurrent.futures, unicodedata, typing).
 """
-import unicodedata
-
-from typing import Dict, Any, List, Optional
 import concurrent.futures
-import sqlite3
+import unicodedata
+from typing import Dict, Any, List, Optional
+
 from src.domain.rag_engine import extract_advanced_rag_context
 from src.domain.graph_multihop import find_multihop_pathways
 from src.domain.rag_grounding_guard import verify_rag_grounding
 
 
-def _run_explorer_agent(query: str, db_path: Optional[str] = None) -> Dict[str, Any]:
-    """Explorer Agent: Performs broad hybrid semantic and FTS5 retrieval."""
+def _run_explorer_stage(query: str, db_path: Optional[str] = None) -> Dict[str, Any]:
+    """Explorer Stage: Performs broad hybrid semantic and FTS5 retrieval."""
     try:
         res = extract_advanced_rag_context(query, max_snippets=5)
         return {
             "agent": "explorer",
+            "stage": "lexical_vector_retrieval",
             "retrieved_chunks": res.get("snippets", []),
             "context": res.get("formatted_context", ""),
             "status": "success"
         }
     except Exception as e:
-        return {"agent": "explorer", "error": str(e), "status": "error"}
+        return {"agent": "explorer", "stage": "lexical_vector_retrieval", "error": str(e), "status": "error"}
 
 
-def _run_graph_agent(query: str, start_doc: Optional[str] = None) -> Dict[str, Any]:
-    """Graph Traversal Agent: Discovers multi-hop entity pathways and wikilink connections."""
+def _run_graph_stage(query: str, start_doc: Optional[str] = None) -> Dict[str, Any]:
+    """Graph Traversal Stage: Discovers multi-hop entity pathways and wikilink connections."""
     try:
         safe_query = str(query or "")
         if not start_doc:
@@ -38,29 +39,32 @@ def _run_graph_agent(query: str, start_doc: Optional[str] = None) -> Dict[str, A
         pathways = find_multihop_pathways(start_doc=start_doc, max_hops=2)
         return {
             "agent": "graph_traversal",
+            "stage": "graph_pathways",
             "pathways": pathways.get("pathways", []),
             "status": "success"
         }
     except Exception as e:
-        return {"agent": "graph_traversal", "error": str(e), "status": "error"}
+        return {"agent": "graph_traversal", "stage": "graph_pathways", "error": str(e), "status": "error"}
 
 
-def _run_critic_agent(query: str, context: str) -> Dict[str, Any]:
-    """Adversarial Critic Agent: Analyzes context for potential contradictions or gaps."""
-    # ponytail: lightweight heuristic critique audit without heavy external model overhead; ceiling: character length and term overlap critique heuristics; upgrade: instantiate dedicated Critic LLM subagent if full multi-agent swarm debate is enabled
+def _run_critique_stage(query: str, context: str) -> Dict[str, Any]:
+    """Verification Stage: Analyzes context for coverage gaps and entity alignment."""
     critique_points = []
     if not context or len(context.strip()) < 20:
         critique_points.append("Insufficient context retrieved for high confidence.")
+    
     safe_query = unicodedata.normalize("NFC", str(query or ""))
     safe_context = unicodedata.normalize("NFC", str(context or ""))
     query_terms = [w.lower() for w in safe_query.split() if len(w) > 3]
     missing_terms = [w for w in query_terms if w not in safe_context.lower()]
+    
     if missing_terms:
         critique_points.append(f"Query terms missing from retrieved context: {', '.join(missing_terms[:3])}")
 
     return {
-        "agent": "critic",
-        "critique": critique_points,
+        "agent": "adversarial_critic",
+        "stage": "critique",
+        "critique_points": critique_points,
         "is_grounded": len(critique_points) == 0,
         "status": "success"
     }
@@ -68,40 +72,30 @@ def _run_critic_agent(query: str, context: str) -> Dict[str, Any]:
 
 def execute_swarm_rag(query: str, db_path: Optional[str] = None) -> Dict[str, Any]:
     """
-    Executes Cognitive Swarm RAG via parallel thread execution:
-    1. Explorer Agent -> Hybrid Retrieval
-    2. Graph Traversal Agent -> Multihop entity pathways
-    3. Critic Agent -> Adversarial Grounding Audit
-    4. Executive Synthesizer -> Consolidated multi-perspective RAG payload
+    Executes concurrent multi-pathway hybrid retrieval combining:
+    1. Lexical FTS5 + vector context
+    2. Multi-hop Wikilink graph pathways
+    3. Grounding alignment verification
     """
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        f_explorer = executor.submit(_run_explorer_agent, query, db_path)
-        f_graph = executor.submit(_run_graph_agent, query)
+    if not query or not str(query).strip():
+        return {"status": "empty_query", "query": "", "synthesized_context": ""}
 
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        f_explorer = executor.submit(_run_explorer_stage, query, db_path)
+        f_graph = executor.submit(_run_graph_stage, query)
+        
         explorer_res = f_explorer.result()
         graph_res = f_graph.result()
-
-    context = explorer_res.get("context", "")
-    critic_res = _run_critic_agent(query, context)
-
-    sources = explorer_res.get("retrieved_chunks", [])
-    pathways = graph_res.get("pathways", [])
-    critiques = critic_res.get("critique", [])
-
-    synthesized_summary = (
-        f"Retrieved {len(sources)} source chunks across {len(pathways)} relational pathways. "
-        f"Critique audit: {', '.join(critiques) if critiques else 'Verified clean grounding.'}"
-    )
+        
+        context_text = explorer_res.get("context", "")
+        f_critique = executor.submit(_run_critique_stage, query, context_text)
+        critique_res = f_critique.result()
 
     return {
         "query": query,
-        "synthesis": synthesized_summary,
-        "sources": sources,
-        "graph_pathways": pathways,
-        "critic_audit": critic_res,
-        "swarm_status": {
-            "explorer": explorer_res.get("status"),
-            "graph": graph_res.get("status"),
-            "critic": critic_res.get("status")
-        }
+        "explorer_results": explorer_res,
+        "graph_pathways": graph_res.get("pathways", []),
+        "critique": critique_res,
+        "synthesized_context": context_text,
+        "status": "success"
     }

@@ -42,3 +42,7 @@ def compute_system_health_telemetry(
         "sla_healthy": sla_healthy,
         "status": "healthy" if sla_healthy else "degraded"
     }
+
+
+# Facade alias
+check_system_health = compute_system_health_telemetry

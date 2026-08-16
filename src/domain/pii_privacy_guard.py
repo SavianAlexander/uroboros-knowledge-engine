@@ -53,3 +53,7 @@ def redact_pii_from_text(text: str) -> Dict[str, Any]:
         "total_redactions": total_redactions,
         "status": "success"
     }
+
+
+# Backward-compatible alias
+inspect_and_redact_pii = redact_pii_from_text

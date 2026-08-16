@@ -474,10 +474,8 @@ def init_db():
 
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id)')
 
-            cursor.execute("PRAGMA table_info(fts_files)")
-            cursor.execute("DROP TABLE IF EXISTS fts_files")
             cursor.execute("""
-                CREATE VIRTUAL TABLE fts_files USING fts5(
+                CREATE VIRTUAL TABLE IF NOT EXISTS fts_files USING fts5(
                     filepath UNINDEXED,
                     filename,
                     content,
@@ -594,9 +592,13 @@ def init_db():
                     event_type TEXT,
                     description TEXT,
                     timestamp REAL,
-                    metadata_json TEXT
+                    metadata_json TEXT,
+                    prev_hash TEXT,
+                    block_hash TEXT
                 )
             """)
+            _ensure_column(cursor, "system_audit_ledger", "prev_hash", "TEXT")
+            _ensure_column(cursor, "system_audit_ledger", "block_hash", "TEXT")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_ledger_timestamp ON system_audit_ledger(timestamp DESC)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_ledger_event_type ON system_audit_ledger(event_type)")
 

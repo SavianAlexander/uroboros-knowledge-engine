@@ -46,6 +46,9 @@ class HyperGraphRouter:
         return matches
 
 
+HypergraphRouter = HyperGraphRouter
+
+
 def build_dynamic_vault_hypergraph() -> HyperGraphRouter:
     """
     Constructs a dynamic HyperGraphRouter from live SQLite database tables:

@@ -53,7 +53,7 @@ OPTIONAL_SERVICES_TO_TRIM = [
 # Process categories monitored for potential orphan/zombie states
 ORPHAN_TARGET_PATTERNS = [
     "webkitnetworkprocess", "webkitwebprocess", "minibrowser",
-    "crashpad_handler", "playwright", "chromedriver", "geckodriver", "msedgedriver"
+    "crashpad_handler", "playwright", "chromedriver", "geckodriver", "msedgedriver", "llama-server"
 ]
 
 
@@ -62,25 +62,30 @@ ORPHAN_TARGET_PATTERNS = [
 # =========================================================================
 
 def optimize_background_services() -> Dict[str, Any]:
-    """Identifies and stops unneeded background services, setting them to Manual."""
+    """Identifies and stops unneeded background services in a single batched operation."""
     optimized = []
     errors = []
 
-    for svc_name in OPTIONAL_SERVICES_TO_TRIM:
-        try:
-            cmd = f"""
-            $svc = Get-Service -Name '{svc_name}' -ErrorAction SilentlyContinue
-            if ($svc -and $svc.Status -eq 'Running') {{
-                Stop-Service -Name '{svc_name}' -Force -ErrorAction SilentlyContinue
-                Set-Service -Name '{svc_name}' -StartupType Manual -ErrorAction SilentlyContinue
-                Write-Output 'STOPPED_AND_SET_MANUAL'
-            }}
-            """
-            res = subprocess.run(["powershell", "-NoProfile", "-Command", cmd], capture_output=True, text=True, timeout=10)
-            if "STOPPED_AND_SET_MANUAL" in res.stdout:
-                optimized.append(svc_name)
-        except Exception as e:
-            errors.append({"service": svc_name, "error": str(e)})
+    service_names_str = ",".join([f"'{s}'" for s in OPTIONAL_SERVICES_TO_TRIM])
+    cmd = f"""
+    $services = @({service_names_str})
+    $stopped = @()
+    foreach ($s in $services) {{
+        $svc = Get-Service -Name $s -ErrorAction SilentlyContinue
+        if ($svc -and $svc.Status -eq 'Running') {{
+            Stop-Service -Name $s -Force -ErrorAction SilentlyContinue
+            Set-Service -Name $s -StartupType Manual -ErrorAction SilentlyContinue
+            $stopped += $s
+        }}
+    }}
+    $stopped -join ','
+    """
+    try:
+        res = subprocess.run(["powershell", "-NoProfile", "-Command", cmd], capture_output=True, text=True, timeout=10)
+        if res.stdout.strip():
+            optimized = [s.strip() for s in res.stdout.strip().split(",") if s.strip()]
+    except Exception as e:
+        errors.append({"service": "batch_optimization", "error": str(e)})
 
     return {
         "status": "success",
@@ -95,8 +100,7 @@ def optimize_background_services() -> Dict[str, Any]:
 def prune_git_fsmonitors() -> int:
     """Stops detached git fsmonitor daemons that linger in the background."""
     try:
-        cmd = "Get-Process -Name 'git' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue"
-        subprocess.run(["powershell", "-NoProfile", "-Command", cmd], capture_output=True, timeout=5)
+        subprocess.run(["taskkill", "/F", "/IM", "git.exe", "/FI", "STATUS eq RUNNING"], capture_output=True, timeout=5)
         return 1
     except Exception:
         return 0
@@ -173,11 +177,37 @@ def scan_process_hygiene() -> Dict[str, Any]:
         pid = p.get("PID")
         ppid = p.get("PPID")
         parent_alive = ppid in active_pids
+        # Current Python PID safeguard
+        curr_pid = os.getpid()
         cmdline = (p.get("CommandLine") or "").lower()
 
-        # 1. Check Orphaned Browser & Test Workers
-        is_target_pattern = any(pat in pname for pat in ORPHAN_TARGET_PATTERNS)
-        if is_target_pattern and not parent_alive and pname not in CORE_WHITELIST:
+        # 1. Check Orphaned Python Background Workers / Test Runners / Runaways
+        if pname in ("python.exe", "python3.exe", "pytest.exe") and pid != curr_pid and not parent_alive and pname not in CORE_WHITELIST:
+            is_test_or_bus = any(kw in cmdline for kw in ["contract_bus", "pytest", "test_", "uvicorn", "benchmark", "diagnose"])
+            is_heavy = p.get("MemMB", 0) > 250.0
+            if is_test_or_bus or is_heavy:
+                orphans.append({
+                    "pid": pid,
+                    "name": p["Name"],
+                    "ppid": ppid,
+                    "mem_mb": p["MemMB"],
+                    "reason": f"Orphaned background Python worker (Mem: {p['MemMB']}MB, Dead Parent PID: {ppid})",
+                    "category": "python_orphan_runner"
+                })
+
+        # 2. Check Runaway Detached Memory Hogs (> 1.5 GB RAM with Dead Parent)
+        elif not parent_alive and p.get("MemMB", 0) > 1500.0 and pname not in CORE_WHITELIST:
+            orphans.append({
+                "pid": pid,
+                "name": p["Name"],
+                "ppid": ppid,
+                "mem_mb": p["MemMB"],
+                "reason": f"Runaway detached process consuming {p['MemMB']}MB with dead parent PID {ppid}",
+                "category": "runaway_memory_hog"
+            })
+
+        # 3. Check Orphaned Browser & Test Workers
+        elif any(pat in pname for pat in ORPHAN_TARGET_PATTERNS) and not parent_alive and pname not in CORE_WHITELIST:
             orphans.append({
                 "pid": pid,
                 "name": p["Name"],
@@ -187,7 +217,7 @@ def scan_process_hygiene() -> Dict[str, Any]:
                 "category": "browser_worker"
             })
 
-        # 2. Check Orphaned Crashpad Handlers
+        # 4. Check Orphaned Crashpad Handlers
         elif "crashpad" in pname and not parent_alive and pname not in CORE_WHITELIST:
             crashpad_candidates.append({
                 "pid": pid,
@@ -198,7 +228,7 @@ def scan_process_hygiene() -> Dict[str, Any]:
                 "category": "crashpad"
             })
 
-        # 3. Check Orphaned Console Window Hosts
+        # 5. Check Orphaned Console Window Hosts
         elif pname == "conhost.exe" and not parent_alive:
             conhost_candidates.append({
                 "pid": pid,
@@ -209,7 +239,7 @@ def scan_process_hygiene() -> Dict[str, Any]:
                 "category": "conhost"
             })
 
-        # 4. Check Stale Background cmd.exe with Dead Parents
+        # 6. Check Stale Background cmd.exe with Dead Parents
         elif pname == "cmd.exe" and not parent_alive and "set path=" in cmdline:
             orphans.append({
                 "pid": pid,
@@ -254,19 +284,26 @@ def purge_temp_artifacts(max_age_hours: float = 2.0) -> Dict[str, Any]:
     cutoff_time = time.time() - (max_age_hours * 3600)
 
     try:
-        for root, dirs, files in os.walk(temp_dir):
-            for fname in files:
-                fpath = os.path.join(root, fname)
-                try:
-                    stat = os.stat(fpath)
-                    if stat.st_mtime < cutoff_time:
-                        fsize = stat.st_size
-                        os.remove(fpath)
-                        deleted_count += 1
-                        deleted_bytes += fsize
-                except (PermissionError, OSError):
-                    skipped_count += 1
-                    continue
+        if os.path.exists(temp_dir):
+            with os.scandir(temp_dir) as entries:
+                for entry in entries:
+                    try:
+                        if entry.is_file(follow_symlinks=False):
+                            stat = entry.stat()
+                            if stat.st_mtime < cutoff_time:
+                                os.remove(entry.path)
+                                deleted_count += 1
+                                deleted_bytes += stat.st_size
+                        elif entry.is_dir(follow_symlinks=False):
+                            ename = entry.name.lower()
+                            if any(pat in ename for pat in ["playwright", "pytest", "tmp", "crashpad"]):
+                                stat = entry.stat()
+                                if stat.st_mtime < cutoff_time:
+                                    shutil.rmtree(entry.path, ignore_errors=True)
+                                    deleted_count += 1
+                    except (PermissionError, OSError):
+                        skipped_count += 1
+                        continue
     except Exception as e:
         return {"status": "partial", "error": str(e), "deleted_count": deleted_count}
 
@@ -290,6 +327,13 @@ def checkpoint_database_locks(repo_root: str = ".") -> Dict[str, Any]:
     Scans for SQLite databases across the repository, performs WAL checkpoints
     to flush pending changes to disk, and cleanly removes orphaned .db-wal / .db-shm files.
     """
+    # 1. First reap any stale/idle thread-local SQLite connections
+    try:
+        from src.infrastructure.database import reap_stale_connections
+        reap_stale_connections(max_idle_seconds=30.0)
+    except Exception:
+        pass
+
     root_path = os.path.abspath(repo_root)
     checkpoints = []
     cleared_wal_files = []
@@ -392,8 +436,7 @@ def clean_process_hygiene(dry_run: bool = False, repo_root: str = ".") -> Dict[s
         if name in CORE_WHITELIST:
             continue
         try:
-            cmd = f"Get-CimInstance Win32_Process -Filter 'ProcessId={pid}' | Invoke-CimMethod -MethodName Terminate"
-            subprocess.run(["powershell", "-NoProfile", "-Command", cmd], capture_output=True, timeout=5)
+            subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, timeout=3)
             terminated_pids.append(pid)
         except Exception as e:
             errors.append({"pid": pid, "error": str(e)})
@@ -462,6 +505,11 @@ def self_test() -> bool:
     return True
 
 
+# Backward-compatibility aliases for master CLI and contract bus
+scan_orphaned_processes = scan_process_hygiene
+clean_orphan_workers = clean_process_hygiene
+
+
 def main():
     args = sys.argv[1:]
     if not args or args[0] in ("help", "--help", "-h"):
@@ -471,10 +519,10 @@ def main():
     cmd = args[0].lower()
     dry_run = "--dry-run" in args
 
-    if cmd in ("scan", "scorecard", "audit"):
+    if cmd in ("scan", "scorecard", "audit", "zombies"):
         res = scan_process_hygiene()
         print(json.dumps(res, indent=2))
-    elif cmd in ("clean", "purge", "fix", "perfect"):
+    elif cmd in ("clean", "purge", "fix", "perfect", "reap", "kill_orphans", "slay"):
         res = clean_process_hygiene(dry_run=dry_run)
         print(json.dumps(res, indent=2))
     elif cmd == "purge_temp":

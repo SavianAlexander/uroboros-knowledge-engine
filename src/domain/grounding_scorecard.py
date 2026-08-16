@@ -33,6 +33,8 @@ STATUS_REFUSED: str = "REFUSED"
 STATUS_GROUNDED: str = "GROUNDED"
 STATUS_UNGROUNDED: str = "UNGROUNDED"
 
+evaluate_grounding_scorecard = None  # defined below
+
 
 @dataclass
 class KnowledgeGapDiagnosticReport:
@@ -417,3 +419,7 @@ def compute_grounding_scorecard(
         "consensus_audit": consensus_audit,
         "invariant_audit": inv_audit
     }
+
+
+# Backward-compatible alias
+evaluate_grounding_scorecard = compute_grounding_scorecard

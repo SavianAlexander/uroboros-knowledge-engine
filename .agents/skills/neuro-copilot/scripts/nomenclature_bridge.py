@@ -24,7 +24,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 EXCLUDED_DIRS = {
     ".git", "node_modules", ".venv", "__pycache__", "dist", "build",
-    "coverage", ".pytest_cache", "Triage (Support)", ".gemini"
+    "coverage", ".pytest_cache", "vault", "chunks", "dumps", "backups",
+    "Triage (Support)", ".gemini"
 }
 
 # Explicit terms to normalize: (Pattern, Replacement, Description)
@@ -108,6 +109,11 @@ WHITELIST_CONTEXT_PATTERNS = [
 ]
 
 
+COMPILED_RULES = [(re.compile(pat), repl, desc) for pat, repl, desc in TERM_RULES]
+COMPILED_WHITELIST = [re.compile(pat, re.IGNORECASE) for pat in WHITELIST_CONTEXT_PATTERNS]
+SUSPECT_KEYWORDS = ("omni", "sovereign", "god", "magic", "transcendent", "super", "apex")
+
+
 def is_whitelisted_file(filepath: str) -> bool:
     """Check if file is exempt from lexical scanning (e.g. historical game news or meta-audit tools)."""
     norm_path = filepath.replace("\\", "/")
@@ -117,24 +123,33 @@ def is_whitelisted_file(filepath: str) -> bool:
 
 
 def scan_file_for_terms(filepath: str) -> list:
-    """Scans a single file for ostentatious or non-transparent words."""
+    """Scans a single file for ostentatious or non-transparent words with sub-millisecond early exit."""
     if is_whitelisted_file(filepath):
         return []
 
     try:
         with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
-            lines = f.readlines()
+            content = f.read()
     except Exception:
         return []
 
+    content_lower = content.lower()
+    if not any(k in content_lower for k in SUSPECT_KEYWORDS):
+        return []
+
+    lines = content.splitlines()
     findings = []
     for line_idx, line in enumerate(lines, 1):
-        # Check against whitelist patterns
-        if any(re.search(pat, line, re.IGNORECASE) for pat in WHITELIST_CONTEXT_PATTERNS):
+        line_lower = line.lower()
+        if not any(k in line_lower for k in SUSPECT_KEYWORDS):
             continue
 
-        for pattern, replacement, desc in TERM_RULES:
-            matches = list(re.finditer(pattern, line))
+        # Check against whitelist patterns
+        if any(pat.search(line) for pat in COMPILED_WHITELIST):
+            continue
+
+        for pattern, replacement, desc in COMPILED_RULES:
+            matches = list(pattern.finditer(line))
             if matches:
                 for match in matches:
                     findings.append({
@@ -163,7 +178,7 @@ def scan_repository(search_root=".") -> list:
 
 
 def auto_fix_file(filepath: str) -> int:
-    """Automatically applies replacements to a file. Returns number of replacements made."""
+    """Automatically applies replacements to a file with sub-millisecond early exit."""
     if is_whitelisted_file(filepath):
         return 0
 
@@ -173,9 +188,12 @@ def auto_fix_file(filepath: str) -> int:
     except Exception:
         return 0
 
+    if not any(k in content.lower() for k in SUSPECT_KEYWORDS):
+        return 0
+
     original_content = content
-    for pattern, replacement, _ in TERM_RULES:
-        content = re.sub(pattern, replacement, content)
+    for pattern, replacement, _ in COMPILED_RULES:
+        content = pattern.sub(replacement, content)
 
     if content != original_content:
         with open(filepath, "w", encoding="utf-8") as f:

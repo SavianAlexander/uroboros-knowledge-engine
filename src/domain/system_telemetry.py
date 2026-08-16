@@ -106,3 +106,7 @@ def gather_system_telemetry() -> Dict[str, Any]:
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+# Backward-compatible alias
+get_system_telemetry = gather_system_telemetry

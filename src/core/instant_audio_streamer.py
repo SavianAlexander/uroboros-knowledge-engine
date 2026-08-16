@@ -73,7 +73,7 @@ class InstantAudioStreamer:
     def _get_active_output_device(cls, force_refresh: bool = False) -> Optional[int]:
         """Auto-detect active gaming headset or default WASAPI endpoint with TTL caching."""
         now = time.time()
-        if not force_refresh and cls._cached_device_idx is not None and (now - cls._device_last_checked < 60.0):
+        if not force_refresh and cls._device_last_checked > 0.0 and (now - cls._device_last_checked < 60.0):
             return cls._cached_device_idx
 
         try:

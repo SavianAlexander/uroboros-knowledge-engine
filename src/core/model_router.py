@@ -1,10 +1,12 @@
 """
-Intelligent 4-Tier Neural Model Router for Ollama LLM integration.
-Dynamically routes prompts to the optimal specialized model:
-- Micro Tier (< 50ms): qwen2.5:0.5b / smollm2:1.7b (intent, keywords, hyde, auto-tags)
-- Coder Tier (Expert Programming): qwen2.5-coder:14b / qwen2.5-coder:7b (AST, refactoring, SQL)
-- Long-Context Tier (128k Context): phi4-mini:latest (large document digests > 8k tokens)
-- Master RAG Tier (General Reasoning): qwen2.5:7b (conversational RAG, briefings)
+Intelligent 5-Tier Neural Model Router for Ollama SLM/LLM integration.
+Standard: Pure Python Standard Library (urllib, re, json, logging)
+Ponytail Senior Dev Principle: Min-maxed intelligence-per-watt routing to ultra-lean 2-3GB specialized models:
+- Logic & Reasoning Tier: deepseek-r1:1.5b / phi4-mini (Chain-of-thought, self-correction, math, planning)
+- Coder Tier: qwen2.5-coder:3b / qwen2.5-coder:7b (AST code analysis, refactoring, SQL, diffs)
+- Long-Context Tier (128k): phi4-mini:latest (large document digests, book analysis > 8k tokens)
+- Micro Tier (< 30ms): qwen2.5:0.5b / smollm2:1.7b (intent classification, keywords, hyde, auto-tags)
+- Master RAG Tier: phi4-mini:latest / qwen2.5:7b (conversational RAG, briefings, general QA)
 """
 import os
 import re
@@ -26,6 +28,12 @@ _RE_COMPLEX_CODE = re.compile(
 # Regular expressions detecting micro / fast keyword tasks
 _RE_MICRO_TASK = re.compile(
     r'\b(expand query|synonyms|generate keywords|extract tags|intent|classify|json entity|tag taxonomy)\b',
+    re.IGNORECASE
+)
+
+# Regular expressions detecting deep reasoning / logic tasks
+_RE_LOGIC_TASK = re.compile(
+    r'\b(think|reason|step by step|proof|math|diagnose|root cause|deduce|logic|why did|evaluate plan)\b',
     re.IGNORECASE
 )
 
@@ -57,14 +65,14 @@ def get_available_models(force_refresh: bool = False) -> Set[str]:
     except Exception as e:
         logger.debug(f"Ollama model probe notice: {e}")
         # Default known models on standard installation
-        discovered = {"qwen2.5:7b", "qwen2.5-coder:14b", "qwen2.5-coder:7b", "qwen2.5:0.5b", "phi4-mini:latest", "smollm2:1.7b", "nomic-embed-text:latest"}
+        discovered = {"deepseek-r1:1.5b", "qwen2.5-coder:3b", "phi4-mini:latest", "qwen2.5:0.5b", "qwen2.5:7b", "nomic-embed-text:latest"}
 
     _cached_available_models = discovered
     _last_probe_time = now
     return _cached_available_models
 
 
-def _pick_best_available(candidates: list, default_model: str = "qwen2.5:7b") -> str:
+def _pick_best_available(candidates: list, default_model: str = "phi4-mini:latest") -> str:
     """Selects the first candidate present in Ollama's model tags, with graceful fallback."""
     available = get_available_models()
     for c in candidates:
@@ -79,10 +87,10 @@ def route_prompt_model(
     token_estimate: int = 0
 ) -> Dict[str, Any]:
     """
-    Intelligent 4-Tier Neural Model Router.
+    Intelligent 5-Tier Neural Model Router.
     Analyzes prompt text, task category, and token density to select the optimal model.
     """
-    default_master = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+    default_master = os.environ.get("OLLAMA_MODEL", "phi4-mini:latest")
     raw_prompt = str(prompt or "").strip()
     word_count = len(raw_prompt.split()) if raw_prompt else 0
 
@@ -97,22 +105,33 @@ def route_prompt_model(
             "temperature": 0.2
         }
 
-    # 2. MICRO TIER (Sub-50ms query expansion, auto-tagging, intent classification)
+    # 2. MICRO TIER (Sub-30ms query expansion, auto-tagging, intent classification)
     if task_type in ("micro", "intent", "tag", "hyde", "expand", "keyword") or _RE_MICRO_TASK.search(raw_prompt):
-        chosen = _pick_best_available(["qwen2.5:0.5b", "smollm2:1.7b", "qwen2.5:7b"], default_master)
+        chosen = _pick_best_available(["qwen2.5:0.5b", "smollm2:1.7b", "phi4-mini:latest"], default_master)
         return {
             "model": chosen,
             "tier": "micro",
-            "reason": "sub_50ms_fast_classification_and_expansion",
+            "reason": "sub_30ms_fast_classification_and_expansion",
             "num_ctx": 4096,
             "temperature": 0.1
         }
 
-    # 3. CODER TIER (Code analysis, AST refactoring, SQL generation, debugging)
+    # 3. REASONING & LOGIC TIER (Chain-of-thought, mathematical deduction, diagnosis)
+    is_reasoning = task_type in ("reason", "logic", "think", "diagnose", "plan") or bool(_RE_LOGIC_TASK.search(raw_prompt))
+    if is_reasoning:
+        chosen = _pick_best_available(["deepseek-r1:1.5b", "phi4-mini:latest", "qwen2.5:7b"], default_master)
+        return {
+            "model": chosen,
+            "tier": "reasoning",
+            "reason": "chain_of_thought_self_verifying_logic",
+            "num_ctx": 8192 if token_estimate > 2000 else 4096,
+            "temperature": 0.6
+        }
+
+    # 4. CODER TIER (Code analysis, AST refactoring, SQL generation, debugging)
     is_code = task_type in ("code", "ast", "refactor", "sql", "debug") or bool(_RE_COMPLEX_CODE.search(raw_prompt))
     if is_code:
-        # Prefer 14B Coder for deep reasoning, fallback to 7B Coder or base 7B
-        chosen = _pick_best_available(["qwen2.5-coder:14b", "qwen2.5-coder:7b", "qwen2.5:7b"], default_master)
+        chosen = _pick_best_available(["qwen2.5-coder:3b", "qwen2.5-coder:7b", "qwen2.5-coder:14b", "phi4-mini:latest"], default_master)
         return {
             "model": chosen,
             "tier": "coder",
@@ -121,8 +140,8 @@ def route_prompt_model(
             "temperature": 0.2
         }
 
-    # 4. MASTER RAG TIER (Standard conversational RAG, daily briefings, executive summaries)
-    chosen = _pick_best_available(["qwen2.5:7b"], default_master)
+    # 5. MASTER RAG TIER (Standard conversational RAG, daily briefings, executive summaries)
+    chosen = _pick_best_available(["phi4-mini:latest", "qwen2.5:7b"], default_master)
     return {
         "model": chosen,
         "tier": "master_rag",

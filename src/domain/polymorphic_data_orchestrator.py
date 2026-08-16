@@ -12,7 +12,7 @@ import sqlite3
 import unicodedata
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
-from src.infrastructure.database import get_db
+from src.infrastructure.database import get_db, get_db_write_connection, DB_FILE, DB_TIMEOUT
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
 CURRENCY_REGEX = re.compile(r'^[\$\€\£\¥]?\s*-?(?:\d+|\d{1,3}(?:,\d{3})*)(?:\.\d+)?\s*[\$\€\£\¥]?$')
@@ -249,7 +249,7 @@ def provision_dynamic_dataset(
     safe_table = f"client_data_{sanitize_identifier(dataset_name)}"
 
     # Ensure catalog table exists
-    with get_db() as conn:
+    with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS _client_datasets_catalog (

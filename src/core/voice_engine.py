@@ -204,6 +204,12 @@ class KokoroVoiceEngine:
         """Initialize in-process ONNX model if model files are present."""
         if os.path.exists(LOCAL_ONNX_MODEL_PATH) and os.path.exists(LOCAL_VOICES_BIN_PATH):
             try:
+                import onnxruntime as rt
+                # ponytail: Prefer DirectML hardware acceleration on AMD GPUs when available
+                available_providers = rt.get_available_providers()
+                if "DmlExecutionProvider" in available_providers and not os.getenv("ONNX_PROVIDER"):
+                    os.environ["ONNX_PROVIDER"] = "DmlExecutionProvider"
+                
                 from kokoro_onnx import Kokoro
                 self._local_kokoro_instance = Kokoro(LOCAL_ONNX_MODEL_PATH, LOCAL_VOICES_BIN_PATH)
             except Exception:
@@ -220,6 +226,9 @@ class KokoroVoiceEngine:
         """
         Synthesize audio via Local In-Process ONNX (with direct 512-D blended persona tensor resolution) -> Containerized HTTP -> SAPI.
         """
+        if not text or not str(text).strip():
+            return None
+
         target_voice_arg = voice if voice is not None else self.default_voice
         selected_lang = "en-us"
 
@@ -249,6 +258,11 @@ class KokoroVoiceEngine:
                             resolved_voice_name = mapped
         except Exception:
             pass
+
+        # Check in-memory LRU phrase cache for instant 0ms return
+        cache_key = f"{text.strip()}_{resolved_voice_name}_{speed}_{dsp_preset}"
+        if cache_key in self.audio_cache:
+            return self.audio_cache[cache_key]
 
         # Determine language: en-gb for British personas/voices
         if isinstance(resolved_voice_name, str):
@@ -294,6 +308,7 @@ class KokoroVoiceEngine:
                 buf = io.BytesIO()
                 sf.write(buf, samples, sample_rate, format="WAV", subtype="PCM_16")
                 audio_bytes = buf.getvalue()
+                self.audio_cache[cache_key] = audio_bytes
                 self.audio_cache[text] = audio_bytes
                 return audio_bytes
             except Exception:
@@ -360,6 +375,8 @@ class KokoroVoiceEngine:
                     "clause_index": clause_index,
                     "text": clause_text,
                     "has_audio": audio_bytes is not None,
+                    "has_neural_audio": audio_bytes is not None,
+                    "audio_bytes": audio_bytes,
                     "audio_size_bytes": len(audio_bytes) if audio_bytes else 0,
                     "latency_ms": latency_ms,
                     "voice": self.default_voice
@@ -376,6 +393,8 @@ class KokoroVoiceEngine:
                 "clause_index": clause_index,
                 "text": clause_text,
                 "has_audio": audio_bytes is not None,
+                "has_neural_audio": audio_bytes is not None,
+                "audio_bytes": audio_bytes,
                 "audio_size_bytes": len(audio_bytes) if audio_bytes else 0,
                 "latency_ms": latency_ms,
                 "voice": self.default_voice

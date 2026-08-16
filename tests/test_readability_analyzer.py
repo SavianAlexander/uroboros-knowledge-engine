@@ -3,9 +3,14 @@ from src.domain.readability_analyzer import analyze_readability, count_syllables
 from fastapi.testclient import TestClient
 from src.app.main import app
 
+import os
+
 class TestReadabilityAnalyzer(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
+        os.makedirs("dumps", exist_ok=True)
+        with open("dumps/sample.txt", "w", encoding="utf-8") as f:
+            f.write("The quick brown fox jumps over the lazy dog. It was an excellent day for software testing!\n")
 
     def test_count_syllables_in_word(self):
         self.assertEqual(count_syllables_in_word("cat"), 1)

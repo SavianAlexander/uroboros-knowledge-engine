@@ -11,8 +11,6 @@ CODE_KEYWORDS = {"def", "function", "class", "import", "api", "struct", "code", 
 MATH_KEYWORDS = {"table", "revenue", "quarter", "profit", "percent", "sum", "average", "total", "margin", "count"}
 SUMMARY_KEYWORDS = {"summary", "overview", "briefing", "report", "explain", "architecture"}
 COMPARE_KEYWORDS = {"vs", "versus", "compare", "difference", "contrast", "compared"}
-
-
 PATHFINDING_KEYWORDS = {"path", "connection", "relationship", "network", "connect", "links", "hop"}
 
 
@@ -21,7 +19,14 @@ def classify_query_intent(query: str) -> Dict[str, Any]:
     Classifies user query intent and provides recommended search parameter presets.
     """
     if not query or not isinstance(query, str):
-        return {"intent": "factual_lookup", "confidence": 1.0, "recommended_preset": {"top_k": 5, "rerank": True}, "recommended_pipeline": "fts5_exact_search", "status": "success"}
+        return {
+            "query": "",
+            "intent": "factual_lookup",
+            "confidence": 1.0,
+            "recommended_preset": {"top_k": 5, "rerank": True},
+            "recommended_pipeline": "fts5_exact_search",
+            "status": "success"
+        }
     norm_query = unicodedata.normalize("NFC", query)
     words = set(re.findall(r'\b[\w-]+\b', norm_query.lower()))
 
@@ -70,3 +75,7 @@ def classify_query_intent(query: str) -> Dict[str, Any]:
         "recommended_pipeline": pipeline,
         "status": "success"
     }
+
+
+# Backward-compatible routing alias
+route_query_intent = classify_query_intent

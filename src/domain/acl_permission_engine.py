@@ -72,3 +72,15 @@ def trim_search_results_by_acl(
             authorized_results.append(r)
 
     return authorized_results
+
+
+class AclPermissionEngine:
+    """Enterprise ACL permission evaluation and trimming engine."""
+
+    @staticmethod
+    def is_authorized(user_context: Dict[str, Any], document_acl: Dict[str, Any]) -> bool:
+        return is_user_authorized(user_context, document_acl)
+
+    @staticmethod
+    def trim_results(user_context: Dict[str, Any], results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        return trim_search_results_by_acl(user_context, results)

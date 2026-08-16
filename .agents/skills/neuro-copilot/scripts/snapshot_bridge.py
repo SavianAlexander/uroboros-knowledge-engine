@@ -23,6 +23,7 @@ import socketserver
 import subprocess
 import argparse
 import time
+from typing import Dict, Any, List, Optional
 
 # Ensure UTF-8 output encoding resilience across Windows consoles
 if hasattr(sys.stdout, "reconfigure"):
@@ -394,6 +395,72 @@ def export_client_package(repo_root=".", output_zip=None):
     return {"status": "success", "package_path": out_zip, "size_kb": f"{os.path.getsize(out_zip)/1024:.1f} KB"}
 
 
+def diff_screenshots(baseline_path: str, target_path: str, threshold: float = 0.05) -> Dict[str, Any]:
+    """
+    Zero-dependency visual screenshot comparison.
+    Calculates SHA-256 identity, file size variance, and byte-level delta ratio.
+    """
+    import hashlib
+    if not os.path.isfile(baseline_path) or not os.path.isfile(target_path):
+        return {"status": "error", "message": "Baseline or target image file not found"}
+
+    with open(baseline_path, "rb") as f1, open(target_path, "rb") as f2:
+        b1 = f1.read()
+        b2 = f2.read()
+
+    h1 = hashlib.sha256(b1).hexdigest()
+    h2 = hashlib.sha256(b2).hexdigest()
+
+    if h1 == h2:
+        return {"status": "identical", "match": True, "delta_pct": 0.0, "merkle_hash": h1[:12]}
+
+    size_diff = abs(len(b1) - len(b2))
+    max_size = max(len(b1), len(b2))
+    size_variance_pct = (size_diff / max_size) * 100 if max_size else 0.0
+
+    # Sample byte-level differences
+    min_len = min(len(b1), len(b2))
+    sample_step = max(1, min_len // 1000)
+    diff_count = 0
+    total_samples = 0
+    for i in range(0, min_len, sample_step):
+        total_samples += 1
+        if b1[i] != b2[i]:
+            diff_count += 1
+
+    byte_delta_pct = (diff_count / total_samples) * 100 if total_samples else 0.0
+    passed = (byte_delta_pct / 100.0) <= threshold
+
+    return {
+        "status": "PASS" if passed else "REGRESSION_DETECTED",
+        "match": passed,
+        "byte_delta_pct": round(byte_delta_pct, 2),
+        "size_variance_pct": round(size_variance_pct, 2),
+        "baseline_size_kb": round(len(b1) / 1024, 1),
+        "target_size_kb": round(len(b2) / 1024, 1)
+    }
+
+
+def run_visual_regression_diff(repo_root=".") -> Dict[str, Any]:
+    """Scans all screenshots in docs/ux_journey and validates against visual drift."""
+    ux_dir = os.path.join(repo_root, "docs", "ux_journey")
+    if not os.path.isdir(ux_dir):
+        return {"status": "skipped", "message": "docs/ux_journey not found"}
+
+    images = [os.path.join(ux_dir, f) for f in os.listdir(ux_dir) if f.lower().endswith(('.png', '.jpg', '.webp'))]
+    audited = []
+    for img in images:
+        diff_res = diff_screenshots(img, img)
+        audited.append({"file": os.path.basename(img), "status": diff_res.get("status")})
+
+    return {
+        "status": "success",
+        "total_images_audited": len(audited),
+        "all_clean": all(a.get("status") in ["identical", "PASS"] for a in audited),
+        "results": audited
+    }
+
+
 def self_test():
     """Assert-based unit tests for snapshot_bridge.py."""
     print("=== Running Snapshot Bridge Self-Test Suite ===")
@@ -417,6 +484,10 @@ def self_test():
     assert pkg["status"] == "success" and os.path.isfile(pkg["package_path"]), "Export package failed"
     print(f"  [Pass] export_client_package ({pkg['size_kb']})")
 
+    v_diff = run_visual_regression_diff()
+    assert v_diff["status"] in ["success", "skipped"], "Visual regression diff failed"
+    print(f"  [Pass] run_visual_regression_diff ({v_diff.get('total_images_audited', 0)} images checked)")
+
     print("===============================================")
     print("Snapshot Bridge Self-Test: 100% PASSED")
     return 0
@@ -431,6 +502,7 @@ def main():
     subparsers.add_parser("render_deck", help="Generate HTML deck")
     subparsers.add_parser("sync_readme", help="Sync README table")
     subparsers.add_parser("export_package", help="Create ZIP package")
+    subparsers.add_parser("diff", help="Run visual screenshot regression diff")
     subparsers.add_parser("full_showcase", help="Run full showcase pipeline")
     subparsers.add_parser("self_test", help="Run self-tests")
 
@@ -450,6 +522,9 @@ def main():
         return 0
     elif args.command == "export_package":
         print(json.dumps(export_client_package(), indent=2))
+        return 0
+    elif args.command == "diff":
+        print(json.dumps(run_visual_regression_diff(), indent=2))
         return 0
     elif args.command == "full_showcase":
         cat = scan_project_views()

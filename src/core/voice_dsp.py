@@ -262,6 +262,16 @@ class VoiceDSP:
         rms = float(np.sqrt(np.mean(audio_samples ** 2)))
         peak = float(np.max(np.abs(audio_samples)))
 
+        # ponytail: Silence gating fast-path to let CPU drop into low-power C-states during silence
+        if peak < 0.002 and rms < 0.001:
+            return {
+                "spectrum_32_bands": [0.0] * num_bands,
+                "rms_energy": round(rms, 4),
+                "peak_amplitude": round(peak, 4),
+                "dominant_freq_hz": 0.0,
+                "num_bands": num_bands
+            }
+
         # FFT computation
         n_fft = min(len(audio_samples), 2048)
         if n_fft < 64:

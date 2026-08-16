@@ -1,10 +1,9 @@
 """
-Self-Evolving Sparse-Dense-ColBERT Fusion Reranker Engine.
-Dynamically calculates optimal alpha, beta, gamma scalars per query intent.
-Zero-dependency, stdlib implementation.
+Sparse-Dense-ColBERT Fusion Reranker Engine.
+Calculates optimal alpha (sparse), beta (dense), and gamma (ColBERT) scalars per query intent.
+Standard: Pure Python standard library (unicodedata, typing).
 """
 import unicodedata
-
 from typing import Dict, Any, List
 
 
@@ -32,17 +31,16 @@ def rerank_sparse_dense_fusion(
     if not valid_chunks:
         return {"reranked_chunks": [], "status": "empty_input"}
 
-    # Dynamic scalar computation based on query characteristics
     norm_query = unicodedata.normalize("NFC", safe_query)
     is_code = "def " in norm_query or "class " in norm_query or "import " in norm_query
     is_legal = "policy" in norm_query.lower() or "contract" in norm_query.lower()
 
     if is_code:
-        alpha, beta, gamma = 0.5, 0.2, 0.3  # High lexical precision for code
+        alpha, beta, gamma = 0.5, 0.2, 0.3
     elif is_legal:
-        alpha, beta, gamma = 0.2, 0.3, 0.5  # High ColBERT late interaction for legal semantics
+        alpha, beta, gamma = 0.2, 0.3, 0.5
     else:
-        alpha, beta, gamma = 0.3, 0.4, 0.3  # Balanced hybrid default
+        alpha, beta, gamma = 0.3, 0.4, 0.3
 
     reranked = []
     for chunk in valid_chunks:
@@ -71,3 +69,7 @@ def rerank_sparse_dense_fusion(
         "computed_weights": {"alpha": alpha, "beta": beta, "gamma": gamma},
         "status": "success"
     }
+
+
+# Facade alias
+fuse_sparse_dense_rankings = rerank_sparse_dense_fusion

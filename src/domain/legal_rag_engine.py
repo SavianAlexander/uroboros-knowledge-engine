@@ -157,3 +157,7 @@ class LegalRegulatoryRAGEngine:
             "hierarchical_statutory_chunking": True,
             "status": "active"
         }
+
+
+# Facade alias
+LegalRAGEngine = LegalRegulatoryRAGEngine

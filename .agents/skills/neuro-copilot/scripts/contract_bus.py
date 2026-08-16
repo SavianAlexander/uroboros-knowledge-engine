@@ -17,6 +17,7 @@ import re
 import json
 import time
 import hashlib
+import gc
 import asyncio
 import concurrent.futures
 import argparse
@@ -595,15 +596,127 @@ def execute_file_allocation_contract(bus: InterBridgeEventBus) -> BridgeContract
     return contract
 
 
+def execute_doctor_contract(bus: InterBridgeEventBus) -> BridgeContract:
+    """Executes Neuro Doctor System Health Diagnostic, publishing Contract K."""
+    t0 = time.time()
+    c_id = f"contract_doctor_{int(time.time() * 1000)}"
+    try:
+        import doctor_bridge
+        card = doctor_bridge.generate_health_scorecard(bus.repo_root)
+        healthy = card.get("status") in ("NOMINAL", "HEALTHY", "WARNING")
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="doctor_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="SUCCESS" if healthy else "WARNING",
+            outputs={"health_score": card.get("score"), "status": card.get("status")},
+            shared_context={"system_healthy": healthy, "health_score": card.get("score")}
+        )
+    except Exception as e:
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="doctor_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="WARNING",
+            outputs={"error": str(e)}
+        )
+    bus.publish_contract(contract)
+    return contract
+
+
+def execute_voice_operator_contract(bus: InterBridgeEventBus) -> BridgeContract:
+    """Executes Voice Operator Bridge synthesis readiness check, publishing Contract L."""
+    t0 = time.time()
+    c_id = f"contract_voice_operator_{int(time.time() * 1000)}"
+    try:
+        import voice_operator_bridge
+        res = voice_operator_bridge.speak_briefing("Contract bus voice check", preset="EXECUTIVE_PRECISION", async_mode=True)
+        ok = (res == 0)
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="voice_operator_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="SUCCESS" if ok else "WARNING",
+            outputs={"voice_status": "ready" if ok else "warning", "exit_code": res},
+            shared_context={"voice_ready": ok}
+        )
+    except Exception as e:
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="voice_operator_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="WARNING",
+            outputs={"error": str(e)}
+        )
+    bus.publish_contract(contract)
+    return contract
+
+
+def execute_benchmark_contract(bus: InterBridgeEventBus) -> BridgeContract:
+    """Executes Sub-Millisecond Performance Benchmark Watchdog, publishing Contract M."""
+    t0 = time.time()
+    c_id = f"contract_benchmark_{int(time.time() * 1000)}"
+    try:
+        import benchmark_bridge
+        b_res = benchmark_bridge.run_full_benchmark_suite(bus.repo_root)
+        ok = b_res.get("status") in ("PASS", "SUCCESS", "WARNING")
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="benchmark_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="SUCCESS" if ok else "WARNING",
+            outputs={"benchmark_status": b_res.get("status"), "total_duration_ms": b_res.get("total_duration_ms")},
+            shared_context={"performance_optimal": ok}
+        )
+    except Exception as e:
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="benchmark_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="WARNING",
+            outputs={"error": str(e)}
+        )
+    bus.publish_contract(contract)
+    return contract
+
+
+def execute_fleet_watchdog_contract(bus: InterBridgeEventBus) -> BridgeContract:
+    """Executes EVE Fleet Tactical Radar & Character Sweep, publishing Contract N."""
+    t0 = time.time()
+    c_id = f"contract_fleet_watchdog_{int(time.time() * 1000)}"
+    try:
+        import fleet_watchdog_bridge
+        f_res = fleet_watchdog_bridge.get_fleet_radar_telemetry(bus.repo_root)
+        ok = f_res.get("status") in ("PASS", "ONLINE", "SUCCESS", "WARNING")
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="fleet_watchdog_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="SUCCESS" if ok else "WARNING",
+            outputs={"fleet_status": f_res.get("fleet_status"), "total_pilots": f_res.get("total_pilots"), "fleet_sp": f_res.get("fleet_total_sp")},
+            shared_context={"fleet_online": True, "total_pilots": f_res.get("total_pilots")}
+        )
+    except Exception as e:
+        contract = BridgeContract(
+            contract_id=c_id,
+            bridge_name="fleet_watchdog_bridge",
+            duration_ms=(time.time() - t0) * 1000,
+            status="WARNING",
+            outputs={"error": str(e)}
+        )
+    bus.publish_contract(contract)
+    return contract
+
+
 # -------------------------------------------------------------------------
 # Parallel Asynchronous DAG Orchestrator
 # -------------------------------------------------------------------------
 
 async def run_parallel_bridge_pipeline_async(repo_root: str = ".") -> Dict[str, Any]:
     """
-    Executes all 12 bridges concurrently using an asynchronous DAG pipeline:
-    - Stage 1 (Parallel Independent Execution): Architecture, Tududi, GitHub, Visual Audit, Process Hygiene, Nomenclature, File Allocation
-    - Stage 2 (Parallel Context-Informed Execution): Snapshot Showcase, Neuro Vault, EVE Bridge
+    Executes all 16 bridges concurrently using an asynchronous DAG pipeline:
+    - Stage 1 (Parallel Independent Execution): Architecture, Tududi, GitHub, Visual Audit, Process Hygiene, Nomenclature, File Allocation, Doctor, Benchmark
+    - Stage 2 (Parallel Context-Informed Execution): Snapshot Showcase, Neuro Vault, EVE Bridge, Fleet Watchdog, Voice Operator
     - Stage 3 (Ledger Compilation & Audit Verification): Persist cryptographically signed ledger
     """
     t_start = time.time()
@@ -616,7 +729,7 @@ async def run_parallel_bridge_pipeline_async(repo_root: str = ".") -> Dict[str, 
 
     # Stage 1: Run Independent Bridges in Parallel ThreadPool
     print("[Stage 1/3] Launching Independent Bridges in Parallel (Async Gather)...")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=7) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=9) as executor:
         stage_1_tasks = [
             loop.run_in_executor(executor, execute_architecture_contract, bus),
             loop.run_in_executor(executor, execute_tududi_contract, bus),
@@ -624,21 +737,24 @@ async def run_parallel_bridge_pipeline_async(repo_root: str = ".") -> Dict[str, 
             loop.run_in_executor(executor, execute_visual_audit_contract, bus),
             loop.run_in_executor(executor, execute_process_hygiene_contract, bus),
             loop.run_in_executor(executor, execute_nomenclature_contract, bus),
-            loop.run_in_executor(executor, execute_file_allocation_contract, bus)
+            loop.run_in_executor(executor, execute_file_allocation_contract, bus),
+            loop.run_in_executor(executor, execute_doctor_contract, bus),
+            loop.run_in_executor(executor, execute_benchmark_contract, bus)
         ]
         s1_results = await asyncio.gather(*stage_1_tasks)
-
 
     for contract in s1_results:
         print(f"  -> [{contract.bridge_name}] Contract Issued in {contract.duration_ms:.1f}ms (Status: {contract.status})")
 
     # Stage 2: Run Downstream Bridges Consuming Stage 1 Contract Context
     print("[Stage 2/3] Launching Context-Informed Bridges (Parallel Async Execution)...")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         stage_2_tasks = [
             loop.run_in_executor(executor, execute_snapshot_contract, bus),
             loop.run_in_executor(executor, execute_neuro_contract, bus),
-            loop.run_in_executor(executor, execute_eve_contract, bus)
+            loop.run_in_executor(executor, execute_eve_contract, bus),
+            loop.run_in_executor(executor, execute_fleet_watchdog_contract, bus),
+            loop.run_in_executor(executor, execute_voice_operator_contract, bus)
         ]
         s2_results = await asyncio.gather(*stage_2_tasks)
 
@@ -689,12 +805,105 @@ def self_test():
     return 0
 
 
+def run_all_self_tests_parallel() -> Dict[str, Any]:
+    """
+    Executes the self_test() suites for all available bridges concurrently in parallel.
+    Returns a unified pass/fail matrix and timing metrics.
+    """
+    bridges_to_test = [
+        ("architecture_bridge", "architecture_bridge"),
+        ("ast_graph_bridge", "ast_graph_bridge"),
+        ("benchmark_bridge", "benchmark_bridge"),
+        ("doctor_bridge", "doctor_bridge"),
+        ("eve_bridge", "eve_bridge"),
+        ("file_allocation_bridge", "file_allocation_bridge"),
+        ("fleet_watchdog_bridge", "fleet_watchdog_bridge"),
+        ("github_bridge", "github_bridge"),
+        ("neuro_bridge", "neuro_bridge"),
+        ("nomenclature_bridge", "nomenclature_bridge"),
+        ("process_hygiene_bridge", "process_hygiene_bridge"),
+        ("react_agent_bridge", "react_agent_bridge"),
+        ("snapshot_bridge", "snapshot_bridge"),
+        ("system_recovery_bridge", "system_recovery_bridge"),
+        ("tududi_bridge", "tududi_bridge"),
+        ("visual_audit_bridge", "visual_audit_bridge"),
+        ("voice_operator_bridge", "voice_operator_bridge"),
+        ("workflow_hub_bridge", "workflow_hub_bridge"),
+    ]
+
+    t_start = time.time()
+    results = {}
+
+    def _test_single_bridge(name, mod_name):
+        t0 = time.time()
+        try:
+            mod = __import__(mod_name)
+            if hasattr(mod, "self_test"):
+                fn_res = mod.self_test()
+                passed = (
+                    fn_res in (0, True, None)
+                    or (isinstance(fn_res, dict) and (
+                        str(fn_res.get("status", "")).upper() in ("SUCCESS", "PASS", "PASSED")
+                        or fn_res.get("all_tests_passed") is True
+                        or fn_res.get("all_passed") is True
+                        or fn_res.get("clean") is True
+                    ))
+                )
+                return name, {
+                    "passed": passed,
+                    "duration_ms": round((time.time() - t0) * 1000, 1),
+                    "status": "PASS" if passed else "FAIL"
+                }
+            return name, {"passed": True, "duration_ms": round((time.time() - t0) * 1000, 1), "status": "NO_TEST_METHOD"}
+        except Exception as e:
+            return name, {
+                "passed": False,
+                "duration_ms": round((time.time() - t0) * 1000, 1),
+                "status": "ERROR",
+                "error": str(e)
+            }
+
+    print("===================================================================")
+    print("🧪 Running Concurrent Multi-Bridge Self-Test Matrix")
+    print("===================================================================")
+
+    # ponytail: Bound max workers to 4 to prevent 16-thread simultaneous memory bloat
+    worker_count = min(4, len(bridges_to_test))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as executor:
+        futures = [executor.submit(_test_single_bridge, name, mod) for name, mod in bridges_to_test]
+        for f in concurrent.futures.as_completed(futures):
+            b_name, res = f.result()
+            results[b_name] = res
+            icon = "✅" if res["passed"] else "❌"
+            print(f"  {icon} [{b_name:<25}] {res['status']:<6} in {res['duration_ms']}ms")
+
+    # Reclaim test memory immediately
+    gc.collect()
+
+    total_duration_ms = round((time.time() - t_start) * 1000, 1)
+    all_passed = all(r["passed"] for r in results.values())
+
+    print("===================================================================")
+    print(f"{'✅ ALL BRIDGES PASSED (100%)' if all_passed else '⚠️ SOME BRIDGE TESTS FAILED'} in {total_duration_ms}ms")
+    print("===================================================================")
+
+    return {
+        "status": "success" if all_passed else "failed",
+        "total_duration_ms": total_duration_ms,
+        "all_passed": all_passed,
+        "passed_count": sum(1 for r in results.values() if r["passed"]),
+        "total_bridges": len(results),
+        "results": results
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Neuro Co-Pilot Inter-Bridge Contract Bus & Parallel Async Orchestrator")
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("run_parallel", help="Execute all bridges in parallel asynchronous pipeline")
     subparsers.add_parser("self_test", help="Run contract bus assertion self-tests")
+    subparsers.add_parser("test_all", help="Run concurrent 13-bridge parallel self-test matrix")
 
     args = parser.parse_args()
 
@@ -704,6 +913,9 @@ def main():
         return 0
     elif args.command == "self_test":
         return self_test()
+    elif args.command in ("test_all", "self_test_all"):
+        res = run_all_self_tests_parallel()
+        return 0 if res["all_passed"] else 1
 
 
 if __name__ == "__main__":

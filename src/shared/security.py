@@ -72,11 +72,15 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
         target = Path(normalized).resolve()
         
         is_inside_base = False
-        try:
-            target.relative_to(base)
-            is_inside_base = True
-        except ValueError:
-            pass
+        allowed_bases = [base, Path("dumps").resolve(), BASE_DIR]
+        for b in allowed_bases:
+            try:
+                target.relative_to(b)
+                if ".." not in path_str and ".." not in decoded_path:
+                    is_inside_base = True
+                    break
+            except ValueError:
+                pass
 
         if not is_inside_base:
             temp_dirs = [Path(tempfile.gettempdir()).resolve(), Path("/tmp").resolve(), Path("/var/tmp").resolve()]

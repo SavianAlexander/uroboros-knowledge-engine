@@ -52,3 +52,15 @@ def verify_crypto_chain_integrity() -> bool:
         if curr_block["previous_hash"] != prev_block["hash"]:
             return False
     return True
+
+
+class CryptoAuditLedger:
+    """Cryptographic audit chain manager."""
+
+    @staticmethod
+    def append_block(query: str, answer: str, contexts: List[str]) -> Dict[str, Any]:
+        return append_crypto_audit_block(query, answer, contexts)
+
+    @staticmethod
+    def verify_integrity() -> bool:
+        return verify_crypto_chain_integrity()

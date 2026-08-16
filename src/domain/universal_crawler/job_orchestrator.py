@@ -306,3 +306,7 @@ class CrawlJobOrchestrator:
             "triplets_extracted": triplets_total,
             "chunks_indexed": chunks_indexed
         }
+
+
+# Facade alias
+CrawlerJobOrchestrator = CrawlJobOrchestrator

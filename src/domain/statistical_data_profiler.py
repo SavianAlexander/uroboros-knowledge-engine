@@ -281,3 +281,7 @@ def profile_client_dataset(dataset_name: str) -> Dict[str, Any]:
         "spearman_correlation_matrix": spearman_matrix,
         "executive_summary_markdown": "\n".join(summary_lines)
     }
+
+
+# Facade alias
+profile_tabular_dataset = profile_client_dataset

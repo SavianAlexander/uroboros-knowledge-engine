@@ -120,3 +120,19 @@ def reap_zombies_on_ports(start_port: int = 8085, end_port: int = 8095) -> Dict[
         "reaped_count": len(reaped),
         "reaped_processes": reaped
     }
+
+
+class ProcessManager:
+    """Zero-dependency background process and zombie lifecycle supervisor."""
+
+    @staticmethod
+    def check_health(port: int = 8085, host: str = "127.0.0.1") -> bool:
+        return check_uroboros_health(port, host)
+
+    @staticmethod
+    def audit_instances(start_port: int = 8085, end_port: int = 8095):
+        return audit_active_uroboros_processes(start_port, end_port)
+
+    @staticmethod
+    def reap_zombies(start_port: int = 8085, end_port: int = 8095):
+        return reap_zombies_on_ports(start_port, end_port)

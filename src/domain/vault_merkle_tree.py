@@ -169,3 +169,20 @@ def verify_merkle_proof(leaf_hash: str, proof_steps: List[Dict[str, str]], expec
         else:
             current_hash = hash_pair(sibling, current_hash)
     return current_hash == expected_root
+
+
+class VaultMerkleTree:
+    """Cryptographic Merkle tree vault provenance manager."""
+
+    @staticmethod
+    def build_tree() -> Dict[str, Any]:
+        return build_vault_merkle_tree()
+
+    @staticmethod
+    def generate_proof(target_filepath: str) -> Dict[str, Any]:
+        return generate_merkle_audit_proof(target_filepath)
+
+    @staticmethod
+    def verify_proof(leaf_hash: str, proof_steps: List[Dict[str, str]], expected_root: str) -> bool:
+        return verify_merkle_proof(leaf_hash, proof_steps, expected_root)
+

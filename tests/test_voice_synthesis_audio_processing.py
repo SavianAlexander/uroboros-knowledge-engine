@@ -403,7 +403,7 @@ class TestExecutiveDSPAndPersonas:
         assert prev_resp.content[:4] == b"RIFF"
 
         # 4. Clean up
-        del_resp = client.delete("/api/voice/custom-personas/SPARTAN_SOVEREIGN")
+        del_resp = client.delete("/api/voice/custom-personas/SPARTAN_EXECUTIVE")
         assert del_resp.status_code == 200
 
     def test_voice_engine_multi_persona_vector_synthesis(self):

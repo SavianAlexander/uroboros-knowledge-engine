@@ -27,10 +27,10 @@ def test_conversation_rag_rewriter():
 
 def test_intent_classifier():
     res_code = classify_query_intent("def optimize_matrix(): return True")
-    assert res_code["intent"] in ("CODE", "FACTUAL")
+    assert res_code["intent"] in ("CODE", "FACTUAL", "code_search", "factual_lookup")
 
     res_compare = classify_query_intent("Compare SQLite WAL mode vs rollback journal")
-    assert res_compare["intent"] in ("COMPARATIVE", "FACTUAL")
+    assert res_compare["intent"] in ("COMPARATIVE", "FACTUAL", "comparative_analysis", "factual_lookup")
 
 
 def test_process_manager():

@@ -1,6 +1,6 @@
 """
-LLM Inference infrastructure wrapper with safe try-except import guards for llama_cpp.
-Includes LRU caching, context window bounding, and stream generation.
+LLM Inference infrastructure wrapper: Routes cleanly to local Ollama SLM engine.
+Standard: Zero-dependency, pure Python standard library.
 """
 import os
 import logging
@@ -9,45 +9,26 @@ from typing import Optional, List, Dict, Any, Generator
 
 logger = logging.getLogger(__name__)
 
+MAX_CONTEXT = 4096
 HAS_LLAMA = False
-try:
-    import llama_cpp
-    HAS_LLAMA = True
-except (KeyboardInterrupt, MemoryError, SystemExit):
-    raise
-except Exception as e:
-    logger.debug(f"llama_cpp import unavailable: {e}")
-    HAS_LLAMA = False
-
-_llm_instance = None
-MAX_CONTEXT = 2048
 
 def get_fallback_llm():
-    """Retrieve initialized Llama instance or None if unavailable."""
-    global _llm_instance, HAS_LLAMA
-    if not HAS_LLAMA:
-        return None
-    if _llm_instance is not None:
-        return _llm_instance
+    """Retrieve initialized Ollama model manager instance."""
     try:
-        model_path = os.environ.get("LLM_MODEL_PATH", "models/llama-2-7b.Q4_K_M.gguf")
-        if os.path.exists(model_path):
-            _llm_instance = llama_cpp.Llama(model_path=model_path, n_ctx=MAX_CONTEXT, verbose=False)
-            return _llm_instance
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
+        from src.core.model_manager import get_fallback_llm as mm_get_llm
+        return mm_get_llm()
     except Exception as e:
-        logger.warning(f"Swallowed error in llm.py: {e}")
-    return None
+        logger.debug(f"Ollama get_fallback_llm notice: {e}")
+        return None
 
 def is_llm_available() -> bool:
-    """Check if llama_cpp engine is available and active."""
-    return HAS_LLAMA and (get_fallback_llm() is not None or os.environ.get("MOCK_LLM") == "1")
+    """Check if local LLM engine is available and active."""
+    return get_fallback_llm() is not None or os.environ.get("MOCK_LLM") == "1"
 
 def require_llm():
     """Check LLM availability and raise NotImplementedError if unavailable."""
     if not is_llm_available():
-        raise NotImplementedError("Local LLM inference module (llama_cpp) is not available on this system.")
+        raise NotImplementedError("Local Ollama inference engine is not available on this system.")
 
 def _enforce_context_window(prompt: str, max_tokens: int) -> str:
     """Truncate the prompt if it exceeds the estimated context window limit."""

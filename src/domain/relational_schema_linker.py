@@ -289,3 +289,19 @@ LIMIT 50"""
         "row_count": len(rows),
         "results": rows
     }
+
+
+class RelationalSchemaLinker:
+    """Relational schema discovery and multi-hop JOIN engine."""
+
+    @staticmethod
+    def discover_relationships():
+        return discover_foreign_key_relationships()
+
+    @staticmethod
+    def plan_join_path(source_table: str, target_table: str, relationships: List[Dict[str, Any]]):
+        return plan_multi_hop_join_path(source_table, target_table, relationships)
+
+    @staticmethod
+    def execute_multi_hop_join(dataset_names: Optional[List[str]] = None):
+        return synthesize_and_execute_multi_hop_join(dataset_names)

@@ -238,3 +238,14 @@ class ProcessSupervisor:
             "lifetime_reaped_children": _REAPED_STATS["reaped_children"],
             "last_reap_timestamp": _REAPED_STATS["last_reap_timestamp"]
         }
+
+
+def cleanup_zombie_processes() -> int:
+    """Convenience functional wrapper to reap dead children."""
+    return ProcessSupervisor.reap_dead_children()
+
+
+def get_system_resource_metrics() -> Dict[str, Any]:
+    """Convenience functional wrapper to get supervisor metrics."""
+    return ProcessSupervisor.get_supervisor_stats()
+

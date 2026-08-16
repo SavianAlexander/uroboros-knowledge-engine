@@ -109,6 +109,7 @@ class AuditHashchain:
         now = time.time()
         metadata_str = json.dumps(metadata or {}, sort_keys=True)
 
+        init_audit_hashchain_schema()
         with _SEAL_LOCK:
             with get_db_write_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
                 with conn:
@@ -153,6 +154,7 @@ class AuditHashchain:
         Verifies the uninterrupted mathematical validity of the entire audit hashchain from genesis to head.
         Pinpoints any tampered, altered, or deleted records.
         """
+        init_audit_hashchain_schema()
         with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as conn:
             cursor = conn.cursor()
             cursor.execute("""

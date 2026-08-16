@@ -1,14 +1,36 @@
 """
-Dynamic Entropy-Based Semantic Boundary Chunker Engine.
-Calculates semantic distance between consecutive sentence n-grams and creates topic boundaries when distance spikes above threshold theta.
-Zero-dependency, stdlib implementation.
+Semantic Boundary & Information Entropy Chunker Engine.
+Calculates semantic distance between consecutive sentence n-grams and computes Shannon Entropy
+to create clean topic boundaries for vector indexing.
+Standard: Pure Python standard library (math, collections, re, functools).
 """
+import collections
 import functools
-import re
 import math
+import re
 from typing import List, Dict, Any, Tuple
 
 from src.domain.rag_grounding_guard import split_sentences, RE_WORD, STOP_WORDS
+
+
+def compute_shannon_entropy(text: str) -> float:
+    """
+    Calculates Shannon Entropy (in bits per byte) of a text string:
+    H = -sum(p_i * log2(p_i))
+    """
+    if not text:
+        return 0.0
+    bytes_data = text.encode("utf-8")
+    length = len(bytes_data)
+    if length == 0:
+        return 0.0
+    
+    counts = collections.Counter(bytes_data)
+    entropy = 0.0
+    for count in counts.values():
+        p = count / float(length)
+        entropy -= p * math.log2(p)
+    return round(entropy, 4)
 
 
 @functools.lru_cache(maxsize=2048)
@@ -40,7 +62,7 @@ def chunk_by_semantic_entropy(
     max_chunk_size: int = 500
 ) -> List[Dict[str, Any]]:
     """
-    Chunks text by calculating semantic entropy distance between adjacent sentences.
+    Chunks text by calculating semantic distance between adjacent sentences.
     Creates a new chunk whenever distance spikes above distance_threshold or max_chunk_size is exceeded.
     """
     if not text or not isinstance(text, str) or not text.strip():
@@ -68,7 +90,8 @@ def chunk_by_semantic_entropy(
                 "content": chunk_content,
                 "char_length": len(chunk_content),
                 "sentence_count": len(current_sentences),
-                "boundary_entropy_score": distance
+                "boundary_entropy_score": distance,
+                "shannon_entropy": compute_shannon_entropy(chunk_content)
             })
             current_sentences = [sent]
             current_length = len(sent)
@@ -85,7 +108,8 @@ def chunk_by_semantic_entropy(
             "content": chunk_content,
             "char_length": len(chunk_content),
             "sentence_count": len(current_sentences),
-            "boundary_entropy_score": 0.0
+            "boundary_entropy_score": 0.0,
+            "shannon_entropy": compute_shannon_entropy(chunk_content)
         })
 
     return chunks

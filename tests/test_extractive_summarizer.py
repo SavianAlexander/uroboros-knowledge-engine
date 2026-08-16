@@ -3,9 +3,14 @@ from src.domain.extractive_summarizer import summarize_text
 from fastapi.testclient import TestClient
 from src.app.main import app
 
+import os
+
 class TestExtractiveSummarizer(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
+        os.makedirs("dumps", exist_ok=True)
+        with open("dumps/sample.txt", "w", encoding="utf-8") as f:
+            f.write("Accounting standards regulate corporate financial reporting worldwide. The International Financial Reporting Standards set global rules.\n")
 
     def test_summarize_text_extractive(self):
         sample_text = (

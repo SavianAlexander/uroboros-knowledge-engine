@@ -3,9 +3,14 @@ from src.domain.entity_extractor import extract_entities_from_text
 from fastapi.testclient import TestClient
 from src.app.main import app
 
+import os
+
 class TestEntityExtractor(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
+        os.makedirs("dumps", exist_ok=True)
+        with open("dumps/sample.txt", "w", encoding="utf-8") as f:
+            f.write("International Financial Reporting Standards (IFRS) and GAAP regulate Accounting principles in Uroboros Engine.\n")
 
     def test_extract_entities_from_text(self):
         sample_text = "International Financial Reporting Standards (IFRS) and GAAP regulate Accounting principles in Uroboros Engine."

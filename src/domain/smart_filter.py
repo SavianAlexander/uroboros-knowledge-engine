@@ -48,11 +48,11 @@ def _parse_nl_filter_cached(query: str) -> Tuple[str, Tuple[Tuple[str, Any], ...
 def parse_natural_language_filter(query: str) -> Dict[str, Any]:
     """
     Parses natural language query strings into structured SQLite search parameters and filters.
-    Example: "pdf files tagged architecture size > 1mb" ->
-    {'fts_term': 'files', 'filters': {'ext': 'pdf', 'tag': 'architecture', 'size_op': '>', 'size_bytes': 1048576}}
     """
     fts_term, filter_items = _parse_nl_filter_cached(query)
     return {
         "fts_term": fts_term,
         "filters": dict(filter_items)
     }
+
+parse_smart_query_filter = parse_natural_language_filter

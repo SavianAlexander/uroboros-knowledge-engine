@@ -405,3 +405,7 @@ class PRLegalEngine:
             "total_nodes": len(retrieved_nodes),
             "disclaimer": "Puerto Rico Legal Provenance Ledger: Grounded on official enacted statutes and D.P.R. jurisprudence."
         }
+
+
+# Facade alias
+PRLegalCodexEngine = PRLegalEngine

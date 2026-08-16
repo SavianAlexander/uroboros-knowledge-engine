@@ -1,60 +1,33 @@
+"""
+Browser Automation Anti-Detection & Headers Rotation Subsystem.
+Features:
+1. Standards-compliant Chrome/Chromium header rotation with sec-ch-ua profiles.
+2. Headless CDP Anti-Detection Injection Scripts.
+3. Transparent Gzip / Deflate payload decompression.
+Standard: Pure Python standard library (urllib, http.cookiejar, ssl, gzip, zlib, time).
+"""
 import time
-import math
-import random
 import re
 import json
 import ssl
 import gzip
+import zlib
 import http.cookiejar
 import urllib.request
 import urllib.parse
 from typing import Dict, Any, Optional, Tuple, List
 
-"""
-Browser Automation Anti-Detection & Human Micro-Interaction Subsystem.
-Features:
-1. Human Micro-Interactions (In-Page Search Ctrl+F, Backtrack Scrolling, Text Selection Simulation)
-2. Headless Browser CDP Anti-Detection Injection Scripts
-3. Dynamic Packet MTU Jitter & Natural Reading Dwell Curves
-"""
 
 class HumanMicroActionEngine:
-    """Emulates granular micro-interactions of real humans reading complex documents."""
+    """Calculates non-blocking reading dwell durations and human cadence metrics."""
 
     @staticmethod
-    def simulate_backtrack_scrolling(doc_length_chars: int) -> float:
-        """
-        Simulates human cognitive backtracking: reader scrolls down, then scrolls back up
-        to re-read a preceding clause or definition.
-        """
-        if doc_length_chars > 3000 and random.random() < 0.35:
-            # Backtrack pause: 1.8 to 4.5 seconds
-            re_read_pause = random.uniform(1.8, 4.5)
-            time.sleep(re_read_pause)
-            return re_read_pause
-        return 0.0
+    def calculate_dwell_duration(doc_length_chars: int) -> float:
+        """Calculates expected human reading dwell duration for a document size."""
+        words = max(1, doc_length_chars / 5.5)
+        # 250 words per minute baseline
+        return round(min(2.0, max(0.05, (words / 250.0) * 0.10)), 3)
 
-    @staticmethod
-    def simulate_in_page_search(query_terms: Optional[List[str]] = None) -> float:
-        """
-        Simulates in-browser Ctrl+F search behavior and jump-to-result fixation pauses.
-        """
-        if random.random() < 0.20:
-            search_dwell = random.uniform(2.0, 5.0)
-            time.sleep(search_dwell)
-            return search_dwell
-        return 0.0
-
-    @staticmethod
-    def simulate_text_selection_highlight() -> float:
-        """
-        Simulates mouse drag text selection highlight pause while reading key sentences.
-        """
-        if random.random() < 0.25:
-            select_pause = random.uniform(0.8, 2.2)
-            time.sleep(select_pause)
-            return select_pause
-        return 0.0
 
 class BrowserEvasionHooks:
     """JavaScript injection snippets for headless CDP / Chromium anti-detection."""
@@ -62,7 +35,7 @@ class BrowserEvasionHooks:
     @staticmethod
     def get_cdp_evasion_script() -> str:
         return """
-        // Stealth Evasion Protocol
+        // CDP Anti-Detection Injection
         Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
         window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {}, app: {} };
         const originalQuery = window.navigator.permissions.query;
@@ -75,16 +48,17 @@ class BrowserEvasionHooks:
         Object.defineProperty(navigator, 'languages', { get: () => ['es-PR', 'es', 'en-US', 'en'] });
         """
 
-class QuantumStealthSession:
+
+class StealthSession:
     """
     Automated Stealth Network Session.
-    Combines Micro-Action simulation, Backtrack Scrolling, and Zero-Fingerprint TLS 1.3.
+    Combines cookie jar state, TLS 1.3 ciphers, and Chrome browser fingerprint headers.
     """
 
     def __init__(self, session_seed: Optional[str] = None):
-        self.session_seed = session_seed or f"quantum_{time.time()}_{random.randint(1000, 9999)}"
+        self.session_seed = session_seed or f"session_{time.time()}"
         self.cookie_jar = http.cookiejar.CookieJar()
-        self.ssl_context = self._create_quantum_ssl_context()
+        self.ssl_context = self._create_ssl_context()
         self.opener = urllib.request.build_opener(
             urllib.request.HTTPCookieProcessor(self.cookie_jar),
             urllib.request.HTTPSHandler(context=self.ssl_context)
@@ -92,7 +66,7 @@ class QuantumStealthSession:
         self.request_count = 0
         self.history_chain: List[str] = []
 
-    def _create_quantum_ssl_context(self) -> ssl.SSLContext:
+    def _create_ssl_context(self) -> ssl.SSLContext:
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
@@ -102,7 +76,7 @@ class QuantumStealthSession:
             pass
         return ctx
 
-    def get_quantum_headers(self, target_url: str, is_json: bool = False) -> Dict[str, str]:
+    def get_stealth_headers(self, target_url: str, is_json: bool = False) -> Dict[str, str]:
         parsed = urllib.parse.urlparse(target_url)
         referer = self.history_chain[-1] if self.history_chain else f"{parsed.scheme}://{parsed.netloc}/"
 
@@ -125,21 +99,21 @@ class QuantumStealthSession:
         }
         return headers
 
-    def quantum_fetch(
+    def fetch(
         self,
         url: str,
         timeout: int = 15
     ) -> Tuple[Optional[bytes], Optional[str], int, Optional[str], Dict[str, Any]]:
         """
-        Execute Quantum-Tier fetch with micro-action modeling and cognitive reading.
+        Execute network fetch with decompression and header rotation.
         """
         self.request_count += 1
         t_start = time.time()
         is_json = url.endswith(".json") or "/api/" in url
 
-        headers = self.get_quantum_headers(url, is_json=is_json)
+        headers = self.get_stealth_headers(url, is_json=is_json)
         req_headers = dict(headers)
-        req_headers.pop("Host", None) # Let urllib manage Host dynamically across redirects
+        req_headers.pop("Host", None)
         req = urllib.request.Request(url, headers=req_headers)
 
         try:
@@ -156,7 +130,6 @@ class QuantumStealthSession:
                         pass
                 elif "deflate" in enc:
                     try:
-                        import zlib
                         raw_data = zlib.decompress(raw_data)
                     except Exception:
                         pass
@@ -165,29 +138,24 @@ class QuantumStealthSession:
                 if len(self.history_chain) > 30:
                     self.history_chain.pop(0)
 
-                # Micro-Actions (non-blocking fast human emulation)
-                backtrack_sec = 0.05 if random.random() < 0.15 else 0.0
-                search_sec = 0.05 if random.random() < 0.10 else 0.0
-                select_sec = 0.05 if random.random() < 0.10 else 0.0
-
-                # Reading cadence
-                words = len(raw_data) / 5.5
-                dwell_sec = min(0.35, max(0.05, (words / 10000.0) * 0.1))
-                time.sleep(dwell_sec)
-
+                latency_ms = (time.time() - t_start) * 1000.0
                 telemetry = {
-                    "latency_ms": (time.time() - t_start) * 1000.0,
-                    "backtrack_sec": backtrack_sec,
-                    "search_sec": search_sec,
-                    "select_sec": select_sec,
-                    "reading_pause_sec": dwell_sec,
-                    "stealth_tier": "ADVANCED_STEALTH"
+                    "latency_ms": round(latency_ms, 2),
+                    "bytes_received": len(raw_data),
+                    "stealth_mode": "adaptive_headers"
                 }
                 return raw_data, content_type, status_code, None, telemetry
 
         except urllib.error.HTTPError as e:
-            return None, "", e.code, f"HTTP {e.code}: {e.reason}", {"latency_ms": (time.time() - t_start) * 1000.0}
+            return None, "", e.code, f"HTTP {e.code}: {e.reason}", {"latency_ms": round((time.time() - t_start) * 1000.0, 2)}
         except Exception as ex:
-            return None, "", 0, str(ex), {"latency_ms": (time.time() - t_start) * 1000.0}
+            return None, "", 0, str(ex), {"latency_ms": round((time.time() - t_start) * 1000.0, 2)}
 
-BrowserStealthSession = QuantumStealthSession
+    # Aliases for backward compatibility
+    quantum_fetch = fetch
+    get_quantum_headers = get_stealth_headers
+
+
+# Backward compatible aliases
+QuantumStealthSession = StealthSession
+BrowserStealthSession = StealthSession

@@ -8,6 +8,30 @@ const __dirname = path.dirname(__filename);
 const DOCS_DIR = path.resolve(__dirname, '..', 'docs', 'ux_journey');
 const VIEWS = [
   {
+    "id": "tab_visual",
+    "title": "Visual Studio",
+    "path": "/?tab=visual",
+    "category": "Core Application",
+    "selector": null,
+    "description": "Interactive view mode for Visual"
+  },
+  {
+    "id": "tab_mermaid",
+    "title": "Mermaid Studio",
+    "path": "/?tab=mermaid",
+    "category": "Core Application",
+    "selector": null,
+    "description": "Interactive view mode for Mermaid"
+  },
+  {
+    "id": "tab_specs",
+    "title": "Specs Studio",
+    "path": "/?tab=specs",
+    "category": "Core Application",
+    "selector": null,
+    "description": "Interactive view mode for Specs"
+  },
+  {
     "id": "modal_logs",
     "title": "Logs Modal Overlay",
     "path": "/#modal",

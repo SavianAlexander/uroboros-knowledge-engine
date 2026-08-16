@@ -13,11 +13,12 @@ from src.domain.polymorphic_data_orchestrator import list_orchestrated_datasets,
 
 
 AGGREGATION_KEYWORDS = {
-    "total": "SUM",
-    "sum": "SUM",
-    "count": "COUNT",
+    "total count": "COUNT",
     "how many": "COUNT",
     "number of": "COUNT",
+    "count": "COUNT",
+    "sum": "SUM",
+    "total": "SUM",
     "average": "AVG",
     "avg": "AVG",
     "mean": "AVG",

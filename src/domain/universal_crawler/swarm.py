@@ -358,3 +358,7 @@ class CrawlSwarm:
             "chunks_indexed": self.stats["chunks_indexed"],
             "bytes_downloaded": self.stats["bytes_downloaded"]
         }
+
+
+# Facade alias
+SwarmCrawler = CrawlSwarm
