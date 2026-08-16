@@ -83,6 +83,7 @@ services:
       dockerfile: Dockerfile.frontend
     image: neuroalexander-uroboros_frontend:latest
     container_name: uroboros_frontend
+    profiles: ["ui", "frontend", "all"]
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -122,6 +123,7 @@ services:
   uroboros_voice:
     image: ghcr.io/remsky/kokoro-fastapi-cpu:v0.1.2
     container_name: uroboros_voice
+    profiles: ["voice", "all"]
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
