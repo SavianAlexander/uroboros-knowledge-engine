@@ -20,7 +20,7 @@ graph TD
     Kokoro --> DSP["VoiceDSP Mastering Rack (Single-Pass Biquad)"]
     
     subgraph DSP_Presets["Acoustic DSP Presets"]
-        Sovereign["EXECUTIVE_PRESENCE (180Hz Warmth + 3.8kHz Crystal Presence)"]
+        Executive["EXECUTIVE_PRESENCE (180Hz Warmth + 3.8kHz Crystal Presence)"]
         Studio["STUDIO_MASTER (4.5kHz Broadcast Sheen)"]
         Tactical["COMMANDER_TACTICAL (2.8kHz Midrange Vocal Punch)"]
         Aura["HOLOGRAPHIC_AURA (3.4kHz & 8.5kHz Shimmer)"]

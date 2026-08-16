@@ -26,7 +26,8 @@ VOICES_JSON_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.json")
 # Signature Curated Vocal Timbre Persona Blends
 SIGNATURE_PERSONA_BLENDS: Dict[str, Dict[str, float]] = {
     # Executive & Command Personas (Presence & Authority)
-    "ALEXANDER_SOVEREIGN": {"am_adam": 0.70, "bm_george": 0.20, "am_michael": 0.10},  # Executive Command: Deep baritone, resonant low-end & vocal clarity
+    "ALEXANDER_EXECUTIVE": {"am_adam": 0.70, "bm_george": 0.20, "am_michael": 0.10},  # Executive Command: Deep baritone, resonant low-end & vocal clarity
+    "ALEXANDER_SOVEREIGN": {"am_adam": 0.70, "bm_george": 0.20, "am_michael": 0.10},  # Alias for backward compatibility
     "FREYA_VALKYRIE": {"bf_emma": 0.60, "af_sarah": 0.25, "af_bella": 0.15},          # Resolute Command: Crystalline, articulate noble authority
     "AURELIUS_STOIC": {"am_adam": 0.80, "bm_lewis": 0.20},                             # Stoic Presence: Deep low-end presence & deliberate pacing
     "NOCTURNA_SOLON": {"bm_george": 0.65, "am_adam": 0.35},                           # Strategic Analysis: Focused, articulate analysis & strategic gravitas

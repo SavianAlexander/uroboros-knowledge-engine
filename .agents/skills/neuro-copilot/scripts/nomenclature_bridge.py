@@ -109,9 +109,9 @@ WHITELIST_CONTEXT_PATTERNS = [
 
 
 def is_whitelisted_file(filepath: str) -> bool:
-    """Check if file is exempt from lexical scanning (e.g. historical game news)."""
+    """Check if file is exempt from lexical scanning (e.g. historical game news or meta-audit tools)."""
     norm_path = filepath.replace("\\", "/")
-    if "vault/Eve Online/News/" in norm_path:
+    if "vault/Eve Online/News/" in norm_path or "deep_lexical_audit.py" in norm_path or "comprehensive_lexical_scan.py" in norm_path or "filter_findings.py" in norm_path:
         return True
     return False
 

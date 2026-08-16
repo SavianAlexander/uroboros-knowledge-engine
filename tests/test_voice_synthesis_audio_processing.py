@@ -317,13 +317,13 @@ class TestExecutiveDSPAndPersonas:
     def test_sovereign_persona_vectors(self):
         from src.core.voice_persona_blend import VoicePersonaBlender
         blends = VoicePersonaBlender.get_preset_blends()
-        assert "ALEXANDER_SOVEREIGN" in blends
+        assert "ALEXANDER_EXECUTIVE" in blends or "ALEXANDER_SOVEREIGN" in blends
         assert "FREYA_VALKYRIE" in blends
         assert "AURELIUS_STOIC" in blends
         assert "NOCTURNA_SOLON" in blends
 
-        # Check Alexander Sovereign tensor
-        alex_vec = VoicePersonaBlender.get_persona_tensor("ALEXANDER_SOVEREIGN")
+        # Check Alexander Executive tensor
+        alex_vec = VoicePersonaBlender.get_persona_tensor("ALEXANDER_EXECUTIVE")
         assert alex_vec is not None
         assert alex_vec.shape == (511, 1, 256)
 
@@ -375,7 +375,7 @@ class TestExecutiveDSPAndPersonas:
         save_resp = client.post(
             "/api/voice/custom-personas",
             json={
-                "name": "Spartan Sovereign",
+                "name": "Spartan Executive",
                 "weights": {"am_adam": 0.8, "bm_george": 0.2},
                 "dsp_preset": "EXECUTIVE_PRECISION",
                 "description": "Test Spartan voice"
@@ -387,14 +387,14 @@ class TestExecutiveDSPAndPersonas:
         # 2. List custom personas
         list_resp = client.get("/api/voice/custom-personas")
         assert list_resp.status_code == 200
-        assert "SPARTAN_SOVEREIGN" in list_resp.json()["personas"]
+        assert "SPARTAN_EXECUTIVE" in list_resp.json()["personas"]
 
         # 3. Test Preview endpoint
         prev_resp = client.post(
             "/api/voice/preview",
             json={
-                "text": "Testing Sovereign preview.",
-                "voice": "SPARTAN_SOVEREIGN",
+                "text": "Testing Executive preview.",
+                "voice": "SPARTAN_EXECUTIVE",
                 "dsp_preset": "EXECUTIVE_PRECISION"
             }
         )
