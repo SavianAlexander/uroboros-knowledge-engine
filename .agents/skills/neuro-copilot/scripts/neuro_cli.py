@@ -497,6 +497,37 @@ def cmd_recover(args):
     return 0 if res.get("status") == "success" else 1
 
 
+def cmd_docker(args):
+    """Spawns modular on-demand Docker container profiles (core, ui, voice, all, gpu, stop)."""
+    import subprocess
+    target = getattr(args, "target", "status")
+    
+    cmd_map = {
+        "core": ["docker", "compose", "up", "-d"],
+        "ui": ["docker", "compose", "--profile", "ui", "up", "-d"],
+        "frontend": ["docker", "compose", "--profile", "ui", "up", "-d"],
+        "voice": ["docker", "compose", "--profile", "voice", "up", "-d"],
+        "all": ["docker", "compose", "--profile", "all", "up", "-d"],
+        "gpu": ["docker", "compose", "--profile", "all", "--profile", "gpu-nvidia", "up", "-d"],
+        "gpu-amd": ["docker", "compose", "--profile", "all", "--profile", "gpu-amd", "up", "-d"],
+        "stop": ["docker", "compose", "down"],
+        "status": ["docker", "compose", "ps"]
+    }
+    
+    cmd = cmd_map.get(target.lower())
+    if not cmd:
+        print(f"Unknown Docker target: '{target}'. Available: core, ui, voice, all, gpu, stop, status")
+        return 1
+        
+    print(f"🐳 Spawning Docker Profile: '{target}' -> {' '.join(cmd)}")
+    try:
+        res = subprocess.run(cmd, cwd=BASE_DIR)
+        return res.returncode
+    except Exception as e:
+        print(f"Docker execution error: {e}")
+        return 1
+
+
 def cmd_status(args):
     """Displays a quick multi-layer dashboard scorecard."""
     print_banner()
@@ -643,6 +674,10 @@ def main():
     hud_p = subparsers.add_parser("hud", help="Alias for watch (real-time telemetry HUD)")
     hud_p.add_argument("--root", default=BASE_DIR, help="Target repository root")
     hud_p.add_argument("--iterations", type=int, default=0, help="Loop frames (0 for infinite)")
+
+    # docker
+    dock_p = subparsers.add_parser("docker", help="Spawn modular on-demand Docker container profiles")
+    dock_p.add_argument("target", nargs="?", default="status", choices=["core", "ui", "frontend", "voice", "all", "gpu", "gpu-amd", "stop", "status"], help="Target profile to spawn")
 
     # release
     rel_p = subparsers.add_parser("release", help="Generate immutable SOC 2 Type II Merkle release certificate")
@@ -793,6 +828,7 @@ def main():
         "bench": cmd_bench,
         "fleet": cmd_fleet,
         "flight_plan": cmd_flight_plan,
+        "docker": cmd_docker,
         "status": cmd_status,
         "self_test": lambda a: self_test()
     }
