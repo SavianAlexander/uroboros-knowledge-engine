@@ -33,8 +33,18 @@ RE_WORD_BOUNDARIES = re.compile(r'\w+')
 RE_SENTENCE_BOUNDARIES = re.compile(r'(?<=[.!?])\s+')
 
 def _smart_extract_context(context: str, query: str, max_chars: int = 6000) -> str:
-    if len(context) <= max_chars:
-        return context
+    if not context or len(context) <= max_chars:
+        return context or ""
+    try:
+        from src.domain.rag_engine import build_token_budget_context
+        blocks = [b.strip() for b in context.split("\n\n") if b.strip()]
+        if blocks and len(blocks) > 1:
+            packed = build_token_budget_context(blocks, max_tokens=max_chars // 4)
+            if packed:
+                return packed
+    except Exception:
+        pass
+
     keywords = {kw for kw in RE_WORD_BOUNDARIES.findall(query.lower()) if len(kw) > 3}
     if not keywords:
         return context[:max_chars]

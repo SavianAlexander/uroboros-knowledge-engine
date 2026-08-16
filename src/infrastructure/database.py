@@ -123,16 +123,34 @@ def reset_db_connections():
 
 _db_write_lock = threading.Lock()
 
+def with_sqlite_retry(fn: Callable, max_retries: int = 5, initial_delay: float = 0.05, backoff_factor: float = 2.0) -> Any:
+    """Execute callable with exponential backoff on transient SQLite write locks / busy states."""
+    import random
+    last_err = None
+    for attempt in range(max_retries):
+        try:
+            return fn()
+        except sqlite3.OperationalError as e:
+            last_err = e
+            err_str = str(e).lower()
+            if ("locked" in err_str or "busy" in err_str) and attempt < max_retries - 1:
+                sleep_time = (initial_delay * (backoff_factor ** attempt)) + random.uniform(0.01, 0.05)
+                time.sleep(sleep_time)
+                continue
+            raise
+    if last_err:
+        raise last_err
+
 @contextlib.contextmanager
 def get_db_write_connection(db_path: str, timeout: float = DB_TIMEOUT):
-    """Acquires a global lock to serialize SQLite writes at the Python level, preventing database is locked errors."""
+    """Acquires a global lock to serialize SQLite writes at Python level with exponential retry backoff."""
     pool = get_pool(db_path)
     with _db_write_lock:
         conn = pool.get_connection()
         try:
             yield conn
             if getattr(conn, "in_transaction", False):
-                conn.commit()
+                with_sqlite_retry(lambda: conn.commit())
         except Exception:
             if getattr(conn, "in_transaction", False):
                 try:
@@ -145,13 +163,13 @@ def get_db_write_connection(db_path: str, timeout: float = DB_TIMEOUT):
 
 @contextlib.contextmanager
 def get_db_connection(db_path: str, timeout: float = DB_TIMEOUT):
-    """Centralized database connection manager that uses a thread-safe connection pool."""
+    """Centralized database connection manager that uses a thread-safe connection pool with commit retry."""
     pool = get_pool(db_path)
     conn = pool.get_connection()
     try:
         yield conn
         if getattr(conn, "in_transaction", False):
-            conn.commit()
+            with_sqlite_retry(lambda: conn.commit())
     except Exception:
         if getattr(conn, "in_transaction", False):
             try:

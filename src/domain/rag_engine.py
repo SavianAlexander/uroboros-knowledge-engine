@@ -516,6 +516,40 @@ def extract_advanced_rag_context(
     return context_text, citations
 
 
+def build_token_budget_context(context_blocks: List[str], max_tokens: int = 3500) -> str:
+    """
+    Sentence-priority token budget packing:
+    Estimates tokens (4 chars ~ 1 token) and packs complete sentences across retrieved blocks
+    in ranking priority order without crude mid-sentence slicing or dropping downstream sources.
+    """
+    if not context_blocks:
+        return ""
+
+    budget_chars = max_tokens * 4
+    total_len = sum(len(b) for b in context_blocks)
+    if total_len <= budget_chars:
+        return "\n\n".join(context_blocks)
+
+    allocated_blocks = []
+    chars_remaining = budget_chars
+
+    min_per_block = max(200, budget_chars // (len(context_blocks) + 1))
+
+    for block in context_blocks:
+        if chars_remaining <= 0:
+            break
+        if len(block) <= min_per_block or len(block) <= chars_remaining:
+            allocated_blocks.append(block)
+            chars_remaining -= len(block)
+        else:
+            trimmed = trim_to_sentence_boundary(block, max_chars=chars_remaining)
+            if trimmed:
+                allocated_blocks.append(trimmed)
+                chars_remaining -= len(trimmed)
+
+    return "\n\n".join(allocated_blocks)
+
+
 def build_augmented_prompt(query: str, context: str) -> str:
     """Formats retrieved context and user query into a grounded RAG prompt."""
     return f"Context:\n{context}\n\nQuestion: {query}\n\nAnswer:"

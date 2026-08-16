@@ -113,6 +113,140 @@ def search_files(query: str) -> List[Dict[str, Any]]:
                 import logging; logging.warning(f"Swallowed error in database.py: {e}")
         return []
 
+def index_file(filepath: str) -> bool:
+    """
+    Incremental single-file indexer: parses one file, generates embeddings,
+    and updates SQLite/FTS/Tags in an isolated transaction without scanning the entire directory.
+    """
+    p = Path(filepath).resolve()
+    if not p.is_file() or p.name == db.DB_FILE or p.name.startswith('.'):
+        return False
+
+    from src.core.context import get_current_user_id
+    user_id = get_current_user_id() or 0
+
+    try:
+        stat = p.stat()
+        file_size = stat.st_size
+        modified_at = stat.st_mtime
+    except OSError:
+        return False
+
+    suffix = p.suffix.lower()
+    mime_type, _ = mimetypes.guess_type(str(p))
+    mime_type = mime_type or 'application/octet-stream'
+
+    text_extensions = {
+        '.md', '.markdown', '.py', '.txt', '.json', '.yaml', '.yml', '.ini', '.csv', '.tsv', '.tab',
+        '.xml', '.html', '.css', '.js', '.pdf', '.docx', '.rtf', '.xlsx', '.pptx', '.ipynb', '.epub',
+        '.png', '.jpg', '.jpeg', '.bmp'
+    }
+
+    if file_size > 100 * 1024 * 1024:
+        sha256 = calculate_sha256_cached(str(p), modified_at)
+        content = f"[File size ({file_size / (1024*1024):.1f}MB) exceeds 100MB safety limit.]"
+        coords = []
+    else:
+        sha256 = calculate_sha256_cached(str(p), modified_at)
+        content = ""
+        coords = []
+        if mime_type.startswith('text/') or suffix in text_extensions:
+            content, coords = extract_content(str(p), suffix)
+        elif suffix in {'.wav', '.mp3'}:
+            meta = parse_audio_metadata(str(p))
+            content = f"[Audio Metadata] samplerate:{meta.get('samplerate', 0)} channels:{meta.get('channels', 0)}"
+
+    acl_permissions = get_file_acl(str(p))
+
+    rule_matches = []
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT pattern, tag FROM auto_rules")
+            rule_matches = [(r[0], r[1]) for r in cursor.fetchall()]
+    except Exception:
+        rule_matches = []
+
+    matched_tags = extract_ai_tags(content, p.name, rule_matches=rule_matches)
+
+    # Chunks & Embeddings
+    from src.core.embeddings import generate_embedding
+    from src.core.domain.services import chunk_text
+    chunks = chunk_text(content, chunk_size=1024)
+    chunk_data = []
+    for chunk_idx, chunk in enumerate(chunks):
+        emb = generate_embedding(chunk)
+        emb_json = json.dumps(emb) if emb else None
+        chunk_data.append((chunk_idx, chunk, emb_json))
+
+    # Atomic DB Update
+    str_fp = str(p)
+    with get_db_write_connection(db.DB_FILE) as conn:
+        with conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM files WHERE filepath = ?", (str_fp,))
+            row = cursor.fetchone()
+            if row:
+                file_id = row[0]
+                cursor.execute("""
+                    UPDATE files
+                    SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?, acl_permissions = ?, insights = NULL
+                    WHERE id = ?
+                """, (p.name, file_size, mime_type, sha256, modified_at, content, acl_permissions, file_id))
+
+                cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (str_fp,))
+                cursor.execute("""
+                    INSERT INTO fts_files (filepath, filename, content, notes)
+                    VALUES (?, ?, ?, (SELECT notes FROM files WHERE id = ?))
+                """, (str_fp, p.name, content, file_id))
+
+                cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
+                cursor.execute("DELETE FROM tags WHERE file_id = ?", (file_id,))
+                cursor.execute("DELETE FROM file_chunks WHERE file_id = ?", (file_id,))
+                cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
+            else:
+                cursor.execute("""
+                    INSERT INTO files (user_id, filepath, filename, file_size, mime_type, sha256, modified_at, content, acl_permissions, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+                """, (user_id, str_fp, p.name, file_size, mime_type, sha256, modified_at, content, acl_permissions))
+                file_id = cursor.lastrowid
+                cursor.execute("""
+                    INSERT INTO fts_files (filepath, filename, content, notes)
+                    VALUES (?, ?, ?, NULL)
+                """, (str_fp, p.name, content))
+
+            if coords:
+                cursor.executemany("""
+                    INSERT INTO ocr_coords (file_id, word, x, y, w, h)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, [(file_id, c['word'], c['x'], c['y'], c['w'], c['h']) for c in coords])
+
+            if matched_tags:
+                cursor.executemany("INSERT OR IGNORE INTO tags (file_id, tag) VALUES (?, ?)", [(file_id, tag) for tag in matched_tags])
+
+            for chunk_idx, chunk, emb_json in chunk_data:
+                cursor.execute('''
+                    INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json)
+                    VALUES (?, ?, ?, ?)
+                ''', (file_id, chunk_idx, chunk, emb_json))
+                chunk_id = cursor.lastrowid
+                try:
+                    cursor.execute(
+                        "INSERT INTO fts_file_chunks (chunk_id, file_id, content) VALUES (?, ?, ?)",
+                        (chunk_id, file_id, chunk)
+                    )
+                except Exception:
+                    pass
+
+    db._db_version += 1
+    try:
+        from src.core.state import GLOBAL_QUERY_CACHE
+        if GLOBAL_QUERY_CACHE is not None:
+            GLOBAL_QUERY_CACHE.invalidate()
+    except Exception:
+        pass
+    return True
+
 def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, int, int], None]] = None, on_complete_callback: Optional[Callable[[], None]] = None, job_id: Optional[str] = None):
     """
     Crawls dir_path, parses supported files, updates files/FTS/Tags,
@@ -531,6 +665,7 @@ class MiniVectorEngine:
         """
         Sub-3ms High-Performance Vector Search with Matryoshka Representation Learning (MRL).
         Uses 256-dim MRL slicing for candidate filtering and full-dimension L2 dot product for scoring.
+        Enforces embedding dimension validation to prevent mathematical drift across model changes.
         """
         if not query or not query.strip():
             return []
@@ -544,7 +679,20 @@ class MiniVectorEngine:
         q_256 = matryoshka_slice(query_emb, target_dim=256)
 
         MiniVectorEngine._ensure_vector_matrix_cache()
-        cached_chunks = MiniVectorEngine._cached_chunks
+        cached_chunks = MiniVectorEngine._cached_chunks or []
+
+        if not cached_chunks:
+            return []
+
+        # Vector Dimension & Drift Invariant Guard
+        stored_dim = len(cached_chunks[0].get("full_emb", []))
+        query_dim = len(q_full)
+        if stored_dim > 0 and query_dim > 0 and stored_dim != query_dim:
+            logging.warning(
+                f"Embedding vector dimension mismatch: stored={stored_dim}, query={query_dim}. "
+                f"Automatic vector re-index recommended."
+            )
+            return []
 
         results = []
         for item in cached_chunks:
@@ -574,6 +722,20 @@ class MiniVectorEngine:
 
         results.sort(key=lambda x: x["score"], reverse=True)
         return results[:top_k]
+
+    @classmethod
+    def get_embedding_dimension_info(cls) -> Dict[str, Any]:
+        """Returns metadata regarding active vector index dimension and model alignment."""
+        cls._ensure_vector_matrix_cache()
+        cached = cls._cached_chunks or []
+        stored_dim = len(cached[0]["full_emb"]) if cached and "full_emb" in cached[0] else 0
+        from src.core.embeddings import OLLAMA_EMBED_MODEL
+        return {
+            "stored_dimension": stored_dim,
+            "configured_model": OLLAMA_EMBED_MODEL,
+            "total_cached_chunks": len(cached),
+            "status": "synchronized" if stored_dim > 0 else "empty"
+        }
 
     @staticmethod
     def search_hybrid_rrf(query: str, top_k: int = 10, k: float = 60.0) -> List[Dict[str, Any]]:
@@ -2695,9 +2857,11 @@ class MiniVectorEngine:
         Computes real cosine alignment loss and empirical SGD gradient step magnitude for query-document vector pairs.
         """
         q_vec = generate_embedding(query) if query else [0.1] * 16
-        norm_q = math.sqrt(sum(x * x for x in q_vec)) or 1.0
-        # Compute empirical alignment loss against target unit vector
-        cosine_loss = max(0.0001, round(1.0 - (sum(q_vec) / (norm_q * math.sqrt(len(q_vec)))), 6))
+        if not q_vec:
+            q_vec = [0.1] * 16
+        norm_q = math.sqrt(sum(x * x for x in q_vec))
+        denom = norm_q * math.sqrt(len(q_vec))
+        cosine_loss = max(0.0001, round(1.0 - (sum(q_vec) / denom), 6)) if denom > 1e-9 else 0.0001
         grad_step = round(cosine_loss * (1.0 - feedback_weight), 6)
         return {
             "query": query,

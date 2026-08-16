@@ -1920,9 +1920,11 @@ export default function ChatView() {
             {artifactTab === 'preview' ? (
               <div className="h-full rounded-xl border border-slate-800 bg-slate-900/50 p-4 overflow-auto">
                 {activeArtifact.language === 'html' || activeArtifact.language === 'svg' ? (
-                  <div
-                    dangerouslySetInnerHTML={{ __html: activeArtifact.content }}
-                    className="w-full text-slate-200"
+                  <iframe
+                    srcDoc={activeArtifact.content}
+                    sandbox="allow-scripts"
+                    className="w-full h-full min-h-[300px] border-0 bg-transparent rounded-lg"
+                    title="Secure Artifact Sandbox"
                   />
                 ) : (
                   <div className="space-y-3 font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
