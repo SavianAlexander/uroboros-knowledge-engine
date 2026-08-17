@@ -1,6 +1,6 @@
 # 📐 Uroboros Knowledge Engine & Neuro Co-Pilot Architecture Diagrams
 
-**Generated**: `2026-08-16 17:06:37Z`  
+**Generated**: `2026-08-16 20:17:05Z`  
 **Standard**: Pure Mermaid JS diagrams rendered in GitHub Flavored Markdown.
 
 ---

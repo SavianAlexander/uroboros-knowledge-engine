@@ -42,20 +42,23 @@ ALLOWED_ROOT_FILES = {
     # Configurations & Build Manifests
     "docker-compose.yml", "docker-compose.test.yml",
     "Dockerfile", "Dockerfile.frontend", "Dockerfile.test",
-    "nginx.conf", "pytest.ini", "requirements.txt", "uroboros_engine.spec",
+    "nginx.conf", "pytest.ini", "requirements.txt", "requirements-dev.txt", "uroboros_engine.spec",
     ".gitignore", ".gitattributes", ".editorconfig", ".env.example", ".dockerignore",
     
     # Canonical Knowledge & Vector Databases
     "knowledge.db",
     "knowledge.db-shm",
     "knowledge.db-wal",
+    "know.db",
+    "know.db-shm",
+    "know.db-wal",
     "vectors.db"
 }
 
 ALLOWED_ROOT_DIRS = {
     ".agents", ".git", ".github", ".pytest_cache", ".venv", "__pycache__",
     "assets", "backups", "build", "chunks", "data", "dist", "docs", "dumps",
-    "frontend", "models", "scratch", "scripts", "skills", "src", "tests",
+    "frontend", "models", "runtimes", "scratch", "scripts", "skills", "src", "tests",
     "tools", "vault", "Triage (Support)"
 }
 

@@ -72,13 +72,53 @@ class TestDockerConfig(unittest.TestCase):
         content = comp_path.read_text(encoding="utf-8")
         self.assertIn("gzipSync", content)
         self.assertIn("Z_BEST_COMPRESSION", content)
+        self.assertIn("brotliCompressSync", content)
 
     def test_tune_wsl_script(self):
         wsl_script = BASE_DIR / "scripts" / "tune_wsl.ps1"
         self.assertTrue(wsl_script.exists())
         content = wsl_script.read_text(encoding="utf-8")
         self.assertIn(".wslconfig", content)
-        self.assertIn("memory=6GB", content)
+        self.assertIn("memory=4GB", content)
+
+    def test_dependency_decoupling(self):
+        req_path = BASE_DIR / "requirements.txt"
+        req_dev_path = BASE_DIR / "requirements-dev.txt"
+        self.assertTrue(req_path.exists())
+        self.assertTrue(req_dev_path.exists())
+        prod_content = req_path.read_text(encoding="utf-8")
+        dev_content = req_dev_path.read_text(encoding="utf-8")
+        self.assertNotIn("playwright", prod_content)
+        self.assertNotIn("pytest", prod_content)
+        self.assertIn("playwright", dev_content)
+        self.assertIn("pytest", dev_content)
+
+    def test_dockerfile_test_deps(self):
+        df_test = BASE_DIR / "Dockerfile.test"
+        self.assertTrue(df_test.exists())
+        content = df_test.read_text(encoding="utf-8")
+        self.assertIn("requirements-dev.txt", content)
+        self.assertIn("playwright install", content)
+
+    def test_advanced_docker_optimizations(self):
+        df_path = BASE_DIR / "Dockerfile"
+        df_content = df_path.read_text(encoding="utf-8")
+        self.assertIn("idlelib", df_content)
+        self.assertIn("compileall", df_content)
+        self.assertIn("PYTHONMALLOC=malloc", df_content)
+        self.assertIn("MALLOC_TRIM_THRESHOLD_=65536", df_content)
+
+        nginx_path = BASE_DIR / "nginx.conf"
+        nginx_content = nginx_path.read_text(encoding="utf-8")
+        self.assertIn("open_file_cache", nginx_content)
+        self.assertIn("worker_processes 1;", nginx_content)
+
+        dc_path = BASE_DIR / "docker-compose.yml"
+        dc_content = dc_path.read_text(encoding="utf-8")
+        self.assertIn("ulimits:", dc_content)
+        self.assertIn("shm_size: '256mb'", dc_content)
+        self.assertIn("OLLAMA_KEEP_ALIVE=2m", dc_content)
+        self.assertIn("OLLAMA_FLASH_ATTENTION=1", dc_content)
 
 if __name__ == "__main__":
     unittest.main()

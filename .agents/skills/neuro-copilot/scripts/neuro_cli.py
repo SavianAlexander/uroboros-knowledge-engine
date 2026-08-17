@@ -528,20 +528,107 @@ def cmd_docker(args):
         return 1
 
 
+def cmd_upload_status(args):
+    """Displays GitHub remote upload and provenance visibility."""
+    import github_bridge
+    repo_root = getattr(args, "root", BASE_DIR) or BASE_DIR
+    if getattr(args, "json", False):
+        print(json.dumps(github_bridge.get_git_sync_status(repo_root), indent=2))
+        return 0
+    return github_bridge.print_upload_status()
+
+
 def cmd_status(args):
     """Displays a quick multi-layer dashboard scorecard."""
     print_banner()
     try:
         import doctor_bridge
+        import github_bridge
         repo_root = getattr(args, "root", BASE_DIR) or BASE_DIR
         score = doctor_bridge.generate_health_scorecard(repo_root)
-        print(f"System Health: {score.get('score', '100%')} | Status: {score.get('status', 'NOMINAL')} | In {score.get('duration_ms', 0)}ms\n")
+        sync_stat = github_bridge.get_git_sync_status(repo_root)
+        print(f"System Health: {score.get('score', '100%')} | Status: {score.get('status', 'NOMINAL')} | In {score.get('duration_ms', 0)}ms")
+        print(f"GitHub Upload: {sync_stat.get('status_badge', 'Unknown')} (Branch: {sync_stat.get('branch', 'master')})\n")
         for k, v in score.get("checks", {}).items():
             icon = "✅" if v.get("ok") else "⚠️"
             print(f"  {icon} {k:<24}: {v.get('summary')}")
         print("===================================================================")
     except Exception as e:
         print(f"Status check error: {e}")
+    return 0
+
+
+def cmd_erp(args):
+    """Unified PR ERP Multi-Database SQL Bridge (know, payroll, compliance)."""
+    import pr_erp_sql_bridge
+    sub = getattr(args, "erp_subcommand", None) or "schema"
+    if sub == "schema":
+        print(json.dumps(pr_erp_sql_bridge.get_schema_catalog(), indent=2))
+    elif sub == "payroll":
+        print(json.dumps(pr_erp_sql_bridge.get_payroll_metrics(), indent=2))
+    elif sub == "compliance":
+        print(json.dumps(pr_erp_sql_bridge.get_compliance_metrics(), indent=2))
+    elif sub == "query":
+        print(json.dumps(pr_erp_sql_bridge.execute_safe_query(args.sql, args.limit), indent=2))
+    elif sub == "ask":
+        q_str = " ".join(args.question) if isinstance(args.question, list) else str(args.question or "")
+        print(pr_erp_sql_bridge.ask_erp_copilot(q_str))
+    return 0
+
+
+def cmd_llm(args):
+    """Standalone Local LLM Engine Bridge (Zero-Daemon GGUF Execution)."""
+    import standalone_llama_bridge
+    sub = getattr(args, "llm_subcommand", None) or "status"
+    if sub == "list":
+        reg = standalone_llama_bridge.load_model_registry()
+        print(json.dumps(reg, indent=2))
+    elif sub == "status":
+        ollama_up = standalone_llama_bridge.check_ollama_alive()
+        vulkan_bin = standalone_llama_bridge.get_llama_binary("vulkan")
+        hip_bin = standalone_llama_bridge.get_llama_binary("hip")
+        reg = standalone_llama_bridge.load_model_registry()
+        print(json.dumps({
+            "status": "NOMINAL",
+            "ollama_http_daemon": "ONLINE" if ollama_up else "OFFLINE (Fallback Active)",
+            "vulkan_runtime": "READY" if vulkan_bin else "MISSING",
+            "hip_rocm_runtime": "READY" if hip_bin else "MISSING",
+            "registered_models_count": len(reg.get("models", {})),
+            "total_model_storage_mb": reg.get("total_storage_mb", 0)
+        }, indent=2))
+    elif sub == "run":
+        p_str = " ".join(args.prompt) if isinstance(args.prompt, list) else str(args.prompt or "")
+        print(json.dumps(standalone_llama_bridge.run_standalone_inference(
+            p_str,
+            model=args.model,
+            max_tokens=args.tokens,
+            temperature=args.temp,
+            runtime=args.runtime,
+            gpu_layers=args.ngl
+        ), indent=2))
+    return 0
+
+
+def cmd_loop(args):
+    """Executes Closed-Loop Autonomous Engineering Engines (develop, health, erp, knowledge)."""
+    import workflow_hub_bridge
+    sub = getattr(args, "loop_subcommand", None) or "health"
+    repo_root = getattr(args, "root", BASE_DIR) or BASE_DIR
+
+    if sub == "develop":
+        task_str = " ".join(args.task) if isinstance(args.task, list) else str(args.task or "Autonomous feature development")
+        res = workflow_hub_bridge.loop_develop(task_str, max_iterations=args.iterations, repo_root=repo_root)
+        print(json.dumps(res, indent=2))
+    elif sub == "health":
+        res = workflow_hub_bridge.loop_health(daemon=args.daemon, interval_sec=args.interval, max_iterations=args.max_cycles, repo_root=repo_root)
+        print(json.dumps(res, indent=2))
+    elif sub == "erp":
+        res = workflow_hub_bridge.loop_erp()
+        print(json.dumps(res, indent=2))
+    elif sub == "knowledge":
+        q = " ".join(args.query) if isinstance(args.query, list) else str(args.query or "Bono de Navidad")
+        res = workflow_hub_bridge.loop_knowledge(query_test=q)
+        print(json.dumps(res, indent=2))
     return 0
 
 
@@ -574,6 +661,10 @@ def self_test():
     ret_bench = cmd_bench(args)
     assert ret_bench == 0, "cmd_bench failed"
     print("  [Pass] cmd_bench clean")
+
+    ret_upload = cmd_upload_status(args)
+    assert ret_upload == 0, "cmd_upload_status failed"
+    print("  [Pass] cmd_upload_status clean")
 
     ret_fleet = cmd_fleet(args)
     assert ret_fleet == 0, "cmd_fleet failed"
@@ -781,9 +872,63 @@ def main():
     subparsers.add_parser("recover", help="Execute 5-stage zero-reboot Windows recovery cascade")
     subparsers.add_parser("restore", help="Alias for recover (zero-reboot recovery cascade)")
 
+    # upload_status / sync
+    up_p = subparsers.add_parser("upload_status", help="Display GitHub Remote Upload & Sync Visibility status")
+    up_p.add_argument("--json", action="store_true", help="Output raw JSON")
+    up_p.add_argument("--root", default=BASE_DIR, help="Target repository root")
+
+    sync_p = subparsers.add_parser("sync", help="Alias for upload_status (GitHub Remote Sync Visibility)")
+    sync_p.add_argument("--json", action="store_true", help="Output raw JSON")
+    sync_p.add_argument("--root", default=BASE_DIR, help="Target repository root")
+
     # status
     status_p = subparsers.add_parser("status", help="Quick executive health scorecard")
     status_p.add_argument("--root", default=BASE_DIR, help="Target repository root")
+
+    # erp
+    erp_p = subparsers.add_parser("erp", help="Unified PR ERP Multi-Database SQL Bridge (know, payroll, compliance)")
+    erp_subs = erp_p.add_subparsers(dest="erp_subcommand")
+    erp_subs.add_parser("schema", help="Reflect full schema across all attached ERP databases")
+    erp_subs.add_parser("payroll", help="Summary metrics from payroll.db")
+    erp_subs.add_parser("compliance", help="Summary metrics from compliance.db")
+    erp_q = erp_subs.add_parser("query", help="Execute read-only SQL query across attached databases")
+    erp_q.add_argument("sql", help="SQL SELECT statement")
+    erp_q.add_argument("--limit", type=int, default=100, help="Max rows")
+    erp_ask = erp_subs.add_parser("ask", help="Natural language question to SQL execution")
+    erp_ask.add_argument("question", nargs="*", help="Question text")
+
+    # llm
+    llm_p = subparsers.add_parser("llm", help="Standalone Local LLM Engine Bridge (Zero-Daemon GGUF Execution)")
+    llm_subs = llm_p.add_subparsers(dest="llm_subcommand")
+    llm_subs.add_parser("list", help="List registered GGUF models and aliases")
+    llm_subs.add_parser("status", help="Check Ollama and Standalone Vulkan/HIP runtime status")
+    llm_run = llm_subs.add_parser("run", help="Run standalone prompt directly via llama-cli")
+    llm_run.add_argument("prompt", nargs="*", help="Prompt string")
+    llm_run.add_argument("--model", default="qwen2.5:0.5b", help="Target model name")
+    llm_run.add_argument("--tokens", type=int, default=256, help="Max tokens")
+    llm_run.add_argument("--temp", type=float, default=0.2, help="Temperature")
+    llm_run.add_argument("--runtime", default="vulkan", choices=["vulkan", "hip"], help="GPU backend")
+    llm_run.add_argument("--ngl", type=int, default=16, help="GPU offload layers")
+
+    # loop (Closed-Loop Autonomous Engineering)
+    loop_p = subparsers.add_parser("loop", help="Execute Closed-Loop Autonomous Engineering Engines")
+    loop_subs = loop_p.add_subparsers(dest="loop_subcommand")
+    
+    loop_dev = loop_subs.add_parser("develop", help="Autonomous Feature & Bugfix Loop with Self-Healing")
+    loop_dev.add_argument("task", nargs="*", help="Task or feature description")
+    loop_dev.add_argument("--iterations", type=int, default=3, help="Max self-healing iterations")
+    loop_dev.add_argument("--root", default=BASE_DIR, help="Target repository root")
+
+    loop_hlth = loop_subs.add_parser("health", help="Continuous 360° System Health & Zero-Orphan Loop")
+    loop_hlth.add_argument("--daemon", action="store_true", help="Run continuous background watchdog loop")
+    loop_hlth.add_argument("--interval", type=int, default=60, help="Watchdog interval seconds")
+    loop_hlth.add_argument("--max-cycles", type=int, default=1, help="Max loop cycles")
+    loop_hlth.add_argument("--root", default=BASE_DIR, help="Target repository root")
+
+    loop_subs.add_parser("erp", help="Autonomous PR ERP Compliance & Statutory Cross-Audit Loop")
+    
+    loop_know = loop_subs.add_parser("knowledge", help="Autonomous Knowledge Ingestion & Vector Retrieval Verification Loop")
+    loop_know.add_argument("query", nargs="*", help="Test query for retrieval verification")
 
     # self_test
     subparsers.add_parser("self_test", help="Run automated CLI self-test assertions")
@@ -829,7 +974,12 @@ def main():
         "fleet": cmd_fleet,
         "flight_plan": cmd_flight_plan,
         "docker": cmd_docker,
+        "upload_status": cmd_upload_status,
+        "sync": cmd_upload_status,
         "status": cmd_status,
+        "erp": cmd_erp,
+        "llm": cmd_llm,
+        "loop": cmd_loop,
         "self_test": lambda a: self_test()
     }
 

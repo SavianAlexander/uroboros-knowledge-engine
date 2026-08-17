@@ -12,12 +12,12 @@ Write-Host "`nTarget configuration: $wslConfigPath" -ForegroundColor Yellow
 
 $recommendedConfig = @"
 # ==============================================================================
-# WSL 2 Hardware Profile Optimized for Uroboros & Local AI
+# WSL 2 Hardware Profile Optimized for Uroboros & EVE Multi-Client Zero-Stutter
 # ==============================================================================
 [wsl2]
-memory=6GB
+memory=4GB
 processors=4
-swap=2GB
+swap=1GB
 pageReporting=true
 autoProxy=true
 "@
@@ -33,7 +33,7 @@ if (Test-Path $wslConfigPath) {
 }
 
 Set-Content -Path $wslConfigPath -Value $recommendedConfig -Encoding utf8
-Write-Host "`n[OK] .wslconfig successfully updated with 6GB RAM and 4 Cores!" -ForegroundColor Green
+Write-Host "`n[OK] .wslconfig successfully updated with 4GB RAM and 4 Cores for EVE Zero-Stutter Gaming!" -ForegroundColor Green
 
 Write-Host "`n----------------------------------------------------------" -ForegroundColor Cyan
 Write-Host "NOTE: To apply these hardware limits to Docker Desktop:" -ForegroundColor Yellow

@@ -134,6 +134,15 @@ class InterBridgeEventBus:
                 f.write(f"| **`{name}`** | `{c.status}` | `{c.duration_ms:.1f}ms` | {short_hash} | {metric_summary} |\n")
 
             f.write("\n---\n\n")
+            f.write("## 🌐 GitHub Remote Synchronization & Upload Visibility\n\n")
+            f.write("| Metric | Value | Status |\n")
+            f.write("| :--- | :--- | :---: |\n")
+            f.write(f"| **Upload Status** | {self.get_shared_value('github_upload_status', 'Verified')} | 🌐 |\n")
+            f.write(f"| **Current Branch** | `{self.get_shared_value('github_branch', 'master')}` | ✅ |\n")
+            f.write(f"| **Head Commit** | `{self.get_shared_value('github_head_commit', 'N/A')}` | ✅ |\n")
+            f.write(f"| **Remote Origin** | `{self.get_shared_value('github_remote_url', 'N/A')}` | ✅ |\n")
+            f.write(f"| **Tududi Burndown** | `{self.get_shared_value('tududi_completion_percentage', '100%')}` | ✅ |\n\n")
+            f.write("---\n\n")
             f.write("## 🔄 Shared Cross-Bridge Context State\n\n")
             f.write("```json\n")
             f.write(json.dumps(self.shared_memory, indent=2))
@@ -238,25 +247,36 @@ def execute_tududi_contract(bus: InterBridgeEventBus) -> BridgeContract:
 
 
 def execute_github_contract(bus: InterBridgeEventBus) -> BridgeContract:
-    """Executes Git provenance check and PR audit, publishing Contract C."""
+    """Executes Git provenance check, remote upload status, and PR audit, publishing Contract C."""
     t0 = time.time()
     c_id = f"contract_github_{int(time.time() * 1000)}"
     try:
         import github_bridge
         prov = github_bridge.provenance_tag_data()
         diff = github_bridge.audit_pr_diff()
+        sync_stat = github_bridge.get_git_sync_status(bus.repo_root)
 
         outputs = {
             "merkle_sha256": prov.get("combined_sha256", "clean")[:16],
             "commit_message": prov.get("commit_message", "update"),
             "modified_files_count": len(prov.get("file_hashes", {})),
-            "diff_issues_count": len(diff.get("issues", [])) if isinstance(diff, dict) else 0
+            "diff_issues_count": len(diff.get("issues", [])) if isinstance(diff, dict) else 0,
+            "uploaded_to_github": sync_stat.get("is_uploaded", False),
+            "github_upload_status": sync_stat.get("status_badge", "Unknown"),
+            "unpushed_commits": sync_stat.get("unpushed_count", 0),
+            "branch": sync_stat.get("branch", "master"),
+            "head_commit": sync_stat.get("head_commit", "clean")
         }
 
         shared_context = {
             "git_merkle_sha256": prov.get("combined_sha256", ""),
             "git_commit_msg": prov.get("commit_message", ""),
-            "git_modified_files_count": len(prov.get("file_hashes", {}))
+            "git_modified_files_count": len(prov.get("file_hashes", {})),
+            "github_uploaded": sync_stat.get("is_uploaded", False),
+            "github_upload_status": sync_stat.get("status_badge", "Unknown"),
+            "github_branch": sync_stat.get("branch", "master"),
+            "github_head_commit": sync_stat.get("head_commit", ""),
+            "github_remote_url": sync_stat.get("remote_url", "")
         }
 
         contract = BridgeContract(

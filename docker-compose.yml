@@ -16,8 +16,13 @@ services:
     restart: unless-stopped
     stop_signal: SIGINT
     stop_grace_period: 15s
+    shm_size: '256mb'
     security_opt:
       - no-new-privileges:true
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     ports:
       - "${ENGINE_HOST_PORT:-8000}:8000"
       - "8098:8098/udp"
@@ -42,20 +47,25 @@ services:
       - LLM_API_KEY=ollama
       - OPENAI_API_BASE=http://host.docker.internal:11434/v1
       - OLLAMA_HOST=http://host.docker.internal:11434
+      - OLLAMA_KEEP_ALIVE=2m
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_NUM_PARALLEL=1
       - TTS_ENGINE_URL=http://uroboros_voice:8880/v1/audio/speech
       - VOICE_ENGINE_HOST=http://host.docker.internal:8880
       - VOICE_DEFAULT_MODEL=kokoro
       - VOICE_DEFAULT_VOICE=bf_emma
-      - MAX_WORKERS=2
+      - MAX_WORKERS=1
+      - PYTHONMALLOC=malloc
+      - MALLOC_TRIM_THRESHOLD_=65536
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 4G
-          pids: 200
+          cpus: '1.0'
+          memory: 1G
+          pids: 100
         reservations:
-          cpus: '0.5'
-          memory: 256M
+          cpus: '0.1'
+          memory: 64M
     logging:
       driver: json-file
       options:
@@ -87,6 +97,10 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     ports:
       - "${FRONTEND_HOST_PORT:-80}:80"
     depends_on:
@@ -102,12 +116,12 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 1G
-          pids: 100
-        reservations:
-          cpus: '0.25'
+          cpus: '0.5'
           memory: 128M
+          pids: 50
+        reservations:
+          cpus: '0.05'
+          memory: 32M
     logging:
       driver: json-file
       options:
@@ -134,12 +148,12 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 1G
-          pids: 100
+          cpus: '1.0'
+          memory: 512M
+          pids: 50
         reservations:
-          cpus: '0.25'
-          memory: 256M
+          cpus: '0.1'
+          memory: 128M
     logging:
       driver: json-file
       options:
@@ -158,6 +172,10 @@ services:
     profiles: ["gpu-nvidia"]
     ports:
       - "11434:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=2m
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_NUM_PARALLEL=1
     volumes:
       - ollama_data:/root/.ollama
     deploy:
@@ -187,6 +205,9 @@ services:
       - "/dev/dri:/dev/dri"
     environment:
       - HSA_OVERRIDE_GFX_VERSION=10.3.0
+      - OLLAMA_KEEP_ALIVE=2m
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_NUM_PARALLEL=1
     networks:
       - ai_net
     restart: unless-stopped

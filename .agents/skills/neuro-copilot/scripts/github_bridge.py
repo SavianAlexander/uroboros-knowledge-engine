@@ -161,7 +161,145 @@ def check_health():
     except Exception:
         pass
 
+    # 10. GitHub Remote Synchronization & Upload Visibility
+    sync_stat = get_git_sync_status(repo_root)
+    print(f"[GitHub Upload] Status: {sync_stat.get('status_badge', 'Unknown')}")
+    print(f"[GitHub Upload] Remote Target: {sync_stat.get('remote_url', 'N/A')} ({sync_stat.get('upstream', 'N/A')})")
+
     print("=================================================")
+    return 0
+
+def get_git_sync_status(repo_root=None):
+    """
+    Evaluates exact GitHub remote upload and sync status.
+    Determines whether local commits are pushed/uploaded to the remote repository,
+    the unpushed commit count, active branch, and remote CI health.
+    Standard library only.
+    """
+    cwd = repo_root or project_root
+
+    # 1. Active Branch and Commit Hash
+    branch, _, code_b = run_cmd("git rev-parse --abbrev-ref HEAD", cwd=cwd)
+    branch = branch.strip() if code_b == 0 and branch else "unknown"
+
+    head_short, _, code_h = run_cmd("git rev-parse --short HEAD", cwd=cwd)
+    head_short = head_short.strip() if code_h == 0 and head_short else "unknown"
+
+    head_full, _, code_hf = run_cmd("git rev-parse HEAD", cwd=cwd)
+    head_full = head_full.strip() if code_hf == 0 and head_full else "unknown"
+
+    # 2. Remote URL Detection
+    remote_url, _, code_r = run_cmd("git remote get-url origin", cwd=cwd)
+    if code_r != 0 or not remote_url:
+        remote_url, _, _ = run_cmd("git config --get remote.origin.url", cwd=cwd)
+    remote_url = remote_url.strip() if remote_url else "Not configured"
+
+    # 3. Cleanliness & Staged Files Count
+    status_porcelain, _, _ = run_cmd("git status --porcelain", cwd=cwd)
+    is_clean = len(status_porcelain.strip()) == 0
+    uncommitted_count = len([line for line in status_porcelain.splitlines() if line.strip()]) if status_porcelain else 0
+
+    staged_out, _, _ = run_cmd("git diff --cached --name-only", cwd=cwd)
+    staged_count = len([f for f in staged_out.splitlines() if f.strip()]) if staged_out else 0
+
+    # 4. Upstream Branch & Unpushed Commits Count
+    upstream, _, code_u = run_cmd("git rev-parse --abbrev-ref @{u}", cwd=cwd)
+    if code_u != 0 or not upstream:
+        upstream = f"origin/{branch}" if branch != "unknown" else "origin/master"
+    else:
+        upstream = upstream.strip()
+
+    unpushed_out, _, code_unp = run_cmd(f"git log {upstream}..HEAD --oneline", cwd=cwd)
+    if code_unp == 0:
+        unpushed_lines = [l for l in unpushed_out.splitlines() if l.strip()]
+        unpushed_count = len(unpushed_lines)
+    else:
+        unpushed_fallback, _, code_fb = run_cmd(f"git rev-list --count origin/{branch}..HEAD", cwd=cwd)
+        if code_fb == 0 and unpushed_fallback.strip().isdigit():
+            unpushed_count = int(unpushed_fallback.strip())
+        else:
+            unpushed_count = 0
+
+    # 5. Is Uploaded / Pushed Determination
+    is_uploaded = (unpushed_count == 0) and (head_short != "unknown") and (remote_url != "Not configured")
+
+    # 6. Status Label & Markdown Badges
+    if not remote_url or remote_url == "Not configured":
+        status_label = "Local Only (No Remote Upstream)"
+        status_code = "NO_REMOTE"
+        status_badge = "❌ Not Uploaded (No Remote Origin)"
+    elif unpushed_count > 0:
+        status_label = f"Unpushed ({unpushed_count} commit{'s' if unpushed_count > 1 else ''} pending upload)"
+        status_code = "UNPUSHED"
+        status_badge = f"⚠️ Unpushed ({unpushed_count} pending push to {upstream})"
+    elif not is_clean:
+        status_label = "Uploaded to GitHub (Uncommitted Local Changes)"
+        status_code = "DIRTY_LOCAL"
+        status_badge = "🟡 Uploaded to GitHub (Uncommitted Local Changes)"
+    else:
+        status_label = "Uploaded & Synced with GitHub (Clean)"
+        status_code = "IN_SYNC"
+        status_badge = "✅ Uploaded & Synced with GitHub (100% Clean)"
+
+    # 7. CI Status Check via gh CLI
+    ci_out, _, code_ci = run_cmd("gh run list --limit 1 --json status,conclusion", cwd=cwd)
+    ci_status = "Unknown"
+    if code_ci == 0 and ci_out:
+        try:
+            runs = json.loads(ci_out)
+            if runs:
+                r = runs[0]
+                conclusion = r.get("conclusion")
+                status_val = r.get("status")
+                ci_status = conclusion if conclusion else (status_val if status_val else "Unknown")
+        except Exception:
+            pass
+
+    # 8. Summary Markdown Block
+    md = f"""### 🌐 GitHub Remote Synchronization & Upload Visibility
+- **Upload Status**: {status_badge}
+- **Current Branch**: `{branch}`
+- **Head Commit**: `{head_short}` (`{head_full[:12] if len(head_full)>=12 else head_full}`)
+- **Remote Origin**: `{remote_url}`
+- **Unpushed Commits**: `{unpushed_count}`
+- **Working Tree**: `{'Clean (100% committed)' if is_clean else f'Dirty ({uncommitted_count} files modified)'}`
+- **Remote CI Pipeline**: `{ci_status.upper() if ci_status else 'N/A'}`
+"""
+
+    return {
+        "status": "success",
+        "is_uploaded": is_uploaded,
+        "status_code": status_code,
+        "status_label": status_label,
+        "status_badge": status_badge,
+        "branch": branch,
+        "head_commit": head_short,
+        "head_commit_full": head_full,
+        "remote_url": remote_url,
+        "upstream": upstream,
+        "unpushed_count": unpushed_count,
+        "is_clean": is_clean,
+        "uncommitted_count": uncommitted_count,
+        "staged_count": staged_count,
+        "ci_status": ci_status,
+        "summary_markdown": md
+    }
+
+def print_upload_status():
+    """Print executive terminal block for GitHub Remote Upload & Sync Visibility."""
+    sync_stat = get_git_sync_status()
+    print("==========================================================================")
+    print("             GITHUB REMOTE UPLOAD & PROVENANCE VISIBILITY                 ")
+    print("==========================================================================")
+    print(f"  Upload Status       : {sync_stat.get('status_badge')}")
+    print(f"  Active Branch       : {sync_stat.get('branch')}")
+    print(f"  Head Commit         : {sync_stat.get('head_commit')} ({sync_stat.get('head_commit_full')[:12]})")
+    print(f"  Remote Origin       : {sync_stat.get('remote_url')}")
+    print(f"  Upstream Target     : {sync_stat.get('upstream')}")
+    print(f"  Unpushed Commits    : {sync_stat.get('unpushed_count')}")
+    print(f"  Working Tree        : {'Clean' if sync_stat.get('is_clean') else f'Dirty ({sync_stat.get('uncommitted_count')} files changed)'}")
+    print(f"  Remote CI Pipeline  : {str(sync_stat.get('ci_status', 'N/A')).upper()}")
+    print("==========================================================================")
     return 0
 
 def sync_issues():
@@ -876,12 +1014,17 @@ def dashboard():
     except Exception:
         pass
 
+    # GitHub Remote Upload Status
+    sync_stat = get_git_sync_status()
+    upload_line = sync_stat.get("status_badge", "Unknown")
+
     print("+--------------------------------------------------------------------------+")
     print("|                 NEURO CO-PILOT EXECUTIVE DASHBOARD v15.0                 |")
     print("+--------------------------------------------------------------------------+")
     print(f"|  Git Branch:         {branch:<51} |")
     print(f"|  Head Commit:        {git_hash:<51} |")
     print(f"|  Staged Files:       {len(staged.splitlines()) if staged else 0:<51} |")
+    print(f"|  GitHub Upload:      {upload_line:<51} |")
     print(f"|  GitHub Auth:        {'OK (Logged in)' if has_gh else 'NOT AUTHENTICATED':<51} |")
     print(f"|  Commit Guard Hook:  {'INSTALLED' if has_hook else 'NOT INSTALLED':<51} |")
     print(f"|  CI Workflow:        {'INSTALLED' if has_ci else 'NOT INSTALLED':<51} |")
@@ -1563,7 +1706,8 @@ def tri_engine_health():
     branch, _, _ = run_cmd("git rev-parse --abbrev-ref HEAD")
     gh_auth, _, code_a = run_cmd("gh auth status")
     gh_status = "AUTHENTICATED" if code_a == 0 else "UNAUTHENTICATED"
-    print(f"[GitHub Engine]       : {gh_status} (Branch: {branch})")
+    sync_stat = get_git_sync_status()
+    print(f"[GitHub Engine]       : {gh_status} (Branch: {branch}, Upload: {sync_stat.get('status_badge')})")
 
     # Engine 4: Clean Architecture Doctor
     try:
@@ -1667,6 +1811,13 @@ def self_test():
     out, err, code = run_cmd("git --version")
     assert code == 0, f"git --version failed: {err}"
     print("  [Pass] run_cmd assertion clean")
+    
+    # 2. Test get_git_sync_status & print_upload_status
+    sync_res = get_git_sync_status()
+    assert sync_res.get("status") == "success", "get_git_sync_status failed"
+    assert "status_badge" in sync_res and "branch" in sync_res, "Missing sync status fields"
+    assert print_upload_status() == 0, "print_upload_status failed"
+    print("  [Pass] get_git_sync_status assertion clean")
     
     # 2. Test format_commit
     msg = format_commit(scope="test", desc="unit test commit", tududi_id="123", neuro_hash="abcdef123456")
@@ -1817,6 +1968,8 @@ def main():
     snap_p = subparsers.add_parser("snapshot", help="Enterprise Client Snapshot Showcase Suite (scan, script, deck, sync)")
     snap_p.add_argument("action", nargs="?", default="full_showcase", choices=["scan", "generate_script", "render_deck", "sync_readme", "full_showcase", "self_test"], help="Snapshot action")
     subparsers.add_parser("dashboard", help="Render executive ASCII terminal dashboard")
+    subparsers.add_parser("upload_status", help="Display GitHub Remote Upload & Sync Visibility status")
+    subparsers.add_parser("sync_status", help="Display GitHub Remote Upload & Sync Visibility status (alias)")
     subparsers.add_parser("tri_engine_health", help="Run unified 4-engine executive health diagnostic")
     subparsers.add_parser("run_full_pipeline", help="Execute 1-click full Tri-Engine pipeline")
 
@@ -1955,6 +2108,8 @@ def main():
         sys.exit(visual_showcase_audit())
     elif args.command == "snapshot":
         sys.exit(snapshot_cli(args.action))
+    elif args.command in ("upload_status", "sync_status"):
+        sys.exit(print_upload_status())
     elif args.command == "dashboard":
         sys.exit(dashboard())
     elif args.command == "run_full_pipeline":

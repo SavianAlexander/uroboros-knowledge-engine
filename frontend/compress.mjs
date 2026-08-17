@@ -22,6 +22,13 @@ function compressDirectory(dir) {
         const content = fs.readFileSync(fullPath);
         const gzipped = zlib.gzipSync(content, { level: zlib.constants.Z_BEST_COMPRESSION });
         fs.writeFileSync(`${fullPath}.gz`, gzipped);
+
+        const brotlied = zlib.brotliCompressSync(content, {
+          params: {
+            [zlib.constants.BROTLI_PARAM_QUALITY]: zlib.constants.BROTLI_MAX_QUALITY,
+          },
+        });
+        fs.writeFileSync(`${fullPath}.br`, brotlied);
       }
     }
   }
@@ -29,5 +36,5 @@ function compressDirectory(dir) {
 
 if (fs.existsSync(distDir)) {
   compressDirectory(distDir);
-  console.log('✓ Gzip pre-compression complete for dist/');
+  console.log('✓ Gzip & Brotli pre-compression complete for dist/');
 }

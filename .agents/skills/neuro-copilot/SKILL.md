@@ -89,7 +89,8 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../neuro_cli.py recover` (or `restore`): 5-Stage zero-reboot Windows crash recovery cascade (Explorer, DWM, Audio, DNS, Tasks).
 - `python .../neuro_cli.py test` (or `test_all`): Run concurrent 13-bridge parallel self-test matrix in <2 seconds.
 - `python .../neuro_cli.py doctor [--json]`: Run unified 360° health diagnostic scorecard across OS, databases, Git, CI, and architecture.
-- `python .../neuro_cli.py status`: Display quick terminal scorecard with Tududi burndown and OS process hygiene.
+- `python .../neuro_cli.py status`: Display quick terminal scorecard with Tududi burndown, OS process hygiene, and GitHub upload state.
+- `python .../neuro_cli.py upload_status` (or `sync`): Real-time GitHub Remote Upload & Synchronization visibility check.
 - `python .../neuro_cli.py run`: Execute full parallel asynchronous contract pipeline.
 - `python .../neuro_cli.py ci [--wait] [--diagnose]`: Monitor remote GitHub Actions CI gate until 100% Green.
 - `python .../neuro_cli.py clean`: Surgical dual-layer cleanup (orphan worker processes + temporary database/test artifacts).
@@ -309,6 +310,8 @@ The Neuro Copilot is powered by a 5-tier dynamic model router minimizing VRAM to
 | **70** | `scan` (Allocation) | `file_allocation_bridge.py` | Audit Repository File Allocation & Root Whitelist |
 | **71** | `clean` (Allocation) | `file_allocation_bridge.py` | Surgically Eliminate Orphan Databases & Temp Artifacts |
 | **72** | `check` (Allocation) | `file_allocation_bridge.py` | Continuous Verification Gate for Clean Architecture Topology |
+| **73** | `upload_status` | `github_bridge.py` | Inspect & Display GitHub Remote Upload & Synchronization State |
+| **74** | `sync` | `neuro_cli.py` | Quick Visibility into GitHub Remote Push & Upstream Sync Status |
 
 ---
 
@@ -320,6 +323,28 @@ All background daemons, automated summarizers, indexers, watchers, and periodic 
 2. **Cold-Start Boot Grace Period**: A minimum 30-second quiet period must elapse upon application launch before background compute initiates, ensuring the web backend, static assets, and browser load with 0% CPU/GPU contention.
 3. **Single-Item Throttling & Cooling Intervals**: Heavy background processing (e.g. SLM summarization or embeddings) must process exactly **1** item per step followed by an explicit cooling delay (minimum 10 seconds).
 4. **Infinite-Loop Database Guards**: Queries must strictly filter uncompleted tasks (`WHERE json_extract(metadata_json, '$.summary') IS NULL`), sleeping quietly when no items require processing.
+
+### 2. Mandatory End-of-Run Tududi Posting & GitHub Upload Visibility Standard
+Every engineering workflow run, task completion, or autonomous agent pass operating under the **`neuro-copilot`** skill must conclude with full end-of-run synchronization and transparent visibility:
+1. **Tududi Task Master Orchestration**:
+   - Update active Tududi task cards or log completed deliverables using `tududi_bridge.py` / Tududi MCP tools (`update_task`, `complete_task`).
+   - All tasks must be assigned under Project #13 (*Neuro Alexander*) with standard tags: `["Antigravity", "TriEngine", "Project13", "EnrichedTask", "SOC2"]`.
+2. **Mandatory GitHub Upload Visibility Card**:
+   - In every Tududi task note, burndown log, inter-bridge audit report, and the final response presented to the user, the **GitHub Remote Upload & Provenance Visibility Card** must be visibly rendered:
+     ```markdown
+     ## 🌐 GitHub Remote Upload & Provenance Visibility Card
+
+     | Metric | Status / Value |
+     | :--- | :--- |
+     | **Upload Status** | `✅ Uploaded & Synced with GitHub (100% Clean)` / `⚠️ Unpushed (<N> commits pending)` |
+     | **Active Branch** | `<branch>` |
+     | **Head Commit** | `<short_sha>` (`<full_sha_prefix>`) |
+     | **Remote Origin** | `<remote_url>` (`<upstream_branch>`) |
+     | **Unpushed Commits** | `<count>` |
+     | **Working Tree State**| `Clean (100% committed)` / `Modified` |
+     | **Remote CI Pipeline**| `100% SUCCESS (Green)` / `Pending` |
+     ```
+3. **Zero Ambiguity Rule**: Never conclude an engineering task or submit a final briefing without explicitly stating whether the commit/release was pushed and verified on the remote GitHub repository.
 
 ---
 
