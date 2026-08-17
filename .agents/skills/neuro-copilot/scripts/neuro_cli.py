@@ -1074,8 +1074,8 @@ def main():
     uat_cert.add_argument("--approver", default="Chief Information Officer / Product Owner SME", help="Approver title")
 
     # sync_sources (Primary Source Live Harvesting & Sync)
-    sync_src_p = subparsers.add_parser("sync_sources", help="Harvest and synchronize live upstream primary sources (eCFR, Federal Register, Jira OpenAPI, IBM CER)")
-    sync_src_p.add_argument("--domain", choices=["ecfr", "federal_register", "jira", "curam", "statutory"], help="Filter synchronization to a specific primary source domain")
+    sync_src_p = subparsers.add_parser("sync_sources", help="Harvest and synchronize live upstream primary sources (eCFR, Federal Register, Jira OpenAPI, IBM CER, EVE ESI, Puerto Rico Lex, ISO/SOC2)")
+    sync_src_p.add_argument("--domain", choices=["ecfr", "federal_register", "jira", "curam", "statutory", "eve", "puerto_rico", "uat", "all"], help="Filter synchronization to a specific primary source domain")
     sync_src_p.add_argument("--no-index", action="store_true", help="Skip automatic RAG vector indexing after harvesting")
 
     # self_test

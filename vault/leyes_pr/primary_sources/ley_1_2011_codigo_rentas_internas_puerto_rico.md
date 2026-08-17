@@ -1,0 +1,37 @@
+---
+title: "Ley Núm. 1-2011: Código de Rentas Internas para un Nuevo Puerto Rico (Enmendado)"
+source_authority: "Oficina de Servicios Legislativos de Puerto Rico (OSLPR) / Departamento de Hacienda"
+statute_number: "Ley 1-2011"
+governing_jurisdiction: "Estado Libre Asociado de Puerto Rico"
+harvested_at: "2026-08-17T16:14:42Z"
+document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
+verification: "OSLPR_LEX_VERIFIED"
+---
+
+# Ley Núm. 1-2011: Código de Rentas Internas de Puerto Rico
+
+## Título IV: Impuesto sobre Ventas y Uso (IVU / SUT)
+
+### Sección 4020.01 - Imposición del Impuesto sobre Ventas
+Se fija, se impondrá y se cobrará un impuesto sobre ventas de **diez punto cinco por ciento (10.5%)** sobre el precio de venta de toda partida tributable vendida en Puerto Rico.
+
+### Sección 4020.02 - Impuesto Municipal sobre Ventas
+Los municipios de Puerto Rico impondrán un impuesto sobre ventas municipal de **uno por ciento (1.0%)** sobre toda partida tributable vendida dentro de sus límites territoriales, totalizando una tasa combinada de **once punto cinco por ciento (11.5%)**.
+
+### Sección 4030.01 - Exención para Servicios Prestados entre Comerciantes (B2B)
+Estarán exentos del pago del impuesto sobre ventas los servicios prestados por un comerciante a otro comerciante (B2B) debidamente registrado con Certificado de Registro de Comerciante vigente, sujetos a la tasa reducida de cuatro por ciento (4.0%) cuando aplique la Sección 4020.05.
+
+---
+
+## Título I: Contribución sobre Ingresos de Corporaciones
+
+### Sección 1022.01 - Contribución Normal y Contribución Adicional
+**(a) Contribución Normal.** Se impondrá, cobrará y pagará sobre el ingreso neto tributable de toda corporación una contribución normal de **dieciocho punto cinco por ciento (18.5%)**.
+
+**(b) Contribución Adicional (Surtax).** Se impondrá una sobretasa progresiva escalonada:
+- Hasta $75,000 de ingreso neto sujeto a sobretasa: **5%**
+- En exceso de $75,000 hasta $125,000: **15%**
+- En exceso de $125,000 hasta $175,000: **16%**
+- En exceso de $175,000 hasta $225,000: **17%**
+- En exceso de $225,000 hasta $275,000: **18%**
+- En exceso de $275,000: **19%** (Tasa máxima corporativa combinada: **37.5%**)

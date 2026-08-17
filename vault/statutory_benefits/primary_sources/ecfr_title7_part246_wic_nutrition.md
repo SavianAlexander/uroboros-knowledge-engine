@@ -6,7 +6,7 @@ cfr_title: 7
 cfr_part: 246
 domain_key: "wic_nutrition"
 official_ecfr_url: "https://www.ecfr.gov/current/title-7/part-246"
-harvested_at: "2026-08-17T16:07:26Z"
+harvested_at: "2026-08-17T16:14:42Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "eCFR_API_V1_VERIFIED"
 ---

@@ -1,5 +1,5 @@
 """Master Primary Source Synchronization & Change Detection Orchestrator.
-Orchestrates live harvesting across eCFR, Federal Register, Atlassian, and IBM Cúram.
+Orchestrates live harvesting across eCFR, Federal Register, Atlassian, IBM Cúram, CCP Games EVE ESI, Puerto Rico OSLPR, and ISO/SOC 2 Standards.
 Maintains persistent SHA-256 ledger and triggers automatic RAG vectorization.
 Pure Python standard library (json, hashlib, os, time).
 """
@@ -14,6 +14,9 @@ from src.domain.connectors.ecfr_connector import EcfrConnector
 from src.domain.connectors.federal_register_connector import FederalRegisterConnector
 from src.domain.connectors.jira_openapi_connector import JiraOpenApiConnector
 from src.domain.connectors.curam_spec_connector import CuramSpecConnector
+from src.domain.connectors.eve_esi_connector import EveEsiConnector
+from src.domain.connectors.puerto_rico_lex_connector import PuertoRicoLexConnector
+from src.domain.connectors.uat_iso_connector import UatIsoConnector
 
 
 class PrimarySourceSyncOrchestrator:
@@ -55,30 +58,48 @@ class PrimarySourceSyncOrchestrator:
         unchanged_count = 0
 
         # 1. Harvest eCFR Federal Regulations
-        if not domain_filter or domain_filter in ["ecfr", "statutory", "benefits"]:
+        if not domain_filter or domain_filter in ["ecfr", "statutory", "benefits", "all"]:
             ecfr = EcfrConnector(output_dir=os.path.join(self.vault_root, "statutory_benefits", "primary_sources"))
             ecfr_res = ecfr.harvest_all()
             harvested_results.extend(ecfr_res)
 
         # 2. Harvest Federal Register Guidelines & Notices
-        if not domain_filter or domain_filter in ["federal_register", "fpl", "statutory"]:
+        if not domain_filter or domain_filter in ["federal_register", "fpl", "statutory", "all"]:
             fed_reg = FederalRegisterConnector(output_dir=os.path.join(self.vault_root, "statutory_benefits", "primary_sources"))
             fed_res = fed_reg.harvest_all()
             harvested_results.extend(fed_res)
 
         # 3. Harvest Atlassian Jira Cloud & Xray Schemas
-        if not domain_filter or domain_filter in ["jira", "jira_qa", "qa"]:
+        if not domain_filter or domain_filter in ["jira", "jira_qa", "qa", "all"]:
             jira = JiraOpenApiConnector(output_dir=os.path.join(self.vault_root, "jira_qa", "primary_sources"))
             jira_res = jira.harvest_all()
             harvested_results.extend(jira_res)
 
         # 4. Harvest IBM Cúram CER DTDs & SPM Schemas
-        if not domain_filter or domain_filter in ["curam", "curam_spm", "cer"]:
+        if not domain_filter or domain_filter in ["curam", "curam_spm", "cer", "all"]:
             curam = CuramSpecConnector(output_dir=os.path.join(self.vault_root, "curam_spm", "primary_sources"))
             curam_res = curam.harvest_all()
             harvested_results.extend(curam_res)
 
-        # 5. Process ledger changes and detect diffs
+        # 5. Harvest CCP Games EVE Online ESI, SDE & Dogma Specifications
+        if not domain_filter or domain_filter in ["eve", "eve_online", "esi", "all"]:
+            eve = EveEsiConnector(output_dir=os.path.join(self.vault_root, "Eve Online", "primary_sources"))
+            eve_res = eve.harvest_all()
+            harvested_results.extend(eve_res)
+
+        # 6. Harvest Puerto Rico Statutory Lex & Tax ERP Codes
+        if not domain_filter or domain_filter in ["puerto_rico", "pr_lex", "leyes_pr", "all"]:
+            pr_lex = PuertoRicoLexConnector(output_dir=os.path.join(self.vault_root, "leyes_pr", "primary_sources"))
+            pr_res = pr_lex.harvest_all()
+            harvested_results.extend(pr_res)
+
+        # 7. Harvest ISO/IEC/IEEE 29119 & AICPA SOC 2 Testing Standards
+        if not domain_filter or domain_filter in ["uat", "iso", "soc2", "standards", "all"]:
+            uat_iso = UatIsoConnector(output_dir=os.path.join(self.vault_root, "uat_standards", "primary_sources"))
+            uat_res = uat_iso.harvest_all()
+            harvested_results.extend(uat_res)
+
+        # 8. Process ledger changes and detect diffs
         ledger_entries = ledger.setdefault("entries", {})
         touched_paths: List[str] = []
 
@@ -107,13 +128,21 @@ class PrimarySourceSyncOrchestrator:
         self._save_ledger(ledger)
         duration_ms = round((time.time() - t0) * 1000.0, 2)
 
-        # 6. Auto-index into SQLite Vector Vault if requested
+        # 9. Auto-index into SQLite Vector Vault if requested
         indexed_status = "SKIPPED"
         if auto_index and (new_count > 0 or updated_count > 0):
             try:
                 from know import index_directory
                 indexed_count = 0
-                for domain_folder in ["statutory_benefits", "curam_spm", "jira_qa"]:
+                target_directories = [
+                    "statutory_benefits",
+                    "curam_spm",
+                    "jira_qa",
+                    "uat_standards",
+                    "Eve Online",
+                    "leyes_pr"
+                ]
+                for domain_folder in target_directories:
                     folder_path = os.path.join(self.vault_root, domain_folder, "primary_sources")
                     if os.path.exists(folder_path):
                         index_directory(folder_path)

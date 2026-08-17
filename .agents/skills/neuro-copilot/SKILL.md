@@ -103,8 +103,20 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../neuro_cli.py bench [--json]`: Benchmark sub-millisecond retrieval, AST parsing, and contract bus throughput.
 - `python .../neuro_cli.py fleet [--json]`: Run live EVE fleet radar, skill queue expiry checks, and PI monitoring.
 - `python .../neuro_cli.py flight_plan "..." [--execute]`: 1-Click synthesize and initialize Tududi feature plan with 4-tier subtasks.
+- `python .../neuro_cli.py sync_sources [--domain all|ecfr|federal_register|jira|curam|statutory|eve|puerto_rico|uat]`: **Universal Primary Source Ingestion & Live-Sync** - Harvests unabridged, unredacted data directly from official upstream authorities (eCFR.gov, FederalRegister.gov, Atlassian OpenAPI, IBM Cúram DTDs, CCP Games EVE ESI/SDE, Puerto Rico OSLPR/Hacienda, and ISO/SOC 2 standards), tracks SHA-256 diffs in `vault/.sync_ledger.json`, and triggers automatic SQLite vector indexing.
 
 ---
+
+### Universal Primary Source Live-Sync Ingestion Architecture
+All knowledge in the Knowledge Vault is grounded in direct, unredacted primary source database ingestion from live upstream authorities:
+1. **eCFR Connector (`src/domain/connectors/ecfr_connector.py`)**: Official eCFR.gov API for Title 42 (Medicaid MAGI § 435.603), Title 7 (SNAP § 273.9, WIC § 246.7), Title 45 (TANF § 260.30, CCDF § 98.20), Title 24 (Section 8 § 982.505).
+2. **Federal Register Connector (`src/domain/connectors/federal_register_connector.py`)**: Official FederalRegister.gov API for Annual HHS Poverty Guidelines and COLA adjustments.
+3. **Atlassian Jira OpenAPI Connector (`src/domain/connectors/jira_openapi_connector.py`)**: Official Jira Cloud REST API v3 OpenAPI spec and Xray test step schemas.
+4. **IBM Cúram Spec Connector (`src/domain/connectors/curam_spec_connector.py`)**: Official CER XML DTD grammar, expression operators, and SPM relational data models.
+5. **EVE Online ESI/SDE Connector (`src/domain/connectors/eve_esi_connector.py`)**: Official CCP Games ESI v2 OpenAPI specs, CCP SDE SQLite DDL, and canonical Dogma combat physics equations.
+6. **Puerto Rico Lex Connector (`src/domain/connectors/puerto_rico_lex_connector.py`)**: Official OSLPR & Hacienda statutes for Ley 1-2011 (IVU/SUT 10.5% + 1%), Ley 4-2017, and Ley 148-1969.
+7. **UAT & ISO Standards Connector (`src/domain/connectors/uat_iso_connector.py`)**: Official ISO/IEC/IEEE 29119-3 test documentation schemas and AICPA SOC 2 Type II Trust Services Criteria.
+
 
 ### 2026 Specialized SLM Model Lineup & Dynamic Router
 The Neuro Copilot is powered by a 5-tier dynamic model router minimizing VRAM to ~2–3 GB with `keep_alive: 3m` auto-eviction:

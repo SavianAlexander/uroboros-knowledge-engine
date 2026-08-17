@@ -3,7 +3,7 @@ title: "Atlassian Jira Cloud REST API v3 Official OpenAPI Specification"
 source_authority: "Atlassian Developer Documentation"
 spec_version: "OpenAPI 3.0.0 / Jira Cloud v3"
 endpoint_base: "https://{your-domain}.atlassian.net/rest/api/3"
-harvested_at: "2026-08-17T16:07:26Z"
+harvested_at: "2026-08-17T16:14:42Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "ATLASSIAN_OPENAPI_SPEC_VERIFIED"
 ---

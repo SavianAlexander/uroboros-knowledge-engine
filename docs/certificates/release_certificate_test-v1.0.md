@@ -1,19 +1,19 @@
 # 🛡️ SOC 2 TYPE II MERKLE PROVENANCE RELEASE CERTIFICATE
 
 **Milestone / Tag**: `test-v1.0`  
-**Attestation Timestamp**: `2026-08-17T16:07:24Z`  
-**Cryptographic Merkle Root**: `3005c3a83be565e4bab65bfbe9febc6fd2ed37b984a8212994b56a2651517a16`  
+**Attestation Timestamp**: `2026-08-17T16:14:40Z`  
+**Cryptographic Merkle Root**: `9ac6149e8f30205e652d40d4f32d06def9488e574b8e5747002c8c16bb37e4e2`  
 
 ---
 
 ## 1. Cryptographic Invariants & Source Integrity
-- **Total Source Files Attested**: `777`
-- **Source Merkle Digest**: `SHA256:3005c3a83be565e4bab65bfbe9febc6fd2ed37b984a8212994b56a2651517a16`
+- **Total Source Files Attested**: `780`
+- **Source Merkle Digest**: `SHA256:9ac6149e8f30205e652d40d4f32d06def9488e574b8e5747002c8c16bb37e4e2`
 - **Standard Applied**: Ponytail Zero-Dependency & Standard Library Strict Enactment
 
 ## 2. Git Provenance
 - **Branch**: `master`
-- **Commit SHA**: `896a10c9477c5905872e8cbe6df419a3648860ec`
+- **Commit SHA**: `6856303a2a26a151b955ce679ecd11e49fe8a5d0`
 - **Origin Remote**: `https://github.com/SavianAlexander/uroboros-knowledge-engine.git`
 
 ## 3. SQLite Knowledge Engine Attestation
