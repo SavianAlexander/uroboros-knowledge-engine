@@ -48,8 +48,23 @@ class EveEsiConnector:
         except Exception:
             pass
 
+        if not region_ids:
 
-        total_regions = len(region_ids) if region_ids else 114
+            raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
+            raw_json_path = os.path.join(raw_dir, "universe_regions.json")
+            if not os.path.exists(raw_json_path):
+                base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+                raw_json_path = os.path.join(base_dir, "vault", "Eve Online", "raw", "universe_regions.json")
+            if os.path.exists(raw_json_path):
+                with open(raw_json_path, "r", encoding="utf-8") as rf:
+                    region_ids = json.load(rf)
+            else:
+                raise FileNotFoundError(
+                    f"No live ESI response and no empirical raw cache found at '{raw_json_path}'."
+                )
+
+        total_regions = len(region_ids)
+
 
         # Canonical empire and nullsec regions
         known_regions = [

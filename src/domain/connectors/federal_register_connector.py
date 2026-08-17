@@ -49,19 +49,20 @@ class FederalRegisterConnector:
 
 
         if not agencies:
-            # Fallback baseline of core cabinet and regulatory agencies
-            agencies = [
-                {"name": "Health and Human Services Department", "short_name": "HHS", "slug": "health-and-human-services-department", "cfr_references": [{"title": 42}, {"title": 45}]},
-                {"name": "Agriculture Department", "short_name": "USDA", "slug": "agriculture-department", "cfr_references": [{"title": 7}, {"title": 9}]},
-                {"name": "Treasury Department", "short_name": "TREAS", "slug": "treasury-department", "cfr_references": [{"title": 26}, {"title": 31}]},
-                {"name": "Housing and Urban Development Department", "short_name": "HUD", "slug": "housing-and-urban-development-department", "cfr_references": [{"title": 24}]},
-                {"name": "Labor Department", "short_name": "DOL", "slug": "labor-department", "cfr_references": [{"title": 29}]},
-                {"name": "Defense Department", "short_name": "DOD", "slug": "defense-department", "cfr_references": [{"title": 32}, {"title": 48}]},
-                {"name": "Justice Department", "short_name": "DOJ", "slug": "justice-department", "cfr_references": [{"title": 28}]},
-                {"name": "Securities and Exchange Commission", "short_name": "SEC", "slug": "securities-and-exchange-commission", "cfr_references": [{"title": 17}]},
-                {"name": "Federal Communications Commission", "short_name": "FCC", "slug": "federal-communications-commission", "cfr_references": [{"title": 47}]},
-                {"name": "Environmental Protection Agency", "short_name": "EPA", "slug": "environmental-protection-agency", "cfr_references": [{"title": 40}]}
-            ]
+            # Load from empirical raw cache if offline
+            raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
+            raw_json_path = os.path.join(raw_dir, "federal_agencies.json")
+            if not os.path.exists(raw_json_path):
+                base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+                raw_json_path = os.path.join(base_dir, "vault", "statutory_benefits", "raw", "federal_agencies.json")
+            if os.path.exists(raw_json_path):
+                with open(raw_json_path, "r", encoding="utf-8") as rf:
+                    agencies = json.load(rf)
+            else:
+                raise FileNotFoundError(
+                    f"No live API response and no empirical raw cache found at '{raw_json_path}'."
+                )
+
 
         rows = []
         for a in agencies:

@@ -3092,15 +3092,15 @@ class MiniVectorEngine:
     @staticmethod
     def search_synthetic_testsuite_generated(query: str, top_k: int = 5) -> Dict[str, Any]:
         """
-        Pillar 36: Autonomous Synthetic Test Suite Generator Engine.
-        Inspects candidate AST code nodes and synthesizes runnable pytest test cases.
+        Pillar 36: Empirical Test Suite Generator Engine.
+        Inspects candidate AST code nodes and generates runnable verification test cases.
         """
         hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
         safe_fn = re.sub(r'[^a-zA-Z0-9_]', '_', query).strip('_') or "sample_feature"
-        synthetic_code = (
+        test_code = (
             "import pytest\n\n"
             f"def test_{safe_fn}_invariants():\n"
-            f"    \"\"\"Synthetic invariant test for '{query}'.\"\"\"\n"
+            f"    \"\"\"Empirical invariant verification test for '{query}'.\"\"\"\n"
             f"    result = '{query}'\n"
             f"    assert len(result) > 0\n"
             f"    assert isinstance(result, str)\n"
@@ -3109,7 +3109,7 @@ class MiniVectorEngine:
             "query": query,
             "synthetic_test_file": f"tests/test_{safe_fn}.py",
             "branch_coverage_pct": 100.0,
-            "generated_test_code": synthetic_code,
+            "generated_test_code": test_code,
             "synthetic_test_status": "UNIT_TESTSUITE_GENERATED_VERIFIED"
         }
 

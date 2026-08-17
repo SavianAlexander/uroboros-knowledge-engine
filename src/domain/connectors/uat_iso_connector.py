@@ -21,10 +21,23 @@ class UatIsoConnector:
             self.output_dir = os.path.join(base_dir, "vault", "uat_standards", "primary_sources")
         os.makedirs(self.output_dir, exist_ok=True)
 
+    def _read_raw(self, filename: str) -> str:
+        """Reads raw specification file from raw directory."""
+        raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
+        raw_path = os.path.join(raw_dir, filename)
+        if not os.path.exists(raw_path):
+            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+            raw_path = os.path.join(base_dir, "vault", "uat_standards", "raw", filename)
+        if not os.path.exists(raw_path):
+            raise FileNotFoundError(f"Empirical raw standard file not found: '{raw_path}'")
+        with open(raw_path, "r", encoding="utf-8") as f:
+            return f.read().strip()
+
     def harvest_iso_29119_test_spec(self) -> Dict[str, Any]:
         """Harvest unredacted ISO/IEC/IEEE 29119-3 standard test documentation schemas."""
         filename = "iso_ieee_29119_test_documentation_spec.md"
         filepath = os.path.join(self.output_dir, filename)
+        raw_schema = self._read_raw("iso_29119_3_test_schema.json")
 
         content = f"""---
 title: "ISO/IEC/IEEE 29119-3: International Standard for Software Testing - Test Documentation"
@@ -40,53 +53,10 @@ verification: "ISO_IEEE_29119_VERIFIED"
 ## 1. Test Case Specification Structure (Clause 7.2)
 
 ```json
-{{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ISO29119TestCaseSpecification",
-  "type": "object",
-  "required": [
-    "testCaseIdentifier",
-    "testCaseObjective",
-    "preconditions",
-    "inputData",
-    "expectedResults",
-    "statutoryRuleTraceability"
-  ],
-  "properties": {{
-    "testCaseIdentifier": {{ "type": "string", "pattern": "^[A-Z0-9_-]+$" }},
-    "testCaseObjective": {{ "type": "string" }},
-    "preconditions": {{ "type": "array", "items": {{ "type": "string" }} }},
-    "inputData": {{ "type": "object" }},
-    "expectedResults": {{
-      "type": "object",
-      "required": ["decisionStatus", "benefitAmount", "statutoryRuleReference"]
-    }},
-    "statutoryRuleTraceability": {{ "type": "string" }}
-  }}
-}}
-```
-
----
-
-## 2. Test Execution Log Structure (Clause 7.4)
-
-```json
-{{
-  "title": "ISO29119TestExecutionLog",
-  "type": "object",
-  "required": ["executionTimestamp", "testCaseIdentifier", "actualResult", "verdict", "merkleHashProof"],
-  "properties": {{
-    "executionTimestamp": {{ "type": "string", "format": "date-time" }},
-    "testCaseIdentifier": {{ "type": "string" }},
-    "actualResult": {{ "type": "object" }},
-    "verdict": {{ "type": "string", "enum": ["PASS", "FAIL", "BLOCKED", "INCONCLUSIVE"] }},
-    "merkleHashProof": {{ "type": "string", "pattern": "^[a-f0-9]{{64}}$" }}
-  }}
-}}
+{raw_schema}
 ```
 """
         sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
-
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
 
@@ -102,6 +72,12 @@ verification: "ISO_IEEE_29119_VERIFIED"
         """Harvest unredacted AICPA SOC 2 Type II Trust Services Criteria."""
         filename = "aicpa_soc2_type2_trust_services_criteria.md"
         filepath = os.path.join(self.output_dir, filename)
+        raw_soc2 = self._read_raw("soc2_trust_services_criteria.json")
+        soc2_data = json.loads(raw_soc2)
+
+        criteria_rows = []
+        for c in soc2_data.get("categories", []):
+            criteria_rows.append(f"### {c['code']} - {c['category']}\n{c['criteria']}\n")
 
         content = f"""---
 title: "AICPA SOC 2 Type II Trust Services Criteria (2017 TSC with 2022 Revisions)"
@@ -114,29 +90,9 @@ verification: "AICPA_TSC_VERIFIED"
 
 # AICPA SOC 2 Type II Trust Services Criteria
 
-## 1. Common Criteria (Security): CC6.0 - Logical and Physical Access Controls
-
-### CC6.1 - Access Registration and Maintenance
-The entity implements logical access security software, infrastructure, and architectures over protected information assets to protect them from security events.
-
-### CC6.6 - Boundary Protection and Network Firewalls
-The entity implements logical boundaries and network segmentation between application components, preventing unauthorized data leakage.
-
-### CC6.8 - Cryptographic Hash Verification & Tamper Detection
-The entity implements SHA-256 cryptographic hash trees (Merkle Trees) and automated provenance verification across all deployed production releases.
-
----
-
-## 2. Processing Integrity Criteria (PI1.0)
-
-### PI1.1 - Processing Input Validation & Determinism
-The entity obtains or generates, uses, and communicates relevant, high-quality information regarding the definition of data processing inputs, calculations, and rule outcomes.
-
-### PI1.5 - Immutable Test Execution Evidence
-The entity maintains complete, unalterable execution logs and signed acceptance certificates for all statutory benefit calculations.
+{''.join(criteria_rows)}
 """
         sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
-
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
 

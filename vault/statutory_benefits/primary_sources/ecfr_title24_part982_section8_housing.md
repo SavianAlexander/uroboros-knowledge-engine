@@ -6,7 +6,7 @@ cfr_title: 24
 cfr_part: 982
 domain_key: "section8_housing"
 official_ecfr_url: "https://www.ecfr.gov/current/title-24/part-982"
-harvested_at: "2026-08-17T16:45:41Z"
+harvested_at: "2026-08-17T16:59:47Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_LIVE_CRAWL"
 verification: "ECFR_LIVE_XML_API_VERIFIED"
 ---

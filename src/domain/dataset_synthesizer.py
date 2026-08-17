@@ -91,14 +91,12 @@ def generate_vault_instruction_dataset(
                 break
 
     if not dataset_items:
-        dataset_items = [{
-            "id": "vault_demo_1",
-            "conversations": [
-                {"from": "human", "value": "Summarize key architecture details."},
-                {"from": "gpt", "value": "Synthesized technical documentation summary."}
-            ],
-            "metadata": {"filename": "overview.md", "source_id": 1}
-        }]
+        return {
+            "status": "empty",
+            "total_generated": 0,
+            "output_path": output_path,
+            "sample_item": None
+        }
 
     if output_path:
         with open(output_path, "w", encoding="utf-8") as f:
@@ -109,5 +107,5 @@ def generate_vault_instruction_dataset(
         "status": "success",
         "total_generated": len(dataset_items),
         "output_path": output_path,
-        "sample_item": dataset_items[0]
+        "sample_item": dataset_items[0] if dataset_items else None
     }

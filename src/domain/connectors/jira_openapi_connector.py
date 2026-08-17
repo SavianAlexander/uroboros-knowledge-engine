@@ -50,6 +50,23 @@ class JiraOpenApiConnector:
             pass
 
 
+        if not paths_dict:
+            # Load from empirical raw cache if offline
+            raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
+            raw_json_path = os.path.join(raw_dir, "jira_cloud_v3_openapi.json")
+            if not os.path.exists(raw_json_path):
+                base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+                raw_json_path = os.path.join(base_dir, "vault", "jira_qa", "raw", "jira_cloud_v3_openapi.json")
+            if os.path.exists(raw_json_path):
+                with open(raw_json_path, "r", encoding="utf-8") as rf:
+                    data = json.load(rf)
+                    paths_dict = data.get("paths", {})
+                    info_dict = data.get("info", {})
+            else:
+                raise FileNotFoundError(
+                    f"No live OpenAPI response and no empirical raw cache found at '{raw_json_path}'."
+                )
+
         # Build path endpoint summary table
         rows = []
         for path, methods in sorted(paths_dict.items())[:120]:
@@ -59,22 +76,6 @@ class JiraOpenApiConnector:
                     tags = ", ".join(details.get("tags", ["general"]))
                     rows.append(f"| `{method.upper()}` | `{path}` | {tags} | {summary} |")
 
-        if not rows:
-            # High-fidelity baseline of core route groups
-            core_paths = [
-                ("POST", "/rest/api/3/issue", "Issues", "Create issue"),
-                ("GET", "/rest/api/3/issue/{issueIdOrKey}", "Issues", "Get issue"),
-                ("PUT", "/rest/api/3/issue/{issueIdOrKey}", "Issues", "Edit issue"),
-                ("DELETE", "/rest/api/3/issue/{issueIdOrKey}", "Issues", "Delete issue"),
-                ("POST", "/rest/api/3/search", "Issue search", "Search for issues using JQL (POST)"),
-                ("GET", "/rest/api/3/search", "Issue search", "Search for issues using JQL (GET)"),
-                ("GET", "/rest/api/3/project", "Projects", "Get all projects"),
-                ("POST", "/rest/api/3/project", "Projects", "Create project"),
-                ("GET", "/rest/api/3/workflow", "Workflows", "Get all workflows"),
-                ("GET", "/rest/api/3/field", "Issue fields", "Get fields"),
-                ("POST", "/rest/api/3/field", "Issue fields", "Create custom field")
-            ]
-            rows = [f"| `{m}` | `{p}` | {t} | {s} |" for m, p, t, s in core_paths]
 
         total_paths = len(paths_dict) if paths_dict else 421
 

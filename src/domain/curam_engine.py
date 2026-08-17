@@ -20,13 +20,7 @@ from src.domain.statutory_data import (
 )
 
 
-# Empirical Statutory Constants for Backward Compatibility
-FPL_ANNUAL_BASE_2026 = 15650.0
-FPL_ANNUAL_PER_PERSON_2026 = 5520.0
-SNAP_MAX_ALLOTMENTS_2026 = {1: 292.0, 2: 536.0, 3: 768.0, 4: 975.0, 5: 1158.0, 6: 1390.0, 7: 1536.0, 8: 1756.0}
-TANF_MAX_BENEFITS_2026 = {1: 240.0, 2: 320.0, 3: 390.0, 4: 460.0, 5: 530.0, 6: 590.0}
-
-
+# Dynamic Statutory Policy Proxy
 def get_monthly_fpl(household_size: int, region: str = "contiguous_48_and_dc", policy: Optional[Dict[str, Any]] = None) -> float:
     """Calculate the 100% Monthly Federal Poverty Level for a given household size from empirical tables."""
     return get_fpl_monthly(household_size, region=region, policy=policy)

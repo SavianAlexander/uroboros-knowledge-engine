@@ -6,15 +6,25 @@ import unicodedata
 import re
 from typing import Dict, Any, List
 
-COMMON_TRANSLATIONS = {
-    # Spanish
-    "financiero": "financial", "contabilidad": "accounting", "informe": "report", "auditoria": "audit",
-    "estandar": "standard", "norma": "rule", "documento": "document", "sistema": "system",
-    # French
-    "financier": "financial", "comptabilite": "accounting", "rapport": "report", "norme": "standard",
-    # German
-    "finanz": "financial", "bericht": "report", "standard": "standard", "system": "system"
-}
+import os
+import json
+from functools import lru_cache
+
+_LEXICON_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "data", "lexicon_cross_lingual.json")
+)
+
+@lru_cache(maxsize=1)
+def load_cross_lingual_translations() -> Dict[str, str]:
+    """Loads and caches the empirical cross-lingual translation dictionary from JSON."""
+    if os.path.exists(_LEXICON_PATH):
+        try:
+            with open(_LEXICON_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return data.get("translations", {})
+        except Exception:
+            pass
+    return {}
 
 
 def align_cross_lingual_query(query: str) -> Dict[str, Any]:
@@ -30,8 +40,9 @@ def align_cross_lingual_query(query: str) -> Dict[str, Any]:
     tokens = re.findall(r'\b[a-z0-9_-]{3,}\b', stripped_query)
     translated_tokens = []
 
+    translations = load_cross_lingual_translations()
     for t in tokens:
-        translated = COMMON_TRANSLATIONS.get(t)
+        translated = translations.get(t)
         if not translated:
             import os
             import sqlite3

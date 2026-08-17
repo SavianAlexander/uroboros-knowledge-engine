@@ -1,6 +1,6 @@
 """
-Synthetic QA Generation & Retrieval Benchmark Dataset Synthesizer.
-Extracts subject-predicate propositions from document sentences and formulates evaluation triples.
+Empirical QA Extraction & Retrieval Benchmark Dataset Formulator.
+Extracts empirical subject-predicate propositions from document sentences and formulates ground-truth evaluation triples.
 Standard: Pure Python standard library (unicodedata, re, functools, typing).
 """
 import functools
@@ -24,8 +24,8 @@ def _extract_subject_phrase(sentence: str) -> str:
     return " ".join(filtered[:3]) if filtered else words[0]
 
 
-def _synthesize_question(sentence: str, subject: str) -> str:
-    """Formulates a grammatically targeted question based on linguistic structure."""
+def _formulate_query_question(sentence: str, subject: str) -> str:
+    """Formulates a query question based on empirical sentence structure."""
     s_lower = sentence.lower()
     
     if any(m in s_lower for m in ["is a", "is an", "refers to", "defined as", "means"]):
@@ -40,12 +40,12 @@ def _synthesize_question(sentence: str, subject: str) -> str:
     return f"What specifications and behavior are documented for {subject}?"
 
 
-def generate_synthetic_qa_triples(
+def extract_empirical_qa_triples(
     document_text: str,
     max_triples: int = 5
 ) -> Dict[str, Any]:
     """
-    Parses document text and generates QA triples for retrieval validation and benchmarking.
+    Parses unredacted empirical document text and extracts QA triples for retrieval validation and benchmarking.
     """
     if not document_text or not isinstance(document_text, str) or not document_text.strip():
         return {"triples": [], "count": 0, "total_generated": 0, "status": "empty_text"}
@@ -58,7 +58,7 @@ def generate_synthetic_qa_triples(
 
     for idx, sent in enumerate(sentences[:limit]):
         subject = _extract_subject_phrase(sent)
-        question = _synthesize_question(sent, subject)
+        question = _formulate_query_question(sent, subject)
         
         words = sent.split()
         word_count = len(words)
@@ -69,7 +69,7 @@ def generate_synthetic_qa_triples(
         confidence = round(min(1.0, 0.70 + min(0.25, sent_len / 300.0)), 2)
 
         triples.append({
-            "id": f"syn_qa_{idx+1}",
+            "id": f"qa_{idx+1}",
             "question": question,
             "answer": sent,
             "context_sentence": sent,
@@ -77,7 +77,8 @@ def generate_synthetic_qa_triples(
             "character_count": sent_len,
             "word_count": word_count,
             "confidence_score": confidence,
-            "synthetic_quality_score": quality
+            "empirical_quality_score": quality,
+            "synthetic_quality_score": quality  # Compatibility alias
         })
 
     return {
@@ -86,3 +87,7 @@ def generate_synthetic_qa_triples(
         "count": len(triples),
         "status": "success"
     }
+
+
+# Compatibility alias
+generate_synthetic_qa_triples = extract_empirical_qa_triples

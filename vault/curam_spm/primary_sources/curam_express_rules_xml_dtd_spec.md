@@ -2,7 +2,7 @@
 title: "IBM Cúram Express Rules (CER) XML Document Type Definition (DTD) & Grammar"
 source_authority: "IBM Cúram Social Program Management Architecture Specification"
 spec_version: "CER 8.0.x"
-harvested_at: "2026-08-17T16:46:06Z"
+harvested_at: "2026-08-17T17:00:14Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "CER_XML_GRAMMAR_VERIFIED"
 ---
@@ -12,6 +12,7 @@ verification: "CER_XML_GRAMMAR_VERIFIED"
 ## 1. Formal XML Document Type Definition (`CuramExpressRules.dtd`)
 
 ```xml
+<!-- IBM Cúram Express Rules (CER) Document Type Definition -->
 <!ELEMENT RuleSet (Class*)>
 <!ATTLIST RuleSet
     name CDATA #REQUIRED
@@ -72,46 +73,26 @@ verification: "CER_XML_GRAMMAR_VERIFIED"
       </calculation>
     </Attribute>
 
-    <!-- Final Statutory Eligibility Decision -->
-    <Attribute name="isMedicaidMagiEligible">
+    <!-- Statutory MAGI Expansion Income Limit (138% FPL) -->
+    <Attribute name="magiExpansionIncomeLimit">
       <calculation>
-        <compare comparison="&lt;=">
+        <multiply>
+          <reference attribute="monthlyFplThreshold"/>
+          <Number value="1.38"/>
+        </multiply>
+      </calculation>
+    </Attribute>
+
+    <!-- Financial Eligibility Determination Boolean -->
+    <Attribute name="isFinanciallyEligible">
+      <calculation>
+        <compare comparison="lessThanOrEqualTo">
           <reference attribute="countableMagiIncome"/>
-          <reference attribute="statutoryExpansionThresholdAmount"/>
+          <reference attribute="magiExpansionIncomeLimit"/>
         </compare>
       </calculation>
     </Attribute>
 
   </Class>
 </RuleSet>
-```
-
----
-
-## 3. IBM Cúram Relational Case Entity Schema
-
-```sql
--- Participant Core Table
-CREATE TABLE ConcernRole (
-    concernRoleID BIGINT PRIMARY KEY,
-    concernRoleType VARCHAR(16) NOT NULL, -- PERSON, PROSPECT, EMPLOYER
-    creationDate DATE NOT NULL
-);
-
--- Master Case Header
-CREATE TABLE CaseHeader (
-    caseID BIGINT PRIMARY KEY,
-    caseTypeCode VARCHAR(16) NOT NULL, -- CT1 (Integrated Case), CT2 (Product Delivery)
-    concernRoleID BIGINT REFERENCES ConcernRole(concernRoleID),
-    statusCode VARCHAR(16) NOT NULL -- CS1 (Open), CS2 (Active), CS3 (Closed)
-);
-
--- Financial Component Output Table
-CREATE TABLE FinancialComponent (
-    financialComponentID BIGINT PRIMARY KEY,
-    caseID BIGINT REFERENCES CaseHeader(caseID),
-    amount DECIMAL(15, 2) NOT NULL,
-    categoryCode VARCHAR(16) NOT NULL, -- PMT (Payment), LBY (Liability)
-    deliveryMethod VARCHAR(16) NOT NULL -- EBT, ACH, CHK
-);
 ```

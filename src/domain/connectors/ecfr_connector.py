@@ -90,46 +90,35 @@ class EcfrConnector:
         filename = "ecfr_master_50_titles_registry.md"
         filepath = os.path.join(self.output_dir, filename)
 
+        raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
+        os.makedirs(raw_dir, exist_ok=True)
+        raw_titles_path = os.path.join(raw_dir, "ecfr_titles.json")
+
         titles_data = []
         try:
             url = f"{self.BASE_API_URL}/versioner/v1/titles.json"
             req = urllib.request.Request(url, headers={"User-Agent": self.USER_AGENT, "Accept": "application/json"})
             with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
+                raw_bytes = resp.read()
+                data = json.loads(raw_bytes.decode("utf-8"))
                 titles_data = data.get("titles", [])
+                with open(raw_titles_path, "wb") as rf:
+                    rf.write(raw_bytes)
         except Exception:
             pass
 
-        if not titles_data or len(titles_data) < 50:
-            titles_names = [
-                (1, "General Provisions"), (2, "Grants and Agreements / Financial Assistance"),
-                (3, "The President"), (4, "Accounts"), (5, "Administrative Personnel"),
-                (6, "Domestic Security"), (7, "Agriculture (SNAP, WIC, USDA)"), (8, "Aliens and Nationality"),
-                (9, "Animals and Animal Products"), (10, "Energy (NRC, DOE)"), (11, "Federal Elections (FEC)"),
-                (12, "Banks and Banking (Federal Reserve, FDIC, OCC)"), (13, "Business Credit and Assistance (SBA)"),
-                (14, "Aeronautics and Space (FAA, NASA)"), (15, "Commerce and Foreign Trade (NIST, BIS)"),
-                (16, "Commercial Practices (FTC)"), (17, "Commodity and Securities Exchanges (SEC, CFTC)"),
-                (18, "Conservation of Power and Water Resources (FERC)"), (19, "Customs Duties (CBP)"),
-                (20, "Employees' Benefits (SSA, DOL)"), (21, "Food and Drugs (FDA, DEA)"),
-                (22, "Foreign Relations (State Dept)"), (23, "Highways (FHWA)"),
-                (24, "Housing and Urban Development (HUD Section 8)"), (25, "Indians (BIA)"),
-                (26, "Internal Revenue (IRS / Treasury Tax Regulations)"), (27, "Alcohol, Tobacco Products and Firearms (ATF, TTB)"),
-                (28, "Judicial Administration (DOJ, FBI)"), (29, "Labor (OSHA, Wage & Hour, NLRB)"),
-                (30, "Mineral Resources (MSHA, BOEM)"), (31, "Money and Finance: Treasury (FinCEN, OFAC)"),
-                (32, "National Defense (DOD)"), (33, "Navigation and Navigable Waters (USCG, USACE)"),
-                (34, "Education (ED)"), (35, "Reserved"), (36, "Parks, Forests, and Public Property (NPS, USFS)"),
-                (37, "Patents, Trademarks, and Copyrights (USPTO, Copyright Office)"), (38, "Pensions, Bonuses, and Veterans' Relief (VA)"),
-                (39, "Postal Service (USPS, PRC)"), (40, "Protection of Environment (EPA)"),
-                (41, "Public Contracts and Property Management (GSA)"), (42, "Public Health (CMS, CDC, NIH, Medicaid)"),
-                (43, "Public Lands: Interior (BLM)"), (44, "Emergency Management and Assistance (FEMA)"),
-                (45, "Public Welfare (ACF, TANF, CCDF, OCR, HIPAA)"), (46, "Shipping (MARAD, FMC)"),
-                (47, "Telecommunication (FCC)"), (48, "Federal Acquisition Regulations System (FAR)"),
-                (49, "Transportation (DOT, NHTSA, FAA, FMCSA)"), (50, "Wildlife and Fisheries (USFWS, NOAA)")
-            ]
-            titles_data = [
-                {"number": num, "name": name, "latest_amended_on": "2026-08-10", "latest_issue_date": "2026-08-12", "up_to_date_as_of": "2026-08-13", "reserved": (num == 35)}
-                for num, name in titles_names
-            ]
+        if not titles_data:
+            if not os.path.exists(raw_titles_path):
+                base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+                raw_titles_path = os.path.join(base_dir, "vault", "statutory_benefits", "raw", "ecfr_titles.json")
+            if os.path.exists(raw_titles_path):
+                with open(raw_titles_path, "r", encoding="utf-8") as rf:
+                    cached_data = json.load(rf)
+                    titles_data = cached_data.get("titles", [])
+            else:
+                raise FileNotFoundError(
+                    f"No live eCFR API response and no raw titles cache found at '{raw_titles_path}'."
+                )
 
         rows = []
         for t in titles_data:
@@ -207,22 +196,30 @@ verification: "ECFR_API_V1_VERIFIED"
         date_str = self._get_latest_date(title)
         url = f"{self.BASE_API_URL}/versioner/v1/full/{date_str}/title-{title}.xml?part={part}"
         sections = []
+        raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
+        raw_path = os.path.join(raw_dir, f"title_{title}_part_{part}.xml")
+        if not os.path.exists(raw_path):
+            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+            raw_path = os.path.join(base_dir, "vault", "statutory_benefits", "raw", f"title_{title}_part_{part}.xml")
 
+        xml_data = None
         try:
             req = urllib.request.Request(url, headers={"User-Agent": self.USER_AGENT, "Accept": "application/xml"})
             with urllib.request.urlopen(req, timeout=15) as resp:
                 xml_data = resp.read()
-
-                # Persist exact raw XML artifact for empirical audit trail
-                raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
-                os.makedirs(raw_dir, exist_ok=True)
-                raw_path = os.path.join(raw_dir, f"title_{title}_part_{part}.xml")
+                os.makedirs(os.path.dirname(raw_path), exist_ok=True)
                 with open(raw_path, "wb") as rf:
                     rf.write(xml_data)
+        except Exception:
+            pass
 
+        if xml_data is None and os.path.exists(raw_path):
+            with open(raw_path, "rb") as rf:
+                xml_data = rf.read()
+
+        if xml_data is not None:
+            try:
                 root = ET.fromstring(xml_data)
-
-
                 for div in root.iter():
                     tag = div.tag
                     div_type = div.get("TYPE", "")
@@ -248,9 +245,8 @@ verification: "ECFR_API_V1_VERIFIED"
                             for p in paragraphs:
                                 sections.append(f"{p}\n")
                             sections.append("\n---\n")
-
-        except Exception:
-            pass
+            except Exception:
+                pass
 
         return sections
 
@@ -266,15 +262,12 @@ verification: "ECFR_API_V1_VERIFIED"
         filename = f"ecfr_title{title}_part{part}_{domain_key}.md"
         filepath = os.path.join(self.output_dir, filename)
 
-        # 1. Fetch unredacted sections live from eCFR XML API
+        # 1. Fetch unredacted sections live or from persistent empirical raw XML
         parsed_sections = self.fetch_live_xml_and_parse(title, part)
-
-        # 2. Fallback: If network offline, parse baseline statutory sections
         if not parsed_sections:
-            parsed_sections = [
-                f"### § {part}.1 - Purpose and Authority\nStatutory authority pursuant to {meta['authority']} and federal regulations codified under Title {title}, Part {part} of the Code of Federal Regulations.\n",
-                f"### § {part}.2 - Comprehensive Eligibility Methodologies\nIn accordance with Centers for Medicare & Medicaid Services (CMS) and USDA Food and Nutrition Service (FNS) guidelines, the agency mandates full compliance with state and federal statutory eligibility criteria without synthetic modification.\n"
-            ]
+            raise FileNotFoundError(
+                f"Could not fetch live eCFR XML and no empirical raw XML exists for Title {title} Part {part}."
+            )
 
         content = f"""---
 title: "{meta['name']}"

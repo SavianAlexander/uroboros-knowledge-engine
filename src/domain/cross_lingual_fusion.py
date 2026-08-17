@@ -8,27 +8,25 @@ import unicodedata
 from typing import Dict, Any, List, Optional
 from src.domain.rag_engine import extract_advanced_rag_context
 
-# Comprehensive multilingual domain dictionary with bi-directional aliases
-MULTILINGUAL_CONCEPT_MAP = {
-    # Architecture & Systems
-    "database": ["base de datos", "datenbank", "base de données", "banco de dados", "db", "sqlite", "postgres"],
-    "base de datos": ["database", "datenbank", "base de données", "banco de dados"],
-    "datenbank": ["database", "base de datos", "base de données"],
-    "search": ["búsqueda", "suche", "recherche", "busca", "retrieval", "fts", "vector"],
-    "búsqueda": ["search", "suche", "recherche", "retrieval"],
-    "suche": ["search", "búsqueda", "recherche"],
-    "security": ["seguridad", "sicherheit", "sécurité", "segurança", "auth", "audit", "rbac"],
-    "seguridad": ["security", "sicherheit", "sécurité"],
-    "performance": ["rendimiento", "leistung", "desempenho", "latency", "throughput", "speed"],
-    "rendimiento": ["performance", "leistung", "speed", "throughput"],
-    "architecture": ["arquitectura", "architektur", "arquitetura", "system design", "clean architecture"],
-    "arquitectura": ["architecture", "architektur", "system design"],
-    "compliance": ["cumplimiento", "einhaltung", "conformité", "conformidade", "soc2", "gdpr", "hipaa"],
-    "cumplimiento": ["compliance", "soc2", "audit"],
-    "cache": ["memoria caché", "zwischenspeicher", "caching", "lru"],
-    "contract": ["contrato", "vertrag", "accord", "agreement"],
-    "contrato": ["contract", "agreement", "policy"]
-}
+import os
+import json
+from functools import lru_cache
+
+_LEXICON_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "data", "lexicon_cross_lingual.json")
+)
+
+@lru_cache(maxsize=1)
+def load_multilingual_concept_map() -> Dict[str, List[str]]:
+    """Loads and caches the empirical multilingual concept map from JSON."""
+    if os.path.exists(_LEXICON_PATH):
+        try:
+            with open(_LEXICON_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return data.get("concept_map", {})
+        except Exception:
+            pass
+    return {}
 
 
 def expand_cross_lingual_query(query: str) -> str:
@@ -42,7 +40,8 @@ def expand_cross_lingual_query(query: str) -> str:
     
     # Check multi-word phrases first
     q_lower = norm_query.lower()
-    for phrase, translations in MULTILINGUAL_CONCEPT_MAP.items():
+    concept_map = load_multilingual_concept_map()
+    for phrase, translations in concept_map.items():
         if phrase in q_lower:
             for t in translations[:3]:
                 if t not in expanded_terms:
@@ -51,8 +50,8 @@ def expand_cross_lingual_query(query: str) -> str:
     # Check individual words
     words = [w.strip(".,;:!?\"'()[]{}").lower() for w in norm_query.split() if len(w) > 3]
     for w in words:
-        if w in MULTILINGUAL_CONCEPT_MAP:
-            for t in MULTILINGUAL_CONCEPT_MAP[w][:2]:
+        if w in concept_map:
+            for t in concept_map[w][:2]:
                 if t not in expanded_terms:
                     expanded_terms.append(t)
         else:

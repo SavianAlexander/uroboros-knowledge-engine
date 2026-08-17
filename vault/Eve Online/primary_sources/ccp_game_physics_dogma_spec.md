@@ -1,7 +1,7 @@
 ---
 title: "CCP Games Canonical Dogma Combat Physics & Stacking Penalty Equations"
 source_authority: "CCP Games Game Engine Dogma Specification & Math Engine"
-harvested_at: "2026-08-17T16:46:06Z"
+harvested_at: "2026-08-17T17:00:15Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "CCP_DOGMA_PHYSICS_VERIFIED"
 ---
