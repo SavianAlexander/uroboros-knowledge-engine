@@ -68,7 +68,8 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 ├── file_allocation_bridge.py # 14. File Allocation, Clean Architecture Topology & Root Whitelist Bridge
 ├── doctor_bridge.py          # 15. 360° System, Engine & Repository Diagnostic Doctor
 ├── voice_operator_bridge.py  # 16. Executive Voice Telemetry, Spoken Briefings & Acoustic DSP Mastering
-└── benchmark_bridge.py       # 17. Empirical Latency Regression Watchdog & Benchmark Harness
+├── benchmark_bridge.py       # 17. Empirical Latency Regression Watchdog & Benchmark Harness
+└── browser_optimizer_bridge.py # 18. Browser Performance & Zero-Stutter Gaming Optimizer Bridge
 ```
 
 ### Master CLI Entrypoint (`scripts/neuro_cli.py`)
@@ -87,7 +88,8 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 - `python .../neuro_cli.py blast <filepath>`: Calculate AST blast radius, touched tables, and downstream caller impact.
 - `python .../neuro_cli.py release [--tag <name>]`: Generate immutable SOC 2 Type II Merkle provenance release certificate.
 - `python .../neuro_cli.py recover` (or `restore`): 5-Stage zero-reboot Windows crash recovery cascade (Explorer, DWM, Audio, DNS, Tasks).
-- `python .../neuro_cli.py test` (or `test_all`): Run concurrent 13-bridge parallel self-test matrix in <2 seconds.
+- `python .../neuro_cli.py browser [status|tune|restore]`: **Browser Performance & Zero-Stutter Gaming Optimizer** - Tunes Chromium/Brave/Chrome/Edge with Memory Saver, background app elimination, and timer throttling.
+- `python .../neuro_cli.py test` (or `test_all`): Run concurrent 14-bridge parallel self-test matrix in <2 seconds.
 - `python .../neuro_cli.py doctor [--json]`: Run unified 360° health diagnostic scorecard across OS, databases, Git, CI, and architecture.
 - `python .../neuro_cli.py status`: Display quick terminal scorecard with Tududi burndown, OS process hygiene, and GitHub upload state.
 - `python .../neuro_cli.py upload_status` (or `sync`): Real-time GitHub Remote Upload & Synchronization visibility check.

@@ -606,7 +606,50 @@ def cmd_llm(args):
             runtime=args.runtime,
             gpu_layers=args.ngl
         ), indent=2))
+def cmd_browser(args):
+    """Browser Performance & Zero-Stutter Gaming Optimizer Bridge."""
+    import browser_optimizer_bridge
+    sub = getattr(args, "browser_subcommand", None) or "status"
+    if sub == "status":
+        rep = browser_optimizer_bridge.inspect_browser_status()
+        if getattr(args, "json", False):
+            print(json.dumps(rep, indent=2))
+        else:
+            browser_optimizer_bridge.print_status_card(rep)
+        return 0
+    elif sub == "tune":
+        targets = browser_optimizer_bridge.get_browser_targets()
+        target_browsers = targets if getattr(args, "browser", "all") == "all" else {k: v for k, v in targets.items() if k == args.browser}
+        print("==========================================================================")
+        print("             APPLYING ZERO-STUTTER BROWSER GAMING PROFILE                 ")
+        print("==========================================================================")
+        for bkey, binfo in target_browsers.items():
+            print(f"[*] Optimizing {binfo['name']}...")
+            res = browser_optimizer_bridge.tune_browser_profile(binfo["user_data_dir"])
+            print(f"    [+] Modified Profiles : {', '.join(res.get('profiles_modified', []))}")
+            print(f"    [+] Local State Tuned : {res.get('local_state_modified')}")
+            print(f"    [+] Backups Generated : {len(res.get('backups_created', []))} files")
+        print("==========================================================================")
+        print("✅ [SUCCESS] Zero-Stutter Gaming Profile applied successfully!")
+        return 0
+    elif sub == "restore":
+        targets = browser_optimizer_bridge.get_browser_targets()
+        target_browsers = targets if getattr(args, "browser", "all") == "all" else {k: v for k, v in targets.items() if k == args.browser}
+        print("==========================================================================")
+        print("             RESTORING BROWSER PREFERENCES FROM BACKUP                    ")
+        print("==========================================================================")
+        for bkey, binfo in target_browsers.items():
+            print(f"[*] Restoring {binfo['name']}...")
+            res = browser_optimizer_bridge.restore_browser_backups(binfo["user_data_dir"])
+            for r in res.get("restored_files", []):
+                print(f"    [+] Restored: {r}")
+        print("==========================================================================")
+        print("✅ [SUCCESS] Browser preferences restored from backup!")
+        return 0
+    elif sub == "test":
+        return browser_optimizer_bridge.run_self_test()
     return 0
+
 
 
 def cmd_loop(args):
@@ -930,6 +973,16 @@ def main():
     loop_know = loop_subs.add_parser("knowledge", help="Autonomous Knowledge Ingestion & Vector Retrieval Verification Loop")
     loop_know.add_argument("query", nargs="*", help="Test query for retrieval verification")
 
+    # browser (Performance & Zero-Stutter Gaming Optimizer)
+    browser_p = subparsers.add_parser("browser", help="Browser Performance & Zero-Stutter Gaming Optimizer Bridge")
+    browser_subs = browser_p.add_subparsers(dest="browser_subcommand")
+    browser_subs.add_parser("status", help="Inspect browser memory usage and zero-stutter optimization state")
+    b_tune = browser_subs.add_parser("tune", help="Apply zero-stutter gaming profile to detected browsers")
+    b_tune.add_argument("--browser", choices=["brave", "chrome", "edge", "all"], default="all", help="Target browser")
+    b_rest = browser_subs.add_parser("restore", help="Restore previous browser settings from backup")
+    b_rest.add_argument("--browser", choices=["brave", "chrome", "edge", "all"], default="all", help="Target browser")
+    browser_subs.add_parser("test", help="Run automated self-test assertions")
+
     # self_test
     subparsers.add_parser("self_test", help="Run automated CLI self-test assertions")
 
@@ -980,6 +1033,7 @@ def main():
         "erp": cmd_erp,
         "llm": cmd_llm,
         "loop": cmd_loop,
+        "browser": cmd_browser,
         "self_test": lambda a: self_test()
     }
 
