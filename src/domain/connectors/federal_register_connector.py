@@ -36,9 +36,17 @@ class FederalRegisterConnector:
             url = f"{self.BASE_API_URL}/agencies.json"
             req = urllib.request.Request(url, headers={"User-Agent": self.USER_AGENT, "Accept": "application/json"})
             with urllib.request.urlopen(req, timeout=10) as resp:
-                agencies = json.loads(resp.read().decode("utf-8"))
+                raw_bytes = resp.read()
+                agencies = json.loads(raw_bytes.decode("utf-8"))
+
+                # Persist raw JSON for audit trail
+                raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
+                os.makedirs(raw_dir, exist_ok=True)
+                with open(os.path.join(raw_dir, "federal_agencies.json"), "wb") as rf:
+                    rf.write(raw_bytes)
         except Exception:
             pass
+
 
         if not agencies:
             # Fallback baseline of core cabinet and regulatory agencies

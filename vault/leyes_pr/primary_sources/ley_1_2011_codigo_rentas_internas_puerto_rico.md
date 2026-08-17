@@ -3,7 +3,7 @@ title: "Ley Núm. 1-2011: Código de Rentas Internas para un Nuevo Puerto Rico (
 source_authority: "Oficina de Servicios Legislativos de Puerto Rico (OSLPR) / Departamento de Hacienda"
 statute_number: "Ley 1-2011 (Subtítulos A, B, C, D, E, F)"
 governing_jurisdiction: "Estado Libre Asociado de Puerto Rico"
-harvested_at: "2026-08-17T16:30:04Z"
+harvested_at: "2026-08-17T16:46:06Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_STATUTE"
 verification: "OSLPR_LEX_VERIFIED"
 ---

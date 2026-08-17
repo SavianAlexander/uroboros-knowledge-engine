@@ -1,47 +1,47 @@
 {
-  "last_sync_timestamp": "2026-08-17T16:30:04Z",
-  "total_sync_runs": 10,
+  "last_sync_timestamp": "2026-08-17T16:46:06Z",
+  "total_sync_runs": 12,
   "entries": {
     "ecfr_title42_part435_medicaid_magi.md": {
-      "sha256": "f8804c5d2dc76b671dae85c08691b03a16cc1d5e387c4c6384bbb7119d91d635",
+      "sha256": "26aecc533aba7af91b963464704c824c0e6f236e8d7457eb573f37c98890aecd",
       "first_harvested": "2026-08-17T16:04:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
-      "bytes": 7083
+      "last_updated": "2026-08-17T16:46:06Z",
+      "bytes": 416894
     },
     "ecfr_title7_part273_snap_nutrition.md": {
-      "sha256": "072c6bade739d3606d1b4129ee6c51a6fc481b682e894e0fb89a14646d20007c",
+      "sha256": "62797c1d0b211cb415303f9a0be9c68ff8a04e855aada07692f7cd5309f17afc",
       "first_harvested": "2026-08-17T16:04:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
-      "bytes": 4087
+      "last_updated": "2026-08-17T16:46:06Z",
+      "bytes": 828366
     },
     "ecfr_title45_part260_tanf_cash.md": {
-      "sha256": "343596d484cb43d011b84e94785b1e323bb5432a8810ebb76715ec2ac89ee1de",
+      "sha256": "a6e68b028b55601a077effa99aae35aa10c3389d98d3738746fa2d48cef76acf",
       "first_harvested": "2026-08-17T16:04:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
-      "bytes": 2873
+      "last_updated": "2026-08-17T16:46:06Z",
+      "bytes": 46827
     },
     "ecfr_title7_part246_wic_nutrition.md": {
-      "sha256": "388041ee2eaec9a5ee6d9bf991dcee2693aad90c2808b670fc95aefc7f262c20",
+      "sha256": "8f4316bb9d73a81bd8a65ef0bce385bbffe4a2d3c7babbaaf2f69cd1d3e31431",
       "first_harvested": "2026-08-17T16:04:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
-      "bytes": 1860
+      "last_updated": "2026-08-17T16:46:06Z",
+      "bytes": 443870
     },
     "ecfr_title45_part98_ccdf_childcare.md": {
-      "sha256": "b81126191d39109f392ca9adc8740c86957eadfe5934158ba1f23ecb9d359df6",
+      "sha256": "509fe14a2efaa7aba0143b86fbe3e73167d23605028ac5f4fa495d394a65ffd0",
       "first_harvested": "2026-08-17T16:04:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
-      "bytes": 1795
+      "last_updated": "2026-08-17T16:46:06Z",
+      "bytes": 232575
     },
     "ecfr_title24_part982_section8_housing.md": {
-      "sha256": "cd9caed842dcb3de7a59486b342fb3adfe6761a3b3c579b488351a5baf84731f",
+      "sha256": "1ea5b4259cc6beff86c4fbb98ebd1cbacfca87b7efe427f4d4fbaf196d018ca9",
       "first_harvested": "2026-08-17T16:04:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
-      "bytes": 2230
+      "last_updated": "2026-08-17T16:46:06Z",
+      "bytes": 337476
     },
     "federal_register_hhs_poverty_guidelines_2026.md": {
-      "sha256": "b9a98e901cf7167ba5008aea5d66702a02a2f0a8486c674f851e4bade089f6d4",
+      "sha256": "ac9485d15276ab47b4ad2a931f2e54c226d72881a61d774a656da9c2092ecb60",
       "first_harvested": "2026-08-17T16:04:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 2002
     },
     "jira_cloud_v3_openapi_spec.md": {
@@ -51,99 +51,99 @@
       "bytes": 2661
     },
     "curam_express_rules_xml_dtd_spec.md": {
-      "sha256": "c95b00cd2e6fa0bc6fc1203c12e8dbe95ba3c59ad982e91bfed0cb8aa57c6995",
+      "sha256": "194c3e723f8651bb9206c35c380c5947a5f35ab5741d6a3d913aa07f90a48a3f",
       "first_harvested": "2026-08-17T16:04:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 3347
     },
     "eve_esi_v2_openapi_spec.md": {
-      "sha256": "34109735b4f9579817a454a1346551762ba4ebbd46d8d208ad74ea68522521b6",
+      "sha256": "46325469e49cb9739787cdbeadf6236ecb31a308821003d3dd000cd03ca5f6a5",
       "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 3807
     },
     "eve_sde_relational_schema_ddl.md": {
-      "sha256": "dc5abf8da2338e24b01841bcfacd5c281704f78e39da1501bb3fdfc054b74aa6",
+      "sha256": "c673171b878eb3d7afe7c7be687d61bb5c0e9d99eeaea242336016ce85b390fc",
       "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 2790
     },
     "ccp_game_physics_dogma_spec.md": {
-      "sha256": "564be47a8ea3a6a2ec639475d363c468333071d754d8aa67bb34217455e8f6d6",
+      "sha256": "777137c5888ff05167e6d129a756bc33ca8817db406bd13f27d67d7c8395ad76",
       "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 1545
     },
     "ley_1_2011_codigo_rentas_internas_puerto_rico.md": {
-      "sha256": "e39b760aec94c3d9dbcf587686a60bd164450f6d863f79015cef695e0b4e3dbf",
+      "sha256": "2c34c83cf697bac971db0369fdd1467ea0c6cf8e126b77fa1d7b1be033be09a1",
       "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 2446
     },
     "ley_148_1969_y_ley_4_2017_laboral_pr.md": {
-      "sha256": "f02f0817256878d4446dadfe09180c6dd1e0e54f5fb6389a44705f90ab45c873",
+      "sha256": "dd22fea5725b6efcfac6d35c8b822ab8d4f2b7f0153c6b10ae3e364d76c2f145",
       "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 1351
     },
     "iso_ieee_29119_test_documentation_spec.md": {
-      "sha256": "c92edd4f00f568b59fcd57f008460d68758a35bc74160ba7885fa5dfb699c5a8",
+      "sha256": "872b064036c5d6d099a538b4712d13d6c76e81276e56fbef9231730fa1c9068e",
       "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 1788
     },
     "aicpa_soc2_type2_trust_services_criteria.md": {
-      "sha256": "a388d4260886b39859e22bf5ced5ea759eb4aed3a5bcc30fe04846ee84cd8e30",
+      "sha256": "5475eb6b87622fe9d4329aec8b8d0ef048d9e750b305ef6c441d587cb6ea0fa6",
       "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 1625
     },
     "ecfr_master_50_titles_registry.md": {
-      "sha256": "76f20ab13d1574cc31c1191048a914def08e0736ca2a0b94ef0ae2f354a8be43",
+      "sha256": "9e9bbd86db65ee911444e110b7d117e0969f00daea52a85f9c9cc432ffc07cdc",
       "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 8972
     },
     "ecfr_title26_part1_internal_revenue.md": {
-      "sha256": "ab48a8d0eca21c456d415f914f7b624dac105be4ff329c755bba07e17a534d1c",
+      "sha256": "b1d02f770ea8b7985c2376856e96f8b62869345606911ec87e1ec5dba9afedeb",
       "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
-      "bytes": 2320
+      "last_updated": "2026-08-17T16:46:06Z",
+      "bytes": 1388
     },
     "ecfr_title29_part1910_labor_osha.md": {
-      "sha256": "8debc30d7d76bce0328b93759a5d7f10418ce61f91780d151042c1b8113e0c6e",
+      "sha256": "8324a467ca23439f71a891c7fd6219053d7497deaf7ed3c33eacf0e4e71b4b5e",
       "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
-      "bytes": 1904
+      "last_updated": "2026-08-17T16:46:06Z",
+      "bytes": 3163206
     },
     "ecfr_title48_part1_federal_acquisition_far.md": {
-      "sha256": "1f526af032e97b40b2c6a78fb4ffbd3bd0571bcf64c97f4ba3294898c549879b",
+      "sha256": "3c83b544aa28756f59d340e12b739cf719387719bc3065ee59083fd753c37ac7",
       "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
-      "bytes": 2377
+      "last_updated": "2026-08-17T16:46:06Z",
+      "bytes": 52611
     },
     "federal_register_all_472_agencies_directory.md": {
-      "sha256": "b8a4ddc60925ebbc322db6d451ac403af65040689df4f0e2fac777ec46a5f05b",
+      "sha256": "9b976e3ac48b3d3ac0f234d9cbbf78c07816da3f799c8bb1d6908068d76eabd7",
       "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 82280
     },
     "jira_cloud_v3_all_421_endpoints_openapi_spec.md": {
-      "sha256": "5f97a03a8d313deccedc8e671b66f61daac18ded99cf9ca67e5f1e7f80d9352b",
+      "sha256": "1df5ff4b14d68447beaed0f3fb1b24f1ad2e12e43170ed01f56dc055792fe19b",
       "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 20132
     },
     "eve_universe_114_regions_and_systems_catalog.md": {
-      "sha256": "9e92a2c9c4e4c7d6751b271fc3ad1fa45bf49cd358253266d287b1ed45dee660",
+      "sha256": "b1ee24a5cdef7bbd6231230d041ddaa564b2660aebd660a39ee0dfd591b99106",
       "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 2136
     },
     "codigo_civil_puerto_rico_2020_ley_55.md": {
-      "sha256": "c188f4c3ba08d14dcd5b5c384efac630ea85542711b2f9568212a31d0e577eaa",
+      "sha256": "54334ba0663a22beaf12af81bfc3a76c05d9d7c19336094e56e83f8df616116f",
       "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-17T16:30:04Z",
+      "last_updated": "2026-08-17T16:46:06Z",
       "bytes": 1225
     }
   }

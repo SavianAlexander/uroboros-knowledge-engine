@@ -37,9 +37,17 @@ class EveEsiConnector:
             url = f"{self.ESI_BASE_URL}/universe/regions/"
             req = urllib.request.Request(url, headers={"User-Agent": self.USER_AGENT, "Accept": "application/json"})
             with urllib.request.urlopen(req, timeout=10) as resp:
-                region_ids = json.loads(resp.read().decode("utf-8"))
+                raw_bytes = resp.read()
+                region_ids = json.loads(raw_bytes.decode("utf-8"))
+
+                # Persist raw universe regions JSON for audit trail
+                raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
+                os.makedirs(raw_dir, exist_ok=True)
+                with open(os.path.join(raw_dir, "universe_regions.json"), "wb") as rf:
+                    rf.write(raw_bytes)
         except Exception:
             pass
+
 
         total_regions = len(region_ids) if region_ids else 114
 

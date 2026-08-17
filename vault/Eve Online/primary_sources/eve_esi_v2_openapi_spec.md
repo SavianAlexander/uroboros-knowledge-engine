@@ -3,7 +3,7 @@ title: "CCP Games EVE Swagger Interface (ESI) Official OpenAPI Specification"
 source_authority: "CCP Games Developer Portal (https://esi.evetech.net/latest)"
 spec_version: "OpenAPI 3.0 ESI v2 (All 18 Route Groups)"
 endpoint_base: "https://esi.evetech.net/latest"
-harvested_at: "2026-08-17T16:30:04Z"
+harvested_at: "2026-08-17T16:46:06Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "CCP_ESI_OPENAPI_VERIFIED"
 ---

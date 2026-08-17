@@ -3,7 +3,7 @@ title: "Código Civil de Puerto Rico (Ley Núm. 55-2020)"
 source_authority: "Oficina de Servicios Legislativos de Puerto Rico (OSLPR)"
 statute_number: "Ley 55-2020"
 governing_jurisdiction: "Estado Libre Asociado de Puerto Rico"
-harvested_at: "2026-08-17T16:30:04Z"
+harvested_at: "2026-08-17T16:46:06Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_CODE"
 verification: "OSLPR_CIVIL_CODE_VERIFIED"
 ---

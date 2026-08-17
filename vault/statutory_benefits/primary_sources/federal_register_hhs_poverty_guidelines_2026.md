@@ -5,7 +5,7 @@ publication_source: "Federal Register (Annual Statutory Notice)"
 statutory_authority: "42 U.S.C. 9902(2)"
 effective_year: 2026
 official_citation: "2026-HHS-FPL-FR-001"
-harvested_at: "2026-08-17T16:30:02Z"
+harvested_at: "2026-08-17T16:46:04Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "FEDERAL_REGISTER_API_V1_VERIFIED"
 ---

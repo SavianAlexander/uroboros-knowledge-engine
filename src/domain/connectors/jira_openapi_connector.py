@@ -36,11 +36,19 @@ class JiraOpenApiConnector:
         try:
             req = urllib.request.Request(self.JIRA_OPENAPI_URL, headers={"User-Agent": self.USER_AGENT, "Accept": "application/json"})
             with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
+                raw_bytes = resp.read()
+                data = json.loads(raw_bytes.decode("utf-8"))
                 paths_dict = data.get("paths", {})
                 info_dict = data.get("info", {})
+
+                # Persist exact raw OpenAPI schema for audit trail
+                raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
+                os.makedirs(raw_dir, exist_ok=True)
+                with open(os.path.join(raw_dir, "jira_cloud_v3_openapi.json"), "wb") as rf:
+                    rf.write(raw_bytes)
         except Exception:
             pass
+
 
         # Build path endpoint summary table
         rows = []
