@@ -82,19 +82,22 @@ from fastapi.responses import FileResponse
 @app.get("/")
 def get_index():
     asset_path = Path(FRONTEND_DIST) / "index.html"
+    headers = {"Cache-Control": "no-cache, no-store, must-revalidate"}
     if not asset_path.exists():
-        return FileResponse("index.html") if os.path.exists("index.html") else JSONResponse({"error": "UI build not found. Run npm run build in frontend/."})
-    return FileResponse(str(asset_path))
+        return FileResponse("index.html", headers=headers) if os.path.exists("index.html") else JSONResponse({"error": "UI build not found. Run npm run build in frontend/."})
+    return FileResponse(str(asset_path), headers=headers)
 
 @app.get("/app.js")
 def get_app_bundle():
     p = os.path.join(FRONTEND_DIST, "app.js")
-    return FileResponse(p, media_type="application/javascript") if os.path.exists(p) else FileResponse("app.js")
+    headers = {"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    return FileResponse(p, media_type="application/javascript", headers=headers) if os.path.exists(p) else FileResponse("app.js", headers=headers)
 
 @app.get("/style.css")
 def get_style_bundle():
     p = os.path.join(FRONTEND_DIST, "style.css")
-    return FileResponse(p, media_type="text/css") if os.path.exists(p) else FileResponse("style.css")
+    headers = {"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
+    return FileResponse(p, media_type="text/css", headers=headers) if os.path.exists(p) else FileResponse("style.css", headers=headers)
 
 
 from fastapi import Depends

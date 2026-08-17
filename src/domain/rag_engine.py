@@ -402,7 +402,7 @@ def extract_advanced_rag_context(
                 query_sql = (
                     "SELECT files.filepath, files.filename, files.content, files.modified_at "
                     "FROM fts_files JOIN files ON fts_files.filepath = files.filepath "
-                    f"WHERE {' AND '.join(sql_where)} LIMIT 10"
+                    f"WHERE {' AND '.join(sql_where)} ORDER BY bm25(fts_files) ASC LIMIT 10"
                 )
                 cursor.execute(query_sql, sql_params)
                 fts_hits = [dict(row) for row in cursor.fetchall()]

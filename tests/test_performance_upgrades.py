@@ -124,5 +124,43 @@ class TestPerformanceUpgrades(unittest.TestCase):
         self.assertAlmostEqual(dot_product(normalized[0], normalized[0]), 1.0, places=5)
         self.assertAlmostEqual(dot_product(normalized[1], normalized[1]), 1.0, places=5)
 
+    def test_eve_sde_o1_lookup_and_search(self):
+        from src.infrastructure.eve_sde import get_ship_hull, search_ship_hulls
+        hulk = get_ship_hull("Hulk")
+        self.assertIsNotNone(hulk)
+        self.assertEqual(hulk["class"], "Exhumer")
+        self.assertEqual(hulk["race"], "ORE")
+
+        # Case insensitive lookup
+        mack = get_ship_hull("mackinaw")
+        self.assertIsNotNone(mack)
+        self.assertEqual(mack["class"], "Exhumer")
+
+        # Search query
+        dreads = search_ship_hulls("Dreadnought", limit=5)
+        self.assertTrue(len(dreads) > 0)
+        self.assertTrue(any(d["name"] in ("Revelation", "Naglfar") for d in dreads))
+
+    def test_semantic_rag_cache_prenormalization(self):
+        from src.core.rag_query_cache import SemanticRAGQueryCache
+        cache = SemanticRAGQueryCache(max_entries=10, similarity_threshold=0.95)
+        raw_emb = [3.0, 4.0, 0.0] # Un-normalized vector with norm 5.0
+        cache.put("what is mining boost?", "Mining boost docs", embedding=raw_emb)
+
+        # Hit by near-identical normalized query
+        query_emb = [0.6, 0.8, 0.0] # Unit vector (3/5, 4/5, 0)
+        hit = cache.get("what is mining boost?", embedding=query_emb)
+        self.assertIsNotNone(hit)
+        self.assertEqual(hit["results"], "Mining boost docs")
+
+    def test_static_asset_cache_control_headers(self):
+        from fastapi.testclient import TestClient
+        from src.app.server import app
+        client = TestClient(app)
+        res_idx = client.get("/")
+        self.assertIn(res_idx.status_code, (200, 404))
+        if res_idx.status_code == 200:
+            self.assertIn("no-cache", res_idx.headers.get("cache-control", ""))
+
 if __name__ == "__main__":
     unittest.main()

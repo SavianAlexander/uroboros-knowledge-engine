@@ -85,7 +85,7 @@ class SemanticRAGQueryCache:
         return None
 
     def put(self, query: str, results: Any, embedding: Optional[List[float]] = None, ttl_sec: Optional[float] = None) -> None:
-        """Store query results with optional embedding and TTL."""
+        """Store query results with optional pre-normalized embedding and TTL."""
         now = time.time()
         q_norm = query.strip().lower()
         ttl = ttl_sec if ttl_sec is not None else self.default_ttl_sec
@@ -94,10 +94,15 @@ class SemanticRAGQueryCache:
         if len(self._cache) >= self.max_entries and q_norm not in self._cache:
             self._cache.popitem(last=False)
 
+        norm_emb = None
+        if embedding is not None:
+            v_norm = math.sqrt(math.fsum(x * x for x in embedding)) or 1.0
+            norm_emb = [x / v_norm for x in embedding]
+
         self._cache[q_norm] = {
             "query": query,
             "results": results,
-            "embedding": embedding,
+            "embedding": norm_emb,
             "created_at": now,
             "expires_at": now + ttl
         }

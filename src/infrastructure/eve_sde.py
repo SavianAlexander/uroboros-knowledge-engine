@@ -15,6 +15,7 @@ import os
 import sys
 import json
 import time
+from typing import Optional, Dict, Any, List
 
 VAULT_EVE_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -272,3 +273,47 @@ Comprehensive technical database of ship hulls, base stats, fitting layouts, rol
         created_files.append(ship_file)
 
     return created_files
+
+
+# In-Memory O(1) Index for instantaneous retrieval
+_SHIP_HULL_LOWER_INDEX = {k.lower().strip(): dict(v, name=k) for k, v in SHIP_HULL_DATABASE.items()}
+
+
+def get_ship_hull(name: str) -> Optional[Dict[str, Any]]:
+    """Retrieve ship hull specifications by name in O(1) time."""
+    if not name or not isinstance(name, str):
+        return None
+    return _SHIP_HULL_LOWER_INDEX.get(name.lower().strip())
+
+
+def search_ship_hulls(query: str = "", limit: int = 10) -> List[Dict[str, Any]]:
+    """Search ship hulls by name, role, class, or fitting doctrine in O(N) memory scan."""
+    if not query or not str(query).strip():
+        return [dict(v, name=k) for k, v in list(SHIP_HULL_DATABASE.items())[:limit]]
+
+    q_clean = str(query).lower().strip()
+    matches = []
+    for k, v in SHIP_HULL_DATABASE.items():
+        score = 0
+        name_low = k.lower()
+        class_low = (v.get("class") or "").lower()
+        role_low = (v.get("role") or "").lower()
+        fit_low = (v.get("doctrine_fit") or "").lower()
+
+        if q_clean == name_low:
+            score += 100
+        elif q_clean in name_low:
+            score += 50
+        elif q_clean in class_low:
+            score += 30
+        elif q_clean in role_low:
+            score += 20
+        elif q_clean in fit_low:
+            score += 10
+
+        if score > 0:
+            item = dict(v, name=k, search_score=score)
+            matches.append(item)
+
+    matches.sort(key=lambda x: x["search_score"], reverse=True)
+    return matches[:limit]
