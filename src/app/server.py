@@ -4,6 +4,10 @@ FastAPI application server instantiation, middleware, static asset mounts, and r
 import os
 from pathlib import Path
 from fastapi import FastAPI
+try:
+    from fastapi.responses import ORJSONResponse as FastJSONResponse
+except ImportError:
+    from fastapi.responses import JSONResponse as FastJSONResponse
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
@@ -60,7 +64,7 @@ async def lifespan(app: FastAPI):
                 import logging; logging.warning(f"Swallowed error in server.py beacon stop: {e}")
         execute_clean_shutdown()
 
-app = FastAPI(title="Uroboros Knowledge Database", default_response_class=JSONResponse, lifespan=lifespan)
+app = FastAPI(title="Uroboros Knowledge Database", default_response_class=FastJSONResponse, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 FRONTEND_DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))

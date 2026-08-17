@@ -59,6 +59,7 @@ class SQLiteConnectionPool:
                     conn.execute("PRAGMA temp_store = MEMORY")
                     conn.execute("PRAGMA cache_size = -262144")
                     conn.execute("PRAGMA mmap_size = 4294967296")
+                    conn.execute("PRAGMA threads = 4")
                     conn.execute("PRAGMA wal_autocheckpoint = 2000")
                     conn.execute("PRAGMA journal_size_limit = 67108864")
                     return conn
@@ -349,6 +350,7 @@ def get_db():
                 conn.execute("PRAGMA temp_store = MEMORY")
                 conn.execute("PRAGMA cache_size = -262144")
                 conn.execute("PRAGMA mmap_size = 4294967296")
+                conn.execute("PRAGMA threads = 4")
                 conn.execute("PRAGMA wal_autocheckpoint = 2000")
                 conn.execute("PRAGMA foreign_keys = ON")
                 _local.connection = conn

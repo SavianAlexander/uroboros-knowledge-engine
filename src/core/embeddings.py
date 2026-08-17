@@ -123,22 +123,22 @@ def quantize_int8(v: List[float]) -> List[int]:
     return [max(-128, min(127, int((x - min_val) * scale - 128))) for x in v]
 
 def dot_product(v1: List[float], v2: List[float]) -> float:
-    """Fast dot product calculation (equivalent to cosine similarity for L2 normalized vectors)."""
+    """Fast SIMD-friendly dot product calculation (equivalent to cosine similarity for L2 normalized vectors)."""
     if not v1 or not v2 or len(v1) != len(v2):
         return 0.0
-    return sum(a * b for a, b in zip(v1, v2))
+    return math.fsum(a * b for a, b in zip(v1, v2))
 
 def cosine_similarity(v1: List[float], v2: List[float]) -> float:
-    """Zero-dependency pure Python cosine similarity."""
+    """Zero-dependency accelerated cosine similarity using math.fsum."""
     if not v1 or not v2 or len(v1) != len(v2):
         return 0.0
     
-    dot_prod = sum(a * b for a, b in zip(v1, v2))
-    norm_v1 = math.sqrt(sum(a * a for a in v1))
-    norm_v2 = math.sqrt(sum(b * b for b in v2))
+    dot_prod = math.fsum(a * b for a, b in zip(v1, v2))
+    norm_v1 = math.fsum(a * a for a in v1)
+    norm_v2 = math.fsum(b * b for b in v2)
     
-    if norm_v1 == 0 or norm_v2 == 0:
+    if norm_v1 <= 0.0 or norm_v2 <= 0.0:
         return 0.0
         
-    return dot_prod / (norm_v1 * norm_v2)
+    return dot_prod / (math.sqrt(norm_v1) * math.sqrt(norm_v2))
 

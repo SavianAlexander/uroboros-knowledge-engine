@@ -2,7 +2,7 @@
 
 Automated verification report asserting complete alignment between live CCP ESI telemetry, canonical physics equations, and knowledge vault embeddings.
 
-- **Audit Timestamp**: `2026-08-16 21:21:41 UTC`
+- **Audit Timestamp**: `2026-08-17 02:55:31 UTC`
 - **Total Assertions Tested**: **38 / 38**
 - **Audit Result**: **100% VERIFIED — ZERO ASSUMPTIONS (PASS)**
 
@@ -19,5 +19,5 @@ Automated verification report asserting complete alignment between live CCP ESI 
    - **Turret Tracking Equation**: Verified exact 50% hit chance at Optimal + Falloff distance.
 
 3. **Knowledge Vault Health**:
-   - **2,972 EVE Documents** verified in SQLite database.
-   - **18,209 Vector & FTS5 Chunks** verified with zero broken links or orphan records.
+   - **7,071 EVE Documents** verified in SQLite database.
+   - **22,308 Vector & FTS5 Chunks** verified with zero broken links or orphan records.

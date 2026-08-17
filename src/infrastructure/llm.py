@@ -53,8 +53,28 @@ def generate_cached_completion(prompt: str, max_tokens: int = 150) -> str:
     response = llm(prompt, max_tokens=max_tokens, echo=False, stream=False)
     return response["choices"][0]["text"].strip()
 
+def coalesce_token_chunks(token_gen: Generator[str, None, None], frame_interval: float = 0.016) -> Generator[str, None, None]:
+    """Coalesces raw token chunks into 60 FPS frame-timed batches for silky-smooth UI rendering."""
+    import time
+    buffer = []
+    last_flush = time.perf_counter()
+    
+    for token in token_gen:
+        if not token:
+            continue
+        buffer.append(token)
+        now = time.perf_counter()
+        if (now - last_flush) >= frame_interval or token.endswith(("\n", ".", "!", "?", ";", " ")):
+            yield "".join(buffer)
+            buffer.clear()
+            last_flush = now
+            
+    if buffer:
+        yield "".join(buffer)
+
+
 def stream_completion(prompt: str, max_tokens: int = 500) -> Generator[str, None, None]:
-    """Generate completion and yield token chunks for real-time SSE streaming."""
+    """Generate completion and yield coalesced token chunks for real-time 60 FPS SSE streaming."""
     require_llm()
     prompt = _enforce_context_window(prompt, max_tokens)
     
@@ -65,8 +85,12 @@ def stream_completion(prompt: str, max_tokens: int = 500) -> Generator[str, None
         return
         
     llm = get_fallback_llm()
-    for chunk in llm(prompt, max_tokens=max_tokens, echo=False, stream=True):
-        yield chunk["choices"][0]["text"]
+
+    def _raw_generator():
+        for chunk in llm(prompt, max_tokens=max_tokens, echo=False, stream=True):
+            yield chunk["choices"][0]["text"]
+
+    yield from coalesce_token_chunks(_raw_generator())
 
 
 def ensure_local_model_directory(models_dir: str = "models") -> Dict[str, Any]:
