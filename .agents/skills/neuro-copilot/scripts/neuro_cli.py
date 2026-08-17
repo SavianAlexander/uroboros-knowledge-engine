@@ -624,6 +624,11 @@ def cmd_browser(args):
         print("             APPLYING ZERO-STUTTER BROWSER GAMING PROFILE                 ")
         print("==========================================================================")
         for bkey, binfo in target_browsers.items():
+            if getattr(args, "close", False):
+                closed = browser_optimizer_bridge.close_browser_processes(bkey, targets)
+                if closed > 0:
+                    print(f"[*] Closed {closed} running processes for {binfo['name']} to lock settings.")
+
             print(f"[*] Optimizing {binfo['name']}...")
             res = browser_optimizer_bridge.tune_browser_profile(binfo["user_data_dir"])
             print(f"    [+] Modified Profiles : {', '.join(res.get('profiles_modified', []))}")
@@ -979,6 +984,7 @@ def main():
     browser_subs.add_parser("status", help="Inspect browser memory usage and zero-stutter optimization state")
     b_tune = browser_subs.add_parser("tune", help="Apply zero-stutter gaming profile to detected browsers")
     b_tune.add_argument("--browser", choices=["brave", "chrome", "edge", "all"], default="all", help="Target browser")
+    b_tune.add_argument("--close", action="store_true", help="Cleanly close running browser processes to lock settings")
     b_rest = browser_subs.add_parser("restore", help="Restore previous browser settings from backup")
     b_rest.add_argument("--browser", choices=["brave", "chrome", "edge", "all"], default="all", help="Target browser")
     browser_subs.add_parser("test", help="Run automated self-test assertions")

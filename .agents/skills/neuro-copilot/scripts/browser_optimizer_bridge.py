@@ -200,6 +200,23 @@ def inspect_browser_status() -> Dict[str, Any]:
     return status_report
 
 
+def close_browser_processes(browser_key: str, targets: Dict[str, Dict[str, Any]]) -> int:
+    """Closes running browser processes so file writes are permanently saved."""
+    binfo = targets.get(browser_key)
+    if not binfo:
+        return 0
+    closed_count = 0
+    if os.name == "nt":
+        for p in binfo.get("process_names", []):
+            stem = p.replace(".exe", "")
+            ps_script = "$procs = Get-Process -Name '" + stem + "' -ErrorAction SilentlyContinue; if ($procs) { $cnt = $procs.Count; $procs | Stop-Process -Force; $cnt } else { 0 }"
+            cmd = ["powershell", "-NoProfile", "-Command", ps_script]
+            res = subprocess.run(cmd, capture_output=True, text=True)
+            if res.returncode == 0 and res.stdout.strip().isdigit():
+                closed_count += int(res.stdout.strip())
+    return closed_count
+
+
 def tune_browser_profile(user_data_dir: pathlib.Path) -> Dict[str, Any]:
     """Applies the zero-stutter gaming profile to a Chromium User Data directory."""
     results = {
@@ -405,6 +422,7 @@ def main():
     # tune
     tune_parser = subparsers.add_parser("tune", help="Apply zero-stutter gaming profile to detected browsers")
     tune_parser.add_argument("--browser", choices=["brave", "chrome", "edge", "all"], default="all", help="Target specific browser")
+    tune_parser.add_argument("--close", action="store_true", help="Cleanly close running browser processes before applying settings to prevent in-memory rollback")
 
     # restore
     rest_parser = subparsers.add_parser("restore", help="Restore previous browser settings from backup")
@@ -435,16 +453,21 @@ def main():
         print("             APPLYING ZERO-STUTTER BROWSER GAMING PROFILE                 ")
         print("==========================================================================")
         for bkey, binfo in target_browsers.items():
+            if getattr(args, "close", False):
+                closed = close_browser_processes(bkey, targets)
+                if closed > 0:
+                    print(f"[*] Closed {closed} running processes for {binfo['name']} to lock settings.")
+
             print(f"[*] Optimizing {binfo['name']}...")
             res = tune_browser_profile(binfo["user_data_dir"])
             print(f"    [+] Modified Profiles : {', '.join(res.get('profiles_modified', []))}")
             print(f"    [+] Local State Tuned : {res.get('local_state_modified')}")
             print(f"    [+] Backups Generated : {len(res.get('backups_created', []))} files")
-            if binfo["user_data_dir"] in [v["user_data_dir"] for v in targets.values()]:
+            if not getattr(args, "close", False) and binfo["user_data_dir"] in [v["user_data_dir"] for v in targets.values()]:
                 running = get_running_browser_processes().get(bkey)
                 if running and running.get("count", 0) > 0:
                     print(f"    [!] Note: {binfo['name']} is currently open ({running.get('count')} processes).")
-                    print(f"        Settings will take full effect upon next browser restart.")
+                    print(f"        Use '--close' to close running instances or restart the browser manually.")
         print("==========================================================================")
         print("✅ [SUCCESS] Zero-Stutter Gaming Profile applied successfully!")
         return 0
