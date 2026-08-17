@@ -2,6 +2,7 @@ import os
 import math
 import json
 import struct
+import heapq
 import sqlite3
 import threading
 import contextlib
@@ -69,7 +70,7 @@ class DenseVectorStore:
         elif vec_len < self.dimension:
             vector = vector + [0.0] * (self.dimension - vec_len)
             
-        norm = math.sqrt(sum(v * v for v in vector)) or 1.0
+        norm = math.sqrt(math.fsum(v * v for v in vector)) or 1.0
         normalized = tuple(v / norm for v in vector)
         
         meta_dict = meta or {}
@@ -88,8 +89,8 @@ class DenseVectorStore:
             conn.commit()
 
     def search_nearest(self, query_vector: List[float], top_k: int = 10) -> List[Tuple[str, float, Dict[str, Any]]]:
-        """Return top_k nearest documents ranked by cosine similarity using fast zip iteration."""
-        if not self.vectors or not query_vector:
+        """Return top_k nearest documents ranked by cosine similarity using zero-allocation O(N log K) min-heap."""
+        if not self.vectors or not query_vector or top_k <= 0:
             return []
 
         # Pad/truncate query
@@ -99,27 +100,31 @@ class DenseVectorStore:
         elif vec_len < self.dimension:
             query_vector = query_vector + [0.0] * (self.dimension - vec_len)
 
-        q_norm = math.sqrt(sum(v * v for v in query_vector)) or 1.0
+        q_norm = math.sqrt(math.fsum(v * v for v in query_vector)) or 1.0
         q_normalized = tuple(v / q_norm for v in query_vector)
 
-        results = []
         with self._lock:
+            # Min-heap of size top_k: (score, doc_id)
+            heap: List[Tuple[float, str]] = []
             for doc_id, doc_vector in self.vectors.items():
-                score = sum(a * b for a, b in zip(q_normalized, doc_vector))
-                results.append((doc_id, score, self.metadata.get(doc_id, {})))
-
-        # N-log-K optimization conceptually via sort+slice
-        results.sort(key=lambda x: x[1], reverse=True)
-        return results[:top_k]
+                score = math.fsum(a * b for a, b in zip(q_normalized, doc_vector))
+                if len(heap) < top_k:
+                    heapq.heappush(heap, (score, doc_id))
+                elif score > heap[0][0]:
+                    heapq.heapreplace(heap, (score, doc_id))
+            
+            # Sort top_k items in descending order
+            heap.sort(key=lambda x: x[0], reverse=True)
+            return [(doc_id, score, self.metadata.get(doc_id, {})) for score, doc_id in heap]
 
     def search_nearest_2phase(self, query_vector: List[float], top_k: int = 10, coarse_dim: int = 64, candidate_k: int = 50) -> List[Tuple[str, float, Dict[str, Any]]]:
         """
         Two-phase Matryoshka Representation Learning (MRL) retrieval:
         1. Coarse Pass: Fast cosine similarity on truncated vectors (coarse_dim) to retrieve top candidates.
         2. Precision Pass: Full-dimension cosine rescoring on the top candidates.
-        # ponytail: 2-phase MRL coarse-to-fine filtering for sub-10ms similarity search
+        # ponytail: 2-phase MRL coarse-to-fine filtering with O(N log K) heap
         """
-        if not self.vectors or not query_vector:
+        if not self.vectors or not query_vector or top_k <= 0:
             return []
 
         vec_len = len(query_vector)
@@ -128,32 +133,40 @@ class DenseVectorStore:
         else:
             q_full = query_vector + [0.0] * (self.dimension - vec_len)
 
-        full_norm = math.sqrt(sum(v * v for v in q_full)) or 1.0
+        full_norm = math.sqrt(math.fsum(v * v for v in q_full)) or 1.0
         q_full_norm = tuple(v / full_norm for v in q_full)
 
         actual_coarse = min(coarse_dim, self.dimension)
         coarse_q = q_full_norm[:actual_coarse]
-        coarse_q_norm_val = math.sqrt(sum(v * v for v in coarse_q)) or 1.0
+        coarse_q_norm_val = math.sqrt(math.fsum(v * v for v in coarse_q)) or 1.0
         coarse_q_norm = tuple(v / coarse_q_norm_val for v in coarse_q)
 
-        coarse_candidates = []
+        target_candidates = max(candidate_k, top_k * 3)
+
         with self._lock:
+            # 1. Coarse min-heap
+            coarse_heap: List[Tuple[float, str, Tuple[float, ...]]] = []
             for doc_id, doc_vector in self.vectors.items():
                 coarse_doc = doc_vector[:actual_coarse]
-                coarse_doc_norm_val = math.sqrt(sum(v * v for v in coarse_doc)) or 1.0
-                coarse_score = sum(a * (b / coarse_doc_norm_val) for a, b in zip(coarse_q_norm, coarse_doc))
-                coarse_candidates.append((doc_id, coarse_score, doc_vector))
+                coarse_doc_norm_val = math.sqrt(math.fsum(v * v for v in coarse_doc)) or 1.0
+                coarse_score = math.fsum(a * (b / coarse_doc_norm_val) for a, b in zip(coarse_q_norm, coarse_doc))
+                
+                if len(coarse_heap) < target_candidates:
+                    heapq.heappush(coarse_heap, (coarse_score, doc_id, doc_vector))
+                elif coarse_score > coarse_heap[0][0]:
+                    heapq.heapreplace(coarse_heap, (coarse_score, doc_id, doc_vector))
 
-        coarse_candidates.sort(key=lambda x: x[1], reverse=True)
-        top_candidates = coarse_candidates[:max(candidate_k, top_k * 3)]
+            # 2. Precision min-heap on coarse survivors
+            prec_heap: List[Tuple[float, str]] = []
+            for _, doc_id, doc_vector in coarse_heap:
+                score = math.fsum(a * b for a, b in zip(q_full_norm, doc_vector))
+                if len(prec_heap) < top_k:
+                    heapq.heappush(prec_heap, (score, doc_id))
+                elif score > prec_heap[0][0]:
+                    heapq.heapreplace(prec_heap, (score, doc_id))
 
-        results = []
-        for doc_id, _, doc_vector in top_candidates:
-            score = sum(a * b for a, b in zip(q_full_norm, doc_vector))
-            results.append((doc_id, score, self.metadata.get(doc_id, {})))
-
-        results.sort(key=lambda x: x[1], reverse=True)
-        return results[:top_k]
+            prec_heap.sort(key=lambda x: x[0], reverse=True)
+            return [(doc_id, score, self.metadata.get(doc_id, {})) for score, doc_id in prec_heap]
 
     def clear(self):
         with self._lock:

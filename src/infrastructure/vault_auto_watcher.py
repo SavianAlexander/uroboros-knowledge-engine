@@ -57,47 +57,59 @@ class VaultAutoWatcher:
         conn = get_db()
         cursor = conn.cursor()
 
-        for root, _, files in os.walk(self.vault_dir):
-            for file in files:
-                if file.endswith((".md", ".txt", ".json")):
-                    full_path = os.path.join(root, file)
-                    try:
-                        mtime = os.path.getmtime(full_path)
-                        last_mtime = self._file_mtimes.get(full_path, 0.0)
+        def _walk_entries(directory: str):
+            try:
+                with os.scandir(directory) as it:
+                    for entry in it:
+                        if entry.is_dir(follow_symlinks=False):
+                            yield from _walk_entries(entry.path)
+                        elif entry.is_file(follow_symlinks=False) and entry.name.endswith((".md", ".txt", ".json")):
+                            yield entry
+            except (PermissionError, FileNotFoundError):
+                pass
 
-                        if mtime > last_mtime:
-                            self._file_mtimes[full_path] = mtime
-                            with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
-                                content = f.read()
+        for entry in _walk_entries(self.vault_dir):
+            full_path = entry.path
+            file = entry.name
+            try:
+                stat = entry.stat()
+                mtime = stat.st_mtime
+                mtime_ns = stat.st_mtime_ns
+                last_mtime = self._file_mtimes.get(full_path, 0.0)
 
-                            cursor.execute("SELECT id FROM files WHERE filepath = ?", (full_path,))
-                            row = cursor.fetchone()
+                if mtime > last_mtime:
+                    self._file_mtimes[full_path] = mtime
+                    with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.read()
 
-                            if row:
-                                file_id = row[0]
-                                cursor.execute(
-                                    "UPDATE files SET content = ?, size = ?, mtime = ? WHERE id = ?",
-                                    (content, len(content), mtime, file_id)
-                                )
-                                cursor.execute(
-                                    "UPDATE fts_files SET content = ? WHERE rowid = ?",
-                                    (content, file_id)
-                                )
-                            else:
-                                cursor.execute(
-                                    "INSERT INTO files (filename, filepath, content, size, mtime) VALUES (?, ?, ?, ?, ?)",
-                                    (file, full_path, content, len(content), mtime)
-                                )
-                                file_id = cursor.lastrowid
-                                cursor.execute(
-                                    "INSERT INTO fts_files (rowid, filename, filepath, content, notes) VALUES (?, ?, ?, ?, ?)",
-                                    (file_id, file, full_path, content, "")
-                                )
+                    cursor.execute("SELECT id FROM files WHERE filepath = ?", (full_path,))
+                    row = cursor.fetchone()
 
-                            changed_files.append(file)
-                            self._indexed_count += 1
-                    except Exception:
-                        pass
+                    if row:
+                        file_id = row[0]
+                        cursor.execute(
+                            "UPDATE files SET content = ?, file_size = ?, modified_at = ? WHERE id = ?",
+                            (content, len(content), mtime, file_id)
+                        )
+                        cursor.execute(
+                            "UPDATE fts_files SET content = ? WHERE rowid = ?",
+                            (content, file_id)
+                        )
+                    else:
+                        cursor.execute(
+                            "INSERT INTO files (filename, filepath, content, file_size, modified_at) VALUES (?, ?, ?, ?, ?)",
+                            (file, full_path, content, len(content), mtime)
+                        )
+                        file_id = cursor.lastrowid
+                        cursor.execute(
+                            "INSERT INTO fts_files (rowid, filename, filepath, content, notes) VALUES (?, ?, ?, ?, ?)",
+                            (file_id, file, full_path, content, "")
+                        )
+
+                    changed_files.append(file)
+                    self._indexed_count += 1
+            except Exception:
+                pass
 
         conn.commit()
         scan_ms = round((time.perf_counter() - t0) * 1000, 2)

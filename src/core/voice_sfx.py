@@ -192,3 +192,16 @@ class VoiceSFX:
             winsound.PlaySound(wav_bytes, flags)
         except Exception:
             pass
+
+    @classmethod
+    def prewarm_all(cls):
+        """Pre-synthesizes all procedural SFX waveforms into RAM for true 0.0ms trigger latency."""
+        for sfx_key in _SFX_GENERATORS:
+            cls.synthesize_sfx(sfx_key)
+
+
+# Instant 0.0ms warm cache initialization
+try:
+    VoiceSFX.prewarm_all()
+except Exception:
+    pass

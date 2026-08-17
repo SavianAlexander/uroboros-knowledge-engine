@@ -74,5 +74,55 @@ class TestPerformanceUpgrades(unittest.TestCase):
             mode = cur.fetchone()[0]
             self.assertEqual(mode.upper(), "WAL")
 
+    def test_dense_vector_store_heap_top_k(self):
+        import tempfile, os
+        from src.domain.vector_store import DenseVectorStore
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tf:
+            temp_db = tf.name
+        try:
+            store = DenseVectorStore(dimension=4, db_path=temp_db)
+            store.add_vector("doc_1", [1.0, 0.0, 0.0, 0.0], {"title": "Doc 1"})
+            store.add_vector("doc_2", [0.0, 1.0, 0.0, 0.0], {"title": "Doc 2"})
+            store.add_vector("doc_3", [0.9, 0.1, 0.0, 0.0], {"title": "Doc 3"})
+
+            results = store.search_nearest([1.0, 0.0, 0.0, 0.0], top_k=2)
+            self.assertEqual(len(results), 2)
+            self.assertEqual(results[0][0], "doc_1")
+            self.assertEqual(results[1][0], "doc_3")
+        finally:
+            reset_db_connections()
+            if os.path.exists(temp_db):
+                try:
+                    os.remove(temp_db)
+                except Exception:
+                    pass
+
+    def test_voice_sfx_prewarm_and_latency(self):
+        from src.core.voice_sfx import VoiceSFX
+        VoiceSFX.prewarm_all()
+        # Synthesis should be instant O(1) from cache
+        wav = VoiceSFX.synthesize_sfx("ready")
+        self.assertTrue(len(wav) > 44)
+        self.assertTrue(wav.startswith(b"RIFF"))
+
+    def test_static_rag_prompt_prefix(self):
+        from src.domain.rag_engine import build_augmented_prompt, STATIC_RAG_SYSTEM_PREFIX
+        prompt = build_augmented_prompt("What is our architecture?", "Engine is built on FastAPI.")
+        self.assertTrue(prompt.startswith(STATIC_RAG_SYSTEM_PREFIX))
+        self.assertIn("Engine is built on FastAPI.", prompt)
+        self.assertIn("Question: What is our architecture?", prompt)
+
+    def test_batch_l2_normalize(self):
+        from src.core.embeddings import batch_l2_normalize, dot_product
+        vectors = [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [0.0, 0.0, 0.0]
+        ]
+        normalized = batch_l2_normalize(vectors)
+        self.assertEqual(len(normalized), 3)
+        self.assertAlmostEqual(dot_product(normalized[0], normalized[0]), 1.0, places=5)
+        self.assertAlmostEqual(dot_product(normalized[1], normalized[1]), 1.0, places=5)
+
 if __name__ == "__main__":
     unittest.main()

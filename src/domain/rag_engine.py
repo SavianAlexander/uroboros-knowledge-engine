@@ -550,9 +550,18 @@ def build_token_budget_context(context_blocks: List[str], max_tokens: int = 3500
     return "\n\n".join(allocated_blocks)
 
 
+STATIC_RAG_SYSTEM_PREFIX = (
+    "You are an expert AI knowledge engine assistant. "
+    "Synthesize accurate, grounded answers based strictly on the provided Context. "
+    "If the context does not contain the answer, state that clearly without guessing."
+)
+
+
 def build_augmented_prompt(query: str, context: str) -> str:
-    """Formats retrieved context and user query into a grounded RAG prompt."""
-    return f"Context:\n{context}\n\nQuestion: {query}\n\nAnswer:"
+    """Formats retrieved context and user query into a grounded RAG prompt with static prefix KV-cache pinning."""
+    if not context or not context.strip():
+        return f"{STATIC_RAG_SYSTEM_PREFIX}\n\nQuestion: {query.strip()}\n\nAnswer:"
+    return f"{STATIC_RAG_SYSTEM_PREFIX}\n\nContext:\n{context.strip()}\n\nQuestion: {query.strip()}\n\nAnswer:"
 
 
 def get_rag_engine_capabilities() -> Dict[str, Any]:

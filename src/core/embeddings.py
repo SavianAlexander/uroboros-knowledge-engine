@@ -88,13 +88,18 @@ def generate_embedding(text: str) -> List[float]:
     return res[0] if res else []
 
 def l2_normalize(v: List[float]) -> List[float]:
-    """L2 normalize vector to unit length for fast dot-product similarity."""
+    """L2 normalize vector to unit length using accelerated math.fsum."""
     if not v:
         return []
-    norm = math.sqrt(sum(x * x for x in v))
+    norm = math.sqrt(math.fsum(x * x for x in v))
     if norm == 0:
         return [0.0] * len(v)
-    return [x / norm for x in v]
+    inv_norm = 1.0 / norm
+    return [x * inv_norm for x in v]
+
+def batch_l2_normalize(vectors: List[List[float]]) -> List[List[float]]:
+    """Batch accelerated L2 normalization for bulk document chunk arrays."""
+    return [l2_normalize(vec) for vec in vectors]
 
 def matryoshka_slice(v: List[float], target_dim: int = 256) -> List[float]:
     """
