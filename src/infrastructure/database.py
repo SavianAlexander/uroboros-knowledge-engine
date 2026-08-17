@@ -448,6 +448,7 @@ def init_db():
                 )
             """)
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_file_id ON file_chunks(file_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_file_chunk ON file_chunks(file_id, chunk_index)')
 
             _ensure_column(cursor, "file_chunks", "chunk_hash", "TEXT")
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_hash ON file_chunks(chunk_hash)')
@@ -483,6 +484,7 @@ def init_db():
                 )
             """)
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_modified ON files(modified_at)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_mtime_desc ON files(modified_at DESC)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_filename ON files(filename)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_sha256 ON files(sha256)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_mime_type ON files(mime_type)')
@@ -514,6 +516,7 @@ def init_db():
                 )
             """)
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_tags_tag ON tags(tag)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_tags_tag_file ON tags(tag, file_id)')
 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS auto_rules (

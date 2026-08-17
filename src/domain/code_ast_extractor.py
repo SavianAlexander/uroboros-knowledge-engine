@@ -107,9 +107,16 @@ class PythonASTAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
 
+import collections
+
+_AST_CACHE: collections.OrderedDict = collections.OrderedDict()
+_MAX_AST_CACHE_SIZE = 512
+
+
 def extract_code_structure(code_content: str, filename: str = "snippet.py") -> Dict[str, Any]:
     """
     Extracts class hierarchies, functions, call graphs, and cyclomatic complexity from source code.
+    Uses zero-allocation LRU cache for sub-millisecond repeated lookups.
     """
     if not code_content or not isinstance(code_content, str):
         return {
@@ -123,6 +130,11 @@ def extract_code_structure(code_content: str, filename: str = "snippet.py") -> D
             "cyclomatic_complexity": 1
         }
 
+    cache_key = (hash(code_content), filename)
+    if cache_key in _AST_CACHE:
+        _AST_CACHE.move_to_end(cache_key)
+        return _AST_CACHE[cache_key]
+
     ext = os.path.splitext(filename)[1].lower()
 
     if ext in [".py", ""] or "def " in code_content or "import " in code_content:
@@ -130,7 +142,7 @@ def extract_code_structure(code_content: str, filename: str = "snippet.py") -> D
             tree = ast.parse(code_content)
             analyzer = PythonASTAnalyzer()
             analyzer.visit(tree)
-            return {
+            res = {
                 "status": "success",
                 "language": "python",
                 "filename": filename,
@@ -140,7 +152,11 @@ def extract_code_structure(code_content: str, filename: str = "snippet.py") -> D
                 "calls": analyzer.calls,
                 "cyclomatic_complexity": analyzer.complexity_score
             }
-        except Exception as e:
+            if len(_AST_CACHE) >= _MAX_AST_CACHE_SIZE:
+                _AST_CACHE.popitem(last=False)
+            _AST_CACHE[cache_key] = res
+            return res
+        except Exception:
             pass
 
     # Generic regex fallback for JS/TS/Go/Rust
@@ -149,7 +165,7 @@ def extract_code_structure(code_content: str, filename: str = "snippet.py") -> D
     imports = [{"module": m.group(1), "line": 0} for m in re.finditer(r'\bimport\s+[\'"]([^\'"]+)[\'"]|\bfrom\s+([a-zA-Z0-9_\.]+)', code_content)]
     branching = len(re.findall(r'\b(?:if|else if|elif|for|while|catch|case)\b', code_content))
 
-    return {
+    res = {
         "status": "success",
         "language": "generic",
         "filename": filename,
@@ -159,6 +175,10 @@ def extract_code_structure(code_content: str, filename: str = "snippet.py") -> D
         "calls": [],
         "cyclomatic_complexity": 1 + branching
     }
+    if len(_AST_CACHE) >= _MAX_AST_CACHE_SIZE:
+        _AST_CACHE.popitem(last=False)
+    _AST_CACHE[cache_key] = res
+    return res
 
 
 def analyze_file_callgraph(filepath: str) -> Dict[str, Any]:

@@ -90,8 +90,8 @@ def get_item_price(type_id: int, prices: dict = None) -> float:
     return info.get("average_price", 0.0) or info.get("adjusted_price", 0.0)
 
 
-def compute_asset_valuation(items: list, prices: dict = None) -> dict:
-    """Compute total valuation and top value items from an asset list."""
+def compute_asset_valuation(items: list, prices: dict = None, top_k: int = 10) -> dict:
+    """Compute total valuation and top value items from an asset list with single-pass aggregation."""
     if prices is None:
         prices = fetch_universe_market_prices()
 
@@ -101,7 +101,8 @@ def compute_asset_valuation(items: list, prices: dict = None) -> dict:
     for it in items:
         tid = it.get("type_id", 0)
         qty = it.get("quantity", 1)
-        unit_price = get_item_price(tid, prices)
+        info = prices.get(str(tid), {})
+        unit_price = info.get("average_price", 0.0) or info.get("adjusted_price", 0.0) if isinstance(info, dict) else 0.0
         item_val = unit_price * qty
         total_value += item_val
 
@@ -114,6 +115,8 @@ def compute_asset_valuation(items: list, prices: dict = None) -> dict:
     valued_items.sort(key=lambda x: x["total_value"], reverse=True)
 
     return {
-        "total_valuation": total_value,
+        "total_valuation": round(total_value, 2),
+        "total_items": len(items),
+        "top_items": valued_items[:top_k],
         "items": valued_items,
     }

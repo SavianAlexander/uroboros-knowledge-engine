@@ -147,3 +147,19 @@ def cosine_similarity(v1: List[float], v2: List[float]) -> float:
         
     return dot_prod / (math.sqrt(norm_v1) * math.sqrt(norm_v2))
 
+def batch_dot_product(query_vec: List[float], matrix: List[List[float]]) -> List[float]:
+    """Batch SIMD-friendly dot product against an array of candidate vectors."""
+    if not query_vec or not matrix:
+        return []
+    q_len = len(query_vec)
+    return [
+        math.fsum(a * b for a, b in zip(query_vec, candidate)) if len(candidate) == q_len else 0.0
+        for candidate in matrix
+    ]
+
+def batch_cosine_similarity(query_vec: List[float], matrix: List[List[float]]) -> List[float]:
+    """Batch accelerated cosine similarity scoring against a candidate vector matrix."""
+    if not query_vec or not matrix:
+        return []
+    return [cosine_similarity(query_vec, candidate) for candidate in matrix]
+

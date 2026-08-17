@@ -162,5 +162,52 @@ class TestPerformanceUpgrades(unittest.TestCase):
         if res_idx.status_code == 200:
             self.assertIn("no-cache", res_idx.headers.get("cache-control", ""))
 
+    def test_ast_code_extractor_lru_cache(self):
+        from src.domain.code_ast_extractor import extract_code_structure
+        code = "def calculate_dps(turrets: int, damage_mod: float) -> float:\n    return turrets * damage_mod * 1.25\n"
+        # First parse
+        res1 = extract_code_structure(code, filename="dps_calc.py")
+        self.assertEqual(res1["status"], "success")
+        self.assertEqual(len(res1["functions"]), 1)
+        self.assertEqual(res1["functions"][0]["name"], "calculate_dps")
+
+        # Second parse must be identical from cache
+        res2 = extract_code_structure(code, filename="dps_calc.py")
+        self.assertIs(res1, res2)
+
+    def test_batch_dot_product_and_matrix_cosine(self):
+        from src.core.embeddings import batch_dot_product, batch_cosine_similarity
+        q = [1.0, 0.0, 0.0]
+        matrix = [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.7071, 0.7071, 0.0]
+        ]
+        dots = batch_dot_product(q, matrix)
+        self.assertEqual(len(dots), 3)
+        self.assertAlmostEqual(dots[0], 1.0, places=4)
+        self.assertAlmostEqual(dots[1], 0.0, places=4)
+        self.assertAlmostEqual(dots[2], 0.7071, places=4)
+
+        cos_scores = batch_cosine_similarity(q, matrix)
+        self.assertEqual(len(cos_scores), 3)
+        self.assertAlmostEqual(cos_scores[0], 1.0, places=4)
+
+    def test_eve_asset_valuation_aggregation(self):
+        from src.infrastructure.eve_market import compute_asset_valuation
+        sample_items = [
+            {"type_id": 17478, "quantity": 2, "name": "Hulk"},
+            {"type_id": 12068, "quantity": 100, "name": "Scordite"},
+        ]
+        mock_prices = {
+            "17478": {"average_price": 350000000.0, "adjusted_price": 340000000.0},
+            "12068": {"average_price": 45.0, "adjusted_price": 42.0},
+        }
+        res = compute_asset_valuation(sample_items, prices=mock_prices)
+        self.assertEqual(res["total_items"], 2)
+        self.assertEqual(res["total_valuation"], 700004500.0)
+        self.assertEqual(len(res["top_items"]), 2)
+        self.assertEqual(res["top_items"][0]["name"], "Hulk")
+
 if __name__ == "__main__":
     unittest.main()
