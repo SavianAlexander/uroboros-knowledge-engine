@@ -71,6 +71,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
     networks:
       - backend_net
       - ai_net
@@ -103,6 +105,9 @@ services:
         hard: 65535
     ports:
       - "${FRONTEND_HOST_PORT:-80}:80"
+    tmpfs:
+      - /var/cache/nginx:size=32M,mode=1777
+      - /tmp:size=16M,mode=1777
     depends_on:
       uroboros_engine:
         condition: service_healthy
@@ -127,6 +132,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
     networks:
       - frontend_net
       - backend_net
@@ -159,6 +166,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+        mode: "non-blocking"
+        max-buffer-size: "4m"
     networks:
       - ai_net
       - backend_net

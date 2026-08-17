@@ -107,11 +107,14 @@ class TestDockerConfig(unittest.TestCase):
         self.assertIn("compileall", df_content)
         self.assertIn("PYTHONMALLOC=malloc", df_content)
         self.assertIn("MALLOC_TRIM_THRESHOLD_=65536", df_content)
+        self.assertIn("strip --strip-unneeded", df_content)
 
         nginx_path = BASE_DIR / "nginx.conf"
         nginx_content = nginx_path.read_text(encoding="utf-8")
         self.assertIn("open_file_cache", nginx_content)
         self.assertIn("worker_processes 1;", nginx_content)
+        self.assertIn("upstream engine_backend", nginx_content)
+        self.assertIn("keepalive 32;", nginx_content)
 
         dc_path = BASE_DIR / "docker-compose.yml"
         dc_content = dc_path.read_text(encoding="utf-8")
@@ -119,6 +122,8 @@ class TestDockerConfig(unittest.TestCase):
         self.assertIn("shm_size: '256mb'", dc_content)
         self.assertIn("OLLAMA_KEEP_ALIVE=2m", dc_content)
         self.assertIn("OLLAMA_FLASH_ATTENTION=1", dc_content)
+        self.assertIn("mode: \"non-blocking\"", dc_content)
+        self.assertIn("/var/cache/nginx:size=32M", dc_content)
 
 if __name__ == "__main__":
     unittest.main()

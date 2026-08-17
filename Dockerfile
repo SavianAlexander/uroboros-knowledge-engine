@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir --prefix=/install -r requirements.txt && \
+    find /install -name "*.so*" -exec strip --strip-unneeded {} + 2>/dev/null || true && \
     find /install -type d -name "tests" -o -type d -name "test" -o -type d -name "__pycache__" | xargs rm -rf 2>/dev/null || true && \
     find /install -type f -name "*.pyc" -o -name "*.pyo" | xargs rm -f 2>/dev/null || true
 
