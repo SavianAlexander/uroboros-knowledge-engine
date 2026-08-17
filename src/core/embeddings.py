@@ -174,3 +174,28 @@ def filter_vectors_by_threshold(query_vec: List[float], matrix: List[List[float]
             results.append((idx, score))
     return results
 
+_last_health_check_ts: float = 0.0
+_cached_availability: bool = False
+
+def is_embedding_service_available(force_check: bool = False) -> bool:
+    """Check if local Ollama embedding endpoint is reachable with cached result."""
+    global _last_health_check_ts, _cached_availability
+    now = time.time()
+    if not force_check and (now - _last_health_check_ts < 10.0):
+        return _cached_availability
+
+    _last_health_check_ts = now
+    base = OLLAMA_BASE_URL.replace("/v1", "").replace("host.docker.internal", "127.0.0.1")
+    url = f"{base}/api/tags"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Uroboros-Health/1.0"})
+        with urllib.request.urlopen(req, timeout=1.0) as res:
+            if res.status == 200:
+                _cached_availability = True
+                return True
+    except Exception:
+        pass
+    _cached_availability = False
+    return False
+
+

@@ -173,3 +173,54 @@ def test_eve_infrastructure_package():
     import src.infrastructure.eve as eve_pkg
     assert hasattr(eve_pkg, "EveEsiClient")
     assert hasattr(eve_pkg, "EveMarketEngine")
+
+
+def test_database_self_healing():
+    from src.domain.database_self_healer import execute_database_self_healing
+    res = execute_database_self_healing()
+    assert res["status"] == "success"
+    assert "database_health" in res
+    assert "purged_orphan_chunks" in res
+
+
+def test_fre_902_merkle_certificate():
+    from src.domain.vault_merkle_tree import generate_fre_902_certificate
+    cert = generate_fre_902_certificate("nonexistent_test_doc.md")
+    assert cert["status"] in ["not_found", "success"]
+
+
+def test_polyglot_ast_extraction():
+    from src.domain.code_ast_extractor import extract_code_structure
+    ts_code = """
+    export interface UserProfile { id: string; name: string; }
+    export async function fetchProfile(id: string) { return id; }
+    const calculateScore = (x: number) => x * 2;
+    """
+    res = extract_code_structure(ts_code, filename="service.ts")
+    assert res["status"] == "success"
+    assert res["language"] == "typescript"
+    fn_names = [f["name"] for f in res["functions"]]
+    assert "fetchProfile" in fn_names
+    assert "calculateScore" in fn_names
+    assert any(c["name"] == "UserProfile" for c in res["classes"])
+
+
+def test_agent_episodic_scratchpad():
+    from src.domain.agent_scratchpad import store_memory, recall_memory, list_session_memories
+    session_id = "test_session_42"
+    store_memory(session_id, "current_plan", {"step": 1, "action": "index_files"}, tags=["rag", "planner"])
+    val = recall_memory(session_id, "current_plan")
+    assert val is not None
+    assert val["step"] == 1
+    mems = list_session_memories(session_id)
+    assert len(mems) >= 1
+    assert any(m["key"] == "current_plan" for m in mems)
+
+
+def test_service_catalog_registry():
+    from src.core.router_registry import get_service_catalog
+    catalog = get_service_catalog()
+    assert isinstance(catalog, list)
+    assert len(catalog) > 0
+    paths = [c["path"] for c in catalog]
+    assert "/health" in paths or any("/api/" in p for p in paths)

@@ -108,13 +108,22 @@ def get_index():
 def get_app_bundle():
     p = os.path.join(FRONTEND_DIST, "app.js")
     headers = {"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
-    return FileResponse(p, media_type="application/javascript", headers=headers) if os.path.exists(p) else FileResponse("app.js", headers=headers)
+    if os.path.exists(p):
+        return FileResponse(p, media_type="application/javascript", headers=headers)
+    # If React build is active, Vite bundles assets in /assets/
+    if os.path.exists(os.path.join(FRONTEND_DIST, "index.html")):
+        raise HTTPException(status_code=404, detail="Legacy bundle app.js deprecated in React SPA. Use assets/index-*.js.")
+    return FileResponse("app.js", headers=headers) if os.path.exists("app.js") else JSONResponse({"error": "Bundle not found"}, status_code=404)
 
 @app.get("/style.css")
 def get_style_bundle():
     p = os.path.join(FRONTEND_DIST, "style.css")
     headers = {"Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"}
-    return FileResponse(p, media_type="text/css", headers=headers) if os.path.exists(p) else FileResponse("style.css", headers=headers)
+    if os.path.exists(p):
+        return FileResponse(p, media_type="text/css", headers=headers)
+    if os.path.exists(os.path.join(FRONTEND_DIST, "index.html")):
+        raise HTTPException(status_code=404, detail="Legacy bundle style.css deprecated in React SPA. Use assets/index-*.css.")
+    return FileResponse("style.css", headers=headers) if os.path.exists("style.css") else JSONResponse({"error": "Style not found"}, status_code=404)
 
 
 from fastapi import Depends

@@ -1,0 +1,60 @@
+{
+  "last_sync_timestamp": "2026-08-17T16:07:26Z",
+  "total_sync_runs": 5,
+  "entries": {
+    "ecfr_title42_part435_medicaid_magi.md": {
+      "sha256": "112c8ca6bedfa9f211937263db235d63938d4fd48d8d9c39fb0d91e16993e4d1",
+      "first_harvested": "2026-08-17T16:04:46Z",
+      "last_updated": "2026-08-17T16:07:26Z",
+      "bytes": 3186
+    },
+    "ecfr_title7_part273_snap_nutrition.md": {
+      "sha256": "a91198b6f95f9a6618cda5b887c2e3aff9bd190a010ffa792078debedbae524b",
+      "first_harvested": "2026-08-17T16:04:46Z",
+      "last_updated": "2026-08-17T16:07:26Z",
+      "bytes": 3217
+    },
+    "ecfr_title45_part260_tanf_cash.md": {
+      "sha256": "ed912615cd3808bb9dd1f7e6b9a925ab304d2ccd84fe6a48aacc533c3e7a0689",
+      "first_harvested": "2026-08-17T16:04:46Z",
+      "last_updated": "2026-08-17T16:07:26Z",
+      "bytes": 2172
+    },
+    "ecfr_title7_part246_wic_nutrition.md": {
+      "sha256": "a96f19f4f5106d6972ca8b4be483db3f27de9b749df91cb07c72d6246ed34df7",
+      "first_harvested": "2026-08-17T16:04:46Z",
+      "last_updated": "2026-08-17T16:07:26Z",
+      "bytes": 1898
+    },
+    "ecfr_title45_part98_ccdf_childcare.md": {
+      "sha256": "fdef49a0a930809fe64b137116462085110d2cad4ea4e66efc5ff3cd45772444",
+      "first_harvested": "2026-08-17T16:04:46Z",
+      "last_updated": "2026-08-17T16:07:26Z",
+      "bytes": 1726
+    },
+    "ecfr_title24_part982_section8_housing.md": {
+      "sha256": "46d97536b41c698aa96e0b7b03deeb794410178e6a185efadbbc428a3d93377b",
+      "first_harvested": "2026-08-17T16:04:46Z",
+      "last_updated": "2026-08-17T16:07:26Z",
+      "bytes": 2134
+    },
+    "federal_register_hhs_poverty_guidelines_2026.md": {
+      "sha256": "2a547acd2c524ed93339a4421251c66bd1c4c2b518f20a9a95c68f5f07c9e079",
+      "first_harvested": "2026-08-17T16:04:46Z",
+      "last_updated": "2026-08-17T16:07:26Z",
+      "bytes": 2524
+    },
+    "jira_cloud_v3_openapi_spec.md": {
+      "sha256": "631b05601726e2e887f50f87dbda741dfb35ddbde4e5c2190b4995724cc63ead",
+      "first_harvested": "2026-08-17T16:04:46Z",
+      "last_updated": "2026-08-17T16:07:26Z",
+      "bytes": 2661
+    },
+    "curam_express_rules_xml_dtd_spec.md": {
+      "sha256": "62821f56308552a8c75c81203d9669f3aaf31eac520f1692a19b7a4019a0c35d",
+      "first_harvested": "2026-08-17T16:04:46Z",
+      "last_updated": "2026-08-17T16:07:26Z",
+      "bytes": 3347
+    }
+  }
+}

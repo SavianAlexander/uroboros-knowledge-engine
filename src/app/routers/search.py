@@ -1330,3 +1330,41 @@ def grounded_search_endpoint(payload: Dict[str, Any] = Body(...)):
         import logging; logging.getLogger(__name__).exception(f"Swallowed error in grounded_search: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/api/search/capabilities")
+def search_capabilities_endpoint():
+    """Returns available retrieval strategies and DAG pipeline stages."""
+    from src.infrastructure.retrieval_strategies import get_strategy_registry
+    from src.domain.retrieval_pipeline_dag import get_retrieval_pipeline
+    strat_reg = get_strategy_registry()
+    dag = get_retrieval_pipeline()
+    return {
+        "status": "success",
+        "strategies": strat_reg.list_strategies(),
+        "dag_max_chunks": dag.max_chunks,
+        "dag_jaccard_threshold": dag.jaccard_threshold,
+        "supported_features": ["hybrid_rrf", "colbert_maxsim", "hyde", "entropy_compression", "knowledge_synthesis"]
+    }
+
+
+@router.get("/api/search/plugins")
+def search_plugins_endpoint():
+    """Returns registered domain plugins and vertical cartridges."""
+    from src.core.domain_plugin_spi import get_domain_registry
+    reg = get_domain_registry()
+    manifests = reg.list_plugins()
+    return {
+        "status": "success",
+        "count": len(manifests),
+        "plugins": [
+            {
+                "name": m.name,
+                "version": m.version,
+                "description": m.description,
+                "keywords": m.keywords,
+                "capabilities": m.capabilities
+            }
+            for m in manifests
+        ]
+    }
+

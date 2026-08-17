@@ -613,12 +613,14 @@ class MiniVectorEngine:
     def _ensure_vector_matrix_cache(cls):
         """
         In-Memory Vector Matrix Cache: Caches parsed float vectors and metadata per DB version.
+        Uses SQLite PRAGMA data_version for real-time inter-process cache invalidation.
         Eliminates repeated JSON deserialization overhead, enabling sub-3ms local vector search.
         """
-        if cls._cached_version == db._db_version and cls._cached_db_file == db.DB_FILE and cls._cached_chunks is not None:
+        current_data_ver = db.get_db_data_version(db.DB_FILE)
+        if cls._cached_version == current_data_ver and cls._cached_db_file == db.DB_FILE and cls._cached_chunks is not None:
             return
 
-        cls._cached_version = db._db_version
+        cls._cached_version = current_data_ver
         cls._cached_db_file = db.DB_FILE
 
         try:
@@ -815,7 +817,8 @@ class MiniVectorEngine:
                 all_results.append(res)
         
         if not all_results:
-            return []
+            fts_fallback = search_files(query)
+            return fts_fallback[:top_k]
 
         rrf_scores = {}
         doc_map = {}
@@ -852,7 +855,8 @@ class MiniVectorEngine:
 
         candidates = MiniVectorEngine.search_semantic(query, top_k=50)
         if not candidates:
-            return []
+            fts_fallback = search_files(query)
+            return fts_fallback[:top_k]
 
         from src.core.embeddings import dot_product
         
@@ -1054,6 +1058,8 @@ class MiniVectorEngine:
             return []
 
         candidates = MiniVectorEngine.search_semantic(query, top_k=top_k * 3)
+        if not candidates:
+            candidates = search_files(query)[:top_k * 3]
         if not candidates:
             return []
 

@@ -159,15 +159,68 @@ def extract_code_structure(code_content: str, filename: str = "snippet.py") -> D
         except Exception:
             pass
 
-    # Generic regex fallback for JS/TS/Go/Rust
-    funcs = [{"name": m.group(1), "line": 0} for m in re.finditer(r'\bfunction\s+([a-zA-Z0-9_$]+)|\bdef\s+([a-zA-Z0-9_]+)|\bfn\s+([a-zA-Z0-9_]+)', code_content)]
-    classes = [{"name": m.group(1), "line": 0} for m in re.finditer(r'\bclass\s+([a-zA-Z0-9_$]+)', code_content)]
-    imports = [{"module": m.group(1), "line": 0} for m in re.finditer(r'\bimport\s+[\'"]([^\'"]+)[\'"]|\bfrom\s+([a-zA-Z0-9_\.]+)', code_content)]
-    branching = len(re.findall(r'\b(?:if|else if|elif|for|while|catch|case)\b', code_content))
+    # Polyglot line-accurate symbol extraction for TS/JS/Go/Rust
+    res = _extract_polyglot_structure(code_content, filename, ext)
+    if len(_AST_CACHE) >= _MAX_AST_CACHE_SIZE:
+        _AST_CACHE.popitem(last=False)
+    _AST_CACHE[cache_key] = res
+    return res
 
-    res = {
+
+def _extract_polyglot_structure(code_content: str, filename: str, ext: str) -> Dict[str, Any]:
+    lines = code_content.splitlines()
+    funcs = []
+    classes = []
+    imports = []
+
+    for lineno, line in enumerate(lines, start=1):
+        line_str = line.strip()
+        if not line_str or line_str.startswith("//") or line_str.startswith("#") or line_str.startswith("/*"):
+            continue
+
+        # JS/TS Functions & Arrow functions
+        m_js_fn = re.search(r'\b(?:export\s+)?(?:async\s+)?function\s+([a-zA-Z0-9_$]+)', line_str)
+        if m_js_fn:
+            funcs.append({"name": m_js_fn.group(1), "line": lineno, "is_async": "async" in line_str})
+        else:
+            m_arrow = re.search(r'\b(?:export\s+)?(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>', line_str)
+            if m_arrow:
+                funcs.append({"name": m_arrow.group(1), "line": lineno, "is_async": "async" in line_str})
+
+        # Rust / Go Functions
+        m_rust_fn = re.search(r'\b(?:pub\s+)?(?:async\s+)?fn\s+([a-zA-Z0-9_]+)', line_str)
+        if m_rust_fn:
+            funcs.append({"name": m_rust_fn.group(1), "line": lineno, "is_async": "async" in line_str})
+        m_go_fn = re.search(r'\bfunc\s+(?:\([^)]+\)\s*)?([a-zA-Z0-9_]+)\s*\(', line_str)
+        if m_go_fn:
+            funcs.append({"name": m_go_fn.group(1), "line": lineno, "is_async": False})
+
+        # Classes / Structs / Interfaces
+        m_class = re.search(r'\b(?:export\s+)?class\s+([a-zA-Z0-9_$]+)', line_str)
+        if m_class:
+            classes.append({"name": m_class.group(1), "line": lineno, "type": "class"})
+        m_interface = re.search(r'\b(?:export\s+)?interface\s+([a-zA-Z0-9_$]+)', line_str)
+        if m_interface:
+            classes.append({"name": m_interface.group(1), "line": lineno, "type": "interface"})
+        m_rust_struct = re.search(r'\b(?:pub\s+)?(?:struct|enum|trait)\s+([a-zA-Z0-9_]+)', line_str)
+        if m_rust_struct:
+            classes.append({"name": m_rust_struct.group(1), "line": lineno, "type": "struct"})
+        m_go_struct = re.search(r'\btype\s+([a-zA-Z0-9_]+)\s+(?:struct|interface)', line_str)
+        if m_go_struct:
+            classes.append({"name": m_go_struct.group(1), "line": lineno, "type": "struct"})
+
+        # Imports
+        m_imp = re.search(r'\bimport\s+.*?from\s+[\'"]([^\'"]+)[\'"]|\bimport\s+[\'"]([^\'"]+)[\'"]|\bfrom\s+([a-zA-Z0-9_\.]+)', line_str)
+        if m_imp:
+            mod = m_imp.group(1) or m_imp.group(2) or m_imp.group(3) or ""
+            imports.append({"module": mod, "line": lineno})
+
+    branching = len(re.findall(r'\b(?:if|else if|elif|for|while|catch|case|match)\b', code_content))
+    detected_lang = "typescript" if ext in [".ts", ".tsx"] else ("javascript" if ext in [".js", ".jsx", ".mjs"] else ("rust" if ext == ".rs" else ("go" if ext == ".go" else "generic")))
+
+    return {
         "status": "success",
-        "language": "generic",
+        "language": detected_lang,
         "filename": filename,
         "classes": classes,
         "functions": funcs,
@@ -175,10 +228,6 @@ def extract_code_structure(code_content: str, filename: str = "snippet.py") -> D
         "calls": [],
         "cyclomatic_complexity": 1 + branching
     }
-    if len(_AST_CACHE) >= _MAX_AST_CACHE_SIZE:
-        _AST_CACHE.popitem(last=False)
-    _AST_CACHE[cache_key] = res
-    return res
 
 
 def analyze_file_callgraph(filepath: str) -> Dict[str, Any]:

@@ -187,6 +187,26 @@ _local = threading.local()
 
 _db_version = 0
 
+def get_db_data_version(db_path: Optional[str] = None) -> int:
+    """
+    Returns SQLite PRAGMA data_version integer.
+    Increments whenever ANY database connection in ANY process commits a write transaction in WAL mode.
+    Enables zero-downtime, inter-process cache invalidation.
+    """
+    target_db = db_path or DB_FILE
+    if not os.path.exists(target_db):
+        return _db_version
+    try:
+        with get_db_connection(target_db, timeout=2.0) as conn:
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA data_version")
+            row = cursor.fetchone()
+            if row and row[0] is not None:
+                return int(row[0])
+    except Exception:
+        pass
+    return _db_version
+
 def get_active_dir() -> str:
     """Return active sandbox or working directory."""
     try:
@@ -770,11 +790,15 @@ def db_status() -> Dict[str, Any]:
         page_size = cursor.fetchone()[0]
         cursor.execute("PRAGMA freelist_count")
         freelist_count = cursor.fetchone()[0]
+        cursor.execute("PRAGMA data_version")
+        dv_row = cursor.fetchone()
+        data_version = int(dv_row[0]) if dv_row and dv_row[0] is not None else 0
         from src.infrastructure.repositories.snapshots import list_db_snapshots
         return {
             "file_count": file_count,
             "db_size_bytes": page_count * page_size,
             "freelist_pages": freelist_count,
+            "data_version": data_version,
             "snapshots_count": len(list_db_snapshots())
         }
 

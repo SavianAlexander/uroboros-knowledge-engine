@@ -697,6 +697,21 @@ def cmd_uat(args):
     return 0
 
 
+def cmd_sync_sources(args):
+    """Execute live primary source harvesting and synchronization (eCFR, Federal Register, Jira OpenAPI, IBM CER)."""
+    try:
+        from src.domain.sync_orchestrator import PrimarySourceSyncOrchestrator
+        domain = getattr(args, "domain", None)
+        auto_index = not getattr(args, "no_index", False)
+        orch = PrimarySourceSyncOrchestrator()
+        res = orch.execute_sync(domain_filter=domain, auto_index=auto_index)
+        print(json.dumps(res, indent=2))
+        return 0 if res.get("status") == "SUCCESS" else 1
+    except Exception as e:
+        print(json.dumps({"status": "ERROR", "message": str(e)}, indent=2))
+        return 1
+
+
 def cmd_loop(args):
     """Executes Closed-Loop Autonomous Engineering Engines (develop, health, erp, knowledge)."""
     import workflow_hub_bridge
@@ -765,6 +780,10 @@ def self_test():
     ret_release = cmd_release(args)
     assert ret_release == 0, "cmd_release failed"
     print("  [Pass] cmd_release clean")
+
+    ret_sync_sources = cmd_sync_sources(args)
+    assert ret_sync_sources == 0, "cmd_sync_sources failed"
+    print("  [Pass] cmd_sync_sources clean")
 
     # Test review
     args.staged = False
@@ -1054,6 +1073,11 @@ def main():
     uat_cert = uat_subs.add_parser("certificate", help="Generate official UAT Sign-Off Certificate")
     uat_cert.add_argument("--approver", default="Chief Information Officer / Product Owner SME", help="Approver title")
 
+    # sync_sources (Primary Source Live Harvesting & Sync)
+    sync_src_p = subparsers.add_parser("sync_sources", help="Harvest and synchronize live upstream primary sources (eCFR, Federal Register, Jira OpenAPI, IBM CER)")
+    sync_src_p.add_argument("--domain", choices=["ecfr", "federal_register", "jira", "curam", "statutory"], help="Filter synchronization to a specific primary source domain")
+    sync_src_p.add_argument("--no-index", action="store_true", help="Skip automatic RAG vector indexing after harvesting")
+
     # self_test
     subparsers.add_parser("self_test", help="Run automated CLI self-test assertions")
 
@@ -1108,6 +1132,7 @@ def main():
         "curam": cmd_curam,
         "jira": cmd_jira,
         "uat": cmd_uat,
+        "sync_sources": cmd_sync_sources,
         "self_test": lambda a: self_test()
     }
 
