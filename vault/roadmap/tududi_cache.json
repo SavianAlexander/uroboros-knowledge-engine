@@ -2,58 +2,177 @@
   "project_id": 13,
   "tasks": [
     {
+      "id": 1891,
+      "name": "Execute Test Suites and Verify Audit Ledger",
+      "status": 0,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1890,
+      "name": "Standardize SQLite Connection Lifecycle and Health Telemetry",
+      "status": 0,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1889,
+      "name": "Implement Resilient Hybrid Search Fallback with Degraded Status Telemetry",
+      "status": 0,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1888,
+      "name": "Fix SPA Routing Fallbacks & Clean Stale Vanilla Fallbacks in server.py",
+      "status": 0,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1887,
+      "name": "Fix Inter-Process Vector Cache Invalidation via PRAGMA data_version",
+      "status": 0,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1886,
+      "name": "Core Architecture Remediation & System Stability Fixes",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1885,
+      "name": "Subtask 4: Automated Verification & Master Domain Test Pass",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1884,
+      "name": "Subtask 3: Runtime Service Catalog Registry",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1883,
+      "name": "Subtask 2: Agent Episodic Memory & Scratchpad Engine",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1882,
+      "name": "G5: Full Regression Matrix Certification (100% Green)",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1881,
+      "name": "Subtask 1: Polyglot AST Extraction Engine (TS/JS/Go/Rust/Python)",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1880,
+      "name": "Advanced Polyglot AST Engine, Agent Episodic Memory & Service Catalog Registry",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1879,
+      "name": "G4: Database Optimization, Vacuum & Index Tuning",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1878,
+      "name": "G3: Wire Domain Plugin Extensions into UI & Search Endpoints",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1877,
+      "name": "G2: Frontend React 19 Production Build & UI Parity Sync",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1876,
+      "name": "G1: Architecture Doctor & Contract Bus DAG Certification",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1875,
+      "name": "Autonomous Long-Running System Hardening & Optimization (/goal)",
+      "status": 2,
+      "priority": 2,
+      "due_date": "2026-08-20 00:00:00.000 +00:00"
+    },
+    {
       "id": 1874,
       "name": "Subtask 6: Automated End-to-End System Verification",
-      "status": 0,
+      "status": 2,
       "priority": 0,
       "due_date": "2026-08-18 00:00:00.000 +00:00"
     },
     {
       "id": 1873,
       "name": "Subtask 5: Federal Rule of Evidence 902 Merkle Audit Certificate",
-      "status": 0,
+      "status": 2,
       "priority": 0,
       "due_date": "2026-08-18 00:00:00.000 +00:00"
     },
     {
       "id": 1872,
       "name": "Subtask 4: Database Self-Healing Diagnostics & Integrity Audit",
-      "status": 0,
+      "status": 2,
       "priority": 0,
       "due_date": "2026-08-18 00:00:00.000 +00:00"
     },
     {
       "id": 1871,
       "name": "Subtask 3: OpenAPI Router Tags & Metadata Enrichment",
-      "status": 0,
+      "status": 2,
       "priority": 0,
       "due_date": "2026-08-18 00:00:00.000 +00:00"
     },
     {
       "id": 1870,
       "name": "Subtask 2: SQLite Query Index & FTS5 Synchronization Triggers",
-      "status": 0,
+      "status": 2,
       "priority": 0,
       "due_date": "2026-08-18 00:00:00.000 +00:00"
     },
     {
       "id": 1869,
       "name": "Subtask 1: Bitwise UI Asset Parity Synchronization",
-      "status": 0,
+      "status": 2,
       "priority": 0,
       "due_date": "2026-08-18 00:00:00.000 +00:00"
     },
     {
       "id": 1868,
       "name": "Goal Execution: Complete Enterprise Hardening, Index Optimization, Bitwise Asset Parity & Rule 902 Audit Ledger",
-      "status": 0,
+      "status": 2,
       "priority": 0,
       "due_date": "2026-08-18 00:00:00.000 +00:00"
     },
     {
       "id": 1867,
       "name": "Empirical Data-Driven Statutory Platform (C\u00c3\u00baram, CHIP, WIC, CCDF, Section 8, Jira, UAT) & React QA Studio",
-      "status": 0,
+      "status": 2,
       "priority": 2,
       "due_date": "2026-08-17 00:00:00.000 +00:00"
     },
@@ -231,125 +350,6 @@
       "status": 2,
       "priority": 0,
       "due_date": "2026-08-17 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1841,
-      "name": "Comprehensive Docker Containerization, Image Size & Multi-Stage Layer Optimization Analysis",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-17 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1840,
-      "name": "Ground and verify fleet mining command burst formulas & Savian Alexander status",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1839,
-      "name": "Ingest & index articles into SQLite database & vector/FTS5 knowledge vault",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1838,
-      "name": "Download all content articles from EVE Uni MediaWiki API into Markdown vault",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1837,
-      "name": "Build high-throughput EVE Uni MediaWiki Harvester",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1836,
-      "name": "Ingest Full EVE University Wiki & Ground Fleet Mining Buff Calculations",
-      "status": 2,
-      "priority": 0,
-      "due_date": null
-    },
-    {
-      "id": 1835,
-      "name": "Verify closed-loop execution with assertion-based self-tests and doctor scorecard",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1834,
-      "name": "Integrate loop subcommand into neuro_cli.py with full argument parsing and daemon modes",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1833,
-      "name": "Implement automated self-healing feedback circuit with local SLMs (qwen2.5-coder & phi4-mini)",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1832,
-      "name": "Author closed-loop autonomous execution loops in workflow_hub_bridge.py (develop, health, erp, knowledge)",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1831,
-      "name": "Implement Full Closed-Loop Autonomous Engineering Engine",
-      "status": 2,
-      "priority": 0,
-      "due_date": null
-    },
-    {
-      "id": 1830,
-      "name": "Integrate llm subcommand into neuro_cli.py and verify with automated self-tests",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1829,
-      "name": "Implement standalone_engine.py with automatic Ollama failover and Vulkan/HIP GPU offload",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1828,
-      "name": "Generate automated model_registry.json mapping manifests to friendly aliases",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1827,
-      "name": "Relocate and standardize llama-vulkan, llama-hip, and Titan Forge into Neuro Alexander runtimes and models directories",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1826,
-      "name": "Absorb & Standardize Local AI Runtimes and GGUF Model Vault",
-      "status": 2,
-      "priority": 0,
-      "due_date": null
-    },
-    {
-      "id": 1825,
-      "name": "Enhance Neuro Co-Pilot Skill with Mandatory GitHub Upload & Provenance Visibility in Tududi and Audit Reporting",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-16 00:00:00.000 +00:00"
     }
   ]
 }
