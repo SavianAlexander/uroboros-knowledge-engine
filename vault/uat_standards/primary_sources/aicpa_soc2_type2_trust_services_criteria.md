@@ -2,7 +2,7 @@
 title: "AICPA SOC 2 Type II Trust Services Criteria (2017 TSC with 2022 Revisions)"
 source_authority: "American Institute of Certified Public Accountants (AICPA)"
 governing_standard: "Trust Services Criteria for Security, Availability, Processing Integrity, Confidentiality, and Privacy"
-harvested_at: "2026-08-17T16:14:42Z"
+harvested_at: "2026-08-17T16:30:04Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "AICPA_TSC_VERIFIED"
 ---

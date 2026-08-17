@@ -1,26 +1,24 @@
 ---
-title: "Compendio Estatutario Laboral: Ley 148-1969 (Bono Navidad) y Ley 4-2017 (Flexibilidad Laboral)"
-source_authority: "Departamento del Trabajo y Recursos Humanos de Puerto Rico (DTRH)"
-harvested_at: "2026-08-17T16:14:42Z"
+title: "Compendio Estatutario Laboral: Ley 4-2017 y Ley 148-1969 de Puerto Rico"
+source_authority: "Departamento del Trabajo y Recursos Humanos (DTRH) / OSLPR"
+statutes: "Ley 4-2017 (Transformación Laboral) & Ley 148-1969 (Bono de Navidad)"
+harvested_at: "2026-08-17T16:30:04Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
-verification: "DTRH_STATUTE_VERIFIED"
+verification: "DTRH_OSLPR_VERIFIED"
 ---
 
-# Estatutos Laborales de Puerto Rico: Bono de Navidad y Flexibilidad Laboral
+# Compendio Estatutario Laboral de Puerto Rico
 
-## 1. Ley Núm. 148 de 30 de Junio de 1969 (Bono de Navidad en la Empresa Privada)
-
-### Artículo 1 - Obligación del Pago de Bono
-Todo patrono en la empresa privada que emplee uno o más trabajadores estará obligado a conceder a cada empleado que haya trabajado:
-- **Patronos con más de 20 empleados**: 1,350 horas o más en el período de 12 meses (1 de octubre al 30 de septiembre) recibirán un bono equivalente al **6% del total del salario devengado**, hasta un máximo de **$600.00**.
-- **Patronos con 20 o menos empleados**: 1,350 horas o más recibirán un bono equivalente al **3% del total del salario devengado**, hasta un máximo de **$300.00**.
-- **Período de Pago Obligatorio**: El bono deberá pagarse anualmente entre el **15 de noviembre y el 15 de diciembre**.
+## 1. Ley Núm. 148 de 30 de Junio de 1969 (Ley de Bono de Navidad)
+- **Umbral de Horas**: 1,350 horas (1,000 horas para patronos con 12 empleados o menos).
+- **Bono para Patronos con >12 Empleados**: 6% del salario total hasta un tope de bono de $600 ($10,000 base).
+- **Bono para Patronos Pequeños (<=12)**: 3% del salario total hasta un tope de $300.
+- **Fecha Límite de Pago**: Entre el 15 de noviembre y el 15 de diciembre de cada año.
 
 ---
 
-## 2. Ley Núm. 4-2017: Ley de Transformación y Flexibilidad Laboral
-
-### Artículo 2.3 - Período Probatorio Automático
-Para empleados contratados a partir del 26 de enero de 2017:
-- Período probatorio automático no menor de **nueve (9) meses** para empleados no exentos.
-- Período probatorio de **doce (12) meses** para empleados exentos (ejecutivos, administradores y profesionales).
+## 2. Ley Núm. 4-2017 (Ley de Transformación y Flexibilidad Laboral)
+- **Periodo Probatorio**: Hasta 9 meses para empleados no exentos (12 meses para exentos).
+- **Licencia de Vacaciones**: 1.25 días por mes trabajado (mínimo 130 horas mensuales).
+- **Licencia por Enfermedad**: 1 día por mes trabajado (mínimo 130 horas mensuales).
+- **Compensación Extraordinaria (Overtime)**: Pago a tiempo y medio (1.5x) por horas trabajadas en exceso de 8 horas diarias o 40 horas semanales.

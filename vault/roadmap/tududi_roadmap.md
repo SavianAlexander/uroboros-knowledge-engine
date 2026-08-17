@@ -1,12 +1,14 @@
 # Project #13: Neuro Alexander Roadmap & Execution Ledger
 
-**Completion Rate**: 99.9% (1839 completed / 1840 total)
+**Completion Rate**: 99.9% (1840 completed / 1842 total)
 
 ## Active Sprint & Phase Overview
 
 | Task ID | Name | Priority | Status |
 | :--- | :--- | :--- | :--- |
-| #1894 | Feat: Universal Primary Source Ingestion Expansion (EVE, Puerto Rico, ISO/SOC2) | Low | Pending |
+| #1896 | Feat: Complete 50-Title CFR & Full-API Command Center Ingestion | Low | Pending |
+| #1895 | Feat: Complete 50-Title CFR & Full-API Command Center Ingestion | Low | Pending |
+| #1894 | Feat: Universal Primary Source Ingestion Expansion (EVE, Puerto Rico, ISO/SOC2) | Low | Completed |
 | #1893 | Feat: Universal Primary Source Live-Sync Ingestion Architecture | Low | Completed |
 | #1892 | Feat: Universal Primary Source Live-Sync Ingestion Architecture | Low | Completed |
 | #1891 | Execute Test Suites and Verify Audit Ledger | Medium | Completed |
@@ -54,5 +56,3 @@
 | #1849 | Phase 2: Domain Module Consolidation & Facade Shims | High | Completed |
 | #1848 | Phase 1: Composable Retrieval Pipeline DAG | High | Completed |
 | #1847 | Architectural Modernization: Retrieval Pipeline DAG, Bounded Contexts, Typed Exceptions & Engine Consolidation | High | Completed |
-| #1846 | Feat: Integrate IBM CÃºram CER Engine, Jira Test Case Generator, and UAT Verification into Neuro Co-Pilot | Low | Completed |
-| #1845 | Feat: Integrate IBM CÃºram CER Engine, Jira Test Case Generator, and UAT Verification into Neuro Co-Pilot | Low | Completed |

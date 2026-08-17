@@ -1,26 +1,26 @@
 {
-  "timestamp": "2026-08-17T16:14:51Z",
-  "total_duration_ms": 789.31,
+  "timestamp": "2026-08-17T16:30:14Z",
+  "total_duration_ms": 797.8,
   "status": "PASS",
   "benchmarks": {
     "sqlite_wal": {
       "status": "PASS",
       "iterations": 50,
-      "avg_read_latency_ms": 0.036,
-      "avg_write_latency_ms": 0.025,
-      "total_duration_ms": 3.48
+      "avg_read_latency_ms": 0.016,
+      "avg_write_latency_ms": 0.031,
+      "total_duration_ms": 3.19
     },
     "ast_parsing": {
       "status": "PASS",
       "files_sampled": 3,
       "symbols_extracted": 1280,
-      "avg_file_parse_ms": 13.072,
-      "total_duration_ms": 784.29
+      "avg_file_parse_ms": 13.221,
+      "total_duration_ms": 793.25
     },
     "contract_merkle_dispatch": {
       "status": "PASS",
       "iterations": 100,
-      "avg_contract_hash_microseconds": 3.61,
+      "avg_contract_hash_microseconds": 3.65,
       "total_duration_ms": 0.36
     }
   }

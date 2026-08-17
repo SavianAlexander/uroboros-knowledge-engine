@@ -1,16 +1,16 @@
 ---
 title: "Ley Núm. 1-2011: Código de Rentas Internas para un Nuevo Puerto Rico (Enmendado)"
 source_authority: "Oficina de Servicios Legislativos de Puerto Rico (OSLPR) / Departamento de Hacienda"
-statute_number: "Ley 1-2011"
+statute_number: "Ley 1-2011 (Subtítulos A, B, C, D, E, F)"
 governing_jurisdiction: "Estado Libre Asociado de Puerto Rico"
-harvested_at: "2026-08-17T16:14:42Z"
-document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
+harvested_at: "2026-08-17T16:30:04Z"
+document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_STATUTE"
 verification: "OSLPR_LEX_VERIFIED"
 ---
 
 # Ley Núm. 1-2011: Código de Rentas Internas de Puerto Rico
 
-## Título IV: Impuesto sobre Ventas y Uso (IVU / SUT)
+## Subtítulo D: Impuesto sobre Ventas y Uso (IVU / SUT)
 
 ### Sección 4020.01 - Imposición del Impuesto sobre Ventas
 Se fija, se impondrá y se cobrará un impuesto sobre ventas de **diez punto cinco por ciento (10.5%)** sobre el precio de venta de toda partida tributable vendida en Puerto Rico.
@@ -23,15 +23,22 @@ Estarán exentos del pago del impuesto sobre ventas los servicios prestados por 
 
 ---
 
-## Título I: Contribución sobre Ingresos de Corporaciones
+## Subtítulo A: Contribución sobre Ingresos
 
-### Sección 1022.01 - Contribución Normal y Contribución Adicional
-**(a) Contribución Normal.** Se impondrá, cobrará y pagará sobre el ingreso neto tributable de toda corporación una contribución normal de **dieciocho punto cinco por ciento (18.5%)**.
+### Sección 1021.01 - Contribución sobre Individuos
+Escala progresiva de tasas contributivas:
+- $0 a $9,000: **0%**
+- $9,001 a $25,000: **7%**
+- $25,001 a $41,500: **14%**
+- $41,501 a $61,500: **25%**
+- En exceso de $61,500: **33%**
 
+### Sección 1022.01 - Contribución sobre Corporaciones
+**(a) Contribución Normal.** Se impondrá, cobrará y pagará sobre el ingreso neto tributable de toda corporación una contribución normal de **dieciocho punto cinco por ciento (18.5%)**.  
 **(b) Contribución Adicional (Surtax).** Se impondrá una sobretasa progresiva escalonada:
 - Hasta $75,000 de ingreso neto sujeto a sobretasa: **5%**
 - En exceso de $75,000 hasta $125,000: **15%**
 - En exceso de $125,000 hasta $175,000: **16%**
 - En exceso de $175,000 hasta $225,000: **17%**
 - En exceso de $225,000 hasta $275,000: **18%**
-- En exceso de $275,000: **19%** (Tasa máxima corporativa combinada: **37.5%**)
+- En exceso de $275,000: **19%** (Tasa marginal corporativa máxima combinada: **37.5%**).

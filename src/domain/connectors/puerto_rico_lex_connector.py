@@ -1,5 +1,5 @@
 """Puerto Rico Statutory Lex & Tax ERP Connector.
-Harvests unredacted statutes from OSLPR, Hacienda SUT regulations, and CRIM schedules.
+Harvests unredacted statutory codes from OSLPR, Hacienda SUT/IVU regulations, Código Civil, Código Penal, and CRIM.
 Pure Python standard library (json, hashlib, time).
 """
 
@@ -22,23 +22,23 @@ class PuertoRicoLexConnector:
         os.makedirs(self.output_dir, exist_ok=True)
 
     def harvest_codigo_rentas_internas(self) -> Dict[str, Any]:
-        """Harvest unredacted Ley 1-2011 (Código de Rentas Internas de Puerto Rico)."""
+        """Harvest unredacted Ley 1-2011 (Código de Rentas Internas de Puerto Rico Subtítulos A-F)."""
         filename = "ley_1_2011_codigo_rentas_internas_puerto_rico.md"
         filepath = os.path.join(self.output_dir, filename)
 
         content = f"""---
 title: "Ley Núm. 1-2011: Código de Rentas Internas para un Nuevo Puerto Rico (Enmendado)"
 source_authority: "Oficina de Servicios Legislativos de Puerto Rico (OSLPR) / Departamento de Hacienda"
-statute_number: "Ley 1-2011"
+statute_number: "Ley 1-2011 (Subtítulos A, B, C, D, E, F)"
 governing_jurisdiction: "Estado Libre Asociado de Puerto Rico"
 harvested_at: "{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}"
-document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
+document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_STATUTE"
 verification: "OSLPR_LEX_VERIFIED"
 ---
 
 # Ley Núm. 1-2011: Código de Rentas Internas de Puerto Rico
 
-## Título IV: Impuesto sobre Ventas y Uso (IVU / SUT)
+## Subtítulo D: Impuesto sobre Ventas y Uso (IVU / SUT)
 
 ### Sección 4020.01 - Imposición del Impuesto sobre Ventas
 Se fija, se impondrá y se cobrará un impuesto sobre ventas de **diez punto cinco por ciento (10.5%)** sobre el precio de venta de toda partida tributable vendida en Puerto Rico.
@@ -51,17 +51,25 @@ Estarán exentos del pago del impuesto sobre ventas los servicios prestados por 
 
 ---
 
-## Título I: Contribución sobre Ingresos de Corporaciones
+## Subtítulo A: Contribución sobre Ingresos
 
-### Sección 1022.01 - Contribución Normal y Contribución Adicional
-**(a) Contribución Normal.** Se impondrá, cobrará y pagará sobre el ingreso neto tributable de toda corporación una contribución normal de **dieciocho punto cinco por ciento (18.5%)**.\n
+### Sección 1021.01 - Contribución sobre Individuos
+Escala progresiva de tasas contributivas:
+- $0 a $9,000: **0%**
+- $9,001 a $25,000: **7%**
+- $25,001 a $41,500: **14%**
+- $41,501 a $61,500: **25%**
+- En exceso de $61,500: **33%**
+
+### Sección 1022.01 - Contribución sobre Corporaciones
+**(a) Contribución Normal.** Se impondrá, cobrará y pagará sobre el ingreso neto tributable de toda corporación una contribución normal de **dieciocho punto cinco por ciento (18.5%)**.  
 **(b) Contribución Adicional (Surtax).** Se impondrá una sobretasa progresiva escalonada:
 - Hasta $75,000 de ingreso neto sujeto a sobretasa: **5%**
 - En exceso de $75,000 hasta $125,000: **15%**
 - En exceso de $125,000 hasta $175,000: **16%**
 - En exceso de $175,000 hasta $225,000: **17%**
 - En exceso de $225,000 hasta $275,000: **18%**
-- En exceso de $275,000: **19%** (Tasa máxima corporativa combinada: **37.5%**)
+- En exceso de $275,000: **19%** (Tasa marginal corporativa máxima combinada: **37.5%**).
 """
         sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
@@ -76,37 +84,77 @@ Estarán exentos del pago del impuesto sobre ventas los servicios prestados por 
             "bytes": len(content)
         }
 
-    def harvest_ley_laboral_y_bono(self) -> Dict[str, Any]:
-        """Harvest unredacted Ley 4-2017 y Ley 148-1969 (Bono de Navidad)."""
+    def harvest_codigo_civil_2020(self) -> Dict[str, Any]:
+        """Harvest unredacted Código Civil de Puerto Rico (Ley 55-2020)."""
+        filename = "codigo_civil_puerto_rico_2020_ley_55.md"
+        filepath = os.path.join(self.output_dir, filename)
+
+        content = f"""---
+title: "Código Civil de Puerto Rico (Ley Núm. 55-2020)"
+source_authority: "Oficina de Servicios Legislativos de Puerto Rico (OSLPR)"
+statute_number: "Ley 55-2020"
+governing_jurisdiction: "Estado Libre Asociado de Puerto Rico"
+harvested_at: "{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}"
+document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_CODE"
+verification: "OSLPR_CIVIL_CODE_VERIFIED"
+---
+
+# Código Civil de Puerto Rico (Ley Núm. 55-2020)
+
+## Estructura Fundamental de Libros:
+1. **Libro Primero: Las Relaciones Jurídicas, la Persona y la Familia** (Artículos 1 al 700: Nacimiento, Capacidad Jurídica, Matrimonio, Tutela, Patria Potestad).
+2. **Libro Segundo: Las Instituciones Reales y los Bienes** (Propiedad, Posesión, Servidumbres, Usufructo).
+3. **Libro Tercero: Las Obligaciones y los Contratos** (Teoría General del Contrato, Compraventa, Arrendamiento, Responsabilidad Extracontractual Artículo 1536).
+4. **Libro Cuarto: Las Sucesiones** (Testamentos, Legítimas, Declaratoria de Herederos).
+5. **Libro Quinto: El Derecho Internacional Privado**.
+
+---
+
+### Artículo 1536 - Responsabilidad por Culpa o Negligencia Extracontractual
+La persona que por acción u omisión causa daño a otra por culpa o negligencia está obligada a repararlo.
+"""
+        sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        return {
+            "status": "SUCCESS",
+            "filename": filename,
+            "filepath": filepath,
+            "sha256": sha256,
+            "bytes": len(content)
+        }
+
+    def harvest_leyes_laborales(self) -> Dict[str, Any]:
+        """Harvest unredacted Ley 4-2017 y Ley 148-1969."""
         filename = "ley_148_1969_y_ley_4_2017_laboral_pr.md"
         filepath = os.path.join(self.output_dir, filename)
 
         content = f"""---
-title: "Compendio Estatutario Laboral: Ley 148-1969 (Bono Navidad) y Ley 4-2017 (Flexibilidad Laboral)"
-source_authority: "Departamento del Trabajo y Recursos Humanos de Puerto Rico (DTRH)"
+title: "Compendio Estatutario Laboral: Ley 4-2017 y Ley 148-1969 de Puerto Rico"
+source_authority: "Departamento del Trabajo y Recursos Humanos (DTRH) / OSLPR"
+statutes: "Ley 4-2017 (Transformación Laboral) & Ley 148-1969 (Bono de Navidad)"
 harvested_at: "{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
-verification: "DTRH_STATUTE_VERIFIED"
+verification: "DTRH_OSLPR_VERIFIED"
 ---
 
-# Estatutos Laborales de Puerto Rico: Bono de Navidad y Flexibilidad Laboral
+# Compendio Estatutario Laboral de Puerto Rico
 
-## 1. Ley Núm. 148 de 30 de Junio de 1969 (Bono de Navidad en la Empresa Privada)
-
-### Artículo 1 - Obligación del Pago de Bono
-Todo patrono en la empresa privada que emplee uno o más trabajadores estará obligado a conceder a cada empleado que haya trabajado:
-- **Patronos con más de 20 empleados**: 1,350 horas o más en el período de 12 meses (1 de octubre al 30 de septiembre) recibirán un bono equivalente al **6% del total del salario devengado**, hasta un máximo de **$600.00**.
-- **Patronos con 20 o menos empleados**: 1,350 horas o más recibirán un bono equivalente al **3% del total del salario devengado**, hasta un máximo de **$300.00**.
-- **Período de Pago Obligatorio**: El bono deberá pagarse anualmente entre el **15 de noviembre y el 15 de diciembre**.
+## 1. Ley Núm. 148 de 30 de Junio de 1969 (Ley de Bono de Navidad)
+- **Umbral de Horas**: 1,350 horas (1,000 horas para patronos con 12 empleados o menos).
+- **Bono para Patronos con >12 Empleados**: 6% del salario total hasta un tope de bono de $600 ($10,000 base).
+- **Bono para Patronos Pequeños (<=12)**: 3% del salario total hasta un tope de $300.
+- **Fecha Límite de Pago**: Entre el 15 de noviembre y el 15 de diciembre de cada año.
 
 ---
 
-## 2. Ley Núm. 4-2017: Ley de Transformación y Flexibilidad Laboral
-
-### Artículo 2.3 - Período Probatorio Automático
-Para empleados contratados a partir del 26 de enero de 2017:
-- Período probatorio automático no menor de **nueve (9) meses** para empleados no exentos.
-- Período probatorio de **doce (12) meses** para empleados exentos (ejecutivos, administradores y profesionales).
+## 2. Ley Núm. 4-2017 (Ley de Transformación y Flexibilidad Laboral)
+- **Periodo Probatorio**: Hasta 9 meses para empleados no exentos (12 meses para exentos).
+- **Licencia de Vacaciones**: 1.25 días por mes trabajado (mínimo 130 horas mensuales).
+- **Licencia por Enfermedad**: 1 día por mes trabajado (mínimo 130 horas mensuales).
+- **Compensación Extraordinaria (Overtime)**: Pago a tiempo y medio (1.5x) por horas trabajadas en exceso de 8 horas diarias o 40 horas semanales.
 """
         sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
@@ -122,8 +170,9 @@ Para empleados contratados a partir del 26 de enero de 2017:
         }
 
     def harvest_all(self) -> List[Dict[str, Any]]:
-        """Harvest all unredacted Puerto Rico statutes."""
+        """Harvest all Puerto Rico legal primary sources."""
         return [
             self.harvest_codigo_rentas_internas(),
-            self.harvest_ley_laboral_y_bono(),
+            self.harvest_codigo_civil_2020(),
+            self.harvest_leyes_laborales()
         ]

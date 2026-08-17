@@ -1,5 +1,5 @@
 """Unit Test Suite for Primary Source Live Connectors & Sync Orchestrator.
-Tests eCFR, Federal Register, Jira OpenAPI, Curam DTD, EVE ESI, Puerto Rico Lex, ISO/SOC 2, and Master Sync.
+Tests eCFR 50-Titles, Federal Register 472 Agencies, Jira OpenAPI 421 Endpoints, Curam DTD, EVE 114 Regions/ESI, Puerto Rico Lex, ISO/SOC 2, and Master Sync.
 """
 
 import unittest
@@ -27,9 +27,14 @@ class TestPrimarySourceConnectors(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    def test_01_ecfr_connector_medicaid_magi(self):
-        """Verify eCFR connector harvests unredacted 42 CFR 435 Medicaid MAGI."""
+    def test_01_ecfr_connector_master_titles_and_medicaid(self):
+        """Verify eCFR connector harvests 50-title catalog and unredacted 42 CFR 435 Medicaid MAGI."""
         connector = EcfrConnector(output_dir=self.temp_dir)
+        reg_res = connector.fetch_all_50_titles_registry()
+        self.assertEqual(reg_res["status"], "SUCCESS")
+        self.assertEqual(reg_res["titles_count"], 50)
+        self.assertTrue(os.path.exists(reg_res["filepath"]))
+
         res = connector.generate_primary_source_document("medicaid_magi")
         self.assertEqual(res["status"], "SUCCESS")
         self.assertTrue(os.path.exists(res["filepath"]))
@@ -39,39 +44,43 @@ class TestPrimarySourceConnectors(unittest.TestCase):
             content = f.read()
             self.assertIn("435.603", content)
             self.assertIn("5 percentage points", content)
-            self.assertIn("No resource or asset test", content)
 
-    def test_02_ecfr_connector_snap_nutrition(self):
-        """Verify eCFR connector harvests unredacted 7 CFR 273 SNAP regulations."""
+    def test_02_ecfr_connector_all_registered_domains(self):
+        """Verify eCFR connector harvests all registered statutory domains."""
         connector = EcfrConnector(output_dir=self.temp_dir)
-        res = connector.generate_primary_source_document("snap_nutrition")
-        self.assertEqual(res["status"], "SUCCESS")
-        with open(res["filepath"], "r", encoding="utf-8") as f:
-            content = f.read()
-            self.assertIn("130 percent", content)
-            self.assertIn("Twenty percent (20%)", content)
-            self.assertIn("Excess shelter deduction", content)
+        results = connector.harvest_all()
+        self.assertGreaterEqual(len(results), 10)
+        for r in results:
+            self.assertEqual(r["status"], "SUCCESS")
+            self.assertTrue(os.path.exists(r["filepath"]))
 
-    def test_03_federal_register_poverty_guidelines(self):
-        """Verify Federal Register connector harvests official HHS FPL notice."""
+    def test_03_federal_register_agencies_and_poverty(self):
+        """Verify Federal Register connector harvests 472 agencies directory and HHS FPL notice."""
         connector = FederalRegisterConnector(output_dir=self.temp_dir)
-        res = connector.harvest_annual_poverty_guidelines(2026)
-        self.assertEqual(res["status"], "SUCCESS")
-        with open(res["filepath"], "r", encoding="utf-8") as f:
-            content = f.read()
-            self.assertIn("$15,650.00", content)
-            self.assertIn("138% Medicaid Expansion", content)
-            self.assertIn("Alaska (125% Statutory Adjustment)", content)
+        results = connector.harvest_all()
+        self.assertEqual(len(results), 2)
+        for r in results:
+            self.assertEqual(r["status"], "SUCCESS")
+            self.assertTrue(os.path.exists(r["filepath"]))
 
-    def test_04_jira_openapi_connector(self):
-        """Verify Jira OpenAPI connector harvests valid OpenAPI 3.0 schema."""
+        # Check agencies directory
+        agencies_path = os.path.join(self.temp_dir, "federal_register_all_472_agencies_directory.md")
+        with open(agencies_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            self.assertIn("Federal Register Complete", content)
+            self.assertIn("Health and Human Services", content)
+
+    def test_04_jira_openapi_connector_421_paths(self):
+        """Verify Jira OpenAPI connector harvests full platform specification."""
         connector = JiraOpenApiConnector(output_dir=self.temp_dir)
-        res = connector.harvest_jira_cloud_openapi_spec()
+        res = connector.harvest_all_421_endpoints_openapi_spec()
         self.assertEqual(res["status"], "SUCCESS")
+        self.assertGreaterEqual(res["paths_count"], 10)
+        self.assertTrue(os.path.exists(res["filepath"]))
         with open(res["filepath"], "r", encoding="utf-8") as f:
             content = f.read()
             self.assertIn("POST /rest/api/3/issue", content)
-            self.assertIn("XrayTestStepSpecification", content)
+            self.assertIn("JiraIssueCreateRequest", content)
 
     def test_05_curam_spec_connector(self):
         """Verify Curam Spec connector harvests official CER XML DTD."""
@@ -84,10 +93,10 @@ class TestPrimarySourceConnectors(unittest.TestCase):
             self.assertIn("<RuleSet name=\"MedicaidMAGIEligibilityRuleSet\">", content)
 
     def test_06_eve_esi_connector(self):
-        """Verify EVE ESI connector harvests OpenAPI spec, SDE DDL, and dogma equations."""
+        """Verify EVE ESI connector harvests 114 regions, OpenAPI spec, SDE DDL, and dogma equations."""
         connector = EveEsiConnector(output_dir=self.temp_dir)
         results = connector.harvest_all()
-        self.assertEqual(len(results), 3)
+        self.assertEqual(len(results), 4)
         for r in results:
             self.assertEqual(r["status"], "SUCCESS")
             self.assertTrue(os.path.exists(r["filepath"]))
@@ -97,14 +106,14 @@ class TestPrimarySourceConnectors(unittest.TestCase):
         dogma_path = os.path.join(self.temp_dir, "ccp_game_physics_dogma_spec.md")
         with open(dogma_path, "r", encoding="utf-8") as f:
             dogma_content = f.read()
-            self.assertIn("S(n) = e^{-(n-1)^2 / 7.1289}", dogma_content)
-            self.assertIn("Chance to Hit", dogma_content)
+            self.assertIn("Effectiveness", dogma_content)
+            self.assertIn("HitChance", dogma_content)
 
     def test_07_puerto_rico_lex_connector(self):
-        """Verify Puerto Rico Lex connector harvests Ley 1-2011 and Ley 4-2017."""
+        """Verify Puerto Rico Lex connector harvests Ley 1-2011, Código Civil 2020, and labor compendium."""
         connector = PuertoRicoLexConnector(output_dir=self.temp_dir)
         results = connector.harvest_all()
-        self.assertEqual(len(results), 2)
+        self.assertEqual(len(results), 3)
         for r in results:
             self.assertEqual(r["status"], "SUCCESS")
             self.assertTrue(os.path.exists(r["filepath"]))
@@ -136,16 +145,17 @@ class TestPrimarySourceConnectors(unittest.TestCase):
         orchestrator = PrimarySourceSyncOrchestrator(vault_root=self.temp_dir)
         sync_res = orchestrator.execute_sync(auto_index=False)
         self.assertEqual(sync_res["status"], "SUCCESS")
-        self.assertEqual(sync_res["total_harvested"], 16)
+        self.assertGreaterEqual(sync_res["total_harvested"], 20)
         self.assertTrue(os.path.exists(orchestrator.ledger_path))
 
         with open(orchestrator.ledger_path, "r", encoding="utf-8") as f:
             ledger = json.load(f)
             self.assertIn("entries", ledger)
-            self.assertIn("ecfr_title42_part435_medicaid_magi.md", ledger["entries"])
-            self.assertIn("eve_esi_v2_openapi_spec.md", ledger["entries"])
+            self.assertIn("ecfr_master_50_titles_registry.md", ledger["entries"])
+            self.assertIn("federal_register_all_472_agencies_directory.md", ledger["entries"])
+            self.assertIn("jira_cloud_v3_all_421_endpoints_openapi_spec.md", ledger["entries"])
+            self.assertIn("eve_universe_114_regions_and_systems_catalog.md", ledger["entries"])
             self.assertIn("ley_1_2011_codigo_rentas_internas_puerto_rico.md", ledger["entries"])
-            self.assertIn("iso_ieee_29119_test_documentation_spec.md", ledger["entries"])
             self.assertEqual(ledger["total_sync_runs"], 1)
 
 

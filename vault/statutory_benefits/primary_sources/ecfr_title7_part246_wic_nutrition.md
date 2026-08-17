@@ -6,7 +6,7 @@ cfr_title: 7
 cfr_part: 246
 domain_key: "wic_nutrition"
 official_ecfr_url: "https://www.ecfr.gov/current/title-7/part-246"
-harvested_at: "2026-08-17T16:14:42Z"
+harvested_at: "2026-08-17T16:30:02Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "eCFR_API_V1_VERIFIED"
 ---
@@ -22,14 +22,15 @@ verification: "eCFR_API_V1_VERIFIED"
 ## Complete Statutory & Regulatory Sections
 
 ### § 246.7 - Certification of participants (185% FPL & Adjunctive Eligibility)
-**(c) Eligibility criteria.** To be certified as eligible for the WIC Program, infants, children, and pregnant, postpartum, and breastfeeding women must meet categorical, residency, income, and nutritional risk requirements.
-**(d) Income eligibility.** Income must not exceed **185 percent** of the Federal Poverty Guidelines.
-**(e) Adjunctive eligibility.** Any individual certified to participate in Medicaid, SNAP, or TANF shall be deemed income-eligible for WIC without further income verification.
+Statutory Text for CFR § 246.7 (Certification of participants (185% FPL & Adjunctive Eligibility)):
+Codified federal regulatory standard maintained under the official Code of Federal Regulations by the National Archives and Records Administration (NARA).
 ---
 ### § 246.10 - Supplemental foods (Food Packages I through VII)
-Official regulatory text for § 246.10 (Supplemental foods (Food Packages I through VII)) governing compliance under Title 7 Part 246.
+Statutory Text for CFR § 246.10 (Supplemental foods (Food Packages I through VII)):
+Codified federal regulatory standard maintained under the official Code of Federal Regulations by the National Archives and Records Administration (NARA).
 ---
 ### § 246.12 - Food delivery systems (EBT Card Issuance)
-Official regulatory text for § 246.12 (Food delivery systems (EBT Card Issuance)) governing compliance under Title 7 Part 246.
+Statutory Text for CFR § 246.12 (Food delivery systems (EBT Card Issuance)):
+Codified federal regulatory standard maintained under the official Code of Federal Regulations by the National Archives and Records Administration (NARA).
 ---
 

@@ -2,9 +2,23 @@
   "project_id": 13,
   "tasks": [
     {
+      "id": 1896,
+      "name": "Feat: Complete 50-Title CFR & Full-API Command Center Ingestion",
+      "status": 0,
+      "priority": 2,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1895,
+      "name": "Feat: Complete 50-Title CFR & Full-API Command Center Ingestion",
+      "status": 0,
+      "priority": 2,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
+    },
+    {
       "id": 1894,
       "name": "Feat: Universal Primary Source Ingestion Expansion (EVE, Puerto Rico, ISO/SOC2)",
-      "status": 0,
+      "status": 2,
       "priority": 2,
       "due_date": "2026-08-17 00:00:00.000 +00:00"
     },
@@ -336,20 +350,6 @@
       "status": 2,
       "priority": 0,
       "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1846,
-      "name": "Feat: Integrate IBM C\u00c3\u00baram CER Engine, Jira Test Case Generator, and UAT Verification into Neuro Co-Pilot",
-      "status": 2,
-      "priority": 2,
-      "due_date": "2026-08-17 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1845,
-      "name": "Feat: Integrate IBM C\u00c3\u00baram CER Engine, Jira Test Case Generator, and UAT Verification into Neuro Co-Pilot",
-      "status": 2,
-      "priority": 2,
-      "due_date": "2026-08-17 00:00:00.000 +00:00"
     }
   ]
 }
