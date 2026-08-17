@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Sparkles,
   Layers,
-  Database
+  Database,
+  ClipboardCheck
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ViewId } from '../types';
@@ -34,6 +35,7 @@ export default function Sidebar() {
       label: 'INTELLIGENCE & WORKSPACE',
       items: [
         { id: 'chat', label: 'AI Chat Studio', icon: MessageSquare, badge: 'RAG', badgeColor: 'gold' },
+        { id: 'curam', label: 'Cúram & QA Studio', icon: ClipboardCheck, badge: 'CER', badgeColor: 'emerald' },
         { id: 'workspace', label: 'Workspace Explorer', icon: FolderTree },
         { id: 'search', label: 'Search & Filtering', icon: Search },
       ]

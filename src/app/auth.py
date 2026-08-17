@@ -36,6 +36,8 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
+import secrets
+
 @router.post("/api/auth/login")
 def login(req: LoginRequest):
     # In a real app we'd verify against the `users` table
@@ -47,13 +49,14 @@ def login(req: LoginRequest):
         row = cursor.fetchone()
         
         if not row:
-            # Bootstrap fallback
-            if req.username == "admin" and req.password == "admin":
+            # Bootstrap fallback with constant-time check
+            if secrets.compare_digest(req.username, "admin") and secrets.compare_digest(req.password, "admin"):
                 return {"token": sign_jwt({"user_id": 0, "username": "admin", "role": "admin"})}
             raise HTTPException(status_code=401, detail="Invalid credentials")
             
         expected_hash = hash_password(req.password)
-        if row["password_hash"] != expected_hash:
+        stored_hash = str(row["password_hash"] or "")
+        if not secrets.compare_digest(stored_hash, expected_hash):
             raise HTTPException(status_code=401, detail="Invalid credentials")
             
         token = sign_jwt({

@@ -1,7 +1,17 @@
 import os
+import sys
 import json
 import asyncio
+from pathlib import Path
 import httpx
+
+# Add project root and neuro-copilot scripts directory to sys.path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SCRIPTS_DIR = PROJECT_ROOT / ".agents" / "skills" / "neuro-copilot" / "scripts"
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 try:
     from mcp.server.models import InitializationOptions
     import mcp.types as types
@@ -229,6 +239,43 @@ REAP_ZOMBIES_SCHEMA = {
     "properties": {},
 }
 
+CURAM_CER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "applicant_name": {"type": "string", "description": "Applicant full name", "default": "Primary Applicant"},
+        "household_size": {"type": "integer", "description": "Household member count", "default": 1},
+        "earned_income_monthly": {"type": "number", "description": "Monthly gross earned income", "default": 0.0},
+        "unearned_income_monthly": {"type": "number", "description": "Monthly unearned income", "default": 0.0},
+        "countable_assets": {"type": "number", "description": "Countable liquid assets", "default": 0.0},
+        "shelter_cost_monthly": {"type": "number", "description": "Monthly shelter/rent expense", "default": 0.0},
+        "utility_standard_monthly": {"type": "number", "description": "Monthly utility standard expense", "default": 0.0},
+        "is_resident": {"type": "boolean", "description": "State residency verified", "default": True},
+        "has_qualified_immigration_status": {"type": "boolean", "description": "Immigration/citizenship status", "default": True},
+        "is_child_under_19": {"type": "boolean", "description": "Applicant child under 19", "default": False},
+        "is_pregnant": {"type": "boolean", "description": "Applicant is pregnant", "default": False},
+        "has_disability": {"type": "boolean", "description": "Applicant has certified disability", "default": False},
+        "has_child_under_18": {"type": "boolean", "description": "Dependent child under 18 in unit", "default": False},
+        "has_parental_deprivation": {"type": "boolean", "description": "Parental deprivation criteria present", "default": False},
+        "has_elderly_or_disabled_member": {"type": "boolean", "description": "Elderly or disabled member present", "default": False}
+    }
+}
+
+JIRA_TEST_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "program": {"type": "string", "enum": ["MEDICAID_MAGI", "SNAP", "TANF"], "default": "MEDICAID_MAGI", "description": "Target social assistance program"},
+        "format_type": {"type": "string", "enum": ["json", "markdown"], "default": "json", "description": "Specification output format"}
+    }
+}
+
+UAT_RUN_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "programs": {"type": "array", "items": {"type": "string"}, "description": "List of programs to verify", "default": ["MEDICAID_MAGI", "SNAP", "TANF"]},
+        "approver": {"type": "string", "description": "Sign-off authority title", "default": "Chief Information Officer / Health & Human Services SME"}
+    }
+}
+
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     return [
@@ -312,6 +359,21 @@ async def handle_list_tools() -> list[types.Tool]:
             description="Play procedural tactical cockpit sound effect (warp spool, shield siren, target lock).",
             inputSchema=SFX_SCHEMA,
         ),
+        types.Tool(
+            name="neuro_curam_cer_eval",
+            description="Evaluate citizen evidence against IBM Cúram Express Rules (CER) Engine across Medicaid, SNAP, and TANF.",
+            inputSchema=CURAM_CER_SCHEMA,
+        ),
+        types.Tool(
+            name="neuro_jira_test_generator",
+            description="Generate audit-ready Jira Xray/Zephyr-compatible test cases with full step-by-step procedure and traceability.",
+            inputSchema=JIRA_TEST_SCHEMA,
+        ),
+        types.Tool(
+            name="neuro_uat_runner",
+            description="Execute automated User Acceptance Testing (UAT) scenarios across Cúram programs with Merkle provenance certification.",
+            inputSchema=UAT_RUN_SCHEMA,
+        ),
     ]
 
 async def _mcp_tool_search(args: dict) -> list[types.TextContent]:
@@ -362,26 +424,26 @@ async def _mcp_tool_graph_query(args: dict) -> list[types.TextContent]:
 
 
 async def _mcp_tool_compress_ast(args: dict) -> list[types.TextContent]:
-    from .agents.skills.neuro_copilot.scripts.neuro_bridge import compress_ast
-    res = compress_ast(args.get("path"))
+    import neuro_bridge
+    res = neuro_bridge.compress_ast(args.get("path"))
     return [types.TextContent(type="text", text=res)]
 
 
 async def _mcp_tool_self_patch(args: dict) -> list[types.TextContent]:
-    from .agents.skills.neuro_copilot.scripts.github_bridge import self_patch
-    res = self_patch(args.get("error"), args.get("file"))
+    import github_bridge
+    res = github_bridge.self_patch(args.get("error"), args.get("file"))
     return [types.TextContent(type="text", text=res)]
 
 
 async def _mcp_tool_call_graph(args: dict) -> list[types.TextContent]:
-    from .agents.skills.neuro_copilot.scripts.github_bridge import call_graph
-    res = call_graph(args.get("target", "know.py"))
+    import github_bridge
+    res = github_bridge.call_graph(args.get("target", "know.py"))
     return [types.TextContent(type="text", text=res)]
 
 
 async def _mcp_tool_release_certificate(args: dict) -> list[types.TextContent]:
-    from .agents.skills.neuro_copilot.scripts.github_bridge import generate_certificate
-    res = generate_certificate()
+    import github_bridge
+    res = github_bridge.generate_certificate()
     return [types.TextContent(type="text", text=res)]
 
 
@@ -432,7 +494,37 @@ async def _mcp_tool_doctor(args: dict) -> list[types.TextContent]:
 async def _mcp_tool_reap_zombies(args: dict) -> list[types.TextContent]:
     import process_hygiene_bridge
     res = process_hygiene_bridge.clean_process_hygiene()
+async def _mcp_tool_curam_cer_eval(args: dict) -> list[types.TextContent]:
+    from src.domain.curam_uat_engine import CuramExpressRulesEngine
+    res = CuramExpressRulesEngine.evaluate_integrated_case(args)
     return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
+
+
+async def _mcp_tool_jira_test_generator(args: dict) -> list[types.TextContent]:
+    from src.domain.curam_uat_engine import JiraTestCaseGenerator
+    prog = args.get("program", "MEDICAID_MAGI")
+    fmt = args.get("format_type", "json")
+    cases = JiraTestCaseGenerator.generate_suite_for_program(prog)
+    if fmt == "markdown":
+        out = JiraTestCaseGenerator.export_jira_markdown(cases)
+    else:
+        out = json.dumps({"status": "success", "program": prog, "total_cases": len(cases), "test_cases": cases}, indent=2)
+    return [types.TextContent(type="text", text=out)]
+
+
+async def _mcp_tool_uat_runner(args: dict) -> list[types.TextContent]:
+    from src.domain.curam_uat_engine import UserAcceptanceTestRunner
+    progs = args.get("programs", ["MEDICAID_MAGI", "SNAP", "TANF"])
+    approver = args.get("approver", "Chief Information Officer / Health & Human Services SME")
+    suite_res = UserAcceptanceTestRunner.run_uat_suite(progs)
+    cert_md = UserAcceptanceTestRunner.generate_uat_certificate_markdown(suite_res, approver)
+    return [types.TextContent(type="text", text=json.dumps({
+        "status": "success",
+        "acceptance_verdict": suite_res["acceptance_verdict"],
+        "pass_rate": suite_res["pass_rate"],
+        "merkle_provenance_hash": suite_res["merkle_provenance_hash"],
+        "certificate_markdown": cert_md
+    }, indent=2))]
 
 
 _MCP_TOOL_HANDLERS = {
@@ -452,6 +544,9 @@ _MCP_TOOL_HANDLERS = {
     "neuro_release_certificate": _mcp_tool_release_certificate,
     "neuro_speak": _mcp_tool_speak,
     "neuro_play_sfx": _mcp_tool_play_sfx,
+    "neuro_curam_cer_eval": _mcp_tool_curam_cer_eval,
+    "neuro_jira_test_generator": _mcp_tool_jira_test_generator,
+    "neuro_uat_runner": _mcp_tool_uat_runner,
 }
 
 

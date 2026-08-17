@@ -1124,3 +1124,7 @@ def evaluate_all_boundary_invariants(
         "multiplier": 1.0 if is_valid else 0.0,
         "diagnostics": diagnostics
     }
+
+
+# Standard alias
+evaluate_boundary_invariants = evaluate_all_boundary_invariants

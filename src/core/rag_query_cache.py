@@ -126,5 +126,26 @@ class SemanticRAGQueryCache:
         }
 
 
+def get_db_data_version(db_path: Optional[str] = None) -> int:
+    """Returns SQLite internal data_version pragma tracking transactions with zero overhead."""
+    try:
+        from src.infrastructure.database import get_db
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA data_version")
+            row = cursor.fetchone()
+            return int(row[0]) if row else 0
+    except Exception:
+        return int(time.time())
+
+
+def generate_query_etag(query: str, version: Optional[int] = None) -> str:
+    """Generates an ETag hash combining normalized query and database mutation version."""
+    import hashlib
+    v = version if version is not None else get_db_data_version()
+    raw = f"{query.strip().lower()}:{v}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
 # Global singleton instance
 GLOBAL_RAG_CACHE = SemanticRAGQueryCache()

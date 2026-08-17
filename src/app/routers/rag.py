@@ -142,33 +142,14 @@ def chat_stream_endpoint(req: ChatRequest):
         except ImportError:
             raise HTTPException(status_code=501, detail="llama-cpp-python is not installed. LLM runner disabled.")
 
-    # 1. Grounded local context extraction using domain RAG engine with HyDE query expansion
-    expanded_query = expand_query_with_llm(user_query)
-    local_context, local_citations = extract_advanced_rag_context(expanded_query, max_chunks=5, jaccard_threshold=0.70)
-    if local_context:
-        try:
-            comp_res = compress_context_entropy([local_context])
-            if comp_res.get("compressed_chunks") and comp_res["compressed_chunks"][0]:
-                local_context = comp_res["compressed_chunks"][0]
-        except Exception:
-            pass
-
-    # 2. Web search context fetch if vault hits < 2 or explicitly requested
-    web_sources = []
-    should_web_search = (
-        getattr(req, "web_search", False) or
-        getattr(req, "enable_web_search", False) or
-        len(local_citations) < 2
-    )
-
-    if should_web_search:
-        try:
-            web_sources = fetch_web_context(user_query, max_results=3)
-        except (KeyboardInterrupt, MemoryError, SystemExit):
-            raise
-        except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in rag.py")
-            web_sources = []
+    # 1. Execute Dynamic Composable RAG DAG Pipeline
+    from src.domain.retrieval_pipeline_dag import get_retrieval_pipeline
+    dag_pipeline = get_retrieval_pipeline()
+    enable_web = bool(getattr(req, "web_search", False) or getattr(req, "enable_web_search", False))
+    retrieval_res = dag_pipeline.execute(user_query, enable_web=enable_web)
+    local_context = retrieval_res.context_text
+    local_citations = retrieval_res.citations
+    web_sources = retrieval_res.web_sources
 
     # 3. Session resolution and user message turn persistence
     session_id = getattr(req, "session_id", None)
@@ -220,6 +201,9 @@ def chat_stream_endpoint(req: ChatRequest):
             system_prompt += " Focus on writing clean, modular, production-grade code with complete docstrings, type annotations, and error handling."
         elif any(kw in user_query.lower() for kw in math_kws):
             system_prompt += " Format mathematical expressions using standard LaTeX notation ($...$ for inline, $$...$$ for block)."
+
+        if getattr(retrieval_res, "domain_instructions", None):
+            system_prompt += f" Domain Guidelines: {retrieval_res.domain_instructions}"
 
         messages = [{"role": "system", "content": system_prompt}]
         causality_keywords = ["why", "how did", "what caused", "reason", "because"]
@@ -283,6 +267,14 @@ def chat_stream_endpoint(req: ChatRequest):
             web_sources_json=web_sources,
             tokens_used=len(full_response_text.split())
         )
+
+        # Trigger autonomous knowledge synthesis write-back loop (Uroboros feedback)
+        try:
+            from src.domain.knowledge_synthesis_loop import get_knowledge_synthesis_loop
+            synth_loop = get_knowledge_synthesis_loop()
+            synth_loop.record_synthesis(session_id, user_query, full_response_text, local_citations)
+        except Exception:
+            pass
 
         dt_gen = max(0.001, time.perf_counter() - t_gen_start)
         tok_speed = round(token_count / dt_gen, 1)

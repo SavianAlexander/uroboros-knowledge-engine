@@ -5,8 +5,9 @@ import os
 from pathlib import Path
 from fastapi import FastAPI
 try:
+    import orjson
     from fastapi.responses import ORJSONResponse as FastJSONResponse
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     from fastapi.responses import JSONResponse as FastJSONResponse
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
@@ -64,8 +65,24 @@ async def lifespan(app: FastAPI):
                 import logging; logging.warning(f"Swallowed error in server.py beacon stop: {e}")
         execute_clean_shutdown()
 
-app = FastAPI(title="Uroboros Knowledge Database", default_response_class=FastJSONResponse, lifespan=lifespan)
+app = FastAPI(
+    title="Uroboros Knowledge Engine API",
+    description="Enterprise-grade Knowledge Engine with Hybrid RRF RAG, Graph Traversal, Neural Voice, and Autonomous Swarm Intelligence.",
+    version="2.0.0",
+    default_response_class=FastJSONResponse,
+    lifespan=lifespan
+)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+from fastapi import Request
+from src.shared.exceptions import UroborosError
+
+@app.exception_handler(UroborosError)
+async def uroboros_exception_handler(request: Request, exc: UroborosError):
+    return FastJSONResponse(
+        status_code=exc.status_code,
+        content=exc.to_dict()
+    )
 
 FRONTEND_DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
 
@@ -103,11 +120,12 @@ def get_style_bundle():
 from fastapi import Depends
 from src.app.auth import verify_api_key
 
-from src.app.routers import health, search, rag, files, tags, export, analytics, workflows, briefing, ocr, eve, voice, voice_ws, crawler
+from src.app.routers import health, search, rag, files, tags, export, analytics, workflows, briefing, ocr, eve, voice, voice_ws, crawler, curam
 
 app.include_router(health.router) # Health remains unprotected
 app.include_router(voice.router) # Voice and OpenAI audio API
 app.include_router(voice_ws.router) # Real-Time Audio Spectrum & Call WebSocket
+app.include_router(curam.router) # Cúram CER, Jira Test & UAT API
 app.include_router(crawler.router, dependencies=[Depends(verify_api_key)])
 app.include_router(search.router, dependencies=[Depends(verify_api_key)])
 app.include_router(rag.router, dependencies=[Depends(verify_api_key)])

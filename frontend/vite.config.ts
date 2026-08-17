@@ -35,11 +35,20 @@ export default defineConfig(() => {
           chunkFileNames: 'chunks/[name].js',
           manualChunks(id) {
             if (id.includes('node_modules')) {
-              if (id.includes('three') || id.includes('force-graph')) {
-                return 'vendor-graph';
+              if (id.includes('three') || id.includes('force-graph') || id.includes('d3')) {
+                return 'vendor-3d-graph';
+              }
+              if (id.includes('recharts')) {
+                return 'vendor-charts';
+              }
+              if (id.includes('motion')) {
+                return 'vendor-motion';
               }
               if (id.includes('lucide-react')) {
                 return 'vendor-icons';
+              }
+              if (id.includes('react-dom') || id.includes('react/')) {
+                return 'vendor-react';
               }
             }
           },

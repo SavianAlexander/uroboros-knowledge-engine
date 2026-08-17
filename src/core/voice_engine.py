@@ -103,7 +103,16 @@ class NonInterruptingAudioQueue:
             self._interrupt_event.clear()
 
     def _playback_worker(self):
-        """Background worker that executes audio playback sequentially."""
+        """Background worker that executes audio playback sequentially with elevated thread priority."""
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                # THREAD_PRIORITY_HIGHEST = 2
+                handle = ctypes.windll.kernel32.GetCurrentThread()
+                ctypes.windll.kernel32.SetThreadPriority(handle, 2)
+            except Exception:
+                pass
+
         while True:
             try:
                 priority_level, count, item = self._queue.get(timeout=0.5)

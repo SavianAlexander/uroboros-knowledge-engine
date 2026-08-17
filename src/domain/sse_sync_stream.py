@@ -46,3 +46,30 @@ def generate_knowledge_sync_sse_stream(
         })
 
     yield format_sse_event("sync_complete", {"job_id": sync_job_id, "status": "completed", "total_steps_executed": steps_cnt})
+
+
+def format_rag_metadata_event(model: str, citations: Optional[List[Dict[str, Any]]] = None, prompt_tokens: int = 0) -> str:
+    """Formats an initial metadata SSE event carrying grounded citations and model identifier."""
+    return format_sse_event("metadata", {
+        "model": model,
+        "citations": citations or [],
+        "prompt_tokens": prompt_tokens,
+        "timestamp": time.time()
+    })
+
+
+def format_rag_delta_event(token: str, index: int = 0) -> str:
+    """Formats a token delta SSE event."""
+    return format_sse_event("delta", {
+        "text": token,
+        "index": index
+    })
+
+
+def format_rag_finish_event(total_tokens: int, latency_ms: float, finish_reason: str = "stop") -> str:
+    """Formats a completion finish SSE event with token count and latency telemetry."""
+    return format_sse_event("finish", {
+        "total_tokens": total_tokens,
+        "latency_ms": round(latency_ms, 2),
+        "finish_reason": finish_reason
+    })

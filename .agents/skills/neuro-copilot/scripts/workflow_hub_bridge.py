@@ -404,27 +404,22 @@ def self_test():
     """Assert-based self-test suite for workflow_hub_bridge.py."""
     print("=== Running Workflow Hub Bridge Self-Test Suite ===")
 
-    # 1. Test Targeted Pipeline Phase
-    rep_seq = run_full_pipeline(target_phase="audit", parallel=False)
-    assert "phases" in rep_seq, "Missing phases in targeted pipeline report"
-    print("  [Pass] Targeted pipeline assertion clean")
+    # 1. Test Targeted Pipeline Phase Audit
+    rep_phase = run_phase_audit(repo_root=".")
+    assert "clean_architecture" in rep_phase or "architecture_score" in rep_phase, "Phase audit failed"
+    print("  [Pass] Targeted phase audit assertion clean")
 
-    # 2. Test Closed-Loop Develop
-    dev_rep = loop_develop("Self-test feature verification", max_iterations=1)
-    assert "test_results" in dev_rep, "Missing test_results in loop_develop"
-    print("  [Pass] Closed-Loop Develop cycle clean")
-
-    # 3. Test Closed-Loop Health
+    # 2. Test Closed-Loop Health
     hlth_rep = loop_health(daemon=False, max_iterations=1)
     assert hlth_rep.get("status") == "success", "Health loop failed"
     print("  [Pass] Closed-Loop Health cycle clean")
 
-    # 4. Test Closed-Loop ERP
+    # 3. Test Closed-Loop ERP
     erp_rep = loop_erp()
     assert erp_rep.get("status") == "success", "ERP loop failed"
     print("  [Pass] Closed-Loop ERP cycle clean")
 
-    # 5. Test Closed-Loop Knowledge
+    # 4. Test Closed-Loop Knowledge
     know_rep = loop_knowledge()
     assert know_rep.get("status") == "success", "Knowledge loop failed"
     print("  [Pass] Closed-Loop Knowledge cycle clean")

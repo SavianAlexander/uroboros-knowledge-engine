@@ -44,7 +44,7 @@ graph TD
 
 ---
 
-## The 16 Dedicated Modular CLI Bridges
+## The 21 Dedicated Modular CLI Bridges
 
 All bridges are zero-dependency standard library Python scripts located in `scripts/`:
 
@@ -69,7 +69,10 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 ├── doctor_bridge.py          # 15. 360° System, Engine & Repository Diagnostic Doctor
 ├── voice_operator_bridge.py  # 16. Executive Voice Telemetry, Spoken Briefings & Acoustic DSP Mastering
 ├── benchmark_bridge.py       # 17. Empirical Latency Regression Watchdog & Benchmark Harness
-└── browser_optimizer_bridge.py # 18. Browser Performance & Zero-Stutter Gaming Optimizer Bridge
+├── browser_optimizer_bridge.py # 18. Browser Performance & Zero-Stutter Gaming Optimizer Bridge
+├── curam_bridge.py           # 19. IBM Cúram SPM & CER Statutory Rules Decision Engine Bridge
+├── jira_bridge.py            # 20. Jira Issue & QA Test Case Specification Bridge (Xray & Zephyr)
+└── uat_bridge.py             # 21. User Acceptance Testing (UAT) & Merkle Sign-Off Certification Bridge
 ```
 
 ### Master CLI Entrypoint (`scripts/neuro_cli.py`)
@@ -234,6 +237,21 @@ The Neuro Copilot is powered by a 5-tier dynamic model router minimizing VRAM to
 - `python .../fleet_watchdog_bridge.py --json`: Output raw JSON telemetry scorecard.
 - `python .../fleet_watchdog_bridge.py self_test`: Run automated fleet watchdog self-tests.
 
+#### 17. IBM Cúram SPM & CER Rules Bridge (`scripts/curam_bridge.py`)
+- `python .../curam_bridge.py evaluate --evidence data.json`: Live statutory eligibility evaluation across Medicaid/MAGI, SNAP, and TANF.
+- `python .../curam_bridge.py fpl --size 3`: Query statutory 2026 Federal Poverty Level threshold schedules.
+- `python .../curam_bridge.py self_test`: Run automated Cúram decision table self-tests.
+
+#### 18. Jira Issue & QA Test Case Bridge (`scripts/jira_bridge.py`)
+- `python .../jira_bridge.py generate --domain MEDICAID_MAGI [--format json|markdown]`: Synthesize standardized Jira Xray/Zephyr test case specs.
+- `python .../jira_bridge.py export --domain SNAP`: Export formatted test specification into `docs/jira/`.
+- `python .../jira_bridge.py self_test`: Run automated Jira test generation self-tests.
+
+#### 19. User Acceptance Testing (UAT) Bridge (`scripts/uat_bridge.py`)
+- `python .../uat_bridge.py run [--domains MEDICAID_MAGI SNAP TANF]`: Execute automated UAT caseworker journey matrix.
+- `python .../uat_bridge.py certificate [--approver "Name / Title"]`: Generate official SOC 2 Merkle Sign-Off Certificate.
+- `python .../uat_bridge.py self_test`: Run automated UAT runner self-tests.
+
 ---
 
 ## Tri-Engine Unified Command Matrix (72 Operations)
@@ -314,6 +332,12 @@ The Neuro Copilot is powered by a 5-tier dynamic model router minimizing VRAM to
 | **72** | `check` (Allocation) | `file_allocation_bridge.py` | Continuous Verification Gate for Clean Architecture Topology |
 | **73** | `upload_status` | `github_bridge.py` | Inspect & Display GitHub Remote Upload & Synchronization State |
 | **74** | `sync` | `neuro_cli.py` | Quick Visibility into GitHub Remote Push & Upstream Sync Status |
+| **75** | `curam evaluate` | `curam_bridge.py` | Evaluate Evidence Against Cúram Express Rules (CER) Engine |
+| **76** | `curam fpl` | `curam_bridge.py` | Query 2026 Statutory Federal Poverty Level Guidelines |
+| **77** | `jira generate` | `jira_bridge.py` | Synthesize Jira Xray/Zephyr Test Case Specifications |
+| **78** | `jira export` | `jira_bridge.py` | Export Standardized Test Specification to `docs/jira/` |
+| **79** | `uat run` | `uat_bridge.py` | Execute Automated User Acceptance Testing (UAT) Matrix |
+| **80** | `uat certificate` | `uat_bridge.py` | Generate Official SOC 2 Merkle Sign-Off Certificate |
 
 ---
 

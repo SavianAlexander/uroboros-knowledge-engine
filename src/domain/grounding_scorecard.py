@@ -63,6 +63,10 @@ class KnowledgeGapDiagnosticReport:
         return getattr(self, key, default)
 
 
+# Compatibility alias
+GroundingScorecard = KnowledgeGapDiagnosticReport
+
+
 def generate_knowledge_gap_diagnostic_report(
     score: float,
     threshold: float = REFUSAL_THRESHOLD,

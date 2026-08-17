@@ -478,7 +478,7 @@ def run_single_module(mod_name):
                     self.errors += 1
 
         collector = PytestResultCollector()
-        pytest.main([file_path, '-q', '--disable-warnings'], plugins=[collector])
+        pytest.main([file_path, '-q', '--disable-warnings', '-p', 'no:fugue_test', '-p', 'no:fugue_sql_test', '-p', 'no:pytest_qt'], plugins=[collector])
         mod_t1 = time.time()
         passed = collector.passed
         failures_cnt = collector.failures

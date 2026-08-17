@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-08-17T02:54:49Z",
-  "total_views_discovered": 22,
+  "timestamp": "2026-08-17T14:38:43Z",
+  "total_views_discovered": 26,
   "categories": [
     "Configuration & Maintenance",
     "Core Application",
@@ -48,6 +48,38 @@
       "category": "Core Application",
       "selector": null,
       "description": "Interactive view mode for Specs"
+    },
+    {
+      "id": "tab_determination",
+      "title": "Determination Studio",
+      "path": "/?tab=determination",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Interactive view mode for Determination"
+    },
+    {
+      "id": "tab_policy",
+      "title": "Policy Studio",
+      "path": "/?tab=policy",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Interactive view mode for Policy"
+    },
+    {
+      "id": "tab_jira",
+      "title": "Jira Studio",
+      "path": "/?tab=jira",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Interactive view mode for Jira"
+    },
+    {
+      "id": "tab_uat",
+      "title": "Uat Studio",
+      "path": "/?tab=uat",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Interactive view mode for Uat"
     },
     {
       "id": "modal_logs",

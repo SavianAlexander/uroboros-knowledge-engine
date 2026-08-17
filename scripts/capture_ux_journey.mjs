@@ -32,6 +32,38 @@ const VIEWS = [
     "description": "Interactive view mode for Specs"
   },
   {
+    "id": "tab_determination",
+    "title": "Determination Studio",
+    "path": "/?tab=determination",
+    "category": "Core Application",
+    "selector": null,
+    "description": "Interactive view mode for Determination"
+  },
+  {
+    "id": "tab_policy",
+    "title": "Policy Studio",
+    "path": "/?tab=policy",
+    "category": "Core Application",
+    "selector": null,
+    "description": "Interactive view mode for Policy"
+  },
+  {
+    "id": "tab_jira",
+    "title": "Jira Studio",
+    "path": "/?tab=jira",
+    "category": "Core Application",
+    "selector": null,
+    "description": "Interactive view mode for Jira"
+  },
+  {
+    "id": "tab_uat",
+    "title": "Uat Studio",
+    "path": "/?tab=uat",
+    "category": "Core Application",
+    "selector": null,
+    "description": "Interactive view mode for Uat"
+  },
+  {
     "id": "modal_logs",
     "title": "Logs Modal Overlay",
     "path": "/#modal",

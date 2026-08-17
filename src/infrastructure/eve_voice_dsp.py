@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Autonomous EVE Online Tactical DSP Acoustic Engine & Studio Broadcast Audio Mastering Rack.
 Standard: Pure Python Standard Library + NumPy (with SciPy / pure-NumPy IIR biquad filtering).

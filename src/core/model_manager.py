@@ -271,12 +271,12 @@ class OllamaClient:
         urls = ["http://127.0.0.1:11434/api/chat", "http://localhost:11434/api/chat"]
         
         tokens_yielded = 0
-        GpuInferenceGuard.acquire(timeout=45.0)
+        GpuInferenceGuard.acquire(timeout=5.0)
         try:
             for u in urls:
                 try:
                     req = urllib.request.Request(u, data=data_bytes, headers={"Content-Type": "application/json"})
-                    with urllib.request.urlopen(req, timeout=45) as resp:
+                    with urllib.request.urlopen(req, timeout=5) as resp:
                         for line in resp:
                             if not line:
                                 continue
@@ -295,6 +295,8 @@ class OllamaClient:
                 except urllib.error.HTTPError as e:
                     err_msg = e.read().decode("utf-8", errors="ignore")
                     logging.warning(f"Ollama stream_chat HTTPError {e.code} on {u}: {err_msg}")
+                    if e.code == 404:
+                        break
                     continue
                 except Exception as e:
                     logging.warning(f"Ollama stream_chat fallback on {u}: {e}")

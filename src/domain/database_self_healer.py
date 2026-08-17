@@ -152,15 +152,26 @@ def detect_client_data_anomalies(dataset_name: Optional[str] = None) -> List[Dic
 
 
 def execute_database_self_healing() -> Dict[str, Any]:
-    """Runs a complete self-healing and optimization cycle across the entire database."""
+    """Runs a complete self-healing, orphan purge, and optimization cycle across the entire database."""
     health_before = inspect_database_health()
     opt_res = auto_optimize_indexes()
     anomalies = detect_client_data_anomalies()
 
+    purged_orphan_chunks = 0
     with get_db() as conn:
         cursor = conn.cursor()
-        # Truncate WAL to free file size
-        cursor.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        # 1. Clean orphan file_chunks
+        try:
+            cursor.execute("DELETE FROM file_chunks WHERE file_id NOT IN (SELECT id FROM files)")
+            purged_orphan_chunks = cursor.rowcount
+        except Exception:
+            pass
+
+        # 2. Truncate WAL to free file size
+        try:
+            cursor.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except Exception:
+            pass
         conn.commit()
 
     health_after = inspect_database_health()
@@ -169,6 +180,7 @@ def execute_database_self_healing() -> Dict[str, Any]:
         "status": "success",
         "database_health": health_after,
         "indexes_optimized": opt_res["indexes_verified"],
+        "purged_orphan_chunks": max(0, purged_orphan_chunks),
         "anomalies_detected_count": len(anomalies),
         "anomalies": anomalies
     }

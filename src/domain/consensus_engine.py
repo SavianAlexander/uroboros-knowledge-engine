@@ -784,3 +784,8 @@ def evaluate_cross_document_consensus(passages: List[Dict[str, Any]]) -> Dict[st
         "pairwise_nli": pairwise_nli_records,
         "assertion_count": total_assertions
     }
+
+
+# Standard compatibility aliases
+resolve_contradictions = resolve_contradiction_hierarchy
+compute_consensus_confidence = compute_consensus_boost

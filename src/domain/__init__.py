@@ -111,4 +111,15 @@ __all__ = [
     "analyze_readability_metrics",
     "profile_tabular_dataset",
     "TranscriptionEngine",
+    # Unified Engines
+    "bandit_select_pipeline",
+    "compute_graph_pagerank",
+    "generate_mermaid_graph",
+    "export_graph_to_graphml",
+    "rerank_search_results_colbert",
+    "verify_claims_and_consensus",
 ]
+from src.domain.query_intent import bandit_select_pipeline
+from src.domain.graph_engine import compute_graph_pagerank, generate_mermaid_graph, export_graph_to_graphml
+from src.domain.reranking import rerank_search_results_colbert
+from src.domain.verification_guards import verify_claims_and_consensus

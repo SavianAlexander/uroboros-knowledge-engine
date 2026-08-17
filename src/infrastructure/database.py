@@ -488,6 +488,8 @@ def init_db():
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_filename ON files(filename)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_sha256 ON files(sha256)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_mime_type ON files(mime_type)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_filepath_mod ON files(filepath, modified_at)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_created_at ON files(created_at DESC)')
 
             _ensure_column(cursor, "files", "user_id", "INTEGER DEFAULT 0")
             _ensure_column(cursor, "files", "created_at", "REAL DEFAULT 0.0")

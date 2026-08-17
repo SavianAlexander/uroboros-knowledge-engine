@@ -1,0 +1,355 @@
+{
+  "project_id": 13,
+  "tasks": [
+    {
+      "id": 1874,
+      "name": "Subtask 6: Automated End-to-End System Verification",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1873,
+      "name": "Subtask 5: Federal Rule of Evidence 902 Merkle Audit Certificate",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1872,
+      "name": "Subtask 4: Database Self-Healing Diagnostics & Integrity Audit",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1871,
+      "name": "Subtask 3: OpenAPI Router Tags & Metadata Enrichment",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1870,
+      "name": "Subtask 2: SQLite Query Index & FTS5 Synchronization Triggers",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1869,
+      "name": "Subtask 1: Bitwise UI Asset Parity Synchronization",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1868,
+      "name": "Goal Execution: Complete Enterprise Hardening, Index Optimization, Bitwise Asset Parity & Rule 902 Audit Ledger",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1867,
+      "name": "Empirical Data-Driven Statutory Platform (C\u00c3\u00baram, CHIP, WIC, CCDF, Section 8, Jira, UAT) & React QA Studio",
+      "status": 0,
+      "priority": 2,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1866,
+      "name": "Subtask 5: System Verification & Automated Test Pass",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1865,
+      "name": "Subtask 4: Typed JSON-SSE Streaming Protocol",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1864,
+      "name": "Subtask 3: Generational ETag Query Caching (PRAGMA data_version)",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1863,
+      "name": "Subtask 2: Constant-Time Authentication (secrets.compare_digest)",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1862,
+      "name": "Subtask 1: EVE Infrastructure Encapsulation (src/infrastructure/eve/)",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1861,
+      "name": "Architectural Hardening Phase 2: EVE Infrastructure Encapsulation, Constant-Time Auth, Generational ETag Caching & Typed SSE",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1860,
+      "name": "Phase 7: Full Domain & E2E Test Suite Validation",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1859,
+      "name": "Phase 6: Isolate Real-Time Voice Audio Daemon from FastAPI Event Loop",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1858,
+      "name": "Phase 5: Refactor vector_engine.py into Modular Storage & Strategy Classes",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1857,
+      "name": "Phase 4: Build Autonomous Knowledge Graph Synthesis Write-Back Loop",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1856,
+      "name": "Phase 3: Implement Zero-LLM Fast-Path Streaming with Speculative Verification",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1855,
+      "name": "Phase 2: Build Dynamic Composable RAG Execution DAG Engine",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1854,
+      "name": "Phase 1: Implement Domain Plugin SPI & Vertical Cartridge Registry",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1853,
+      "name": "Uroboros Architectural Modernization & Consolidation",
+      "status": 2,
+      "priority": 2,
+      "due_date": "2026-08-20 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1852,
+      "name": "Phase 5: Automated Verification & Unit Test Suite Validation",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1851,
+      "name": "Phase 4: Vector Buffer & SQLite Scoping Optimization",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1850,
+      "name": "Phase 3: Domain Exceptions & FastAPI Error Hierarchy",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1849,
+      "name": "Phase 2: Domain Module Consolidation & Facade Shims",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1848,
+      "name": "Phase 1: Composable Retrieval Pipeline DAG",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1847,
+      "name": "Architectural Modernization: Retrieval Pipeline DAG, Bounded Contexts, Typed Exceptions & Engine Consolidation",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1846,
+      "name": "Feat: Integrate IBM C\u00c3\u00baram CER Engine, Jira Test Case Generator, and UAT Verification into Neuro Co-Pilot",
+      "status": 2,
+      "priority": 2,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1845,
+      "name": "Feat: Integrate IBM C\u00c3\u00baram CER Engine, Jira Test Case Generator, and UAT Verification into Neuro Co-Pilot",
+      "status": 2,
+      "priority": 2,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1844,
+      "name": "Feat: Integrate IBM C\u00c3\u00baram CER Engine, Jira Test Case Generator, and UAT Verification into Neuro Co-Pilot",
+      "status": 2,
+      "priority": 2,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1843,
+      "name": "EVE Multi-Client Zero-Stutter & Ultra-Low-Footprint Container Profile Optimization",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1842,
+      "name": "Advanced Container Performance, Pre-Compression & Runtime Hardening Implementation",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1841,
+      "name": "Comprehensive Docker Containerization, Image Size & Multi-Stage Layer Optimization Analysis",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1840,
+      "name": "Ground and verify fleet mining command burst formulas & Savian Alexander status",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1839,
+      "name": "Ingest & index articles into SQLite database & vector/FTS5 knowledge vault",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1838,
+      "name": "Download all content articles from EVE Uni MediaWiki API into Markdown vault",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1837,
+      "name": "Build high-throughput EVE Uni MediaWiki Harvester",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1836,
+      "name": "Ingest Full EVE University Wiki & Ground Fleet Mining Buff Calculations",
+      "status": 2,
+      "priority": 0,
+      "due_date": null
+    },
+    {
+      "id": 1835,
+      "name": "Verify closed-loop execution with assertion-based self-tests and doctor scorecard",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1834,
+      "name": "Integrate loop subcommand into neuro_cli.py with full argument parsing and daemon modes",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1833,
+      "name": "Implement automated self-healing feedback circuit with local SLMs (qwen2.5-coder & phi4-mini)",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1832,
+      "name": "Author closed-loop autonomous execution loops in workflow_hub_bridge.py (develop, health, erp, knowledge)",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1831,
+      "name": "Implement Full Closed-Loop Autonomous Engineering Engine",
+      "status": 2,
+      "priority": 0,
+      "due_date": null
+    },
+    {
+      "id": 1830,
+      "name": "Integrate llm subcommand into neuro_cli.py and verify with automated self-tests",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1829,
+      "name": "Implement standalone_engine.py with automatic Ollama failover and Vulkan/HIP GPU offload",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1828,
+      "name": "Generate automated model_registry.json mapping manifests to friendly aliases",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1827,
+      "name": "Relocate and standardize llama-vulkan, llama-hip, and Titan Forge into Neuro Alexander runtimes and models directories",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1826,
+      "name": "Absorb & Standardize Local AI Runtimes and GGUF Model Vault",
+      "status": 2,
+      "priority": 0,
+      "due_date": null
+    },
+    {
+      "id": 1825,
+      "name": "Enhance Neuro Co-Pilot Skill with Mandatory GitHub Upload & Provenance Visibility in Tududi and Audit Reporting",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-16 00:00:00.000 +00:00"
+    }
+  ]
+}
