@@ -6,7 +6,7 @@ cfr_title: 7
 cfr_part: 273
 domain_key: "snap_nutrition"
 official_ecfr_url: "https://www.ecfr.gov/current/title-7/part-273"
-harvested_at: "2026-08-17T16:59:32Z"
+harvested_at: "2026-08-17T17:15:27Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_LIVE_CRAWL"
 verification: "ECFR_LIVE_XML_API_VERIFIED"
 ---

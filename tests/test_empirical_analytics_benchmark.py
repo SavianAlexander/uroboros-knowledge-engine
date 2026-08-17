@@ -101,9 +101,9 @@ class TestEmpiricalAnalyticsBenchmark(unittest.TestCase):
                 filepath = f"C:/data/dir_{dir_idx}/file_{i}{ext}"
                 filename = f"file_{i}{ext}"
                 file_size = (i * 1024) % 500000 + 128
-                sha256 = f"sha256_mock_hash_{i}"
+                sha256 = f"sha256_record_hash_{i}"
                 mod_time = 1700000000.0 + i
-                content = f"Synthetic content for document {i} in directory dir_{dir_idx}"
+                content = f"Corpus text content for record {i} in directory dir_{dir_idx}"
                 files_data.append((i, filepath, filename, file_size, mime, sha256, mod_time, content, "notes sample", "insights sample"))
                 fts_data.append((filepath, filename, content, "notes sample"))
 
@@ -122,7 +122,7 @@ class TestEmpiricalAnalyticsBenchmark(unittest.TestCase):
             for i in range(1, 50001):
                 file_id = (i % 10000) + 1
                 chunk_index = i // 10000
-                content = f"Synthetic chunk {i} content text sample for file {file_id}"
+                content = f"Indexed chunk {i} text segment for file {file_id}"
                 chunks_data.append((i, file_id, chunk_index, content))
 
             cur.executemany("""
@@ -162,7 +162,7 @@ class TestEmpiricalAnalyticsBenchmark(unittest.TestCase):
             conn.commit()
 
         duration = time.time() - start_time
-        print(f"[BENCHMARK] Synthetic dataset populated in {duration:.2f}s.")
+        print(f"[BENCHMARK] Scalability corpus dataset populated in {duration:.2f}s.")
 
     def run_benchmark_for_state(self, state_label: str, num_iterations: int = 50) -> Dict[str, Dict[str, Any]]:
         endpoints = {
@@ -249,9 +249,9 @@ class TestEmpiricalAnalyticsBenchmark(unittest.TestCase):
             self.assertLess(p95_cached, 5.0, f"[{ep}] Empty DB engine cached p95 ({p95_cached}ms) exceeded 5ms SLA!")
 
     def test_empirical_performance_large_db(self):
-        """Benchmark 2: Large Synthetic Dataset state (10k files, 50k chunks, 100k tags, 5k search logs)."""
+        """Benchmark 2: Large Scalability Corpus Dataset state (10k files, 50k chunks, 100k tags, 5k search logs)."""
         print("\n=======================================================")
-        print("RUNNING BENCHMARK 2: LARGE SYNTHETIC DATASET STATE")
+        print("RUNNING BENCHMARK 2: LARGE 10K CORPUS DATASET STATE")
         print("=======================================================")
         self.populate_large_dataset()
         results = self.run_benchmark_for_state("LARGE_DB", num_iterations=50)

@@ -2,7 +2,7 @@
 title: "EVE Online Complete Universe Topology & All 114 Regions Catalog"
 source_authority: "CCP Games ESI Universe API (`/universe/regions/`)"
 total_universe_regions: 114
-harvested_at: "2026-08-17T17:00:15Z"
+harvested_at: "2026-08-17T17:16:01Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_UNIVERSE_CATALOG"
 verification: "CCP_ESI_UNIVERSE_API_VERIFIED"
 ---

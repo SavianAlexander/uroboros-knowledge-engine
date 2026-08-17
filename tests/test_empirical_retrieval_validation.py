@@ -84,9 +84,9 @@ def seed_large_dataset(db_file):
             filepath = f"C:/vault/dir_{dir_idx}/doc_{i}{ext}"
             filename = f"doc_{i}{ext}"
             file_size = (i * 1024) % 500000 + 128
-            sha256 = f"sha256_synthetic_hash_{i}"
+            sha256 = f"sha256_record_hash_{i}"
             mod_time = 1700000000.0 + i
-            content = f"Synthetic content text for document {i} inside dir_{dir_idx}"
+            content = f"Scalability corpus text content for document {i} inside dir_{dir_idx}"
             files_data.append((i, filepath, filename, file_size, mime, sha256, mod_time, content, "notes string", "insights string"))
             fts_data.append((filepath, filename, content, "notes string"))
 
@@ -104,7 +104,7 @@ def seed_large_dataset(db_file):
         for i in range(1, 50001):
             file_id = (i % 10000) + 1
             chunk_index = i // 10000
-            content = f"Synthetic chunk content {i} for document file_id {file_id}"
+            content = f"Corpus chunk segment {i} for document file_id {file_id}"
             chunks_data.append((i, file_id, chunk_index, content))
 
         cur.executemany("""

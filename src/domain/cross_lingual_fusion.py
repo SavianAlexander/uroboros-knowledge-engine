@@ -19,14 +19,11 @@ _LEXICON_PATH = os.path.abspath(
 @lru_cache(maxsize=1)
 def load_multilingual_concept_map() -> Dict[str, List[str]]:
     """Loads and caches the empirical multilingual concept map from JSON."""
-    if os.path.exists(_LEXICON_PATH):
-        try:
-            with open(_LEXICON_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                return data.get("concept_map", {})
-        except Exception:
-            pass
-    return {}
+    if not os.path.exists(_LEXICON_PATH):
+        raise FileNotFoundError(f"Empirical multilingual concept map not found at '{_LEXICON_PATH}'.")
+    with open(_LEXICON_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        return data.get("concept_map", {})
 
 
 def expand_cross_lingual_query(query: str) -> str:

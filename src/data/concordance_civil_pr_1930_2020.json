@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "version": "2026.1",
+    "title": "Concordancia Histórica Código Civil de Puerto Rico (1930 -> 2020)",
+    "source_authority": "Oficina de Servicios Legislativos de Puerto Rico (OSLPR) & Tribunal Supremo de Puerto Rico",
+    "governing_statutes": [
+      "Código Civil de Puerto Rico de 1930 (31 LPRA)",
+      "Código Civil de Puerto Rico de 2020 (Ley Núm. 55-2020, 31 LPRA § 9401 et seq.)"
+    ]
+  },
+  "concordance": {
+    "1802": {
+      "predecessor": "Art. 1802 Código Civil 1930 (31 LPRA § 5141)",
+      "predecessor_topic": "Responsabilidad civil extracontractual por culpa o negligencia",
+      "successor": "Art. 1536 Código Civil 2020 (Ley Núm. 55-2020)",
+      "successor_citation": "31 LPRA § 10801",
+      "successor_topic": "Responsabilidad por culpa o negligencia",
+      "notes": "Conserva la regla general de responsabilidad subjetiva por culpa o negligencia.",
+      "leading_cases": [
+        {
+          "case": "Ramos v. Argos",
+          "citation": "143 D.P.R. 887 (1997)",
+          "doctrine": "Elementos de la causa de acción bajo daño extracontractual"
+        },
+        {
+          "case": "Pueblo v. Yip Berríos",
+          "citation": "142 D.P.R. 386 (1997)",
+          "doctrine": "Normas de causalidad adecuada y prueba pericial"
+        },
+        {
+          "case": "García v. Shiley",
+          "citation": "140 D.P.R. 969 (1996)",
+          "doctrine": "Responsabilidad por productos defectuosos"
+        }
+      ]
+    },
+    "1803": {
+      "predecessor": "Art. 1803 Código Civil 1930 (31 LPRA § 5142)",
+      "predecessor_topic": "Responsabilidad vicaria (patronos, padres, tutores)",
+      "successor": "Art. 1540 Código Civil 2020 (Ley Núm. 55-2020)",
+      "successor_citation": "31 LPRA § 10805",
+      "successor_topic": "Responsabilidad por actos de terceros (responsabilidad vicaria)",
+      "notes": "Regula la responsabilidad indirecta de patronos, progenitores y directores de establecimientos.",
+      "leading_cases": [
+        {
+          "case": "López v. Porrata Doria",
+          "citation": "169 D.P.R. 320 (2006)",
+          "doctrine": "Responsabilidad de anfitriones y patronos por actos de invitados/empleados"
+        }
+      ]
+    },
+    "1804": {
+      "predecessor": "Art. 1804 Código Civil 1930 (31 LPRA § 5143)",
+      "predecessor_topic": "Responsabilidad del poseedor o dueño de animales",
+      "successor": "Art. 1541 Código Civil 2020 (Ley Núm. 55-2020)",
+      "successor_citation": "31 LPRA § 10806",
+      "successor_topic": "Responsabilidad por daños causados por animales",
+      "notes": "Responsabilidad objetiva salvo fuerza mayor o culpa exclusiva de la víctima.",
+      "leading_cases": []
+    },
+    "1054": {
+      "predecessor": "Art. 1054 Código Civil 1930 (31 LPRA § 3018)",
+      "predecessor_topic": "Responsabilidad contractual por dolo, negligencia o morosidad",
+      "successor": "Art. 1188 Código Civil 2020 (Ley Núm. 55-2020)",
+      "successor_citation": "31 LPRA § 9488",
+      "successor_topic": "Resarcimiento por dolo, culpa o mora contractual",
+      "notes": "Diferenciación estricta entre dolo (excluye exoneración) y culpa simple contractual.",
+      "leading_cases": []
+    },
+    "1474": {
+      "predecessor": "Art. 1474 Código Civil 1930 (31 LPRA § 3841)",
+      "predecessor_topic": "Saneamiento por vicios ocultos en la compraventa",
+      "successor": "Art. 1303 Código Civil 2020 (Ley Núm. 55-2020)",
+      "successor_citation": "31 LPRA § 9703",
+      "successor_topic": "Garantía legal por vicios o defectos ocultos",
+      "notes": "Acción redhibitoria o quanti minoris con plazo de caducidad estricto.",
+      "leading_cases": []
+    },
+    "1867": {
+      "predecessor": "Art. 1867 Código Civil 1930 (31 LPRA § 5297)",
+      "predecessor_topic": "Prescripción extintiva de acciones personales (15 años)",
+      "successor": "Art. 1203 Código Civil 2020 (Ley Núm. 55-2020)",
+      "successor_citation": "31 LPRA § 9503",
+      "successor_topic": "Término general de prescripción de acciones personales (reducido a 4 años / 5 años)",
+      "notes": "Cambio paradigmático: redujo el plazo de 15 años a 4 años en el nuevo Código.",
+      "leading_cases": []
+    },
+    "1868": {
+      "predecessor": "Art. 1868 Código Civil 1930 (31 LPRA § 5298)",
+      "predecessor_topic": "Prescripción de acción extracontractual de daños y perjuicios (1 año)",
+      "successor": "Art. 1544 Código Civil 2020 (Ley Núm. 55-2020)",
+      "successor_citation": "31 LPRA § 10809",
+      "successor_topic": "Prescripción de la acción de responsabilidad por culpa o negligencia (1 año)",
+      "notes": "Mantiene el término prescriptivo de un (1) año desde que lo supo el agraviado.",
+      "leading_cases": [
+        {
+          "case": "Cotto v. C.M. Ins. Co.",
+          "citation": "116 D.P.R. 644 (1985)",
+          "doctrine": "Cómputo y conocimiento cognoscitivo del daño"
+        }
+      ]
+    }
+  }
+}

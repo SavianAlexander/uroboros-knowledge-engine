@@ -1,0 +1,130 @@
+{
+  "metadata": {
+    "version": "2026.1",
+    "effective_date": "2026-01-01",
+    "jurisdiction": "US_FEDERAL_DEFAULT",
+    "description": "2026 Statutory Benefit Guidelines & Decision Thresholds for Social Program Management (HHS, USDA, ACF, HUD)"
+  },
+  "fpl_guidelines": {
+    "contiguous_48_and_dc": {
+      "annual_base": 15650.0,
+      "annual_per_person": 5520.0
+    },
+    "alaska": {
+      "annual_base": 19570.0,
+      "annual_per_person": 6900.0
+    },
+    "hawaii": {
+      "annual_base": 18000.0,
+      "annual_per_person": 6350.0
+    }
+  },
+  "medicaid_magi": {
+    "adult_expansion_fpl_pct": 138.0,
+    "statutory_5pct_disregard": true,
+    "children_pregnancy_fpl_pct": 200.0,
+    "abd_disability_fpl_pct": 150.0,
+    "resource_limit": null
+  },
+  "chip": {
+    "default_fpl_pct": 250.0,
+    "infant_under_1_fpl_pct": 300.0,
+    "child_1_to_18_fpl_pct": 250.0,
+    "uninsured_requirement": true,
+    "waiting_period_months": 0
+  },
+  "snap": {
+    "gross_income_fpl_pct": 130.0,
+    "net_income_fpl_pct": 100.0,
+    "earned_income_disregard_pct": 20.0,
+    "standard_deduction": {
+      "household_1_to_3": 198.0,
+      "household_4_to_5": 208.0,
+      "household_6_plus": 246.0
+    },
+    "excess_shelter_cap": 672.0,
+    "shelter_percentage_threshold": 50.0,
+    "standard_utility_allowance": 150.0,
+    "maximum_allotments": {
+      "1": 292.0,
+      "2": 536.0,
+      "3": 768.0,
+      "4": 975.0,
+      "5": 1158.0,
+      "6": 1390.0,
+      "7": 1536.0,
+      "8": 1756.0
+    },
+    "per_additional_person_allotment": 220.0,
+    "minimum_allotment_1_to_2": 23.0,
+    "asset_limit_standard": 3000.0,
+    "asset_limit_elderly_disabled": 4500.0
+  },
+  "tanf": {
+    "gross_income_test_fpl_pct": 100.0,
+    "earned_income_disregard_initial": 90.0,
+    "earned_income_disregard_ongoing_pct": 30.0,
+    "maximum_benefit_schedule": {
+      "1": 240.0,
+      "2": 320.0,
+      "3": 390.0,
+      "4": 460.0,
+      "5": 530.0,
+      "6": 590.0
+    },
+    "per_additional_person": 55.0,
+    "asset_limit": 2500.0,
+    "lifetime_limit_months": 60,
+    "work_activity_weekly_hours": 30
+  },
+  "wic": {
+    "income_limit_fpl_pct": 185.0,
+    "adjunctive_eligibility_programs": ["MEDICAID_MAGI", "SNAP", "TANF"],
+    "target_categories": [
+      "PREGNANT_WOMAN",
+      "POSTPARTUM_WOMAN",
+      "BREASTFEEDING_WOMAN",
+      "INFANT_UNDER_1",
+      "CHILD_1_TO_5"
+    ],
+    "priority_tiers": {
+      "PRIORITY_I": "Pregnant/Breastfeeding with Anthropometric/Biochemical Risk",
+      "PRIORITY_II": "Infant of Mother with Nutritional Risk",
+      "PRIORITY_III": "Children with Medical/Anthropometric Risk",
+      "PRIORITY_IV": "Pregnant/Breastfeeding with Dietary Risk",
+      "PRIORITY_V": "Children with Dietary Risk",
+      "PRIORITY_VI": "Postpartum Non-Breastfeeding Women",
+      "PRIORITY_VII": "Previously Certified Individuals"
+    }
+  },
+  "ccdf_childcare": {
+    "state_median_income_monthly": 6800.0,
+    "smi_limit_pct": 85.0,
+    "fpl_limit_pct": 200.0,
+    "sliding_copay_schedule": [
+      { "max_fpl_pct": 100.0, "copay_pct_of_income": 0.0 },
+      { "max_fpl_pct": 138.0, "copay_pct_of_income": 2.0 },
+      { "max_fpl_pct": 175.0, "copay_pct_of_income": 4.0 },
+      { "max_fpl_pct": 200.0, "copay_pct_of_income": 7.0 }
+    ],
+    "max_child_age": 13,
+    "child_with_special_needs_max_age": 19
+  },
+  "section8_housing": {
+    "area_median_income_monthly": 6500.0,
+    "income_brackets_pct_of_ami": {
+      "extremely_low_income": 30.0,
+      "very_low_income": 50.0,
+      "low_income": 80.0
+    },
+    "tenant_rent_contribution_pct": 30.0,
+    "minimum_tenant_payment": 50.0,
+    "payment_standard_by_bedrooms": {
+      "0": 1100.0,
+      "1": 1350.0,
+      "2": 1650.0,
+      "3": 2150.0,
+      "4": 2550.0
+    }
+  }
+}

@@ -26,14 +26,11 @@ _CONCORDANCE_PATH = os.path.abspath(
 @lru_cache(maxsize=1)
 def load_civil_code_concordance() -> Dict[str, Dict[str, Any]]:
     """Loads and caches the empirical Civil Code 1930 -> 2020 concordance dataset from JSON."""
-    if os.path.exists(_CONCORDANCE_PATH):
-        try:
-            with open(_CONCORDANCE_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                return data.get("concordance", {})
-        except Exception:
-            pass
-    return {}
+    if not os.path.exists(_CONCORDANCE_PATH):
+        raise FileNotFoundError(f"Empirical Civil Code concordance dataset not found at '{_CONCORDANCE_PATH}'.")
+    with open(_CONCORDANCE_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        return data.get("concordance", {})
 
 class PRLegalEngine:
     """

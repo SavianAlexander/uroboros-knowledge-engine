@@ -3,7 +3,7 @@ title: "Atlassian Jira Cloud REST API v3 Complete OpenAPI 3.0 Platform Specifica
 source_authority: "Atlassian Developer Platform (Official OpenAPI 3.0 Schema)"
 total_api_paths: 421
 openapi_version: "3.0.0"
-harvested_at: "2026-08-17T17:00:14Z"
+harvested_at: "2026-08-17T17:16:01Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_PLATFORM_SPEC"
 verification: "ATLASSIAN_OPENAPI_V3_VERIFIED"
 ---

@@ -44,7 +44,7 @@ class UserAcceptanceTestRunner:
             else:
                 cer_result = CuramExpressRulesEngine.evaluate_integrated_case(test_data)
         except Exception as e:
-            cer_result = {"status": "success", "eligible": True, "note": f"Evaluated: {e}"}
+            cer_result = {"status": "error", "eligible": False, "error": str(e)}
 
         duration_ms = round((time.time() - t0) * 1000.0, 2)
         

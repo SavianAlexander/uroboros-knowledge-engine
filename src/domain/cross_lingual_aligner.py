@@ -17,14 +17,11 @@ _LEXICON_PATH = os.path.abspath(
 @lru_cache(maxsize=1)
 def load_cross_lingual_translations() -> Dict[str, str]:
     """Loads and caches the empirical cross-lingual translation dictionary from JSON."""
-    if os.path.exists(_LEXICON_PATH):
-        try:
-            with open(_LEXICON_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                return data.get("translations", {})
-        except Exception:
-            pass
-    return {}
+    if not os.path.exists(_LEXICON_PATH):
+        raise FileNotFoundError(f"Empirical cross-lingual lexicon not found at '{_LEXICON_PATH}'.")
+    with open(_LEXICON_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        return data.get("translations", {})
 
 
 def align_cross_lingual_query(query: str) -> Dict[str, Any]:

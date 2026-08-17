@@ -2,16 +2,23 @@
   "project_id": 13,
   "tasks": [
     {
+      "id": 1897,
+      "name": "Audit codebase for static/hardcoded RAG information and bypasses",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-18 00:00:00.000 +00:00"
+    },
+    {
       "id": 1896,
       "name": "Feat: Complete 50-Title CFR & Full-API Command Center Ingestion",
-      "status": 0,
+      "status": 2,
       "priority": 2,
       "due_date": "2026-08-17 00:00:00.000 +00:00"
     },
     {
       "id": 1895,
       "name": "Feat: Complete 50-Title CFR & Full-API Command Center Ingestion",
-      "status": 0,
+      "status": 2,
       "priority": 2,
       "due_date": "2026-08-17 00:00:00.000 +00:00"
     },
@@ -95,258 +102,6 @@
     {
       "id": 1883,
       "name": "Subtask 2: Agent Episodic Memory & Scratchpad Engine",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1882,
-      "name": "G5: Full Regression Matrix Certification (100% Green)",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1881,
-      "name": "Subtask 1: Polyglot AST Extraction Engine (TS/JS/Go/Rust/Python)",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1880,
-      "name": "Advanced Polyglot AST Engine, Agent Episodic Memory & Service Catalog Registry",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1879,
-      "name": "G4: Database Optimization, Vacuum & Index Tuning",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1878,
-      "name": "G3: Wire Domain Plugin Extensions into UI & Search Endpoints",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1877,
-      "name": "G2: Frontend React 19 Production Build & UI Parity Sync",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1876,
-      "name": "G1: Architecture Doctor & Contract Bus DAG Certification",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1875,
-      "name": "Autonomous Long-Running System Hardening & Optimization (/goal)",
-      "status": 2,
-      "priority": 2,
-      "due_date": "2026-08-20 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1874,
-      "name": "Subtask 6: Automated End-to-End System Verification",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1873,
-      "name": "Subtask 5: Federal Rule of Evidence 902 Merkle Audit Certificate",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1872,
-      "name": "Subtask 4: Database Self-Healing Diagnostics & Integrity Audit",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1871,
-      "name": "Subtask 3: OpenAPI Router Tags & Metadata Enrichment",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1870,
-      "name": "Subtask 2: SQLite Query Index & FTS5 Synchronization Triggers",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1869,
-      "name": "Subtask 1: Bitwise UI Asset Parity Synchronization",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1868,
-      "name": "Goal Execution: Complete Enterprise Hardening, Index Optimization, Bitwise Asset Parity & Rule 902 Audit Ledger",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1867,
-      "name": "Empirical Data-Driven Statutory Platform (C\u00c3\u00baram, CHIP, WIC, CCDF, Section 8, Jira, UAT) & React QA Studio",
-      "status": 2,
-      "priority": 2,
-      "due_date": "2026-08-17 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1866,
-      "name": "Subtask 5: System Verification & Automated Test Pass",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1865,
-      "name": "Subtask 4: Typed JSON-SSE Streaming Protocol",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1864,
-      "name": "Subtask 3: Generational ETag Query Caching (PRAGMA data_version)",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1863,
-      "name": "Subtask 2: Constant-Time Authentication (secrets.compare_digest)",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1862,
-      "name": "Subtask 1: EVE Infrastructure Encapsulation (src/infrastructure/eve/)",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1861,
-      "name": "Architectural Hardening Phase 2: EVE Infrastructure Encapsulation, Constant-Time Auth, Generational ETag Caching & Typed SSE",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1860,
-      "name": "Phase 7: Full Domain & E2E Test Suite Validation",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1859,
-      "name": "Phase 6: Isolate Real-Time Voice Audio Daemon from FastAPI Event Loop",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1858,
-      "name": "Phase 5: Refactor vector_engine.py into Modular Storage & Strategy Classes",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1857,
-      "name": "Phase 4: Build Autonomous Knowledge Graph Synthesis Write-Back Loop",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1856,
-      "name": "Phase 3: Implement Zero-LLM Fast-Path Streaming with Speculative Verification",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1855,
-      "name": "Phase 2: Build Dynamic Composable RAG Execution DAG Engine",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1854,
-      "name": "Phase 1: Implement Domain Plugin SPI & Vertical Cartridge Registry",
-      "status": 2,
-      "priority": 1,
-      "due_date": null
-    },
-    {
-      "id": 1853,
-      "name": "Uroboros Architectural Modernization & Consolidation",
-      "status": 2,
-      "priority": 2,
-      "due_date": "2026-08-20 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1852,
-      "name": "Phase 5: Automated Verification & Unit Test Suite Validation",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1851,
-      "name": "Phase 4: Vector Buffer & SQLite Scoping Optimization",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1850,
-      "name": "Phase 3: Domain Exceptions & FastAPI Error Hierarchy",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1849,
-      "name": "Phase 2: Domain Module Consolidation & Facade Shims",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1848,
-      "name": "Phase 1: Composable Retrieval Pipeline DAG",
-      "status": 2,
-      "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
-    },
-    {
-      "id": 1847,
-      "name": "Architectural Modernization: Retrieval Pipeline DAG, Bounded Contexts, Typed Exceptions & Engine Consolidation",
       "status": 2,
       "priority": 0,
       "due_date": "2026-08-18 00:00:00.000 +00:00"

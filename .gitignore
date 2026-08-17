@@ -31,7 +31,23 @@ test_results.xml
 *.xml
 scratch*.py
 scratch/
-data/
+/data/
+!src/data/concordance_civil_pr_1930_2020.json
+
+# Local RAG Data Lake & Large Ingested Payloads (Kept on local disk, not in Git)
+vault/**/raw/
+vault/**/raw/*
+vault/crawler_downloads/*
+vault/snapshots/*
+vault/statutory_benefits/raw/
+vault/jira_qa/raw/
+vault/Eve Online/raw/
+vault/curam_spm/raw/
+vault/leyes_pr/raw/
+vault/uat_standards/raw/
+
+
+
 
 # OS and IDE files
 .DS_Store

@@ -64,7 +64,8 @@ def get_available_models(force_refresh: bool = False) -> Set[str]:
                         discovered.add(name.split(":")[0])
     except Exception as e:
         logger.debug(f"Ollama model probe notice: {e}")
-        # Default known models on standard installation
+
+    if not discovered:
         discovered = {"deepseek-r1:1.5b", "qwen2.5-coder:3b", "phi4-mini:latest", "qwen2.5:0.5b", "qwen2.5:7b", "nomic-embed-text:latest"}
 
     _cached_available_models = discovered

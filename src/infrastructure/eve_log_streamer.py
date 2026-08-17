@@ -126,22 +126,10 @@ class EveLogStreamer:
 
     def stream_events(self) -> List[Dict[str, Any]]:
         """
-        Dynamically retrieve stream events from live disk logs,
-        falling back to high-fidelity simulation if no active game logs exist.
+        Dynamically retrieve stream events from live disk logs.
+        Returns empty list if no active game logs exist.
         """
-        live_events = self.read_recent_events()
-        if live_events:
-            return live_events
-        return self.simulate_mock_stream()
-
-    def simulate_mock_stream(self) -> List[Dict[str, Any]]:
-        """Simulate real-time stream sample for automated test suites."""
-        sample_lines = [
-            "[ 2026.08.14 22:30:15 ] (mining) You have mined 4,800 units of Spodumain with Modulated Strip Miner II.",
-            "[ 2026.08.14 22:30:18 ] delve.intel > G-EURJ * 1x Loki 14.3 AU D-Scan",
-            "[ 2026.08.14 22:30:22 ] (combat) 850 to Thena Alexander - Heavy Missile - Hits"
-        ]
-        return [self.parse_log_line(l) for l in sample_lines]
+        return self.read_recent_events()
 
 
 def generate_log_streamer_markdown() -> List[str]:
@@ -150,7 +138,7 @@ def generate_log_streamer_markdown() -> List[str]:
     out_file = os.path.join(VAULT_SYS_DIR, "realtime_log_scraping_architecture.md")
 
     streamer = EveLogStreamer()
-    mock_events = streamer.simulate_mock_stream()
+    live_events = streamer.stream_events()
 
     doc_md = f"""---
 title: Autonomous EVE Online Real-Time Local Log Streamer & Threat Radar
@@ -168,13 +156,16 @@ This document establishes the architecture for non-invasive, 100% EULA-compliant
 ## ⚡ 1. Operational Event Stream Ledger
 
 """
-    for idx, ev in enumerate(mock_events, 1):
-        doc_md += f"### Event {idx}: `{ev['type']}`\n"
-        doc_md += f"- **Raw Telemetry**: `{ev['raw_line']}`\n"
-        for k, v in ev.items():
-            if k not in ["type", "raw_line"]:
-                doc_md += f"- **{k}**: `{v}`\n"
-        doc_md += "\n"
+    if live_events:
+        for idx, ev in enumerate(live_events, 1):
+            doc_md += f"### Event {idx}: `{ev['type']}`\n"
+            doc_md += f"- **Raw Telemetry**: `{ev['raw_line']}`\n"
+            for k, v in ev.items():
+                if k not in ["type", "raw_line"]:
+                    doc_md += f"- **{k}**: `{v}`\n"
+            doc_md += "\n"
+    else:
+        doc_md += "No active local game client logs detected. Operating in passive zero-lag listening mode.\n"
 
     with open(out_file, "w", encoding="utf-8") as f:
         f.write(doc_md)

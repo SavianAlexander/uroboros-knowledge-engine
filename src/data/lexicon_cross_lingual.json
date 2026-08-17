@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "version": "2026.1",
+    "description": "Standardized Multilingual Domain Lexicon for Zero-Shot Cross-Lingual Search & Alignment"
+  },
+  "translations": {
+    "financiero": "financial",
+    "contabilidad": "accounting",
+    "informe": "report",
+    "auditoria": "audit",
+    "estandar": "standard",
+    "norma": "rule",
+    "documento": "document",
+    "sistema": "system",
+    "financier": "financial",
+    "comptabilite": "accounting",
+    "rapport": "report",
+    "norme": "standard",
+    "finanz": "financial",
+    "bericht": "report",
+    "standard": "standard"
+  },
+  "concept_map": {
+    "database": ["base de datos", "datenbank", "base de données", "banco de dados", "db", "sqlite", "postgres"],
+    "base de datos": ["database", "datenbank", "base de données", "banco de dados"],
+    "datenbank": ["database", "base de datos", "base de données"],
+    "search": ["búsqueda", "suche", "recherche", "busca", "retrieval", "fts", "vector"],
+    "búsqueda": ["search", "suche", "recherche", "retrieval"],
+    "suche": ["search", "búsqueda", "recherche"],
+    "security": ["seguridad", "sicherheit", "sécurité", "segurança", "auth", "audit", "rbac"],
+    "seguridad": ["security", "sicherheit", "sécurité"],
+    "performance": ["rendimiento", "leistung", "desempenho", "latency", "throughput", "speed"],
+    "rendimiento": ["performance", "leistung", "speed", "throughput"],
+    "architecture": ["arquitectura", "architektur", "arquitetura", "system design", "clean architecture"],
+    "arquitectura": ["architecture", "architektur", "system design"],
+    "compliance": ["cumplimiento", "einhaltung", "conformité", "conformidade", "soc2", "gdpr", "hipaa"],
+    "cumplimiento": ["compliance", "soc2", "audit"],
+    "cache": ["memoria caché", "zwischenspeicher", "caching", "lru"],
+    "contract": ["contrato", "vertrag", "accord", "agreement"],
+    "contrato": ["contract", "agreement", "policy"]
+  }
+}

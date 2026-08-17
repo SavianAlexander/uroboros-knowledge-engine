@@ -40,14 +40,36 @@ def benchmark_vector_retrieval(
         except Exception:
             pass
 
-    # Ensure baseline benchmark vectors exist if store is still empty on fresh setup
+    # Compute real embeddings from document titles if store is empty
     if not store.vectors:
-        for i in range(20):
-            dummy_vec = [0.05 * (i + j) for j in range(dimension)]
-            title_nfc = unicodedata.normalize("NFC", f"Bench Doc {i}")
-            store.add_vector(f"bench_doc_{i}", dummy_vec, {"title": title_nfc})
+        from src.core.embeddings import generate_embedding
+        benchmark_titles = [
+            "Medicaid MAGI Statutory Policy Rules",
+            "Supplemental Nutrition Assistance Program (SNAP)",
+            "Temporary Assistance for Needy Families (TANF)",
+            "Child Care and Development Fund (CCDF)",
+            "Section 8 Housing Choice Voucher Program",
+            "Puerto Rico Internal Revenue Code Ley 1-2011",
+            "Puerto Rico Civil Code Ley 55-2020",
+            "Puerto Rico Labor Reform Bono de Navidad",
+            "ISO IEC IEEE 29119 Software Testing Specification",
+            "AICPA SOC 2 Type II Trust Services Criteria"
+        ]
+        for idx, title in enumerate(benchmark_titles):
+            title_nfc = unicodedata.normalize("NFC", title)
+            real_vec = generate_embedding(title_nfc)
+            if len(real_vec) > dimension:
+                real_vec = real_vec[:dimension]
+            elif len(real_vec) < dimension:
+                real_vec = real_vec + [0.0] * (dimension - len(real_vec))
+            store.add_vector(f"bench_doc_{idx}", real_vec, {"title": title_nfc})
 
-    query_vec = [0.1] * dimension
+    from src.core.embeddings import generate_embedding
+    query_vec = generate_embedding("Statutory Benefit Eligibility Benchmark Query")
+    if len(query_vec) > dimension:
+        query_vec = query_vec[:dimension]
+    elif len(query_vec) < dimension:
+        query_vec = query_vec + [0.0] * (dimension - len(query_vec))
     latencies_ms = []
 
     safe_queries = max(1, int(num_queries)) if num_queries is not None and isinstance(num_queries, (int, float)) else 10

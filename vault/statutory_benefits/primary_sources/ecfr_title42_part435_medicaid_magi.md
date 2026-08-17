@@ -6,7 +6,7 @@ cfr_title: 42
 cfr_part: 435
 domain_key: "medicaid_magi"
 official_ecfr_url: "https://www.ecfr.gov/current/title-42/part-435"
-harvested_at: "2026-08-17T16:59:28Z"
+harvested_at: "2026-08-17T17:15:23Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_LIVE_CRAWL"
 verification: "ECFR_LIVE_XML_API_VERIFIED"
 ---
