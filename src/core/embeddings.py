@@ -7,7 +7,7 @@ import os
 import math
 import functools
 from collections import OrderedDict
-from typing import List
+from typing import List, Tuple
 
 # Default to the local docker-compose Ollama instance
 OLLAMA_BASE_URL = os.environ.get("OPENAI_API_BASE", "http://host.docker.internal:11434/v1")
@@ -162,4 +162,15 @@ def batch_cosine_similarity(query_vec: List[float], matrix: List[List[float]]) -
     if not query_vec or not matrix:
         return []
     return [cosine_similarity(query_vec, candidate) for candidate in matrix]
+
+def filter_vectors_by_threshold(query_vec: List[float], matrix: List[List[float]], threshold: float = 0.75) -> List[Tuple[int, float]]:
+    """Filter and return (index, score) pairs matching or exceeding the similarity threshold."""
+    if not query_vec or not matrix:
+        return []
+    results = []
+    for idx, candidate in enumerate(matrix):
+        score = cosine_similarity(query_vec, candidate)
+        if score >= threshold:
+            results.append((idx, score))
+    return results
 

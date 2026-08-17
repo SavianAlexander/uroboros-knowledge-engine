@@ -12,6 +12,9 @@ from src.infrastructure.webhook_dispatcher import WebhookDispatcher
 
 logger = logging.getLogger(__name__)
 
+_RE_SCORE_THRESHOLD = re.compile(r'(?:min_score|score)\s*[:>=]+\s*([0-9\.]+)', re.IGNORECASE)
+_RE_NUMERIC = re.compile(r'^[0-9\.]+$')
+
 
 def _eval_json_condition(cond_obj: dict, payload: Dict[str, Any]) -> bool:
     for key, expected in cond_obj.items():
@@ -64,7 +67,7 @@ def evaluate_condition(
             import logging; logging.warning(f"Swallowed error in workflow_engine.py: {e}")
 
     # Score threshold evaluation for semantic_match
-    score_threshold_match = re.search(r'(?:min_score|score)\s*[:>=]+\s*([0-9\.]+)', pattern_str, re.IGNORECASE)
+    score_threshold_match = _RE_SCORE_THRESHOLD.search(pattern_str)
     if score_threshold_match:
         try:
             threshold = float(score_threshold_match.group(1))
@@ -75,7 +78,7 @@ def evaluate_condition(
             return False
 
     # Standard numeric pattern (e.g., "0.85") when event is semantic_match
-    if event_type == "semantic_match" and re.match(r'^[0-9\.]+$', pattern_str):
+    if event_type == "semantic_match" and _RE_NUMERIC.match(pattern_str):
         try:
             threshold = float(pattern_str)
             val_raw = payload.get("score", payload.get("confidence", 0.0))

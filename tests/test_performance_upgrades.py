@@ -209,5 +209,46 @@ class TestPerformanceUpgrades(unittest.TestCase):
         self.assertEqual(len(res["top_items"]), 2)
         self.assertEqual(res["top_items"][0]["name"], "Hulk")
 
+    def test_biquad_coeff_cache(self):
+        from src.core.voice_dsp import biquad_highpass, _BIQUAD_COEFF_CACHE
+        b1, a1 = biquad_highpass(80.0, q=0.707, fs=24000)
+        b2, a2 = biquad_highpass(80.0, q=0.707, fs=24000)
+        self.assertIs(b1, b2)
+        self.assertIs(a1, a2)
+
+    def test_workflow_engine_precompiled_regex(self):
+        from src.domain.workflow_engine import evaluate_condition
+        # Semantic match score evaluation
+        res_pass = evaluate_condition("min_score:0.80", "semantic_match", {"score": 0.92})
+        self.assertTrue(res_pass)
+
+        res_fail = evaluate_condition("score>=0.85", "semantic_match", {"score": 0.70})
+        self.assertFalse(res_fail)
+
+    def test_semantic_drift_jaccard_divergence(self):
+        from src.domain.semantic_drift_monitor import compute_jaccard_divergence
+        text1 = "exhumer mining barge hulk mackinaw ore laser"
+        text2 = "exhumer mining barge hulk mackinaw ore laser"
+        text3 = "dreadnought capital revelation siege gun armor"
+
+        div_identical = compute_jaccard_divergence(text1, text2)
+        self.assertEqual(div_identical, 0.0)
+
+        div_different = compute_jaccard_divergence(text1, text3)
+        self.assertEqual(div_different, 1.0)
+
+    def test_filter_vectors_by_threshold(self):
+        from src.core.embeddings import filter_vectors_by_threshold
+        q = [1.0, 0.0, 0.0]
+        matrix = [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.9, 0.1, 0.0]
+        ]
+        filtered = filter_vectors_by_threshold(q, matrix, threshold=0.8)
+        self.assertEqual(len(filtered), 2)
+        self.assertEqual(filtered[0][0], 0)
+        self.assertEqual(filtered[1][0], 2)
+
 if __name__ == "__main__":
     unittest.main()

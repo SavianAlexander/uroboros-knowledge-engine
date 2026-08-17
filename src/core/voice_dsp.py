@@ -24,10 +24,16 @@ if BASE_DIR not in sys.path:
 # ----------------------------------------------------------------------
 # 1. Biquad Parametric Filter Coefficient Generators
 # ----------------------------------------------------------------------
+_BIQUAD_COEFF_CACHE: Dict[Tuple, Tuple[Any, Any]] = {}
+
 def biquad_peaking(f0: float, gain_db: float, q: float = 1.0, fs: int = 24000) -> Tuple[Any, Any]:
-    """Generate peaking / bell EQ filter coefficients."""
+    """Generate peaking / bell EQ filter coefficients with O(1) cache."""
     if np is None:
         return [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]
+    key = ("pk", round(f0, 1), round(gain_db, 2), round(q, 3), fs)
+    if key in _BIQUAD_COEFF_CACHE:
+        return _BIQUAD_COEFF_CACHE[key]
+
     A = 10.0 ** (gain_db / 40.0)
     w0 = 2.0 * np.pi * min(f0, fs * 0.49) / fs
     alpha = np.sin(w0) / (2.0 * max(0.01, q))
@@ -39,13 +45,18 @@ def biquad_peaking(f0: float, gain_db: float, q: float = 1.0, fs: int = 24000) -
     a2 = 1.0 - alpha / A
     b = np.array([b0 / a0, b1 / a0, b2 / a0], dtype=np.float32)
     a = np.array([1.0, a1 / a0, a2 / a0], dtype=np.float32)
+    _BIQUAD_COEFF_CACHE[key] = (b, a)
     return b, a
 
 
 def biquad_highpass(f0: float, q: float = 0.707, fs: int = 24000) -> Tuple[Any, Any]:
-    """Generate 2nd-order highpass filter coefficients."""
+    """Generate 2nd-order highpass filter coefficients with O(1) cache."""
     if np is None:
         return [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]
+    key = ("hp", round(f0, 1), round(q, 3), fs)
+    if key in _BIQUAD_COEFF_CACHE:
+        return _BIQUAD_COEFF_CACHE[key]
+
     w0 = 2.0 * np.pi * min(f0, fs * 0.49) / fs
     alpha = np.sin(w0) / (2.0 * max(0.01, q))
     b0 = (1.0 + np.cos(w0)) / 2.0
@@ -56,13 +67,18 @@ def biquad_highpass(f0: float, q: float = 0.707, fs: int = 24000) -> Tuple[Any, 
     a2 = 1.0 - alpha
     b = np.array([b0 / a0, b1 / a0, b2 / a0], dtype=np.float32)
     a = np.array([1.0, a1 / a0, a2 / a0], dtype=np.float32)
+    _BIQUAD_COEFF_CACHE[key] = (b, a)
     return b, a
 
 
 def biquad_lowpass(f0: float, q: float = 0.707, fs: int = 24000) -> Tuple[Any, Any]:
-    """Generate 2nd-order lowpass filter coefficients."""
+    """Generate 2nd-order lowpass filter coefficients with O(1) cache."""
     if np is None:
         return [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]
+    key = ("lp", round(f0, 1), round(q, 3), fs)
+    if key in _BIQUAD_COEFF_CACHE:
+        return _BIQUAD_COEFF_CACHE[key]
+
     w0 = 2.0 * np.pi * min(f0, fs * 0.49) / fs
     alpha = np.sin(w0) / (2.0 * max(0.01, q))
     b0 = (1.0 - np.cos(w0)) / 2.0
@@ -73,6 +89,7 @@ def biquad_lowpass(f0: float, q: float = 0.707, fs: int = 24000) -> Tuple[Any, A
     a2 = 1.0 - alpha
     b = np.array([b0 / a0, b1 / a0, b2 / a0], dtype=np.float32)
     a = np.array([1.0, a1 / a0, a2 / a0], dtype=np.float32)
+    _BIQUAD_COEFF_CACHE[key] = (b, a)
     return b, a
 
 
