@@ -296,8 +296,8 @@ def print_upload_status():
     print(f"  Head Commit         : {sync_stat.get('head_commit')} ({sync_stat.get('head_commit_full')[:12]})")
     print(f"  Remote Origin       : {sync_stat.get('remote_url')}")
     print(f"  Upstream Target     : {sync_stat.get('upstream')}")
-    print(f"  Unpushed Commits    : {sync_stat.get('unpushed_count')}")
-    print(f"  Working Tree        : {'Clean' if sync_stat.get('is_clean') else f'Dirty ({sync_stat.get('uncommitted_count')} files changed)'}")
+    tree_status = "Clean" if sync_stat.get("is_clean") else f"Dirty ({sync_stat.get('uncommitted_count')} files changed)"
+    print(f"  Working Tree        : {tree_status}")
     print(f"  Remote CI Pipeline  : {str(sync_stat.get('ci_status', 'N/A')).upper()}")
     print("==========================================================================")
     return 0
