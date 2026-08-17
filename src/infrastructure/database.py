@@ -488,6 +488,7 @@ def init_db():
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_mime_type ON files(mime_type)')
 
             _ensure_column(cursor, "files", "user_id", "INTEGER DEFAULT 0")
+            _ensure_column(cursor, "files", "created_at", "REAL DEFAULT 0.0")
             _ensure_column(cursor, "files", "notes", "TEXT")
             _ensure_column(cursor, "files", "insights", "TEXT")
             _ensure_column(cursor, "files", "acl_permissions", "TEXT")

@@ -13,7 +13,7 @@ def audit_semantic_concept_drift(term: str = "") -> Dict[str, Any]:
     try:
         from src.infrastructure.database import get_db
 
-        query_sql = "SELECT id, filename, content, created_at FROM files"
+        query_sql = "SELECT id, filename, content, COALESCE(modified_at, 0.0) FROM files"
         params = []
         if term:
             query_sql += " WHERE content LIKE ? OR filename LIKE ?"

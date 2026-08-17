@@ -40,11 +40,11 @@ class DocumentSummarizerDaemon(threading.Thread):
     - OS IDLE thread priority: yields CPU/GPU slices immediately when user interacts with PC.
     - Single-document throttled dispatch: processes 1 document per cycle with cooling intervals.
     """
-    def __init__(self, boot_grace_seconds: int = 30, cooloff_seconds: int = 10, idle_interval_seconds: int = 60):
+    def __init__(self, boot_grace_seconds: int = 30, cooloff_seconds: int = 10, idle_interval_seconds: int = 60, interval_seconds: Optional[int] = None):
         super().__init__(daemon=True, name="CooperativeDocSummarizer")
         self.boot_grace_seconds = boot_grace_seconds
         self.cooloff_seconds = cooloff_seconds
-        self.idle_interval_seconds = idle_interval_seconds
+        self.idle_interval_seconds = interval_seconds if interval_seconds is not None else idle_interval_seconds
         self._running = True
 
     def stop(self):

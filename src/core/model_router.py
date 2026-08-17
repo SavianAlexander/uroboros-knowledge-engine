@@ -90,7 +90,7 @@ def route_prompt_model(
     Intelligent 5-Tier Neural Model Router.
     Analyzes prompt text, task category, and token density to select the optimal model.
     """
-    default_master = os.environ.get("OLLAMA_MODEL", "phi4-mini:latest")
+    default_master = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
     raw_prompt = str(prompt or "").strip()
     word_count = len(raw_prompt.split()) if raw_prompt else 0
 
@@ -141,7 +141,7 @@ def route_prompt_model(
         }
 
     # 5. MASTER RAG TIER (Standard conversational RAG, daily briefings, executive summaries)
-    chosen = _pick_best_available(["phi4-mini:latest", "qwen2.5:7b"], default_master)
+    chosen = _pick_best_available(["qwen2.5:7b", "phi4-mini:latest"], default_master)
     return {
         "model": chosen,
         "tier": "master_rag",

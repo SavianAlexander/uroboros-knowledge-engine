@@ -26,7 +26,7 @@ class TestExtendedPlatformValidation(unittest.TestCase):
         goal = "Build end-to-end multi-modal pipeline"
         res = decompose_goal_into_agent_swarm(goal)
         self.assertEqual(res["status"], "success")
-        self.assertEqual(res["total_worker_agents"], 3)
+        self.assertEqual(res["total_worker_agents"], 4)
 
     def test_03_code_doc_aligner(self):
         code = "def process(val_a, val_b):\n    '''Doc for val_a only.'''\n    pass"
