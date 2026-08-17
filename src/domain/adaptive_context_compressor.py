@@ -8,17 +8,32 @@ import re
 import unicodedata
 from typing import Dict, Any, List
 
+import hashlib
+import threading
+from collections import OrderedDict
+
 RE_SPLIT_SENTENCE = re.compile(r'(?<=[.!?])\s+')
 RE_NUMBERS = re.compile(r'\d+')
 RE_CODE_SYMBOLS = re.compile(r'[`_(){}\[\]=:]')
 RE_ENTITY = re.compile(r'^[A-Z][a-zA-Z0-9_-]*$')
 
+_COMPRESS_CACHE: OrderedDict[str, str] = OrderedDict()
+_COMPRESS_LOCK = threading.Lock()
+_MAX_COMPRESS_CACHE = 512
 
-@functools.lru_cache(maxsize=1024)
+
 def _compress_single_chunk(chunk: str) -> str:
+    if not chunk:
+        return ""
     norm_chunk = unicodedata.normalize("NFC", chunk)
     if '.' not in norm_chunk and '!' not in norm_chunk and '?' not in norm_chunk:
         return norm_chunk
+
+    digest = hashlib.sha256(norm_chunk.encode("utf-8", "ignore")).hexdigest()[:16]
+    with _COMPRESS_LOCK:
+        if digest in _COMPRESS_CACHE:
+            _COMPRESS_CACHE.move_to_end(digest)
+            return _COMPRESS_CACHE[digest]
 
     sentences = [s.strip() for s in RE_SPLIT_SENTENCE.split(norm_chunk) if s.strip()]
     if not sentences:
@@ -39,7 +54,12 @@ def _compress_single_chunk(chunk: str) -> str:
             keep_sentences.append(sent)
             continue
 
-    return " ".join(keep_sentences) if keep_sentences else chunk
+    result = " ".join(keep_sentences) if keep_sentences else chunk
+    with _COMPRESS_LOCK:
+        _COMPRESS_CACHE[digest] = result
+        if len(_COMPRESS_CACHE) > _MAX_COMPRESS_CACHE:
+            _COMPRESS_CACHE.popitem(last=False)
+    return result
 
 
 def compress_context_entropy(context_chunks: List[str], target_reduction: float = 0.4) -> Dict[str, Any]:

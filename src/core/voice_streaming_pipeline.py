@@ -28,7 +28,7 @@ class VoiceStreamingPipeliner:
     on clause 1 while subsequent tokens are generated concurrently.
     """
 
-    CLAUSE_DELIMITERS = re.compile(r'([.!?;\n]+)')
+    CLAUSE_DELIMITERS = re.compile(r'(?<!\d)([.!?;\n]+)(?!\d)')
 
     @classmethod
     def _speak_clause_if_valid(

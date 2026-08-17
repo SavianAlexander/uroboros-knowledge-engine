@@ -44,13 +44,13 @@ graph TD
 
 ---
 
-## The 21 Dedicated Modular CLI Bridges
+## The 22 Dedicated Modular CLI Bridges
 
 All bridges are zero-dependency standard library Python scripts located in `scripts/`:
 
 ```
 .agents/skills/neuro-copilot/scripts/
-├── neuro_cli.py              # Single Master CLI Entrypoint (act, graph_code, symbol, ask, context, doctor, run, ci, clean)
+├── neuro_cli.py              # Single Master CLI Entrypoint (act, graph_code, symbol, ask, context, doctor, run, ci, clean, spawn)
 ├── contract_bus.py           # 0. Inter-Bridge Contract Bus & Asynchronous Parallel DAG Orchestrator
 ├── react_agent_bridge.py     # 1. Autonomous ReAct Agent Loop (Thought -> Action -> Observe -> Self-Correct)
 ├── ast_graph_bridge.py       # 2. Deterministic Codebase AST Call Graph & Symbol Topology in SQLite
@@ -72,10 +72,12 @@ All bridges are zero-dependency standard library Python scripts located in `scri
 ├── browser_optimizer_bridge.py # 18. Browser Performance & Zero-Stutter Gaming Optimizer Bridge
 ├── curam_bridge.py           # 19. IBM Cúram SPM & CER Statutory Rules Decision Engine Bridge
 ├── jira_bridge.py            # 20. Jira Issue & QA Test Case Specification Bridge (Xray & Zephyr)
-└── uat_bridge.py             # 21. User Acceptance Testing (UAT) & Merkle Sign-Off Certification Bridge
+├── uat_bridge.py             # 21. User Acceptance Testing (UAT) & Merkle Sign-Off Certification Bridge
+└── subagent_bridge.py        # 22. Autonomous Hands-Free Subagent Delegation & Ledger Bridge
 ```
 
 ### Master CLI Entrypoint (`scripts/neuro_cli.py`)
+- `python .../neuro_cli.py spawn "<task>"` (or `subagent`): **Autonomous Hands-Free Subagent Delegation** - Spawns a cooperative zero-stutter background subagent to execute multi-bridge engineering passes end-to-end, updating Tududi and logging cryptographic ledgers to `docs/bridge_contracts/subagent_runs/`.
 - `python .../neuro_cli.py act "<task>"` (or `agent`): **Autonomous ReAct Agent Loop** - Multi-step reasoning loop (Thought $\rightarrow$ Action $\rightarrow$ Observe $\rightarrow$ Self-Correct) using local SLMs to solve complex codebase tasks.
 - `python .../neuro_cli.py symbol "<name>"` (or `callers`, `call_graph`): **AST Symbol Topology** - Sub-millisecond lookup of symbol definitions, line spans, upstream callers, and DB tables.
 - `python .../neuro_cli.py graph_code` (or `ast_build`): **AST Code Graph Builder** - Indexes 4,600+ symbols and 32,000+ call edges into SQLite in ~1.5s.
@@ -350,10 +352,43 @@ The Neuro Copilot is powered by a 5-tier dynamic model router minimizing VRAM to
 | **78** | `jira export` | `jira_bridge.py` | Export Standardized Test Specification to `docs/jira/` |
 | **79** | `uat run` | `uat_bridge.py` | Execute Automated User Acceptance Testing (UAT) Matrix |
 | **80** | `uat certificate` | `uat_bridge.py` | Generate Official SOC 2 Merkle Sign-Off Certificate |
+| **81** | `spawn "<task>"` | `subagent_bridge.py` | Spawn Autonomous Hands-Free Subagent Delegation Pipeline |
+| **82** | `subagent spec` | `subagent_bridge.py` | Output Canonical Subagent Configuration & System Prompt |
+| **83** | `subagent status` | `subagent_bridge.py` | Inspect Latest Autonomous Subagent Execution Run Ledger |
 
 ---
 
 ## Core Engineering Protocols & Invariants
+
+### 0. RAG-Grounded Assistant Protocol (HIGHEST PRIORITY)
+
+**This protocol overrides all other behaviors when the user asks a question, requests information, designs a system, calculates domain logic, or needs help understanding something.**
+
+The Neuro Knowledge Vault (`vault/` + `knowledge.db`) is the **empirical source of truth**. It contains 300+ raw, unredacted primary sources ingested directly from authoritative upstream APIs (eCFR.gov, FederalRegister.gov, CCP Games ESI/Dogma SDE, IBM Cúram CER DTDs, Puerto Rico OSLPR/Hacienda statutes, and ISO 29119 / SOC 2 schemas). The agent MUST treat this vault data as ground truth — never hallucinating or relying on vague model training memories.
+
+#### Mandatory Retrieve-Then-Act Flow
+
+When the user asks any question, gives a coding prompt, or seeks assistance:
+
+1. **RETRIEVE FIRST (Empirical Anchor)**:
+   - Query the vault via `python .agents/skills/neuro-copilot/scripts/neuro_cli.py context "<topic>"` or `neuro_search` MCP tool.
+   - If touching codebase architecture or functions, query AST topology via `python .agents/skills/neuro-copilot/scripts/neuro_cli.py symbol "<name>"`.
+2. **USE THE DATA TO SOLVE THE PROBLEM (Not Just Recite It)**:
+   - **Do not just dump raw text chunks at the user.**
+   - Parse the exact statutory formulas, thresholds, tables, or API endpoints from the retrieved primary source.
+   - **Apply the data directly** to solve the user's specific scenario (e.g. calculate eligibility, build the API client, fix the database query, write the test case).
+3. **CITE EXACT PRIMARY SOURCES**:
+   - Every factual assertion, threshold, dollar amount, or formula must include an exact clickable Markdown citation: `[source: <filename>](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/vault/<path>)`.
+4. **DOMAIN-SPECIFIC ACTION GUIDELINES**:
+   - **Statutory Benefits & Social Programs (Medicaid, SNAP, TANF, WIC)**: Always look up the 2026 Federal Poverty Level (FPL) from `federal_register_hhs_poverty_guidelines_2026.md` and statutory rules in `ecfr_title42_part435_medicaid_magi.md` / `ecfr_title7_part273_snap_nutrition.md`. Apply the exact 138% MAGI limit, 5% FPL disregard (§ 435.603(d)), and standard utility allowances.
+   - **Puerto Rico Legal Statutes**: Ground tax/labor logic directly in `leyes_pr/` (Ley 1-2011 IVU 10.5% + 1%, Ley 4-2017 Reforma Laboral).
+   - **EVE Tactical Intelligence & Physics**: Ground combat math in canonical Dogma equations (Effective EHP, capacitor recharge differential equations, tracking speed formula).
+   - **Code Architecture & Refactoring**: Inspect `know.py`, `src/infrastructure/database.py`, and AST call graphs before proposing architectural changes.
+5. **NEVER HALLUCINATE & ADMIT GAPS LOUDLY**:
+   - If the knowledge vault does not contain data on a requested statutory rule or API spec, state: *"The knowledge vault currently does not contain data on [X]. I need to run `python .agents/skills/neuro-copilot/scripts/neuro_cli.py sync_sources --domain [domain]` to harvest the primary source."*
+   - If supplementing with general programming knowledge, explicitly prefix: *"[Note: General stdlib implementation — not domain statutory rule]"*.
+
+---
 
 ### 1. Mandatory Cooperative Zero-Stutter Background Worker Standard
 All background daemons, automated summarizers, indexers, watchers, and periodic analyzers must adhere to cooperative zero-stutter engineering:
@@ -384,6 +419,13 @@ Every engineering workflow run, task completion, or autonomous agent pass operat
      ```
 3. **Zero Ambiguity Rule**: Never conclude an engineering task or submit a final briefing without explicitly stating whether the commit/release was pushed and verified on the remote GitHub repository.
 
+### 3. Autonomous Hands-Free Subagent Delegation Protocol
+When `/neuro-copilot` is activated or requested to execute an autonomous engineering workflow:
+1. **Immediate Background Subagent Spawning**: The primary agent must immediately invoke a dedicated subagent via `invoke_subagent` (`TypeName: "self"`, `Role: "Autonomous Neuro Co-Pilot"`, `Model: "inherit"`, `Workspace: "inherit"`).
+2. **Liberating the User & Primary Thread**: The primary agent outputs the clickable subagent conversation link (`[Autonomous Neuro Co-Pilot Subagent](conversation://<conversation-id>)`) and immediately yields control. This liberates the user and unblocks the primary conversational interface, allowing uninterrupted interactive dialogue or parallel tasking while the subagent runs in its isolated context.
+3. **End-to-End Autonomous Pipeline**: The subagent autonomously executes all required phases (AST symbol indexing, Tududi burndown & task tracking under Project #13, code generation/refactoring, parallel test matrix execution, remote CI monitoring, and git provenance auto-commit).
+4. **Reactive Wakeup & Audit Delivery**: Upon subagent completion, the parent agent automatically receives the completion message and presents the final executive summary along with the mandatory Tududi burndown card and GitHub Remote Upload & Provenance Visibility Card.
+
 ---
 
 ## References & Bridge Index
@@ -404,3 +446,4 @@ Every engineering workflow run, task completion, or autonomous agent pass operat
 - Process Hygiene Bridge: [`scripts/process_hygiene_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/process_hygiene_bridge.py)
 - Nomenclature Bridge: [`scripts/nomenclature_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/nomenclature_bridge.py)
 - File Allocation Bridge: [`scripts/file_allocation_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/file_allocation_bridge.py)
+- Subagent Delegation Bridge: [`scripts/subagent_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/scripts/subagent_bridge.py)

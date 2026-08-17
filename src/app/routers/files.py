@@ -86,21 +86,35 @@ def get_raw_file(path: str):
                 real_path = str(cand)
 
         ext = os.path.splitext(path)[1].lower()
-        if ext in ('.pdf', '.docx', '.xlsx', '.rtf') and db_content:
+        BINARY_EXTS = {'.wav', '.mp3', '.flac', '.ogg', '.m4a', '.png', '.jpg', '.jpeg', '.gif', '.zip', '.tar', '.gz', '.iso', '.bin', '.exe', '.dll', '.mp4', '.mkv', '.mov', '.webp'}
+        
+        if ext in BINARY_EXTS:
+            content = f"[Binary Media/Archive File: {os.path.basename(path)}]"
+            suggested_tags = []
+        elif ext in ('.pdf', '.docx', '.xlsx', '.rtf') and db_content:
             content = db_content
+            import re
+            from collections import Counter
+            words = [w.lower() for w in re.findall(r'\b[a-zA-Z]{3,}\b', content[:50000])]
+            freq = Counter(w for w in words if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'))
+            suggested_tags = [w for w, _ in freq.most_common(5)]
         elif real_path and os.path.exists(real_path) and not os.path.isdir(real_path):
             with open(real_path, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
+                content = f.read(500000)  # Safe bounded 500KB preview limit
+            import re
+            from collections import Counter
+            words = [w.lower() for w in re.findall(r'\b[a-zA-Z]{3,}\b', content[:50000])]
+            freq = Counter(w for w in words if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'))
+            suggested_tags = [w for w, _ in freq.most_common(5)]
         elif db_content:
             content = db_content
+            import re
+            from collections import Counter
+            words = [w.lower() for w in re.findall(r'\b[a-zA-Z]{3,}\b', content[:50000])]
+            freq = Counter(w for w in words if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'))
+            suggested_tags = [w for w, _ in freq.most_common(5)]
         else:
             raise HTTPException(status_code=404, detail="File not found")
-
-        import re
-        from collections import Counter
-        words = [w.lower() for w in re.findall(r'\b[a-zA-Z]{3,}\b', content)]
-        freq = Counter(w for w in words if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'))
-        suggested_tags = [w for w, _ in freq.most_common(5)]
 
         res = {
             "id": file_id or 1,

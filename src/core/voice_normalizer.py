@@ -137,6 +137,13 @@ LEXICAL_PHONETIC_REPLACEMENTS: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\bNode\.?js\b", re.IGNORECASE), "Node J-S"),
     (re.compile(r"\bReact\.?js\b", re.IGNORECASE), "React"),
     (re.compile(r"\bVue\.?js\b", re.IGNORECASE), "View J-S"),
+    (re.compile(r"\bHNSW\b", re.IGNORECASE), "H-N-S-W"),
+    (re.compile(r"\bColBERT\b", re.IGNORECASE), "Coal-bear"),
+    (re.compile(r"\bBM25\b", re.IGNORECASE), "B-M 25"),
+    (re.compile(r"\bDirectML\b", re.IGNORECASE), "Direct-M-L"),
+    (re.compile(r"\bWASAPI\b", re.IGNORECASE), "Wah-sah-pee"),
+    (re.compile(r"\b(\d+)\s*fps\b", re.IGNORECASE), r"\1 frames per second"),
+    (re.compile(r"\bFPS\b"), "F-P-S"),
 
     # Complexity Notation
     (re.compile(r"O\(1\)", re.IGNORECASE), "O of 1"),
@@ -430,12 +437,133 @@ class VoiceNormalizer:
     # ------------------------------------------------------------------
     # 5. Core Markdown Stripper & Structural Cleaner
     # ------------------------------------------------------------------
-    @staticmethod
-    def strip_markdown(text: str) -> str:
+    @classmethod
+    def strip_html_and_reasoning_tags(cls, text: str) -> str:
+        """Strip internal LLM thought tags (<think>, <thought>), HTML, and XML elements completely."""
+        if not text:
+            return ""
+        # 1. Remove reasoning / thought blocks entirely
+        text = re.sub(r"(?is)<think>[\s\S]*?</think>", "", text)
+        text = re.sub(r"(?is)<thought>[\s\S]*?</thought>", "", text)
+        text = re.sub(r"(?is)<details[\s\S]*?</details>", "", text)
+        text = re.sub(r"(?is)<style[\s\S]*?</style>", "", text)
+        text = re.sub(r"(?is)<script[\s\S]*?</script>", "", text)
+        # 2. Remove remaining HTML/XML tags (<div ...>, <span ...>, <summary>, </p>, etc.)
+        text = re.sub(r"<[^>]+>", " ", text)
+        # 3. Clean common HTML entities (&nbsp;, &amp;, &lt;, &gt;, &quot;)
+        text = re.sub(r"&nbsp;", " ", text)
+        text = re.sub(r"&amp;", " and ", text)
+        text = re.sub(r"&lt;", " less than ", text)
+        text = re.sub(r"&gt;", " greater than ", text)
+        text = re.sub(r"&quot;", '"', text)
+        text = re.sub(r"&#\d+;", " ", text)
+        return text
+
+    @classmethod
+    def normalize_file_paths_and_extensions(cls, text: str) -> str:
+        """
+        Normalize Windows/Unix file paths and pronounce file extensions naturally.
+        Prevents Kokoro from saying 'file dot txt' or reading full folder trees with backslashes.
+        """
+        if not text:
+            return ""
+
+        # 1. File URLs: file:///path/to/filename.ext -> filename.ext
+        text = re.sub(r"file:///[^\s\)\"']+/([^\s\)\"']+)", r"\1", text)
+
+        # 2. Windows absolute paths: C:\path\to\file.ext -> file.ext or C:/path/to/file.ext -> file.ext
+        text = re.sub(r"\b[a-zA-Z]:[/\\](?:[^/\\\r\n]+[/\\])+([a-zA-Z0-9_\-.]+\.[a-zA-Z0-9]+)\b", r"\1", text)
+        text = re.sub(r"\b[a-zA-Z]:[/\\](?:[^/\\\r\n]+[/\\])+([a-zA-Z0-9_\-]+)\b", r"\1", text)
+
+        # 3. Unix root paths: /var/log/file.ext -> file.ext
+        text = re.sub(r"(?:^|\s)/(?:[a-zA-Z0-9_\-]+/)+([a-zA-Z0-9_\-.]+\.[a-zA-Z0-9]+)\b", r" \1", text)
+
+        # 4. Specific File Extension Pronunciations (e.g. notes.txt -> notes text file)
+        ext_map = [
+            (r"\b([a-zA-Z0-9_\-]+)\.txt\b", r"\1 text file"),
+            (r"\b([a-zA-Z0-9_\-]+)\.jsonl?\b", r"\1 JSON file"),
+            (r"\b([a-zA-Z0-9_\-]+)\.md\b", r"\1 markdown file"),
+            (r"\b([a-zA-Z0-9_\-]+)\.py\b", r"\1 Python script"),
+            (r"\b([a-zA-Z0-9_\-]+)\.tsx?\b", r"\1 TypeScript file"),
+            (r"\b([a-zA-Z0-9_\-]+)\.jsx?\b", r"\1 JavaScript file"),
+            (r"\b([a-zA-Z0-9_\-]+)\.html?\b", r"\1 HTML document"),
+            (r"\b([a-zA-Z0-9_\-]+)\.css\b", r"\1 CSS stylesheet"),
+            (r"\b([a-zA-Z0-9_\-]+)\.csv\b", r"\1 C-S-V file"),
+            (r"\b([a-zA-Z0-9_\-]+)\.log\b", r"\1 log file"),
+            (r"\b([a-zA-Z0-9_\-]+)\.sql\b", r"\1 SQL file"),
+            (r"\b([a-zA-Z0-9_\-]+)\.ya?ml\b", r"\1 YAML config"),
+            (r"\b([a-zA-Z0-9_\-]+)\.(?:sh|bat|ps1|cmd)\b", r"\1 script"),
+            (r"\b([a-zA-Z0-9_\-]+)\.pdf\b", r"\1 P-D-F document"),
+            (r"\b([a-zA-Z0-9_\-]+)\.(?:wav|mp3|ogg|flac|aac)\b", r"\1 audio file"),
+            (r"\b([a-zA-Z0-9_\-]+)\.(?:zip|tar(?:\.gz)?|7z|rar)\b", r"\1 archive"),
+            (r"\b([a-zA-Z0-9_\-]+)\.(?:png|jpe?g|svg|webp|gif)\b", r"\1 image"),
+            (r"\b([a-zA-Z0-9_\-]+)\.onnx\b", r"\1 ONNX model"),
+            (r"\b([a-zA-Z0-9_\-]+)\.bin\b", r"\1 binary file"),
+            (r"\b\.txt\b", "text file"),
+            (r"\b\.json\b", "JSON file"),
+            (r"\b\.md\b", "markdown file"),
+            (r"\b\.py\b", "Python file"),
+        ]
+        for pattern, repl in ext_map:
+            text = re.sub(pattern, repl, text, flags=re.IGNORECASE)
+
+        return text
+
+    @classmethod
+    def normalize_unicode_and_glyphs(cls, text: str) -> str:
+        """Clean unicode math symbols, arrows, bullet glyphs, and emojis for flawless phonetic speech."""
+        if not text:
+            return ""
+
+        # Normalize unicode composition
+        import unicodedata
+        text = unicodedata.normalize("NFKC", text)
+
+        # Mathematical and relational symbols
+        math_map = [
+            (r"∑", "sum of "),
+            (r"√", "square root of "),
+            (r"≈", " approximately "),
+            (r"≠", " is not equal to "),
+            (r"≤", " is less than or equal to "),
+            (r"≥", " is greater than or equal to "),
+            (r"±", " plus or minus "),
+            (r"π", " pi "),
+            (r"∆", " delta "),
+            (r"µ", " micro "),
+            (r"°", " degrees "),
+            (r"∞", " infinity "),
+            (r"→|-->|==>", " leads to "),
+            (r"←|<--|<==", " comes from "),
+            (r"↔|<->|<=>", " corresponds to "),
+        ]
+        for pat, rep in math_map:
+            text = re.sub(pat, rep, text)
+
+        # Bullets and checklist marks
+        bullet_map = [
+            (r"[•►▪▫★◆○●▶▷]", ", "),
+            (r"[✓✔☑]", " completed, "),
+            (r"[❌☒✖]", " failed, "),
+            (r"⚠️\s*(?:Warning:?)?", " Warning: "),
+        ]
+        for pat, rep in bullet_map:
+            text = re.sub(pat, rep, text)
+
+        # Strip emojis and high-range symbols
+        text = re.sub(r"[\U00010000-\U0010ffff]", "", text)
+        text = re.sub(r"[\u2600-\u26ff\u2700-\u27bf]", "", text)
+
+        return text
+
+    @classmethod
+    def strip_markdown(cls, text: str) -> str:
         """Strip markdown syntax to prevent Kokoro from reading symbols."""
         if not text:
             return ""
-        # 1. Remove fenced code blocks completely
+        # 1. First strip HTML/XML tags and reasoning tags
+        text = cls.strip_html_and_reasoning_tags(text)
+        # 2. Remove fenced code blocks completely if any remain
         text = re.sub(r"```[\s\S]*?```", "", text)
         text = re.sub(r"~~~[\s\S]*?~~~", "", text)
         # Inline code `code` -> code
@@ -448,8 +576,10 @@ class VoiceNormalizer:
         text = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
         # Unordered bullets -> comma pause
         text = re.sub(r"^\s*[\-\*\+]\s+", "", text, flags=re.MULTILINE)
-        # Ordered list items
-        text = re.sub(r"^\s*\d+\.\s+", "", text, flags=re.MULTILINE)
+        # Ordered list items (1. 2. 3.) -> keep item number for speech
+        text = re.sub(r"^\s*(\d+)\.\s+", r"Item \1: ", text, flags=re.MULTILINE)
+        # Convert intra-word underscores in snake_case identifiers (e.g. test_voice_runner) to spaces
+        text = re.sub(r"(?<=\w)_(?=\w)", " ", text)
         # Bold/Italic asterisks/underscores
         text = re.sub(r"(\*\*|__|\*|_)", "", text)
         # Strikethrough
@@ -480,28 +610,33 @@ class VoiceNormalizer:
     def insert_natural_cadence(cls, text: str) -> str:
         """
         Inserts natural clause pauses (commas and periods) for fluid conversational breathing.
+        Preserves numbers (3.14), abbreviations (e.g., i.e.), version strings, and file names.
         """
         if not text:
             return ""
-        # Ensure punctuation has clean trailing spacing
-        text = re.sub(r"([.,!?;:])(?=[^\s\d])", r"\1 ", text)
-        # Insert micro-pause for semicolons
+
+        # Insert space after punctuation only when followed by a capital letter or word boundary (not decimals like 3.14)
+        text = re.sub(r"([.,!?;:])(?=[A-Za-z])", r"\1 ", text)
+
+        # Micro-pause for semicolons
         text = re.sub(r"\s*;\s*", ", ", text)
+
         # Replace dashes used as parentheticals with comma pause
         text = re.sub(r"\s+—\s+|\s+--\s+", ", ", text)
-        # Clean double periods / multiple commas / duplicate pauses
+
+        # Clean double punctuation / multiple commas / duplicate pauses
         text = re.sub(r"\s*,\s*,\s*", ", ", text)
         text = re.sub(r"\s*\.\s*\.\s*", ". ", text)
         text = re.sub(r",\s*\.", ".", text)
         text = re.sub(r"\.\s*,", ".", text)
         text = re.sub(r"\s+", " ", text).strip()
+
         if text and text[-1] not in ".!?":
             text += "."
         return text
 
     @classmethod
     def shape_gravitas_intent_cadence(cls, text: str) -> str:
-
         """
         Gravitas & Intent Prosody Shaper (Executive & Tactical Authority):
         - Strips frivolous filler words ('basically', 'you know', 'sort of', 'kind of').
@@ -534,48 +669,68 @@ class VoiceNormalizer:
     # ------------------------------------------------------------------
     # 6. Master Synthesis Pipeline
     # ------------------------------------------------------------------
-
     @classmethod
     def normalize_for_speech(cls, text: str, mode: str = "AUTO") -> str:
         """
         Master Pipeline:
-        1. Fenced Code Block Translation (convert code to spoken English)
-        2. Email & Memo Formatting (headers, quotes, disclaimers)
-        3. Table Narration (translating markdown tables to spoken briefs)
-        4. Daily Business & Financial Lexicon (currencies, dates, times, tasks)
-        5. Markdown Stripping
-        6. Phonetic Lexical Dictionary
-        7. Natural Cadence & Breath Injection
+        1. Strip internal thought tags (<think>, <thought>, <details>) and HTML/XML
+        2. Fenced Code Block Translation & Sanitization (summarize/translate without verbalizing 'txt')
+        3. Normalize file paths and natural file extensions (e.g. notes.txt -> notes text file)
+        4. Normalize unicode math symbols, bullets, glyphs, and emojis
+        5. Email & Memo Formatting (headers, quotes, disclaimers)
+        6. Table Narration (translating markdown tables to spoken briefs)
+        7. Daily Business & Financial Lexicon (currencies, dates, times, tasks)
+        8. Markdown Stripping
+        9. Phonetic Lexical Dictionary
+        10. Natural Cadence & Breath Injection
         """
         if not text:
             return ""
 
-        # Step 1: Translate fenced code blocks into spoken sentences
+        # Step 1: Strip reasoning thoughts (<think>...</think>), <details>, and HTML/XML
+        text = cls.strip_html_and_reasoning_tags(text)
+
+        # Step 2: Translate fenced code blocks or strip large blocks cleanly
         def code_block_handler(m):
-            lang = m.group(1) or ""
-            code_content = m.group(2)
+            lang = (m.group(1) or "").strip().lower()
+            code_content = m.group(2).strip()
+            # If plain text/txt block or log dump, summarize or read cleanly without 'Code snippet: xt'
+            if lang in ["txt", "text", "log", "output", "csv", "json", "yaml", "yml"] or not lang:
+                lines = [l.strip() for l in code_content.split("\n") if l.strip()]
+                if len(lines) > 4:
+                    return " Data output provided. "
+                return " " + " ".join(lines) + " "
             spoken = cls.convert_code_to_spoken_english(code_content, lang=lang)
-            return f" Code snippet: {spoken} "
+            return f" Code snippet: {spoken} " if spoken else ""
 
         text = re.sub(r"```(\w*)[ \t]*\r?\n([\s\S]*?)```", code_block_handler, text)
         text = re.sub(r"~~~(\w*)[ \t]*\r?\n([\s\S]*?)~~~", code_block_handler, text)
 
-        # Step 2: Email & Memo formatting
+        # Strip any PowerShell backtick-escaped code fence artifacts like standalone `xt` or `txt`
+        text = re.sub(r"(?:^|[\s`\.])xt(?::|\.|\b)", " ", text, flags=re.IGNORECASE)
+
+        # Step 3: File paths and file extensions
+        text = cls.normalize_file_paths_and_extensions(text)
+
+        # Step 4: Unicode math, glyphs, checkmarks, bullets
+        text = cls.normalize_unicode_and_glyphs(text)
+
+        # Step 5: Email & Memo formatting
         text = cls.normalize_email_text(text)
 
-        # Step 3: Markdown table translation
+        # Step 6: Markdown table translation
         text = cls.convert_tables_to_spoken_text(text)
 
-        # Step 4: Daily business, currencies, dates, times, checklists
+        # Step 7: Daily business, currencies, dates, times, checklists
         text = cls.normalize_daily_business_lexicon(text)
 
-        # Step 5: Clean remaining markdown formatting
+        # Step 8: Clean remaining markdown formatting
         clean = cls.strip_markdown(text)
 
-        # Step 6: Apply phonetic technical and acronym dictionary
+        # Step 9: Apply phonetic technical and acronym dictionary
         phonetic = cls.apply_phonetic_dictionary(clean)
 
-        # Step 7: Insert breathing cadence
+        # Step 10: Insert breathing cadence
         cadence = cls.insert_natural_cadence(phonetic)
 
         return cadence.strip()
@@ -621,3 +776,4 @@ class VoiceNormalizer:
             )
 
         return np.clip(samples, -1.0, 1.0).astype(np.float32)
+

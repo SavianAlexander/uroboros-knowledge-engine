@@ -50,8 +50,12 @@ def generate_cached_completion(prompt: str, max_tokens: int = 150) -> str:
         return f"[MOCK_CACHED_RESPONSE] Length: {len(prompt)}"
         
     llm = get_fallback_llm()
-    response = llm(prompt, max_tokens=max_tokens, echo=False, stream=False)
-    return response["choices"][0]["text"].strip()
+    try:
+        response = llm(prompt, max_tokens=max_tokens, echo=False, stream=False)
+        return response["choices"][0]["text"].strip()
+    except Exception as e:
+        logger.warning(f"Ollama inference error during completion: {e}")
+        return ""
 
 def coalesce_token_chunks(token_gen: Generator[str, None, None], frame_interval: float = 0.016) -> Generator[str, None, None]:
     """Coalesces raw token chunks into 60 FPS frame-timed batches for silky-smooth UI rendering."""

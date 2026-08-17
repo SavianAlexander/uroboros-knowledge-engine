@@ -39,9 +39,8 @@ class DoHResolver:
         if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', hostname):
             return hostname
 
+        # Secure SSL context with standard CA verification
         ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
 
         for endpoint in DOH_ENDPOINTS:
             try:

@@ -47,10 +47,6 @@ class VoicePodcastGenerator:
         turns format: [{"speaker": "Aura", "persona": "AURA_SHIP_AI", "text": "..."}, ...]
         """
         t0 = time.perf_counter()
-        copilot = VoiceBridge.get_copilot()
-        if not copilot or not copilot._local_kokoro_instance:
-            return {"status": "error", "message": "Kokoro engine not loaded"}
-
         combined_pcm_chunks = []
         pause_samples = int(cls.SAMPLE_RATE * pause_duration_s)
         pause_buffer = np.zeros(pause_samples, dtype=np.float32) if np is not None else b'\x00' * (pause_samples * 2)
@@ -61,13 +57,28 @@ class VoicePodcastGenerator:
             speaker = turn.get("speaker", f"Speaker {idx+1}")
             persona = turn.get("persona", "AURA_SHIP_AI")
             raw_text = turn.get("text", "")
-            voice_id = KOKORO_PERSONAS.get(persona, "bf_emma")
+            voice_id = KOKORO_PERSONAS.get(persona, persona)
             dsp_preset = "HOLOGRAPHIC_AURA" if "AURA" in persona else "COMMANDER_TACTICAL" if "COMMANDER" in persona else "EXECUTIVE_PRESENCE"
 
             clean_text = VoiceNormalizer.normalize_for_speech(raw_text)
 
-            # Synthesize float32 samples from Kokoro
-            samples, _ = copilot._local_kokoro_instance.create(clean_text, voice=voice_id, speed=1.0)
+            samples = None
+            copilot = VoiceBridge.get_copilot()
+            if copilot and getattr(copilot, "_local_kokoro_instance", None):
+                try:
+                    samples, _ = copilot._local_kokoro_instance.create(clean_text, voice=voice_id, speed=1.0)
+                except Exception:
+                    samples = None
+
+            if samples is None:
+                try:
+                    raw_wav = VoiceBridge.synthesize_bytes(clean_text, voice=voice_id, speed=1.0, dsp_preset=dsp_preset)
+                    if raw_wav and len(raw_wav) > 44 and np is not None:
+                        int16_data = np.frombuffer(raw_wav[44:], dtype=np.int16)
+                        samples = int16_data.astype(np.float32) / 32768.0
+                except Exception:
+                    samples = None
+
             if samples is not None and len(samples) > 0:
                 # Apply DSP preset mastering
                 mastered_samples = VoiceDSP.apply_dsp_preset(samples, preset=dsp_preset, fs=cls.SAMPLE_RATE)

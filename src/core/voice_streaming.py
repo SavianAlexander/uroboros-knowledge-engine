@@ -41,11 +41,15 @@ class StreamingAudioCache:
 
     @classmethod
     def _compute_key(cls, text: str, voice: str, speed: float, dsp_preset: str) -> str:
+        try:
+            norm = VoiceNormalizer.normalize_for_speech(text)
+        except Exception:
+            norm = text.strip()
         h = hashlib.sha256()
-        h.update(text.strip().encode("utf-8"))
-        h.update(voice.encode("utf-8"))
+        h.update(norm.strip().lower().encode("utf-8"))
+        h.update(voice.strip().encode("utf-8"))
         h.update(f"{speed:.2f}".encode("utf-8"))
-        h.update(dsp_preset.encode("utf-8"))
+        h.update(dsp_preset.strip().encode("utf-8"))
         return h.hexdigest()
 
     @classmethod
@@ -90,15 +94,16 @@ class StreamingNeuralSynthesizer:
     @classmethod
     def split_into_acoustic_clauses(cls, text: str) -> List[str]:
         """
-        Split narrative into natural acoustic breath groups / clauses (sentences, semicolons, major clauses).
+        Split narrative into natural acoustic sentence breath groups without cadence choking.
+        Preserves natural pitch inflections across clauses instead of forcing artificial periods.
         """
         if not text or not text.strip():
             return []
 
         cleaned = VoiceNormalizer.normalize_for_speech(text)
 
-        # Split by sentence terminators or newlines
-        raw_sentences = re.split(r"(?<=[.?!;:\n])\s+", cleaned)
+        # Split by sentence terminators (. ! ?) followed by whitespace, or double newlines
+        raw_sentences = re.split(r"(?<=[.!?])\s+|\n{2,}", cleaned)
         clauses = []
 
         for sent in raw_sentences:
@@ -106,10 +111,10 @@ class StreamingNeuralSynthesizer:
             if not sent:
                 continue
 
-            # If sentence is excessively long (>22 words), split at comma boundaries
+            # If a single sentence is exceptionally long (>40 words), break at semicolons or long dashes
             words = sent.split()
-            if len(words) > 22 and "," in sent:
-                sub_parts = [p.strip() for p in sent.split(",") if p.strip()]
+            if len(words) > 40 and (";" in sent or "—" in sent or " -- " in sent):
+                sub_parts = [p.strip() for p in re.split(r"[;—]|\s+--\s+", sent) if p.strip()]
                 for p in sub_parts:
                     if p:
                         clauses.append(p if p.endswith((".", "!", "?")) else p + ".")

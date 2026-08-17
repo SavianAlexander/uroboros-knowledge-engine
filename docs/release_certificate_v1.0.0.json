@@ -1,8 +1,8 @@
 {
   "certificate_type": "SOC 2 Type II Cryptographic Provenance Attestation",
   "version": "1.0.0",
-  "merkle_root_sha256": "37aa72a91f385c6bb396950d1e91474ea274304ba5fabfa40459ac0646c08969",
-  "timestamp_utc": "2026-08-17T17:11:13.208466+00:00",
+  "merkle_root_sha256": "9d6db6a3cae261a41cdf538393f2302c4d063f33ccac8f9423398585805a957a",
+  "timestamp_utc": "2026-08-17T19:59:23.672484+00:00",
   "issuer": "Uroboros Knowledge Engine Suite",
   "verified_domains": [
     "Neuro ColBERT Hybrid Vector Vault",
@@ -11,6 +11,6 @@
     "Adversarial Security & Fuzzing Audit (100% Trust)"
   ],
   "domain_tests_passed": 394,
-  "total_files_audited": 19816,
+  "total_files_audited": 19858,
   "soc2_trust_status": "COMPLIANT_AND_CERTIFIED"
 }

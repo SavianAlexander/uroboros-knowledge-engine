@@ -51,12 +51,27 @@ def get_fleet_radar_telemetry(repo_root: str = PROJECT_ROOT) -> Dict[str, Any]:
             if hours_left < 24.0:
                 expiring_queues.append(f"{p.get('name')}: {hours_left:.1f}h left in queue")
 
-        # Mock / calculate PI status
+        # Calculate empirical PI colony capacity from pilot skills
+        audit_file = os.path.join(repo_root, "vault", "Eve Online", "Fleet", "empirical_esi_audit.json")
+        total_colonies = 0
+        if os.path.exists(audit_file):
+            try:
+                with open(audit_file, "r", encoding="utf-8") as af:
+                    fdata = json.load(af)
+                    for pname, pdata in fdata.items():
+                        skills = pdata.get("skills", {})
+                        ipc_level = skills.get("Interplanetary Consolidation", {}).get("level", 0)
+                        total_colonies += (1 + ipc_level)
+            except Exception:
+                total_colonies = len(pilots) * 5 if pilots else 40
+        else:
+            total_colonies = len(pilots) * 5 if pilots else 40
+
         pi_status = {
-            "colonies_tracked": len(pilots) * 5 if pilots else 40,
-            "extraction_cycles_active": len(pilots) * 4 if pilots else 32,
-            "hopper_saturation_avg": "42%",
-            "status": "NOMINAL"
+            "colonies_tracked": total_colonies,
+            "extraction_cycles_active": total_colonies,
+            "hopper_saturation_avg": "NOMINAL",
+            "status": "OPERATIONAL"
         }
 
         alerts = []
@@ -76,14 +91,14 @@ def get_fleet_radar_telemetry(repo_root: str = PROJECT_ROOT) -> Dict[str, Any]:
         }
     except Exception as e:
         return {
-            "status": "WARNING",
-            "fleet_status": "cached_fallback",
-            "total_pilots": 8,
-            "fleet_total_sp": 142850000,
-            "liquid_isk": 12500000000.0,
-            "pi_telemetry": {"colonies_tracked": 40, "status": "NOMINAL"},
-            "alerts": [],
-            "notice": str(e)
+            "status": "ERROR",
+            "fleet_status": "offline",
+            "total_pilots": 0,
+            "fleet_total_sp": 0,
+            "liquid_isk": 0.0,
+            "pi_telemetry": {"colonies_tracked": 0, "status": "OFFLINE"},
+            "alerts": [f"Fleet telemetry unavailable: {str(e)}"],
+            "error": str(e)
         }
 
 

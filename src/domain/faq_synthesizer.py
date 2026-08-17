@@ -36,7 +36,7 @@ def _fetch_grounded_answer(query: str, db_path: Optional[str] = None) -> str:
         except Exception:
             pass
 
-    return f"Synthesized answer for '{query}' grounded in verified local vault records."
+    return f"No verified vault records found for '{query}'."
 
 
 def synthesize_faq_from_queries(

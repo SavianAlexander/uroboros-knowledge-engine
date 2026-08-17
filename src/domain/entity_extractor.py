@@ -28,10 +28,14 @@ RE_PROPER_NOUN = re.compile(r'\b[A-Z][a-zA-Z0-9_-]{2,}\b')
 RE_WORD = re.compile(r'\b[a-zA-Z0-9_-]{3,}\b')
 
 
-from functools import lru_cache
+import hashlib
+from collections import OrderedDict
 
-@lru_cache(maxsize=1024)
-def _extract_entities_cached(text: str, k: int) -> Tuple[Tuple[Tuple[str, int], ...], Tuple[Tuple[str, int, float], ...], int, int]:
+MAX_CACHE_SIZE = 512
+_entity_cache: OrderedDict = OrderedDict()
+
+
+def _extract_entities_impl(text: str, k: int) -> Tuple[Tuple[Tuple[str, int], ...], Tuple[Tuple[str, int, float], ...], int, int]:
     words = RE_WORD.findall(text)
     total_words = len(words)
 
@@ -55,7 +59,7 @@ def _extract_entities_cached(text: str, k: int) -> Tuple[Tuple[Tuple[str, int], 
 def extract_entities_from_text(text: str, top_k: int = 10) -> Dict[str, Any]:
     """
     Extracts key domain entities, technical terms, and TF-IDF word frequencies.
-    Zero-dependency stdlib implementation.
+    Zero-dependency stdlib implementation with memory-safe compact digest caching.
     """
     if not text or not isinstance(text, str) or not text.strip():
         return {
@@ -66,7 +70,17 @@ def extract_entities_from_text(text: str, top_k: int = 10) -> Dict[str, Any]:
         }
 
     k = max(1, int(top_k)) if top_k is not None and isinstance(top_k, (int, float)) else 10
-    top_entities, top_keywords, total_words, unique_count = _extract_entities_cached(text, k)
+    
+    # Compute compact 16-character cache key
+    cache_key = f"{hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]}_{k}"
+    if cache_key in _entity_cache:
+        _entity_cache.move_to_end(cache_key)
+        top_entities, top_keywords, total_words, unique_count = _entity_cache[cache_key]
+    else:
+        top_entities, top_keywords, total_words, unique_count = _extract_entities_impl(text, k)
+        if len(_entity_cache) >= MAX_CACHE_SIZE:
+            _entity_cache.popitem(last=False)
+        _entity_cache[cache_key] = (top_entities, top_keywords, total_words, unique_count)
 
     return {
         "entities": [{"entity": term, "count": count} for term, count in top_entities],

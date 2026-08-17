@@ -590,7 +590,8 @@ def _handle_speak(args: Dict[str, Any]) -> Dict[str, Any]:
         priority=priority,
         voice=voice,
         dsp_preset=dsp_preset,
-        sfx_intro=sfx_intro if sfx_intro else None
+        sfx_intro=sfx_intro if sfx_intro else None,
+        blocking=blocking
     )
     res["original_text"] = text
     res["normalized_text"] = clean_text
@@ -618,6 +619,7 @@ def _handle_announce_task(args: Dict[str, Any]) -> Dict[str, Any]:
 
     intro_sfx = "target_lock" if state == "COMPLETED" else "shield_critical" if state == "FAILED" else ""
     priority = "CRITICAL" if state == "FAILED" else "HIGH" if state == "STARTED" else "NORMAL"
+    blocking = bool(args.get("blocking", False))
 
     state_phrasing = {
         "STARTED": f"Started working on {task_name}.",
@@ -635,7 +637,8 @@ def _handle_announce_task(args: Dict[str, Any]) -> Dict[str, Any]:
         domain="DEV_OPS",
         priority=priority,
         voice=voice,
-        sfx_intro=intro_sfx if intro_sfx else None
+        sfx_intro=intro_sfx if intro_sfx else None,
+        blocking=blocking
     )
     res["task_name"] = task_name
     res["state"] = state

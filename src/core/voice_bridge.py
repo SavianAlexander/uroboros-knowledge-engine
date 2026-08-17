@@ -22,10 +22,10 @@ except Exception:
     KokoroVoiceCopilot = None
 
 KOKORO_PERSONAS = {
-    "CORTANA_PRIME": "CORTANA_PRIME",
+    "CORTANA_PRIME": "af_sky",
     "AURA_SHIP_AI": "bf_emma",
-    "EXECUTIVE_ADVISOR": "EXECUTIVE_ADVISOR",
-    "TACTICAL_OFFICER": "TACTICAL_OFFICER",
+    "EXECUTIVE_ADVISOR": "af_heart",
+    "TACTICAL_OFFICER": "af_sarah",
     "TACTICAL_ADVISOR": "af_sarah",
     "FLEET_COMMANDER": "am_adam",
     "INDUSTRY_OVERSEER": "bm_george",
@@ -45,25 +45,25 @@ KOKORO_PERSONAS = {
 
 DOMAIN_PROFILES = {
     "CORTANA_AI": {
-        "voice": "CORTANA_PRIME",
+        "voice": "af_sky",
         "speed": 1.02,
         "dsp_preset": "STUDIO_MASTER",
         "description": "Cortana-Grade Neural AI Assistant & Master Broadcaster"
     },
     "DEV_OPS": {
-        "voice": "TACTICAL_OFFICER",
+        "voice": "af_sarah",
         "speed": 1.05,
         "dsp_preset": "STUDIO_MASTER",
         "description": "Concise Developer & CI/CD Terminal Broadcaster"
     },
     "DAILY_BRIEF": {
-        "voice": "EXECUTIVE_ADVISOR",
+        "voice": "af_heart",
         "speed": 1.00,
         "dsp_preset": "STUDIO_MASTER",
         "description": "Warm, engaging Task Master & Tududi Productivity Speaker"
     },
     "EXECUTIVE_ASSISTANT": {
-        "voice": "CORTANA_PRIME",
+        "voice": "af_sky",
         "speed": 1.00,
         "dsp_preset": "STUDIO_MASTER",
         "description": "Authoritative, crystalline Executive Intelligence Voice"
@@ -75,13 +75,13 @@ DOMAIN_PROFILES = {
         "description": "Military-grade Tactical Radar & Combat Alert Voice"
     },
     "CALL_INTERCOM": {
-        "voice": "CORTANA_PRIME",
+        "voice": "af_sky",
         "speed": 1.05,
         "dsp_preset": "STUDIO_MASTER",
         "description": "Real-Time Full-Duplex Phone Call & Radio Intercom Voice"
     },
     "GENERAL": {
-        "voice": "CORTANA_PRIME",
+        "voice": "af_sky",
         "speed": 1.00,
         "dsp_preset": "STUDIO_MASTER",
         "description": "Universal Multi-Purpose Neural Synthesizer"
@@ -110,7 +110,8 @@ class VoiceBridge:
         priority: str = "NORMAL",
         voice: Optional[str] = None,
         dsp_preset: Optional[str] = None,
-        sfx_intro: Optional[str] = None
+        sfx_intro: Optional[str] = None,
+        blocking: bool = False
     ) -> Dict[str, Any]:
         """
         Universal 1-line speech dispatcher for any agent, script, or workflow.
@@ -119,26 +120,18 @@ class VoiceBridge:
         copilot = cls.get_copilot()
         profile = DOMAIN_PROFILES.get(domain.upper(), DOMAIN_PROFILES["GENERAL"])
 
-        selected_voice = voice or profile["voice"]
+        raw_voice = voice or profile["voice"]
+        selected_voice = KOKORO_PERSONAS.get(raw_voice, raw_voice)
         selected_dsp = dsp_preset or profile["dsp_preset"]
-
-        # If sfx_intro requested, play SFX first
-        if sfx_intro and copilot:
-            try:
-                from src.infrastructure.eve_voice_soundboard import SFX_LIBRARY, render_sfx_to_wav_bytes
-                if sfx_intro in SFX_LIBRARY:
-                    sfx_bytes = render_sfx_to_wav_bytes(sfx_intro)
-                    if sfx_bytes:
-                        copilot.audio_queue.play_raw_pcm_wav(sfx_bytes, priority_level=1)
-            except Exception:
-                pass
 
         if copilot:
             rec = copilot.speak(
                 text=text,
                 priority=priority,
                 voice=selected_voice,
-                dsp_preset=selected_dsp
+                dsp_preset=selected_dsp,
+                sfx_intro=sfx_intro,
+                blocking=blocking
             )
         else:
             rec = {

@@ -273,8 +273,15 @@ def parse_pptx_presentation(filepath: str) -> str:
             slide_names = [n for n in namelist if re.match(r'ppt/slides/slide\d+\.xml', n)]
             # Sort slides numerically: slide1.xml, slide2.xml, slide10.xml
             slide_names.sort(key=lambda x: int(re.search(r'\d+', x).group()))
+            slide_names = slide_names[:500]  # Cap at 500 slides max
+
+            MAX_SLIDE_XML_BYTES = 25 * 1024 * 1024  # 25MB zip-bomb limit per slide
 
             for idx, sname in enumerate(slide_names, 1):
+                info = z.getinfo(sname)
+                if info.file_size > MAX_SLIDE_XML_BYTES:
+                    continue  # Skip decompression bomb payload
+
                 raw_xml = z.read(sname)
                 root = ET.fromstring(raw_xml)
                 
@@ -296,16 +303,18 @@ def parse_pptx_presentation(filepath: str) -> str:
                 # 2. Check for speaker notes in notesSlides
                 notes_name = f"ppt/notesSlides/notesSlide{idx}.xml"
                 if notes_name in namelist_set:
-                    notes_xml = z.read(notes_name)
-                    notes_root = ET.fromstring(notes_xml)
-                    notes_paras = []
-                    for np in notes_root.iter('{http://schemas.openxmlformats.org/drawingml/2006/main}p'):
-                        np_texts = [t.text for t in np.iter('{http://schemas.openxmlformats.org/drawingml/2006/main}t') if t.text]
-                        nline = "".join(np_texts).strip()
-                        if nline and not nline.isdigit() and nline != slide_title:
-                            notes_paras.append(nline)
-                    if notes_paras:
-                        slide_block.append(f"\n> **Speaker Notes**: {' '.join(notes_paras)}")
+                    notes_info = z.getinfo(notes_name)
+                    if notes_info.file_size <= MAX_SLIDE_XML_BYTES:
+                        notes_xml = z.read(notes_name)
+                        notes_root = ET.fromstring(notes_xml)
+                        notes_paras = []
+                        for np in notes_root.iter('{http://schemas.openxmlformats.org/drawingml/2006/main}p'):
+                            np_texts = [t.text for t in np.iter('{http://schemas.openxmlformats.org/drawingml/2006/main}t') if t.text]
+                            nline = "".join(np_texts).strip()
+                            if nline and not nline.isdigit() and nline != slide_title:
+                                notes_paras.append(nline)
+                        if notes_paras:
+                            slide_block.append(f"\n> **Speaker Notes**: {' '.join(notes_paras)}")
 
                 slides_text.append("\n".join(slide_block))
 
@@ -340,6 +349,8 @@ def parse_tabular_csv(filepath: str, max_preview_rows: int = 30) -> str:
             for r in reader:
                 if r:
                     rows.append(r)
+                    if len(rows) >= 500:  # Safe memory cap on large CSV ingestion
+                        break
 
         if not rows:
             return "[Empty Tabular Dataset]"
@@ -496,26 +507,17 @@ def extract_content(filepath: str, suffix: str) -> Tuple[str, List[Dict[str, Any
             except Exception as e:
                 return f"[XLSX Parsing Error: {str(e)}]", []
         elif suffix in ['.png', '.jpg', '.jpeg', '.bmp']:
-            return extract_ocr_text_structured(filepath)
+            try:
+                return extract_ocr_text_structured(filepath)
+            except Exception as e:
+                return f"[Image Metadata: {os.path.basename(filepath)}]", []
         elif suffix in ['.mp3', '.wav', '.m4a', '.flac', '.ogg']:
             meta = parse_audio_metadata(filepath)
             dur = meta.get("duration", 0.0)
             ch = meta.get("channels", 0)
             sr = meta.get("samplerate", 0)
-            transcript = ""
-            if dur > 0 and sr > 0:
-                try:
-                    # ponytail: safe import guard for whisper/torch DLL loads on valid audio headers
-                    import whisper
-                    model = whisper.load_model("tiny")
-                    res = model.transcribe(filepath)
-                    transcript = res.get("text", "").strip()
-                except (Exception, BaseException, OSError, AttributeError):
-                    pass
-            
-            header = f"[Audio Voice Memo | Duration: {dur}s | Channels: {ch} | SampleRate: {sr} Hz]"
-            content_str = f"{header}\n{transcript}" if transcript else header
-            return content_str, []
+            header = f"[Audio Voice Memo | File: {os.path.basename(filepath)} | Duration: {dur}s | Channels: {ch} | SampleRate: {sr} Hz]"
+            return header, []
         elif suffix == '.zip':
             import zipfile
             with zipfile.ZipFile(filepath, 'r') as z:

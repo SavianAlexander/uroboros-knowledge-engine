@@ -7,20 +7,38 @@ import unicodedata
 import re
 import hashlib
 from collections import defaultdict
-import functools
+import threading
+from collections import OrderedDict, defaultdict
 from typing import Dict, Any, List, Set, Tuple
 
+_SHINGLE_CACHE: OrderedDict[str, Tuple[str, ...]] = OrderedDict()
+_SHINGLE_LOCK = threading.Lock()
+_MAX_SHINGLE_CACHE = 512
 
-@functools.lru_cache(maxsize=2048)
+
 def _compute_shingles_tuple(text: str, k: int = 3) -> Tuple[str, ...]:
     if not text or not isinstance(text, (str, bytes)):
         return ()
     raw_str = text.decode("utf-8", errors="ignore") if isinstance(text, bytes) else str(text)
     norm_text = unicodedata.normalize("NFC", raw_str)
+    digest = hashlib.sha256(norm_text.encode("utf-8", "ignore")).hexdigest()[:16]
+
+    with _SHINGLE_LOCK:
+        if digest in _SHINGLE_CACHE:
+            _SHINGLE_CACHE.move_to_end(digest)
+            return _SHINGLE_CACHE[digest]
+
     words = re.findall(r'\b[\w-]+\b', norm_text.lower())
     if len(words) < k:
-        return (" ".join(words),) if words else ()
-    return tuple(" ".join(words[i:i+k]) for i in range(len(words) - k + 1))
+        res = (" ".join(words),) if words else ()
+    else:
+        res = tuple(" ".join(words[i:i+k]) for i in range(len(words) - k + 1))
+
+    with _SHINGLE_LOCK:
+        _SHINGLE_CACHE[digest] = res
+        if len(_SHINGLE_CACHE) > _MAX_SHINGLE_CACHE:
+            _SHINGLE_CACHE.popitem(last=False)
+    return res
 
 
 def compute_shingles(text: str, k: int = 3) -> Set[str]:
@@ -40,7 +58,7 @@ def jaccard_similarity(set_a: Set[str], set_b: Set[str]) -> float:
 def detect_near_duplicates(similarity_threshold: float = 0.80) -> Dict[str, Any]:
     """
     Scans vault files in database and identifies near-duplicate document pairs.
-    Zero-dependency stdlib implementation.
+    Uses inverted shingle index for O(N * K) candidate pruning instead of O(N^2) pairwise comparisons.
     """
     try:
         from src.infrastructure.database import get_db, init_db
@@ -48,41 +66,51 @@ def detect_near_duplicates(similarity_threshold: float = 0.80) -> Dict[str, Any]
         init_db()
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL LIMIT 100")
+            cursor.execute("SELECT id, filename, filepath, content FROM files WHERE content IS NOT NULL LIMIT 250")
             rows = cursor.fetchall()
 
         shingles_by_file = {}
+        inverted_index: Dict[str, List[int]] = defaultdict(list)
+
         for r in rows:
             content = r[3] or ""
             if len(content.strip()) > 30:
-                shingles_by_file[r[0]] = {
-                    "id": r[0],
+                f_id = r[0]
+                sh = compute_shingles(content, k=3)
+                shingles_by_file[f_id] = {
+                    "id": f_id,
                     "filename": r[1],
                     "filepath": r[2],
-                    "shingles": compute_shingles(content, k=3)
+                    "shingles": sh
                 }
+                for s in sh:
+                    inverted_index[s].append(f_id)
 
-        file_ids = list(shingles_by_file.keys())
+        # Inverted index candidate generation: only compare files sharing >= 1 shingle
+        candidate_pairs: Set[Tuple[int, int]] = set()
+        for f_list in inverted_index.values():
+            if len(f_list) > 1:
+                for i in range(len(f_list)):
+                    for j in range(i + 1, len(f_list)):
+                        id1, id2 = f_list[i], f_list[j]
+                        if id1 != id2:
+                            candidate_pairs.add((min(id1, id2), max(id1, id2)))
+
         duplicate_pairs = []
+        for id_a, id_b in candidate_pairs:
+            shingles_a = shingles_by_file[id_a]["shingles"]
+            shingles_b = shingles_by_file[id_b]["shingles"]
 
-        for i in range(len(file_ids)):
-            for j in range(i + 1, len(file_ids)):
-                id_a = file_ids[i]
-                id_b = file_ids[j]
-
-                shingles_a = shingles_by_file[id_a]["shingles"]
-                shingles_b = shingles_by_file[id_b]["shingles"]
-
-                sim = jaccard_similarity(shingles_a, shingles_b)
-                if sim >= similarity_threshold:
-                    duplicate_pairs.append({
-                        "file_a": shingles_by_file[id_a]["filename"],
-                        "file_b": shingles_by_file[id_b]["filename"],
-                        "path_a": shingles_by_file[id_a]["filepath"],
-                        "path_b": shingles_by_file[id_b]["filepath"],
-                        "jaccard_similarity": sim,
-                        "similarity_pct": round(sim * 100, 2)
-                    })
+            sim = jaccard_similarity(shingles_a, shingles_b)
+            if sim >= similarity_threshold:
+                duplicate_pairs.append({
+                    "file_a": shingles_by_file[id_a]["filename"],
+                    "file_b": shingles_by_file[id_b]["filename"],
+                    "path_a": shingles_by_file[id_a]["filepath"],
+                    "path_b": shingles_by_file[id_b]["filepath"],
+                    "jaccard_similarity": sim,
+                    "similarity_pct": round(sim * 100, 2)
+                })
 
         duplicate_pairs.sort(key=lambda x: x["jaccard_similarity"], reverse=True)
 
@@ -155,7 +183,6 @@ def detect_near_duplicate_chunks(similarity_threshold: float = 0.80, limit: int 
 
             if len(cluster) > 1:
                 claimed_ids.add(c_a["chunk_id"])
-                # Estimate token savings (4 chars ~ 1 token)
                 saved_chars = sum(c["char_length"] for c in cluster[1:])
                 saved_tokens = max(1, saved_chars // 4)
                 total_token_savings += saved_tokens

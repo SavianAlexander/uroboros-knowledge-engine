@@ -80,11 +80,11 @@ class InstantAudioStreamer:
             import sounddevice as sd
             devices = sd.query_devices()
             selected = None
-            # Prioritize connected headset keywords
+            # Prioritize connected headset / headphones if present
             for idx, dev in enumerate(devices):
                 if dev.get("max_output_channels", 0) > 0:
                     name = dev.get("name", "").lower()
-                    if "onn" in name or "headset" in name or "gaming" in name:
+                    if any(kw in name for kw in ["headset", "headphones", "gaming audio", "earphones", "airpods"]):
                         selected = idx
                         break
             if selected is None:
@@ -97,6 +97,43 @@ class InstantAudioStreamer:
             cls._cached_device_idx = None
             cls._device_last_checked = now
             return None
+
+    def _get_persistent_stream(self, sample_rate: int = SAMPLE_RATE_HZ):
+        """Acquire or initialize persistent OutputStream with zero device reopen overhead."""
+        import sounddevice as sd
+        target_dev = self._get_active_output_device(force_refresh=False)
+        if self._stream is not None:
+            if not self._stream.closed and self._stream.active and getattr(self, "_stream_device", None) == target_dev:
+                return self._stream
+            try:
+                self._stream.close()
+            except Exception:
+                pass
+            self._stream = None
+
+        try:
+            self._stream = sd.OutputStream(
+                samplerate=sample_rate,
+                channels=CHANNELS,
+                dtype=DTYPE,
+                device=target_dev
+            )
+            self._stream.start()
+            self._stream_device = target_dev
+            return self._stream
+        except Exception:
+            try:
+                self._stream = sd.OutputStream(
+                    samplerate=sample_rate,
+                    channels=CHANNELS,
+                    dtype=DTYPE
+                )
+                self._stream.start()
+                self._stream_device = None
+                return self._stream
+            except Exception:
+                self._stream = None
+                return None
 
     def _stream_worker(self):
         """Dedicated background audio worker with persistent audio stream."""
@@ -127,16 +164,30 @@ class InstantAudioStreamer:
             played = False
             if has_sd and audio_data is not None:
                 try:
-                    import sounddevice as sd
-                    target_dev = self._get_active_output_device(force_refresh=False)
-                    sd.play(audio_data, sample_rate, device=target_dev)
-                    sd.wait()
-                    played = True
+                    import numpy as np
+                    out_arr = np.ascontiguousarray(audio_data, dtype=np.float32)
+                    if out_arr.ndim == 2 and out_arr.shape[1] > 1:
+                        out_arr = np.mean(out_arr, axis=1)
+                    out_arr = out_arr.flatten()
+
+                    stream = self._get_persistent_stream(sample_rate)
+                    if stream is not None and not stream.closed:
+                        stream.write(out_arr)
+                        played = True
+                    else:
+                        import sounddevice as sd
+                        target_dev = self._get_active_output_device(force_refresh=False)
+                        sd.play(out_arr, sample_rate, device=target_dev)
+                        sd.wait()
+                        played = True
                 except Exception:
                     # Retry once with refreshed device
                     try:
+                        import sounddevice as sd
+                        import numpy as np
+                        out_arr = np.ascontiguousarray(audio_data, dtype=np.float32).flatten()
                         target_dev = self._get_active_output_device(force_refresh=True)
-                        sd.play(audio_data, sample_rate, device=target_dev)
+                        sd.play(out_arr, sample_rate, device=target_dev)
                         sd.wait()
                         played = True
                     except Exception:
@@ -220,6 +271,12 @@ class InstantAudioStreamer:
     def purge_and_interrupt(self):
         """Immediately silence active hardware output in <0.5ms (Barge-in)."""
         self._interrupt_event.set()
+        if self._stream is not None:
+            try:
+                self._stream.abort()
+                self._stream.start()
+            except Exception:
+                pass
         if sys.platform == "win32":
             try:
                 import winsound
@@ -265,7 +322,12 @@ class InstantVoiceClient:
 
     @classmethod
     def get_cache_key(cls, text: str, voice: str, dsp_preset: str, speed: float) -> str:
-        raw = f"{text.strip().lower()}|{voice}|{dsp_preset}|{speed}"
+        try:
+            from src.core.voice_normalizer import VoiceNormalizer
+            norm = VoiceNormalizer.normalize_for_speech(text)
+        except Exception:
+            norm = text.strip()
+        raw = f"{norm.strip().lower()}|{voice}|{dsp_preset}|{speed:.2f}"
         return hashlib.md5(raw.encode("utf-8")).hexdigest()
 
     @classmethod

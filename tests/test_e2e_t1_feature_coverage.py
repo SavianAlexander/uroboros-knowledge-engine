@@ -183,13 +183,23 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
 
     def test_v2_voice_memo_recorder_and_transcribe(self):
         """T1.2.2 — Voice Memo Recording & Transcription endpoint."""
+        import wave
         memo_dir = Path("dumps/voice_memos")
         memo_dir.mkdir(parents=True, exist_ok=True)
         memo_file = memo_dir / "test_memo.wav"
-        memo_file.write_bytes(b"RIFF....WAVEfmt ....data....")
+        
+        # Write valid PCM WAV audio data
+        with wave.open(str(memo_file), "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(16000)
+            wf.writeframes(b"\x00\x00" * 16000)
 
         resp = self.client.post("/api/transcribe", json={"filepath": str(memo_file)})
-        self.assertIn(resp.status_code, [200, 400])
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data.get("status"), "success")
+        self.assertIn("transcription", data)
 
     def test_v2_autocomplete_and_operator_validation(self):
         """T1.2.3 — Autocomplete & Query Syntax Operator Validation."""

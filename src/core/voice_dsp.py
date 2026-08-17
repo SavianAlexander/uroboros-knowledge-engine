@@ -244,10 +244,23 @@ class VoiceDSP:
         voice_env = np.abs(voice_padded)
         is_speaking = (voice_env > 0.02).astype(np.float32)
 
-        # Smooth envelope
-        kernel_size = ramp_samples
-        kernel = np.ones(kernel_size, dtype=np.float32) / kernel_size
-        smooth_activity = np.convolve(is_speaking, kernel, mode="same")
+        # Smooth envelope using O(N) 1-pole recursive exponential moving average (EMA)
+        # Replaces O(N*K) convolution to eliminate 70B FLOPs latency spike
+        alpha = float(np.exp(-1.0 / max(1, ramp_samples)))
+        smooth_activity = np.zeros(target_length, dtype=np.float32)
+        
+        try:
+            from scipy.signal import lfilter
+            b = [1.0 - alpha]
+            a = [1.0, -alpha]
+            smooth_activity = lfilter(b, a, is_speaking).astype(np.float32)
+        except Exception:
+            current = 0.0
+            one_minus_alpha = 1.0 - alpha
+            for i in range(target_length):
+                current = alpha * current + one_minus_alpha * is_speaking[i]
+                smooth_activity[i] = current
+
         smooth_activity = np.clip(smooth_activity, 0.0, 1.0)
 
         # Ducking gain envelope: 1.0 when silent, duck_gain when speaking

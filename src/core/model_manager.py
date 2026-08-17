@@ -294,12 +294,12 @@ class OllamaClient:
                         return
                 except urllib.error.HTTPError as e:
                     err_msg = e.read().decode("utf-8", errors="ignore")
-                    logging.warning(f"Ollama stream_chat HTTPError {e.code} on {u}: {err_msg}")
+                    logging.debug(f"Ollama stream_chat HTTPError {e.code} on {u}: {err_msg}")
                     if e.code == 404:
                         break
                     continue
                 except Exception as e:
-                    logging.warning(f"Ollama stream_chat fallback on {u}: {e}")
+                    logging.debug(f"Ollama stream_chat fallback on {u}: {e}")
                     continue
 
             if tokens_yielded == 0:

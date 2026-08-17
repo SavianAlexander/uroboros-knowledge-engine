@@ -388,6 +388,38 @@ def cmd_context(args):
     return 0 if res.get("status") == "success" else 1
 
 
+def cmd_verify(args):
+    """Verifies whether a factual statement, statutory threshold, or technical claim is empirically grounded in the Vault."""
+    import neuro_bridge
+    s_words = getattr(args, "statement", [""])
+    stmt = " ".join(s_words) if isinstance(s_words, list) else str(s_words)
+    res_json = neuro_bridge.verify_grounding(stmt)
+    res = json.loads(res_json)
+    if getattr(args, "json", False):
+        print(json.dumps(res, indent=2))
+    else:
+        verdict = res.get("verdict", "UNVERIFIED")
+        conf = res.get("confidence_score", 0.0)
+        is_ok = verdict == "VERIFIED_GROUNDED"
+        icon = "✅" if is_ok else "⚠️"
+        print("===================================================================")
+        print(f"🔬 NEURO EMPIRICAL GROUNDING VERIFIER")
+        print("===================================================================")
+        print(f"Statement: \"{stmt}\"")
+        print(f"Verdict  : {icon} {verdict} (Confidence: {conf * 100:.1f}%)")
+        print(f"Sources  : {res.get('citations_count', 0)} matching primary documents in vault\n")
+        if res.get("citations"):
+            print("--- PRIMARY CITATIONS ---")
+            for c in res.get("citations", []):
+                print(f"  • {c.get('filename')} (Score: {c.get('confidence_score', 0):.3f})")
+                print(f"    Path: {c.get('filepath')}")
+        if res.get("supporting_evidence"):
+            print("\n--- SUPPORTING EVIDENCE FROM VAULT ---")
+            print(res.get("supporting_evidence")[:1000] + "...")
+        print("===================================================================")
+    return 0 if res.get("verdict") == "VERIFIED_GROUNDED" else 1
+
+
 def cmd_summarize(args):
     """Generates structured executive summary of a vault file or topic."""
     import neuro_bridge
@@ -426,13 +458,31 @@ def cmd_reap(args):
 
 
 def cmd_act(args):
-    """Executes multi-step Autonomous ReAct Agent Loop on a given engineering task."""
+    """Executes multi-step Autonomous ReAct / Tree-of-Thoughts / Debate / GoT Agent Loop."""
     import react_agent_bridge
     t_words = getattr(args, "task", ["Analyze system architecture"])
     task_str = " ".join(t_words) if isinstance(t_words, list) else str(t_words)
     steps = getattr(args, "steps", 6)
     model = getattr(args, "model", None)
-    rep = react_agent_bridge.run_react_agent_loop(task_str, max_steps=steps, model_name=model)
+    tot = getattr(args, "tot", False)
+    paths = getattr(args, "paths", 3)
+    cove = getattr(args, "cove", True)
+    verify = getattr(args, "verify", False)
+    debate = getattr(args, "debate", False)
+    got = getattr(args, "got", False)
+    thinking_budget = getattr(args, "thinking_budget", "medium")
+    rep = react_agent_bridge.run_react_agent_loop(
+        task_str,
+        max_steps=steps,
+        model_name=model,
+        enforce_verification=verify,
+        enable_cove=cove,
+        use_tot=tot,
+        n_paths=paths,
+        use_debate=debate,
+        use_got=got,
+        thinking_budget=thinking_budget
+    )
     if getattr(args, "json", False):
         print(json.dumps(rep, indent=2))
     else:
@@ -712,6 +762,68 @@ def cmd_sync_sources(args):
         return 1
 
 
+def cmd_connection(args):
+    """Manage centralized ConnectionClient profiles, health pings, and one-shot RAG synchronization."""
+    from src.domain.connection_client import client
+    sub = getattr(args, "connection_subcommand", None) or "list"
+
+    if sub == "list":
+        conns = client.list_connections()
+        print(f"\n==========================================================================")
+        print(f"               CENTRAL CONNECTION CLIENT REGISTRY (V2.0)                 ")
+        print(f"==========================================================================")
+        for c in conns:
+            auth_str = "[Auth Configured]" if c["has_auth"] else "[Public/No Auth]"
+            print(f"  • {c['name']:<18} : {c['base_url']}")
+            print(f"    {auth_str:<18} : {c['description']}")
+        print(f"==========================================================================\n")
+        return 0
+
+    elif sub == "ping":
+        target = getattr(args, "target", None)
+        if target:
+            res = client.ping(target)
+            print(json.dumps(res, indent=2))
+        else:
+            results = client.ping_all()
+            print(json.dumps(results, indent=2))
+        return 0
+
+    elif sub == "sync":
+        target = getattr(args, "target", None)
+        if not target:
+            print("Error: --target is required for connection sync")
+            return 1
+        path = getattr(args, "path", "") or ""
+        subfolder = getattr(args, "folder", "primary_sources") or "primary_sources"
+        filename = getattr(args, "filename", f"{target}_sync.md") or f"{target}_sync.md"
+        title = getattr(args, "title", f"{target.upper()} Primary Source Sync")
+        res = client.sync_and_rag(
+            connection_name=target,
+            path=path,
+            target_subfolder=subfolder,
+            filename=filename,
+            title=title,
+            auto_index=True
+        )
+        print(json.dumps(res, indent=2))
+        return 0 if res.get("status") in ("NEW", "UPDATED", "UNCHANGED") else 1
+
+    elif sub == "register":
+        name = getattr(args, "name", None)
+        base_url = getattr(args, "base_url", None)
+        if not name or not base_url:
+            print("Error: --name and --base-url are required to register a connection")
+            return 1
+        desc = getattr(args, "desc", "") or ""
+        client.register(name=name, base_url=base_url, description=desc)
+        print(f"Successfully registered connection: {name} -> {base_url}")
+        return 0
+
+    return 0
+
+
+
 def cmd_loop(args):
     """Executes Closed-Loop Autonomous Engineering Engines (develop, health, erp, knowledge)."""
     import workflow_hub_bridge
@@ -732,7 +844,40 @@ def cmd_loop(args):
         q = " ".join(args.query) if isinstance(args.query, list) else str(args.query or "Bono de Navidad")
         res = workflow_hub_bridge.loop_knowledge(query_test=q)
         print(json.dumps(res, indent=2))
-    return 0
+def cmd_spawn(args):
+    """Launches or manages Autonomous Hands-Free Subagent Delegation pipeline."""
+    import subagent_bridge
+    sub = getattr(args, "subagent_subcommand", None) or "run"
+    if sub == "spec":
+        print(json.dumps(subagent_bridge.get_subagent_spec(), indent=2))
+        return 0
+    elif sub == "status":
+        latest_file = os.path.join(subagent_bridge.SUBAGENT_LEDGER_DIR, "latest.json")
+        if os.path.exists(latest_file):
+            with open(latest_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if getattr(args, "json", False):
+                print(json.dumps(data, indent=2))
+            else:
+                print(subagent_bridge.format_subagent_report(data))
+        else:
+            print("No previous subagent runs recorded.")
+        return 0
+    else:
+        t_words = getattr(args, "task", ["Execute autonomous multi-bridge engineering pass"])
+        task_str = " ".join(t_words) if isinstance(t_words, list) else str(t_words)
+        p_id = getattr(args, "project_id", 13)
+        res = subagent_bridge.execute_subagent_pipeline(
+            task_description=task_str,
+            project_id=p_id,
+            run_tests=not getattr(args, "skip_tests", False),
+            enable_voice=getattr(args, "voice", False)
+        )
+        if getattr(args, "json", False):
+            print(json.dumps(res, indent=2))
+        else:
+            print(subagent_bridge.format_subagent_report(res))
+        return 0 if res.get("status") == "success" else 1
 
 
 def self_test():
@@ -751,6 +896,8 @@ def self_test():
         iterations = 1
         tag = "test-v1.0"
         file = os.path.join(SCRIPTS_DIR, "doctor_bridge.py")
+        no_index = True
+        domain = "medicaid_magi"
 
     args = MockArgs()
     ret_status = cmd_status(args)
@@ -926,6 +1073,15 @@ def main():
     ctx_p.add_argument("--files", type=int, default=8, help="Maximum related files")
     ctx_p.add_argument("--json", action="store_true", help="Output raw JSON")
 
+    # verify / check_fact
+    ver_p = subparsers.add_parser("verify", help="Verify whether a statement or threshold is empirically grounded in the Vault")
+    ver_p.add_argument("statement", nargs="*", help="Statement, claim, or calculation to verify")
+    ver_p.add_argument("--json", action="store_true", help="Output raw JSON")
+
+    cf_p = subparsers.add_parser("check_fact", help="Alias for verify (Empirical Grounding Verifier)")
+    cf_p.add_argument("statement", nargs="*", help="Statement, claim, or calculation to verify")
+    cf_p.add_argument("--json", action="store_true", help="Output raw JSON")
+
     # summarize
     sum_p = subparsers.add_parser("summarize", help="Generate structured executive summary from a vault file or topic")
     sum_p.add_argument("target", nargs="*", help="Target file path or topic keywords")
@@ -940,17 +1096,31 @@ def main():
     zomb_p.add_argument("--root", default=BASE_DIR, help="Target repository root")
     zomb_p.add_argument("--json", action="store_true", help="Output raw JSON")
 
-    # act / agent (Autonomous ReAct Agent Loop)
-    act_p = subparsers.add_parser("act", help="Launch autonomous multi-step ReAct engineering agent loop")
+    # act / agent (Autonomous ReAct / Tree-of-Thoughts / Debate / GoT Agent Loop)
+    act_p = subparsers.add_parser("act", help="Launch autonomous multi-step ReAct/ToT/Debate/GoT engineering agent loop")
     act_p.add_argument("task", nargs="*", help="Task or complex engineering question")
     act_p.add_argument("--steps", type=int, default=6, help="Maximum execution steps")
     act_p.add_argument("--model", default=None, help="Model override (e.g. deepseek-r1:1.5b, phi4-mini:latest)")
+    act_p.add_argument("--tot", action="store_true", help="Enable Tree-of-Thoughts multi-candidate sampling")
+    act_p.add_argument("--paths", type=int, default=3, help="Number of ToT candidate paths to sample per step")
+    act_p.add_argument("--cove", action="store_true", default=True, help="Enable Chain-of-Verification (CoVe) reflection")
+    act_p.add_argument("--verify", action="store_true", help="Enforce mandatory execution verification gate before finish")
+    act_p.add_argument("--debate", action="store_true", help="Enable Proposer / Critic / Arbiter multi-agent debate")
+    act_p.add_argument("--got", action="store_true", help="Enable Graph-of-Thoughts topological DAG reasoning")
+    act_p.add_argument("--thinking-budget", default="medium", choices=["low", "medium", "high", "extended"], help="Thinking token budget")
     act_p.add_argument("--json", action="store_true", help="Output raw JSON trajectory")
 
-    agent_p = subparsers.add_parser("agent", help="Alias for act (autonomous multi-step ReAct loop)")
+    agent_p = subparsers.add_parser("agent", help="Alias for act (autonomous multi-step ReAct/ToT/Debate/GoT loop)")
     agent_p.add_argument("task", nargs="*", help="Task or complex engineering question")
     agent_p.add_argument("--steps", type=int, default=6, help="Maximum execution steps")
     agent_p.add_argument("--model", default=None, help="Model override")
+    agent_p.add_argument("--tot", action="store_true", help="Enable Tree-of-Thoughts multi-candidate sampling")
+    agent_p.add_argument("--paths", type=int, default=3, help="Number of ToT candidate paths to sample per step")
+    agent_p.add_argument("--cove", action="store_true", default=True, help="Enable Chain-of-Verification (CoVe) reflection")
+    agent_p.add_argument("--verify", action="store_true", help="Enforce mandatory execution verification gate before finish")
+    agent_p.add_argument("--debate", action="store_true", help="Enable Proposer / Critic / Arbiter multi-agent debate")
+    agent_p.add_argument("--got", action="store_true", help="Enable Graph-of-Thoughts topological DAG reasoning")
+    agent_p.add_argument("--thinking-budget", default="medium", choices=["low", "medium", "high", "extended"], help="Thinking token budget")
     agent_p.add_argument("--json", action="store_true", help="Output raw JSON trajectory")
 
     # graph_code / ast_build
@@ -1078,6 +1248,47 @@ def main():
     sync_src_p.add_argument("--domain", choices=["ecfr", "federal_register", "jira", "curam", "statutory", "eve", "puerto_rico", "uat", "all"], help="Filter synchronization to a specific primary source domain")
     sync_src_p.add_argument("--no-index", action="store_true", help="Skip automatic RAG vector indexing after harvesting")
 
+    # spawn / subagent (Autonomous Hands-Free Subagent Delegation)
+    spawn_p = subparsers.add_parser("spawn", help="Spawn autonomous hands-free subagent engineering pipeline")
+    spawn_subs = spawn_p.add_subparsers(dest="subagent_subcommand")
+    spawn_run = spawn_subs.add_parser("run", help="Execute complete autonomous subagent pipeline")
+    spawn_run.add_argument("task", nargs="*", default=["Execute autonomous multi-bridge engineering pass"], help="Task goal")
+    spawn_run.add_argument("--project-id", type=int, default=13, help="Tududi Project ID")
+    spawn_run.add_argument("--voice", action="store_true", help="Synthesize spoken briefing with Kokoro")
+    spawn_run.add_argument("--skip-tests", action="store_true", help="Skip parallel contract self-tests")
+    spawn_run.add_argument("--json", action="store_true", help="Output raw JSON format")
+    spawn_subs.add_parser("spec", help="Output canonical subagent system configuration")
+    spawn_stat = spawn_subs.add_parser("status", help="Inspect latest subagent execution ledger")
+    spawn_stat.add_argument("--json", action="store_true", help="Output raw JSON format")
+
+    subagent_p = subparsers.add_parser("subagent", help="Alias for spawn (Autonomous Subagent Delegation)")
+    subagent_subs = subagent_p.add_subparsers(dest="subagent_subcommand")
+    subagent_run = subagent_subs.add_parser("run", help="Execute complete autonomous subagent pipeline")
+    subagent_run.add_argument("task", nargs="*", default=["Execute autonomous multi-bridge engineering pass"], help="Task goal")
+    subagent_run.add_argument("--project-id", type=int, default=13, help="Tududi Project ID")
+    subagent_run.add_argument("--voice", action="store_true", help="Synthesize spoken briefing with Kokoro")
+    subagent_run.add_argument("--skip-tests", action="store_true", help="Skip parallel contract self-tests")
+    subagent_run.add_argument("--json", action="store_true", help="Output raw JSON format")
+    subagent_subs.add_parser("spec", help="Output canonical subagent system configuration")
+    subagent_subs.add_parser("status", help="Inspect latest subagent execution ledger")
+
+    # connection (Central Connection Client Registry & Health)
+    conn_p = subparsers.add_parser("connection", help="Manage ConnectionClient profiles, health pings, and one-shot RAG synchronization")
+    conn_subs = conn_p.add_subparsers(dest="connection_subcommand")
+    conn_subs.add_parser("list", help="List all registered connection targets")
+    conn_ping = conn_subs.add_parser("ping", help="Ping a registered connection target")
+    conn_ping.add_argument("--target", help="Specific connection target (e.g. ecfr, federal_register, eve_esi, ollama)")
+    conn_sync = conn_subs.add_parser("sync", help="Synchronize a connection target directly into the vault and auto-index into RAG")
+    conn_sync.add_argument("--target", required=True, help="Connection name (e.g. ecfr, federal_register, eve_esi)")
+    conn_sync.add_argument("--path", default="", help="Sub-path on the connection base URL")
+    conn_sync.add_argument("--folder", default="primary_sources", help="Target subfolder in vault")
+    conn_sync.add_argument("--filename", default="connection_sync.md", help="Output filename")
+    conn_sync.add_argument("--title", default="Primary Source Sync", help="Document title header")
+    conn_reg = conn_subs.add_parser("register", help="Register a custom connection target")
+    conn_reg.add_argument("--name", required=True, help="Connection profile name")
+    conn_reg.add_argument("--base-url", required=True, help="Base URL of target API")
+    conn_reg.add_argument("--desc", default="", help="Description of connection")
+
     # self_test
     subparsers.add_parser("self_test", help="Run automated CLI self-test assertions")
 
@@ -1114,6 +1325,8 @@ def main():
         "ask": cmd_ask,
         "rag": cmd_ask,
         "context": cmd_context,
+        "verify": cmd_verify,
+        "check_fact": cmd_verify,
         "summarize": cmd_summarize,
         "recover": cmd_recover,
         "restore": cmd_recover,
@@ -1133,8 +1346,12 @@ def main():
         "jira": cmd_jira,
         "uat": cmd_uat,
         "sync_sources": cmd_sync_sources,
+        "connection": cmd_connection,
+        "spawn": cmd_spawn,
+        "subagent": cmd_spawn,
         "self_test": lambda a: self_test()
     }
+
 
     fn = cmd_map.get(args.command)
     if fn:

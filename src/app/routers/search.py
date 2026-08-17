@@ -24,7 +24,6 @@ from src.domain.graph_export import export_graph_to_graphml
 from src.domain.decomposed_hybrid_rag import execute_hybrid_decomposed_search, execute_sota_rag_search
 from src.domain.self_rag_critique import critique_rag_passages
 from src.domain.reranker import compute_rrf_scores
-from src.domain.intent_classifier import classify_query_intent
 from src.domain.parent_child_retrieval import expand_child_chunks_to_parents
 from src.domain.graph_multihop import find_multihop_pathways
 from src.domain.contextual_hyde import generate_hypothetical_document

@@ -1,3 +1,4 @@
+import os
 import base64
 import hmac
 import hashlib
@@ -5,8 +6,8 @@ import json
 import time
 from typing import Dict, Any, Optional
 
-# In a real system, this would be loaded from env vars
-SECRET_KEY = b"zero_dependency_super_secret_key_12345"
+# Dynamic JWT Secret Key loaded from environment with local fallback
+SECRET_KEY = os.environ.get("JWT_SECRET", "uroboros_secure_runtime_key_2026").encode("utf-8")
 
 def encode_base64_url(data: bytes) -> str:
     """Encode bytes to base64url format string."""
@@ -59,6 +60,37 @@ def verify_jwt(token: str) -> Optional[Dict[str, Any]]:
         import logging; logging.getLogger(__name__).exception("Swallowed error in auth_jwt.py")
         return None
 
-def hash_password(password: str) -> str:
-    """Hash password using SHA-256 (in real prod use pbkdf2 or bcrypt)."""
-    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+def hash_password(password: str, salt: Optional[str] = None) -> str:
+    """
+    Hash password using standard-library PBKDF2-HMAC-SHA256 (100,000 iterations).
+    Format: pbkdf2:sha256:100000$<salt>$<hash>
+    """
+    if not salt:
+        salt = os.urandom(16).hex()
+    key = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        100000
+    )
+    return f"pbkdf2:sha256:100000${salt}${key.hex()}"
+
+
+def verify_password(plain_password: str, stored_hash: str) -> bool:
+    """
+    Constant-time password verification supporting PBKDF2-HMAC and legacy SHA-256 fallback.
+    """
+    if not plain_password or not stored_hash:
+        return False
+    if stored_hash.startswith("pbkdf2:sha256:"):
+        try:
+            parts = stored_hash.split("$")
+            if len(parts) == 3:
+                salt = parts[1]
+                expected_hash = hash_password(plain_password, salt=salt)
+                return hmac.compare_digest(expected_hash, stored_hash)
+        except Exception:
+            return False
+    # Legacy SHA-256 fallback
+    legacy_hash = hashlib.sha256(plain_password.encode("utf-8")).hexdigest()
+    return hmac.compare_digest(legacy_hash, stored_hash)

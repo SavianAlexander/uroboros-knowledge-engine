@@ -137,6 +137,9 @@ def parse_checkbox_states(text: str) -> Dict[str, List[str]]:
     }
 
 
+import os
+
+
 def prepare_vision_model_payload(
     image_base64_or_path: str,
     prompt: str = "Extract all text, tables, and form fields accurately.",
@@ -144,11 +147,18 @@ def prepare_vision_model_payload(
 ) -> Dict[str, Any]:
     """
     Constructs an Ollama-compatible Vision Model JSON payload for local visual document analysis.
+    Supports raw base64 data, data URI schemes, or local file paths on disk.
     """
     raw_img = str(image_base64_or_path or "").strip()
     # Strip data URI header if present
     if raw_img.startswith("data:image"):
         raw_img = raw_img.split(",", 1)[-1]
+    elif os.path.isfile(raw_img):
+        try:
+            with open(raw_img, "rb") as f:
+                raw_img = base64.b64encode(f.read()).decode("utf-8")
+        except Exception:
+            pass
 
     return {
         "model": model,

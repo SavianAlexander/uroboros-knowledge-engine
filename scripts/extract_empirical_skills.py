@@ -224,6 +224,7 @@ def extract_all_pilots():
 
     # Save to empirical audit json
     out_path = os.path.join(BASE_DIR, "vault", "Eve Online", "Fleet", "empirical_esi_audit.json")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(empirical_results, f, indent=2, default=str)
     print(f"=================================================================")

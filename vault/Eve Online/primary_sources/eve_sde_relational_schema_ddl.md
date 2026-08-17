@@ -2,7 +2,7 @@
 title: "CCP Games EVE Online Static Data Export (SDE) Relational Schema DDL"
 source_authority: "CCP Games Developer Resources / Fuzzwork SDE Conversion"
 database_type: "SQLite 3 Relational Architecture"
-harvested_at: "2026-08-17T17:16:01Z"
+harvested_at: "2026-08-17T17:48:00Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "CCP_SDE_RELATIONAL_SCHEMA_VERIFIED"
 ---

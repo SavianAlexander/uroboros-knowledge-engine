@@ -274,6 +274,16 @@ def get_profiles_endpoint():
     }
 
 
+@router.get("/api/voice/hardware")
+def get_voice_hardware_endpoint():
+    """Get neural voice engine hardware acceleration and execution provider telemetry."""
+    copilot = VoiceBridge.get_copilot()
+    if not copilot:
+        return {"status": "error", "message": "Voice engine not initialized"}
+    info = copilot.get_hardware_acceleration_info()
+    return {"status": "success", **info}
+
+
 class VoiceIntercomTurnRequest(BaseModel):
     prompt: str
     persona: Optional[str] = "AURA_SHIP_AI"

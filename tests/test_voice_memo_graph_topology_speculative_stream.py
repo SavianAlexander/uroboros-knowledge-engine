@@ -17,10 +17,24 @@ class TestNextGenNonScaleValidation(unittest.TestCase):
         self.client = TestClient(app)
 
     def test_01_voice_memo_search(self):
+        import os
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        audio_path = os.path.join(base_dir, "vault", "audio_showcase", "1_AURA_SHIP_AI.wav")
+        
+        # Test 1: Real audio file transcription and search
+        if os.path.isfile(audio_path):
+            res_audio = transcribe_and_search_voice_memo(audio_path, top_k=5)
+            self.assertEqual(res_audio["status"], "success")
+            self.assertGreater(len(res_audio["transcribed_text"]), 0)
+            self.assertGreater(res_audio["confidence_score"], 0.80)
+            self.assertIn(res_audio["engine"], ["voice_stt_ear", "audio_parser", "Acoustic_Fallback_Analyzer", "Windows_Speech_Recognition_Engine", "Faster-Whisper (Local CPU/ONNX)"])
+
+        # Test 2: Grounded text search query across real knowledge vault
         res = transcribe_and_search_voice_memo("GPU cluster setup architecture guide", top_k=5)
         self.assertEqual(res["status"], "success")
         self.assertEqual(res["transcribed_text"], "GPU cluster setup architecture guide")
         self.assertGreater(res["confidence_score"], 0.90)
+        self.assertIsInstance(res["results"], list)
 
     def test_02_graph_topology_explorer(self):
         res = generate_graph_topology()

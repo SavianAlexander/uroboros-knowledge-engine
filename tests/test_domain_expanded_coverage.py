@@ -61,11 +61,20 @@ class TestDomainExpandedCoverage(unittest.TestCase):
         Invariants: Audio memo files reside inside voice_memos subdirectory.
         Expected Outcomes: File created successfully and path string contains 'voice_memos'.
         """
+        import wave
         memo_dir = os.path.join(self.test_dir, "voice_memos")
         os.makedirs(memo_dir, exist_ok=True)
         memo_file = os.path.join(memo_dir, "voice-memo-123456.wav")
-        safe_write_file(memo_file, "fake audio wav data")
+        
+        # Write valid PCM WAV audio data
+        with wave.open(memo_file, "wb") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(16000)
+            wf.writeframes(b"\x00\x00" * 8000)
+
         self.assertTrue(os.path.exists(memo_file))
+        self.assertGreater(os.path.getsize(memo_file), 44)
         self.assertIn("voice_memos", memo_file)
 
     def test_03_system_env_endpoint_structure(self):

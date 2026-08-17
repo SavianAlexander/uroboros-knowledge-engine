@@ -43,7 +43,8 @@ async def _handle_ws_text_message(websocket: WebSocket, raw_text: str, session_i
     dsp_preset = payload.get("dsp_preset")
 
     if action in ("turn", "say", "command"):
-        turn_res = VoiceAgentLoop.process_spoken_turn(
+        turn_res = await asyncio.to_thread(
+            VoiceAgentLoop.process_spoken_turn,
             user_input_text=text,
             session_id=session_id,
             persona=persona,
@@ -60,7 +61,7 @@ async def _handle_ws_text_message(websocket: WebSocket, raw_text: str, session_i
         return
 
     if action == "history":
-        hist = VoiceAgentLoop.get_session_history(session_id)
+        hist = await asyncio.to_thread(VoiceAgentLoop.get_session_history, session_id)
         await websocket.send_json({"event": "history", "data": hist})
 
 

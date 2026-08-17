@@ -16,42 +16,52 @@ def compute_graph_pagerank(damping_factor: float = 0.85, max_iterations: int = 2
     """
     try:
         from src.infrastructure.database import get_db_connection, DB_FILE, init_db
-        try:
-            with get_db_connection(DB_FILE) as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT id, filename, filepath, content FROM files")
-                rows = cursor.fetchall()
-        except (sqlite3.OperationalError, sqlite3.DatabaseError, NameError):
-            init_db()
-            with get_db_connection(DB_FILE) as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT id, filename, filepath, content FROM files")
-                rows = cursor.fetchall()
-
-        if not rows:
-            return {"rankings": [], "total_documents": 0, "status": "success"}
-
-        nodes = [r[0] for r in rows]
-        node_names = {r[0]: r[1] for r in rows}
-        title_to_id = {str(r[1]).lower(): r[0] for r in rows}
-        N = len(nodes)
-
-        # Build adjacency graph from wikilinks
+        nodes = []
+        node_names = {}
+        title_to_id = {}
         out_edges = defaultdict(set)
         in_edges = defaultdict(set)
 
-        for r in rows:
-            u = r[0]
-            content = r[3] or ""
-            matches = RE_WIKILINKS.findall(content)
-            for m in matches:
-                target_str = m[0] if isinstance(m, tuple) else m
-                target_title = target_str.strip().lower()
-                if target_title in title_to_id:
-                    v = title_to_id[target_title]
-                    if u != v:
-                        out_edges[u].add(v)
-                        in_edges[v].add(u)
+        with get_db_connection(DB_FILE) as conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute("SELECT id, filename FROM files")
+                id_rows = cursor.fetchall()
+            except (sqlite3.OperationalError, sqlite3.DatabaseError, NameError):
+                init_db()
+                cursor.execute("SELECT id, filename FROM files")
+                id_rows = cursor.fetchall()
+
+            if not id_rows:
+                return {"rankings": [], "total_documents": 0, "status": "success"}
+
+            for fid, fname in id_rows:
+                nodes.append(fid)
+                node_names[fid] = fname
+                title_to_id[str(fname).lower()] = fid
+
+            # Stream wikilink-containing files in memory-bounded batches
+            cursor.execute("SELECT id, content FROM files WHERE content LIKE '%[[%'")
+            while True:
+                batch = cursor.fetchmany(250)
+                if not batch:
+                    break
+                for u, content in batch:
+                    if not content:
+                        continue
+                    matches = RE_WIKILINKS.findall(content)
+                    for m in matches:
+                        target_str = m[0] if isinstance(m, tuple) else m
+                        target_title = target_str.strip().lower()
+                        if target_title in title_to_id:
+                            v = title_to_id[target_title]
+                            if u != v:
+                                out_edges[u].add(v)
+                                in_edges[v].add(u)
+
+        N = len(nodes)
+        if N == 0:
+            return {"rankings": [], "total_documents": 0, "status": "success"}
 
         # Pre-compute out-degrees and dangling node set
         out_degrees = {n: float(len(out_edges[n])) for n in nodes}

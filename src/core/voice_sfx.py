@@ -142,6 +142,27 @@ class VoiceSFX:
         return header
 
     @classmethod
+    def _synthesize_sfx_pure_python(cls, name: str, sr: int) -> bytes:
+        """Pure standard library math fallback wave synthesizer when numpy is absent."""
+        duration = 0.35
+        num_samples = int(sr * duration)
+        raw_frames = bytearray()
+        
+        for i in range(num_samples):
+            t = i / sr
+            env = math.exp(-t * 9.5) * (1.0 - math.exp(-t * 400.0)) if t > 0 else 0.0
+            # Crystalline chord tone synthesis
+            sig_l = (0.50 * math.sin(2 * math.pi * 1046.50 * t) + 0.35 * math.sin(2 * math.pi * 1318.51 * t) + 0.15 * math.sin(2 * math.pi * 1567.98 * t)) * env
+            sig_r = (0.35 * math.sin(2 * math.pi * 1046.50 * t) + 0.50 * math.sin(2 * math.pi * 1318.51 * t) + 0.15 * math.sin(2 * math.pi * 1567.98 * t)) * env
+            
+            val_l = max(-32767, min(32767, int(sig_l * 32767.0 * 0.95)))
+            val_r = max(-32767, min(32767, int(sig_r * 32767.0 * 0.95)))
+            raw_frames.extend(struct.pack("<hh", val_l, val_r))
+            
+        header = cls._create_wav_header(num_samples, num_channels=2, sample_rate=sr)
+        return header + bytes(raw_frames)
+
+    @classmethod
     def synthesize_sfx(cls, sfx_name: str) -> bytes:
         """
         Generate crystalline audio cue by name via O(1) generator dispatch.
@@ -158,7 +179,9 @@ class VoiceSFX:
 
         sr = cls.SAMPLE_RATE
         if np is None:
-            return b""
+            wav_bytes = cls._synthesize_sfx_pure_python(name, sr)
+            cls._sfx_cache[name] = wav_bytes
+            return wav_bytes
 
         gen = _SFX_GENERATORS.get(name, _sfx_neutral_tick)
         left, right = gen(sr)

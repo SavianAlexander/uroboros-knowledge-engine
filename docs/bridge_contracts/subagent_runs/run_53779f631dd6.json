@@ -1,0 +1,39 @@
+{
+  "run_id": "53779f631dd6",
+  "task": "Self-Test Verification Run",
+  "status": "success",
+  "zero_stutter_priority_idle": true,
+  "total_duration_ms": 1792.67,
+  "timestamp_iso": "2026-08-17T17:38:19Z",
+  "stages": [
+    {
+      "stage": 1,
+      "name": "Pre-Flight Process Hygiene",
+      "status": "warning",
+      "duration_ms": 26.08,
+      "details": "module 'process_hygiene_bridge' has no attribute 'preflight_process_sanitization'"
+    },
+    {
+      "stage": 2,
+      "name": "Tududi Task Master Tracking",
+      "status": "warning",
+      "duration_ms": 6.45,
+      "details": "module 'tududi_bridge' has no attribute 'get_project_metrics'"
+    },
+    {
+      "stage": 3,
+      "name": "AST Code Graph Indexing",
+      "status": "success",
+      "duration_ms": 1751.67,
+      "details": "Indexed 5118 symbols, 0 call edges"
+    },
+    {
+      "stage": 5,
+      "name": "Git Merkle Provenance & Sync Check",
+      "status": "warning",
+      "duration_ms": 1.24,
+      "details": "module 'github_bridge' has no attribute 'inspect_remote_upload_state'"
+    }
+  ],
+  "git_state": "Synchronized"
+}

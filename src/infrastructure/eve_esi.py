@@ -62,13 +62,18 @@ def make_esi_request(endpoint: str, access_token: str = None, method: str = "GET
         try:
             with urllib.request.urlopen(req, timeout=25) as resp:
                 remain = int(resp.headers.get("X-Esi-Error-Limit-Remain", 100))
-                if remain < 25:
-                    time.sleep(2.0)
+                reset_sec = int(resp.headers.get("X-Esi-Error-Limit-Reset", 10))
+                if remain < 20:
+                    time.sleep(max(1.0, min(float(reset_sec), 15.0)))
                 raw = resp.read().decode("utf-8")
                 return json.loads(raw) if raw else {}
         except urllib.error.HTTPError as e:
             if e.code in (404, 204, 403):
                 return {} if method == "POST" else []
+            if e.code == 420:
+                # ESI Error Limit hit — backoff until reset window elapses
+                reset_sec = int(e.headers.get("X-Esi-Error-Limit-Reset", 20)) if hasattr(e, "headers") else 20
+                time.sleep(min(float(reset_sec), 30.0))
             if attempt == retries - 1:
                 return {} if method == "POST" else []
             time.sleep(1.0 * (attempt + 1))

@@ -57,8 +57,8 @@ class SQLiteConnectionPool:
                     conn.execute("PRAGMA busy_timeout = 30000")
                     conn.execute("PRAGMA synchronous = NORMAL")
                     conn.execute("PRAGMA temp_store = MEMORY")
-                    conn.execute("PRAGMA cache_size = -262144")
-                    conn.execute("PRAGMA mmap_size = 4294967296")
+                    conn.execute("PRAGMA cache_size = -64000")
+                    conn.execute("PRAGMA mmap_size = 268435456")
                     conn.execute("PRAGMA threads = 4")
                     conn.execute("PRAGMA wal_autocheckpoint = 2000")
                     conn.execute("PRAGMA journal_size_limit = 67108864")
@@ -368,8 +368,8 @@ def get_db():
                 conn.execute("PRAGMA busy_timeout = 5000")
                 conn.execute("PRAGMA synchronous = NORMAL")
                 conn.execute("PRAGMA temp_store = MEMORY")
-                conn.execute("PRAGMA cache_size = -262144")
-                conn.execute("PRAGMA mmap_size = 4294967296")
+                conn.execute("PRAGMA cache_size = -64000")
+                conn.execute("PRAGMA mmap_size = 268435456")
                 conn.execute("PRAGMA threads = 4")
                 conn.execute("PRAGMA wal_autocheckpoint = 2000")
                 conn.execute("PRAGMA foreign_keys = ON")
@@ -500,7 +500,8 @@ def init_db():
                     created_at REAL DEFAULT 0.0,
                     notes TEXT,
                     insights TEXT,
-                    acl_permissions TEXT
+                    acl_permissions TEXT,
+                    metadata_json TEXT
                 )
             """)
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_modified ON files(modified_at)')
@@ -516,6 +517,7 @@ def init_db():
             _ensure_column(cursor, "files", "notes", "TEXT")
             _ensure_column(cursor, "files", "insights", "TEXT")
             _ensure_column(cursor, "files", "acl_permissions", "TEXT")
+            _ensure_column(cursor, "files", "metadata_json", "TEXT")
 
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id)')
 

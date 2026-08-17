@@ -15,17 +15,17 @@ def _mask_word(word: str, salt: str) -> str:
     return f"[MASK_{word_hash}]"
 
 
-def mask_payload_with_zk_proof(sensitive_text: str, secret_salt: str = "uroboros_zk_salt") -> Dict[str, Any]:
+def pseudonymize_payload_salted_sha256(sensitive_text: str, secret_salt: str = "uroboros_salt") -> Dict[str, Any]:
     """
-    Generates a deterministic salt-hashed cryptographic verification proof and masked payload.
+    Generates a deterministic salt-hashed cryptographic verification digest and masked payload.
     # ponytail: stdlib SHA-256 pseudonymization with salt; deterministic and self-contained
     """
     if not sensitive_text or not isinstance(sensitive_text, str):
-        return {"status": "empty", "zk_proof": "", "zk_proof_hash": "", "masked_payload": ""}
+        return {"status": "empty", "auth_digest": "", "auth_digest_hash": "", "masked_payload": "", "zk_proof": "", "zk_proof_hash": ""}
 
     norm_text = unicodedata.normalize("NFC", str(sensitive_text))
     combined = f"{secret_salt}:{norm_text}:{secret_salt}"
-    zk_proof = hashlib.sha256(combined.encode("utf-8")).hexdigest()
+    auth_digest = hashlib.sha256(combined.encode("utf-8")).hexdigest()
 
     # Redact sensitive words (4+ characters) with deterministic hash tokens
     words = sensitive_text.split()
@@ -34,12 +34,15 @@ def mask_payload_with_zk_proof(sensitive_text: str, secret_salt: str = "uroboros
     return {
         "status": "success",
         "original_char_count": len(sensitive_text),
-        "zk_proof": zk_proof,
-        "zk_proof_hash": zk_proof,
+        "auth_digest": auth_digest,
+        "auth_digest_hash": auth_digest,
+        "zk_proof": auth_digest,
+        "zk_proof_hash": auth_digest,
         "verification_passed": True,
         "masked_payload": " ".join(masked_words)
     }
 
 
-# Facade alias
-pseudonymize_records = mask_payload_with_zk_proof
+# Facade aliases for backward compatibility
+mask_payload_with_zk_proof = pseudonymize_payload_salted_sha256
+pseudonymize_records = pseudonymize_payload_salted_sha256

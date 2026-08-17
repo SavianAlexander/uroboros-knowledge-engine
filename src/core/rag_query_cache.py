@@ -6,6 +6,7 @@ Ponytail Senior Dev Principle: Bypasses expensive re-vectorization and full-tabl
 
 import math
 import time
+import threading
 from collections import OrderedDict
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -30,6 +31,7 @@ class SemanticRAGQueryCache:
         self.default_ttl_sec = default_ttl_sec
         self.similarity_threshold = similarity_threshold
         self._cache: OrderedDict[str, Dict[str, Any]] = OrderedDict()
+        self._lock = threading.RLock()
         self._hits = 0
         self._misses = 0
 
@@ -38,51 +40,52 @@ class SemanticRAGQueryCache:
         now = time.time()
         q_norm = query.strip().lower()
 
-        # 1. Exact query match in LRU
-        if q_norm in self._cache:
-            entry = self._cache[q_norm]
-            if now < entry["expires_at"]:
-                self._cache.move_to_end(q_norm)
-                self._hits += 1
-                return {
-                    "hit_type": "exact",
-                    "similarity": 1.0,
-                    "results": entry["results"],
-                    "cached_query": entry["query"],
-                    "age_seconds": round(now - entry["created_at"], 2)
-                }
-            else:
-                del self._cache[q_norm]
+        with self._lock:
+            # 1. Exact query match in LRU
+            if q_norm in self._cache:
+                entry = self._cache[q_norm]
+                if now < entry["expires_at"]:
+                    self._cache.move_to_end(q_norm)
+                    self._hits += 1
+                    return {
+                        "hit_type": "exact",
+                        "similarity": 1.0,
+                        "results": entry["results"],
+                        "cached_query": entry["query"],
+                        "age_seconds": round(now - entry["created_at"], 2)
+                    }
+                else:
+                    del self._cache[q_norm]
 
-        # 2. Semantic vector similarity search over unexpired entries
-        if embedding is not None:
-            best_match = None
-            best_score = -1.0
+            # 2. Semantic vector similarity search over unexpired entries
+            if embedding is not None:
+                best_match = None
+                best_score = -1.0
 
-            for k, entry in list(self._cache.items()):
-                if now >= entry["expires_at"]:
-                    del self._cache[k]
-                    continue
-                if entry.get("embedding") is not None:
-                    sim = _cosine_similarity(embedding, entry["embedding"])
-                    if sim > best_score:
-                        best_score = sim
-                        best_match = (k, entry)
+                for k, entry in list(self._cache.items()):
+                    if now >= entry["expires_at"]:
+                        del self._cache[k]
+                        continue
+                    if entry.get("embedding") is not None:
+                        sim = _cosine_similarity(embedding, entry["embedding"])
+                        if sim > best_score:
+                            best_score = sim
+                            best_match = (k, entry)
 
-            if best_match and best_score >= self.similarity_threshold:
-                matched_key, entry = best_match
-                self._cache.move_to_end(matched_key)
-                self._hits += 1
-                return {
-                    "hit_type": "semantic_similarity",
-                    "similarity": round(best_score, 4),
-                    "results": entry["results"],
-                    "cached_query": entry["query"],
-                    "age_seconds": round(now - entry["created_at"], 2)
-                }
+                if best_match and best_score >= self.similarity_threshold:
+                    matched_key, entry = best_match
+                    self._cache.move_to_end(matched_key)
+                    self._hits += 1
+                    return {
+                        "hit_type": "semantic_similarity",
+                        "similarity": round(best_score, 4),
+                        "results": entry["results"],
+                        "cached_query": entry["query"],
+                        "age_seconds": round(now - entry["created_at"], 2)
+                    }
 
-        self._misses += 1
-        return None
+            self._misses += 1
+            return None
 
     def put(self, query: str, results: Any, embedding: Optional[List[float]] = None, ttl_sec: Optional[float] = None) -> None:
         """Store query results with optional pre-normalized embedding and TTL."""
@@ -90,40 +93,43 @@ class SemanticRAGQueryCache:
         q_norm = query.strip().lower()
         ttl = ttl_sec if ttl_sec is not None else self.default_ttl_sec
 
-        # Evict oldest if capacity exceeded
-        if len(self._cache) >= self.max_entries and q_norm not in self._cache:
-            self._cache.popitem(last=False)
-
         norm_emb = None
         if embedding is not None:
             v_norm = math.sqrt(math.fsum(x * x for x in embedding)) or 1.0
             norm_emb = [x / v_norm for x in embedding]
 
-        self._cache[q_norm] = {
-            "query": query,
-            "results": results,
-            "embedding": norm_emb,
-            "created_at": now,
-            "expires_at": now + ttl
-        }
-        self._cache.move_to_end(q_norm)
+        with self._lock:
+            # Evict oldest if capacity exceeded
+            if len(self._cache) >= self.max_entries and q_norm not in self._cache:
+                self._cache.popitem(last=False)
+
+            self._cache[q_norm] = {
+                "query": query,
+                "results": results,
+                "embedding": norm_emb,
+                "created_at": now,
+                "expires_at": now + ttl
+            }
+            self._cache.move_to_end(q_norm)
 
     def clear(self) -> None:
         """Purge all cached query records."""
-        self._cache.clear()
+        with self._lock:
+            self._cache.clear()
 
     def get_stats(self) -> Dict[str, Any]:
         """Return cache hit rate, entries count, and memory metrics."""
-        total = self._hits + self._misses
-        hit_ratio = round(self._hits / total, 4) if total > 0 else 0.0
-        return {
-            "total_entries": len(self._cache),
-            "max_capacity": self.max_entries,
-            "hits": self._hits,
-            "misses": self._misses,
-            "hit_ratio": hit_ratio,
-            "similarity_threshold": self.similarity_threshold
-        }
+        with self._lock:
+            total = self._hits + self._misses
+            hit_ratio = round(self._hits / total, 4) if total > 0 else 0.0
+            return {
+                "total_entries": len(self._cache),
+                "max_capacity": self.max_entries,
+                "hits": self._hits,
+                "misses": self._misses,
+                "hit_ratio": hit_ratio,
+                "similarity_threshold": self.similarity_threshold
+            }
 
 
 def get_db_data_version(db_path: Optional[str] = None) -> int:

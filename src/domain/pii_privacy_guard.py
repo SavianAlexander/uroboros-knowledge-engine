@@ -8,8 +8,24 @@ from typing import Dict, Any, List
 
 RE_SSN = re.compile(r'\b\d{3}-\d{2}-\d{4}\b')
 RE_EMAIL = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b')
-RE_CREDIT_CARD = re.compile(r'\b(?:\d[ -]*?){13,16}\b')
+RE_CREDIT_CARD = re.compile(r'\b(?:\d{4}[ -]?){3}\d{4}\b|\b(?:\d{4}[ -]?){2}\d{5}\b|\b\d{15,16}\b')
 RE_API_KEY = re.compile(r'\b(?:sk_live_|api_key_|ghp_)[A-Za-z0-9]{16,}\b')
+
+
+def _is_luhn_valid(number_str: str) -> bool:
+    """Luhn algorithm validation for credit card numbers."""
+    digits = [int(c) for c in number_str if c.isdigit()]
+    if len(digits) < 13 or len(digits) > 19:
+        return False
+    checksum = 0
+    reverse_digits = digits[::-1]
+    for i, d in enumerate(reverse_digits):
+        if i % 2 == 1:
+            d *= 2
+            if d > 9:
+                d -= 9
+        checksum += d
+    return checksum % 10 == 0
 
 
 def redact_pii_from_text(text: str) -> Dict[str, Any]:
@@ -32,11 +48,13 @@ def redact_pii_from_text(text: str) -> Dict[str, Any]:
         pii_counts["api_key"] += len(key_matches)
         redacted_text = RE_API_KEY.sub("[REDACTED_API_KEY]", redacted_text)
 
-    # Credit Card
-    cc_matches = RE_CREDIT_CARD.findall(redacted_text)
-    if cc_matches:
-        pii_counts["credit_card"] += len(cc_matches)
-        redacted_text = RE_CREDIT_CARD.sub("[REDACTED_CREDIT_CARD]", redacted_text)
+    # Credit Card (formatted 4x4 blocks or Luhn-validated continuous digits)
+    for cc in RE_CREDIT_CARD.findall(redacted_text):
+        digits_only = re.sub(r'\D', '', cc)
+        # Match if explicitly formatted as card groups (e.g. 4111-2222-3333-4444) or passes Luhn
+        if "-" in cc or " " in cc or _is_luhn_valid(digits_only):
+            pii_counts["credit_card"] += 1
+            redacted_text = redacted_text.replace(cc, "[REDACTED_CREDIT_CARD]")
 
     # Emails
     email_matches = RE_EMAIL.findall(redacted_text)

@@ -67,14 +67,6 @@ def synthesize_anki_flashcards(passages: List[Dict[str, Any]]) -> Dict[str, Any]
             except Exception:
                 pass
 
-    if not cards:
-        cards.append({
-            "id": 1,
-            "front": "What is the primary architecture of Uroboros Knowledge Engine?",
-            "back": "Zero-dependency FastAPI + SQLite FTS5 + MinHash + GraphRAG hybrid retrieval.",
-            "tags": ["architecture", "default"]
-        })
-
     flashcards = cards[:15]
     return {
         "cards_generated": len(flashcards),

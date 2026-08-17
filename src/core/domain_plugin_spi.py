@@ -99,44 +99,7 @@ class DomainRegistry:
         if getattr(self, "_initialized", False):
             return
 
-        # 1. Puerto Rico Legal Plugin
-        try:
-            from src.domain.pr_legal_engine import PRLegalEngine
-            class PRLegalDomainPlugin(BaseDomainPlugin):
-                @property
-                def manifest(self) -> DomainPluginManifest:
-                    return DomainPluginManifest(
-                        name="puerto_rico_legal",
-                        version="1.0.0",
-                        description="Puerto Rico Statutory Legal Analysis, Código Civil & Penal Engine",
-                        keywords=["puerto rico", "codigo civil", "codigo penal", "tribunal", "ley", "articulo", "jurisprudencia"],
-                        capabilities=["statutory_analysis", "legal_rag", "citation_linker"]
-                    )
-                def get_system_prompt_extension(self, query: str = "") -> Optional[str]:
-                    return "Puerto Rico Legal Protocol: Reference statutory articles from Código Civil 2020 or Código Penal 2012 with official legal citations."
-            self.register(PRLegalDomainPlugin())
-        except Exception as e:
-            logger.debug(f"[DomainRegistry] Skipped PR Legal plugin: {e}")
-
-        # 2. Enterprise Cúram UAT Plugin
-        try:
-            class CuramDomainPlugin(BaseDomainPlugin):
-                @property
-                def manifest(self) -> DomainPluginManifest:
-                    return DomainPluginManifest(
-                        name="curam_enterprise",
-                        version="1.0.0",
-                        description="IBM Cúram Social Program Management & UAT Analysis",
-                        keywords=["curam", "uat", "eligibility", "evidence", "determination", "intake"],
-                        capabilities=["case_management", "uat_matrix", "business_rules"]
-                    )
-                def get_system_prompt_extension(self, query: str = "") -> Optional[str]:
-                    return "IBM Cúram Protocol: Analyze eligibility rules, evidence flows, and determination lifecycle."
-            self.register(CuramDomainPlugin())
-        except Exception as e:
-            logger.debug(f"[DomainRegistry] Skipped Curam plugin: {e}")
-
-        # 3. Space Simulation & Telemetry Plugin
+        # 1. Space Simulation & Telemetry Plugin (EVE Online ESI)
         try:
             class EveSpaceDomainPlugin(BaseDomainPlugin):
                 @property
@@ -153,6 +116,24 @@ class DomainRegistry:
             self.register(EveSpaceDomainPlugin())
         except Exception as e:
             logger.debug(f"[DomainRegistry] Skipped EVE plugin: {e}")
+
+        # 2. Neural Voice & Audio Telemetry Plugin
+        try:
+            class VoiceAudioDomainPlugin(BaseDomainPlugin):
+                @property
+                def manifest(self) -> DomainPluginManifest:
+                    return DomainPluginManifest(
+                        name="voice_audio",
+                        version="1.0.0",
+                        description="Kokoro Neural Voice Synthesis & Audio DSP Pipeline",
+                        keywords=["voice", "tts", "speak", "audio", "sfx", "intercom", "kokoro"],
+                        capabilities=["neural_tts", "audio_dsp", "voice_rag"]
+                    )
+                def get_system_prompt_extension(self, query: str = "") -> Optional[str]:
+                    return "Voice Synthesis Protocol: Generate high-fidelity neural audio briefings and telemetry."
+            self.register(VoiceAudioDomainPlugin())
+        except Exception as e:
+            logger.debug(f"[DomainRegistry] Skipped Voice plugin: {e}")
 
         self._initialized = True
 

@@ -15,15 +15,6 @@ def save_file_revision(filepath: str, content: str):
     with get_db_write_connection(db_infra.DB_FILE, timeout=db_infra.DB_TIMEOUT) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS file_revisions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                filepath TEXT,
-                content TEXT,
-                sha256 TEXT,
-                saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        cursor.execute("""
             INSERT INTO file_revisions (filepath, content, sha256)
             VALUES (?, ?, ?)
         """, (norm_path, content, content_hash))
@@ -43,15 +34,6 @@ def get_file_revisions(filepath: str) -> List[Dict[str, Any]]:
     with get_db_connection(db_infra.DB_FILE, timeout=db_infra.DB_TIMEOUT) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS file_revisions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                filepath TEXT,
-                content TEXT,
-                sha256 TEXT,
-                saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
         cursor.execute("""
             SELECT id, filepath, sha256, saved_at, LENGTH(content) as content_length
             FROM file_revisions

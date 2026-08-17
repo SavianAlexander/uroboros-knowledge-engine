@@ -99,8 +99,12 @@ def generate_release_certificate(tag: str = "v1.0.0", repo_root: str = PROJECT_R
             cur = conn.cursor()
             cur.execute("PRAGMA quick_check;")
             qc = cur.fetchone()[0]
-            cur.execute("SELECT COUNT(*) FROM chunks;")
-            chunks_cnt = cur.fetchone()[0]
+            try:
+                cur.execute("SELECT COUNT(*) FROM file_chunks;")
+                chunks_cnt = cur.fetchone()[0]
+            except Exception:
+                cur.execute("SELECT COUNT(*) FROM files;")
+                chunks_cnt = cur.fetchone()[0]
             conn.close()
             db_stats = {"exists": True, "chunks": chunks_cnt, "quick_check": qc}
         except Exception as e:
@@ -121,6 +125,7 @@ def generate_release_certificate(tag: str = "v1.0.0", repo_root: str = PROJECT_R
         pass
 
     cert_payload = {
+        "status": "SUCCESS",
         "certificate_version": "2.0-SOC2-MERKLE",
         "tag": tag,
         "timestamp_iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

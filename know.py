@@ -2,6 +2,7 @@
 Backward-compatibility root entrypoint shim re-exporting core infrastructure and domain services.
 """
 
+import os
 import sys
 from src.shared.regex import (
     URL_PATTERN,
@@ -123,13 +124,6 @@ from src.domain.rag_engine import (
 from src.domain.web_search import (
     WebSearchFetcher,
     fetch_web_context
-)
-from src.domain.pr_legal_engine import PRLegalEngine
-from src.infrastructure.pr_legal_repository import (
-    init_pr_legal_schema,
-    ingest_pr_statutory_corpus,
-    lookup_pr_citation_exact,
-    query_pr_legal_hybrid
 )
 
 def search_knowledge(query: str, limit: int = 10):

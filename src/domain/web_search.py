@@ -87,9 +87,9 @@ def fetch_web_context(query: str, max_results: int = 3, timeout: float = 4.0) ->
                                 "snippet": text,
                                 "source": "web"
                             })
-    except Exception:
+    except Exception as e:
         # Silently catch network errors, socket timeouts, connection failures, offline mode
-        import logging; logging.getLogger(__name__).exception("Swallowed error in web_search.py")
+        import logging; logging.getLogger(__name__).debug("Web search offline / timeout for query '%s': %s", query, e)
         return []
 
     return results[:max_results]

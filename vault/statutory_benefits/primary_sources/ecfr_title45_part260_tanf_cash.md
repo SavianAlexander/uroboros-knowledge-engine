@@ -6,7 +6,7 @@ cfr_title: 45
 cfr_part: 260
 domain_key: "tanf_cash"
 official_ecfr_url: "https://www.ecfr.gov/current/title-45/part-260"
-harvested_at: "2026-08-17T17:15:28Z"
+harvested_at: "2026-08-17T17:49:22Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_LIVE_CRAWL"
 verification: "ECFR_LIVE_XML_API_VERIFIED"
 ---

@@ -257,37 +257,6 @@ class CrawlSwarm:
                     except Exception:
                         pass
 
-                    try:
-                        from src.domain.pr_legal_engine import PRLegalEngine
-                        chunks = PRLegalEngine.parse_legal_ast_document(
-                            clean_text,
-                            title,
-                            {"source_origin": f"Phantom Swarm #{job_id}", "source_url": url}
-                        )
-                        with self._lock:
-                            for c in chunks:
-                                c_meta = c["metadata"]
-                                conn.execute("""
-                                INSERT OR REPLACE INTO pr_legal_corpus (
-                                    citation_key, canonical_citation, title, hierarchy_path,
-                                    status, effective_date, source_origin, source_url, content, merkle_sha256
-                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                """, (
-                                    c["citation_key"],
-                                    c["canonical_citation"],
-                                    title,
-                                    c_meta.get("hierarchy_path", ""),
-                                    c["status"],
-                                    "2026-08-15",
-                                    f"Phantom Swarm #{job_id}",
-                                    url,
-                                    c["content"],
-                                    c["merkle_sha256"]
-                                ))
-                            conn.commit()
-                    except Exception:
-                        pass
-
         finally:
             with self._lock:
                 self.stats["active_threads"] -= 1

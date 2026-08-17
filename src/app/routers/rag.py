@@ -244,19 +244,29 @@ def chat_stream_endpoint(req: ChatRequest):
                 raise
             except Exception as e:
                 import logging; logging.error(f"Streaming exception in rag.py: {e}")
-                fallback_toks = ["Grounded ", "response ", "based ", "on ", "retrieved ", "documents."]
-                for tok in fallback_toks:
+                fallback_msg = "\n\n**Empirical Retrieved Evidence**:\n"
+                for c in local_citations:
+                    fallback_msg += f"- *{c.get('filename', 'Doc')}*: {c.get('snippet', '')}\n"
+                if not local_citations:
+                    fallback_msg = "No local evidence found and local LLM daemon is offline."
+                for tok in fallback_msg.split(" "):
+                    t_sp = tok + " "
                     token_count += 1
-                    full_response_text += tok
-                    yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
-                    time.sleep(0.01)
+                    full_response_text += t_sp
+                    yield f"data: {json.dumps({'type': 'token', 'content': t_sp})}\n\n"
+                    time.sleep(0.005)
         else:
-            fallback_toks = ["Synthesized ", "response ", "grounded ", "in ", "retrieved ", "vault ", "documents."]
-            for tok in fallback_toks:
+            fallback_msg = "\n\n**Empirical Retrieved Evidence**:\n"
+            for c in local_citations:
+                fallback_msg += f"- *{c.get('filename', 'Doc')}*: {c.get('snippet', '')}\n"
+            if not local_citations:
+                fallback_msg = "No local evidence found and local LLM daemon is offline."
+            for tok in fallback_msg.split(" "):
+                t_sp = tok + " "
                 token_count += 1
-                full_response_text += tok
-                yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
-                time.sleep(0.01)
+                full_response_text += t_sp
+                yield f"data: {json.dumps({'type': 'token', 'content': t_sp})}\n\n"
+                time.sleep(0.005)
 
         # Save assistant message turn into SQLite chat_messages table
         msg_record = add_chat_message(
@@ -1408,9 +1418,9 @@ async def stream_rag_pipeline_endpoint(q: str = "", query: str = "", top_k: int 
         yield f"event: query_decomposed\ndata: {json.dumps({'sub_queries': sub_queries})}\n\n"
         await asyncio.sleep(0.01)
 
-        # 3. Retrieve & Compress Candidates
+        # 3. Retrieve & Compress Candidates (Offloaded to worker thread)
         try:
-            rag_res = execute_hybrid_decomposed_search(search_q, top_k=top_k)
+            rag_res = await asyncio.to_thread(execute_hybrid_decomposed_search, search_q, top_k=top_k)
         except Exception:
             rag_res = {"top_candidates": [], "compressed_context": "", "compression_ratio_pct": 0}
 

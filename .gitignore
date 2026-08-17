@@ -64,6 +64,7 @@ e2e_t*
 test_sandbox_*
 *.snapshot-*
 test_*.db*
+adversarial_*.db*
 
 # PyInstaller build outputs and compiled binaries
 dist/

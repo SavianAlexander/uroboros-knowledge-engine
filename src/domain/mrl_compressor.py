@@ -1,39 +1,23 @@
 """
 Matryoshka Representation Learning (MRL) Vector Truncation & Compression Engine.
-Enables dynamic sub-dimension vector indexing (256d / 512d / 768d) with zero-dependency L2 re-normalization.
+Delegates directly to src.core.embeddings for zero-dependency vector dimension slicing.
 """
-import math
-from typing import List, Dict, Any
+from typing import List
+from src.core.embeddings import matryoshka_slice, dot_product
 
-
-def truncate_mrl_embedding(embedding: List[float], target_dim: int = 256) -> List[float]:
-    """
-    Truncates a high-dimensional vector (e.g., 1536d) to a Matryoshka sub-dimension (e.g., 256d)
-    and applies L2 re-normalization.
-    """
-    if not embedding:
-        return []
-    
-    sliced = embedding[:target_dim]
-    norm = math.sqrt(sum(x * x for x in sliced))
-    if norm == 0.0:
-        return sliced
-    
-    return [round(x / norm, 6) for x in sliced]
+# Primary delegation aliases
+truncate_mrl_embedding = matryoshka_slice
 
 
 def batch_compress_embeddings(embeddings: List[List[float]], target_dim: int = 256) -> List[List[float]]:
     """Compresses a batch of dense embeddings to target Matryoshka dimension."""
-    return [truncate_mrl_embedding(emb, target_dim) for emb in embeddings]
+    return [matryoshka_slice(emb, target_dim) for emb in embeddings]
 
 
 def mrl_cosine_similarity(vec_a: List[float], vec_b: List[float], target_dim: int = 256) -> float:
     """Calculates cosine similarity on Matryoshka truncated vector slices."""
-    min_len = min(len(vec_a), len(vec_b), target_dim)
-    if min_len == 0:
+    if not vec_a or not vec_b:
         return 0.0
-    
-    trunc_a = truncate_mrl_embedding(vec_a, target_dim)
-    trunc_b = truncate_mrl_embedding(vec_b, target_dim)
-    dot = sum(trunc_a[i] * trunc_b[i] for i in range(min_len))
-    return round(dot, 4)
+    trunc_a = matryoshka_slice(vec_a, target_dim)
+    trunc_b = matryoshka_slice(vec_b, target_dim)
+    return round(dot_product(trunc_a, trunc_b), 4)

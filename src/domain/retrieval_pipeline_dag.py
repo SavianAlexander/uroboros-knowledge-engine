@@ -133,11 +133,16 @@ class RetrievalDAGPipeline:
         return ctx
 
 
+import threading
+
 # Global singleton executor
 _dag_pipeline: Optional[RetrievalDAGPipeline] = None
+_dag_lock = threading.Lock()
 
 def get_retrieval_pipeline() -> RetrievalDAGPipeline:
     global _dag_pipeline
     if _dag_pipeline is None:
-        _dag_pipeline = RetrievalDAGPipeline()
+        with _dag_lock:
+            if _dag_pipeline is None:
+                _dag_pipeline = RetrievalDAGPipeline()
     return _dag_pipeline

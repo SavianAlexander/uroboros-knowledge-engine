@@ -2,7 +2,7 @@
 FastAPI Router for EVE Online SSO Authentication, Character Management, and ESI Knowledge Sync.
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Response, Query
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Response, Query, Request
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import time
@@ -133,10 +133,12 @@ from src.infrastructure.eve_optimizer import calculate_optimal_remap
 
 
 @router.get("/live-stream")
-async def get_live_telemetry_stream():
-    """Server-Sent Events (SSE) stream pushing real-time tactical events and heartbeats."""
+async def get_live_telemetry_stream(request: Request):
+    """Server-Sent Events (SSE) stream pushing real-time tactical events with disconnect detection."""
     async def event_generator():
         while True:
+            if await request.is_disconnected():
+                break
             chars = token_manager.list_characters()
             active_count = len(chars)
             pilot_str = f"{active_count} pilot{'s' if active_count != 1 else ''}"
@@ -148,7 +150,10 @@ async def get_live_telemetry_stream():
                 "message": f"Tranquility ESI telemetry nominal. {pilot_str} synchronized in local vault."
             }
             yield f"data: {json.dumps(event_data)}\n\n"
-            await asyncio.sleep(5)
+            try:
+                await asyncio.sleep(5)
+            except asyncio.CancelledError:
+                break
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

@@ -1,0 +1,4391 @@
+{
+  "Savian Alexander": {
+    "id": 2122349505,
+    "total_sp": 74406782,
+    "unallocated_sp": 251613,
+    "wallet_isk": 1151122541.69,
+    "active_ship": "Porpoise",
+    "ship_custom_name": "Pillar of Autumn",
+    "system_name": "G-EURJ",
+    "skills": {
+      "Advanced Planetology": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 2403
+      },
+      "Planetology": {
+        "level": 5,
+        "sp": 768000,
+        "id": 2406
+      },
+      "Interplanetary Consolidation": {
+        "level": 5,
+        "sp": 1024000,
+        "id": 2495
+      },
+      "Command Center Upgrades": {
+        "level": 5,
+        "sp": 1024000,
+        "id": 2505
+      },
+      "ORE Hauler": {
+        "level": 3,
+        "sp": 32000,
+        "id": 3184
+      },
+      "Gunnery": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3300
+      },
+      "Small Hybrid Turret": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3301
+      },
+      "Small Projectile Turret": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3302
+      },
+      "Small Energy Turret": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3303
+      },
+      "Medium Hybrid Turret": {
+        "level": 2,
+        "sp": 4243,
+        "id": 3304
+      },
+      "Medium Projectile Turret": {
+        "level": 2,
+        "sp": 4243,
+        "id": 3305
+      },
+      "Medium Energy Turret": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3306
+      },
+      "Large Projectile Turret": {
+        "level": 0,
+        "sp": 0,
+        "id": 3308
+      },
+      "Large Energy Turret": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 3309
+      },
+      "Rapid Firing": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3310
+      },
+      "Sharpshooter": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3311
+      },
+      "Motion Prediction": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3312
+      },
+      "Surgical Strike": {
+        "level": 5,
+        "sp": 1024000,
+        "id": 3315
+      },
+      "Controlled Bursts": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3316
+      },
+      "Trajectory Analysis": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 3317
+      },
+      "Weapon Upgrades": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3318
+      },
+      "Missile Launcher Operation": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3319
+      },
+      "Rockets": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3320
+      },
+      "Light Missiles": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3321
+      },
+      "Defender Missiles": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3323
+      },
+      "Spaceship Command": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3327
+      },
+      "Gallente Frigate": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3328
+      },
+      "Minmatar Frigate": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3329
+      },
+      "Caldari Frigate": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3330
+      },
+      "Amarr Frigate": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3331
+      },
+      "Gallente Cruiser": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 3332
+      },
+      "Minmatar Cruiser": {
+        "level": 3,
+        "sp": 40000,
+        "id": 3333
+      },
+      "Caldari Cruiser": {
+        "level": 3,
+        "sp": 40000,
+        "id": 3334
+      },
+      "Amarr Cruiser": {
+        "level": 3,
+        "sp": 40000,
+        "id": 3335
+      },
+      "Amarr Battleship": {
+        "level": 5,
+        "sp": 2048000,
+        "id": 3339
+      },
+      "Gallente Hauler": {
+        "level": 3,
+        "sp": 122123,
+        "id": 3340
+      },
+      "Leadership": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3348
+      },
+      "Shield Command": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3350
+      },
+      "Social": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3355
+      },
+      "Connections": {
+        "level": 1,
+        "sp": 750,
+        "id": 3359
+      },
+      "Corporation Management": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3363
+      },
+      "Industry": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3380
+      },
+      "Reprocessing": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3385
+      },
+      "Mining": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3386
+      },
+      "Mass Production": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3387
+      },
+      "Advanced Industry": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3388
+      },
+      "Reprocessing Efficiency": {
+        "level": 5,
+        "sp": 768000,
+        "id": 3389
+      },
+      "Mechanics": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3392
+      },
+      "Repair Systems": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3393
+      },
+      "Hull Upgrades": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3394
+      },
+      "Science": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3402
+      },
+      "Research": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3403
+      },
+      "Biology": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3405
+      },
+      "Laboratory Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3406
+      },
+      "Metallurgy": {
+        "level": 4,
+        "sp": 135765,
+        "id": 3409
+      },
+      "Astrogeology": {
+        "level": 5,
+        "sp": 768000,
+        "id": 3410
+      },
+      "Cybernetics": {
+        "level": 5,
+        "sp": 768000,
+        "id": 3411
+      },
+      "Astrometrics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3412
+      },
+      "Power Grid Management": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3413
+      },
+      "Shield Operation": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3416
+      },
+      "Capacitor Systems Operation": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3417
+      },
+      "Capacitor Management": {
+        "level": 5,
+        "sp": 768000,
+        "id": 3418
+      },
+      "Shield Management": {
+        "level": 5,
+        "sp": 768000,
+        "id": 3419
+      },
+      "Tactical Shield Manipulation": {
+        "level": 4,
+        "sp": 181020,
+        "id": 3420
+      },
+      "Energy Pulse Weapons": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3421
+      },
+      "Shield Emission Systems": {
+        "level": 4,
+        "sp": 90510,
+        "id": 3422
+      },
+      "Capacitor Emission Systems": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3423
+      },
+      "Energy Grid Upgrades": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3424
+      },
+      "Shield Upgrades": {
+        "level": 4,
+        "sp": 90510,
+        "id": 3425
+      },
+      "CPU Management": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3426
+      },
+      "Electronic Warfare": {
+        "level": 4,
+        "sp": 90510,
+        "id": 3427
+      },
+      "Long Range Targeting": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3428
+      },
+      "Target Management": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3429
+      },
+      "Advanced Target Management": {
+        "level": 4,
+        "sp": 135765,
+        "id": 3430
+      },
+      "Signature Analysis": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3431
+      },
+      "Electronics Upgrades": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3432
+      },
+      "Sensor Linking": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3433
+      },
+      "Weapon Disruption": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3434
+      },
+      "Propulsion Jamming": {
+        "level": 5,
+        "sp": 768000,
+        "id": 3435
+      },
+      "Drones": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3436
+      },
+      "Drone Avionics": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3437
+      },
+      "Mining Drone Operation": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3438
+      },
+      "Repair Drone Operation": {
+        "level": 2,
+        "sp": 4243,
+        "id": 3439
+      },
+      "Salvage Drone Operation": {
+        "level": 2,
+        "sp": 5657,
+        "id": 3440
+      },
+      "Heavy Drone Operation": {
+        "level": 4,
+        "sp": 226275,
+        "id": 3441
+      },
+      "Drone Interfacing": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 3442
+      },
+      "Trade": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3443
+      },
+      "Retail": {
+        "level": 1,
+        "sp": 500,
+        "id": 3444
+      },
+      "Broker Relations": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3446
+      },
+      "Visibility": {
+        "level": 4,
+        "sp": 135765,
+        "id": 3447
+      },
+      "Navigation": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3449
+      },
+      "Afterburner": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3450
+      },
+      "Fuel Conservation": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3451
+      },
+      "Acceleration Control": {
+        "level": 5,
+        "sp": 1024000,
+        "id": 3452
+      },
+      "Evasive Maneuvering": {
+        "level": 5,
+        "sp": 512000,
+        "id": 3453
+      },
+      "High Speed Maneuvering": {
+        "level": 4,
+        "sp": 226275,
+        "id": 3454
+      },
+      "Warp Drive Operation": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3455
+      },
+      "Jump Drive Operation": {
+        "level": 4,
+        "sp": 226275,
+        "id": 3456
+      },
+      "Survey": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3551
+      },
+      "Micro Jump Drive Operation": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 4385
+      },
+      "Small Railgun Specialization": {
+        "level": 3,
+        "sp": 24000,
+        "id": 11082
+      },
+      "Advanced Weapon Upgrades": {
+        "level": 5,
+        "sp": 1536000,
+        "id": 11207
+      },
+      "Deep Core Mining": {
+        "level": 2,
+        "sp": 8486,
+        "id": 11395
+      },
+      "Hydromagnetic Physics": {
+        "level": 4,
+        "sp": 226275,
+        "id": 11443
+      },
+      "Thermal Shield Compensation": {
+        "level": 2,
+        "sp": 2829,
+        "id": 11566
+      },
+      "Cloaking": {
+        "level": 4,
+        "sp": 271530,
+        "id": 11579
+      },
+      "Anchoring": {
+        "level": 3,
+        "sp": 24000,
+        "id": 11584
+      },
+      "Interceptors": {
+        "level": 2,
+        "sp": 5657,
+        "id": 12092
+      },
+      "Assault Frigates": {
+        "level": 3,
+        "sp": 32000,
+        "id": 12095
+      },
+      "Logistics Cruisers": {
+        "level": 2,
+        "sp": 8486,
+        "id": 12096
+      },
+      "Mercoxit Ore Processing": {
+        "level": 4,
+        "sp": 226275,
+        "id": 12189
+      },
+      "Large Beam Laser Specialization": {
+        "level": 5,
+        "sp": 2048000,
+        "id": 12205
+      },
+      "Large Pulse Laser Specialization": {
+        "level": 5,
+        "sp": 2048000,
+        "id": 12215
+      },
+      "Drone Navigation": {
+        "level": 5,
+        "sp": 256000,
+        "id": 12305
+      },
+      "EM Shield Compensation": {
+        "level": 2,
+        "sp": 2829,
+        "id": 12365
+      },
+      "Kinetic Shield Compensation": {
+        "level": 2,
+        "sp": 2829,
+        "id": 12366
+      },
+      "Explosive Shield Compensation": {
+        "level": 2,
+        "sp": 2829,
+        "id": 12367
+      },
+      "Missile Bombardment": {
+        "level": 4,
+        "sp": 90510,
+        "id": 12441
+      },
+      "Missile Projection": {
+        "level": 3,
+        "sp": 32000,
+        "id": 12442
+      },
+      "Amarr Drone Specialization": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 12484
+      },
+      "Minmatar Drone Specialization": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 12485
+      },
+      "Gallente Drone Specialization": {
+        "level": 2,
+        "sp": 7072,
+        "id": 12486
+      },
+      "Caldari Drone Specialization": {
+        "level": 3,
+        "sp": 62802,
+        "id": 12487
+      },
+      "Archaeology": {
+        "level": 3,
+        "sp": 24000,
+        "id": 13278
+      },
+      "Remote Sensing": {
+        "level": 5,
+        "sp": 256000,
+        "id": 13279
+      },
+      "Remote Armor Repair Systems": {
+        "level": 4,
+        "sp": 90510,
+        "id": 16069
+      },
+      "Ice Harvesting": {
+        "level": 5,
+        "sp": 256000,
+        "id": 16281
+      },
+      "Heavy Assault Cruisers": {
+        "level": 2,
+        "sp": 8486,
+        "id": 16591
+      },
+      "Procurement": {
+        "level": 4,
+        "sp": 135765,
+        "id": 16594
+      },
+      "Daytrading": {
+        "level": 2,
+        "sp": 1415,
+        "id": 16595
+      },
+      "Advanced Broker Relations": {
+        "level": 4,
+        "sp": 135765,
+        "id": 16597
+      },
+      "Marketing": {
+        "level": 3,
+        "sp": 24000,
+        "id": 16598
+      },
+      "Accounting": {
+        "level": 5,
+        "sp": 768000,
+        "id": 16622
+      },
+      "Mining Barge": {
+        "level": 5,
+        "sp": 1024000,
+        "id": 17940
+      },
+      "Ice Processing": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 18025
+      },
+      "Transport Ships": {
+        "level": 2,
+        "sp": 8486,
+        "id": 19719
+      },
+      "Long Distance Jamming": {
+        "level": 3,
+        "sp": 32000,
+        "id": 19759
+      },
+      "Frequency Modulation": {
+        "level": 3,
+        "sp": 24000,
+        "id": 19760
+      },
+      "Target Painting": {
+        "level": 3,
+        "sp": 24000,
+        "id": 19921
+      },
+      "Guided Missile Precision": {
+        "level": 3,
+        "sp": 40000,
+        "id": 20312
+      },
+      "Target Navigation Prediction": {
+        "level": 3,
+        "sp": 16000,
+        "id": 20314
+      },
+      "Warhead Upgrades": {
+        "level": 3,
+        "sp": 40000,
+        "id": 20315
+      },
+      "Capital Energy Turret": {
+        "level": 5,
+        "sp": 1792000,
+        "id": 20327
+      },
+      "Advanced Spaceship Command": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 20342
+      },
+      "Amarr Dreadnought": {
+        "level": 3,
+        "sp": 96000,
+        "id": 20525
+      },
+      "Capital Ships": {
+        "level": 3,
+        "sp": 205165,
+        "id": 20533
+      },
+      "Shield Compensation": {
+        "level": 3,
+        "sp": 16000,
+        "id": 21059
+      },
+      "Rapid Launch": {
+        "level": 3,
+        "sp": 16000,
+        "id": 21071
+      },
+      "Cynosural Field Theory": {
+        "level": 3,
+        "sp": 40000,
+        "id": 21603
+      },
+      "Jump Fuel Conservation": {
+        "level": 4,
+        "sp": 362039,
+        "id": 21610
+      },
+      "Capital Projectile Turret": {
+        "level": 0,
+        "sp": 0,
+        "id": 21667
+      },
+      "Hacking": {
+        "level": 3,
+        "sp": 24000,
+        "id": 21718
+      },
+      "Capital Repair Systems": {
+        "level": 4,
+        "sp": 362039,
+        "id": 21803
+      },
+      "Tactical Weapon Reconfiguration": {
+        "level": 5,
+        "sp": 2048000,
+        "id": 22043
+      },
+      "Mining Foreman": {
+        "level": 5,
+        "sp": 512000,
+        "id": 22536
+      },
+      "Mining Drone Specialization": {
+        "level": 3,
+        "sp": 40000,
+        "id": 22541
+      },
+      "Exhumers": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 22551
+      },
+      "Mining Director": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 22552
+      },
+      "Mining Upgrades": {
+        "level": 5,
+        "sp": 1024000,
+        "id": 22578
+      },
+      "Recon Ships": {
+        "level": 2,
+        "sp": 8486,
+        "id": 22761
+      },
+      "EM Armor Compensation": {
+        "level": 5,
+        "sp": 512000,
+        "id": 22806
+      },
+      "Explosive Armor Compensation": {
+        "level": 5,
+        "sp": 512000,
+        "id": 22807
+      },
+      "Kinetic Armor Compensation": {
+        "level": 5,
+        "sp": 512000,
+        "id": 22808
+      },
+      "Thermal Armor Compensation": {
+        "level": 5,
+        "sp": 512000,
+        "id": 22809
+      },
+      "Advanced Drone Avionics": {
+        "level": 5,
+        "sp": 1280000,
+        "id": 23566
+      },
+      "Sentry Drone Interfacing": {
+        "level": 2,
+        "sp": 7072,
+        "id": 23594
+      },
+      "Drone Sharpshooting": {
+        "level": 5,
+        "sp": 256000,
+        "id": 23606
+      },
+      "Drone Durability": {
+        "level": 4,
+        "sp": 226275,
+        "id": 23618
+      },
+      "Light Drone Operation": {
+        "level": 5,
+        "sp": 256000,
+        "id": 24241
+      },
+      "Infomorph Psychology": {
+        "level": 3,
+        "sp": 8000,
+        "id": 24242
+      },
+      "Supply Chain Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 24268
+      },
+      "Advanced Mass Production": {
+        "level": 4,
+        "sp": 362039,
+        "id": 24625
+      },
+      "Contracting": {
+        "level": 2,
+        "sp": 1415,
+        "id": 25235
+      },
+      "Gas Cloud Harvesting": {
+        "level": 2,
+        "sp": 1415,
+        "id": 25544
+      },
+      "Astrometric Rangefinding": {
+        "level": 2,
+        "sp": 11314,
+        "id": 25739
+      },
+      "Astrometric Acquisition": {
+        "level": 2,
+        "sp": 7072,
+        "id": 25811
+      },
+      "Salvaging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 25863
+      },
+      "Jury Rigging": {
+        "level": 3,
+        "sp": 16000,
+        "id": 26252
+      },
+      "Armor Rigging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 26253
+      },
+      "Astronautics Rigging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 26254
+      },
+      "Drones Rigging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 26255
+      },
+      "Electronic Superiority Rigging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 26256
+      },
+      "Projectile Weapon Rigging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 26257
+      },
+      "Energy Weapon Rigging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 26258
+      },
+      "Hybrid Weapon Rigging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 26259
+      },
+      "Launcher Rigging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 26260
+      },
+      "Shield Rigging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 26261
+      },
+      "Thermodynamics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 28164
+      },
+      "Capital Industrial Reconfiguration": {
+        "level": 3,
+        "sp": 64000,
+        "id": 28585
+      },
+      "Marauders": {
+        "level": 5,
+        "sp": 2560000,
+        "id": 28667
+      },
+      "Nanite Operation": {
+        "level": 3,
+        "sp": 16000,
+        "id": 28879
+      },
+      "Nanite Interfacing": {
+        "level": 3,
+        "sp": 24000,
+        "id": 28880
+      },
+      "Industrial Command Ships": {
+        "level": 4,
+        "sp": 362039,
+        "id": 29637
+      },
+      "Gallente Defensive Systems": {
+        "level": 5,
+        "sp": 256000,
+        "id": 30540
+      },
+      "Gallente Core Systems": {
+        "level": 5,
+        "sp": 256000,
+        "id": 30546
+      },
+      "Gallente Offensive Systems": {
+        "level": 5,
+        "sp": 256000,
+        "id": 30550
+      },
+      "Gallente Propulsion Systems": {
+        "level": 5,
+        "sp": 256000,
+        "id": 30553
+      },
+      "Gallente Strategic Cruiser": {
+        "level": 2,
+        "sp": 7072,
+        "id": 30652
+      },
+      "Resistance Phasing": {
+        "level": 4,
+        "sp": 135765,
+        "id": 32797
+      },
+      "Mining Frigate": {
+        "level": 3,
+        "sp": 16000,
+        "id": 32918
+      },
+      "Magnetometric Sensor Compensation": {
+        "level": 4,
+        "sp": 90510,
+        "id": 32999
+      },
+      "Gravimetric Sensor Compensation": {
+        "level": 4,
+        "sp": 90510,
+        "id": 33000
+      },
+      "Ladar Sensor Compensation": {
+        "level": 4,
+        "sp": 90510,
+        "id": 33001
+      },
+      "Radar Sensor Compensation": {
+        "level": 5,
+        "sp": 512000,
+        "id": 33002
+      },
+      "Armor Layering": {
+        "level": 3,
+        "sp": 24000,
+        "id": 33078
+      },
+      "Amarr Destroyer": {
+        "level": 3,
+        "sp": 16000,
+        "id": 33091
+      },
+      "Caldari Destroyer": {
+        "level": 3,
+        "sp": 16000,
+        "id": 33092
+      },
+      "Gallente Destroyer": {
+        "level": 3,
+        "sp": 16000,
+        "id": 33093
+      },
+      "Minmatar Destroyer": {
+        "level": 3,
+        "sp": 16000,
+        "id": 33094
+      },
+      "Amarr Battlecruiser": {
+        "level": 3,
+        "sp": 48000,
+        "id": 33095
+      },
+      "Caldari Battlecruiser": {
+        "level": 2,
+        "sp": 8486,
+        "id": 33096
+      },
+      "Minmatar Battlecruiser": {
+        "level": 2,
+        "sp": 8486,
+        "id": 33098
+      },
+      "Customs Code Expertise": {
+        "level": 2,
+        "sp": 2829,
+        "id": 33467
+      },
+      "Medium Drone Operation": {
+        "level": 4,
+        "sp": 90510,
+        "id": 33699
+      },
+      "Capital Autocannon Specialization": {
+        "level": 0,
+        "sp": 0,
+        "id": 41403
+      },
+      "Capital Pulse Laser Specialization": {
+        "level": 3,
+        "sp": 80000,
+        "id": 41407
+      },
+      "Capital Beam Laser Specialization": {
+        "level": 2,
+        "sp": 14143,
+        "id": 41408
+      },
+      "Ice Harvesting Drone Operation": {
+        "level": 5,
+        "sp": 512000,
+        "id": 43702
+      },
+      "Ice Harvesting Drone Specialization": {
+        "level": 3,
+        "sp": 40000,
+        "id": 43703
+      },
+      "Reactions": {
+        "level": 3,
+        "sp": 8000,
+        "id": 45746
+      },
+      "Ubiquitous Moon Ore Processing": {
+        "level": 4,
+        "sp": 181020,
+        "id": 46152
+      },
+      "Common Moon Ore Processing": {
+        "level": 4,
+        "sp": 226275,
+        "id": 46153
+      },
+      "Uncommon Moon Ore Processing": {
+        "level": 4,
+        "sp": 271530,
+        "id": 46154
+      },
+      "Rare Moon Ore Processing": {
+        "level": 4,
+        "sp": 316784,
+        "id": 46155
+      },
+      "Industrial Reconfiguration": {
+        "level": 4,
+        "sp": 181020,
+        "id": 58956
+      },
+      "Simple Ore Processing": {
+        "level": 4,
+        "sp": 135765,
+        "id": 60377
+      },
+      "Coherent Ore Processing": {
+        "level": 4,
+        "sp": 271530,
+        "id": 60378
+      },
+      "Variegated Ore Processing": {
+        "level": 4,
+        "sp": 407294,
+        "id": 60379
+      },
+      "Complex Ore Processing": {
+        "level": 4,
+        "sp": 497804,
+        "id": 60380
+      },
+      "Shipboard Compression Technology": {
+        "level": 4,
+        "sp": 135765,
+        "id": 62450
+      },
+      "Upwell Hauler": {
+        "level": 5,
+        "sp": 1024000,
+        "id": 81032
+      },
+      "Mining Precision": {
+        "level": 5,
+        "sp": 512000,
+        "id": 90727
+      },
+      "Mining Exploitation": {
+        "level": 4,
+        "sp": 271530,
+        "id": 90728
+      }
+    },
+    "queue": [
+      {
+        "skill_name": "Shield Command",
+        "level": 4,
+        "finish_date": "2026-08-18T03:26:10Z"
+      },
+      {
+        "skill_name": "Shield Command",
+        "level": 5,
+        "finish_date": "2026-08-29T14:55:11Z"
+      },
+      {
+        "skill_name": "Laboratory Operation",
+        "level": 4,
+        "finish_date": "2026-08-30T08:55:03Z"
+      },
+      {
+        "skill_name": "Research",
+        "level": 4,
+        "finish_date": "2026-08-31T02:54:54Z"
+      },
+      {
+        "skill_name": "Capital Industrial Reconfiguration",
+        "level": 4,
+        "finish_date": "2026-09-05T15:22:36Z"
+      },
+      {
+        "skill_name": "Capital Industrial Reconfiguration",
+        "level": 5,
+        "finish_date": "2026-10-06T20:41:34Z"
+      },
+      {
+        "skill_name": "Reactions",
+        "level": 4,
+        "finish_date": "2026-10-07T13:15:02Z"
+      },
+      {
+        "skill_name": "Reactions",
+        "level": 5,
+        "finish_date": "2026-10-11T10:54:54Z"
+      },
+      {
+        "skill_name": "Gas Cloud Harvesting",
+        "level": 3,
+        "finish_date": "2026-10-11T13:50:30Z"
+      },
+      {
+        "skill_name": "Gas Cloud Harvesting",
+        "level": 4,
+        "finish_date": "2026-10-12T06:23:58Z"
+      },
+      {
+        "skill_name": "Gas Cloud Harvesting",
+        "level": 5,
+        "finish_date": "2026-10-16T04:03:50Z"
+      },
+      {
+        "skill_name": "Simple Ore Processing",
+        "level": 5,
+        "finish_date": "2026-10-27T21:03:26Z"
+      },
+      {
+        "skill_name": "Ubiquitous Moon Ore Processing",
+        "level": 5,
+        "finish_date": "2026-11-12T11:42:54Z"
+      },
+      {
+        "skill_name": "Uncommon Moon Ore Processing",
+        "level": 5,
+        "finish_date": "2026-12-05T21:42:06Z"
+      },
+      {
+        "skill_name": "Variegated Ore Processing",
+        "level": 5,
+        "finish_date": "2027-01-10T00:40:56Z"
+      },
+      {
+        "skill_name": "Rare Moon Ore Processing",
+        "level": 5,
+        "finish_date": "2027-02-06T08:20:01Z"
+      },
+      {
+        "skill_name": "Coherent Ore Processing",
+        "level": 5,
+        "finish_date": "2027-03-01T18:19:13Z"
+      },
+      {
+        "skill_name": "Common Moon Ore Processing",
+        "level": 5,
+        "finish_date": "2027-03-21T06:38:33Z"
+      },
+      {
+        "skill_name": "Complex Ore Processing",
+        "level": 5,
+        "finish_date": "2027-05-03T04:57:07Z"
+      },
+      {
+        "skill_name": "Mercoxit Ore Processing",
+        "level": 5,
+        "finish_date": "2027-05-22T17:16:27Z"
+      },
+      {
+        "skill_name": "Deep Core Mining",
+        "level": 3,
+        "finish_date": "2027-05-23T10:50:09Z"
+      },
+      {
+        "skill_name": "Deep Core Mining",
+        "level": 4,
+        "finish_date": "2027-05-27T14:10:57Z"
+      },
+      {
+        "skill_name": "Deep Core Mining",
+        "level": 5,
+        "finish_date": "2027-06-20T00:10:09Z"
+      },
+      {
+        "skill_name": "Shipboard Compression Technology",
+        "level": 5,
+        "finish_date": "2027-07-01T17:09:45Z"
+      },
+      {
+        "skill_name": "Salvaging",
+        "level": 4,
+        "finish_date": "2027-07-03T23:09:19Z"
+      },
+      {
+        "skill_name": "Salvaging",
+        "level": 5,
+        "finish_date": "2027-07-16T16:34:58Z"
+      },
+      {
+        "skill_name": "Industrial Reconfiguration",
+        "level": 5,
+        "finish_date": "2027-08-01T07:14:26Z"
+      },
+      {
+        "skill_name": "Mining Exploitation",
+        "level": 5,
+        "finish_date": "2027-08-24T17:13:38Z"
+      },
+      {
+        "skill_name": "Advanced Target Management",
+        "level": 5,
+        "finish_date": "2027-09-06T10:39:17Z"
+      },
+      {
+        "skill_name": "Gravimetric Sensor Compensation",
+        "level": 5,
+        "finish_date": "2027-09-14T22:16:23Z"
+      },
+      {
+        "skill_name": "Ladar Sensor Compensation",
+        "level": 5,
+        "finish_date": "2027-09-23T09:53:29Z"
+      },
+      {
+        "skill_name": "Magnetometric Sensor Compensation",
+        "level": 5,
+        "finish_date": "2027-10-01T21:30:36Z"
+      },
+      {
+        "skill_name": "Advanced Industry",
+        "level": 4,
+        "finish_date": "2027-10-03T23:11:00Z"
+      },
+      {
+        "skill_name": "Advanced Industry",
+        "level": 5,
+        "finish_date": "2027-10-15T16:10:36Z"
+      },
+      {
+        "skill_name": "Advanced Mass Production",
+        "level": 5,
+        "finish_date": "2027-11-15T21:29:33Z"
+      },
+      {
+        "skill_name": "Supply Chain Management",
+        "level": 4,
+        "finish_date": "2027-11-17T23:09:57Z"
+      },
+      {
+        "skill_name": "Supply Chain Management",
+        "level": 5,
+        "finish_date": "2027-11-29T16:09:33Z"
+      },
+      {
+        "skill_name": "Cynosural Field Theory",
+        "level": 4,
+        "finish_date": "2027-12-03T10:08:50Z"
+      },
+      {
+        "skill_name": "Cynosural Field Theory",
+        "level": 5,
+        "finish_date": "2027-12-24T15:11:35Z"
+      },
+      {
+        "skill_name": "High Speed Maneuvering",
+        "level": 5,
+        "finish_date": "2028-01-18T10:31:04Z"
+      },
+      {
+        "skill_name": "Jump Drive Operation",
+        "level": 5,
+        "finish_date": "2028-02-12T05:50:34Z"
+      },
+      {
+        "skill_name": "Jump Fuel Conservation",
+        "level": 5,
+        "finish_date": "2028-03-22T22:21:47Z"
+      },
+      {
+        "skill_name": "Shield Emission Systems",
+        "level": 5,
+        "finish_date": "2028-03-31T09:58:53Z"
+      },
+      {
+        "skill_name": "Shield Upgrades",
+        "level": 5,
+        "finish_date": "2028-04-08T21:35:59Z"
+      },
+      {
+        "skill_name": "Tactical Shield Manipulation",
+        "level": 5,
+        "finish_date": "2028-04-25T20:50:11Z"
+      },
+      {
+        "skill_name": "Shield Compensation",
+        "level": 4,
+        "finish_date": "2028-04-27T08:49:54Z"
+      },
+      {
+        "skill_name": "Shield Compensation",
+        "level": 5,
+        "finish_date": "2028-05-05T20:27:00Z"
+      },
+      {
+        "skill_name": "Armor Layering",
+        "level": 4,
+        "finish_date": "2028-05-08T02:26:34Z"
+      },
+      {
+        "skill_name": "Armor Layering",
+        "level": 5,
+        "finish_date": "2028-05-20T19:52:13Z"
+      },
+      {
+        "skill_name": "Archaeology",
+        "level": 4,
+        "finish_date": "2028-05-23T01:51:47Z"
+      },
+      {
+        "skill_name": "Archaeology",
+        "level": 5,
+        "finish_date": "2028-06-04T19:17:26Z"
+      },
+      {
+        "skill_name": "Astrometric Acquisition",
+        "level": 3,
+        "finish_date": "2028-06-05T11:11:52Z"
+      },
+      {
+        "skill_name": "Astrometric Acquisition",
+        "level": 4,
+        "finish_date": "2028-06-09T05:11:09Z"
+      },
+      {
+        "skill_name": "Astrometric Acquisition",
+        "level": 5,
+        "finish_date": "2028-06-30T10:13:54Z"
+      },
+      {
+        "skill_name": "Astrometric Rangefinding",
+        "level": 3,
+        "finish_date": "2028-07-01T11:41:02Z"
+      },
+      {
+        "skill_name": "Astrometric Rangefinding",
+        "level": 4,
+        "finish_date": "2028-07-07T11:39:51Z"
+      },
+      {
+        "skill_name": "Astrometric Rangefinding",
+        "level": 5,
+        "finish_date": "2028-08-10T10:08:17Z"
+      },
+      {
+        "skill_name": "Survey",
+        "level": 4,
+        "finish_date": "2028-08-11T04:08:08Z"
+      },
+      {
+        "skill_name": "Hacking",
+        "level": 4,
+        "finish_date": "2028-08-13T10:07:42Z"
+      },
+      {
+        "skill_name": "Astrometrics",
+        "level": 4,
+        "finish_date": "2028-08-15T16:07:16Z"
+      },
+      {
+        "skill_name": "Survey",
+        "level": 5,
+        "finish_date": "2028-08-19T21:55:49Z"
+      },
+      {
+        "skill_name": "Hacking",
+        "level": 5,
+        "finish_date": "2028-09-01T15:21:28Z"
+      },
+      {
+        "skill_name": "Astrometrics",
+        "level": 5,
+        "finish_date": "2028-09-14T08:47:07Z"
+      }
+    ]
+  },
+  "Thena Alexander": {
+    "id": 2124540459,
+    "total_sp": 3272860,
+    "unallocated_sp": 0,
+    "wallet_isk": 10203628.0,
+    "active_ship": "Covetor",
+    "ship_custom_name": "Vintage Prowler",
+    "system_name": "G-EURJ",
+    "skills": {
+      "Gunnery": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3300
+      },
+      "Small Hybrid Turret": {
+        "level": 1,
+        "sp": 250,
+        "id": 3301
+      },
+      "Rapid Firing": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3310
+      },
+      "Sharpshooter": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3311
+      },
+      "Motion Prediction": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3312
+      },
+      "Surgical Strike": {
+        "level": 0,
+        "sp": 0,
+        "id": 3315
+      },
+      "Controlled Bursts": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3316
+      },
+      "Trajectory Analysis": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3317
+      },
+      "Weapon Upgrades": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3318
+      },
+      "Missile Launcher Operation": {
+        "level": 1,
+        "sp": 250,
+        "id": 3319
+      },
+      "Spaceship Command": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3327
+      },
+      "Gallente Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 3328
+      },
+      "Gallente Hauler": {
+        "level": 1,
+        "sp": 1000,
+        "id": 3340
+      },
+      "Industry": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3380
+      },
+      "Reprocessing": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3385
+      },
+      "Mining": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3386
+      },
+      "Reprocessing Efficiency": {
+        "level": 0,
+        "sp": 0,
+        "id": 3389
+      },
+      "Mechanics": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3392
+      },
+      "Repair Systems": {
+        "level": 0,
+        "sp": 0,
+        "id": 3393
+      },
+      "Hull Upgrades": {
+        "level": 4,
+        "sp": 90510,
+        "id": 3394
+      },
+      "Science": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3402
+      },
+      "Research": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3403
+      },
+      "Laboratory Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3406
+      },
+      "Metallurgy": {
+        "level": 4,
+        "sp": 135765,
+        "id": 3409
+      },
+      "Astrogeology": {
+        "level": 5,
+        "sp": 768000,
+        "id": 3410
+      },
+      "Cybernetics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3411
+      },
+      "Astrometrics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3412
+      },
+      "Power Grid Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3413
+      },
+      "Capacitor Systems Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3417
+      },
+      "Capacitor Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3418
+      },
+      "Shield Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3419
+      },
+      "Tactical Shield Manipulation": {
+        "level": 4,
+        "sp": 181020,
+        "id": 3420
+      },
+      "Energy Grid Upgrades": {
+        "level": 1,
+        "sp": 500,
+        "id": 3424
+      },
+      "Shield Upgrades": {
+        "level": 4,
+        "sp": 90510,
+        "id": 3425
+      },
+      "CPU Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3426
+      },
+      "Electronic Warfare": {
+        "level": 1,
+        "sp": 500,
+        "id": 3427
+      },
+      "Long Range Targeting": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3428
+      },
+      "Target Management": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3429
+      },
+      "Signature Analysis": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3431
+      },
+      "Electronics Upgrades": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3432
+      },
+      "Propulsion Jamming": {
+        "level": 1,
+        "sp": 750,
+        "id": 3435
+      },
+      "Drones": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3436
+      },
+      "Drone Avionics": {
+        "level": 1,
+        "sp": 250,
+        "id": 3437
+      },
+      "Trade": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3443
+      },
+      "Navigation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3449
+      },
+      "Afterburner": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3450
+      },
+      "Evasive Maneuvering": {
+        "level": 1,
+        "sp": 500,
+        "id": 3453
+      },
+      "High Speed Maneuvering": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3454
+      },
+      "Warp Drive Operation": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3455
+      },
+      "Survey": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3551
+      },
+      "Deep Core Mining": {
+        "level": 2,
+        "sp": 8486,
+        "id": 11395
+      },
+      "Archaeology": {
+        "level": 1,
+        "sp": 750,
+        "id": 13278
+      },
+      "Ice Harvesting": {
+        "level": 5,
+        "sp": 256000,
+        "id": 16281
+      },
+      "Marketing": {
+        "level": 1,
+        "sp": 750,
+        "id": 16598
+      },
+      "Mining Barge": {
+        "level": 4,
+        "sp": 445137,
+        "id": 17940
+      },
+      "Hacking": {
+        "level": 1,
+        "sp": 750,
+        "id": 21718
+      },
+      "Mining Upgrades": {
+        "level": 4,
+        "sp": 181020,
+        "id": 22578
+      },
+      "Light Drone Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 24241
+      },
+      "Infomorph Psychology": {
+        "level": 1,
+        "sp": 250,
+        "id": 24242
+      },
+      "Astrometric Rangefinding": {
+        "level": 1,
+        "sp": 2000,
+        "id": 25739
+      },
+      "Astrometric Acquisition": {
+        "level": 1,
+        "sp": 1250,
+        "id": 25811
+      },
+      "Salvaging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 25863
+      },
+      "Jury Rigging": {
+        "level": 3,
+        "sp": 16000,
+        "id": 26252
+      },
+      "Shield Rigging": {
+        "level": 2,
+        "sp": 4243,
+        "id": 26261
+      },
+      "Mining Frigate": {
+        "level": 3,
+        "sp": 16000,
+        "id": 32918
+      },
+      "Ubiquitous Moon Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 46152
+      },
+      "Coherent Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 60378
+      },
+      "Variegated Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 60379
+      },
+      "Complex Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 60380
+      },
+      "Mining Precision": {
+        "level": 3,
+        "sp": 16000,
+        "id": 90727
+      }
+    },
+    "queue": [
+      {
+        "skill_name": "Reprocessing",
+        "level": 5,
+        "finish_date": "2026-08-17T13:45:14Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 1,
+        "finish_date": "2026-08-17T14:10:14Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 2,
+        "finish_date": "2026-08-17T16:06:40Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 3,
+        "finish_date": "2026-08-18T03:05:14Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 4,
+        "finish_date": "2026-08-20T17:10:44Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 5,
+        "finish_date": "2026-09-04T08:25:14Z"
+      },
+      {
+        "skill_name": "Ubiquitous Moon Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-04T08:58:34Z"
+      },
+      {
+        "skill_name": "Ubiquitous Moon Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-04T11:33:48Z"
+      },
+      {
+        "skill_name": "Ubiquitous Moon Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-05T02:11:54Z"
+      },
+      {
+        "skill_name": "Coherent Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-05T03:01:54Z"
+      },
+      {
+        "skill_name": "Coherent Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-05T06:54:46Z"
+      },
+      {
+        "skill_name": "Coherent Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-06T04:51:54Z"
+      },
+      {
+        "skill_name": "Variegated Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-06T06:06:54Z"
+      },
+      {
+        "skill_name": "Variegated Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-06T11:56:10Z"
+      },
+      {
+        "skill_name": "Variegated Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-07T20:51:54Z"
+      },
+      {
+        "skill_name": "Complex Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-07T22:23:34Z"
+      },
+      {
+        "skill_name": "Complex Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-08T05:30:28Z"
+      },
+      {
+        "skill_name": "Complex Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-09T21:45:14Z"
+      },
+      {
+        "skill_name": "Drones",
+        "level": 4,
+        "finish_date": "2026-09-10T18:27:04Z"
+      },
+      {
+        "skill_name": "Drones",
+        "level": 5,
+        "finish_date": "2026-09-15T15:31:54Z"
+      },
+      {
+        "skill_name": "Light Drone Operation",
+        "level": 4,
+        "finish_date": "2026-09-16T12:13:44Z"
+      },
+      {
+        "skill_name": "CPU Management",
+        "level": 5,
+        "finish_date": "2026-09-21T09:18:34Z"
+      },
+      {
+        "skill_name": "Mining Barge",
+        "level": 5,
+        "finish_date": "2026-10-04T18:54:00Z"
+      }
+    ]
+  },
+  "Vulcastra Alexander": {
+    "id": 2124540474,
+    "total_sp": 3271445,
+    "unallocated_sp": 0,
+    "wallet_isk": 25028866.8,
+    "active_ship": "Covetor",
+    "ship_custom_name": "Vintage Prowler",
+    "system_name": "G-EURJ",
+    "skills": {
+      "Gunnery": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3300
+      },
+      "Small Hybrid Turret": {
+        "level": 1,
+        "sp": 250,
+        "id": 3301
+      },
+      "Rapid Firing": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3310
+      },
+      "Sharpshooter": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3311
+      },
+      "Motion Prediction": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3312
+      },
+      "Surgical Strike": {
+        "level": 0,
+        "sp": 0,
+        "id": 3315
+      },
+      "Controlled Bursts": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3316
+      },
+      "Trajectory Analysis": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3317
+      },
+      "Weapon Upgrades": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3318
+      },
+      "Missile Launcher Operation": {
+        "level": 1,
+        "sp": 250,
+        "id": 3319
+      },
+      "Spaceship Command": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3327
+      },
+      "Caldari Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 3330
+      },
+      "Caldari Hauler": {
+        "level": 1,
+        "sp": 1000,
+        "id": 3342
+      },
+      "Industry": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3380
+      },
+      "Reprocessing": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3385
+      },
+      "Mining": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3386
+      },
+      "Reprocessing Efficiency": {
+        "level": 0,
+        "sp": 0,
+        "id": 3389
+      },
+      "Mechanics": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3392
+      },
+      "Repair Systems": {
+        "level": 0,
+        "sp": 0,
+        "id": 3393
+      },
+      "Hull Upgrades": {
+        "level": 4,
+        "sp": 90510,
+        "id": 3394
+      },
+      "Science": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3402
+      },
+      "Research": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3403
+      },
+      "Laboratory Operation": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3406
+      },
+      "Metallurgy": {
+        "level": 4,
+        "sp": 135765,
+        "id": 3409
+      },
+      "Astrogeology": {
+        "level": 5,
+        "sp": 768000,
+        "id": 3410
+      },
+      "Cybernetics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3411
+      },
+      "Astrometrics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3412
+      },
+      "Power Grid Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3413
+      },
+      "Capacitor Systems Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3417
+      },
+      "Capacitor Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3418
+      },
+      "Shield Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3419
+      },
+      "Tactical Shield Manipulation": {
+        "level": 4,
+        "sp": 181020,
+        "id": 3420
+      },
+      "Energy Grid Upgrades": {
+        "level": 1,
+        "sp": 500,
+        "id": 3424
+      },
+      "Shield Upgrades": {
+        "level": 4,
+        "sp": 90510,
+        "id": 3425
+      },
+      "CPU Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3426
+      },
+      "Electronic Warfare": {
+        "level": 1,
+        "sp": 500,
+        "id": 3427
+      },
+      "Long Range Targeting": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3428
+      },
+      "Target Management": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3429
+      },
+      "Signature Analysis": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3431
+      },
+      "Electronics Upgrades": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3432
+      },
+      "Propulsion Jamming": {
+        "level": 1,
+        "sp": 750,
+        "id": 3435
+      },
+      "Drones": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3436
+      },
+      "Drone Avionics": {
+        "level": 1,
+        "sp": 250,
+        "id": 3437
+      },
+      "Trade": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3443
+      },
+      "Navigation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3449
+      },
+      "Afterburner": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3450
+      },
+      "Evasive Maneuvering": {
+        "level": 1,
+        "sp": 500,
+        "id": 3453
+      },
+      "High Speed Maneuvering": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3454
+      },
+      "Warp Drive Operation": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3455
+      },
+      "Survey": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3551
+      },
+      "Deep Core Mining": {
+        "level": 2,
+        "sp": 8486,
+        "id": 11395
+      },
+      "Archaeology": {
+        "level": 1,
+        "sp": 750,
+        "id": 13278
+      },
+      "Ice Harvesting": {
+        "level": 5,
+        "sp": 256000,
+        "id": 16281
+      },
+      "Marketing": {
+        "level": 1,
+        "sp": 750,
+        "id": 16598
+      },
+      "Mining Barge": {
+        "level": 4,
+        "sp": 450307,
+        "id": 17940
+      },
+      "Hacking": {
+        "level": 1,
+        "sp": 750,
+        "id": 21718
+      },
+      "Mining Upgrades": {
+        "level": 4,
+        "sp": 181020,
+        "id": 22578
+      },
+      "Light Drone Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 24241
+      },
+      "Infomorph Psychology": {
+        "level": 1,
+        "sp": 250,
+        "id": 24242
+      },
+      "Astrometric Rangefinding": {
+        "level": 1,
+        "sp": 2000,
+        "id": 25739
+      },
+      "Astrometric Acquisition": {
+        "level": 1,
+        "sp": 1250,
+        "id": 25811
+      },
+      "Salvaging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 25863
+      },
+      "Jury Rigging": {
+        "level": 3,
+        "sp": 16000,
+        "id": 26252
+      },
+      "Shield Rigging": {
+        "level": 2,
+        "sp": 4243,
+        "id": 26261
+      },
+      "Mining Frigate": {
+        "level": 3,
+        "sp": 16000,
+        "id": 32918
+      },
+      "Ubiquitous Moon Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 46152
+      },
+      "Coherent Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 60378
+      },
+      "Variegated Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 60379
+      },
+      "Complex Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 60380
+      },
+      "Mining Precision": {
+        "level": 3,
+        "sp": 16000,
+        "id": 90727
+      }
+    },
+    "queue": [
+      {
+        "skill_name": "Reprocessing",
+        "level": 5,
+        "finish_date": "2026-08-18T01:37:58Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 1,
+        "finish_date": "2026-08-18T02:02:58Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 2,
+        "finish_date": "2026-08-18T03:59:24Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 3,
+        "finish_date": "2026-08-18T14:57:58Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 4,
+        "finish_date": "2026-08-21T05:03:28Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 5,
+        "finish_date": "2026-09-04T20:17:58Z"
+      },
+      {
+        "skill_name": "Ubiquitous Moon Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-04T20:51:18Z"
+      },
+      {
+        "skill_name": "Ubiquitous Moon Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-04T23:26:32Z"
+      },
+      {
+        "skill_name": "Ubiquitous Moon Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-05T14:04:38Z"
+      },
+      {
+        "skill_name": "Coherent Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-05T14:54:38Z"
+      },
+      {
+        "skill_name": "Coherent Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-05T18:47:30Z"
+      },
+      {
+        "skill_name": "Coherent Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-06T16:44:38Z"
+      },
+      {
+        "skill_name": "Variegated Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-06T17:59:38Z"
+      },
+      {
+        "skill_name": "Variegated Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-06T23:48:54Z"
+      },
+      {
+        "skill_name": "Variegated Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-08T08:44:38Z"
+      },
+      {
+        "skill_name": "Complex Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-08T10:16:18Z"
+      },
+      {
+        "skill_name": "Complex Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-08T17:23:12Z"
+      },
+      {
+        "skill_name": "Complex Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-10T09:37:58Z"
+      },
+      {
+        "skill_name": "Drones",
+        "level": 4,
+        "finish_date": "2026-09-11T06:19:48Z"
+      },
+      {
+        "skill_name": "Drones",
+        "level": 5,
+        "finish_date": "2026-09-16T03:24:38Z"
+      },
+      {
+        "skill_name": "Light Drone Operation",
+        "level": 4,
+        "finish_date": "2026-09-17T00:06:28Z"
+      },
+      {
+        "skill_name": "CPU Management",
+        "level": 5,
+        "finish_date": "2026-09-21T21:11:18Z"
+      },
+      {
+        "skill_name": "Mining Barge",
+        "level": 5,
+        "finish_date": "2026-10-05T03:54:24Z"
+      }
+    ]
+  },
+  "Tulorn Alexander": {
+    "id": 2124540480,
+    "total_sp": 3457818,
+    "unallocated_sp": 0,
+    "wallet_isk": 18772118.0,
+    "active_ship": "Covetor",
+    "ship_custom_name": "Vintage Prowler",
+    "system_name": "G-EURJ",
+    "skills": {
+      "Gunnery": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3300
+      },
+      "Small Hybrid Turret": {
+        "level": 1,
+        "sp": 250,
+        "id": 3301
+      },
+      "Rapid Firing": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3310
+      },
+      "Sharpshooter": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3311
+      },
+      "Motion Prediction": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3312
+      },
+      "Surgical Strike": {
+        "level": 0,
+        "sp": 0,
+        "id": 3315
+      },
+      "Controlled Bursts": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3316
+      },
+      "Trajectory Analysis": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3317
+      },
+      "Weapon Upgrades": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3318
+      },
+      "Missile Launcher Operation": {
+        "level": 1,
+        "sp": 250,
+        "id": 3319
+      },
+      "Spaceship Command": {
+        "level": 4,
+        "sp": 57034,
+        "id": 3327
+      },
+      "Gallente Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 3328
+      },
+      "Gallente Hauler": {
+        "level": 1,
+        "sp": 1000,
+        "id": 3340
+      },
+      "Industry": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3380
+      },
+      "Reprocessing": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3385
+      },
+      "Mining": {
+        "level": 5,
+        "sp": 256000,
+        "id": 3386
+      },
+      "Reprocessing Efficiency": {
+        "level": 2,
+        "sp": 4243,
+        "id": 3389
+      },
+      "Mechanics": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3392
+      },
+      "Repair Systems": {
+        "level": 0,
+        "sp": 0,
+        "id": 3393
+      },
+      "Hull Upgrades": {
+        "level": 4,
+        "sp": 90510,
+        "id": 3394
+      },
+      "Science": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3402
+      },
+      "Research": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3403
+      },
+      "Laboratory Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3406
+      },
+      "Metallurgy": {
+        "level": 4,
+        "sp": 135765,
+        "id": 3409
+      },
+      "Astrogeology": {
+        "level": 5,
+        "sp": 768000,
+        "id": 3410
+      },
+      "Cybernetics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3411
+      },
+      "Astrometrics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3412
+      },
+      "Power Grid Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3413
+      },
+      "Capacitor Systems Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3417
+      },
+      "Capacitor Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3418
+      },
+      "Shield Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3419
+      },
+      "Tactical Shield Manipulation": {
+        "level": 4,
+        "sp": 181020,
+        "id": 3420
+      },
+      "Energy Grid Upgrades": {
+        "level": 1,
+        "sp": 500,
+        "id": 3424
+      },
+      "Shield Upgrades": {
+        "level": 4,
+        "sp": 90510,
+        "id": 3425
+      },
+      "CPU Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3426
+      },
+      "Electronic Warfare": {
+        "level": 1,
+        "sp": 500,
+        "id": 3427
+      },
+      "Long Range Targeting": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3428
+      },
+      "Target Management": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3429
+      },
+      "Signature Analysis": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3431
+      },
+      "Electronics Upgrades": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3432
+      },
+      "Propulsion Jamming": {
+        "level": 1,
+        "sp": 750,
+        "id": 3435
+      },
+      "Drones": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3436
+      },
+      "Drone Avionics": {
+        "level": 1,
+        "sp": 250,
+        "id": 3437
+      },
+      "Trade": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3443
+      },
+      "Navigation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3449
+      },
+      "Afterburner": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3450
+      },
+      "Evasive Maneuvering": {
+        "level": 1,
+        "sp": 500,
+        "id": 3453
+      },
+      "High Speed Maneuvering": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3454
+      },
+      "Warp Drive Operation": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3455
+      },
+      "Survey": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3551
+      },
+      "Deep Core Mining": {
+        "level": 2,
+        "sp": 8486,
+        "id": 11395
+      },
+      "Archaeology": {
+        "level": 1,
+        "sp": 750,
+        "id": 13278
+      },
+      "Ice Harvesting": {
+        "level": 5,
+        "sp": 256000,
+        "id": 16281
+      },
+      "Marketing": {
+        "level": 1,
+        "sp": 750,
+        "id": 16598
+      },
+      "Mining Barge": {
+        "level": 4,
+        "sp": 396743,
+        "id": 17940
+      },
+      "Hacking": {
+        "level": 1,
+        "sp": 750,
+        "id": 21718
+      },
+      "Mining Upgrades": {
+        "level": 4,
+        "sp": 181020,
+        "id": 22578
+      },
+      "Light Drone Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 24241
+      },
+      "Infomorph Psychology": {
+        "level": 1,
+        "sp": 250,
+        "id": 24242
+      },
+      "Astrometric Rangefinding": {
+        "level": 1,
+        "sp": 2000,
+        "id": 25739
+      },
+      "Astrometric Acquisition": {
+        "level": 1,
+        "sp": 1250,
+        "id": 25811
+      },
+      "Salvaging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 25863
+      },
+      "Jury Rigging": {
+        "level": 3,
+        "sp": 16000,
+        "id": 26252
+      },
+      "Shield Rigging": {
+        "level": 2,
+        "sp": 4243,
+        "id": 26261
+      },
+      "Mining Frigate": {
+        "level": 3,
+        "sp": 16000,
+        "id": 32918
+      },
+      "Ubiquitous Moon Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 46152
+      },
+      "Coherent Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 60378
+      },
+      "Variegated Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 60379
+      },
+      "Complex Ore Processing": {
+        "level": 0,
+        "sp": 0,
+        "id": 60380
+      },
+      "Mining Precision": {
+        "level": 3,
+        "sp": 16000,
+        "id": 90727
+      }
+    },
+    "queue": [
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 3,
+        "finish_date": "2026-08-17T23:22:30Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 4,
+        "finish_date": "2026-08-20T13:28:00Z"
+      },
+      {
+        "skill_name": "Reprocessing Efficiency",
+        "level": 5,
+        "finish_date": "2026-09-04T04:42:30Z"
+      },
+      {
+        "skill_name": "Ubiquitous Moon Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-04T05:15:50Z"
+      },
+      {
+        "skill_name": "Ubiquitous Moon Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-04T07:51:04Z"
+      },
+      {
+        "skill_name": "Ubiquitous Moon Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-04T22:29:10Z"
+      },
+      {
+        "skill_name": "Coherent Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-04T23:19:10Z"
+      },
+      {
+        "skill_name": "Coherent Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-05T03:12:02Z"
+      },
+      {
+        "skill_name": "Coherent Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-06T01:09:10Z"
+      },
+      {
+        "skill_name": "Variegated Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-06T02:24:10Z"
+      },
+      {
+        "skill_name": "Variegated Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-06T08:13:26Z"
+      },
+      {
+        "skill_name": "Variegated Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-07T17:09:10Z"
+      },
+      {
+        "skill_name": "Complex Ore Processing",
+        "level": 1,
+        "finish_date": "2026-09-07T18:40:50Z"
+      },
+      {
+        "skill_name": "Complex Ore Processing",
+        "level": 2,
+        "finish_date": "2026-09-08T01:47:44Z"
+      },
+      {
+        "skill_name": "Complex Ore Processing",
+        "level": 3,
+        "finish_date": "2026-09-09T18:02:30Z"
+      },
+      {
+        "skill_name": "Drones",
+        "level": 4,
+        "finish_date": "2026-09-10T14:44:20Z"
+      },
+      {
+        "skill_name": "Drones",
+        "level": 5,
+        "finish_date": "2026-09-15T11:49:10Z"
+      },
+      {
+        "skill_name": "Light Drone Operation",
+        "level": 4,
+        "finish_date": "2026-09-16T08:31:00Z"
+      },
+      {
+        "skill_name": "CPU Management",
+        "level": 5,
+        "finish_date": "2026-09-21T05:35:50Z"
+      },
+      {
+        "skill_name": "Mining Barge",
+        "level": 5,
+        "finish_date": "2026-10-05T18:04:24Z"
+      }
+    ]
+  },
+  "Saigan Alexander": {
+    "id": 2124540489,
+    "total_sp": 642287,
+    "unallocated_sp": 1000000,
+    "wallet_isk": 655000.0,
+    "active_ship": "Velator",
+    "ship_custom_name": "Velator - Saigan Alexander",
+    "system_name": "Hodrold",
+    "skills": {
+      "Gunnery": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3300
+      },
+      "Small Hybrid Turret": {
+        "level": 1,
+        "sp": 250,
+        "id": 3301
+      },
+      "Rapid Firing": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3310
+      },
+      "Sharpshooter": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3311
+      },
+      "Motion Prediction": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3312
+      },
+      "Surgical Strike": {
+        "level": 0,
+        "sp": 0,
+        "id": 3315
+      },
+      "Controlled Bursts": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3316
+      },
+      "Trajectory Analysis": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3317
+      },
+      "Weapon Upgrades": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3318
+      },
+      "Missile Launcher Operation": {
+        "level": 1,
+        "sp": 250,
+        "id": 3319
+      },
+      "Spaceship Command": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3327
+      },
+      "Gallente Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 3328
+      },
+      "Gallente Hauler": {
+        "level": 1,
+        "sp": 1000,
+        "id": 3340
+      },
+      "Industry": {
+        "level": 1,
+        "sp": 250,
+        "id": 3380
+      },
+      "Mining": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3386
+      },
+      "Mechanics": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3392
+      },
+      "Repair Systems": {
+        "level": 0,
+        "sp": 0,
+        "id": 3393
+      },
+      "Hull Upgrades": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3394
+      },
+      "Science": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3402
+      },
+      "Cybernetics": {
+        "level": 1,
+        "sp": 768,
+        "id": 3411
+      },
+      "Astrometrics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3412
+      },
+      "Power Grid Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3413
+      },
+      "Capacitor Systems Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3417
+      },
+      "Capacitor Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3418
+      },
+      "Shield Management": {
+        "level": 1,
+        "sp": 750,
+        "id": 3419
+      },
+      "Tactical Shield Manipulation": {
+        "level": 1,
+        "sp": 1000,
+        "id": 3420
+      },
+      "Energy Grid Upgrades": {
+        "level": 1,
+        "sp": 500,
+        "id": 3424
+      },
+      "Shield Upgrades": {
+        "level": 1,
+        "sp": 500,
+        "id": 3425
+      },
+      "CPU Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3426
+      },
+      "Electronic Warfare": {
+        "level": 1,
+        "sp": 500,
+        "id": 3427
+      },
+      "Long Range Targeting": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3428
+      },
+      "Target Management": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3429
+      },
+      "Signature Analysis": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3431
+      },
+      "Electronics Upgrades": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3432
+      },
+      "Propulsion Jamming": {
+        "level": 1,
+        "sp": 750,
+        "id": 3435
+      },
+      "Drones": {
+        "level": 1,
+        "sp": 250,
+        "id": 3436
+      },
+      "Drone Avionics": {
+        "level": 1,
+        "sp": 250,
+        "id": 3437
+      },
+      "Trade": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3443
+      },
+      "Navigation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3449
+      },
+      "Afterburner": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3450
+      },
+      "Evasive Maneuvering": {
+        "level": 1,
+        "sp": 500,
+        "id": 3453
+      },
+      "High Speed Maneuvering": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3454
+      },
+      "Warp Drive Operation": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3455
+      },
+      "Survey": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3551
+      },
+      "Archaeology": {
+        "level": 1,
+        "sp": 750,
+        "id": 13278
+      },
+      "Marketing": {
+        "level": 1,
+        "sp": 750,
+        "id": 16598
+      },
+      "Hacking": {
+        "level": 1,
+        "sp": 750,
+        "id": 21718
+      },
+      "Mining Upgrades": {
+        "level": 4,
+        "sp": 181020,
+        "id": 22578
+      },
+      "Astrometric Rangefinding": {
+        "level": 1,
+        "sp": 2000,
+        "id": 25739
+      },
+      "Astrometric Acquisition": {
+        "level": 1,
+        "sp": 1250,
+        "id": 25811
+      },
+      "Salvaging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 25863
+      },
+      "Mining Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 32918
+      }
+    },
+    "queue": [
+      {
+        "skill_name": "Industry",
+        "level": 2,
+        "finish_date": "2026-08-14T21:33:57Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 3,
+        "finish_date": "2026-08-15T04:52:57Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 4,
+        "finish_date": "2026-08-16T22:16:37Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 5,
+        "finish_date": "2026-08-26T16:26:17Z"
+      },
+      {
+        "skill_name": "Cybernetics",
+        "level": 2,
+        "finish_date": "2026-08-26T20:17:57Z"
+      },
+      {
+        "skill_name": "Cybernetics",
+        "level": 3,
+        "finish_date": "2026-08-27T18:15:05Z"
+      },
+      {
+        "skill_name": "CPU Management",
+        "level": 5,
+        "finish_date": "2026-09-06T12:24:45Z"
+      },
+      {
+        "skill_name": "Hull Upgrades",
+        "level": 4,
+        "finish_date": "2026-09-09T23:12:05Z"
+      },
+      {
+        "skill_name": "Hull Upgrades",
+        "level": 5,
+        "finish_date": "2026-09-29T11:31:25Z"
+      },
+      {
+        "skill_name": "Mechanics",
+        "level": 4,
+        "finish_date": "2026-10-01T04:55:05Z"
+      }
+    ]
+  },
+  "Targon Alexander": {
+    "id": 2124540495,
+    "total_sp": 421305,
+    "unallocated_sp": 1000000,
+    "wallet_isk": 5000.0,
+    "active_ship": "Ibis",
+    "ship_custom_name": "Ibis - Targon Alexander",
+    "system_name": "Mettle",
+    "skills": {
+      "Gunnery": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3300
+      },
+      "Small Hybrid Turret": {
+        "level": 1,
+        "sp": 250,
+        "id": 3301
+      },
+      "Rapid Firing": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3310
+      },
+      "Sharpshooter": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3311
+      },
+      "Motion Prediction": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3312
+      },
+      "Surgical Strike": {
+        "level": 0,
+        "sp": 0,
+        "id": 3315
+      },
+      "Controlled Bursts": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3316
+      },
+      "Trajectory Analysis": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3317
+      },
+      "Weapon Upgrades": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3318
+      },
+      "Missile Launcher Operation": {
+        "level": 1,
+        "sp": 250,
+        "id": 3319
+      },
+      "Spaceship Command": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3327
+      },
+      "Caldari Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 3330
+      },
+      "Caldari Hauler": {
+        "level": 1,
+        "sp": 1000,
+        "id": 3342
+      },
+      "Industry": {
+        "level": 1,
+        "sp": 253,
+        "id": 3380
+      },
+      "Mining": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3386
+      },
+      "Mechanics": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3392
+      },
+      "Repair Systems": {
+        "level": 0,
+        "sp": 0,
+        "id": 3393
+      },
+      "Hull Upgrades": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3394
+      },
+      "Science": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3402
+      },
+      "Cybernetics": {
+        "level": 1,
+        "sp": 750,
+        "id": 3411
+      },
+      "Astrometrics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3412
+      },
+      "Power Grid Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3413
+      },
+      "Capacitor Systems Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3417
+      },
+      "Capacitor Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3418
+      },
+      "Shield Management": {
+        "level": 2,
+        "sp": 4243,
+        "id": 3419
+      },
+      "Tactical Shield Manipulation": {
+        "level": 2,
+        "sp": 5657,
+        "id": 3420
+      },
+      "Energy Grid Upgrades": {
+        "level": 1,
+        "sp": 500,
+        "id": 3424
+      },
+      "Shield Upgrades": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3425
+      },
+      "CPU Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3426
+      },
+      "Electronic Warfare": {
+        "level": 1,
+        "sp": 500,
+        "id": 3427
+      },
+      "Long Range Targeting": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3428
+      },
+      "Target Management": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3429
+      },
+      "Signature Analysis": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3431
+      },
+      "Electronics Upgrades": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3432
+      },
+      "Propulsion Jamming": {
+        "level": 1,
+        "sp": 750,
+        "id": 3435
+      },
+      "Drones": {
+        "level": 1,
+        "sp": 250,
+        "id": 3436
+      },
+      "Drone Avionics": {
+        "level": 1,
+        "sp": 250,
+        "id": 3437
+      },
+      "Trade": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3443
+      },
+      "Navigation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3449
+      },
+      "Afterburner": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3450
+      },
+      "Evasive Maneuvering": {
+        "level": 1,
+        "sp": 500,
+        "id": 3453
+      },
+      "High Speed Maneuvering": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3454
+      },
+      "Warp Drive Operation": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3455
+      },
+      "Survey": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3551
+      },
+      "Archaeology": {
+        "level": 1,
+        "sp": 750,
+        "id": 13278
+      },
+      "Marketing": {
+        "level": 1,
+        "sp": 750,
+        "id": 16598
+      },
+      "Hacking": {
+        "level": 1,
+        "sp": 750,
+        "id": 21718
+      },
+      "Mining Upgrades": {
+        "level": 0,
+        "sp": 0,
+        "id": 22578
+      },
+      "Astrometric Rangefinding": {
+        "level": 1,
+        "sp": 2000,
+        "id": 25739
+      },
+      "Astrometric Acquisition": {
+        "level": 1,
+        "sp": 1250,
+        "id": 25811
+      },
+      "Salvaging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 25863
+      },
+      "Mining Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 32918
+      }
+    },
+    "queue": [
+      {
+        "skill_name": "Industry",
+        "level": 2,
+        "finish_date": "2026-08-14T21:37:33Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 3,
+        "finish_date": "2026-08-15T04:56:33Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 4,
+        "finish_date": "2026-08-16T22:20:13Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 5,
+        "finish_date": "2026-08-26T16:29:53Z"
+      },
+      {
+        "skill_name": "Cybernetics",
+        "level": 2,
+        "finish_date": "2026-08-26T20:22:45Z"
+      },
+      {
+        "skill_name": "Cybernetics",
+        "level": 3,
+        "finish_date": "2026-08-27T18:19:53Z"
+      },
+      {
+        "skill_name": "Evasive Maneuvering",
+        "level": 2,
+        "finish_date": "2026-08-27T20:55:09Z"
+      },
+      {
+        "skill_name": "Evasive Maneuvering",
+        "level": 3,
+        "finish_date": "2026-08-28T11:33:13Z"
+      },
+      {
+        "skill_name": "Hull Upgrades",
+        "level": 3,
+        "finish_date": "2026-08-29T02:11:17Z"
+      },
+      {
+        "skill_name": "Hull Upgrades",
+        "level": 4,
+        "finish_date": "2026-09-01T12:58:37Z"
+      },
+      {
+        "skill_name": "Hull Upgrades",
+        "level": 5,
+        "finish_date": "2026-09-21T01:17:57Z"
+      },
+      {
+        "skill_name": "Shield Management",
+        "level": 3,
+        "finish_date": "2026-09-21T23:15:05Z"
+      },
+      {
+        "skill_name": "Shield Management",
+        "level": 4,
+        "finish_date": "2026-09-27T03:26:05Z"
+      },
+      {
+        "skill_name": "Shield Upgrades",
+        "level": 3,
+        "finish_date": "2026-09-27T18:04:09Z"
+      },
+      {
+        "skill_name": "Shield Upgrades",
+        "level": 4,
+        "finish_date": "2026-10-01T04:51:29Z"
+      },
+      {
+        "skill_name": "Tactical Shield Manipulation",
+        "level": 3,
+        "finish_date": "2026-10-02T10:07:41Z"
+      },
+      {
+        "skill_name": "Tactical Shield Manipulation",
+        "level": 4,
+        "finish_date": "2026-10-09T07:42:21Z"
+      },
+      {
+        "skill_name": "CPU Management",
+        "level": 5,
+        "finish_date": "2026-10-19T01:52:01Z"
+      },
+      {
+        "skill_name": "Mining Upgrades",
+        "level": 1,
+        "finish_date": "2026-10-19T02:58:41Z"
+      },
+      {
+        "skill_name": "Mining Upgrades",
+        "level": 2,
+        "finish_date": "2026-10-19T08:09:09Z"
+      },
+      {
+        "skill_name": "Mining Upgrades",
+        "level": 3,
+        "finish_date": "2026-10-20T13:25:21Z"
+      },
+      {
+        "skill_name": "Mining Upgrades",
+        "level": 4,
+        "finish_date": "2026-10-27T11:00:01Z"
+      },
+      {
+        "skill_name": "Mining",
+        "level": 4,
+        "finish_date": "2026-10-29T04:23:41Z"
+      }
+    ]
+  },
+  "Tila Alexander": {
+    "id": 2124540497,
+    "total_sp": 424002,
+    "unallocated_sp": 1000000,
+    "wallet_isk": 5000.0,
+    "active_ship": "Velator",
+    "ship_custom_name": "Velator - Tila Alexander",
+    "system_name": "Mettle",
+    "skills": {
+      "Gunnery": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3300
+      },
+      "Small Hybrid Turret": {
+        "level": 1,
+        "sp": 250,
+        "id": 3301
+      },
+      "Rapid Firing": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3310
+      },
+      "Sharpshooter": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3311
+      },
+      "Motion Prediction": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3312
+      },
+      "Surgical Strike": {
+        "level": 0,
+        "sp": 0,
+        "id": 3315
+      },
+      "Controlled Bursts": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3316
+      },
+      "Trajectory Analysis": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3317
+      },
+      "Weapon Upgrades": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3318
+      },
+      "Missile Launcher Operation": {
+        "level": 1,
+        "sp": 250,
+        "id": 3319
+      },
+      "Spaceship Command": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3327
+      },
+      "Gallente Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 3328
+      },
+      "Gallente Hauler": {
+        "level": 1,
+        "sp": 1000,
+        "id": 3340
+      },
+      "Industry": {
+        "level": 1,
+        "sp": 256,
+        "id": 3380
+      },
+      "Mining": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3386
+      },
+      "Mechanics": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3392
+      },
+      "Repair Systems": {
+        "level": 0,
+        "sp": 0,
+        "id": 3393
+      },
+      "Hull Upgrades": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3394
+      },
+      "Science": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3402
+      },
+      "Cybernetics": {
+        "level": 1,
+        "sp": 752,
+        "id": 3411
+      },
+      "Astrometrics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3412
+      },
+      "Power Grid Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3413
+      },
+      "Capacitor Systems Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3417
+      },
+      "Capacitor Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3418
+      },
+      "Shield Management": {
+        "level": 1,
+        "sp": 750,
+        "id": 3419
+      },
+      "Tactical Shield Manipulation": {
+        "level": 1,
+        "sp": 1000,
+        "id": 3420
+      },
+      "Energy Grid Upgrades": {
+        "level": 1,
+        "sp": 500,
+        "id": 3424
+      },
+      "Shield Upgrades": {
+        "level": 1,
+        "sp": 500,
+        "id": 3425
+      },
+      "CPU Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3426
+      },
+      "Electronic Warfare": {
+        "level": 1,
+        "sp": 500,
+        "id": 3427
+      },
+      "Long Range Targeting": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3428
+      },
+      "Target Management": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3429
+      },
+      "Signature Analysis": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3431
+      },
+      "Electronics Upgrades": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3432
+      },
+      "Propulsion Jamming": {
+        "level": 1,
+        "sp": 750,
+        "id": 3435
+      },
+      "Drones": {
+        "level": 1,
+        "sp": 250,
+        "id": 3436
+      },
+      "Drone Avionics": {
+        "level": 1,
+        "sp": 250,
+        "id": 3437
+      },
+      "Trade": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3443
+      },
+      "Navigation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3449
+      },
+      "Afterburner": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3450
+      },
+      "Evasive Maneuvering": {
+        "level": 1,
+        "sp": 500,
+        "id": 3453
+      },
+      "High Speed Maneuvering": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3454
+      },
+      "Warp Drive Operation": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3455
+      },
+      "Survey": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3551
+      },
+      "Archaeology": {
+        "level": 1,
+        "sp": 750,
+        "id": 13278
+      },
+      "Marketing": {
+        "level": 1,
+        "sp": 750,
+        "id": 16598
+      },
+      "Hacking": {
+        "level": 1,
+        "sp": 750,
+        "id": 21718
+      },
+      "Mining Upgrades": {
+        "level": 0,
+        "sp": 0,
+        "id": 22578
+      },
+      "Astrometric Rangefinding": {
+        "level": 1,
+        "sp": 2000,
+        "id": 25739
+      },
+      "Astrometric Acquisition": {
+        "level": 1,
+        "sp": 1250,
+        "id": 25811
+      },
+      "Salvaging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 25863
+      },
+      "Mining Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 32918
+      }
+    },
+    "queue": [
+      {
+        "skill_name": "Industry",
+        "level": 2,
+        "finish_date": "2026-08-14T21:35:33Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 3,
+        "finish_date": "2026-08-15T04:54:33Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 4,
+        "finish_date": "2026-08-16T22:18:13Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 5,
+        "finish_date": "2026-08-26T16:27:53Z"
+      },
+      {
+        "skill_name": "Cybernetics",
+        "level": 2,
+        "finish_date": "2026-08-26T20:20:37Z"
+      },
+      {
+        "skill_name": "Cybernetics",
+        "level": 3,
+        "finish_date": "2026-08-27T18:17:45Z"
+      },
+      {
+        "skill_name": "Hull Upgrades",
+        "level": 4,
+        "finish_date": "2026-08-31T05:05:05Z"
+      },
+      {
+        "skill_name": "Hull Upgrades",
+        "level": 5,
+        "finish_date": "2026-09-19T17:24:25Z"
+      },
+      {
+        "skill_name": "CPU Management",
+        "level": 5,
+        "finish_date": "2026-09-29T11:34:05Z"
+      },
+      {
+        "skill_name": "Evasive Maneuvering",
+        "level": 2,
+        "finish_date": "2026-09-29T14:09:21Z"
+      },
+      {
+        "skill_name": "Tactical Shield Manipulation",
+        "level": 2,
+        "finish_date": "2026-09-29T19:19:49Z"
+      },
+      {
+        "skill_name": "Tactical Shield Manipulation",
+        "level": 3,
+        "finish_date": "2026-10-01T00:36:01Z"
+      },
+      {
+        "skill_name": "Tactical Shield Manipulation",
+        "level": 4,
+        "finish_date": "2026-10-07T22:10:41Z"
+      },
+      {
+        "skill_name": "Shield Upgrades",
+        "level": 2,
+        "finish_date": "2026-10-08T00:45:57Z"
+      },
+      {
+        "skill_name": "Shield Upgrades",
+        "level": 3,
+        "finish_date": "2026-10-08T15:24:01Z"
+      },
+      {
+        "skill_name": "Shield Upgrades",
+        "level": 4,
+        "finish_date": "2026-10-12T02:11:21Z"
+      },
+      {
+        "skill_name": "Shield Management",
+        "level": 2,
+        "finish_date": "2026-10-12T06:04:13Z"
+      },
+      {
+        "skill_name": "Shield Management",
+        "level": 3,
+        "finish_date": "2026-10-13T04:01:21Z"
+      },
+      {
+        "skill_name": "Shield Management",
+        "level": 4,
+        "finish_date": "2026-10-18T08:12:21Z"
+      }
+    ]
+  },
+  "Rataghast Alexander": {
+    "id": 2124540504,
+    "total_sp": 423998,
+    "unallocated_sp": 1000000,
+    "wallet_isk": 5000.0,
+    "active_ship": "Velator",
+    "ship_custom_name": "Velator - Rataghast Alexander",
+    "system_name": "Mettle",
+    "skills": {
+      "Gunnery": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3300
+      },
+      "Small Hybrid Turret": {
+        "level": 1,
+        "sp": 250,
+        "id": 3301
+      },
+      "Rapid Firing": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3310
+      },
+      "Sharpshooter": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3311
+      },
+      "Motion Prediction": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3312
+      },
+      "Surgical Strike": {
+        "level": 0,
+        "sp": 0,
+        "id": 3315
+      },
+      "Controlled Bursts": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3316
+      },
+      "Trajectory Analysis": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3317
+      },
+      "Weapon Upgrades": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3318
+      },
+      "Missile Launcher Operation": {
+        "level": 1,
+        "sp": 250,
+        "id": 3319
+      },
+      "Spaceship Command": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3327
+      },
+      "Gallente Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 3328
+      },
+      "Gallente Hauler": {
+        "level": 1,
+        "sp": 1000,
+        "id": 3340
+      },
+      "Industry": {
+        "level": 1,
+        "sp": 254,
+        "id": 3380
+      },
+      "Mining": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3386
+      },
+      "Mechanics": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3392
+      },
+      "Repair Systems": {
+        "level": 0,
+        "sp": 0,
+        "id": 3393
+      },
+      "Hull Upgrades": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3394
+      },
+      "Science": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3402
+      },
+      "Cybernetics": {
+        "level": 1,
+        "sp": 750,
+        "id": 3411
+      },
+      "Astrometrics": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3412
+      },
+      "Power Grid Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3413
+      },
+      "Capacitor Systems Operation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3417
+      },
+      "Capacitor Management": {
+        "level": 3,
+        "sp": 24000,
+        "id": 3418
+      },
+      "Shield Management": {
+        "level": 1,
+        "sp": 750,
+        "id": 3419
+      },
+      "Tactical Shield Manipulation": {
+        "level": 1,
+        "sp": 1000,
+        "id": 3420
+      },
+      "Energy Grid Upgrades": {
+        "level": 1,
+        "sp": 500,
+        "id": 3424
+      },
+      "Shield Upgrades": {
+        "level": 1,
+        "sp": 500,
+        "id": 3425
+      },
+      "CPU Management": {
+        "level": 4,
+        "sp": 45255,
+        "id": 3426
+      },
+      "Electronic Warfare": {
+        "level": 1,
+        "sp": 500,
+        "id": 3427
+      },
+      "Long Range Targeting": {
+        "level": 2,
+        "sp": 2829,
+        "id": 3428
+      },
+      "Target Management": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3429
+      },
+      "Signature Analysis": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3431
+      },
+      "Electronics Upgrades": {
+        "level": 3,
+        "sp": 16000,
+        "id": 3432
+      },
+      "Propulsion Jamming": {
+        "level": 1,
+        "sp": 750,
+        "id": 3435
+      },
+      "Drones": {
+        "level": 1,
+        "sp": 250,
+        "id": 3436
+      },
+      "Drone Avionics": {
+        "level": 1,
+        "sp": 250,
+        "id": 3437
+      },
+      "Trade": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3443
+      },
+      "Navigation": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3449
+      },
+      "Afterburner": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3450
+      },
+      "Evasive Maneuvering": {
+        "level": 1,
+        "sp": 500,
+        "id": 3453
+      },
+      "High Speed Maneuvering": {
+        "level": 1,
+        "sp": 1250,
+        "id": 3454
+      },
+      "Warp Drive Operation": {
+        "level": 2,
+        "sp": 1415,
+        "id": 3455
+      },
+      "Survey": {
+        "level": 3,
+        "sp": 8000,
+        "id": 3551
+      },
+      "Archaeology": {
+        "level": 1,
+        "sp": 750,
+        "id": 13278
+      },
+      "Marketing": {
+        "level": 1,
+        "sp": 750,
+        "id": 16598
+      },
+      "Hacking": {
+        "level": 1,
+        "sp": 750,
+        "id": 21718
+      },
+      "Mining Upgrades": {
+        "level": 0,
+        "sp": 0,
+        "id": 22578
+      },
+      "Astrometric Rangefinding": {
+        "level": 1,
+        "sp": 2000,
+        "id": 25739
+      },
+      "Astrometric Acquisition": {
+        "level": 1,
+        "sp": 1250,
+        "id": 25811
+      },
+      "Salvaging": {
+        "level": 3,
+        "sp": 24000,
+        "id": 25863
+      },
+      "Mining Frigate": {
+        "level": 1,
+        "sp": 500,
+        "id": 32918
+      }
+    },
+    "queue": [
+      {
+        "skill_name": "Industry",
+        "level": 2,
+        "finish_date": "2026-08-14T21:39:13Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 3,
+        "finish_date": "2026-08-15T04:58:13Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 4,
+        "finish_date": "2026-08-16T22:21:53Z"
+      },
+      {
+        "skill_name": "Industry",
+        "level": 5,
+        "finish_date": "2026-08-26T16:31:33Z"
+      },
+      {
+        "skill_name": "Cybernetics",
+        "level": 2,
+        "finish_date": "2026-08-26T20:24:25Z"
+      },
+      {
+        "skill_name": "Cybernetics",
+        "level": 3,
+        "finish_date": "2026-08-27T18:21:33Z"
+      },
+      {
+        "skill_name": "Evasive Maneuvering",
+        "level": 2,
+        "finish_date": "2026-08-27T20:56:49Z"
+      },
+      {
+        "skill_name": "Evasive Maneuvering",
+        "level": 3,
+        "finish_date": "2026-08-28T11:34:53Z"
+      },
+      {
+        "skill_name": "Shield Management",
+        "level": 2,
+        "finish_date": "2026-08-28T15:27:45Z"
+      },
+      {
+        "skill_name": "Shield Management",
+        "level": 3,
+        "finish_date": "2026-08-29T13:24:53Z"
+      },
+      {
+        "skill_name": "Shield Management",
+        "level": 4,
+        "finish_date": "2026-09-03T17:35:53Z"
+      },
+      {
+        "skill_name": "Shield Upgrades",
+        "level": 2,
+        "finish_date": "2026-09-03T20:11:09Z"
+      },
+      {
+        "skill_name": "Shield Upgrades",
+        "level": 3,
+        "finish_date": "2026-09-04T10:49:13Z"
+      },
+      {
+        "skill_name": "Tactical Shield Manipulation",
+        "level": 2,
+        "finish_date": "2026-09-04T15:59:41Z"
+      },
+      {
+        "skill_name": "Shield Upgrades",
+        "level": 4,
+        "finish_date": "2026-09-08T02:47:01Z"
+      },
+      {
+        "skill_name": "Tactical Shield Manipulation",
+        "level": 3,
+        "finish_date": "2026-09-09T08:03:13Z"
+      },
+      {
+        "skill_name": "Tactical Shield Manipulation",
+        "level": 4,
+        "finish_date": "2026-09-16T05:37:53Z"
+      },
+      {
+        "skill_name": "Hull Upgrades",
+        "level": 4,
+        "finish_date": "2026-09-19T16:25:13Z"
+      },
+      {
+        "skill_name": "Hull Upgrades",
+        "level": 5,
+        "finish_date": "2026-10-09T04:44:33Z"
+      },
+      {
+        "skill_name": "CPU Management",
+        "level": 5,
+        "finish_date": "2026-10-18T22:54:13Z"
+      },
+      {
+        "skill_name": "Mining",
+        "level": 4,
+        "finish_date": "2026-10-20T16:17:53Z"
+      },
+      {
+        "skill_name": "Mining Upgrades",
+        "level": 1,
+        "finish_date": "2026-10-20T17:24:33Z"
+      },
+      {
+        "skill_name": "Mining Upgrades",
+        "level": 2,
+        "finish_date": "2026-10-20T22:35:01Z"
+      },
+      {
+        "skill_name": "Mining Upgrades",
+        "level": 3,
+        "finish_date": "2026-10-22T03:51:13Z"
+      },
+      {
+        "skill_name": "Mining Upgrades",
+        "level": 4,
+        "finish_date": "2026-10-29T01:25:53Z"
+      }
+    ]
+  }
+}

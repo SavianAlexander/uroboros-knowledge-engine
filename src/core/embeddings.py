@@ -14,28 +14,36 @@ OLLAMA_BASE_URL = os.environ.get("OPENAI_API_BASE", "http://host.docker.internal
 # ponytail: qwen2.5:7b is completion-only; nomic-embed-text is the actual embedding model
 OLLAMA_EMBED_MODEL = os.environ.get("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 
+import threading
 MAX_EMBED_CACHE_SIZE = 4096
 _embed_cache: OrderedDict = OrderedDict()  # LRU bounded cache preventing empty error caching
+_embed_lock = threading.Lock()
+_ollama_offline_until: float = 0.0
 
 def generate_embeddings_batch(texts: List[str], batch_size: int = 64) -> List[List[float]]:
     """High-performance batch vector embedding generation via local Ollama /api/embed (170+ chunks/sec)."""
+    global _ollama_offline_until
     if not texts:
         return []
 
     results = [[] for _ in range(len(texts))]
+    if time.time() < _ollama_offline_until:
+        return results
+
     uncached_indices = []
     uncached_prompts = []
 
-    for i, t in enumerate(texts):
-        key = (t or "")[:4000]
-        if not key.strip():
-            continue
-        if key in _embed_cache:
-            _embed_cache.move_to_end(key)
-            results[i] = _embed_cache[key]
-        else:
-            uncached_indices.append(i)
-            uncached_prompts.append(key)
+    with _embed_lock:
+        for i, t in enumerate(texts):
+            key = (t or "")[:4000]
+            if not key.strip():
+                continue
+            if key in _embed_cache:
+                _embed_cache.move_to_end(key)
+                results[i] = _embed_cache[key]
+            else:
+                uncached_indices.append(i)
+                uncached_prompts.append(key)
 
     if not uncached_prompts:
         return results
@@ -53,32 +61,31 @@ def generate_embeddings_batch(texts: List[str], batch_size: int = 64) -> List[Li
             "keep_alive": "24h"
         }).encode("utf-8")
 
-        for attempt in range(3):
-            try:
-                req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(req, timeout=5) as res:
-                    body = json.loads(res.read().decode("utf-8"))
-                    embs = body.get("embeddings", [])
+        success = False
+        try:
+            req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=3) as res:
+                body = json.loads(res.read().decode("utf-8"))
+                embs = body.get("embeddings", [])
+                with _embed_lock:
                     for idx, prompt, emb in zip(b_indices, b_prompts, embs):
                         results[idx] = emb
                         if emb:
                             if len(_embed_cache) >= MAX_EMBED_CACHE_SIZE:
                                 _embed_cache.popitem(last=False)
                             _embed_cache[prompt] = emb
-                    break
-            except (urllib.error.URLError, ConnectionError, OSError) as e:
-                # Local Ollama instance is not running or unreachable
-                logging.debug(f"Ollama embedding server offline at {url}: {e}")
-                for idx in b_indices:
-                    results[idx] = []
-                break
-            except Exception as e:
-                if attempt < 2:
-                    time.sleep(0.5 * (attempt + 1))
-                else:
-                    logging.debug(f"Batch embed failed for slice {b_start}: {e}")
-                    for idx in b_indices:
-                        results[idx] = []
+                success = True
+        except (urllib.error.HTTPError, urllib.error.URLError, ConnectionError, OSError, TimeoutError) as e:
+            # Circuit breaker: offline or model missing — silence retry storms for 60s
+            _ollama_offline_until = time.time() + 60.0
+            logging.debug(f"Ollama embedding offline ({e}); tripping circuit breaker for 60s")
+            for idx in b_indices:
+                results[idx] = []
+            break
+        except Exception as e:
+            logging.debug(f"Batch embed exception: {e}")
+            for idx in b_indices:
+                results[idx] = []
 
     return results
 

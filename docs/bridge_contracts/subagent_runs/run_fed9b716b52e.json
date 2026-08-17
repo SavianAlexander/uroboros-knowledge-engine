@@ -1,0 +1,39 @@
+{
+  "run_id": "fed9b716b52e",
+  "task": "Test pipeline execution",
+  "status": "success",
+  "zero_stutter_priority_idle": true,
+  "total_duration_ms": 11806.98,
+  "timestamp_iso": "2026-08-17T17:39:15Z",
+  "stages": [
+    {
+      "stage": 1,
+      "name": "Pre-Flight Process Hygiene",
+      "status": "success",
+      "duration_ms": 8888.46,
+      "details": "Terminated 0 orphans, Score: 100%"
+    },
+    {
+      "stage": 2,
+      "name": "Tududi Task Master Tracking",
+      "status": "warning",
+      "duration_ms": 196.75,
+      "details": "'str' object has no attribute 'get'"
+    },
+    {
+      "stage": 3,
+      "name": "AST Code Graph Indexing",
+      "status": "success",
+      "duration_ms": 1617.69,
+      "details": "Indexed 5118 symbols, 0 call edges"
+    },
+    {
+      "stage": 5,
+      "name": "Git Merkle Provenance & Sync Check",
+      "status": "success",
+      "duration_ms": 1104.03,
+      "details": "Head: 9c2ef26, Status: Clean"
+    }
+  ],
+  "git_state": "Clean"
+}

@@ -7,7 +7,7 @@ import unicodedata
 import re
 from typing import Dict, Any
 
-CODE_KEYWORDS = {"def", "function", "class", "import", "api", "struct", "code", "method", "enum", "const", "let", "var"}
+CODE_KEYWORDS = {"def", "function", "class", "import", "api", "struct", "code", "method", "enum", "const"}
 MATH_KEYWORDS = {"table", "revenue", "quarter", "profit", "percent", "sum", "average", "total", "margin", "count"}
 SUMMARY_KEYWORDS = {"summary", "overview", "briefing", "report", "explain", "architecture"}
 COMPARE_KEYWORDS = {"vs", "versus", "compare", "difference", "contrast", "compared"}

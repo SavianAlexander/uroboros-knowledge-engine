@@ -73,7 +73,8 @@ def run_audit(target_dir, quiet=False):
         "AGENTS.md", "ARCHITECTURE.md", "CHANGELOG.md", "CITATION.cff", "nginx.conf",
         "pytest.ini", "ROADMAP.md", "SECURITY.md", "SUPPORT.md", "setup.ps1",
         "uroboros_engine.spec", "build_desktop_app.py", "batch_index.py", "test_single_book.py",
-        "vectors.db", "start_copilot.py", "app.js.gz", "index.html.gz", "style.css.gz", ".coverage"
+        "vectors.db", "start_copilot.py", "app.js.gz", "index.html.gz", "style.css.gz", ".coverage",
+        "apply_system_hardening.bat", "requirements-dev.txt", "unittest_output.txt"
     }
     excess_root = [
         f.name for f in all_files

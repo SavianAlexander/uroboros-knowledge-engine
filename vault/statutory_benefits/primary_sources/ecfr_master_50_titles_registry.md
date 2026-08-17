@@ -2,7 +2,7 @@
 title: "Electronic Code of Federal Regulations (eCFR) Complete 50-Title Master Registry"
 source_authority: "National Archives and Records Administration (NARA) & GPO (eCFR.gov API)"
 total_titles: 50
-harvested_at: "2026-08-17T17:15:21Z"
+harvested_at: "2026-08-17T17:49:26Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_MASTER_CATALOG"
 verification: "ECFR_API_V1_VERIFIED"
 ---

@@ -124,19 +124,22 @@ class TestDomainAuthSecurityHardening(unittest.TestCase):
         self.assertIsNone(verify_jwt("invalid!@#.bad!@#.signature!@#"))
 
     def test_06_password_hashing_consistency(self):
-        """Verify password hashing consistency and uniqueness.
+        """Verify password hashing consistency, PBKDF2 format, and verification.
 
         Preconditions: Passwords hashed via hash_password().
-        Invariants: Produces deterministic 64-char SHA-256 hex digest.
-        Expected Outcomes: Identical passwords produce identical hashes; distinct passwords produce distinct hashes.
+        Invariants: Produces pbkdf2 format string and verifies via verify_password().
+        Expected Outcomes: Valid password verifies successfully; distinct passwords fail verification.
         """
-        h1 = hash_password("SuperSecretPass123!")
-        h2 = hash_password("SuperSecretPass123!")
-        h3 = hash_password("DifferentPass456!")
+        from src.core.auth_jwt import verify_password
+        h1 = hash_password("SuperSecretPass123!", salt="fixed_test_salt_123")
+        h2 = hash_password("SuperSecretPass123!", salt="fixed_test_salt_123")
+        h3 = hash_password("DifferentPass456!", salt="fixed_test_salt_123")
 
-        self.assertEqual(len(h1), 64)
+        self.assertTrue(h1.startswith("pbkdf2:sha256:"))
         self.assertEqual(h1, h2)
         self.assertNotEqual(h1, h3)
+        self.assertTrue(verify_password("SuperSecretPass123!", h1))
+        self.assertFalse(verify_password("WrongPassword!", h1))
 
     def test_07_multi_tenant_user_id_document_filtering(self):
         """Verify strict multi-tenant document isolation. Tenant A cannot see Tenant B documents.

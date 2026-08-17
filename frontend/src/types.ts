@@ -1,4 +1,4 @@
-export type ViewId = 'dashboard' | 'workspace' | 'search' | 'ingestion' | 'graph' | 'chat' | 'config' | 'settings' | 'architecture' | 'curam';
+export type ViewId = 'dashboard' | 'workspace' | 'search' | 'ingestion' | 'graph' | 'chat' | 'config' | 'settings' | 'architecture';
 
 export interface AppState {
   activeView: ViewId;

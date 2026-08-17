@@ -1,58 +1,58 @@
 # Project #13: Neuro Alexander Roadmap & Execution Ledger
 
-**Completion Rate**: 99.9% (1840 completed / 1842 total)
+**Completion Rate**: 99.3% (1880 completed / 1894 total)
 
 ## Active Sprint & Phase Overview
 
 | Task ID | Name | Priority | Status |
 | :--- | :--- | :--- | :--- |
-| #1896 | Feat: Complete 50-Title CFR & Full-API Command Center Ingestion | Low | Pending |
-| #1895 | Feat: Complete 50-Title CFR & Full-API Command Center Ingestion | Low | Pending |
-| #1894 | Feat: Universal Primary Source Ingestion Expansion (EVE, Puerto Rico, ISO/SOC2) | Low | Completed |
-| #1893 | Feat: Universal Primary Source Live-Sync Ingestion Architecture | Low | Completed |
-| #1892 | Feat: Universal Primary Source Live-Sync Ingestion Architecture | Low | Completed |
-| #1891 | Execute Test Suites and Verify Audit Ledger | Medium | Completed |
-| #1890 | Standardize SQLite Connection Lifecycle and Health Telemetry | Medium | Completed |
-| #1889 | Implement Resilient Hybrid Search Fallback with Degraded Status Telemetry | Medium | Completed |
-| #1888 | Fix SPA Routing Fallbacks & Clean Stale Vanilla Fallbacks in server.py | Medium | Completed |
-| #1887 | Fix Inter-Process Vector Cache Invalidation via PRAGMA data_version | Medium | Completed |
-| #1886 | Core Architecture Remediation & System Stability Fixes | High | Completed |
-| #1885 | Subtask 4: Automated Verification & Master Domain Test Pass | High | Completed |
-| #1884 | Subtask 3: Runtime Service Catalog Registry | High | Completed |
-| #1883 | Subtask 2: Agent Episodic Memory & Scratchpad Engine | High | Completed |
-| #1882 | G5: Full Regression Matrix Certification (100% Green) | Medium | Completed |
-| #1881 | Subtask 1: Polyglot AST Extraction Engine (TS/JS/Go/Rust/Python) | High | Completed |
-| #1880 | Advanced Polyglot AST Engine, Agent Episodic Memory & Service Catalog Registry | High | Completed |
-| #1879 | G4: Database Optimization, Vacuum & Index Tuning | Medium | Completed |
-| #1878 | G3: Wire Domain Plugin Extensions into UI & Search Endpoints | Medium | Completed |
-| #1877 | G2: Frontend React 19 Production Build & UI Parity Sync | Medium | Completed |
-| #1876 | G1: Architecture Doctor & Contract Bus DAG Certification | Medium | Completed |
-| #1875 | Autonomous Long-Running System Hardening & Optimization (/goal) | Low | Completed |
-| #1874 | Subtask 6: Automated End-to-End System Verification | High | Completed |
-| #1873 | Subtask 5: Federal Rule of Evidence 902 Merkle Audit Certificate | High | Completed |
-| #1872 | Subtask 4: Database Self-Healing Diagnostics & Integrity Audit | High | Completed |
-| #1871 | Subtask 3: OpenAPI Router Tags & Metadata Enrichment | High | Completed |
-| #1870 | Subtask 2: SQLite Query Index & FTS5 Synchronization Triggers | High | Completed |
-| #1869 | Subtask 1: Bitwise UI Asset Parity Synchronization | High | Completed |
-| #1868 | Goal Execution: Complete Enterprise Hardening, Index Optimization, Bitwise Asset Parity & Rule 902 Audit Ledger | High | Completed |
-| #1867 | Empirical Data-Driven Statutory Platform (CÃºram, CHIP, WIC, CCDF, Section 8, Jira, UAT) & React QA Studio | Low | Completed |
-| #1866 | Subtask 5: System Verification & Automated Test Pass | High | Completed |
-| #1865 | Subtask 4: Typed JSON-SSE Streaming Protocol | High | Completed |
-| #1864 | Subtask 3: Generational ETag Query Caching (PRAGMA data_version) | High | Completed |
-| #1863 | Subtask 2: Constant-Time Authentication (secrets.compare_digest) | High | Completed |
-| #1862 | Subtask 1: EVE Infrastructure Encapsulation (src/infrastructure/eve/) | High | Completed |
-| #1861 | Architectural Hardening Phase 2: EVE Infrastructure Encapsulation, Constant-Time Auth, Generational ETag Caching & Typed SSE | High | Completed |
-| #1860 | Phase 7: Full Domain & E2E Test Suite Validation | Medium | Completed |
-| #1859 | Phase 6: Isolate Real-Time Voice Audio Daemon from FastAPI Event Loop | Medium | Completed |
-| #1858 | Phase 5: Refactor vector_engine.py into Modular Storage & Strategy Classes | Medium | Completed |
-| #1857 | Phase 4: Build Autonomous Knowledge Graph Synthesis Write-Back Loop | Medium | Completed |
-| #1856 | Phase 3: Implement Zero-LLM Fast-Path Streaming with Speculative Verification | Medium | Completed |
-| #1855 | Phase 2: Build Dynamic Composable RAG Execution DAG Engine | Medium | Completed |
-| #1854 | Phase 1: Implement Domain Plugin SPI & Vertical Cartridge Registry | Medium | Completed |
-| #1853 | Uroboros Architectural Modernization & Consolidation | Low | Completed |
-| #1852 | Phase 5: Automated Verification & Unit Test Suite Validation | High | Completed |
-| #1851 | Phase 4: Vector Buffer & SQLite Scoping Optimization | High | Completed |
-| #1850 | Phase 3: Domain Exceptions & FastAPI Error Hierarchy | High | Completed |
-| #1849 | Phase 2: Domain Module Consolidation & Facade Shims | High | Completed |
-| #1848 | Phase 1: Composable Retrieval Pipeline DAG | High | Completed |
-| #1847 | Architectural Modernization: Retrieval Pipeline DAG, Bounded Contexts, Typed Exceptions & Engine Consolidation | High | Completed |
+| #1948 | Phase 2 Frontier Autonomous Reasoning Architecture | High | Pending |
+| #1947 | Phase 2 Frontier Autonomous Reasoning Architecture (Gemini 3.0 & Claude 3.7 Grade) | High | Pending |
+| #1946 | Elevate Neuro Co-Pilot to Frontier Reasoning Architecture | High | Completed |
+| #1945 | Neuro Copilot Complete Upgrade: Empirical Truth Verification & Multi-Bridge Integrity | High | Pending |
+| #1944 | Diagnose and fix voice synthesis stuttering, stopping, and raw text/tag verbalization | High | Completed |
+| #1943 | Enhance Neuro Copilot with Empirical Action Protocol and Full Vault Indexing | High | Pending |
+| #1942 | Fix neuro-copilot: Add RAG-Grounded Assistant Protocol (Protocol #0) | High | Pending |
+| #1941 | Final Executive Scorecard & Burndown Report | Medium | Pending |
+| #1940 | Git Merkle Provenance & Remote Verification | Medium | Pending |
+| #1939 | Database & Knowledge Vault Integrity Check | Medium | Pending |
+| #1938 | ConnectionClient Health & Primary Source Connectors | Medium | Pending |
+| #1937 | Multi-Bridge Contract Bus & Parallel Self-Test Matrix | Medium | Completed |
+| #1936 | 360Â° System Health Doctor Check | Medium | Completed |
+| #1935 | End-to-End Full System Verification Pass | Low | Pending |
+| #1934 | Comprehensive Primary Source Remediation & Zombie Database Pruning | High | Pending |
+| #1933 | 8. Testing, CLI Verification & Provenance Certification | Medium | Pending |
+| #1932 | 7. UAT Signature Grounding (src/domain/caseworker_uat_engine.py) | Medium | Completed |
+| #1931 | 6. Dynamic HyDE Expansion (src/domain/contextual_hyde.py) | Medium | Completed |
+| #1930 | 5. Puerto Rico Lex Metadata Correction (src/domain/connectors/puerto_rico_lex_connector.py) | Medium | Completed |
+| #1929 | 4. EVE Online ESI Universe Coverage (src/domain/connectors/eve_esi_connector.py) | Medium | Completed |
+| #1928 | 3. Federal Register API Integration (src/domain/connectors/federal_register_connector.py) | Medium | Completed |
+| #1927 | 2. SQLite Database Zombie Purge (uroboros.db) | Medium | Completed |
+| #1926 | 1. Jira REST API Dispatch (src/domain/jira_engine.py) | Medium | Completed |
+| #1925 | Zero-Redaction & Primary Source Grounding Remediation Pass | Low | Pending |
+| #1924 | Compile itemized findings, upstream source mappings, & remediation plan | Medium | Completed |
+| #1923 | Generate Primary Source Provenance Audit Artifact and Provenance Report | Medium | Completed |
+| #1922 | Execute neuro_cli.py doctor & health diagnostics | Medium | Completed |
+| #1921 | Run & Pass Full Verification Test Suites and Invariant Checks | Medium | Completed |
+| #1920 | Audit Jira/UAT Caseworker journeys, RAG Prompts, HyDE, & Model Fallbacks | Medium | Completed |
+| #1919 | Generate comprehensive audit report and GitHub provenance card | Low | Completed |
+| #1918 | Audit EVE Online Telemetry, Tactical Services, & Mock Fixtures | Medium | Completed |
+| #1917 | Update vault/.sync_ledger.json & Ingestion Pipeline with Cryptographic Parity | Medium | Completed |
+| #1916 | Run test matrix and diagnostics (doctor, test_all, bench) | Low | Completed |
+| #1915 | Audit Domain Connectors, CÃºram SPM, Statutory Rules, & Datasets | Medium | Completed |
+| #1914 | Connect and Ingest Official Primary Source Data (eCFR, FederalRegister, Jira, Curam, Eve, PR, ISO) | Medium | Completed |
+| #1913 | Remediate hardcoded mock/dummy fallbacks and enforce live upstream APIs | Low | Completed |
+| #1912 | Audit Knowledge Vault & .sync_ledger.json for synthetic vs primary sources | Medium | Completed |
+| #1911 | Audit Knowledge Vault, Connectors, Bridges for Fake/Mock/Hardcoded Data | Medium | Completed |
+| #1910 | Audit core backend services (src/app, src/core, know.py, engines) | Low | Completed |
+| #1909 | Audit neuro-copilot bridges (eve, curam, tududi, jira, uat, doctor, voice, bench, fleet) | Low | Completed |
+| #1908 | Audit domain connectors and vault sync sources for mock/synthetic data | Low | Completed |
+| #1907 | Audit and Fix Fake/Mock/Placeholder Information in Knowledge Vault & Connectors | High | Completed |
+| #1906 | [AUDIT] Primary Source & Synthetic Data Audit - Codebase & Knowledge Vault | Low | Completed |
+| #1905 | Audit and Remediate Mock / Synthetic / Fake Data Across Uroboros Engine & Bridges | Low | Completed |
+| #1904 | Implement Dedicated Subagent Bridge & CLI spawn Orchestrator | High | Completed |
+| #1903 | 3. Verify subagent tool wiring, self-test bridge contracts, and compile documentation | Medium | Completed |
+| #1902 | 2. Update workspace AGENTS.md rules with Autonomous Hands-Free Subagent Delegation Protocol | Medium | Completed |
+| #1901 | 1. Update neuro-copilot SKILL.md with Autonomous Hands-Free Subagent Delegation Protocol | Medium | Completed |
+| #1900 | Implement Autonomous Hands-Free Subagent Delegation for /neuro-copilot | High | Completed |
+| #1899 | Subtask 1: Audit voice test suites and identify disconnected data paths | High | Completed |

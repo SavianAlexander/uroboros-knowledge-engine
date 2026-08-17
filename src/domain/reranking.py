@@ -107,9 +107,34 @@ def _quantize_tuple_to_bitpack(vec_tuple: Tuple[float, ...]) -> int:
 
 @functools.lru_cache(maxsize=16384)
 def _token_to_64bitpack(token_str: str) -> int:
-    """Memoized conversion of text token into a 64-bit integer bitpack via cryptographic hash."""
-    h = hashlib.sha256(token_str.encode("utf-8")).digest()
-    return int.from_bytes(h[:8], byteorder="big")
+    """
+    Locality-Sensitive Hashing (LSH) bitpack projection of text tokens using character n-grams.
+    Preserves lexical, morphological, and stem similarity in Hamming space for accurate MaxSim scoring.
+    """
+    clean = unicodedata.normalize("NFC", str(token_str or "").lower().strip())
+    if not clean:
+        return 0
+    
+    bitpack = 0
+    # Whole-word seed
+    h_word = (hash(clean) ^ 0x5555555555555555) & 0xFFFFFFFFFFFFFFFF
+    bitpack |= (1 << (h_word % 64))
+
+    # Prefix and suffix anchors
+    if len(clean) >= 3:
+        prefix_h = (hash(clean[:3]) ^ 0xAAAAAAAAAAAAAAA) & 0x3F
+        suffix_h = (hash(clean[-3:]) ^ 0x555555555555555) & 0x3F
+        bitpack |= (1 << prefix_h) | (1 << suffix_h)
+
+    # Character n-grams (2-gram and 3-gram) LSH features
+    for n in (2, 3):
+        if len(clean) >= n:
+            for i in range(len(clean) - n + 1):
+                gram = clean[i : i + n]
+                pos = hash(gram) & 0x3F
+                bitpack |= (1 << pos)
+
+    return bitpack
 
 
 def _quantize_to_binary_bitpack(vector: List[float]) -> int:
@@ -189,25 +214,84 @@ def rerank_search_results_colbert(query: str, results: List[Dict[str, Any]], top
         snippet = item.get("snippet", "") or item.get("content", "") or item.get("title", "") or ""
         d_bitpacks = text_to_token_bitpacks(snippet)
         if not d_bitpacks:
-            scored_results.append((item.get("score", 0.0), item))
+            scored_results.append((float(item.get("score", 0.0) or 0.0), item))
             continue
-
-        colbert_score = compute_maxsim_from_bitpacks(q_bitpacks, d_bitpacks)
-        existing_score = float(item.get("score", 0.5) or 0.5)
-        combined_score = round(0.4 * existing_score + 0.6 * colbert_score, 4)
-        
-        updated_item = dict(item)
-        updated_item["colbert_maxsim_score"] = colbert_score
-        updated_item["score"] = combined_score
-        scored_results.append((combined_score, updated_item))
+        sim = compute_maxsim_from_bitpacks(q_bitpacks, d_bitpacks)
+        orig_score = float(item.get("score", 0.0) or 0.0)
+        combined = 0.5 * orig_score + 0.5 * sim
+        item_copy = dict(item)
+        item_copy["colbert_score"] = sim
+        item_copy["score"] = round(combined, 4)
+        scored_results.append((combined, item_copy))
 
     scored_results.sort(key=lambda x: x[0], reverse=True)
-    return [r[1] for r in scored_results[:top_k]]
+    return [x[1] for x in scored_results[:top_k]]
 
 
-# ==============================================================================
-# 3. Dynamic Sparse-Dense-ColBERT Fusion
-# ==============================================================================
+def dot_product(v1: List[float], v2: List[float]) -> float:
+    """Calculates dot product of two equal-length float vectors."""
+    if not v1 or not v2:
+        return 0.0
+    return sum(x * y for x, y in zip(v1, v2))
+
+
+def normalize_vector(v: List[float]) -> List[float]:
+    """Applies L2 normalization to a vector."""
+    if not v or not isinstance(v, (list, tuple)):
+        return []
+    norm = math.sqrt(sum(x * x for x in v if isinstance(x, (int, float))))
+    if norm == 0.0:
+        return [0.0] * len(v)
+    return [round(x / norm, 6) for x in v if isinstance(x, (int, float))]
+
+
+def colbert_maxsim_score(query_token_embeddings: List[List[float]], doc_token_embeddings: List[List[float]]) -> float:
+    """Computes ColBERT Late Interaction MaxSim score across token embeddings."""
+    if not query_token_embeddings or not doc_token_embeddings:
+        return 0.0
+    normalized_docs = [normalize_vector(d) for d in doc_token_embeddings if d and isinstance(d, (list, tuple))]
+    if not normalized_docs:
+        return 0.0
+    total_score = 0.0
+    valid_query_tokens = 0
+    for q_emb in query_token_embeddings:
+        if not q_emb or not isinstance(q_emb, (list, tuple)):
+            continue
+        q_norm = normalize_vector(q_emb)
+        max_sim = -1.0
+        for d_norm in normalized_docs:
+            sim = dot_product(q_norm, d_norm)
+            if sim > max_sim:
+                max_sim = sim
+                if max_sim >= 0.9999:
+                    break
+        if max_sim > -1.0:
+            total_score += max_sim
+            valid_query_tokens += 1
+    return round(total_score / float(valid_query_tokens), 4) if valid_query_tokens > 0 else 0.0
+
+
+def rerank_documents_colbert(
+    query_tokens: List[List[float]],
+    candidates: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """Reranks document candidates using token-level ColBERT MaxSim scores."""
+    if not candidates or not isinstance(candidates, list):
+        return []
+    valid_candidates = [c for c in candidates if isinstance(c, dict)]
+    reranked = []
+    for cand in valid_candidates:
+        doc_tokens = cand.get("token_embeddings", [])
+        if not doc_tokens:
+            score = _safe_float(cand.get("score"), 0.0)
+        else:
+            score = colbert_maxsim_score(query_tokens, doc_tokens)
+        cand_copy = dict(cand)
+        cand_copy["colbert_maxsim_score"] = score
+        reranked.append(cand_copy)
+    reranked.sort(key=lambda x: x["colbert_maxsim_score"], reverse=True)
+    return reranked
+
 
 def _safe_float(val, default=0.5):
     if val is None:

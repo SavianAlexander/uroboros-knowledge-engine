@@ -228,37 +228,6 @@ class CrawlJobOrchestrator:
                 except Exception:
                     pass
 
-                try:
-                    from src.domain.pr_legal_engine import PRLegalEngine
-                    chunks = PRLegalEngine.parse_legal_ast_document(
-                        clean_text,
-                        title,
-                        {"source_origin": f"Omni Harvester (Job #{job_id})", "source_url": url}
-                    )
-                    for c in chunks:
-                        c_meta = c["metadata"]
-                        self.conn.execute("""
-                        INSERT OR REPLACE INTO pr_legal_corpus (
-                            citation_key, canonical_citation, title, hierarchy_path,
-                            status, effective_date, source_origin, source_url, content, merkle_sha256
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (
-                            c["citation_key"],
-                            c["canonical_citation"],
-                            title,
-                            c_meta.get("hierarchy_path", ""),
-                            c["status"],
-                            "2026-08-15",
-                            f"Omni Crawler Job #{job_id}",
-                            url,
-                            c["content"],
-                            c["merkle_sha256"]
-                        ))
-                        chunks_indexed += 1
-                    self.conn.commit()
-                except Exception:
-                    pass
-
             mark_url_result(self.conn, url_item.id, URL_STATUS_VISITED, content_type=content_type, sha256_hash=merkle_dag_root)
             increment_job_metrics(
                 self.conn,

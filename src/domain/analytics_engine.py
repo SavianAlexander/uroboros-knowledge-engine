@@ -34,17 +34,29 @@ def clear_analytics_cache() -> None:
         _analytics_cache.clear()
 
 
+def _get_cached(cache_key: tuple, now: float) -> Optional[Any]:
+    with _cache_lock:
+        if cache_key in _analytics_cache:
+            res, ts = _analytics_cache[cache_key]
+            if now - ts < CACHE_TTL_SECONDS:
+                return res
+    return None
+
+
+def _set_cached(cache_key: tuple, res: Any, now: float) -> None:
+    with _cache_lock:
+        _analytics_cache[cache_key] = (res, now)
+
+
 def get_indexing_overview(db_path: Optional[str] = None) -> AnalyticsOverviewResponse:
     target_path = db_path if db_path is not None else know.DB_FILE
     db_ver = getattr(know, "_db_version", 0)
     cache_key = ("indexing_overview", target_path, db_ver)
     now = time.time()
 
-    with _cache_lock:
-        if cache_key in _analytics_cache:
-            res, ts = _analytics_cache[cache_key]
-            if now - ts < CACHE_TTL_SECONDS:
-                return res
+    cached = _get_cached(cache_key, now)
+    if cached is not None:
+        return cached
 
     total_docs = 0
     total_chunks = 0
@@ -64,10 +76,7 @@ def get_indexing_overview(db_path: Optional[str] = None) -> AnalyticsOverviewRes
                 """)
                 row = cur.fetchone()
                 if row:
-                    total_docs = row[0] or 0
-                    total_chunks = row[1] or 0
-                    fts_records = row[2] or 0
-                    storage_bytes = row[3] or 0
+                    total_docs, total_chunks, fts_records, storage_bytes = row
             except sqlite3.OperationalError:
                 pass
 
@@ -90,7 +99,7 @@ def get_indexing_overview(db_path: Optional[str] = None) -> AnalyticsOverviewRes
             storage_total_bytes=0
         )
 
-    _analytics_cache[cache_key] = (res, now)
+    _set_cached(cache_key, res, now)
     return res
 
 
@@ -100,10 +109,9 @@ def get_storage_breakdown(db_path: Optional[str] = None) -> StorageBreakdownResp
     cache_key = ("storage_breakdown", target_path, db_ver)
     now = time.time()
 
-    if cache_key in _analytics_cache:
-        res, ts = _analytics_cache[cache_key]
-        if now - ts < CACHE_TTL_SECONDS:
-            return res
+    cached = _get_cached(cache_key, now)
+    if cached is not None:
+        return cached
 
     by_mime: Dict[str, int] = {}
     by_ext: Dict[str, int] = {}
@@ -173,7 +181,7 @@ def get_storage_breakdown(db_path: Optional[str] = None) -> StorageBreakdownResp
             top_directories=[]
         )
 
-    _analytics_cache[cache_key] = (res, now)
+    _set_cached(cache_key, res, now)
     return res
 
 
@@ -184,10 +192,9 @@ def get_tag_distribution(db_path: Optional[str] = None, pool_limit: int = 15) ->
     cache_key = ("tag_distribution", target_path, db_ver, pool_size)
     now = time.time()
 
-    if cache_key in _analytics_cache:
-        res, ts = _analytics_cache[cache_key]
-        if now - ts < CACHE_TTL_SECONDS:
-            return res
+    cached = _get_cached(cache_key, now)
+    if cached is not None:
+        return cached
 
     total_tags = 0
     top_tags: List[Dict[str, Any]] = []
@@ -246,7 +253,7 @@ def get_tag_distribution(db_path: Optional[str] = None, pool_limit: int = 15) ->
             tag_cooccurrence=[]
         )
 
-    _analytics_cache[cache_key] = (res, now)
+    _set_cached(cache_key, res, now)
     return res
 
 
@@ -256,10 +263,9 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
     cache_key = ("search_activity", target_path, db_ver)
     now = time.time()
 
-    if cache_key in _analytics_cache:
-        res, ts = _analytics_cache[cache_key]
-        if now - ts < CACHE_TTL_SECONDS:
-            return res
+    cached = _get_cached(cache_key, now)
+    if cached is not None:
+        return cached
 
     total_queries = 0
     avg_latency = 0.0
@@ -364,5 +370,5 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
             timeline=list(timeline_data.values())
         )
 
-    _analytics_cache[cache_key] = (res, now)
+    _set_cached(cache_key, res, now)
     return res

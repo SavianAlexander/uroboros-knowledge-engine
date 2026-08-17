@@ -29,7 +29,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from src.infrastructure.database import get_db, reset_db_connections
+from src.infrastructure.database import get_db, reset_db_connections, init_db
 from src.app.routers.search import _filter_by_excluded_tags, _filter_by_excluded_words, _batch_fetch_tags
 from src.core.embeddings import (
     _embed_cache, MAX_EMBED_CACHE_SIZE, generate_embeddings_batch,
@@ -542,6 +542,17 @@ class TestRAGContextAndVoiceBridgeEdgeCases(unittest.TestCase):
         self.assertEqual(extracted_facts[0], "Quantum cryptography is secure")
         self.assertEqual(extracted_facts[1], "Quantum states collapse")
 
+    def test_voice_rag_bridge_live_database_search(self):
+        """Test VoiceRAGBridge query_and_summarize directly against live database records without mocks."""
+        # Query real knowledge database for known domain terms
+        res = VoiceRAGBridge.query_and_summarize("Alexander", max_sentences=2)
+        self.assertIsInstance(res, dict)
+        self.assertIn("speech_text", res)
+        self.assertIn("citations", res)
+        self.assertIn("retrieval_ms", res)
+        self.assertIsInstance(res["citations"], list)
+        self.assertGreaterEqual(res["retrieval_ms"], 0.0)
+
 
 class TestModelRouterAndParsersEdgeCases(unittest.TestCase):
     """Adversarial stress tests for Model Router and Document Parsers."""
@@ -667,6 +678,10 @@ Inline hashtags: #alpha #delta #beta #delta #epsilon/sub
 class TestFileTreePopulationEdgeCases(unittest.TestCase):
     """Adversarial stress tests for _populate_db_tree_nodes and resolve_file_on_disk."""
 
+    @classmethod
+    def setUpClass(cls):
+        init_db()
+
     def test_populate_db_tree_nodes_deduplication(self):
         """Test _populate_db_tree_nodes with pre-existing seen paths and empty rows."""
         base_dir = os.path.abspath(".")
@@ -750,6 +765,10 @@ class TestConcurrencyAndHighLoadStress(unittest.TestCase):
 
 class TestExtremeAdversarialInputs(unittest.TestCase):
     """Adversarial testing with SQL injection patterns, regex special chars, and massive payloads."""
+
+    @classmethod
+    def setUpClass(cls):
+        init_db()
 
     def test_tag_filtering_sql_injection_and_null_bytes(self):
         """Test tag filtering resilience against SQL injection strings and null byte payloads."""

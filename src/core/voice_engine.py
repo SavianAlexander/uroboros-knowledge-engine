@@ -21,6 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
+LOCAL_ONNX_GPU_MODEL_PATH = os.path.join(BASE_DIR, "models", "kokoro", "kokoro-v0_19_directml_gpu.onnx")
 LOCAL_ONNX_MODEL_PATH = os.path.join(BASE_DIR, "models", "kokoro", "kokoro-v0_19.onnx")
 LOCAL_VOICES_BIN_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.bin")
 
@@ -193,6 +194,7 @@ class NonInterruptingAudioQueue:
 class KokoroVoiceEngine:
     """
     Universal High-Performance Kokoro-82M neural voice engine & streaming conversational synthesizer.
+    Hardware Accelerated on AMD Radeon RX 7900 XTX via DirectML.
     """
 
     def __init__(
@@ -210,19 +212,53 @@ class KokoroVoiceEngine:
         self._init_local_kokoro()
 
     def _init_local_kokoro(self):
-        """Initialize in-process ONNX model if model files are present."""
-        if os.path.exists(LOCAL_ONNX_MODEL_PATH) and os.path.exists(LOCAL_VOICES_BIN_PATH):
+        """Initialize in-process ONNX model with DirectML GPU acceleration and CPU fallback."""
+        model_to_use = LOCAL_ONNX_GPU_MODEL_PATH if os.path.exists(LOCAL_ONNX_GPU_MODEL_PATH) else LOCAL_ONNX_MODEL_PATH
+        if os.path.exists(model_to_use) and os.path.exists(LOCAL_VOICES_BIN_PATH):
             try:
                 import onnxruntime as rt
-                # ponytail: Prefer DirectML hardware acceleration on AMD GPUs when available
                 available_providers = rt.get_available_providers()
                 if "DmlExecutionProvider" in available_providers and not os.getenv("ONNX_PROVIDER"):
                     os.environ["ONNX_PROVIDER"] = "DmlExecutionProvider"
-                
+
                 from kokoro_onnx import Kokoro
-                self._local_kokoro_instance = Kokoro(LOCAL_ONNX_MODEL_PATH, LOCAL_VOICES_BIN_PATH)
+                self._local_kokoro_instance = Kokoro(model_to_use, LOCAL_VOICES_BIN_PATH)
             except Exception:
-                self._local_kokoro_instance = None
+                try:
+                    os.environ["ONNX_PROVIDER"] = "CPUExecutionProvider"
+                    from kokoro_onnx import Kokoro
+                    self._local_kokoro_instance = Kokoro(LOCAL_ONNX_MODEL_PATH, LOCAL_VOICES_BIN_PATH)
+                except Exception:
+                    self._local_kokoro_instance = None
+
+    def get_hardware_acceleration_info(self) -> Dict[str, Any]:
+        """Query active hardware execution provider, GPU status, and model path."""
+        providers = []
+        active_ep = "None"
+        if self._local_kokoro_instance and hasattr(self._local_kokoro_instance, "sess"):
+            try:
+                providers = self._local_kokoro_instance.sess.get_providers()
+                active_ep = providers[0] if providers else "CPUExecutionProvider"
+            except Exception:
+                pass
+        if "DmlExecutionProvider" in providers:
+            gpu_name = "DirectML Accelerated GPU"
+        elif "CUDAExecutionProvider" in providers:
+            gpu_name = "CUDA Accelerated GPU"
+        elif "ROCMExecutionProvider" in providers:
+            gpu_name = "ROCm Accelerated GPU"
+        elif "CoreMLExecutionProvider" in providers:
+            gpu_name = "Apple Neural Engine (CoreML)"
+        else:
+            gpu_name = "Host CPU (Multi-Threaded SIMD)"
+
+        return {
+            "gpu_hardware": gpu_name,
+            "active_execution_provider": active_ep,
+            "all_providers": providers,
+            "is_gpu_accelerated": ("DmlExecutionProvider" in providers or "CUDAExecutionProvider" in providers),
+            "engine": "Kokoro-82M ONNX (Hardware Accelerated)" if ("DmlExecutionProvider" in providers or "CUDAExecutionProvider" in providers) else "Kokoro-82M ONNX (Multi-Threaded CPU)"
+        }
 
     def synthesize_neural_audio(
         self,
@@ -236,6 +272,16 @@ class KokoroVoiceEngine:
         Synthesize audio via Local In-Process ONNX (with direct 512-D blended persona tensor resolution) -> Containerized HTTP -> SAPI.
         """
         if not text or not str(text).strip():
+            return None
+
+        # Normalize text once upfront for consistent phonetics and maximum cache hits
+        try:
+            from src.core.voice_normalizer import VoiceNormalizer
+            clean_text = VoiceNormalizer.normalize_for_speech(text)
+        except Exception:
+            clean_text = str(text).strip()
+
+        if not clean_text:
             return None
 
         target_voice_arg = voice if voice is not None else self.default_voice
@@ -269,9 +315,11 @@ class KokoroVoiceEngine:
             pass
 
         # Check in-memory LRU phrase cache for instant 0ms return
-        cache_key = f"{text.strip()}_{resolved_voice_name}_{speed}_{dsp_preset}"
+        cache_key = f"{clean_text}_{resolved_voice_name}_{speed:.2f}_{dsp_preset}"
         if cache_key in self.audio_cache:
             return self.audio_cache[cache_key]
+        if text.strip() in self.audio_cache:
+            return self.audio_cache[text.strip()]
 
         # Determine language: en-gb for British personas/voices
         if isinstance(resolved_voice_name, str):
@@ -286,14 +334,9 @@ class KokoroVoiceEngine:
             try:
                 import numpy as np
                 import soundfile as sf
-                try:
-                    from src.core.voice_normalizer import VoiceNormalizer
-                    text = VoiceNormalizer.normalize_for_speech(text)
-                except Exception:
-                    pass
 
                 samples, sample_rate = self._local_kokoro_instance.create(
-                    text,
+                    clean_text,
                     voice=onnx_voice_param,
                     speed=speed,
                     lang=selected_lang
@@ -318,11 +361,13 @@ class KokoroVoiceEngine:
                 sf.write(buf, samples, sample_rate, format="WAV", subtype="PCM_16")
                 audio_bytes = buf.getvalue()
                 self.audio_cache[cache_key] = audio_bytes
-                self.audio_cache[text] = audio_bytes
+                self.audio_cache[text.strip()] = audio_bytes
+                self.audio_cache[clean_text] = audio_bytes
                 return audio_bytes
             except Exception:
                 pass
 
+        # Tier 2: OpenAI-Compatible Container Endpoint
         # Tier 2: OpenAI-Compatible Container Endpoint
         payload = {
             "model": self.default_model,
@@ -341,7 +386,7 @@ class KokoroVoiceEngine:
                     "User-Agent": "NeuroAlexander-KokoroVoice/1.0"
                 }
             )
-            with urllib.request.urlopen(req, timeout=1.5) as resp:
+            with urllib.request.urlopen(req, timeout=8.0) as resp:
                 if resp.status == 200:
                     audio_bytes = resp.read()
                     self.audio_cache[text] = audio_bytes
@@ -365,8 +410,8 @@ class KokoroVoiceEngine:
 
     def stream_conversational_clauses(self, token_stream: List[str]) -> Generator[Dict[str, Any], None, None]:
         """
-        Clause-level token chunker: splits streaming LLM token stream at natural sentence / clause boundaries
-        and synthesizes audio chunks sequentially for zero-latency conversational flow.
+        Clause-level token chunker: splits streaming LLM token stream at natural sentence boundaries
+        and synthesizes audio chunks sequentially for zero-latency conversational flow without stuttering.
         """
         clause_buffer = ""
         clause_index = 1
@@ -374,24 +419,28 @@ class KokoroVoiceEngine:
 
         for token in token_stream:
             clause_buffer += token
-            if any(d in token for d in delimiters) and len(clause_buffer.strip()) > 10:
-                clause_text = clause_buffer.strip()
-                t0 = time.time()
-                audio_bytes = self.synthesize_neural_audio(clause_text)
-                latency_ms = round((time.time() - t0) * 1000, 1)
+            # Check if token completes a sentence (delimiter followed by space or end)
+            if any(d in token for d in delimiters) and len(clause_buffer.strip()) > 15:
+                # Avoid splitting inside numbers like 3.14 or abbreviations
+                trimmed = clause_buffer.strip()
+                if not re.search(r"\b\d+\.\d+$", trimmed) and not re.search(r"\b(e\.g|i\.e|v\d+)\.$", trimmed, re.IGNORECASE):
+                    clause_text = trimmed
+                    t0 = time.time()
+                    audio_bytes = self.synthesize_neural_audio(clause_text)
+                    latency_ms = round((time.time() - t0) * 1000, 1)
 
-                yield {
-                    "clause_index": clause_index,
-                    "text": clause_text,
-                    "has_audio": audio_bytes is not None,
-                    "has_neural_audio": audio_bytes is not None,
-                    "audio_bytes": audio_bytes,
-                    "audio_size_bytes": len(audio_bytes) if audio_bytes else 0,
-                    "latency_ms": latency_ms,
-                    "voice": self.default_voice
-                }
-                clause_buffer = ""
-                clause_index += 1
+                    yield {
+                        "clause_index": clause_index,
+                        "text": clause_text,
+                        "has_audio": audio_bytes is not None,
+                        "has_neural_audio": audio_bytes is not None,
+                        "audio_bytes": audio_bytes,
+                        "audio_size_bytes": len(audio_bytes) if audio_bytes else 0,
+                        "latency_ms": latency_ms,
+                        "voice": self.default_voice
+                    }
+                    clause_buffer = ""
+                    clause_index += 1
 
         if clause_buffer.strip():
             clause_text = clause_buffer.strip()
@@ -419,6 +468,7 @@ class KokoroVoiceEngine:
         priority: str = "HIGH",
         voice: Optional[str] = None,
         dsp_preset: str = "STUDIO_MASTER",
+        sfx_intro: Optional[str] = None,
         blocking: bool = False
     ) -> Dict[str, Any]:
         """
@@ -431,8 +481,29 @@ class KokoroVoiceEngine:
         priority_val = priority_map.get(priority.upper(), 2)
 
         audio_bytes = self.synthesize_neural_audio(text, voice=selected_voice, dsp_preset=dsp_preset)
-        engine_used = f"Kokoro_82M_Neural ({selected_voice})"
 
+        # Seamlessly prepend procedural SFX chime into the audio buffer if requested
+        if sfx_intro and audio_bytes:
+            try:
+                from src.infrastructure.eve_voice_soundboard import SFX_LIBRARY, render_sfx_to_wav_bytes
+                import io
+                import soundfile as sf
+                import numpy as np
+
+                if sfx_intro in SFX_LIBRARY:
+                    sfx_wav = render_sfx_to_wav_bytes(sfx_intro)
+                    if sfx_wav:
+                        sfx_data, fs1 = sf.read(io.BytesIO(sfx_wav))
+                        speech_data, fs2 = sf.read(io.BytesIO(audio_bytes))
+                        silence = np.zeros(int(fs1 * 0.10), dtype=np.float32)
+                        combined = np.concatenate([sfx_data.astype(np.float32), silence, speech_data.astype(np.float32)])
+                        buf = io.BytesIO()
+                        sf.write(buf, combined, fs1, format="WAV", subtype="PCM_16")
+                        audio_bytes = buf.getvalue()
+            except Exception:
+                pass
+
+        engine_used = f"Kokoro_82M_Neural ({selected_voice})"
 
         item = {
             "timestamp": time.time(),
@@ -446,17 +517,19 @@ class KokoroVoiceEngine:
             "dispatched": True
         }
 
-        self.audio_queue.enqueue(item, priority_level=priority_val)
-
-        if blocking and audio_bytes and sys.platform == "win32":
-            try:
-                import winsound
-                winsound.PlaySound(audio_bytes, winsound.SND_MEMORY | winsound.SND_SYNC | winsound.SND_NODEFAULT)
-            except Exception:
-                pass
+        if blocking:
+            # Execute synchronously without double-enqueuing into background worker
+            item["playback_started_at"] = time.time()
+            if audio_bytes:
+                if not self.audio_queue._play_tier1_sounddevice(audio_bytes):
+                    self.audio_queue._play_tier2_winsound(audio_bytes, None)
+            item["playback_completed_at"] = time.time()
+            self.audio_queue.dispatched_history.append(item)
+        else:
+            self.audio_queue.enqueue(item, priority_level=priority_val)
 
         return {
-            "status": "queued",
+            "status": "completed" if blocking else "queued",
             "priority": priority,
             "engine": engine_used,
             "voice": selected_voice,

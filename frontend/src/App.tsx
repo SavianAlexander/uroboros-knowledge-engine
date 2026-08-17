@@ -15,7 +15,6 @@ const ChatView = lazy(() => import('./views/ChatView'));
 const ConfigView = lazy(() => import('./views/ConfigView'));
 const SettingsView = lazy(() => import('./views/SettingsView'));
 const ArchitectureView = lazy(() => import('./views/ArchitectureView'));
-const CuramStudioView = lazy(() => import('./views/CuramStudioView'));
 const LoginView = lazy(() => import('./views/LoginView'));
 
 interface ErrorBoundaryProps {
@@ -163,7 +162,6 @@ function AppLayout() {
             case 'config': return <ConfigView />;
             case 'settings': return <SettingsView />;
             case 'architecture': return <ArchitectureView />;
-            case 'curam': return <CuramStudioView />;
             default: return <DashboardView />;
           }
         })()}

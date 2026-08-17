@@ -1,0 +1,39 @@
+{
+  "run_id": "3069253b25d8",
+  "task": "Self-Test Verification Run",
+  "status": "success",
+  "zero_stutter_priority_idle": true,
+  "total_duration_ms": 10624.3,
+  "timestamp_iso": "2026-08-17T17:39:44Z",
+  "stages": [
+    {
+      "stage": 1,
+      "name": "Pre-Flight Process Hygiene",
+      "status": "success",
+      "duration_ms": 7804.93,
+      "details": "Terminated 0 orphans, Score: 100%"
+    },
+    {
+      "stage": 2,
+      "name": "Tududi Task Master Tracking",
+      "status": "success",
+      "duration_ms": 164.34,
+      "details": "Project #13 (Completed: 1848/1849, Rate: 99.9%)"
+    },
+    {
+      "stage": 3,
+      "name": "AST Code Graph Indexing",
+      "status": "success",
+      "duration_ms": 1563.56,
+      "details": "Indexed 5118 symbols, 0 call edges"
+    },
+    {
+      "stage": 5,
+      "name": "Git Merkle Provenance & Sync Check",
+      "status": "success",
+      "duration_ms": 1083.86,
+      "details": "Head: 9c2ef26, Status: Clean"
+    }
+  ],
+  "git_state": "Clean"
+}

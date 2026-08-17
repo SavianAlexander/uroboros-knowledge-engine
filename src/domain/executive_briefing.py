@@ -98,21 +98,23 @@ def generate_executive_briefing(
                         break
             if len(action_items) >= 4:
                 break
-
-    # Fallback to contextual topic action items if still empty
     if not action_items:
-        words = RE_WORD.findall(combined)
-        primary_topic = words[0].title() if words else norm_title
         action_items = [
-            {"task": f"Review key operational specifications for '{norm_title}'", "priority": "High"},
-            {"task": f"Verify system performance benchmarks for {primary_topic}", "priority": "Medium"}
+            {"task": f"Review and verify findings from {norm_title}", "priority": "Medium"}
         ]
 
+    # Generate Concise Executive Summary Bullet Points
+    summary_sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', combined) if len(s.strip()) > 15]
+    if summary_sentences:
+        summary_text = " ".join(summary_sentences[:3])
+    else:
+        summary_text = f"Briefing compiled across {len(document_chunks)} source fragments."
+
     return {
-        "title": title,
-        "executive_summary": f"Executive summary for '{title}': {combined[:300]}...",
+        "title": norm_title,
+        "executive_summary": summary_text,
         "key_takeaways": key_takeaways,
         "action_items": action_items,
-        "total_source_chunks": len(document_chunks),
+        "chunks_analyzed": len(document_chunks),
         "status": "success"
     }

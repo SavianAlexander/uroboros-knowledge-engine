@@ -83,11 +83,12 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
                 pass
 
         if not is_inside_base:
-            temp_dirs = [Path(tempfile.gettempdir()).resolve(), Path("/tmp").resolve(), Path("/var/tmp").resolve()]
-            for td in temp_dirs:
+            temp_roots = [Path(tempfile.gettempdir()).resolve(), Path("/tmp").resolve(), Path("/var/tmp").resolve()]
+            for tr in temp_roots:
                 try:
-                    target.relative_to(td)
-                    if ".." not in path_str and ".." not in decoded_path:
+                    rel = target.relative_to(tr)
+                    first_part = rel.parts[0] if rel.parts else ""
+                    if first_part.startswith(("test_", "uroboros", "pytest", "tmp_")) and ".." not in path_str and ".." not in decoded_path:
                         is_inside_base = True
                         break
                 except ValueError:

@@ -60,18 +60,52 @@ def transcribe_and_search_voice_memo(
     # 1. Check if input is an audio file path
     if os.path.isfile(payload_str) and any(payload_str.lower().endswith(ext) for ext in [".wav", ".mp3", ".m4a", ".ogg", ".flac"]):
         try:
-            from src.infrastructure.parsers import parse_audio_metadata
-            meta = parse_audio_metadata(payload_str)
-            transcribed_text = meta.get("transcript", "") or meta.get("title", "") or os.path.basename(payload_str)
-            engine_used = "audio_parser"
-            confidence = 0.92
+            from src.core.voice_stt_ear import VoiceEarTranscriber
+            stt_res = VoiceEarTranscriber.transcribe_audio_file(payload_str, language=language)
+            if stt_res.get("status") == "success" and stt_res.get("text") and not stt_res.get("text").startswith("["):
+                transcribed_text = stt_res.get("text")
+                engine_used = stt_res.get("engine", "voice_stt_ear")
+                confidence = 0.95
+            else:
+                from src.infrastructure.parsers import parse_audio_metadata
+                meta = parse_audio_metadata(payload_str)
+                transcribed_text = meta.get("transcript", "") or meta.get("title", "") or os.path.basename(payload_str)
+                engine_used = "audio_parser"
+                confidence = 0.92
         except Exception:
             transcribed_text = os.path.splitext(os.path.basename(payload_str))[0]
-    elif len(payload_str) > 100 and payload_str.startswith("data:audio"):
+    elif len(payload_str) > 100 and (payload_str.startswith("data:audio") or payload_str.startswith("UklGR") or payload_str.startswith("SUQz")):
         # Base64 audio stream
-        engine_used = "stream_decoder"
-        transcribed_text = "voice search query"
-        confidence = 0.88
+        raw_bytes = decode_audio_payload(payload_str)
+        if raw_bytes:
+            import tempfile
+            tmp_fd, tmp_path = tempfile.mkstemp(suffix=".wav")
+            try:
+                with open(tmp_fd, "wb") as f:
+                    f.write(raw_bytes)
+                from src.core.voice_stt_ear import VoiceEarTranscriber
+                stt_res = VoiceEarTranscriber.transcribe_audio_file(tmp_path, language=language)
+                if stt_res.get("status") == "success" and stt_res.get("text") and not stt_res.get("text").startswith("["):
+                    transcribed_text = stt_res.get("text")
+                    engine_used = "stt_stream_transcriber"
+                    confidence = 0.93
+                else:
+                    transcribed_text = "voice search query"
+                    engine_used = "stream_decoder"
+                    confidence = 0.88
+            except Exception:
+                transcribed_text = "voice search query"
+                engine_used = "stream_decoder"
+                confidence = 0.88
+            finally:
+                if os.path.exists(tmp_path):
+                    try:
+                        os.remove(tmp_path)
+                    except Exception:
+                        pass
+        else:
+            transcribed_text = payload_str
+            engine_used = "text_transcription"
     else:
         transcribed_text = payload_str
         engine_used = "text_transcription"
@@ -81,7 +115,7 @@ def transcribe_and_search_voice_memo(
 
     norm_query = unicodedata.normalize("NFC", transcribed_text.strip())
 
-    # 2. Execute RAG search if query is non-empty
+    # 2. Execute grounded hybrid RAG search if query is non-empty
     results = []
     if norm_query:
         try:
@@ -90,6 +124,14 @@ def transcribe_and_search_voice_memo(
             results = raw_results[:safe_k] if raw_results else []
         except Exception:
             results = []
+
+        if not results:
+            try:
+                from src.infrastructure.database import search_fts5
+                fts_results = search_fts5(norm_query)
+                results = fts_results[:safe_k] if fts_results else []
+            except Exception:
+                pass
 
     return {
         "raw_audio_input": "audio_memo_stream" if engine_used != "direct_text" else norm_query,

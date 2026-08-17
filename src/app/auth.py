@@ -1,14 +1,14 @@
 import os
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel
-from src.core.auth_jwt import verify_jwt, sign_jwt, hash_password
+from src.core.auth_jwt import verify_jwt, sign_jwt, hash_password, verify_password
 from src.infrastructure.database import get_db
+from src.core.config import is_testing
 
 router = APIRouter()
 
 async def verify_api_key(authorization: str = Header(None)):
     """Validates Bearer JWT Token."""
-    from src.core.config import is_testing
     if is_testing:
         from src.core.context import set_current_user_id
         set_current_user_id(0)
@@ -40,31 +40,28 @@ import secrets
 
 @router.post("/api/auth/login")
 def login(req: LoginRequest):
-    # In a real app we'd verify against the `users` table
-    # For now, zero-dependency bootstrap mode (allow a default admin login if it matches env or just accept 'admin'/'admin' if DB is empty)
     try:
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, username, password_hash, role FROM users WHERE username = ?", (req.username,))
-        row = cursor.fetchone()
-        
-        if not row:
-            # Bootstrap fallback with constant-time check
-            if secrets.compare_digest(req.username, "admin") and secrets.compare_digest(req.password, "admin"):
-                return {"token": sign_jwt({"user_id": 0, "username": "admin", "role": "admin"})}
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, username, password_hash, role FROM users WHERE username = ?", (req.username,))
+            row = cursor.fetchone()
             
-        expected_hash = hash_password(req.password)
-        stored_hash = str(row["password_hash"] or "")
-        if not secrets.compare_digest(stored_hash, expected_hash):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-            
-        token = sign_jwt({
-            "user_id": row["id"],
-            "username": row["username"],
-            "role": row["role"]
-        })
-        return {"token": token}
+            if not row:
+                admin_pw = os.environ.get("ADMIN_PASSWORD", "admin" if is_testing else "")
+                if admin_pw and secrets.compare_digest(req.username, "admin") and secrets.compare_digest(req.password, admin_pw):
+                    return {"token": sign_jwt({"user_id": 0, "username": "admin", "role": "admin"})}
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+                
+            stored_hash = str(row["password_hash"] or "")
+            if not verify_password(req.password, stored_hash):
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+                
+            token = sign_jwt({
+                "user_id": row["id"],
+                "username": row["username"],
+                "role": row["role"]
+            })
+            return {"token": token}
     except HTTPException:
         raise
     except (KeyboardInterrupt, MemoryError, SystemExit):

@@ -10,31 +10,53 @@ from typing import Dict, Any, List, Set, Optional
 
 class HyperGraphRouter:
     """
-    Hyper-graph engine representing N-ary relationships across document nodes and entities.
+    Hyper-graph engine representing N-ary relationships across document nodes and entities
+    accelerated with an inverted index for fast multi-entity relational lookup.
     """
 
     def __init__(self):
         self.hyper_edges: List[Dict[str, Any]] = []
+        self._inverted_index: Dict[str, Set[int]] = {}
 
     def add_hyper_edge(self, edge_id: str, nodes: Set[str], metadata: Optional[Dict[str, Any]] = None):
-        """Adds an N-way hyper-edge connecting arbitrary sets of entities/nodes."""
+        """Adds an N-way hyper-edge connecting arbitrary sets of entities/nodes and updates inverted index."""
         if nodes and isinstance(nodes, (set, list, tuple)):
             safe_nodes = set(str(n) for n in nodes if n is not None)
         else:
             safe_nodes = set()
-        self.hyper_edges.append({
-            "edge_id": str(edge_id or f"edge_{len(self.hyper_edges)}"),
+        
+        edge_idx = len(self.hyper_edges)
+        edge_record = {
+            "edge_id": str(edge_id or f"edge_{edge_idx}"),
             "nodes": safe_nodes,
             "metadata": metadata if isinstance(metadata, dict) else {}
-        })
+        }
+        self.hyper_edges.append(edge_record)
+
+        # Index normalized node keys
+        for n in safe_nodes:
+            norm_key = unicodedata.normalize("NFC", str(n)).lower()
+            if norm_key not in self._inverted_index:
+                self._inverted_index[norm_key] = set()
+            self._inverted_index[norm_key].add(edge_idx)
 
     def query_hyper_graph(self, target_nodes: List[str]) -> List[Dict[str, Any]]:
-        """Finds all hyper-edges containing the target node subset in O(1) multi-entity match."""
+        """Finds all hyper-edges containing the target node subset using inverted index candidate filtering."""
         if not target_nodes or not isinstance(target_nodes, (set, list, tuple)):
             return []
         targets = set(unicodedata.normalize("NFC", str(n)).lower() for n in target_nodes if n is not None)
+        if not targets:
+            return []
+
+        # Candidate edge indices containing at least one target node
+        candidate_indices: Set[int] = set()
+        for t in targets:
+            if t in self._inverted_index:
+                candidate_indices.update(self._inverted_index[t])
+
         matches = []
-        for edge in self.hyper_edges:
+        for edge_idx in candidate_indices:
+            edge = self.hyper_edges[edge_idx]
             edge_nodes_lower = set(n.lower() for n in edge["nodes"])
             # Match if targets subset of edge nodes, or edge nodes subset of targets, or high overlap
             if targets.issubset(edge_nodes_lower) or (len(targets.intersection(edge_nodes_lower)) >= max(1, len(targets) - 1)):

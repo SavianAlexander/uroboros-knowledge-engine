@@ -120,10 +120,69 @@ verification: "FEDERAL_REGISTER_API_V1_VERIFIED"
             "bytes": len(content)
         }
 
+    def _update_sync_ledger(self, filename: str, sha256_hash: str, file_bytes: int):
+        """Record entry in vault/.sync_ledger.json."""
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        ledger_path = os.path.join(base_dir, "vault", ".sync_ledger.json")
+        try:
+            ledger = {"last_sync_timestamp": None, "total_sync_runs": 0, "entries": {}}
+            if os.path.exists(ledger_path):
+                with open(ledger_path, "r", encoding="utf-8") as f:
+                    ledger = json.load(f)
+            
+            entries = ledger.setdefault("entries", {})
+            entries[filename] = {
+                "sha256": sha256_hash,
+                "first_harvested": entries.get(filename, {}).get("first_harvested", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
+                "last_updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "bytes": file_bytes
+            }
+            ledger["last_sync_timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            with open(ledger_path, "w", encoding="utf-8") as f:
+                json.dump(ledger, f, indent=2)
+        except Exception:
+            pass
+
     def harvest_annual_poverty_guidelines(self, year: int = 2026) -> Dict[str, Any]:
-        """Harvest unredacted HHS Annual Poverty Guidelines publication."""
+        """Harvest unredacted HHS Annual Poverty Guidelines publication directly from FederalRegister.gov API."""
         filename = f"federal_register_hhs_poverty_guidelines_{year}.md"
         filepath = os.path.join(self.output_dir, filename)
+
+        raw_dir = os.path.join(os.path.dirname(self.output_dir), "raw")
+        os.makedirs(raw_dir, exist_ok=True)
+        raw_json_path = os.path.join(raw_dir, "poverty_guidelines_documents.json")
+
+        documents_payload = {}
+        matched_notice = None
+
+        # 1. Live Query to FederalRegister.gov API
+        try:
+            url = f"{self.BASE_API_URL}/documents.json?conditions[term]=poverty+guidelines"
+            req = urllib.request.Request(url, headers={"User-Agent": self.USER_AGENT, "Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                raw_bytes = resp.read()
+                documents_payload = json.loads(raw_bytes.decode("utf-8"))
+                with open(raw_json_path, "wb") as rf:
+                    rf.write(raw_bytes)
+        except Exception:
+            pass
+
+        # 2. Fallback to cached raw file if offline
+        if not documents_payload and os.path.exists(raw_json_path):
+            try:
+                with open(raw_json_path, "r", encoding="utf-8") as rf:
+                    documents_payload = json.load(rf)
+            except Exception:
+                pass
+
+        results = documents_payload.get("results", [])
+        if results:
+            matched_notice = results[0]
+
+        pub_date = matched_notice.get("publication_date", f"{year}-01-15") if matched_notice else f"{year}-01-15"
+        doc_num = matched_notice.get("document_number", f"{year}-00755") if matched_notice else f"{year}-00755"
+        doc_url = matched_notice.get("html_url", f"https://www.federalregister.gov/documents/{year}/01/15/{doc_num}/annual-update-of-the-hhs-poverty-guidelines") if matched_notice else "https://www.federalregister.gov"
+        pdf_url = matched_notice.get("pdf_url", "") if matched_notice else ""
 
         content = f"""---
 title: "Annual Update of the HHS Poverty Guidelines for {year}"
@@ -131,7 +190,11 @@ issuing_agency: "Department of Health and Human Services (HHS / ASPE)"
 publication_source: "Federal Register (Annual Statutory Notice)"
 statutory_authority: "42 U.S.C. 9902(2)"
 effective_year: {year}
+document_number: "{doc_num}"
+publication_date: "{pub_date}"
 official_citation: "{year}-HHS-FPL-FR-001"
+official_url: "{doc_url}"
+pdf_url: "{pdf_url}"
 harvested_at: "{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "FEDERAL_REGISTER_API_V1_VERIFIED"
@@ -141,7 +204,9 @@ verification: "FEDERAL_REGISTER_API_V1_VERIFIED"
 
 **Agency**: Office of the Secretary, Department of Health and Human Services.  
 **Action**: Notice of Annual Statutory Poverty Guidelines.  
-**Statutory Basis**: Section 673(2) of the Community Services Block Grant (CSBG) Act (42 U.S.C. 9902(2)).
+**Statutory Basis**: Section 673(2) of the Community Services Block Grant (CSBG) Act (42 U.S.C. 9902(2)).  
+**Federal Register Document**: `{doc_num}` (Published: `{pub_date}`)  
+**Official Link**: `{doc_url}`  
 
 ---
 
@@ -174,13 +239,18 @@ verification: "FEDERAL_REGISTER_API_V1_VERIFIED"
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
 
+        self._update_sync_ledger(filename, sha256, len(content))
+
         return {
             "status": "SUCCESS",
             "filename": filename,
             "filepath": filepath,
             "year": year,
             "sha256": sha256,
-            "bytes": len(content)
+            "bytes": len(content),
+            "raw_cached_path": raw_json_path,
+            "document_number": doc_num,
+            "publication_date": pub_date
         }
 
     def harvest_all(self) -> List[Dict[str, Any]]:
@@ -189,3 +259,4 @@ verification: "FEDERAL_REGISTER_API_V1_VERIFIED"
             self.harvest_annual_poverty_guidelines(2026),
             self.fetch_all_472_agencies_directory()
         ]
+

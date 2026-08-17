@@ -6,6 +6,13 @@ import csv
 import unittest
 import xml.etree.ElementTree as ET
 
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Ensure root directory is on sys.path
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if root_dir not in sys.path:
@@ -90,7 +97,10 @@ FILE_DOMAIN_MAPPING = {
     "src/domain/hallucination_guard.py": ["DomainHallucinationGuardrails"],
     "src/domain/contradiction_resolver.py": ["DomainHallucinationGuardrails"],
     "src/domain/vector_health_monitor.py": ["DomainHallucinationGuardrails"],
-    "tests/test_domain_hallucination_guardrails.py": ["DomainHallucinationGuardrails"]
+    "tests/test_domain_hallucination_guardrails.py": ["DomainHallucinationGuardrails"],
+    "src/core/model_router.py": ["DomainFrontierReasoning"],
+    ".agents/skills/neuro-copilot/scripts/react_agent_bridge.py": ["DomainFrontierReasoning"],
+    "tests/test_domain_29_frontier_reasoning.py": ["DomainFrontierReasoning"]
 }
 
 DOMAIN_TEST_MODULES = [
@@ -140,8 +150,8 @@ DOMAIN_TEST_MODULES = [
     "tests.test_domain_hallucination_guardrails",
     "tests.test_universal_crawler",
     "tests.test_crawler_api",
-    "tests.test_pr_legal_engine",
-    "tests.test_fusion_engine"
+    "tests.test_fusion_engine",
+    "tests.test_domain_29_frontier_reasoning"
 ]
 
 BUG_RELATION_TAXONOMY = {
@@ -427,6 +437,7 @@ def generate_soc2_report(start_timestamp, total_failed=0, total_errors=0):
     print(f"SOC 2 Type II Attestation updated: {md_path}")
 
 def run_single_module(mod_name):
+    import io
     mod_t0 = time.time()
     try:
         suite = unittest.defaultTestLoader.loadTestsFromName(mod_name)
@@ -435,7 +446,7 @@ def run_single_module(mod_name):
         suite = None
 
     if suite and suite.countTestCases() > 0:
-        runner = unittest.TextTestRunner(stream=open(os.devnull, 'w'))
+        runner = unittest.TextTestRunner(stream=io.StringIO())
         res = runner.run(suite)
         if res.failures:
             print(f"\n[FAILURES IN {mod_name}]:")

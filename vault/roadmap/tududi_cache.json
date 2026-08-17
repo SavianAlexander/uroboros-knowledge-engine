@@ -2,109 +2,354 @@
   "project_id": 13,
   "tasks": [
     {
-      "id": 1897,
-      "name": "Audit codebase for static/hardcoded RAG information and bypasses",
+      "id": 1948,
+      "name": "Phase 2 Frontier Autonomous Reasoning Architecture",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-20 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1947,
+      "name": "Phase 2 Frontier Autonomous Reasoning Architecture (Gemini 3.0 & Claude 3.7 Grade)",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-20 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1946,
+      "name": "Elevate Neuro Co-Pilot to Frontier Reasoning Architecture",
       "status": 2,
       "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
+      "due_date": null
     },
     {
-      "id": 1896,
-      "name": "Feat: Complete 50-Title CFR & Full-API Command Center Ingestion",
+      "id": 1945,
+      "name": "Neuro Copilot Complete Upgrade: Empirical Truth Verification & Multi-Bridge Integrity",
+      "status": 0,
+      "priority": 0,
+      "due_date": null
+    },
+    {
+      "id": 1944,
+      "name": "Diagnose and fix voice synthesis stuttering, stopping, and raw text/tag verbalization",
       "status": 2,
-      "priority": 2,
-      "due_date": "2026-08-17 00:00:00.000 +00:00"
+      "priority": 0,
+      "due_date": null
     },
     {
-      "id": 1895,
-      "name": "Feat: Complete 50-Title CFR & Full-API Command Center Ingestion",
-      "status": 2,
-      "priority": 2,
-      "due_date": "2026-08-17 00:00:00.000 +00:00"
+      "id": 1943,
+      "name": "Enhance Neuro Copilot with Empirical Action Protocol and Full Vault Indexing",
+      "status": 0,
+      "priority": 0,
+      "due_date": null
     },
     {
-      "id": 1894,
-      "name": "Feat: Universal Primary Source Ingestion Expansion (EVE, Puerto Rico, ISO/SOC2)",
-      "status": 2,
-      "priority": 2,
-      "due_date": "2026-08-17 00:00:00.000 +00:00"
+      "id": 1942,
+      "name": "Fix neuro-copilot: Add RAG-Grounded Assistant Protocol (Protocol #0)",
+      "status": 0,
+      "priority": 0,
+      "due_date": null
     },
     {
-      "id": 1893,
-      "name": "Feat: Universal Primary Source Live-Sync Ingestion Architecture",
-      "status": 2,
-      "priority": 2,
-      "due_date": "2026-08-17 00:00:00.000 +00:00"
+      "id": 1941,
+      "name": "Final Executive Scorecard & Burndown Report",
+      "status": 0,
+      "priority": 1,
+      "due_date": null
     },
     {
-      "id": 1892,
-      "name": "Feat: Universal Primary Source Live-Sync Ingestion Architecture",
-      "status": 2,
-      "priority": 2,
-      "due_date": "2026-08-17 00:00:00.000 +00:00"
+      "id": 1940,
+      "name": "Git Merkle Provenance & Remote Verification",
+      "status": 0,
+      "priority": 1,
+      "due_date": null
     },
     {
-      "id": 1891,
-      "name": "Execute Test Suites and Verify Audit Ledger",
+      "id": 1939,
+      "name": "Database & Knowledge Vault Integrity Check",
+      "status": 0,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1938,
+      "name": "ConnectionClient Health & Primary Source Connectors",
+      "status": 0,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1937,
+      "name": "Multi-Bridge Contract Bus & Parallel Self-Test Matrix",
       "status": 2,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1890,
-      "name": "Standardize SQLite Connection Lifecycle and Health Telemetry",
+      "id": 1936,
+      "name": "360\u00c2\u00b0 System Health Doctor Check",
       "status": 2,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1889,
-      "name": "Implement Resilient Hybrid Search Fallback with Degraded Status Telemetry",
+      "id": 1935,
+      "name": "End-to-End Full System Verification Pass",
+      "status": 0,
+      "priority": 2,
+      "due_date": "2026-08-17 23:59:59.000 +00:00"
+    },
+    {
+      "id": 1934,
+      "name": "Comprehensive Primary Source Remediation & Zombie Database Pruning",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
+    },
+    {
+      "id": 1933,
+      "name": "8. Testing, CLI Verification & Provenance Certification",
+      "status": 0,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1932,
+      "name": "7. UAT Signature Grounding (src/domain/caseworker_uat_engine.py)",
       "status": 2,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1888,
-      "name": "Fix SPA Routing Fallbacks & Clean Stale Vanilla Fallbacks in server.py",
+      "id": 1931,
+      "name": "6. Dynamic HyDE Expansion (src/domain/contextual_hyde.py)",
       "status": 2,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1887,
-      "name": "Fix Inter-Process Vector Cache Invalidation via PRAGMA data_version",
+      "id": 1930,
+      "name": "5. Puerto Rico Lex Metadata Correction (src/domain/connectors/puerto_rico_lex_connector.py)",
       "status": 2,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1886,
-      "name": "Core Architecture Remediation & System Stability Fixes",
+      "id": 1929,
+      "name": "4. EVE Online ESI Universe Coverage (src/domain/connectors/eve_esi_connector.py)",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1928,
+      "name": "3. Federal Register API Integration (src/domain/connectors/federal_register_connector.py)",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1927,
+      "name": "2. SQLite Database Zombie Purge (uroboros.db)",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1926,
+      "name": "1. Jira REST API Dispatch (src/domain/jira_engine.py)",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1925,
+      "name": "Zero-Redaction & Primary Source Grounding Remediation Pass",
+      "status": 0,
+      "priority": 2,
+      "due_date": null
+    },
+    {
+      "id": 1924,
+      "name": "Compile itemized findings, upstream source mappings, & remediation plan",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1923,
+      "name": "Generate Primary Source Provenance Audit Artifact and Provenance Report",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1922,
+      "name": "Execute neuro_cli.py doctor & health diagnostics",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1921,
+      "name": "Run & Pass Full Verification Test Suites and Invariant Checks",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1920,
+      "name": "Audit Jira/UAT Caseworker journeys, RAG Prompts, HyDE, & Model Fallbacks",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1919,
+      "name": "Generate comprehensive audit report and GitHub provenance card",
+      "status": 2,
+      "priority": 2,
+      "due_date": null
+    },
+    {
+      "id": 1918,
+      "name": "Audit EVE Online Telemetry, Tactical Services, & Mock Fixtures",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1917,
+      "name": "Update vault/.sync_ledger.json & Ingestion Pipeline with Cryptographic Parity",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1916,
+      "name": "Run test matrix and diagnostics (doctor, test_all, bench)",
+      "status": 2,
+      "priority": 2,
+      "due_date": null
+    },
+    {
+      "id": 1915,
+      "name": "Audit Domain Connectors, C\u00c3\u00baram SPM, Statutory Rules, & Datasets",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1914,
+      "name": "Connect and Ingest Official Primary Source Data (eCFR, FederalRegister, Jira, Curam, Eve, PR, ISO)",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1913,
+      "name": "Remediate hardcoded mock/dummy fallbacks and enforce live upstream APIs",
+      "status": 2,
+      "priority": 2,
+      "due_date": null
+    },
+    {
+      "id": 1912,
+      "name": "Audit Knowledge Vault & .sync_ledger.json for synthetic vs primary sources",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1911,
+      "name": "Audit Knowledge Vault, Connectors, Bridges for Fake/Mock/Hardcoded Data",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1910,
+      "name": "Audit core backend services (src/app, src/core, know.py, engines)",
+      "status": 2,
+      "priority": 2,
+      "due_date": null
+    },
+    {
+      "id": 1909,
+      "name": "Audit neuro-copilot bridges (eve, curam, tududi, jira, uat, doctor, voice, bench, fleet)",
+      "status": 2,
+      "priority": 2,
+      "due_date": null
+    },
+    {
+      "id": 1908,
+      "name": "Audit domain connectors and vault sync sources for mock/synthetic data",
+      "status": 2,
+      "priority": 2,
+      "due_date": null
+    },
+    {
+      "id": 1907,
+      "name": "Audit and Fix Fake/Mock/Placeholder Information in Knowledge Vault & Connectors",
       "status": 2,
       "priority": 0,
+      "due_date": null
+    },
+    {
+      "id": 1906,
+      "name": "[AUDIT] Primary Source & Synthetic Data Audit - Codebase & Knowledge Vault",
+      "status": 2,
+      "priority": 2,
       "due_date": "2026-08-18 00:00:00.000 +00:00"
     },
     {
-      "id": 1885,
-      "name": "Subtask 4: Automated Verification & Master Domain Test Pass",
+      "id": 1905,
+      "name": "Audit and Remediate Mock / Synthetic / Fake Data Across Uroboros Engine & Bridges",
       "status": 2,
-      "priority": 0,
+      "priority": 2,
       "due_date": "2026-08-18 00:00:00.000 +00:00"
     },
     {
-      "id": 1884,
-      "name": "Subtask 3: Runtime Service Catalog Registry",
+      "id": 1904,
+      "name": "Implement Dedicated Subagent Bridge & CLI spawn Orchestrator",
       "status": 2,
       "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
+      "due_date": null
     },
     {
-      "id": 1883,
-      "name": "Subtask 2: Agent Episodic Memory & Scratchpad Engine",
+      "id": 1903,
+      "name": "3. Verify subagent tool wiring, self-test bridge contracts, and compile documentation",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1902,
+      "name": "2. Update workspace AGENTS.md rules with Autonomous Hands-Free Subagent Delegation Protocol",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1901,
+      "name": "1. Update neuro-copilot SKILL.md with Autonomous Hands-Free Subagent Delegation Protocol",
+      "status": 2,
+      "priority": 1,
+      "due_date": null
+    },
+    {
+      "id": 1900,
+      "name": "Implement Autonomous Hands-Free Subagent Delegation for /neuro-copilot",
       "status": 2,
       "priority": 0,
-      "due_date": "2026-08-18 00:00:00.000 +00:00"
+      "due_date": null
+    },
+    {
+      "id": 1899,
+      "name": "Subtask 1: Audit voice test suites and identify disconnected data paths",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-17 00:00:00.000 +00:00"
     }
   ]
 }

@@ -179,14 +179,22 @@ verification: "ECFR_API_V1_VERIFIED"
 
     def _get_latest_date(self, title: int) -> str:
         """Resolve the official up-to-date issue date for the given CFR title."""
+        if not hasattr(self, "_titles_date_cache"):
+            self._titles_date_cache = {}
+        if title in self._titles_date_cache:
+            return self._titles_date_cache[title]
         try:
             url = f"{self.BASE_API_URL}/versioner/v1/titles.json"
             req = urllib.request.Request(url, headers={"User-Agent": self.USER_AGENT, "Accept": "application/json"})
             with urllib.request.urlopen(req, timeout=5) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 for t in data.get("titles", []):
-                    if t.get("number") == title and t.get("up_to_date_as_of"):
-                        return t["up_to_date_as_of"]
+                    num = t.get("number")
+                    dt = t.get("up_to_date_as_of")
+                    if num and dt:
+                        self._titles_date_cache[num] = dt
+                if title in self._titles_date_cache:
+                    return self._titles_date_cache[title]
         except Exception:
             pass
         return "2026-08-13"

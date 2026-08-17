@@ -25,25 +25,28 @@ VAULT_EVE_DIR = os.path.join(
 CACHE_DB_PATH = os.path.join(VAULT_EVE_DIR, "sde_cache.sqlite")
 ESI_BASE = "https://esi.evetech.net/latest"
 
+import threading
+
 _MAX_MEM_CACHE_SIZE = 10000
 _MEM_CACHE: OrderedDict = OrderedDict()
+_mem_cache_lock = threading.Lock()
 
 
 def _cache_get(entity_id: int):
-    global _MEM_CACHE
-    if entity_id in _MEM_CACHE:
-        _MEM_CACHE.move_to_end(entity_id)
-        return _MEM_CACHE[entity_id]
-    return None
+    with _mem_cache_lock:
+        if entity_id in _MEM_CACHE:
+            _MEM_CACHE.move_to_end(entity_id)
+            return _MEM_CACHE[entity_id]
+        return None
 
 
 def _cache_put(entity_id: int, name: str):
-    global _MEM_CACHE
-    if entity_id in _MEM_CACHE:
-        _MEM_CACHE.move_to_end(entity_id)
-    _MEM_CACHE[entity_id] = name
-    if len(_MEM_CACHE) > _MAX_MEM_CACHE_SIZE:
-        _MEM_CACHE.popitem(last=False)
+    with _mem_cache_lock:
+        if entity_id in _MEM_CACHE:
+            _MEM_CACHE.move_to_end(entity_id)
+        _MEM_CACHE[entity_id] = name
+        if len(_MEM_CACHE) > _MAX_MEM_CACHE_SIZE:
+            _MEM_CACHE.popitem(last=False)
 
 
 _STATIC_SDE_LOOKUP = {

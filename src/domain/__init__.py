@@ -36,12 +36,7 @@ from src.domain.louvain_clustering import detect_louvain_communities
 from src.domain.wikilink_parser import extract_wikilinks, build_wikilink_graph
 from src.domain.relational_schema_linker import RelationalSchemaLinker
 
-# 4. Legal & Regulatory Intelligence
-from src.domain.pr_legal_engine import PRLegalCodexEngine
-from src.domain.legal_accuracy_engine import LegalAccuracyEngine
-from src.domain.legal_rag_engine import LegalRAGEngine
-
-# 5. Security, Privacy & Compliance
+# 4. Security, Privacy & Compliance
 from src.domain.pii_privacy_guard import redact_pii_from_text, inspect_and_redact_pii
 from src.domain.crypto_audit_ledger import CryptoAuditLedger
 from src.domain.vault_merkle_tree import VaultMerkleTree
@@ -90,10 +85,6 @@ __all__ = [
     "extract_wikilinks",
     "build_wikilink_graph",
     "RelationalSchemaLinker",
-    # Legal
-    "PRLegalCodexEngine",
-    "LegalAccuracyEngine",
-    "LegalRAGEngine",
     # Compliance
     "redact_pii_from_text",
     "inspect_and_redact_pii",

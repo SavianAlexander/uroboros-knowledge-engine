@@ -1,6 +1,6 @@
 # 📐 Uroboros Knowledge Engine & Neuro Co-Pilot Architecture Diagrams
 
-**Generated**: `2026-08-17 16:30:08Z`  
+**Generated**: `2026-08-17 18:06:48Z`  
 **Standard**: Pure Mermaid JS diagrams rendered in GitHub Flavored Markdown.
 
 ---
@@ -64,26 +64,6 @@ erDiagram
         TEXT embedding_json
         TEXT chunk_hash
     }
-    VEC_FILE_CHUNKS_INFO {
-        TEXT key
-        ANY value
-    }
-    VEC_FILE_CHUNKS_CHUNKS {
-        INTEGER chunk_id
-        INTEGER size
-        BLOB validity
-        BLOB rowids
-    }
-    VEC_FILE_CHUNKS_ROWIDS {
-        INTEGER rowid
-        TEXT id
-        INTEGER chunk_id
-        INTEGER chunk_offset
-    }
-    VEC_FILE_CHUNKS_VECTOR_CHUNKS00 {
-        TEXT rowid
-        BLOB vectors
-    }
     TF_IDF_INDEX {
         TEXT term
         INTEGER file_id
@@ -98,6 +78,36 @@ erDiagram
         TEXT mime_type
         TEXT sha256
         REAL modified_at
+    }
+    FTS_FILES {
+        TEXT filepath
+        TEXT filename
+        TEXT content
+        TEXT notes
+    }
+    FTS_FILES_DATA {
+        INTEGER id
+        BLOB block
+    }
+    FTS_FILES_IDX {
+        TEXT segid
+        TEXT term
+        TEXT pgno
+    }
+    FTS_FILES_CONTENT {
+        INTEGER id
+        TEXT c0
+        TEXT c1
+        TEXT c2
+        TEXT c3
+    }
+    FTS_FILES_DOCSIZE {
+        INTEGER id
+        BLOB sz
+    }
+    FTS_FILES_CONFIG {
+        TEXT k
+        TEXT v
     }
     TAGS {
         INTEGER file_id
@@ -128,14 +138,6 @@ erDiagram
         REAL y
         REAL w
         REAL h
-    }
-    TAG_METADATA {
-        TEXT tag
-        TEXT color
-    }
-    QUERY_MACROS {
-        TEXT name
-        TEXT expansion
     }
 ```
 

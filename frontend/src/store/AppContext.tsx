@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { ViewId, AppState } from '../types';
 
 interface AppContextType extends AppState {
@@ -29,10 +29,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return localStorage.getItem('uroboros_workspace') || 'Default';
   });
 
-  const setActiveView = (v: ViewId) => {
+  const setActiveView = useCallback((v: ViewId) => {
     setActiveViewState(v);
     window.location.hash = `#/${v}`;
-  };
+  }, []);
 
   useEffect(() => {
     const handleHash = () => {
@@ -45,24 +45,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
-  const setTheme = (t: 'dark' | 'light') => {
+  const setTheme = useCallback((t: 'dark' | 'light') => {
     setThemeState(t);
     localStorage.setItem('uroboros_theme', t);
-  };
+  }, []);
 
-  const setActiveWorkspace = (w: string) => {
+  const setActiveWorkspace = useCallback((w: string) => {
     setActiveWorkspaceState(w);
     localStorage.setItem('uroboros_workspace', w);
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    activeView, setActiveView,
+    theme, setTheme,
+    searchQuery, setSearchQuery,
+    isCommandPaletteOpen, setCommandPaletteOpen,
+    activeWorkspace, setActiveWorkspace
+  }), [
+    activeView, setActiveView,
+    theme, setTheme,
+    searchQuery,
+    isCommandPaletteOpen,
+    activeWorkspace, setActiveWorkspace
+  ]);
 
   return (
-    <AppContext.Provider value={{
-      activeView, setActiveView,
-      theme, setTheme,
-      searchQuery, setSearchQuery,
-      isCommandPaletteOpen, setCommandPaletteOpen,
-      activeWorkspace, setActiveWorkspace
-    }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

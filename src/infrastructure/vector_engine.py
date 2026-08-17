@@ -18,6 +18,7 @@ import uuid
 import json
 import contextlib
 import logging
+logger = logging.getLogger(__name__)
 from datetime import datetime, timezone
 import queue
 from pathlib import Path
@@ -66,7 +67,7 @@ def search_files(query: str) -> List[Dict[str, Any]]:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in database.py: {e}")
+            logging.warning(f"FTS search query failed in vector_engine.py: {e}")
 
         if "NEAR(" in norm_query:
             m = re.search(r'NEAR\((.*?),\s*(\d+)\)', norm_query, re.IGNORECASE)
@@ -94,23 +95,36 @@ def search_files(query: str) -> List[Dict[str, Any]]:
                 except (KeyboardInterrupt, MemoryError, SystemExit):
                     raise
                 except Exception as e:
-                    import logging; logging.warning(f"Swallowed error in database.py: {e}")
+                    logging.warning(f"FTS NEAR search failed in vector_engine.py: {e}")
 
         words = re.findall(r'\w+', norm_query)
         words = [w for w in words if w.lower() not in ('near', 'and', 'or', 'not') and not w.isdigit()]
         if words:
-            where_clause = " AND ".join(["(content LIKE ? OR filename LIKE ?)" for _ in words])
+            sanitized_fts = " ".join([f'"{w}"' for w in words[:10]])
+            try:
+                cursor.execute("""
+                    SELECT files.id, files.filepath, files.filename, files.file_size, files.mime_type, files.modified_at, files.content, bm25(fts_files) as bm25_score
+                    FROM fts_files JOIN files ON fts_files.filepath = files.filepath
+                    WHERE fts_files MATCH ? ORDER BY bm25_score LIMIT 100
+                """, (sanitized_fts,))
+                rows = cursor.fetchall()
+                if rows:
+                    return [dict(r) for r in rows]
+            except Exception:
+                pass
+            
+            where_clause = " AND ".join(["(content LIKE ? OR filename LIKE ?)" for _ in words[:4]])
             params = []
-            for w in words:
+            for w in words[:4]:
                 params.extend([f"%{w}%", f"%{w}%"])
             try:
-                cursor.execute(f"SELECT id, filepath, filename, file_size, mime_type, modified_at, content FROM files WHERE {where_clause} LIMIT 100", params)
+                cursor.execute(f"SELECT id, filepath, filename, file_size, mime_type, modified_at, content FROM files WHERE {where_clause} LIMIT 50", params)
                 rows = cursor.fetchall()
                 return [dict(r) for r in rows]
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in database.py: {e}")
+                logging.warning(f"Fallback search error in vector_engine.py: {e}")
         return []
 
 def index_file(filepath: str) -> bool:
@@ -274,7 +288,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in database.py: {e}")
+        logger.warning(f"Swallowed error in database.py: {e}")
 
     path = Path(dir_path).resolve()
     if not path.is_dir():
@@ -322,16 +336,17 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in database.py: {e}")
+                logger.warning(f"Swallowed error in database.py: {e}")
         return
 
     if total_files > 100 and len(all_files) > 50:
         try:
+            from src.infrastructure.repositories.snapshots import create_db_snapshot
             create_db_snapshot()
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in database.py: {e}")
+            logger.warning(f"Swallowed error in database.py: {e}")
 
     modified_tasks = []
     unmodified_tasks = []
@@ -348,7 +363,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in database.py")
+            logger.exception("Swallowed error in database.py")
             continue
 
         mime_type, _ = mimetypes.guess_type(filepath)
@@ -429,7 +444,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
                     except (KeyboardInterrupt, MemoryError, SystemExit):
                         raise
                     except Exception as e:
-                        import logging; logging.getLogger(__name__).exception(f"Swallowed error in database.py: {e}")
+                        logger.exception(f"Swallowed error in database.py: {e}")
                         t = futures[future]
                         t['content'] = f"[ThreadPool Error: {str(e)}]"
                         t['acl_permissions'] = get_file_acl(t['filepath'])
@@ -451,7 +466,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in database.py")
+        logger.exception("Swallowed error in database.py")
         rule_matches = []
 
     all_tasks = modified_tasks + unmodified_tasks
@@ -461,26 +476,30 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
     indexed_count = 0
     updated_count = 0
 
-    # ponytail: pre-compute embeddings OUTSIDE the DB transaction to avoid
-    # holding the write lock for 50+ minutes during Ollama API calls.
-    # ceiling: memory-bound (~60K chunks × 768 floats × 4 bytes ≈ 180MB RAM)
-    from src.core.embeddings import generate_embedding
+    # ponytail: pre-compute embeddings in batch OUTSIDE DB transaction
+    from src.core.embeddings import generate_embeddings_batch
     from src.core.domain.services import chunk_text
 
     precomputed_chunks = {}  # task index -> [(chunk_idx, chunk_text, emb_json)]
-    total_chunks = 0
+    chunk_manifest = []  # (task_idx, chunk_idx, chunk_text)
     for task_idx, task in enumerate(all_tasks):
+        precomputed_chunks[task_idx] = []
         task_content = task.get('content') or ""
         chunks = chunk_text(task_content, chunk_size=1024)
-        chunk_data = []
         for chunk_idx, chunk in enumerate(chunks):
-            emb = generate_embedding(chunk)
-            emb_json = json.dumps(emb) if emb else None
-            chunk_data.append((chunk_idx, chunk, emb_json))
-        precomputed_chunks[task_idx] = chunk_data
-        total_chunks += len(chunk_data)
-        if (task_idx + 1) % 5 == 0 or task_idx == len(all_tasks) - 1:
-            print(f"[EMBED] Pre-computed embeddings: {task_idx + 1}/{len(all_tasks)} files, {total_chunks:,} chunks total")
+            chunk_manifest.append((task_idx, chunk_idx, chunk))
+
+    chunk_texts = [cm[2] for cm in chunk_manifest]
+    all_embeddings = generate_embeddings_batch(chunk_texts, batch_size=128) if chunk_texts else []
+
+    total_chunks = 0
+    for idx, (t_idx, c_idx, c_text) in enumerate(chunk_manifest):
+        emb = all_embeddings[idx] if idx < len(all_embeddings) else []
+        emb_json = json.dumps(emb) if emb else None
+        precomputed_chunks[t_idx].append((c_idx, c_text, emb_json))
+        total_chunks += 1
+
+    print(f"[EMBED] Batch pre-computed {total_chunks:,} chunks across {len(all_tasks)} files")
 
     # Fast batch DB write — transaction holds lock for seconds, not minutes
     max_db_attempts = 10
@@ -568,7 +587,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
                                 except (KeyboardInterrupt, MemoryError, SystemExit):
                                     raise
                                 except Exception as e:
-                                    import logging; logging.warning(f"Swallowed error in database.py: {e}")
+                                    logger.warning(f"Swallowed error in database.py: {e}")
 
                     # Decoupled tag sync for unmodified tasks
                     for task in unmodified_tasks:
@@ -581,7 +600,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
             break
         except sqlite3.OperationalError as db_err:
             if db_attempt == max_db_attempts - 1:
-                print(f"[ERROR] Database write failed after {max_db_attempts} attempts: {db_err}")
+                logging.error(f"Database write failed after {max_db_attempts} attempts: {db_err}")
                 raise
             time.sleep(0.5 * (db_attempt + 1))
 
@@ -591,9 +610,9 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in database.py: {e}")
+            logger.warning(f"Swallowed error in database.py: {e}")
 
-    print(f"Indexing completed. Indexed: {indexed_count}, Updated: {updated_count}")
+    logger.info(f"Indexing completed. Indexed: {indexed_count}, Updated: {updated_count}")
 
 class MiniVectorEngine:
     _cached_version: int = -1
@@ -700,12 +719,12 @@ class MiniVectorEngine:
         for item in cached_chunks:
             # Stage 1: Fast MRL 256-dim candidate similarity
             mrl_score = dot_product(q_256, item["mrl_256"])
-            if mrl_score < 0.20:
+            if mrl_score < 0.05:  # Gentle noise floor
                 continue
 
             # Stage 2: Full-dimension precision similarity
             full_score = dot_product(q_full, item["full_emb"])
-            if full_score > 0.30:
+            if full_score > 0.05:  # Gentle relevance floor
                 content = item["content"]
                 results.append({
                     "id": item["id"],
@@ -1671,15 +1690,19 @@ class MiniVectorEngine:
         Local Hardware Auto-Tuning & Quantization Benchmark Suite.
         Measures vector search latency across target dimensions and Int8 quantization state.
         """
-        from src.core.embeddings import dot_product
+        from src.core.embeddings import dot_product, generate_embedding
         start = time.time()
         MiniVectorEngine._ensure_vector_matrix_cache()
         cnt = len(MiniVectorEngine._cached_chunks)
         
         t0 = time.time()
-        dummy_vec = [0.1] * 256
+        probe_vec = generate_embedding("Hardware Benchmark Query Vector")
+        if len(probe_vec) > 256:
+            probe_vec = probe_vec[:256]
+        elif len(probe_vec) < 256:
+            probe_vec = probe_vec + [0.0] * (256 - len(probe_vec))
         for chunk in MiniVectorEngine._cached_chunks[:1000]:
-            _ = dot_product(dummy_vec, chunk.get("vector_256", dummy_vec))
+            _ = dot_product(probe_vec, chunk.get("vector_256", probe_vec))
         latency_ms = round((time.time() - t0) * 1000, 3)
 
         return {
@@ -2413,1063 +2436,7 @@ class MiniVectorEngine:
             "telemetry_status": "in_acceptable_bounds" if mse < 0.05 else "degraded_precision"
         }
 
-    @staticmethod
-    def search_hardware_simd_assembly(query: str, top_k: int = 10) -> List[Dict[str, Any]]:
-        """
-        Pillar 1: Hardware-Native Quantum SIMD Assembly Engine.
-        Bit-packed 64-bit sign-bit vector kernel and popcount Hamming distance ranking.
-        """
-        candidates = MiniVectorEngine.search_hardware_accelerated(query, top_k=top_k)
-        q_vec = generate_embedding(query) if query else [0.0] * 64
-        q_bits = sum((1 << i) for i, x in enumerate(q_vec[:64]) if x >= 0)
-        for cand in candidates:
-            c_vec = cand.get("embedding") or q_vec
-            c_bits = sum((1 << i) for i, x in enumerate(c_vec[:64]) if x >= 0)
-            xor_bits = q_bits ^ c_bits
-            hamming_dist = bin(xor_bits).count('1')
-            cand["simd_assembly_kernel"] = "AVX-512_VNNI_8x_UNROLLED"
-            cand["kernel_latency_us"] = 8.4
-            cand["hamming_bit_similarity"] = round(1.0 - (hamming_dist / 64.0), 4)
-        return candidates
-
-    @staticmethod
-    def search_graph_synaptic_evolving(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 2: Self-Evolving 3D Graph-RAG Engine.
-        Synaptic Knowledge Graph auto-adjusting edge weights based on developer interaction frequency and co-occurrence.
-        """
-        triples = MiniVectorEngine.search_graph_entity_triples(query, top_k=top_k)
-        nodes = []
-        edges = []
-        for idx, t in enumerate(triples):
-            nodes.append({"id": f"node_{idx}", "label": t.get("subject", "Entity")})
-            edges.append({"source": t.get("subject", "Entity"), "target": t.get("object", "Target"), "relation": t.get("predicate", "REL")})
-
-        return {
-            "query": query,
-            "synaptic_graph_nodes": nodes,
-            "synaptic_graph_edges": edges,
-            "raw_triples": triples,
-            "graph_evolution_state": "synaptic_weights_adapted",
-            "self_healing_cycles": 14
-        }
-
-    @staticmethod
-    def search_zero_trust_aes_encrypted(query: str, tenant_key: str = "aes256_key_default", top_k: int = 10) -> List[Dict[str, Any]]:
-        """
-        Pillar 3: Sovereign Zero-Trust Cryptographic Sandbox Engine.
-        Authenticated HMAC vector verification and zero-leakage mathematical privacy proofs.
-        """
-        candidates = MiniVectorEngine.search_tenant_isolated(query, tenant_id=1, top_k=top_k)
-        for cand in candidates:
-            cand["zero_trust_encrypted"] = True
-            cand["cipher_algorithm"] = "AES-256-GCM-HW"
-            cand["privacy_proof"] = "SOC2_TYPE_II_MATHEMATICALLY_VERIFIED"
-            doc_id = str(cand.get("id") or cand.get("filename") or "doc_0")
-            cand["hmac_auth_tag"] = hashlib.sha256(f"{tenant_key}:{doc_id}".encode("utf-8")).hexdigest()[:16]
-        return candidates
-
-    @staticmethod
-    def search_speculative_copilot_streamed(query: str, top_k: int = 10) -> Dict[str, Any]:
-        """
-        Pillar 4: Zero-Latency Speculative Copilot Engine.
-        Real-time pre-emptive query branch prediction streaming candidates with <1ms first-hit latency.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        return {
-            "query": query,
-            "predicted_branch": f"{query} implementation",
-            "speculative_hits": hits,
-            "first_hit_latency_ms": 0.45,
-            "websocket_stream_ready": True
-        }
-
-    @staticmethod
-    def search_raft_consensus_mesh(query: str, cluster_nodes: int = 3, top_k: int = 10) -> Dict[str, Any]:
-        """
-        Pillar 5: Distributed Multi-Node Raft Consensus Mesh Engine.
-        Replicates vector index state across cluster partition quorums with zero-downtime failover SLA.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        quorum_count = (cluster_nodes // 2) + 1
-        return {
-            "query": query,
-            "cluster_nodes_synced": cluster_nodes,
-            "quorum_required": quorum_count,
-            "raft_leader_node": "node-alpha-us-east",
-            "raft_leader_state": "LEADER_ELECTED_QUORUM_STABLE",
-            "failover_sla_ms": 0.0,
-            "mesh_status": "raft_quorum_healthy",
-            "replicated_candidates": hits
-        }
-
-    @staticmethod
-    def search_product_quantization_residual(vector: List[float], codebook_subvectors: int = 16) -> Dict[str, Any]:
-        """
-        Pillar 6: Product Quantization Residual Codebooks Engine.
-        Compresses vectors into residual codebooks calculating exact Mean Squared Error (MSE).
-        """
-        if not vector:
-            return {"codebook_bytes": 0, "status": "empty_vector"}
-
-        dim = len(vector)
-        raw_bytes = max(dim * 4, 6144)
-        compressed_bytes = codebook_subvectors
-        ram_saving_pct = round((1.0 - (compressed_bytes / float(raw_bytes))) * 100.0, 2)
-
-        sub_len = max(1, dim // max(1, codebook_subvectors))
-        residuals = []
-        codebook_centroids = []
-        for i in range(0, dim, sub_len):
-            sub = vector[i:i+sub_len]
-            c = sum(sub) / float(len(sub)) if sub else 0.0
-            codebook_centroids.append(round(c, 4))
-            for x in sub:
-                residuals.append((x - c) ** 2)
-
-        mse = sum(residuals) / float(len(residuals)) if residuals else 0.0
-
-        return {
-            "vector_dimension": dim,
-            "codebook_bytes": compressed_bytes,
-            "codebook_centroids": codebook_centroids,
-            "quantization_mse": round(mse, 6),
-            "ram_reduction_pct": ram_saving_pct,
-            "asymmetric_distance_recall": 0.988,
-            "status": "quantized_codebook_active"
-        }
-
-    @staticmethod
-    def search_hebbian_synaptic_reranked(query: str, build_pass_signal: bool = True, top_k: int = 10) -> List[Dict[str, Any]]:
-        """
-        Pillar 7: Biological Neural Hebbian Learning Reranker Engine.
-        Associative weight reinforcement boosting document scores on build and validation feedback signals.
-        """
-        candidates = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        boost_factor = 1.25 if build_pass_signal else 1.0
-        for item in candidates:
-            base_sim = item.get("similarity_score", 0.8)
-            item["hebbian_score"] = round(base_sim * boost_factor, 4)
-            item["synaptic_plasticity_active"] = True
-            item["hebbian_signal"] = "fire_together_wire_together"
-        candidates.sort(key=lambda x: x["hebbian_score"], reverse=True)
-        return candidates
-
-    @staticmethod
-    def search_hyperdimensional_10k_projected(query: str, top_k: int = 10) -> Dict[str, Any]:
-        """
-        Pillar 8: Hyper-Dimensional 10,000D Vector Projection Engine.
-        Projects embeddings into 10,000-bit binary hyper-vectors, executing bitwise XOR & Hamming similarity search.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        q_vec = generate_embedding(query) if query else [0.1] * 32
-        rng = random.Random(42)
-        packed_words = []
-        for _ in range(10000 // 64):
-            word = 0
-            for b in range(64):
-                dot = sum(x * rng.gauss(0, 1) for x in q_vec[:min(len(q_vec), 16)])
-                if dot >= 0:
-                    word |= (1 << b)
-            packed_words.append(word)
-
-        return {
-            "query": query,
-            "hyperdimensional_bits": 10000,
-            "projected_words_64bit": len(packed_words),
-            "bitwise_operator": "SINGLE_CYCLE_XOR_HAMMING",
-            "clock_cycles_per_query": 1,
-            "projected_hits": hits
-        }
-
-    @staticmethod
-    def search_causal_counterfactual_simulated(query: str, hypothesis: str = "async_event_loop") -> Dict[str, Any]:
-        """
-        Pillar 9: Self-Reflective Causal Counterfactual Simulator Engine.
-        Evaluates query hypotheses against dependency DAG pathways, calculating causal impact vectors.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=5)
-        causal_impact = round(min(1.0, 0.50 + (len(hits) * 0.088)), 2)
-        return {
-            "query": query,
-            "simulated_hypothesis": hypothesis,
-            "causal_impact_score": causal_impact,
-            "dependency_affect_count": len(hits),
-            "counterfactual_status": "causal_simulation_converged"
-        }
-
-    @staticmethod
-    def search_multimodal_visual_ast(query: str, top_k: int = 10) -> Dict[str, Any]:
-        """
-        Pillar 10: Zero-Shot Multi-Modal Visual AST Graphing Engine.
-        Unifies code ASTs and UI layout render trees into a single visual DAG vector space.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        return {
-            "query": query,
-            "unified_dag_nodes": len(hits) * 3,
-            "visual_layout_tokens": ["div#app", "button.btn-primary", "canvas.render"],
-            "ast_nodes": ["FunctionDef", "ReturnStmt", "CallExpr"],
-            "multimodal_hits": hits
-        }
-
-    @staticmethod
-    def search_lockfree_atomic_memory(query: str, top_k: int = 10) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        """
-        Pillar 11: Sub-Microsecond Lock-Free Atomic Memory Index Engine.
-        Uses atomic Compare-And-Swap (CAS) pointer swapping for sub-microsecond (<= 1us) vector matrix updates.
-        """
-        candidates = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        return candidates, {
-            "index_mode": "LOCK_FREE_ATOMIC_CAS",
-            "update_latency_us": 0.72,
-            "thread_contention": "ZERO_LOCK_FREE"
-        }
-
-    @staticmethod
-    def search_formal_verification_guarded(query: str, answer_context: str = "") -> Dict[str, Any]:
-        """
-        Pillar 12: Mathematical Formal Verification Guard Engine.
-        Formally proves RAG answer correctness against source code ASTs using SMT logic solvers for 0% hallucination guarantees.
-        """
-        return {
-            "query": query,
-            "formal_logic_solver": "SMT_Z3_THEOREM_PROVER",
-            "soundness_proof": "THEOREM_SATISFIED_100_PCT",
-            "hallucination_probability": 0.0,
-            "verification_status": "FORMALLY_VERIFIED_FACTUAL"
-        }
-
-    @staticmethod
-    def search_autonomous_self_refactoring(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 13: Autonomous Self-Refactoring Code Generator Engine.
-        Generates clean git diff patches to refactor code smells and optimize O(N^2) loops automatically.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        diff_patch = (
-            "--- a/src/core/utils.py\n"
-            "+++ b/src/core/utils.py\n"
-            "@@ -10,3 +10,3 @@\n"
-            "-for i in range(len(items)): for j in range(len(items)): pass\n"
-            "+items_set = set(items) # O(N) optimized via search_autonomous_self_refactoring\n"
-        )
-        return {
-            "query": query,
-            "refactored_candidates_count": len(hits),
-            "generated_diff_patch": diff_patch,
-            "patch_status": "AUTO_REFACTORED_CLEAN"
-        }
-
-    @staticmethod
-    def search_quantum_superposition_retrieved(query: str, top_k: int = 10) -> Dict[str, Any]:
-        """
-        Pillar 14: Quantum-Inspired Superposition Retrieval Engine.
-        Evaluates search candidates in a quantum-inspired superposition state, collapsing into the optimal context window.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        return {
-            "query": query,
-            "superposition_states_evaluated": 1024,
-            "collapsed_context_fidelity": 1.0,
-            "superposition_hits": hits,
-            "quantum_state": "COLLAPSED_OPTIMAL_OBSERVABLE"
-        }
-
-    @staticmethod
-    def search_zero_knowledge_proved(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 15: Cryptographic Zero-Knowledge Knowledge Proofs Engine.
-        Generates zk-SNARK cryptographic proofs verifying answer origin without exposing source code text.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        zk_proof = hashlib.sha256(f"zk_snark_proof:{query}".encode("utf-8")).hexdigest()
-        return {
-            "query": query,
-            "zk_snark_proof_hash": f"0x{zk_proof}",
-            "proof_verification": "ZERO_KNOWLEDGE_PROOF_VALIDATED",
-            "source_code_revealed": False,
-            "verified_candidates_count": len(hits)
-        }
-
-    @staticmethod
-    def search_fpga_gpu_hardware_offloaded(query: str, top_k: int = 10) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        """
-        Pillar 16: Hardware FPGA/GPU Microsecond Offload Pipeline Engine.
-        Offloads matrix operations to GPU/FPGA hardware accelerators at 100,000 QPS.
-        """
-        candidates = MiniVectorEngine.search_hardware_accelerated(query, top_k=top_k)
-        return candidates, {
-            "hardware_accelerator": "FPGA_CUDA_DUAL_OFFLOAD",
-            "queries_per_second": 100000,
-            "batch_matrix_latency_us": 0.85,
-            "accelerator_status": "HARDWARE_PIPELINE_ACTIVE"
-        }
-
-    @staticmethod
-    def search_holographic_interference(query: str, top_k: int = 10) -> Dict[str, Any]:
-        """
-        Pillar 17: Holographic Vector Interference Projection Engine.
-        Encodes vector spaces into 2D holographic phase interference patterns with high optical density compression.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        q_vec = generate_embedding(query) if query else [0.5] * 8
-        phase_pattern = [round(math.cos(x * math.pi) ** 2, 4) for x in q_vec[:8]]
-        return {
-            "query": query,
-            "holographic_optical_pattern": "INTERFERENCE_FRINGE_2D_ENCODED",
-            "phase_interference_spectrum": phase_pattern,
-            "optical_compression_ratio": 100.0,
-            "sub_nanosecond_simulated_latency_ns": 0.42,
-            "holographic_hits": hits
-        }
-
-    @staticmethod
-    def search_neuromorphic_spiking_network(query: str, top_k: int = 10) -> List[Dict[str, Any]]:
-        """
-        Pillar 18: Neuromorphic Spiking Neural Network Memory Engine.
-        Leaky Integrate-and-Fire (LIF) threshold dynamics for event-driven vector search execution.
-        """
-        candidates = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        q_vec = generate_embedding(query) if query else [0.1] * 64
-        for cand in candidates:
-            c_vec = cand.get("embedding") or q_vec
-            v_mem = 0.0
-            spikes = 0
-            for x in c_vec[:64]:
-                v_mem = (v_mem * 0.9) + abs(float(x))
-                if v_mem >= 0.4:
-                    spikes += 1
-                    v_mem = 0.0
-            cand["neuromorphic_spikes"] = max(128, spikes)
-            cand["energy_footprint_mw"] = round(0.10 + (spikes * 0.005), 3)
-            cand["neuromorphic_status"] = "EVENT_DRIVEN_SPIKE_VERIFIED"
-        return candidates
-
-    @staticmethod
-    def search_global_multicloud_mesh(query: str, regions: List[str] = None) -> Dict[str, Any]:
-        """
-        Pillar 19: Global Multi-Cloud Geo-Mesh Engine.
-        Replicates vector states across AWS, Azure, GCP, and local edge hardware with real-time geo-routing.
-        """
-        if regions is None:
-            regions = ["aws-us-east-1", "azure-eu-west-1", "gcp-asia-east-1", "local-edge"]
-        hits = MiniVectorEngine.search_semantic(query, top_k=5)
-        return {
-            "query": query,
-            "geo_replicated_regions": regions,
-            "optimal_geo_routed_region": "local-edge",
-            "cross_cloud_latency_ms": 0.08,
-            "geo_mesh_hits": hits
-        }
-
-    @staticmethod
-    def search_post_quantum_lattice_secured(query: str, top_k: int = 10) -> List[Dict[str, Any]]:
-        """
-        Pillar 20: Post-Quantum Cryptographic Lattice Security Engine.
-        Learning with Errors (LWE) modular inner-product lattice verification.
-        """
-        candidates = MiniVectorEngine.search_tenant_isolated(query, tenant_id=1, top_k=top_k)
-        q_modulus = 12289
-        q_vec = generate_embedding(query) if query else [1.0] * 16
-        s_vec = [int(abs(x) * 1000) % q_modulus for x in q_vec[:16]]
-        lattice_inner_product = sum(s * (i + 1) for i, s in enumerate(s_vec)) % q_modulus
-        for cand in candidates:
-            cand["quantum_decryption_resistant"] = True
-            cand["lattice_lwe_modulus"] = q_modulus
-            cand["lattice_proof_scalar"] = lattice_inner_product
-            cand["post_quantum_lattice_encrypted"] = True
-            cand["quantum_cipher"] = "NIST_ML_KEM_KYBER_1024"
-            cand["quantum_immunity"] = "MATHEMATICALLY_QUANTUM_RESISTANT"
-        return candidates
-
-    @staticmethod
-    def search_topological_manifold_mapped(query: str, top_k: int = 10) -> Dict[str, Any]:
-        """
-        Pillar 21: Topological Data Analysis Manifold Mapper Engine.
-        Computes real simplicial graph topological invariants: Betti numbers (b0 connected components, b1 cycles) and Euler characteristic.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        v_count = max(1, len(hits))
-        # Compute edges based on mutual cosine similarity threshold (>= 0.60)
-        e_count = 0
-        for i in range(len(hits)):
-            for j in range(i + 1, len(hits)):
-                s1 = hits[i].get("similarity_score", 0.7)
-                s2 = hits[j].get("similarity_score", 0.7)
-                if (s1 * s2) >= 0.36:
-                    e_count += 1
-        b0 = 1
-        b1 = max(0, e_count - v_count + b0)
-        chi = v_count - e_count
-        return {
-            "query": query,
-            "topological_invariants": {
-                "vertex_count": v_count,
-                "edge_count": e_count,
-                "euler_characteristic": chi
-            },
-            "persistent_betti_numbers": {"betti_0_components": b0, "betti_1_loops": b1, "betti_2_voids": 0},
-            "manifold_topology_status": "HOMOLOGY_INVARIANTS_MAPPED",
-            "topological_candidates": hits
-        }
-
-    @staticmethod
-    def search_rdma_direct_memory_bypass(query: str, top_k: int = 10) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        """
-        Pillar 22: High-Performance Memory Buffer Direct Streaming Engine.
-        Measures real memory buffer transfer throughput in nanoseconds using high-resolution monotonic timer.
-        """
-        t0 = time.perf_counter_ns()
-        candidates = MiniVectorEngine.search_hardware_accelerated(query, top_k=top_k)
-        t_elapsed_ns = max(1, time.perf_counter_ns() - t0)
-        return candidates, {
-            "kernel_bypass_protocol": "INFINIBAND_ROCE_V2_RDMA",
-            "measured_latency_ns": t_elapsed_ns,
-            "transport_latency_ns": round(min(150.0, t_elapsed_ns / 1000.0), 2),
-            "os_stack_bypassed": True,
-            "nic_ram_streaming_status": "DIRECT_DMA_ACTIVE"
-        }
-
-    @staticmethod
-    def search_autonomous_policy_governed(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 23: Autonomous Self-Governing Policy Guard Engine.
-        Performs genuine content compliance scanning (PII, credentials, access controls) on retrieved candidates.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        re_pii = re.compile(r'\b(?:\d{3}-\d{2}-\d{4}|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,})\b')
-        violations = 0
-        for h in hits:
-            content = str(h.get("content") or h.get("text") or "")
-            has_pii = bool(re_pii.search(content))
-            if has_pii:
-                violations += 1
-            h["compliance_governed"] = True
-            h["data_classification"] = "RESTRICTED_PII" if has_pii else "CONFIDENTIAL_PROTECTED"
-
-        return {
-            "query": query,
-            "compliance_frameworks_validated": ["SOC2_TYPE_II", "HIPAA", "GDPR", "ISO_27001"],
-            "policy_violations_detected": violations,
-            "governance_status": "100_PCT_COMPLIANT_ZERO_VIOLATION" if violations == 0 else "AUDIT_WARNINGS_FLAGGED",
-            "governed_candidates": hits
-        }
-
-    @staticmethod
-    def search_continuous_selftrained_foundation(query: str, feedback_weight: float = 0.98) -> Dict[str, Any]:
-        """
-        Pillar 24: Continuous Self-Training Vector Foundation Model Engine.
-        Computes real cosine alignment loss and empirical SGD gradient step magnitude for query-document vector pairs.
-        """
-        q_vec = generate_embedding(query) if query else [0.1] * 16
-        if not q_vec:
-            q_vec = [0.1] * 16
-        norm_q = math.sqrt(sum(x * x for x in q_vec))
-        denom = norm_q * math.sqrt(len(q_vec))
-        cosine_loss = max(0.0001, round(1.0 - (sum(q_vec) / denom), 6)) if denom > 1e-9 else 0.0001
-        grad_step = round(cosine_loss * (1.0 - feedback_weight), 6)
-        return {
-            "query": query,
-            "online_learning_algorithm": "SYNAPTIC_WEIGHT_CONTINUOUS_SGD",
-            "model_loss_gradient": cosine_loss,
-            "empirical_sgd_step": grad_step,
-            "fine_tuning_adaptation_fidelity": feedback_weight,
-            "foundation_model_status": "ONLINE_CONTINUOUS_TRAINING_ACTIVE"
-        }
-
-    @staticmethod
-    def search_morphogenetic_codebase_evolved(query: str, top_k: int = 10) -> Dict[str, Any]:
-        """
-        Pillar 25: Morphogenetic Neural Codebase Evolution Engine.
-        Executes discrete reaction-diffusion iterations across candidate graph adjacency to compute spatial field dynamics.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        # Discrete reaction-diffusion step over candidate similarities
-        u = [h.get("similarity_score", 0.5) for h in hits]
-        if u:
-            gamma = 0.1
-            diffused_u = []
-            for idx, val in enumerate(u):
-                left = u[idx - 1] if idx > 0 else val
-                right = u[idx + 1] if idx < len(u) - 1 else val
-                laplacian = left + right - (2.0 * val)
-                diffused_u.append(round(val + (gamma * laplacian), 4))
-            for idx, h in enumerate(hits):
-                h["morphogenetic_diffusion_score"] = diffused_u[idx]
-        return {
-            "query": query,
-            "reaction_diffusion_turing_pattern": "MORPHOGENETIC_REORGANIZED_FIELD",
-            "spatial_predictive_accuracy": 0.994,
-            "morphogenetic_hits": hits
-        }
-
-    @staticmethod
-    def search_zerocopy_dma_shared_memory(query: str, top_k: int = 10) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        """
-        Pillar 26: Zero-Copy Direct Memory Address (DMA) Shared RAM Kernel Engine.
-        Uses memoryview buffer slices for zero-copy memory access and measures real transfer duration.
-        """
-        candidates = MiniVectorEngine.search_hardware_accelerated(query, top_k=top_k)
-        total_bytes = 0
-        for cand in candidates:
-            raw_text = (cand.get("content") or cand.get("filename") or "").encode("utf-8")
-            mv = memoryview(raw_text)
-            total_bytes += len(mv)
-        return candidates, {
-            "memory_allocation_bytes": 0,
-            "buffer_bytes_referenced": total_bytes,
-            "copy_latency_us": 0.0,
-            "shared_memory_kernel": "ZERO_COPY_CUDA_HOST_REGISTERED_DMA"
-        }
-
-    @staticmethod
-    def search_homomorphic_vector_evaluator(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 27: Fully Homomorphic Encrypted (FHE) Vector Search Engine.
-        Computes vector similarity dot products directly on FHE encrypted vectors without decrypting.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        q_vec = generate_embedding(query) if query else [0.1] * 16
-        q_scaled = [int(x * 10000) for x in q_vec[:16]]
-        fhe_dot_scalar = sum(x * x for x in q_scaled) / (10000.0 ** 2)
-        return {
-            "query": query,
-            "fhe_scheme": "CKKS_HOMOMORPHIC_ENCRYPTION",
-            "encrypted_dot_product_evaluated": True,
-            "fhe_inner_product_scalar": round(fhe_dot_scalar, 4),
-            "decryption_on_server_required": False,
-            "homomorphic_hits": hits
-        }
-
-    @staticmethod
-    def search_metaphorical_synaptic_reasoned(metaphorical_query: str, top_k: int = 10) -> List[Dict[str, Any]]:
-        """
-        Pillar 28: Neural Synaptic Metaphorical Reasoner Engine.
-        Expands metaphorical idioms and fuzzy terms using SQLite synonyms and phonetic token stems.
-        """
-        candidates = MiniVectorEngine.search_semantic(metaphorical_query, top_k=top_k)
-        norm_q = unicodedata.normalize("NFC", str(metaphorical_query or "")).lower()
-        for cand in candidates:
-            c_text = (cand.get("content") or cand.get("filename") or "").lower()
-            overlap = sum(1 for w in norm_q.split() if w in c_text)
-            cand["metaphorical_translation"] = f"Mapped '{metaphorical_query}' to AST symbol"
-            cand["metaphor_overlap_count"] = overlap
-            cand["supported_languages_count"] = 42
-            cand["synaptic_metaphor_active"] = True
-        return candidates
-
-    @staticmethod
-    def search_subatomic_superposition_quantized(vector: List[float], bit_precision: int = 4) -> Dict[str, Any]:
-        """
-        Pillar 29: Sub-Atomic Vector Superposition Quantization Engine.
-        Encodes vectors into 4-bit multi-state superposition registers with exact MSE measurement.
-        """
-        if not vector:
-            return {"superposition_bytes": 0, "status": "empty_vector"}
-        dim = len(vector)
-        raw_bytes = max(dim * 4, 6144)
-        quantized_4bit = [max(-8, min(7, int(x * 8))) for x in vector[:min(dim, 64)]]
-        recon_error = sum((float(q)/8.0 - x)**2 for q, x in zip(quantized_4bit, vector[:len(quantized_4bit)])) / float(max(1, len(quantized_4bit)))
-        return {
-            "vector_dimension": dim,
-            "superposition_bytes": max(1, int(raw_bytes * 0.05)),
-            "quantization_mse_4bit": round(recon_error, 6),
-            "ram_footprint_pct": 0.05,
-            "cosine_fidelity": 0.991,
-            "quantization_state": "SUBATOMIC_SUPERPOSITION_ACTIVE"
-        }
-
-    @staticmethod
-    def search_biosynthetic_synaptic_pruned(query: str, pruning_threshold: float = 0.15, top_k: int = 10) -> List[Dict[str, Any]]:
-        """
-        Pillar 30: Bio-Synthetic Synaptic Pruning Engine.
-        Performs magnitude threshold pruning on embedding coordinates, calculating empirical sparsity ratios.
-        """
-        candidates = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        q_vec = generate_embedding(query) if query else [0.2] * 64
-        pruned_dims = sum(1 for x in q_vec if abs(x) < pruning_threshold)
-        sparsity_pct = round((pruned_dims / float(max(1, len(q_vec)))) * 100.0, 2)
-        for cand in candidates:
-            cand["pruned_dimensions_pct"] = max(45.0, sparsity_pct)
-            cand["speedup_multiplier"] = 4.0
-            cand["synaptic_pruning_status"] = "BIOSYNTHETIC_DIMENSION_PRUNED"
-        return candidates
-
-    @staticmethod
-    def search_autonomous_edge_mesh_synced(query: str, peer_nodes: int = 12) -> Dict[str, Any]:
-        """
-        Pillar 31: Autonomous Edge WebRTC Mesh Synchronization Engine.
-        Calculates SHA-256 distributed state digests across active peer partitions.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=5)
-        state_payload = f"{query}:{len(hits)}:{time.time() // 60}"
-        mesh_digest = hashlib.sha256(state_payload.encode("utf-8")).hexdigest()[:16]
-        return {
-            "query": query,
-            "webrtc_p2p_peers_synced": peer_nodes,
-            "mesh_state_digest": f"0x{mesh_digest}",
-            "global_convergence_ms": 0.38,
-            "mesh_channel": "WEBRTC_DATACHANNEL_FAST",
-            "edge_synced_hits": hits
-        }
-
-    @staticmethod
-    def search_zero_knowledge_self_healing(query: str, memory_sector: str = "sector_alpha_01") -> Dict[str, Any]:
-        """
-        Pillar 32: Merkle Tree Self-Healing Memory Guard Engine.
-        Calculates SHA-256 Merkle root verification over indexed chunks and proves memory sector integrity.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=5)
-        hashes = [hashlib.sha256(str(h.get("id") or h.get("filename") or "").encode()).hexdigest() for h in hits]
-        combined = "".join(hashes) or query
-        merkle_root = hashlib.sha256(combined.encode("utf-8")).hexdigest()
-        return {
-            "query": query,
-            "target_memory_sector": memory_sector,
-            "merkle_root": merkle_root,
-            "merkle_root_proof_valid": True,
-            "auto_repair_status": "RAM_SECTOR_AUTO_HEALED_0MS_DROPPED_QUERIES",
-            "integrity_proof": "ZK_SNARK_MERKLE_PROVED_AUTHENTIC"
-        }
-
-    @staticmethod
-    def search_gene_expression_codebase_transmuted(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 33: Biological Gene Expression Codebase Transmutation Engine.
-        Executes a tournament selection and crossover operator over vector candidates to optimize relevance fitness.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        for h in hits:
-            sim = h.get("similarity_score", 0.7)
-            h["fitness_score"] = round(sim * 1.15, 4)
-        return {
-            "query": query,
-            "transmutation_transcription_factors": ["Promoter_Zero_Dep", "Enhancer_AVX512"],
-            "transmuted_modules_count": len(hits),
-            "gene_expression_status": "GENE_NETWORK_TRANSMUTED_CLEAN",
-            "fitness_evaluated_hits": hits
-        }
-
-    @staticmethod
-    def search_nvme_direct_storage(query: str, top_k: int = 10) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        """
-        Pillar 34: High-Throughput NVMe-oF Storage Direct Reader Engine.
-        Measures raw chunk binary stream throughput in MB/s using high-resolution monotonic timer.
-        """
-        t0 = time.perf_counter_ns()
-        candidates = MiniVectorEngine.search_hardware_accelerated(query, top_k=top_k)
-        t_elapsed_ns = max(1, time.perf_counter_ns() - t0)
-        bytes_read = sum(len(str(c.get("content") or "")) for c in candidates)
-        mb_per_sec = round((bytes_read / (1024.0 * 1024.0)) / max(0.000001, t_elapsed_ns / 1e9), 2)
-        return candidates, {
-            "storage_protocol": "NVME_OVER_FABRICS_RDMA",
-            "controller_throughput_us": 4.1,
-            "measured_throughput_mb_s": max(120.0, mb_per_sec),
-            "host_ram_bypassed": True,
-            "nvme_status": "DIRECT_NVME_CONTROLLER_ACTIVE"
-        }
-
-    @staticmethod
-    def search_quantum_entanglement_encrypted(query: str, top_k: int = 10) -> List[Dict[str, Any]]:
-        """
-        Pillar 35: Quantum Key Distribution (QKD) BB84 Simulation Engine.
-        Simulates BB84 protocol key sifting across rectilinear/diagonal bases with 0.0% Quantum Bit Error Rate (QBER).
-        """
-        candidates = MiniVectorEngine.search_tenant_isolated(query, tenant_id=1, top_k=top_k)
-        rng = random.Random(42)
-        for cand in candidates:
-            alice_bases = [rng.randint(0, 1) for _ in range(16)]
-            bob_bases = [rng.randint(0, 1) for _ in range(16)]
-            sifted_bits = sum(1 for i in range(16) if alice_bases[i] == bob_bases[i])
-            cand["quantum_entanglement_encrypted"] = True
-            cand["qkd_key_pair"] = "EPR_BELL_STATE_01"
-            cand["sifted_key_bits"] = sifted_bits
-            cand["qber_error_rate"] = 0.0
-            cand["physical_eavesdrop_immune"] = True
-        return candidates
-
-    @staticmethod
-    def search_synthetic_testsuite_generated(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 36: Empirical Test Suite Generator Engine.
-        Inspects candidate AST code nodes and generates runnable verification test cases.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        safe_fn = re.sub(r'[^a-zA-Z0-9_]', '_', query).strip('_') or "sample_feature"
-        test_code = (
-            "import pytest\n\n"
-            f"def test_{safe_fn}_invariants():\n"
-            f"    \"\"\"Empirical invariant verification test for '{query}'.\"\"\"\n"
-            f"    result = '{query}'\n"
-            f"    assert len(result) > 0\n"
-            f"    assert isinstance(result, str)\n"
-        )
-        return {
-            "query": query,
-            "synthetic_test_file": f"tests/test_{safe_fn}.py",
-            "branch_coverage_pct": 100.0,
-            "generated_test_code": test_code,
-            "synthetic_test_status": "UNIT_TESTSUITE_GENERATED_VERIFIED"
-        }
-
-    @staticmethod
-    def extract_holographic_rag_context(query: str, max_chunks: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 37: 3D Holographic Vector Context Mesh Engine.
-        Computes 2D Discrete Cosine Transform spectral phase distribution over candidate contexts.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=max_chunks)
-        spectrum = [round(math.cos(i * 0.785) ** 2, 4) for i in range(len(hits) or 1)]
-        return {
-            "query": query,
-            "holographic_density_compression_pct": 95.0,
-            "spectral_phase_distribution": spectrum,
-            "context_mesh_dimensions": "3D_AST_GIT_EXECUTION_MATRIX",
-            "holographic_chunks": hits
-        }
-
-    @staticmethod
-    def search_neuro_symbolic_logic_proved(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 38: Autonomous Neuro-Symbolic Propositional Logic Prover Engine.
-        Performs Horn clause resolution proving query entailment from source document facts.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        for h in hits:
-            h["smt_logic_formula"] = "forall x. Valid(x) => Proven(x)"
-            h["smt_solver_proof"] = "SATISFIABLE_PROVED"
-            h["horn_clause_resolved"] = True
-
-        return {
-            "query": query,
-            "smt_solver": "Z3_THEOREM_PROVER_FORMAL",
-            "hallucination_rate_guarantee_pct": 0.0,
-            "logic_proof_status": "MATHEMATICALLY_PROVED_ZERO_HALLUCINATION",
-            "proved_candidates": hits
-        }
-
-    @staticmethod
-    def search_speculative_preemptive_rag(ide_file: str, cursor_line: int, top_k: int = 3) -> Dict[str, Any]:
-        """
-        Pillar 39: Microsecond Pre-Emptive Speculative RAG Engine.
-        Generates predictive lookahead queries based on IDE active file and line number context.
-        """
-        predicted_query = f"Refactor function at {ide_file}:{cursor_line}"
-        hits = MiniVectorEngine.search_semantic(predicted_query, top_k=top_k)
-        return {
-            "ide_active_file": ide_file,
-            "cursor_line": cursor_line,
-            "predicted_query": predicted_query,
-            "preemptive_ram_latency_ms": 0.08,
-            "speculative_rag_candidates": hits
-        }
-
-    @staticmethod
-    def search_homomorphic_rag_synthesizer(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 40: Cryptographic Zero-Leakage Homomorphic RAG Synthesizer Engine.
-        Performs integer-scaled modular homomorphic vector synthesis over encrypted candidate embeddings.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        q_vec = generate_embedding(query) if query else [0.2] * 8
-        fhe_accumulator = sum(int(abs(x) * 1000) for x in q_vec[:8]) % 65537
-        return {
-            "query": query,
-            "fhe_homomorphic_synthesis": "CKKS_ENCRYPTED_SYNTHESIS_ACTIVE",
-            "modular_fhe_accumulator": fhe_accumulator,
-            "plaintext_exposure_risk": "ZERO_ABS_NONE",
-            "encrypted_context_payload": f"E(FHE_State_{fhe_accumulator})",
-            "homomorphic_synthesized_hits": hits
-        }
-
-    @staticmethod
-    def search_causal_digital_twin_rag(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 41: Autonomous Causally-Inferred Codebase Digital Twin Engine.
-        Traverses dependency DAG to calculate downstream blast radius and affected module counts.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        affected_count = len(hits)
-        return {
-            "query": query,
-            "causal_graph_nodes_simulated": max(1, affected_count * 284),
-            "downstream_breaking_changes_risk": 0.0,
-            "causal_digital_twin_status": "CAUSAL_IMPACT_SIMULATED_SAFE",
-            "twin_candidates": hits
-        }
-
-    @staticmethod
-    def search_promptfree_self_evolving_rag(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 42: Self-Reflective Prompt-Free KV Attention Cache Injection Engine.
-        Computes scaled dot-product attention score weights directly across vector candidate tokens.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        scores = [h.get("similarity_score", 0.7) for h in hits]
-        # Softmax normalization over similarity scores
-        if scores:
-            max_s = max(scores)
-            exp_s = [math.exp(s - max_s) for s in scores]
-            sum_exp = sum(exp_s) or 1.0
-            attn_weights = [round(e / sum_exp, 4) for e in exp_s]
-            for idx, h in enumerate(hits):
-                h["kv_attention_weight"] = attn_weights[idx]
-        return {
-            "query": query,
-            "prompt_parsing_latency_ms": 0.0,
-            "kv_cache_tensor_injected": True,
-            "llm_speedup_boost": "300_PCT_ATTENTION_CACHE_DIRECT",
-            "promptfree_candidates": hits
-        }
-
-    @staticmethod
-    def search_quantum_tunneling_rag(query: str, jump_probability: float = 0.94) -> Dict[str, Any]:
-        """
-        Pillar 43: Multi-Dimensional Quantum Tunneling Graph Traversal Engine.
-        Calculates quantum tunneling transmission coefficient T = exp(-2 * kappa * d) across semantic barriers.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=5)
-        # T = exp(-2 * sqrt(barrier) * distance)
-        barrier = max(0.01, 1.0 - (hits[0].get("similarity_score", 0.8) if hits else 0.8))
-        kappa = math.sqrt(barrier)
-        tunneling_coeff = round(math.exp(-2.0 * kappa * 0.5), 4)
-        return {
-            "query": query,
-            "quantum_tunneling_probability": max(jump_probability, tunneling_coeff),
-            "barrier_transmission_coefficient": tunneling_coeff,
-            "non_adjacent_ast_jumps_found": 8,
-            "cross_repo_linkage_status": "QUANTUM_TUNNELING_TRAVERSAL_COMPLETE",
-            "quantum_hits": hits
-        }
-
-    @staticmethod
-    def search_zk_compliance_audit_proved(query: str, license_standard: str = "MIT_APACHE_COMPLIANT") -> Dict[str, Any]:
-        """
-        Pillar 44: Cryptographic Merkle IP & License Audit Guard Engine.
-        Inspects source headers for license compliance and generates SHA-256 Merkle audit proof certificates.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=5)
-        audit_hash = hashlib.sha256(f"license_audit:{query}:{license_standard}".encode("utf-8")).hexdigest()
-        for h in hits:
-            h["zk_snark_proof"] = "ZK_PROOF_LICENSE_VALID"
-            h["ip_compliance_status"] = license_standard
-            h["merkle_license_hash"] = audit_hash[:16]
-
-        return {
-            "query": query,
-            "license_compliance_standard": license_standard,
-            "zk_snark_certificate": "ZK_SNARK_IP_LICENSE_PROOF_AUTHENTIC",
-            "merkle_compliance_root": f"0x{audit_hash}",
-            "compliance_candidates": hits
-        }
-
-    @staticmethod
-    def search_optical_waveguide_ast_rag(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 45: Zero-Latent Multi-Modal Optical AST Waveguide Engine.
-        Encodes AST structural tokens into optical waveguide phase interference spectra.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        q_vec = generate_embedding(query) if query else [0.3] * 8
-        phase_shifts = [round(math.sin(x * math.pi), 4) for x in q_vec[:8]]
-        return {
-            "query": query,
-            "light_waveguide_propagation_speed": "0.99c_PHOTONIC_EMULATION",
-            "optical_interference_channels": 64,
-            "waveguide_phase_spectrum": phase_shifts,
-            "waveguide_status": "PHOTONIC_AST_SEARCH_ACTIVE",
-            "optical_hits": hits
-        }
-
-    @staticmethod
-    def search_synaptic_memory_crystal_rag(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 46: Self-Assembly O(1) Synaptic Memory Crystal Engine.
-        Executes O(1) in-memory crystal hash lookups for rapid recurring query resolution.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        crystal_key = hashlib.md5(query.lower().strip().encode("utf-8")).hexdigest()
-        return {
-            "query": query,
-            "crystal_hash_key": crystal_key,
-            "time_complexity": "O(1)_CONSTANT_TIME",
-            "memory_crystal_lattice": "SYNTHETIC_HEXAGONAL_CRYSTAL",
-            "crystallized_lookup_status": "O1_MEMORY_CRYSTAL_HIT",
-            "crystal_hits": hits
-        }
-
-    @staticmethod
-    def search_hardware_clock_synced_rag(query: str, top_k: int = 5) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        """
-        Pillar 47: Autonomous Hardware CPU Clock Cycle Synchronization Engine.
-        Measures real CPU hardware execution time in nanoseconds via monotonic timer.
-        """
-        t0 = time.perf_counter_ns()
-        candidates = MiniVectorEngine.search_hardware_accelerated(query, top_k=top_k)
-        t_elapsed_ns = max(1, time.perf_counter_ns() - t0)
-        return candidates, {
-            "hardware_clock_ticks_elapsed": 142,
-            "measured_cpu_time_ns": t_elapsed_ns,
-            "avx512_clock_sync_status": "LOCKED_CPU_HARDWARE_TICKS",
-            "jitter_us": round((t_elapsed_ns % 1000) / 1000.0, 4)
-        }
-
-    @staticmethod
-    def search_zk_provenance_chain_proved(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 48: Cryptographic Merkle Provenance Ledger Engine.
-        Maintains a tamper-proof SHA-256 Merkle chain linking retrieved chunks and query audit records.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        chain_payload = f"{query}:{[h.get('id') for h in hits]}:{time.time() // 3600}"
-        block_hash = hashlib.sha256(chain_payload.encode("utf-8")).hexdigest()
-        return {
-            "query": query,
-            "zk_merkle_provenance_block_hash": f"0x{block_hash}",
-            "blockchain_provenance_status": "IMMUTABLE_ZK_SNARK_LEDGER_VERIFIED",
-            "audit_compliance": "SOC2_TYPE_II_AUDIT_PROVED",
-            "provenance_hits": hits
-        }
-
-    @staticmethod
-    def search_neuromorphic_synaptic_engram_rag(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        """
-        Pillar 49: Bio-Neural Neuromorphic Synaptic Engram Storage Engine.
-        Calculates exponential Ebbinghaus memory engram retention curves: R(t) = exp(-t / S).
-        """
-        candidates = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        half_life_days = 30.0
-        decay_constant = math.log(2) / half_life_days
-        retention = round(math.exp(-decay_constant * 1.0), 4)
-        for cand in candidates:
-            cand["engram_potentiation_weight"] = 0.998
-            cand["engram_retention_ratio"] = retention
-            cand["engram_decay_half_life_days"] = half_life_days
-            cand["engram_status"] = "SYNAPTIC_ENGRAM_CONSOLIDATED"
-        return candidates
-
-    @staticmethod
-    def search_counterfactual_codebase_simulator(query: str, alternate_architectures: List[str] = None) -> Dict[str, Any]:
-        """
-        Pillar 50: Autonomous Counterfactual Dependency Graph Simulator Engine.
-        Evaluates alternate module routing pathways across dependency graph reachability matrices.
-        """
-        if alternate_architectures is None:
-            alternate_architectures = ["Microservice_EventDriven", "Serverless_Edge_Lambda", "Monolith_ZeroDep"]
-        hits = MiniVectorEngine.search_semantic(query, top_k=5)
-        reachability_pct = round(min(100.0, 20.0 + (len(hits) * 14.5)), 1)
-        return {
-            "query": query,
-            "simulated_parallel_universes": alternate_architectures,
-            "optimal_universe_candidate": "Monolith_ZeroDep",
-            "performance_gain_pct": reachability_pct,
-            "counterfactual_hits": hits
-        }
-
-    @staticmethod
-    def search_quantum_topological_knot_rag(query: str, knot_polynomial: str = "JONES_POLYNOMIAL_V_Q") -> Dict[str, Any]:
-        """
-        Pillar 51: Quantum Topological Knot Invariant Indexing Engine.
-        Computes braid word representations and Jones polynomial invariants over AST call graphs.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=5)
-        braid_index = len(hits) % 4 + 1
-        return {
-            "query": query,
-            "topological_knot_braid_group": f"BRAID_B{braid_index}_INVARIANT",
-            "jones_polynomial": knot_polynomial,
-            "structural_equivalence_verified": True,
-            "knot_hits": hits
-        }
-
-    @staticmethod
-    def search_quantum_proof_homomorphic_state_transfer(query: str, top_k: int = 5) -> Dict[str, Any]:
-        """
-        Pillar 52: Post-Quantum Homomorphic State Streaming Engine.
-        Encodes RAG context states using modular polynomial ring arithmetic over Z_12289[X]/(X^16+1).
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=top_k)
-        q_mod = 12289
-        q_vec = generate_embedding(query) if query else [1.0] * 16
-        ring_poly = [int(abs(x) * 1000) % q_mod for x in q_vec[:16]]
-        return {
-            "query": query,
-            "quantum_cipher": "NIST_ML_KEM_KYBER_1024",
-            "ring_lwe_polynomial_coefficients": ring_poly,
-            "fhe_state_streaming": "FHE_STATE_TRANSFER_ACTIVE",
-            "eavesdrop_proof": "MATHEMATICALLY_QUANTUM_RESISTANT",
-            "quantum_proof_hits": hits
-        }
-
-    @staticmethod
-    def search_self_replicating_swarm_rag(query: str, micro_agent_count: int = 16) -> Dict[str, Any]:
-        """
-        Pillar 53: Self-Replicating Autonomous Agentic Swarm RAG Engine.
-        Spawns concurrent branch traversals across isolated vector partitions.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=5)
-        return {
-            "query": query,
-            "spawned_micro_agents_count": micro_agent_count,
-            "swarm_consensus_fidelity": 0.997,
-            "swarm_status": "AGENTIC_SWARM_CONCURRENT_MATCH_COMPLETE",
-            "swarm_hits": hits
-        }
-
-    @staticmethod
-    def search_epigenetic_codebase_adaptation_rag(query: str, environment: str = "PRODUCTION") -> List[Dict[str, Any]]:
-        """
-        Pillar 54: Epigenetic Runtime Environment Adaptation Guard Engine.
-        Applies environment-aware ranking adjustments calibrated to the active operating platform.
-        """
-        candidates = MiniVectorEngine.search_semantic(query, top_k=5)
-        env_upper = str(environment or "PRODUCTION").upper()
-        for cand in candidates:
-            cand["epigenetic_methylation_tag"] = f"DNA_METHYLATED_{env_upper}"
-            cand["environment_adapted"] = True
-            cand["active_runtime_os"] = os.name
-        return candidates
-
-    @staticmethod
-    def search_photonic_interferometry_quantum_rag(query: str, top_k: int = 5) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
-        """
-        Pillar 55: Photonic Quantum Interferometry Engine.
-        Calculates Mach-Zehnder optical interference visibility V = (I_max - I_min) / (I_max + I_min).
-        """
-        candidates = MiniVectorEngine.search_hardware_accelerated(query, top_k=top_k)
-        q_vec = generate_embedding(query) if query else [0.707] * 4
-        phase_shift = round(math.atan2(q_vec[1] if len(q_vec)>1 else 0.5, q_vec[0] if len(q_vec)>0 else 0.5), 4)
-        intensity = round((math.cos(phase_shift / 2.0)) ** 2, 4)
-        return candidates, {
-            "interferometry_latency_fs": 0.85,
-            "photonic_phase_shift_rad": phase_shift or 1.5708,
-            "interference_intensity": intensity,
-            "photonic_status": "SUB_FEMTOSECOND_INTERFEROMETRY_ACTIVE"
-        }
-
-    @staticmethod
-    def search_zk_policy_enforcement_proved(query: str, generated_tokens_count: int = 128) -> Dict[str, Any]:
-        """
-        Pillar 56: Token-Level Cryptographic Policy Enforcement Engine.
-        Calculates Shannon entropy on candidate token streams and generates cryptographic attestation proofs.
-        """
-        hits = MiniVectorEngine.search_semantic(query, top_k=5)
-        text = " ".join(str(h.get("content") or "") for h in hits) or query
-        counts: Dict[str, int] = {}
-        for ch in text:
-            counts[ch] = counts.get(ch, 0) + 1
-        entropy = round(-sum((cnt / len(text)) * math.log2(cnt / len(text)) for cnt in counts.values()), 4) if text else 0.0
-        attestation = hashlib.sha256(f"policy:{query}:{entropy}".encode("utf-8")).hexdigest()
-        return {
-            "query": query,
-            "verified_output_tokens": generated_tokens_count,
-            "token_stream_shannon_entropy": entropy,
-            "token_level_zk_proof": f"0x{attestation}",
-            "policy_enforcement_status": "100_PCT_TOKEN_LEVEL_COMPLIANT",
-            "token_hits": hits
-        }
-
 def extract_rag_context(query: str, max_chunks: int = 5):
     """RAG context extractor delegating to domain RAG engine."""
     return extract_advanced_rag_context(query, max_chunks=max_chunks, jaccard_threshold=0.70)
+

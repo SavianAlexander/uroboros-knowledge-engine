@@ -239,41 +239,20 @@ REAP_ZOMBIES_SCHEMA = {
     "properties": {},
 }
 
-CURAM_CER_SCHEMA = {
+CONSENSUS_DEBATE_SCHEMA = {
     "type": "object",
     "properties": {
-        "applicant_name": {"type": "string", "description": "Applicant full name", "default": "Primary Applicant"},
-        "household_size": {"type": "integer", "description": "Household member count", "default": 1},
-        "earned_income_monthly": {"type": "number", "description": "Monthly gross earned income", "default": 0.0},
-        "unearned_income_monthly": {"type": "number", "description": "Monthly unearned income", "default": 0.0},
-        "countable_assets": {"type": "number", "description": "Countable liquid assets", "default": 0.0},
-        "shelter_cost_monthly": {"type": "number", "description": "Monthly shelter/rent expense", "default": 0.0},
-        "utility_standard_monthly": {"type": "number", "description": "Monthly utility standard expense", "default": 0.0},
-        "is_resident": {"type": "boolean", "description": "State residency verified", "default": True},
-        "has_qualified_immigration_status": {"type": "boolean", "description": "Immigration/citizenship status", "default": True},
-        "is_child_under_19": {"type": "boolean", "description": "Applicant child under 19", "default": False},
-        "is_pregnant": {"type": "boolean", "description": "Applicant is pregnant", "default": False},
-        "has_disability": {"type": "boolean", "description": "Applicant has certified disability", "default": False},
-        "has_child_under_18": {"type": "boolean", "description": "Dependent child under 18 in unit", "default": False},
-        "has_parental_deprivation": {"type": "boolean", "description": "Parental deprivation criteria present", "default": False},
-        "has_elderly_or_disabled_member": {"type": "boolean", "description": "Elderly or disabled member present", "default": False}
-    }
+        "prompt": {"type": "string", "description": "Architecture question or goal for Proposer / Red-Team / Arbiter multi-agent debate"}
+    },
+    "required": ["prompt"]
 }
 
-JIRA_TEST_SCHEMA = {
+GRAPH_OF_THOUGHTS_SCHEMA = {
     "type": "object",
     "properties": {
-        "program": {"type": "string", "enum": ["MEDICAID_MAGI", "SNAP", "TANF"], "default": "MEDICAID_MAGI", "description": "Target social assistance program"},
-        "format_type": {"type": "string", "enum": ["json", "markdown"], "default": "json", "description": "Specification output format"}
-    }
-}
-
-UAT_RUN_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "programs": {"type": "array", "items": {"type": "string"}, "description": "List of programs to verify", "default": ["MEDICAID_MAGI", "SNAP", "TANF"]},
-        "approver": {"type": "string", "description": "Sign-off authority title", "default": "Chief Information Officer / Health & Human Services SME"}
-    }
+        "goal": {"type": "string", "description": "Goal or complex problem to decompose into a topological DAG of thoughts"}
+    },
+    "required": ["goal"]
 }
 
 @server.list_tools()
@@ -360,32 +339,91 @@ async def handle_list_tools() -> list[types.Tool]:
             inputSchema=SFX_SCHEMA,
         ),
         types.Tool(
-            name="neuro_curam_cer_eval",
-            description="Evaluate citizen evidence against IBM Cúram Express Rules (CER) Engine across Medicaid, SNAP, and TANF.",
-            inputSchema=CURAM_CER_SCHEMA,
+            name="neuro_consensus_debate",
+            description="Execute multi-agent Proposer / Red-Team Critic / Arbiter consensus debate with quantitative verification scoring.",
+            inputSchema=CONSENSUS_DEBATE_SCHEMA,
         ),
         types.Tool(
-            name="neuro_jira_test_generator",
-            description="Generate audit-ready Jira Xray/Zephyr-compatible test cases with full step-by-step procedure and traceability.",
-            inputSchema=JIRA_TEST_SCHEMA,
-        ),
-        types.Tool(
-            name="neuro_uat_runner",
-            description="Execute automated User Acceptance Testing (UAT) scenarios across Cúram programs with Merkle provenance certification.",
-            inputSchema=UAT_RUN_SCHEMA,
+            name="neuro_graph_of_thoughts",
+            description="Decompose complex engineering problems into a topological Directed Acyclic Graph (DAG) of thoughts using stdlib graphlib.",
+            inputSchema=GRAPH_OF_THOUGHTS_SCHEMA,
         ),
     ]
 
 async def _mcp_tool_search(args: dict) -> list[types.TextContent]:
-    res = await make_request("POST", "/api/search", json={
-        "query": args.get("query"),
-        "limit": args.get("limit", 5),
-        "search_type": args.get("search_type", "hybrid")
-    })
-    text_out = f"Search Results for '{args.get('query')}':\n\n"
-    for doc in res.get("results", []):
-        text_out += f"- [{doc.get('score', 0):.2f}] {doc.get('content', '')[:300]}...\n"
-    return [types.TextContent(type="text", text=text_out)]
+    query = (args or {}).get("query", "")
+    limit = (args or {}).get("limit", 6)
+    search_type = (args or {}).get("search_type", "hybrid")
+
+    # 1. Primary: Check if make_request API client is available or mocked
+    try:
+        res = await make_request("POST", "/api/search", json={"query": query, "limit": limit, "search_type": search_type})
+        if isinstance(res, dict) and "results" in res:
+            results = res.get("results", [])
+            text_out = f"Search Results for '{query}':\n"
+            for r in results:
+                text_out += f"- [{r.get('score', 0.0)}] {r.get('filename')}: {r.get('content', '')}\n"
+            return [types.TextContent(type="text", text=text_out)]
+    except Exception as e:
+        if isinstance(e, (RuntimeError, ValueError)) or "unreachable" in str(e).lower() or hasattr(e, "response"):
+            return [types.TextContent(type="text", text=f"Error: {e}")]
+
+    # 2. In-process Advanced RAG synthesis engine
+    try:
+        from src.domain.rag_engine import extract_advanced_rag_context
+        context, citations = extract_advanced_rag_context(query, max_chunks=limit)
+        if context or citations:
+            text_out = f"## 📚 Empirical Knowledge Vault Hits for: '{query}'\n\n"
+            if citations:
+                text_out += "### 🏷️ Sources & Citations:\n"
+                for c in citations:
+                    fn = c.get("filename", "")
+                    fp = c.get("filepath", "")
+                    score = c.get("confidence_score", 0.0)
+                    cite_label = c.get("citation", fn)
+                    text_out += f"- **{cite_label}**\n  File: `{fp}` (Relevance: {score:.3f})\n"
+                text_out += "\n"
+            text_out += f"### 📄 Unredacted Vault Content:\n\n{context}\n"
+            return [types.TextContent(type="text", text=text_out)]
+    except Exception:
+        pass
+
+    # 3. Direct SQLite FTS5 file search
+    try:
+        from src.infrastructure.database import get_db
+        from src.core.domain.services import sanitise_fts_query
+        with get_db() as conn:
+            cursor = conn.cursor()
+            clean_q = sanitise_fts_query(query)
+            try:
+                cursor.execute(
+                    "SELECT f.filepath, f.filename, f.content FROM fts_files fts JOIN files f ON fts.filepath = f.filepath WHERE fts_files MATCH ? LIMIT ?",
+                    (clean_q, limit)
+                )
+                rows = cursor.fetchall()
+            except Exception:
+                rows = []
+
+            if not rows:
+                like_q = f"%{query}%"
+                cursor.execute(
+                    "SELECT filepath, filename, content FROM files WHERE filename LIKE ? OR content LIKE ? LIMIT ?",
+                    (like_q, like_q, limit)
+                )
+                rows = cursor.fetchall()
+
+            if rows:
+                text_out = f"## 📚 Knowledge Vault FTS Hits for: '{query}'\n\n"
+                for r in rows:
+                    fname = r[1] if isinstance(r, (tuple, list)) else r.get("filename", "")
+                    fpath = r[0] if isinstance(r, (tuple, list)) else r.get("filepath", "")
+                    content = r[2] if isinstance(r, (tuple, list)) else r.get("content", "")
+                    text_out += f"### File: `{fname}`\nPath: `{fpath}`\n```\n{content[:1500]}\n```\n\n"
+                return [types.TextContent(type="text", text=text_out)]
+    except Exception:
+        pass
+
+    return [types.TextContent(type="text", text=f"Search Results for '{query}':\nNo matching empirical documents found in knowledge vault.")]
 
 
 async def _mcp_tool_ingest(args: dict) -> list[types.TextContent]:
@@ -494,37 +532,46 @@ async def _mcp_tool_doctor(args: dict) -> list[types.TextContent]:
 async def _mcp_tool_reap_zombies(args: dict) -> list[types.TextContent]:
     import process_hygiene_bridge
     res = process_hygiene_bridge.clean_process_hygiene()
-async def _mcp_tool_curam_cer_eval(args: dict) -> list[types.TextContent]:
-    from src.domain.curam_uat_engine import CuramExpressRulesEngine
-    res = CuramExpressRulesEngine.evaluate_integrated_case(args)
     return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
 
 
-async def _mcp_tool_jira_test_generator(args: dict) -> list[types.TextContent]:
-    from src.domain.curam_uat_engine import JiraTestCaseGenerator
-    prog = args.get("program", "MEDICAID_MAGI")
-    fmt = args.get("format_type", "json")
-    cases = JiraTestCaseGenerator.generate_suite_for_program(prog)
-    if fmt == "markdown":
-        out = JiraTestCaseGenerator.export_jira_markdown(cases)
-    else:
-        out = json.dumps({"status": "success", "program": prog, "total_cases": len(cases), "test_cases": cases}, indent=2)
-    return [types.TextContent(type="text", text=out)]
+async def _mcp_tool_consensus_debate(args: dict) -> list[types.TextContent]:
+    prompt = (args or {}).get("prompt", "")
+    try:
+        scripts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".agents", "skills", "neuro-copilot", "scripts"))
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        from frontier_reasoning_bridge import ConsensusArbiter
+        res = ConsensusArbiter.run_debate(prompt)
+        out = (
+            f"## 🏛️ Multi-Agent Consensus Debate Verdict\n\n"
+            f"**Consensus Confidence Score**: `{res.consensus_score:.2f}`\n"
+            f"**Passed**: `{'✅ True' if res.passed else '❌ False'}`\n\n"
+            f"### 🛡️ Hardened Solution:\n{res.arbiter_verdict}\n\n"
+            f"### ⚔️ Red-Team Critic Audit:\n{res.critic_critique}\n"
+        )
+        return [types.TextContent(type="text", text=out)]
+    except Exception as e:
+        return [types.TextContent(type="text", text=f"Error in consensus debate: {e}")]
 
 
-async def _mcp_tool_uat_runner(args: dict) -> list[types.TextContent]:
-    from src.domain.curam_uat_engine import UserAcceptanceTestRunner
-    progs = args.get("programs", ["MEDICAID_MAGI", "SNAP", "TANF"])
-    approver = args.get("approver", "Chief Information Officer / Health & Human Services SME")
-    suite_res = UserAcceptanceTestRunner.run_uat_suite(progs)
-    cert_md = UserAcceptanceTestRunner.generate_uat_certificate_markdown(suite_res, approver)
-    return [types.TextContent(type="text", text=json.dumps({
-        "status": "success",
-        "acceptance_verdict": suite_res["acceptance_verdict"],
-        "pass_rate": suite_res["pass_rate"],
-        "merkle_provenance_hash": suite_res["merkle_provenance_hash"],
-        "certificate_markdown": cert_md
-    }, indent=2))]
+async def _mcp_tool_graph_of_thoughts(args: dict) -> list[types.TextContent]:
+    goal = (args or {}).get("goal", "")
+    try:
+        scripts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".agents", "skills", "neuro-copilot", "scripts"))
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        from frontier_reasoning_bridge import GraphOfThoughtsEngine
+        got = GraphOfThoughtsEngine(goal)
+        got.build_standard_decomposition()
+        nodes = got.execute_dag()
+        out = f"## 🕸️ Graph-of-Thoughts DAG Execution ({len(nodes)} Nodes)\n\n"
+        for nid, n in nodes.items():
+            out += f"### Node `{nid}` ({n.thought_type})\n**Task**: {n.prompt}\n```\n{n.result}\n```\n\n"
+        out += f"### 🎯 Final Synthesized Solution:\n{got.get_final_result()}\n"
+        return [types.TextContent(type="text", text=out)]
+    except Exception as e:
+        return [types.TextContent(type="text", text=f"Error in Graph of Thoughts: {e}")]
 
 
 _MCP_TOOL_HANDLERS = {
@@ -544,9 +591,8 @@ _MCP_TOOL_HANDLERS = {
     "neuro_release_certificate": _mcp_tool_release_certificate,
     "neuro_speak": _mcp_tool_speak,
     "neuro_play_sfx": _mcp_tool_play_sfx,
-    "neuro_curam_cer_eval": _mcp_tool_curam_cer_eval,
-    "neuro_jira_test_generator": _mcp_tool_jira_test_generator,
-    "neuro_uat_runner": _mcp_tool_uat_runner,
+    "neuro_consensus_debate": _mcp_tool_consensus_debate,
+    "neuro_graph_of_thoughts": _mcp_tool_graph_of_thoughts,
 }
 
 
@@ -654,7 +700,7 @@ async def handle_get_prompt(name: str, arguments: dict[str, str] | None = None) 
 
 async def main():
     if not HAS_MCP:
-        print("MCP library (mcp) is not installed on this system.")
+        sys.stderr.write("MCP library (mcp) is not installed on this system.\n")
         return
     capabilities = server.get_capabilities(
         notification_options=NotificationOptions(),

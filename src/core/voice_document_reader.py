@@ -53,7 +53,7 @@ class DocumentVoiceReader:
                 if m_from:
                     # Clean display name from angle brackets
                     sender_raw = m_from.group(2).strip()
-                    sender = re.sub(r"<.*?>", "", sender_raw).strip() or sender_raw
+                    sender = re.sub(r"<.*?>", "", sender_raw).strip().strip('"\'') or sender_raw
                     continue
 
                 m_subj = re.match(r"^(Subject):\s*(.*)", line, re.IGNORECASE)

@@ -433,28 +433,6 @@ def extract_advanced_rag_context(
     citations = []
     context_blocks = []
 
-    # Puerto Rico Legal Corpus Deterministic Interceptor
-    try:
-        conn = get_db()
-        from src.infrastructure.pr_legal_repository import lookup_pr_citation_exact
-        exact_pr = lookup_pr_citation_exact(conn, raw_q)
-        if exact_pr:
-            canon = exact_pr.get("canonical_citation") or exact_pr.get("citation", "Leyes de Puerto Rico")
-            stat = exact_pr.get("status", "VIGENTE")
-            merkle = exact_pr.get("merkle_sha256", "")
-            cite_str = f"[Puerto Rico Ground Truth: {canon} (Status: {stat}, SHA-256: {merkle[:16]}...)]"
-            citations.append({
-                "citation": cite_str,
-                "filename": exact_pr.get("title") or exact_pr.get("case_name", "Leyes de Puerto Rico"),
-                "filepath": exact_pr.get("source_url", "https://sutra.oslpr.org"),
-                "confidence_score": 1.0,
-                "merkle_sha256": merkle
-            })
-            body = exact_pr.get("content") or exact_pr.get("doctrine", "")
-            context_blocks.append(f"{cite_str}\n{body}")
-    except Exception:
-        pass
-
     for idx, hit in enumerate(deduped_hits[:max_chunks], start=1):
         score = hit.get("rrf_score", 0.0)
         fname = hit.get("filename", "document.txt")
