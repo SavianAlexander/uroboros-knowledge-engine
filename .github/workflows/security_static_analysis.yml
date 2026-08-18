@@ -3,8 +3,32 @@ name: Security & Static Analysis Audit
 on:
   push:
     branches: [ master, main ]
+    tags: [ 'v*' ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'vault/**'
+      - 'assets/**'
+      - 'src/assets/**'
+      - 'examples/**'
+      - '.agents/skills/**/SKILL.md'
+      - '.agents/skills/**/references/**'
+      - 'LICENSE'
+      - '.gitignore'
   pull_request:
     branches: [ master, main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'vault/**'
+      - 'assets/**'
+      - 'src/assets/**'
+      - 'examples/**'
+      - '.agents/skills/**/SKILL.md'
+      - '.agents/skills/**/references/**'
+      - 'LICENSE'
+      - '.gitignore'
+  workflow_dispatch:
   schedule:
     - cron: '0 4 * * *' # Nightly at 04:00 UTC
 
@@ -23,7 +47,9 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: 'requirements.txt'
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
       - name: Install Core Dependencies
         run: |

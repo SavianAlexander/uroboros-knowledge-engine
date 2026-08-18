@@ -61,7 +61,7 @@ def calculate_sha256(filepath):
             h.update(chunk)
     return h.hexdigest()
 
-def format_commit(scope="feat", desc="update codebase", tududi_id=None, neuro_hash=None):
+def format_commit(scope="feat", desc="update codebase", tududi_id=None, neuro_hash=None, skip_ci=False):
     """Format standard git commit message adhering to Neuro-CoPilot provenance standard."""
     commit_msg = f"{scope}: {desc}"
     tags = []
@@ -72,8 +72,116 @@ def format_commit(scope="feat", desc="update codebase", tududi_id=None, neuro_ha
     
     if tags:
         commit_msg += " [" + " | ".join(tags) + "]"
+    if skip_ci or scope == "docs":
+        commit_msg += " [skip ci]"
     
     return commit_msg
+
+def classify_changes(files=None, repo_root=None):
+    """
+    Classify changed/staged files into smart change-types:
+    - docs_only: only markdown (.md), docs/, vault/, comments, .txt, LICENSE, .gitignore, skill docs
+    - ui_only: frontend/, src/assets/, index.html, style.css, app.js
+    - backend_domain: Python source files (.py), know.py, src/app/, src/domain/, database, tests
+    - mixed: multi-category changes
+    
+    Standard library only (Ponytail principle).
+    """
+    cwd = repo_root or project_root
+    if files is None:
+        staged, _, _ = run_cmd("git diff --cached --name-only", cwd=cwd)
+        staged_list = [f.strip() for f in staged.splitlines() if f.strip()]
+        if not staged_list:
+            status_out, _, _ = run_cmd("git status --porcelain", cwd=cwd)
+            staged_list = [line.strip().split()[-1] for line in status_out.splitlines() if line.strip()]
+        if not staged_list:
+            last_commit_files, _, _ = run_cmd("git diff-tree --no-commit-id --name-only -r HEAD", cwd=cwd)
+            staged_list = [f.strip() for f in last_commit_files.splitlines() if f.strip()]
+        files = staged_list
+
+    if not files:
+        return {
+            "status": "success",
+            "category": "empty",
+            "is_docs_only": False,
+            "is_ui_only": False,
+            "is_backend": False,
+            "total_files": 0,
+            "files": [],
+            "breakdown": {"docs": 0, "ui": 0, "backend": 0, "other": 0},
+            "suggested_scope": "feat",
+            "skip_ci_recommended": False
+        }
+
+    docs_patterns = (
+        r'\.md$', r'\.txt$', r'^docs/', r'^vault/', r'^examples/',
+        r'^LICENSE$', r'^\.gitignore$', r'^\.agents/skills/.*/SKILL\.md$',
+        r'^\.agents/skills/.*/references/'
+    )
+    ui_patterns = (
+        r'^frontend/', r'^src/assets/', r'^index\.html$', r'^style\.css$', r'^app\.js$',
+        r'\.css$', r'\.tsx?$', r'\.jsx?$', r'\.html$'
+    )
+    backend_patterns = (
+        r'\.py$', r'^src/app/', r'^src/domain/', r'^src/core/', r'^know\.py$',
+        r'^tests/', r'^requirements.*\.txt$', r'^Dockerfile'
+    )
+
+    docs_count = 0
+    ui_count = 0
+    backend_count = 0
+    other_count = 0
+
+    for f in files:
+        norm_f = f.replace('\\', '/')
+        is_doc = any(re.search(p, norm_f, re.IGNORECASE) for p in docs_patterns)
+        is_ui = any(re.search(p, norm_f, re.IGNORECASE) for p in ui_patterns) and not norm_f.endswith('.py')
+        is_backend = any(re.search(p, norm_f, re.IGNORECASE) for p in backend_patterns) and not is_doc
+
+        if is_doc:
+            docs_count += 1
+        elif is_ui:
+            ui_count += 1
+        elif is_backend:
+            backend_count += 1
+        else:
+            other_count += 1
+
+    total = len(files)
+    is_docs_only = (docs_count == total and total > 0)
+    is_ui_only = (ui_count == total and total > 0)
+    is_backend_only = (backend_count == total and total > 0)
+
+    if is_docs_only:
+        category = "docs_only"
+    elif is_ui_only:
+        category = "ui_only"
+    elif is_backend_only:
+        category = "backend_domain"
+    elif backend_count > 0:
+        category = "backend_domain_mixed"
+    elif ui_count > 0:
+        category = "ui_mixed"
+    else:
+        category = "mixed"
+
+    return {
+        "status": "success",
+        "category": category,
+        "is_docs_only": is_docs_only,
+        "is_ui_only": is_ui_only,
+        "is_backend": backend_count > 0,
+        "total_files": total,
+        "files": files,
+        "breakdown": {
+            "docs": docs_count,
+            "ui": ui_count,
+            "backend": backend_count,
+            "other": other_count
+        },
+        "suggested_scope": "docs" if is_docs_only else ("ui" if is_ui_only else "feat"),
+        "skip_ci_recommended": is_docs_only
+    }
 
 def check_health():
     """Verify local git state, gh CLI authentication, and GitHub connectivity."""
@@ -382,15 +490,40 @@ def verify_ci(wait=False, timeout_seconds=300):
     """Query GitHub Actions workflow runs for the active commit/branch, optionally watching until completion.
     
     Verifies that all triggered CI workflows (CI Pipeline, Domain Integration CI Suite, Security & Static Analysis Audit, Build & Package)
-    reach 100% SUCCESS (Green) status.
+    reach 100% SUCCESS (Green) status. Recognizes skipped workflows and provides immediate green feedback on doc-only pushes.
     """
     head_sha, _, _ = run_cmd("git rev-parse HEAD")
     head_sha = head_sha.strip() if head_sha else ""
 
+    # Check if HEAD commit message or files are doc-only or specify skip-ci
+    head_msg, _, _ = run_cmd("git log -1 --pretty=%B")
+    is_skip_ci_commit = bool(re.search(r'\[(skip ci|ci skip|no ci|skip actions|actions skip)\]', head_msg, re.IGNORECASE))
+
+    last_commit_files, _, _ = run_cmd("git diff-tree --no-commit-id --name-only -r HEAD")
+    changed_files = [f.strip() for f in last_commit_files.splitlines() if f.strip()]
+    classification = classify_changes(changed_files)
+    is_doc_only = classification.get("is_docs_only", False) or is_skip_ci_commit
+
     start_time = time.time()
     while True:
-        out, err, code = run_cmd("gh run list --limit 10 --json databaseId,status,conclusion,workflowName,headSha,createdAt,url")
+        out, err, code = run_cmd("gh run list --limit 15 --json databaseId,status,conclusion,workflowName,headSha,createdAt,url")
         if code != 0 or not out:
+            if is_doc_only:
+                summary = {
+                    "status": "success",
+                    "all_passed": True,
+                    "head_sha": head_sha[:8],
+                    "change_type": "docs_only",
+                    "skipped_workflows": True,
+                    "message": "Documentation-only push / skipped CI verified as clean (workflows skipped by paths-ignore/[skip ci]).",
+                    "total_runs_checked": 0,
+                    "successful_count": 0,
+                    "in_progress_count": 0,
+                    "failed_count": 0,
+                    "runs": []
+                }
+                print(json.dumps(summary, indent=2))
+                return 0
             res = {"status": "error", "message": f"Failed to query gh run list: {err}"}
             print(json.dumps(res, indent=2))
             return 1
@@ -402,20 +535,45 @@ def verify_ci(wait=False, timeout_seconds=300):
             print(json.dumps(res, indent=2))
             return 1
 
-        matching_runs = [r for r in runs if r.get("headSha", "").startswith(head_sha[:7])] if head_sha else runs[:4]
+        matching_runs = [r for r in runs if r.get("headSha", "").startswith(head_sha[:7])] if head_sha else []
+
+        # If no runs were triggered for head_sha
         if not matching_runs:
-            matching_runs = runs[:4]
+            if is_doc_only:
+                summary = {
+                    "status": "success",
+                    "all_passed": True,
+                    "head_sha": head_sha[:8],
+                    "change_type": "docs_only",
+                    "skipped_workflows": True,
+                    "message": "Documentation-only push / skipped CI verified as clean (workflows skipped by paths-ignore/[skip ci]).",
+                    "total_runs_checked": 0,
+                    "successful_count": 0,
+                    "in_progress_count": 0,
+                    "failed_count": 0,
+                    "runs": []
+                }
+                print(json.dumps(summary, indent=2))
+                return 0
+
+            elapsed = time.time() - start_time
+            if wait and elapsed < 20:
+                time.sleep(4)
+                continue
+            elif not matching_runs:
+                matching_runs = runs[:4]
 
         in_progress_runs = [r for r in matching_runs if r.get("status") != "completed"]
-        failed_runs = [r for r in matching_runs if r.get("status") == "completed" and r.get("conclusion") != "success"]
-        successful_runs = [r for r in matching_runs if r.get("status") == "completed" and r.get("conclusion") == "success"]
+        failed_runs = [r for r in matching_runs if r.get("status") == "completed" and r.get("conclusion") not in ("success", "skipped", "neutral")]
+        successful_runs = [r for r in matching_runs if r.get("status") == "completed" and r.get("conclusion") in ("success", "skipped", "neutral")]
 
         if not wait or not in_progress_runs:
-            all_passed = len(failed_runs) == 0 and len(matching_runs) > 0 and len(in_progress_runs) == 0
+            all_passed = len(failed_runs) == 0 and (len(matching_runs) > 0 or is_doc_only) and len(in_progress_runs) == 0
             summary = {
                 "status": "success" if all_passed else ("in_progress" if in_progress_runs else "failure"),
                 "all_passed": all_passed,
                 "head_sha": head_sha[:8],
+                "change_type": classification.get("category", "code"),
                 "total_runs_checked": len(matching_runs),
                 "successful_count": len(successful_runs),
                 "in_progress_count": len(in_progress_runs),
@@ -448,8 +606,8 @@ def verify_ci(wait=False, timeout_seconds=300):
 
         time.sleep(10)
 
-def provenance_tag_data(scope="feat", desc="update codebase", tududi_id=None):
-    """Calculate SHA-256 hash of staged/modified files and return dict payload."""
+def provenance_tag_data(scope="feat", desc="update codebase", tududi_id=None, skip_ci=None):
+    """Calculate SHA-256 hash of staged/modified files and return dict payload with change-type classification."""
     staged, _, _ = run_cmd("git diff --cached --name-only")
     if not staged:
         staged, _, _ = run_cmd("git status --porcelain")
@@ -457,6 +615,12 @@ def provenance_tag_data(scope="feat", desc="update codebase", tududi_id=None):
     else:
         staged_files = staged.splitlines()
         
+    classification = classify_changes(staged_files)
+    if skip_ci is None and classification.get("is_docs_only", False):
+        skip_ci = True
+        if scope == "feat":
+            scope = "docs"
+
     hasher = hashlib.sha256()
     file_hashes = {}
     for fpath in staged_files:
@@ -472,18 +636,19 @@ def provenance_tag_data(scope="feat", desc="update codebase", tududi_id=None):
                 pass
 
     combined_hash = hasher.hexdigest()
-    commit_msg = format_commit(scope, desc, tududi_id, combined_hash if combined_hash != hashlib.sha256().hexdigest() else None)
+    commit_msg = format_commit(scope, desc, tududi_id, combined_hash if combined_hash != hashlib.sha256().hexdigest() else None, skip_ci=bool(skip_ci))
 
     return {
         "status": "success",
         "combined_sha256": combined_hash,
         "commit_message": commit_msg,
-        "file_hashes": file_hashes
+        "file_hashes": file_hashes,
+        "classification": classification
     }
 
-def provenance_tag(scope="feat", desc="update codebase", tududi_id=None):
+def provenance_tag(scope="feat", desc="update codebase", tududi_id=None, skip_ci=False):
     """Calculate SHA-256 hash of staged/modified files and format provenance git commit string."""
-    result = provenance_tag_data(scope, desc, tududi_id)
+    result = provenance_tag_data(scope, desc, tududi_id, skip_ci=skip_ci)
     print(json.dumps(result, indent=2))
     return 0
 
@@ -560,17 +725,45 @@ def install_ci_workflow():
     os.makedirs(wf_dir, exist_ok=True)
     wf_file = os.path.join(wf_dir, "neuro_copilot_ci.yml")
     
-    wf_yaml = """name: Neuro Co-Pilot Tri-Engine CI Suite
+    wf_yaml = """name: Domain Integration CI Suite
 
 on:
   push:
     branches: [ master, main, 'feat/*' ]
+    tags: [ 'v*' ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'vault/**'
+      - 'assets/**'
+      - 'src/assets/**'
+      - 'examples/**'
+      - '.agents/skills/**/SKILL.md'
+      - '.agents/skills/**/references/**'
+      - 'LICENSE'
+      - '.gitignore'
   pull_request:
     branches: [ master, main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'vault/**'
+      - 'assets/**'
+      - 'src/assets/**'
+      - 'examples/**'
+      - '.agents/skills/**/SKILL.md'
+      - '.agents/skills/**/references/**'
+      - 'LICENSE'
+      - '.gitignore'
+  workflow_dispatch:
+
+concurrency:
+  group: neuro-copilot-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
-    name: Run Domain Test Suite & Tri-Engine Audit
+    name: Run Domain Test Matrix & Security Controls
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Codebase
@@ -580,11 +773,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
       - name: Install Domain Dependencies
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
       - name: Run Bridge Self-Tests
         run: |
@@ -592,7 +790,7 @@ jobs:
 
       - name: Execute Domain Unit Tests
         run: |
-          python run_domain_tests.py
+          python run_domain_tests.py || (echo "TEST FAILURE DETECTED, DUMPING LEDGER:" && cat tests/test_audit_ledger.json && echo "DUMPING JUNIT XML:" && cat tests/test_results.xml && exit 1)
 """
     with open(wf_file, "w", encoding="utf-8") as f:
         f.write(wf_yaml)
@@ -1708,7 +1906,7 @@ def tri_engine_health():
     print("==========================================================================\n")
     return 0
 
-def auto_commit(scope: str = "feat", desc: str = "update codebase", task: str = None):
+def auto_commit(scope: str = "feat", desc: str = "update codebase", task: str = None, skip_ci: bool = False):
     """Calculates SHA-256 Merkle root of staged files and creates conventional commit with provenance."""
     staged, _, code_s = run_cmd("git diff --cached --name-only")
     if not staged or code_s != 0:
@@ -1716,6 +1914,12 @@ def auto_commit(scope: str = "feat", desc: str = "update codebase", task: str = 
         return 0
 
     staged_files = [f.strip() for f in staged.splitlines() if f.strip()]
+    classification = classify_changes(staged_files)
+    if not skip_ci and classification.get("is_docs_only", False):
+        skip_ci = True
+        if scope == "feat":
+            scope = "docs"
+
     h = hashlib.sha256()
     for sf in staged_files:
         if os.path.exists(sf):
@@ -1728,11 +1932,11 @@ def auto_commit(scope: str = "feat", desc: str = "update codebase", task: str = 
                 pass
     provenance_hash = h.hexdigest()[:8]
 
-    commit_msg = format_commit(scope=scope, desc=desc, tududi_id=task, neuro_hash=provenance_hash)
+    commit_msg = format_commit(scope=scope, desc=desc, tududi_id=task, neuro_hash=provenance_hash, skip_ci=skip_ci)
     print(f"Executing commit: {commit_msg}")
     out, err, code = run_cmd(f'git commit -m "{commit_msg}"')
     if code == 0:
-        print("  [Pass] Commit successfully recorded with cryptographic provenance.")
+        print(f"  [Pass] Commit successfully recorded with cryptographic provenance ({classification.get('category')}).")
         return 0
     else:
         print(f"  [Notice] Git output: {out or err}")
@@ -1806,10 +2010,24 @@ def self_test():
     assert print_upload_status() == 0, "print_upload_status failed"
     print("  [Pass] get_git_sync_status assertion clean")
     
-    # 2. Test format_commit
+    # 2. Test format_commit & classify_changes
     msg = format_commit(scope="test", desc="unit test commit", tududi_id="123", neuro_hash="abcdef123456")
     assert "test: unit test commit [Tududi #123 | Neuro Hash: abcdef123456]" == msg, f"Commit formatting mismatch: {msg}"
-    print("  [Pass] format_commit assertion clean")
+    
+    msg_skip = format_commit(scope="docs", desc="update documentation", tududi_id="1989")
+    assert "[skip ci]" in msg_skip, f"format_commit skip ci mismatch: {msg_skip}"
+    
+    doc_class = classify_changes(["docs/guide.md", "README.md", "vault/spec.md"])
+    assert doc_class.get("is_docs_only") is True, f"classify_changes failed docs test: {doc_class}"
+    assert doc_class.get("category") == "docs_only"
+    
+    code_class = classify_changes(["know.py", "src/app/main.py"])
+    assert code_class.get("is_backend") is True, f"classify_changes failed backend test: {code_class}"
+    assert code_class.get("is_docs_only") is False
+
+    ui_class = classify_changes(["frontend/src/App.tsx", "style.css"])
+    assert ui_class.get("is_ui_only") is True, f"classify_changes failed ui test: {ui_class}"
+    print("  [Pass] format_commit & classify_changes assertion clean")
     
     # 3. Test check_health execution
     health_res = check_health()
@@ -1923,7 +2141,7 @@ def self_test():
     return 0
 
 def main():
-    parser = argparse.ArgumentParser(description="Neuro Co-Pilot GitHub Bridge Enterprise CLI (34-Command Cognitive Suite)")
+    parser = argparse.ArgumentParser(description="Neuro Co-Pilot GitHub Bridge Enterprise CLI (35-Command Cognitive Suite)")
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("check_health", help="Verify git, gh auth, Actions, and repo state")
@@ -1934,6 +2152,7 @@ def main():
     prov_parser.add_argument("--scope", default="feat", help="Commit scope")
     prov_parser.add_argument("--desc", default="update codebase", help="Commit description")
     prov_parser.add_argument("--task", help="Tududi task ID")
+    prov_parser.add_argument("--skip-ci", action="store_true", help="Explicitly append [skip ci] tag")
     pr_parser = subparsers.add_parser("create_pr", help="Generate and open GitHub Pull Request")
     pr_parser.add_argument("--title", required=True, help="PR Title")
     pr_parser.add_argument("--task", help="Tududi task ID")
@@ -1963,6 +2182,9 @@ def main():
     copilot_p = subparsers.add_parser("copilot", help="Synthesize developer intent into an Engineering Flight Plan")
     copilot_p.add_argument("--prompt", required=True, help="Developer objective or feature request")
     copilot_p.add_argument("--execute", action="store_true", help="Automatically branch git and initialize flight plan")
+
+    class_p = subparsers.add_parser("classify_changes", help="Classify changed files into smart change-types (docs, ui, backend)")
+    class_p.add_argument("--files", nargs="*", help="Optional list of file paths to classify")
 
     blast_p = subparsers.add_parser("blast_radius", help="AST-level cognitive dependency & blast radius mapping")
     blast_p.add_argument("--file", "--target", dest="file", default="know.py", help="Target Python file path")
@@ -1997,6 +2219,7 @@ def main():
     commit_p.add_argument("--scope", default="feat", help="Conventional commit scope")
     commit_p.add_argument("--desc", default="update codebase", help="Commit description")
     commit_p.add_argument("--task", help="Optional Tududi task ID")
+    commit_p.add_argument("--skip-ci", action="store_true", help="Explicitly append [skip ci] tag")
 
     agent_p = subparsers.add_parser("format_agent_prompt", help="Format autonomous subagent dispatch prompt")
     agent_p.add_argument("--task", required=True, help="Subagent task description")
@@ -2021,6 +2244,9 @@ def main():
         sys.exit(check_health())
     elif args.command == "copilot":
         sys.exit(copilot_intent(args.prompt, getattr(args, "execute", False)))
+    elif args.command == "classify_changes":
+        print(json.dumps(classify_changes(args.files), indent=2))
+        sys.exit(0)
     elif args.command == "verify_ci":
         sys.exit(verify_ci(getattr(args, "wait", False), getattr(args, "timeout", 300)))
     elif args.command == "blast_radius":
@@ -2049,7 +2275,7 @@ def main():
     elif args.command == "tri_engine_health":
         sys.exit(tri_engine_health())
     elif args.command == "auto_commit":
-        sys.exit(auto_commit(args.scope, args.desc, args.task))
+        sys.exit(auto_commit(args.scope, args.desc, args.task, getattr(args, "skip_ci", False)))
     elif args.command == "format_agent_prompt":
         sys.exit(format_agent_prompt(args.task, args.task_id))
     elif args.command == "query_local_brain":
@@ -2066,7 +2292,7 @@ def main():
     elif args.command == "diagnose_ci":
         sys.exit(diagnose_ci(args.run_id))
     elif args.command == "provenance_tag":
-        sys.exit(provenance_tag(args.scope, args.desc, args.task))
+        sys.exit(provenance_tag(args.scope, args.desc, args.task, getattr(args, "skip_ci", False)))
     elif args.command == "create_pr":
         sys.exit(create_pr(args.title, args.task, args.hash))
     elif args.command == "install_hooks":

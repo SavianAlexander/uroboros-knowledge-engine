@@ -3,8 +3,27 @@ name: Build & Package
 on:
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'vault/**'
+      - 'examples/**'
+      - '.agents/skills/**/SKILL.md'
+      - '.agents/skills/**/references/**'
+      - 'LICENSE'
+      - '.gitignore'
   pull_request:
     branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'vault/**'
+      - 'examples/**'
+      - '.agents/skills/**/SKILL.md'
+      - '.agents/skills/**/references/**'
+      - 'LICENSE'
+      - '.gitignore'
   workflow_dispatch:
 
 concurrency:
@@ -29,7 +48,9 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
-          cache-dependency-path: 'requirements.txt'
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
 
       - name: Install Python Dependencies
         run: |
@@ -71,7 +92,7 @@ jobs:
   publish-package:
     name: Build & Publish Container Package to GHCR
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     needs: build
 
     steps:
@@ -99,6 +120,7 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha,prefix=
+            type=ref,event=tag
 
       - name: Build and Push Core Engine Container
         uses: docker/build-push-action@v5
@@ -120,6 +142,7 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha,prefix=
+            type=ref,event=tag
 
       - name: Build and Push Frontend SPA Container
         uses: docker/build-push-action@v5
