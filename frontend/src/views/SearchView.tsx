@@ -3,7 +3,7 @@ import { api } from '../lib/api';
 import { SearchResult } from '../types';
 import { glassCardClasses, emeraldButtonClasses, emeraldBadgeClasses, goldBadgeClasses, wineBadgeClasses, slateBadgeClasses } from '../lib/utils';
 import { useApp } from '../store/AppContext';
-import { Search, UploadCloud, Mic, Filter, FileText, Settings, Download, X, Play, Hash, Bookmark, Copy, Check, Sparkles, Layers, Zap } from 'lucide-react';
+import { Search, UploadCloud, Mic, Filter, FileText, Settings, Download, X, Play, Hash, Bookmark, Copy, Check, Sparkles, Layers, Zap, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SearchResultSkeleton } from '../components/Skeletons';
 import { useToast } from '../components/Toast';
@@ -18,6 +18,68 @@ export default function SearchView() {
   const [fileNote, setFileNote] = useState('');
   const [newTag, setNewTag] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [playingSnippetId, setPlayingSnippetId] = useState<string | number | null>(null);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
+  const audioPlayerRef = React.useRef<HTMLAudioElement | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleToggleSpeak = async (resId: string | number, text: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (playingSnippetId === resId) {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+      setPlayingSnippetId(null);
+      toast('Speech Stopped', 'Audio playback stopped', 'info');
+      return;
+    }
+
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current = null;
+    }
+
+    setPlayingSnippetId(resId);
+    setIsAudioLoading(true);
+    toast('Kokoro Voice', 'Synthesizing neural audio playback...', 'info');
+
+    try {
+      const blob = await api.synthesizeVoice(text.slice(0, 1000));
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      audioPlayerRef.current = audio;
+
+      audio.onended = () => {
+        setPlayingSnippetId(null);
+        audioPlayerRef.current = null;
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onerror = () => {
+        setPlayingSnippetId(null);
+        audioPlayerRef.current = null;
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      await audio.play();
+    } catch (err) {
+      console.warn('Voice playback failed:', err);
+      setPlayingSnippetId(null);
+      audioPlayerRef.current = null;
+      toast('Voice Error', 'Kokoro neural voice synthesis error', 'error');
+    } finally {
+      setIsAudioLoading(false);
+    }
+  };
 
   React.useEffect(() => {
     let isMounted = true;
@@ -393,7 +455,34 @@ export default function SearchView() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => handleToggleSpeak(resId, snippet || filename, e)}
+                        className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-medium ${
+                          playingSnippetId === resId
+                            ? 'text-purple-600 dark:text-purple-300 bg-purple-500/15 border border-purple-500/30'
+                            : 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 hover:text-purple-400'
+                        }`}
+                        title="Listen to Snippet with Kokoro Neural Voice"
+                      >
+                        {playingSnippetId === resId ? (
+                          <>
+                            <div className="flex items-center gap-0.5 h-3">
+                              <span className="w-0.5 h-2 bg-purple-500 animate-pulse" />
+                              <span className="w-0.5 h-3 bg-purple-500 animate-bounce" />
+                              <span className="w-0.5 h-2 bg-purple-500 animate-pulse" />
+                            </div>
+                            <VolumeX className="w-3.5 h-3.5 text-purple-500" />
+                            <span>Stop</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="w-3.5 h-3.5" />
+                            <span>{isAudioLoading && playingSnippetId === resId ? 'Buffering...' : 'Listen'}</span>
+                          </>
+                        )}
+                      </button>
+
                       <button
                         onClick={(e) => copySnippet({ ...res, snippet, filename, id: resId }, e)}
                         className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"

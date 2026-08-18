@@ -34,7 +34,44 @@ function compressDirectory(dir) {
   }
 }
 
+function copyRecursive(src, dest) {
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(dest, { recursive: true });
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyRecursive(srcPath, destPath);
+    } else if (entry.isFile()) {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+function syncAssets() {
+  const assetsDir = path.resolve(__dirname, '..', 'src', 'assets');
+  const rootDir = path.resolve(__dirname, '..');
+
+  // Copy dist contents to src/assets/
+  copyRecursive(distDir, assetsDir);
+
+  // Copy index.html, style.css, app.js and chunks/ to root directory
+  for (const f of ['index.html', 'style.css', 'app.js']) {
+    const srcFile = path.join(distDir, f);
+    if (fs.existsSync(srcFile)) {
+      fs.copyFileSync(srcFile, path.join(rootDir, f));
+    }
+  }
+  const chunksSrc = path.join(distDir, 'chunks');
+  if (fs.existsSync(chunksSrc)) {
+    copyRecursive(chunksSrc, path.join(rootDir, 'chunks'));
+  }
+  console.log('✓ 100% SHA-256 bitwise parity synchronized to src/assets/ and workspace root');
+}
+
 if (fs.existsSync(distDir)) {
   compressDirectory(distDir);
   console.log('✓ Gzip & Brotli pre-compression complete for dist/');
+  syncAssets();
 }

@@ -6,69 +6,7 @@ and context token length sliding window truncation logic.
 import json
 from typing import List, Dict, Any, Tuple, Optional
 
-def estimate_tokens(text: str) -> int:
-    """
-    Estimates token count for a text string using word/character heuristics.
-    Approx 1 token per 4 characters or 0.75 words, minimum 1 token for non-empty text.
-    """
-    if not text:
-        return 0
-    words = len(text.split())
-    chars = len(text)
-    return max(1, int(max(words * 1.3, chars / 4.0)))
-
-def truncate_context_window(
-    messages: List[Dict[str, Any]],
-    max_tokens: int = 4096,
-    system_prompt: Optional[str] = None
-) -> List[Dict[str, Any]]:
-    """
-    Truncates turn history to fit within max_tokens budget:
-    - Preserves system prompt at the top.
-    - Applies a sliding window to retain the most recent user/assistant turns.
-    - Maintains strict chronological sequence order.
-    """
-    if not messages or not isinstance(messages, list):
-        if not system_prompt:
-            return []
-        messages = []
-
-    result_messages: List[Dict[str, Any]] = []
-
-    # Handle system prompt
-    sys_msg = None
-    turn_messages = list(messages) if messages else []
-
-    if turn_messages and turn_messages[0].get("role") == "system":
-        sys_msg = turn_messages.pop(0)
-    elif system_prompt:
-        sys_msg = {"role": "system", "content": system_prompt}
-
-    sys_tokens = estimate_tokens(sys_msg.get("content", "")) if sys_msg else 0
-    remaining_budget = max(0, max_tokens - sys_tokens)
-
-    # Collect turns from newest to oldest within remaining budget
-    selected_turns: List[Dict[str, Any]] = []
-    current_tokens = 0
-
-    for msg in reversed(turn_messages):
-        msg_content = msg.get("content", "")
-        t_count = estimate_tokens(msg_content)
-        if current_tokens + t_count <= remaining_budget:
-            selected_turns.append(msg)
-            current_tokens += t_count
-        else:
-            # Token budget reached
-            break
-
-    # Restore chronological order
-    selected_turns.reverse()
-
-    if sys_msg:
-        result_messages.append(sys_msg)
-    result_messages.extend(selected_turns)
-
-    return result_messages
+from src.core.text_utils import estimate_tokens, truncate_context_window
 
 def parse_citations_and_metadata(
     citations_raw: Any,

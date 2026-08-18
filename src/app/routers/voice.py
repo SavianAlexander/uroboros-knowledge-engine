@@ -19,7 +19,8 @@ router = APIRouter(tags=["Universal Voice Bridge"])
 
 class OpenAISpeechRequest(BaseModel):
     model: Optional[str] = "kokoro"
-    input: str
+    input: Optional[str] = None
+    text: Optional[str] = None
     voice: Optional[str] = "CORTANA_PRIME"
     response_format: Optional[str] = "wav"
     speed: Optional[float] = 1.0
@@ -36,17 +37,22 @@ class UniversalSpeakRequest(BaseModel):
 
 
 # ----------------------------------------------------------------------
-# 1. Standard OpenAI-Compatible Audio API
+# 1. Standard OpenAI-Compatible Audio & Voice Synthesize API
 # ----------------------------------------------------------------------
 @router.post("/v1/audio/speech")
+@router.post("/api/voice/synthesize")
 def openai_speech_endpoint(req: OpenAISpeechRequest):
     """
     Standard OpenAI-compatible Audio API drop-in endpoint with Studio DSP Mastering.
     Accepts OpenAI TTS JSON and returns binary streaming audio.
     """
     try:
+        raw_text = req.input or req.text or ""
+        if not raw_text:
+            raise HTTPException(status_code=422, detail="Missing input text for voice synthesis.")
+
         audio_bytes = VoiceBridge.synthesize_bytes(
-            text=req.input,
+            text=raw_text,
             voice=req.voice or "CORTANA_PRIME",
             speed=req.speed or 1.0,
             response_format=req.response_format or "wav",

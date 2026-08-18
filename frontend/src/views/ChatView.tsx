@@ -1668,7 +1668,7 @@ export default function ChatView() {
                               ? 'text-purple-600 dark:text-purple-300 font-medium bg-purple-500/10'
                               : 'hover:text-purple-500 dark:hover:text-purple-400'
                           }`}
-                          title="Read Aloud with Studio Neural Voice"
+                          title="Listen with Kokoro Neural Voice"
                         >
                           {speakingMsgId === msg.id ? (
                             <>
@@ -1683,7 +1683,7 @@ export default function ChatView() {
                           ) : (
                             <>
                               <Volume2 className="w-3.5 h-3.5" />
-                              <span>{isAudioLoading && speakingMsgId === msg.id ? 'Buffering...' : 'Read'}</span>
+                              <span>{isAudioLoading && speakingMsgId === msg.id ? 'Buffering...' : 'Listen'}</span>
                             </>
                           )}
                         </button>

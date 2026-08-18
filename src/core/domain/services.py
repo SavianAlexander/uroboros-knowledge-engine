@@ -377,31 +377,7 @@ def generate_summary(text: str) -> str:
 _RE_CLEAN_FTS = re.compile(r'[\x00-\x1F\x7F<>]')
 _RE_KEYWORD_OPERATORS = re.compile(r'\s*(\b(OR|NOT|AND)\b|NEAR\([^)]*\))\s*', re.IGNORECASE)
 
-@lru_cache(maxsize=1024)
-def sanitise_fts_query(query: str) -> str:
-    """Sanitize search query for FTS5 syntax safety, HTML injection, and control characters."""
-    if not query:
-        return ""
-    query = unicodedata.normalize("NFC", query)
-    # Strip standalone or leading asterisks to prevent SQLite FTS5 unknown special query errors
-    query = re.sub(r'(^|\s)\*+', ' ', query)
-    # Strip dangerous FTS syntax symbols like /, =, <, >, ;, --, (, )
-    cleaned = re.sub(r'[/<>=;~\\()|]|--', ' ', query)
-    cleaned = _RE_CLEAN_FTS.sub('', cleaned)
-    if '"' in cleaned:
-        cleaned = cleaned.replace('"', ' ')
-    cleaned = _RE_KEYWORD_OPERATORS.sub(' ', cleaned)
-    words = [w for w in re.findall(r'\b[\w\-\*]+\b', cleaned) if w.lower() not in ('and', 'or', 'not', 'near')]
-    if not words:
-        return ""
-    return " ".join(words)
-
-@lru_cache(maxsize=1024)
-def sanitize_tag(tag: str) -> str:
-    """Sanitize and normalize tag string for query and storage."""
-    if not tag:
-        return ""
-    return re.sub(r'[\s,#]+', '_', tag.strip().lower())
+from src.core.text_utils import sanitise_fts_query, sanitize_fts_query, sanitize_tag
 
 @lru_cache(maxsize=1024)
 def lookup_tag_color(tag: str) -> str:

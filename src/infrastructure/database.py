@@ -925,3 +925,86 @@ def validate_and_repair_indexes(conn=None) -> dict:
         "verified_indexes": verified,
         "repaired_indexes": repaired
     }
+
+
+def set_current_thread_idle_priority():
+    """Lower current thread priority to IDLE so background work never lags desktop UI or audio."""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            # -15 = THREAD_PRIORITY_IDLE on Windows NT/10/11
+            THREAD_PRIORITY_IDLE = -15
+            handle = ctypes.windll.kernel32.GetCurrentThread()
+            ctypes.windll.kernel32.SetThreadPriority(handle, THREAD_PRIORITY_IDLE)
+        except Exception as e:
+            logger.debug(f"[WALDaemon] Windows thread priority note: {e}")
+    else:
+        try:
+            os.nice(19)
+        except Exception:
+            pass
+
+
+class SQLiteWALDaemon(threading.Thread):
+    """
+    Cooperative zero-stutter SQLite WAL truncation and maintenance daemon:
+    - 30-second cold-start boot grace period: protects UI/app launch.
+    - OS IDLE thread priority: yields CPU/IO immediately to foreground tasks.
+    - Periodic idle maintenance: executes PRAGMA wal_checkpoint(TRUNCATE) and index optimization.
+    - Inter-cycle cooling intervals: eliminates disk and CPU contention.
+    """
+    def __init__(self, boot_grace_seconds: int = 30, interval_seconds: int = 120, cooloff_seconds: int = 15):
+        super().__init__(daemon=True, name="CooperativeWALDaemon")
+        self.boot_grace_seconds = boot_grace_seconds
+        self.interval_seconds = interval_seconds
+        self.cooloff_seconds = cooloff_seconds
+        self._running = True
+
+    def stop(self):
+        self._running = False
+
+    def run(self):
+        logger.info(f"[WAL Daemon] Started cooperative daemon (boot grace: {self.boot_grace_seconds}s, interval: {self.interval_seconds}s).")
+        # 1. Boot Grace Period
+        for _ in range(self.boot_grace_seconds):
+            if not self._running:
+                return
+            time.sleep(1.0)
+
+        # 2. Lower OS thread priority to IDLE
+        set_current_thread_idle_priority()
+
+        # 3. Gentle maintenance loop
+        while self._running:
+            try:
+                self.perform_maintenance_cycle()
+            except Exception as e:
+                logger.warning(f"[WAL Daemon] Maintenance cycle note: {e}")
+
+            # Sleep across interval
+            for _ in range(self.interval_seconds):
+                if not self._running:
+                    return
+                time.sleep(1.0)
+
+    def perform_maintenance_cycle(self) -> Dict[str, Any]:
+        """Executes TRUNCATE checkpoint and index verification safely."""
+        res = run_maintenance(truncate_wal=True)
+        validate_and_repair_indexes()
+        logger.debug(f"[WAL Daemon] Completed idle WAL maintenance cycle: {res.get('status')}")
+        return res
+
+
+_wal_daemon: Optional[SQLiteWALDaemon] = None
+
+
+def start_wal_daemon(boot_grace_seconds: int = 30, interval_seconds: int = 120) -> SQLiteWALDaemon:
+    """Start global singleton SQLite WAL maintenance daemon."""
+    global _wal_daemon
+    if _wal_daemon is None or not _wal_daemon.is_alive():
+        _wal_daemon = SQLiteWALDaemon(
+            boot_grace_seconds=boot_grace_seconds,
+            interval_seconds=interval_seconds
+        )
+        _wal_daemon.start()
+    return _wal_daemon

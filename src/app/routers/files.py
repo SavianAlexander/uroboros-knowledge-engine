@@ -26,6 +26,7 @@ from src.core.domain.models import (
     FileInsightsRequest,
     RenameRequest,
 )
+from src.core.text_utils import extract_top_keywords, sanitise_fts_query
 from src.core.domain.services import generate_summary, generate_key_takeaways
 from src.infrastructure.repositories.files import get_file_revisions, revert_file_revision, save_file_revision
 from src.infrastructure.vector_engine import index_directory
@@ -93,26 +94,14 @@ def get_raw_file(path: str):
             suggested_tags = []
         elif ext in ('.pdf', '.docx', '.xlsx', '.rtf') and db_content:
             content = db_content
-            import re
-            from collections import Counter
-            words = [w.lower() for w in re.findall(r'\b[a-zA-Z]{3,}\b', content[:50000])]
-            freq = Counter(w for w in words if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'))
-            suggested_tags = [w for w, _ in freq.most_common(5)]
+            suggested_tags = extract_top_keywords(content, top_k=5)
         elif real_path and os.path.exists(real_path) and not os.path.isdir(real_path):
             with open(real_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read(500000)  # Safe bounded 500KB preview limit
-            import re
-            from collections import Counter
-            words = [w.lower() for w in re.findall(r'\b[a-zA-Z]{3,}\b', content[:50000])]
-            freq = Counter(w for w in words if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'))
-            suggested_tags = [w for w, _ in freq.most_common(5)]
+            suggested_tags = extract_top_keywords(content, top_k=5)
         elif db_content:
             content = db_content
-            import re
-            from collections import Counter
-            words = [w.lower() for w in re.findall(r'\b[a-zA-Z]{3,}\b', content[:50000])]
-            freq = Counter(w for w in words if w not in ('the', 'and', 'for', 'with', 'that', 'this', 'from'))
-            suggested_tags = [w for w, _ in freq.most_common(5)]
+            suggested_tags = extract_top_keywords(content, top_k=5)
         else:
             raise HTTPException(status_code=404, detail="File not found")
 

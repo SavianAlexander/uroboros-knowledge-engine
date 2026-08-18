@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Body
 from fastapi.responses import StreamingResponse
-from src.domain.chat_intelligence import estimate_tokens, truncate_context_window
+from src.core.text_utils import estimate_tokens, truncate_context_window, smart_extract_context, build_token_budget_context
 
 logger = logging.getLogger(__name__)
 
@@ -29,42 +29,8 @@ from src.domain.adaptive_context_compressor import compress_context_entropy
 from src.domain.auto_correct_rag import auto_correct_grounding
 import re
 
-RE_WORD_BOUNDARIES = re.compile(r'\w+')
-RE_SENTENCE_BOUNDARIES = re.compile(r'(?<=[.!?])\s+')
-
-def _smart_extract_context(context: str, query: str, max_chars: int = 6000) -> str:
-    if not context or len(context) <= max_chars:
-        return context or ""
-    try:
-        from src.domain.rag_engine import build_token_budget_context
-        blocks = [b.strip() for b in context.split("\n\n") if b.strip()]
-        if blocks and len(blocks) > 1:
-            packed = build_token_budget_context(blocks, max_tokens=max_chars // 4)
-            if packed:
-                return packed
-    except Exception:
-        pass
-
-    keywords = {kw for kw in RE_WORD_BOUNDARIES.findall(query.lower()) if len(kw) > 3}
-    if not keywords:
-        return context[:max_chars]
-    sentences = RE_SENTENCE_BOUNDARIES.split(context)
-    scored = []
-    for idx, s in enumerate(sentences):
-        sentence_words = set(RE_WORD_BOUNDARIES.findall(s.lower()))
-        score = len(sentence_words & keywords)
-        scored.append((score, idx, s))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    selected_indices = []
-    current_len = 0
-    for score, idx, s in scored:
-        if current_len + len(s) > max_chars:
-            continue
-        selected_indices.append(idx)
-        current_len += len(s)
-    selected_indices.sort()
-    selected_text = " ... ".join([sentences[i] for i in selected_indices])
-    return selected_text if selected_text else context[:max_chars]
+# Backward-compatible router helper
+_smart_extract_context = smart_extract_context
 
 router = APIRouter()
 

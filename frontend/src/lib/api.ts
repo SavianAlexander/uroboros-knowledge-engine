@@ -208,6 +208,21 @@ export const api = {
   exportVaultJSON: () => fetchAPI<any>('/export/vault/json'),
 
   // Modern Cognitive & RAG Intelligence Endpoints
+  synthesizeVoice: (text: string, voice?: string, speed?: number, dspPreset?: string) =>
+    fetch('/api/voice/synthesize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({
+        input: text,
+        voice: voice || 'ALEXANDER_SOVEREIGN',
+        speed: speed || 0.92,
+        dsp_preset: dspPreset || 'EXECUTIVE_PRECISION',
+        response_format: 'wav'
+      })
+    }).then(r => {
+      if (!r.ok) throw new Error(`Synthesis failed: ${r.status}`);
+      return r.blob();
+    }),
   voiceSearch: (audioPayload: string, topK: number = 5) =>
     fetchAPI<any>('/voice/search', { method: 'POST', body: JSON.stringify({ audio_payload: audioPayload, top_k: topK }) }),
   communityClusters: () => fetchAPI<any>('/graph/community-clusters'),

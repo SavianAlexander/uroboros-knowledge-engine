@@ -158,7 +158,8 @@ DOMAIN_TEST_MODULES = [
     "tests.test_fusion_engine",
     "tests.test_domain_29_frontier_reasoning",
     "tests.test_domain_sota_rag_dag",
-    "tests.test_user_acceptance_audit"
+    "tests.test_user_acceptance_audit",
+    "tests.test_text_utils_and_wal_daemon"
 ]
 
 

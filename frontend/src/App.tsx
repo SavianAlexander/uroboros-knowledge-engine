@@ -5,7 +5,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import CommandPalette from './components/CommandPalette';
 import DashboardView from './views/DashboardView';
-import { authEvents } from './lib/api';
+import { api, authEvents } from './lib/api';
 
 const WorkspaceView = lazy(() => import('./views/WorkspaceView'));
 const SearchView = lazy(() => import('./views/SearchView'));
@@ -231,11 +231,9 @@ function CommitBadge() {
   const [versionData, setVersionData] = useState<{ tag?: string; commit?: string; branch?: string; badge?: string } | null>(null);
 
   useEffect(() => {
-    import('./lib/api').then(({ api }) => {
-      api.version()
-        .then(res => setVersionData(res))
-        .catch(() => setVersionData({ tag: 'v1.0.0', commit: 'HEAD', branch: 'master', badge: 'v1.0.0 • HEAD ●' }));
-    });
+    api.version()
+      .then(res => setVersionData(res))
+      .catch(() => setVersionData({ tag: 'v1.0.0', commit: 'HEAD', branch: 'master', badge: 'v1.0.0 • HEAD ●' }));
   }, []);
 
   const badgeText = versionData?.badge || `${versionData?.tag || 'v1.0.0'} • ${versionData?.commit || 'HEAD'} ●`;

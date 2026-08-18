@@ -48,9 +48,25 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             import logging; logging.warning(f"Swallowed error starting background summarizer: {e}")
 
+    # Cooperative Zero-Stutter SQLite WAL Daemon
+    wal_worker = None
+    if os.environ.get("ENABLE_WAL_DAEMON", "1").lower() in ("1", "true", "yes"):
+        try:
+            from src.infrastructure.database import start_wal_daemon
+            wal_worker = start_wal_daemon()
+        except (KeyboardInterrupt, MemoryError, SystemExit):
+            raise
+        except Exception as e:
+            import logging; logging.warning(f"Swallowed error starting WAL daemon: {e}")
+
     try:
         yield
     finally:
+        if wal_worker and hasattr(wal_worker, 'stop'):
+            try:
+                wal_worker.stop()
+            except Exception:
+                pass
         if worker and hasattr(worker, 'stop'):
             try:
                 worker.stop()

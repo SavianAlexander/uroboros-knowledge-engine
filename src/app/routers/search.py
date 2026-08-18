@@ -16,7 +16,8 @@ from fastapi import APIRouter, HTTPException, Body
 import src.infrastructure.database as _infra_db
 from src.infrastructure.vector_engine import search_files, MiniVectorEngine
 from src.infrastructure.database import get_db
-from src.core.domain.services import parse_query_operators, suggest_tags_from_text, sanitise_fts_query
+from src.core.text_utils import sanitise_fts_query, sanitize_tag, normalize_nfc
+from src.core.domain.services import parse_query_operators, suggest_tags_from_text
 from src.core.domain.models import ValidateQueryRequest
 from src.domain.wikilink_parser import parse_wikilinks, slugify_title, normalize_target_title
 from src.domain.louvain_clustering import apply_louvain_communities
