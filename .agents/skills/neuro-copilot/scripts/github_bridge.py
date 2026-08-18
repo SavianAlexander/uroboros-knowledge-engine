@@ -585,6 +585,22 @@ def verify_ci(wait=False, timeout_seconds=300):
         failed_runs = [r for r in matching_runs if r.get("status") == "completed" and r.get("conclusion") not in ("success", "skipped", "neutral")]
         successful_runs = [r for r in matching_runs if r.get("status") == "completed" and r.get("conclusion") in ("success", "skipped", "neutral")]
 
+        # Check if pending runs have 0 jobs (skipped by paths-ignore)
+        actual_in_progress = []
+        for r in in_progress_runs:
+            run_id = r.get("databaseId")
+            if r.get("status") in ("pending", "waiting") and len(successful_runs) > 0 and run_id:
+                job_check, _, _ = run_cmd(f"gh run view {run_id} --json jobs", cwd=project_root)
+                try:
+                    jobs_data = json.loads(job_check).get("jobs", [])
+                    if len(jobs_data) == 0:
+                        successful_runs.append(r)
+                        continue
+                except Exception:
+                    pass
+            actual_in_progress.append(r)
+        in_progress_runs = actual_in_progress
+
         if not wait or not in_progress_runs:
             all_passed = len(failed_runs) == 0 and (len(matching_runs) > 0 or is_doc_only) and len(in_progress_runs) == 0
             summary = {
