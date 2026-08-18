@@ -70,6 +70,7 @@ export const api = {
   // Health & Stats
   health: () => fetchAPI<any>('/health'),
   stats: () => fetchAPI<any>('/stats'),
+  version: () => fetchAPI<any>('/system/version'),
 
   // Dashboard Analytics
   storage: () => fetchAPI<any>('/analytics/storage'),

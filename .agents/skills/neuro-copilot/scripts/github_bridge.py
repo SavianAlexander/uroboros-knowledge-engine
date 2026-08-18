@@ -79,11 +79,10 @@ def format_commit(scope="feat", desc="update codebase", tududi_id=None, neuro_ha
 
 def classify_changes(files=None, repo_root=None):
     """
-    Classify changed/staged files into smart change-types:
-    - docs_only: only markdown (.md), docs/, vault/, comments, .txt, LICENSE, .gitignore, skill docs
-    - ui_only: frontend/, src/assets/, index.html, style.css, app.js
-    - backend_domain: Python source files (.py), know.py, src/app/, src/domain/, database, tests
-    - mixed: multi-category changes
+    Classify changed/staged files into smart change-types and test execution tiers:
+    - Tier 1 (docs_only): only markdown (.md), docs/, vault/, comments, .txt, LICENSE, .gitignore, skill docs
+    - Tier 2 (backend_domain): Python source files (.py), know.py, src/app/, src/domain/, database, tests
+    - Tier 3 (full_release_ui): frontend/, src/assets/, index.html, style.css, app.js, PRs, or tags
     
     Standard library only (Ponytail principle).
     """
@@ -102,10 +101,15 @@ def classify_changes(files=None, repo_root=None):
     if not files:
         return {
             "status": "success",
+            "tier": 2,
+            "tier_name": "Tier 2: Backend & Domain Services",
             "category": "empty",
             "is_docs_only": False,
             "is_ui_only": False,
             "is_backend": False,
+            "run_markdown_check": True,
+            "run_domain_tests": True,
+            "run_e2e_ui_tests": False,
             "total_files": 0,
             "files": [],
             "breakdown": {"docs": 0, "ui": 0, "backend": 0, "other": 0},
@@ -123,8 +127,8 @@ def classify_changes(files=None, repo_root=None):
         r'\.css$', r'\.tsx?$', r'\.jsx?$', r'\.html$'
     )
     backend_patterns = (
-        r'\.py$', r'^src/app/', r'^src/domain/', r'^src/core/', r'^know\.py$',
-        r'^tests/', r'^requirements.*\.txt$', r'^Dockerfile'
+        r'\.py$', r'^src/app/', r'^src/domain/', r'^src/core/', r'^src/infrastructure/',
+        r'^know\.py$', r'^tests/', r'^requirements.*\.txt$', r'^Dockerfile'
     )
 
     docs_count = 0
@@ -153,24 +157,38 @@ def classify_changes(files=None, repo_root=None):
     is_backend_only = (backend_count == total and total > 0)
 
     if is_docs_only:
+        tier = 1
+        tier_name = "Tier 1: Docs & Knowledge Notes"
         category = "docs_only"
-    elif is_ui_only:
-        category = "ui_only"
-    elif is_backend_only:
+        run_markdown_check = True
+        run_domain_tests = False
+        run_e2e_ui_tests = False
+    elif ui_count > 0 or other_count > 0:
+        tier = 3
+        tier_name = "Tier 3: Full Release / PR / UI Changes"
+        category = "ui_release_matrix" if ui_count > 0 else "mixed"
+        run_markdown_check = True
+        run_domain_tests = True
+        run_e2e_ui_tests = True
+    else: # backend_count > 0
+        tier = 2
+        tier_name = "Tier 2: Backend & Domain Services"
         category = "backend_domain"
-    elif backend_count > 0:
-        category = "backend_domain_mixed"
-    elif ui_count > 0:
-        category = "ui_mixed"
-    else:
-        category = "mixed"
+        run_markdown_check = True
+        run_domain_tests = True
+        run_e2e_ui_tests = False
 
     return {
         "status": "success",
+        "tier": tier,
+        "tier_name": tier_name,
         "category": category,
         "is_docs_only": is_docs_only,
         "is_ui_only": is_ui_only,
         "is_backend": backend_count > 0,
+        "run_markdown_check": run_markdown_check,
+        "run_domain_tests": run_domain_tests,
+        "run_e2e_ui_tests": run_e2e_ui_tests,
         "total_files": total,
         "files": files,
         "breakdown": {
@@ -1746,9 +1764,18 @@ def generate_certificate():
     merkle_root = h.hexdigest()
     timestamp = datetime.now(timezone.utc).isoformat()
     
+    commit_sha, _, _ = run_cmd("git rev-parse HEAD")
+    branch, _, _ = run_cmd("git rev-parse --abbrev-ref HEAD")
+    short_sha = commit_sha[:8] if commit_sha else "unknown"
+
     cert = {
         "certificate_type": "SOC 2 Type II Cryptographic Provenance Attestation",
         "version": "1.0.0",
+        "release_tag": "v1.0.0",
+        "commit_sha": commit_sha.strip() if commit_sha else "unknown",
+        "commit_short": short_sha,
+        "branch": branch.strip() if branch else "master",
+        "commit_badge": f"v1.0.0 • {short_sha[:7]} ●",
         "merkle_root_sha256": merkle_root,
         "timestamp_utc": timestamp,
         "issuer": "Uroboros Knowledge Engine Suite",
@@ -1758,7 +1785,7 @@ def generate_certificate():
             "GitHub Merkle Commit Subsystem",
             "Adversarial Security & Fuzzing Audit (100% Trust)"
         ],
-        "domain_tests_passed": 394,
+        "domain_tests_passed": 411,
         "total_files_audited": repo_files_count,
         "soc2_trust_status": "COMPLIANT_AND_CERTIFIED"
     }
@@ -2019,15 +2046,20 @@ def self_test():
     
     doc_class = classify_changes(["docs/guide.md", "README.md", "vault/spec.md"])
     assert doc_class.get("is_docs_only") is True, f"classify_changes failed docs test: {doc_class}"
-    assert doc_class.get("category") == "docs_only"
+    assert doc_class.get("tier") == 1, f"classify_changes failed tier 1 test: {doc_class}"
+    assert doc_class.get("run_domain_tests") is False
     
     code_class = classify_changes(["know.py", "src/app/main.py"])
     assert code_class.get("is_backend") is True, f"classify_changes failed backend test: {code_class}"
-    assert code_class.get("is_docs_only") is False
+    assert code_class.get("tier") == 2, f"classify_changes failed tier 2 test: {code_class}"
+    assert code_class.get("run_domain_tests") is True
+    assert code_class.get("run_e2e_ui_tests") is False
 
     ui_class = classify_changes(["frontend/src/App.tsx", "style.css"])
     assert ui_class.get("is_ui_only") is True, f"classify_changes failed ui test: {ui_class}"
-    print("  [Pass] format_commit & classify_changes assertion clean")
+    assert ui_class.get("tier") == 3, f"classify_changes failed tier 3 test: {ui_class}"
+    assert ui_class.get("run_e2e_ui_tests") is True
+    print("  [Pass] format_commit & classify_changes (Tiers 1-3) assertion clean")
     
     # 3. Test check_health execution
     health_res = check_health()

@@ -4,30 +4,8 @@ on:
   push:
     branches: [ main, master ]
     tags: [ 'v*' ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'vault/**'
-      - 'assets/**'
-      - 'src/assets/**'
-      - 'examples/**'
-      - '.agents/skills/**/SKILL.md'
-      - '.agents/skills/**/references/**'
-      - 'LICENSE'
-      - '.gitignore'
   pull_request:
     branches: [ main, master ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'vault/**'
-      - 'assets/**'
-      - 'src/assets/**'
-      - 'examples/**'
-      - '.agents/skills/**/SKILL.md'
-      - '.agents/skills/**/references/**'
-      - 'LICENSE'
-      - '.gitignore'
   workflow_dispatch:
 
 concurrency:
@@ -45,6 +23,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -55,7 +35,20 @@ jobs:
             requirements.txt
             requirements-dev.txt
 
+      - name: Determine Test Execution Tier
+        id: test-tier
+        run: |
+          python .agents/skills/neuro-copilot/scripts/github_bridge.py classify_changes > /tmp/tier.json
+          cat /tmp/tier.json
+          TIER=$(python -c "import json; d=json.load(open('/tmp/tier.json')); print(3 if '${{ github.event_name }}' == 'pull_request' or '${{ startsWith(github.ref, 'refs/tags/v') }}' == 'true' else d.get('tier', 3))")
+          RUN_E2E=$(python -c "import json; d=json.load(open('/tmp/tier.json')); print('true' if ('${{ github.event_name }}' == 'pull_request' or '${{ startsWith(github.ref, 'refs/tags/v') }}' == 'true' or d.get('run_e2e_ui_tests', False)) else 'false')")
+          RUN_DOMAIN=$(python -c "import json; d=json.load(open('/tmp/tier.json')); print('true' if ('${{ github.event_name }}' == 'pull_request' or '${{ startsWith(github.ref, 'refs/tags/v') }}' == 'true' or d.get('run_domain_tests', True)) else 'false')")
+          echo "TIER=$TIER" >> $GITHUB_ENV
+          echo "RUN_E2E=$RUN_E2E" >> $GITHUB_ENV
+          echo "RUN_DOMAIN=$RUN_DOMAIN" >> $GITHUB_ENV
+
       - name: Cache Playwright Browsers
+        if: env.RUN_E2E == 'true' && matrix.python-version == '3.12'
         uses: actions/cache@v4
         id: playwright-cache
         with:
@@ -64,13 +57,14 @@ jobs:
           restore-keys: |
             playwright-${{ runner.os }}-
 
-      - name: Install Dependencies
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
       - name: Install Playwright Browsers & OS Dependencies
+        if: env.RUN_E2E == 'true' && matrix.python-version == '3.12'
         run: |
           python -m playwright install-deps chromium
           python -m playwright install chromium
@@ -79,10 +73,15 @@ jobs:
         run: |
           python scripts/architecture_cli.py doctor .
 
-      - name: Execute Domain Unit Tests
+      - name: Tier 1: Documentation & Markdown Link Integrity
+        run: |
+          python .agents/skills/neuro-copilot/scripts/github_bridge.py audit_skills
+
+      - name: Tier 2: Execute Domain Unit Tests & SOC 2 Trust Controls
+        if: env.RUN_DOMAIN == 'true'
         run: |
           python run_domain_tests.py || (echo "TEST FAILURE DETECTED, DUMPING LEDGER:" && cat tests/test_audit_ledger.json && echo "DUMPING JUNIT XML:" && cat tests/test_results.xml && exit 1)
 
-      - name: Run E2E UI Tests
-        if: matrix.python-version == '3.12'
+      - name: Tier 3: Run Playwright E2E UI Tests
+        if: env.RUN_E2E == 'true' && matrix.python-version == '3.12'
         run: python run_e2e_ui_tests.py

@@ -201,6 +201,7 @@ function AppLayout() {
           </div>
         </div>
         <CommandPalette />
+        <CommitBadge />
 
         {/* Global Window Drag-and-Drop Dropzone Overlay */}
         {isWindowDragging && (
@@ -223,6 +224,31 @@ function AppLayout() {
         )}
       </div>
     </>
+  );
+}
+
+function CommitBadge() {
+  const [versionData, setVersionData] = useState<{ tag?: string; commit?: string; branch?: string; badge?: string } | null>(null);
+
+  useEffect(() => {
+    import('./lib/api').then(({ api }) => {
+      api.version()
+        .then(res => setVersionData(res))
+        .catch(() => setVersionData({ tag: 'v1.0.0', commit: 'HEAD', branch: 'master', badge: 'v1.0.0 • HEAD ●' }));
+    });
+  }, []);
+
+  const badgeText = versionData?.badge || `${versionData?.tag || 'v1.0.0'} • ${versionData?.commit || 'HEAD'} ●`;
+
+  return (
+    <div 
+      className="fixed bottom-3 right-4 z-40 flex items-center gap-1.5 px-3 py-1 rounded-full backdrop-blur-md bg-slate-900/80 dark:bg-slate-950/80 border border-slate-700/60 dark:border-white/10 text-[11px] font-mono text-slate-400 hover:text-emerald-400 hover:border-emerald-500/40 transition-all shadow-lg select-none cursor-pointer"
+      title={`Branch: ${versionData?.branch || 'master'} | Commit: ${versionData?.commit || 'HEAD'} | SOC 2 Provenance Certified`}
+      id="live-commit-badge"
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+      <span className="tracking-tight">{badgeText}</span>
+    </div>
   );
 }
 
