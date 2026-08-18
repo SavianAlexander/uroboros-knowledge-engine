@@ -167,3 +167,7 @@ def auto_synthesize_wikilinks(text_content: str, known_doc_titles: List[str]) ->
         "synthesized_text": result_text
     }
 
+# Epistemic 4-Pillar alias
+synthesize_graph_links = auto_synthesize_wikilinks
+
+

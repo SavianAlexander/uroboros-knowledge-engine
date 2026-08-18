@@ -61,3 +61,11 @@ def export_knowledge_distillation_dataset(
         "jsonl_payload": jsonl_output,
         "status": "success"
     }
+
+# Epistemic 4-Pillar and backward-compatible aliases
+distill_document_concepts = export_knowledge_distillation_dataset
+
+class KnowledgeDistiller:
+    export = staticmethod(export_knowledge_distillation_dataset)
+    distill = staticmethod(export_knowledge_distillation_dataset)
+

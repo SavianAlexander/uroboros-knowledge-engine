@@ -75,3 +75,8 @@ def redact_pii_from_text(text: str) -> Dict[str, Any]:
 
 # Backward-compatible alias
 inspect_and_redact_pii = redact_pii_from_text
+
+class PiiPrivacyGuard:
+    redact = staticmethod(redact_pii_from_text)
+    inspect_and_redact = staticmethod(redact_pii_from_text)
+

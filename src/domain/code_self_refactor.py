@@ -47,3 +47,7 @@ def analyze_and_propose_refactoring(code_snippet: str) -> Dict[str, Any]:
         "refactor_needed": len(proposals) > 0,
         "status": "success"
     }
+
+# Epistemic 4-Pillar alias
+refactor_code_ast = analyze_and_propose_refactoring
+

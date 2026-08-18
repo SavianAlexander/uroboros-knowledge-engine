@@ -4,7 +4,6 @@ Parses document chunks and generates 1-page executive bullet summaries, key take
 Zero-dependency, stdlib implementation.
 """
 import unicodedata
-
 from typing import Dict, Any, List
 import re
 
@@ -118,3 +117,7 @@ def generate_executive_briefing(
         "chunks_analyzed": len(document_chunks),
         "status": "success"
     }
+
+
+class ExecutiveBriefingSynthesizer:
+    generate = staticmethod(generate_executive_briefing)

@@ -215,3 +215,8 @@ def get_retrieval_pipeline() -> RetrievalDAGPipeline:
             if _dag_pipeline is None:
                 _dag_pipeline = RetrievalDAGPipeline()
     return _dag_pipeline
+
+# Epistemic 4-Pillar Aliases
+RetrievalPipelineDAG = RetrievalDAGPipeline
+create_retrieval_dag = lambda **kwargs: RetrievalDAGPipeline(**kwargs)
+

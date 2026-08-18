@@ -151,3 +151,7 @@ def get_knowledge_synthesis_loop() -> KnowledgeSynthesisLoop:
     if _synthesis_loop is None:
         _synthesis_loop = KnowledgeSynthesisLoop()
     return _synthesis_loop
+
+# Epistemic 4-Pillar alias
+run_synthesis_cycle = lambda: get_knowledge_synthesis_loop()
+

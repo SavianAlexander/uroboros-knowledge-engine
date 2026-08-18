@@ -112,3 +112,7 @@ def summarize_text(text: str, max_sentences: int = 3) -> Dict[str, Any]:
         "compression_ratio": ratio,
         "status": "success"
     }
+
+class ExtractiveSummarizer:
+    summarize = staticmethod(summarize_text)
+

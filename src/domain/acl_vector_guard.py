@@ -50,3 +50,7 @@ def filter_candidates_by_acl(
         "user_tenant_id": user_tenant_id,
         "status": "success"
     }
+
+class AclVectorGuard:
+    filter = staticmethod(filter_candidates_by_acl)
+

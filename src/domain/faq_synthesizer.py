@@ -83,3 +83,11 @@ def synthesize_faq_from_queries(
         "total_faqs_synthesized": len(faqs),
         "status": "success"
     }
+
+# Epistemic 4-Pillar and backward-compatible aliases
+generate_vault_faqs = synthesize_faq_from_queries
+
+class FAQSynthesizer:
+    synthesize = staticmethod(synthesize_faq_from_queries)
+    generate = staticmethod(synthesize_faq_from_queries)
+

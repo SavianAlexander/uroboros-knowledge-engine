@@ -102,8 +102,11 @@ FILE_DOMAIN_MAPPING = {
     ".agents/skills/neuro-copilot/scripts/react_agent_bridge.py": ["DomainFrontierReasoning"],
     "tests/test_domain_29_frontier_reasoning.py": ["DomainFrontierReasoning"],
     "src/domain/retrieval_pipeline_dag.py": ["DomainSemanticRAG", "DomainRAG"],
-    "tests/test_domain_sota_rag_dag.py": ["DomainSemanticRAG", "DomainRAG"]
+    "tests/test_domain_sota_rag_dag.py": ["DomainSemanticRAG", "DomainRAG"],
+    "run_uat_audit.py": ["DomainUATAudit", "DomainAcceptance"],
+    "tests/test_user_acceptance_audit.py": ["DomainUATAudit", "DomainAcceptance"]
 }
+
 
 DOMAIN_TEST_MODULES = [
     "tests.test_domain_db",
@@ -154,8 +157,10 @@ DOMAIN_TEST_MODULES = [
     "tests.test_crawler_api",
     "tests.test_fusion_engine",
     "tests.test_domain_29_frontier_reasoning",
-    "tests.test_domain_sota_rag_dag"
+    "tests.test_domain_sota_rag_dag",
+    "tests.test_user_acceptance_audit"
 ]
+
 
 BUG_RELATION_TAXONOMY = {
     "DomainCatastrophicRecovery": [

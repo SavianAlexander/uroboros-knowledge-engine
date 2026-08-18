@@ -109,3 +109,7 @@ def generate_vault_instruction_dataset(
         "output_path": output_path,
         "sample_item": dataset_items[0] if dataset_items else None
     }
+
+class DatasetSynthesizer:
+    generate = staticmethod(generate_vault_instruction_dataset)
+

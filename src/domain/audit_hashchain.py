@@ -207,3 +207,10 @@ class AuditHashchain:
             "tampered_blocks": tampered_blocks,
             "compliance_tier": "SOC2_TYPE_II_VERIFIED" if is_valid else "COMPLIANCE_FAILED"
         }
+
+# Aliases and helper functions
+AuditHashChain = AuditHashchain
+record_audit_event = AuditHashchain.record_sealed_event
+verify_hashchain_integrity = AuditHashchain.verify_chain_integrity
+
+

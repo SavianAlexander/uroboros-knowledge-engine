@@ -38,3 +38,7 @@ def track_data_provenance(
     }
 
     return provenance_metadata
+
+class DataProvenanceTracker:
+    track = staticmethod(track_data_provenance)
+

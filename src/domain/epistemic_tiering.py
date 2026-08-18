@@ -14,12 +14,19 @@ TIER_2_TECH_SPEC = "TIER_2_TECH_SPEC"
 TIER_3_SECONDARY = "TIER_3_SECONDARY"
 TIER_4_COMMENTARY = "TIER_4_COMMENTARY"
 
+class EpistemicTier:
+    TIER_1_PRIMARY = TIER_1_PRIMARY
+    TIER_2_TECH_SPEC = TIER_2_TECH_SPEC
+    TIER_3_SECONDARY = TIER_3_SECONDARY
+    TIER_4_COMMENTARY = TIER_4_COMMENTARY
+
 TIER_WEIGHTS: Dict[str, float] = {
     TIER_1_PRIMARY: 1.00,       # Statutory law, ISO/IEC/RFC specs, SEC 10-K, Git Merkle provenance, source code
     TIER_2_TECH_SPEC: 0.85,     # Official API specs, vendor whitepapers, datasheets, system architecture
     TIER_3_SECONDARY: 0.70,     # Textbooks, curriculum guides, academic case studies, published literature
     TIER_4_COMMENTARY: 0.35     # Informal notes, chat transcripts, scratchpads, forum blurbs, unverified blogs
 }
+
 
 # Precompiled Regex Patterns for Epistemic Classification
 # Uses lookaround delimiters (?<![a-zA-Z0-9]) and (?![a-zA-Z0-9]) to match across underscores, hyphens, and dots
@@ -260,8 +267,9 @@ def compute_authority_weighted_rrf(
     # Sort descending by grounded score
     results.sort(key=lambda x: (x["grounded_score"], x["raw_rrf_score"]), reverse=True)
 
-    # Attach final rank
-    for rank_idx, record in enumerate(results):
-        record["final_rank"] = rank_idx + 1
-
     return results
+
+# Epistemic 4-Pillar Aliases
+classify_epistemic_tier = classify_source_epistemic_tier
+tier_weighted_rank = compute_authority_weighted_rrf
+

@@ -98,3 +98,7 @@ def inspect_privacy_compliance(text_content: str) -> Dict[str, Any]:
         "masked_text": masked_text
     }
 
+class ComplianceInspector:
+    inspect = staticmethod(inspect_privacy_compliance)
+
+

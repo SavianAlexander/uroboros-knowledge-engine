@@ -53,3 +53,7 @@ def check_code_docstring_alignment(code_snippet: str) -> Dict[str, Any]:
         "is_aligned": len(issues) == 0,
         "status": "success"
     }
+
+# Epistemic 4-Pillar alias
+align_code_and_documentation = check_code_docstring_alignment
+

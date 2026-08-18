@@ -65,3 +65,7 @@ def generate_daily_briefing(db_path: str = DB_FILE) -> Dict[str, Any]:
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+class DailyBriefingSynthesizer:
+    generate = staticmethod(generate_daily_briefing)
+

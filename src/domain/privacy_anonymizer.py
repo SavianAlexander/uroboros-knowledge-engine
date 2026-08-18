@@ -44,3 +44,10 @@ def anonymize_text_pii(text: str) -> Dict[str, Any]:
         "redactions_count": redactions,
         "status": "success"
     }
+
+# Backward-compatible and 4-pillar aliases
+anonymize_sensitive_payload = anonymize_text_pii
+
+class PrivacyAnonymizer:
+    anonymize = staticmethod(anonymize_text_pii)
+

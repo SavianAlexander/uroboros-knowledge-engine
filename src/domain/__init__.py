@@ -54,7 +54,18 @@ from src.domain.readability_analyzer import analyze_readability_metrics
 from src.domain.statistical_data_profiler import profile_tabular_dataset
 from src.domain.transcription_engine import TranscriptionEngine
 
+# 4-Pillar Epistemic Domain Subpackages
+from src.domain import retrieval
+from src.domain import privacy
+from src.domain import synthesis
+from src.domain import connectors
+
 __all__ = [
+    # 4 Pillars
+    "retrieval",
+    "privacy",
+    "synthesis",
+    "connectors",
     # Search
     "classify_query_intent",
     "route_query_intent",
@@ -114,3 +125,4 @@ from src.domain.query_intent import bandit_select_pipeline
 from src.domain.graph_engine import compute_graph_pagerank, generate_mermaid_graph, export_graph_to_graphml
 from src.domain.reranking import rerank_search_results_colbert
 from src.domain.verification_guards import verify_claims_and_consensus
+

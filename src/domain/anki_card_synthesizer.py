@@ -74,3 +74,12 @@ def synthesize_anki_flashcards(passages: List[Dict[str, Any]]) -> Dict[str, Any]
         "anki_export_format": "CSV_TSV_COMPATIBLE",
         "status": "success"
     }
+
+# Epistemic 4-Pillar and backward-compatible aliases
+generate_anki_cards_from_text = synthesize_anki_flashcards
+export_anki_apkg_deck = synthesize_anki_flashcards
+
+class AnkiCardSynthesizer:
+    synthesize = staticmethod(synthesize_anki_flashcards)
+    generate_cards = staticmethod(synthesize_anki_flashcards)
+

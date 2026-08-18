@@ -65,3 +65,7 @@ def generate_html_diff_view(
         context=True,
         numlines=3
     )
+
+# Epistemic 4-Pillar alias
+synthesize_code_diff = generate_refactoring_patch
+

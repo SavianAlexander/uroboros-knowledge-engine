@@ -50,3 +50,10 @@ def generate_audio_podcast_script(db_path: Optional[str] = None) -> Dict[str, An
         }
     except Exception as e:
         return {"status": "error", "message": str(e), "script": []}
+
+# Epistemic 4-Pillar and backward-compatible aliases
+generate_audio_briefing_script = generate_audio_podcast_script
+
+class AudioBriefingSynthesizer:
+    generate = staticmethod(generate_audio_podcast_script)
+

@@ -45,3 +45,11 @@ def scan_prompt_injection(text: str) -> Dict[str, Any]:
         "threat_level": "high" if not is_safe else "none",
         "status": "success"
     }
+
+# Epistemic 4-Pillar and backward-compatible aliases
+evaluate_prompt_safety = scan_prompt_injection
+
+class PromptInjectionGuard:
+    scan = staticmethod(scan_prompt_injection)
+    evaluate_safety = staticmethod(scan_prompt_injection)
+

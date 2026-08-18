@@ -91,3 +91,9 @@ def extract_empirical_qa_triples(
 
 # Compatibility alias
 generate_synthetic_qa_triples = extract_empirical_qa_triples
+generate_synthetic_qa_pairs = extract_empirical_qa_triples
+
+class SyntheticQAGenerator:
+    generate = staticmethod(extract_empirical_qa_triples)
+    extract_triples = staticmethod(extract_empirical_qa_triples)
+

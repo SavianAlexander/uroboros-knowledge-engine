@@ -46,3 +46,9 @@ def pseudonymize_payload_salted_sha256(sensitive_text: str, secret_salt: str = "
 # Facade aliases for backward compatibility
 mask_payload_with_zk_proof = pseudonymize_payload_salted_sha256
 pseudonymize_records = pseudonymize_payload_salted_sha256
+mask_pii_entities = pseudonymize_payload_salted_sha256
+
+class ZkDataMasker:
+    pseudonymize = staticmethod(pseudonymize_payload_salted_sha256)
+    mask = staticmethod(pseudonymize_payload_salted_sha256)
+

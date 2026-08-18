@@ -175,3 +175,7 @@ class DenseVectorStore:
         with get_db_connection(self.db_path, timeout=30.0) as conn:
             conn.execute("DELETE FROM embeddings")
             conn.commit()
+
+# Epistemic 4-Pillar Alias
+VectorStore = DenseVectorStore
+
