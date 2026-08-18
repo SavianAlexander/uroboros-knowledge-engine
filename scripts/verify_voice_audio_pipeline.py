@@ -10,6 +10,8 @@ import unittest
 import time
 import json
 
+os.environ["ORT_LOGGING_LEVEL"] = "3"
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
@@ -36,7 +38,6 @@ from src.core.rag_query_cache import SemanticRAGQueryCache, GLOBAL_RAG_CACHE
 from src.core.audit_hashchain import AuditHashchainLedger, GLOBAL_AUDIT_HASHCHAIN
 from src.core.voice_command_parser import VoiceCommandParser
 from src.core.voice_telemetry_exporter import AudioTelemetryExporter
-from src.domain.eve_fleet_tactical_voice import EVEFleetTacticalVoice
 
 
 class TestVoiceAudioMatrix(unittest.TestCase):
@@ -122,22 +123,9 @@ class TestVoiceAudioMatrix(unittest.TestCase):
         self.assertEqual(p4["intent"], "VERIFY_AUDIT")
 
         # 5. Execution dry-run test
-        exec_res = VoiceCommandParser.execute_command("switch persona to fleet commander", speak_feedback=False)
+        exec_res = VoiceCommandParser.execute_command("switch persona to calm operations", speak_feedback=False)
         self.assertEqual(exec_res["status"], "command_executed")
-        self.assertEqual(exec_res["action_result"]["new_persona"], "FLEET_COMMANDER")
-
-    def test_eve_fleet_tactical_voice(self):
-        """Test EVE fleet tactical combat alerts synthesis and template catalog."""
-        catalog = EVEFleetTacticalVoice.get_tactical_templates()
-        self.assertIn("CYNO_BEACON_ACTIVE", catalog)
-        self.assertIn("INTERDICTOR_BUBBLE_DROP", catalog)
-        self.assertIn("MINING_COMPRESSION_CYCLE", catalog)
-
-        # Test cyno alert dry-run
-        res = EVEFleetTacticalVoice.broadcast_tactical_alert("CYNO_BEACON_ACTIVE", system="G-EURJ", speak_now=False)
-        self.assertEqual(res["status"], "tactical_alert_broadcast")
-        self.assertEqual(res["system"], "G-EURJ")
-        self.assertIn("cynosural beacon", res["text"].lower())
+        self.assertEqual(exec_res["action_result"]["new_persona"], "CALM_OPERATIONS")
 
     def test_audio_telemetry_exporter(self):
         """Test JSON and Prometheus telemetry formatting."""
@@ -319,13 +307,12 @@ Sent from my iPhone
             "antigravity_read_code", "antigravity_read_email",
             "antigravity_showcase_personas", "antigravity_apply_studio_master",
             "antigravity_verify_audit_hashchain", "antigravity_parse_voice_command",
-            "antigravity_get_audio_telemetry", "antigravity_broadcast_fleet_alert",
+            "antigravity_get_audio_telemetry",
             "antigravity_instant_speak", "antigravity_prewarm_voice_engine",
             "antigravity_get_instant_streamer_stats", "antigravity_voice_rag_query",
-            "antigravity_synthesize_podcast_dialogue", "antigravity_voice_telemetry_sweep",
+            "antigravity_synthesize_podcast_dialogue",
             "antigravity_voice_record_note", "antigravity_voice_create_task",
-            "antigravity_check_threat_radar", "antigravity_stream_pipeline_speak",
-            "antigravity_check_market_arbitrage", "antigravity_check_pi_sentinel",
+            "antigravity_stream_pipeline_speak",
             "antigravity_scan_vault_auto_watcher", "antigravity_listen_and_transcribe",
             "antigravity_configure_voice", "antigravity_get_status"
         ]
@@ -347,8 +334,8 @@ Sent from my iPhone
         telemetry_res = handle_tool_call("antigravity_get_audio_telemetry", {"format": "json"})
         self.assertIn("engine", telemetry_res)
 
-        fleet_res = handle_tool_call("antigravity_broadcast_fleet_alert", {"alert_type": "MINING_COMPRESSION_CYCLE", "system": "G-EURJ", "speak": False})
-        self.assertEqual(fleet_res["status"], "tactical_alert_broadcast")
+        config_res = handle_tool_call("antigravity_configure_voice", {"default_persona": "CALM_OPERATIONS", "dsp_preset": "STUDIO_DIRECT"})
+        self.assertEqual(config_res["status"], "updated")
 
         prewarm_res = handle_tool_call("antigravity_prewarm_voice_engine", {})
         self.assertEqual(prewarm_res["status"], "prewarmed")
@@ -359,42 +346,6 @@ Sent from my iPhone
 
         stats_res = handle_tool_call("antigravity_get_instant_streamer_stats", {})
         self.assertEqual(stats_res["status"], "ok")
-
-    def test_eve_market_arbitrage(self):
-        """Test live CCP ESI market arbitrage calculation with dynamic requests."""
-        from src.domain.eve_market_arbitrage import EveMarketArbitrage
-        # 1. Default request
-        arb = EveMarketArbitrage.analyze_commodity_arbitrage(commodity_name="Isogen", speak_report=False)
-        self.assertEqual(arb["status"], "arbitrage_calculated")
-        self.assertEqual(arb["commodity"], "Isogen")
-        self.assertGreater(arb["source_sell_isk"], 0.0)
-
-        # 2. Dynamic commodity and custom regions from request
-        arb_custom = EveMarketArbitrage.analyze_commodity_arbitrage(
-            commodity_name="PLEX",
-            source_region="Domain",
-            target_region="Delve",
-            speak_report=False
-        )
-        self.assertEqual(arb_custom["status"], "arbitrage_calculated")
-        self.assertEqual(arb_custom["commodity"], "PLEX")
-        self.assertEqual(arb_custom["source_region"], "Domain")
-        self.assertEqual(arb_custom["target_region"], "Delve")
-        self.assertEqual(arb_custom["type_id"], 44992)
-
-    def test_eve_pi_sentinel(self):
-        """Test planetary interaction colony audit and fleet aggregation."""
-        from src.domain.eve_pi_sentinel import EvePISentinel
-        # 1. Single character audit
-        pi = EvePISentinel.audit_planetary_colonies(character_name="Savian Alexander", speak_alert=False)
-        self.assertEqual(pi["status"], "pi_audit_completed")
-        self.assertIn("Savian Alexander", pi["character"])
-
-        # 2. Fleet-wide aggregated audit
-        pi_fleet = EvePISentinel.audit_planetary_colonies(character_name="all", speak_alert=False)
-        self.assertEqual(pi_fleet["status"], "pi_audit_completed")
-        self.assertEqual(pi_fleet["character"], "Fleet Total")
-        self.assertIn("fleet_breakdown", pi_fleet)
 
     def test_vault_auto_watcher(self):
         """Test autonomous vault filesystem delta scanner."""
@@ -407,8 +358,8 @@ Sent from my iPhone
     def test_voice_streaming_pipeline(self):
         """Test streaming clause pipeliner with token generator."""
         from src.core.voice_streaming_pipeline import VoiceStreamingPipeliner
-        tokens = ["Commander, ", "all ", "starships ", "are ", "aligned. ", "Warp ", "drive ", "active."]
-        res = VoiceStreamingPipeliner.stream_and_speak(iter(tokens), persona="AURA_SHIP_AI", sync=False)
+        tokens = ["Attention, ", "system ", "integrity ", "verified. ", "All ", "nodes ", "operational."]
+        res = VoiceStreamingPipeliner.stream_and_speak(iter(tokens), persona="CALM_OPERATIONS", sync=False)
         self.assertEqual(res["status"], "stream_completed")
         self.assertGreater(res["clauses_count"], 0)
 
@@ -416,34 +367,20 @@ Sent from my iPhone
         """Test voice note and task ingestion."""
         from src.core.voice_knowledge_ingest import VoiceKnowledgeIngest
         note_res = VoiceKnowledgeIngest.record_voice_note(
-            title="Tactical Mineral Reprocessing Plan",
-            content="Refining 100k m3 of Spodumain in G-EURJ.",
-            tags=["mining", "nullsec"],
+            title="Strategic Architecture Roadmap",
+            content="Knowledge engine decoupling complete with zero regressions.",
+            tags=["architecture", "audit"],
             speak_confirmation=False
         )
         self.assertEqual(note_res["status"], "note_recorded")
         self.assertTrue(os.path.exists(note_res["filepath"]))
 
         task_res = VoiceKnowledgeIngest.create_voice_task(
-            title="Refine Spodumain Batch",
+            title="Verify Multi-Model AI Evaluator",
             priority=1,
             speak_confirmation=False
         )
         self.assertEqual(task_res["status"], "task_logged")
-
-    def test_eve_tactical_threat_radar(self):
-        """Test nullsec tactical threat radar evaluation with dynamic system resolution and constellation sweep."""
-        from src.domain.eve_threat_radar import EveTacticalThreatRadar
-        sweep_geurj = EveTacticalThreatRadar.evaluate_system_threat(target_system="G-EURJ", speak_alert=False)
-        self.assertEqual(sweep_geurj["status"], "sweep_completed")
-        self.assertEqual(sweep_geurj["system_id"], 30001155)
-        self.assertIn(sweep_geurj["threat_level"], ["NOMINAL_GREEN", "ELEVATED_AMBER", "CRITICAL_RED"])
-        self.assertGreater(len(sweep_geurj["adjacent_systems_checked"]), 0)
-
-        # Dynamic system resolution
-        sweep_jita = EveTacticalThreatRadar.evaluate_system_threat(target_system="Jita", speak_alert=False)
-        self.assertEqual(sweep_jita["status"], "sweep_completed")
-        self.assertEqual(sweep_jita["system_id"], 30000142)
 
     def test_voice_ear_transcriber_and_listen(self):
         """Test native winmm microphone recording and STT ear."""
@@ -453,14 +390,6 @@ Sent from my iPhone
         self.assertIn("output_path", rec_res)
         trans_res = VoiceEarTranscriber.transcribe_audio_file(rec_res["output_path"])
         self.assertEqual(trans_res["status"], "success")
-
-    def test_voice_fleet_telemetry_daemon(self):
-        """Test autonomous ESI fleet telemetry sweep."""
-        from src.core.voice_fleet_telemetry_daemon import VoiceFleetTelemetryDaemon
-        report = VoiceFleetTelemetryDaemon.execute_telemetry_sweep(speak_alert=False)
-        self.assertEqual(report["status"], "nominal")
-        self.assertIn("Savian Alexander", report["commander"])
-        self.assertIn("G-EURJ", report["system"])
 
     def test_voice_podcast_generator(self):
         """Test multi-speaker roundtable dialogue synthesizer."""
@@ -536,37 +465,16 @@ Sent from my iPhone
     def test_voice_router_endpoints(self):
         """Test voice REST router endpoints."""
         from src.app.routers.voice import (
-            evaluate_radar_endpoint, RadarEvaluateRequest,
-            market_arbitrage_endpoint, MarketArbitrageRequest,
-            pi_audit_endpoint, PIAuditRequest,
             stt_listen_endpoint, STTListenRequest,
             vault_scan_endpoint
         )
-        # 1. Radar Endpoint
-        radar = evaluate_radar_endpoint(RadarEvaluateRequest(system="G-EURJ", speak_alert=False))
-        self.assertEqual(radar["system_id"], 30001155)
-
-        # 2. Market Arbitrage Endpoint
-        arb = market_arbitrage_endpoint(MarketArbitrageRequest(commodity="PLEX", source_region="Domain", target_region="Delve", speak_report=False))
-        self.assertEqual(arb["commodity"], "PLEX")
-
-        # 3. PI Audit Endpoint
-        pi = pi_audit_endpoint(PIAuditRequest(character="all", speak_alert=False))
-        self.assertEqual(pi["character"], "Fleet Total")
-
-        # 4. STT Listen Endpoint
+        # 1. STT Listen Endpoint
         stt = stt_listen_endpoint(STTListenRequest(duration_seconds=0.5))
         self.assertIn("status", stt)
 
-        # 5. Vault Scan Endpoint
+        # 2. Vault Scan Endpoint
         scan = vault_scan_endpoint()
         self.assertEqual(scan["status"], "scan_complete")
-
-        # 6. Fleet Tactical Alert Endpoint
-        from src.app.routers.voice import fleet_alert_endpoint, FleetAlertRequest
-        fleet = fleet_alert_endpoint(FleetAlertRequest(alert_type="MINING_COMPRESSION_CYCLE", system="G-EURJ", ship="Pillar of Autumn", speak_now=False))
-        self.assertEqual(fleet["status"], "tactical_alert_broadcast")
-        self.assertIn("Pillar of Autumn", fleet["text"])
 
     def test_zero_assumptions_integrity(self):
         """Test strict 38-assertion zero-assumption validation suite."""

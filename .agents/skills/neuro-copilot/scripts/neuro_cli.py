@@ -192,18 +192,6 @@ def cmd_bench(args):
     return 0 if scorecard.get("status") == "PASS" else 1
 
 
-def cmd_fleet(args):
-    """Executes live EVE Online fleet tactical radar, cyno checks, and PI status."""
-    import fleet_watchdog_bridge
-    repo_root = getattr(args, "root", BASE_DIR) or BASE_DIR
-    telem = fleet_watchdog_bridge.get_fleet_radar_telemetry(repo_root)
-    if getattr(args, "json", False):
-        print(json.dumps(telem, indent=2))
-    else:
-        fleet_watchdog_bridge.print_fleet_report(telem)
-    return 0
-
-
 def cmd_flight_plan(args):
     """Synthesizes and initializes complete Engineering Flight Plan with Tududi task hierarchy."""
     import github_bridge
@@ -608,24 +596,6 @@ def cmd_status(args):
     return 0
 
 
-def cmd_erp(args):
-    """Unified PR ERP Multi-Database SQL Bridge (know, payroll, compliance)."""
-    import pr_erp_sql_bridge
-    sub = getattr(args, "erp_subcommand", None) or "schema"
-    if sub == "schema":
-        print(json.dumps(pr_erp_sql_bridge.get_schema_catalog(), indent=2))
-    elif sub == "payroll":
-        print(json.dumps(pr_erp_sql_bridge.get_payroll_metrics(), indent=2))
-    elif sub == "compliance":
-        print(json.dumps(pr_erp_sql_bridge.get_compliance_metrics(), indent=2))
-    elif sub == "query":
-        print(json.dumps(pr_erp_sql_bridge.execute_safe_query(args.sql, args.limit), indent=2))
-    elif sub == "ask":
-        q_str = " ".join(args.question) if isinstance(args.question, list) else str(args.question or "")
-        print(pr_erp_sql_bridge.ask_erp_copilot(q_str))
-    return 0
-
-
 def cmd_llm(args):
     """Standalone Local LLM Engine Bridge (Zero-Daemon GGUF Execution)."""
     import standalone_llama_bridge
@@ -825,7 +795,7 @@ def cmd_connection(args):
 
 
 def cmd_loop(args):
-    """Executes Closed-Loop Autonomous Engineering Engines (develop, health, erp, knowledge)."""
+    """Executes Closed-Loop Autonomous Engineering Engines (develop, health, knowledge)."""
     import workflow_hub_bridge
     sub = getattr(args, "loop_subcommand", None) or "health"
     repo_root = getattr(args, "root", BASE_DIR) or BASE_DIR
@@ -837,13 +807,12 @@ def cmd_loop(args):
     elif sub == "health":
         res = workflow_hub_bridge.loop_health(daemon=args.daemon, interval_sec=args.interval, max_iterations=args.max_cycles, repo_root=repo_root)
         print(json.dumps(res, indent=2))
-    elif sub == "erp":
-        res = workflow_hub_bridge.loop_erp()
-        print(json.dumps(res, indent=2))
     elif sub == "knowledge":
         q = " ".join(args.query) if isinstance(args.query, list) else str(args.query or "Bono de Navidad")
         res = workflow_hub_bridge.loop_knowledge(query_test=q)
         print(json.dumps(res, indent=2))
+
+
 def cmd_spawn(args):
     """Launches or manages Autonomous Hands-Free Subagent Delegation pipeline."""
     import subagent_bridge
@@ -916,10 +885,6 @@ def self_test():
     assert ret_upload == 0, "cmd_upload_status failed"
     print("  [Pass] cmd_upload_status clean")
 
-    ret_fleet = cmd_fleet(args)
-    assert ret_fleet == 0, "cmd_fleet failed"
-    print("  [Pass] cmd_fleet clean")
-
     ret_blast = cmd_blast(args)
     assert ret_blast == 0, "cmd_blast failed"
     print("  [Pass] cmd_blast clean")
@@ -991,11 +956,6 @@ def main():
     bench_p = subparsers.add_parser("bench", help="Run performance benchmark & latency regression watchdog")
     bench_p.add_argument("--json", action="store_true", help="Output JSON format")
     bench_p.add_argument("--root", default=BASE_DIR, help="Target repository root")
-
-    # fleet
-    fleet_p = subparsers.add_parser("fleet", help="Run EVE fleet tactical radar and PI watchdog sweep")
-    fleet_p.add_argument("--json", action="store_true", help="Output JSON format")
-    fleet_p.add_argument("--root", default=BASE_DIR, help="Target repository root")
 
     # flight_plan
     fp_p = subparsers.add_parser("flight_plan", help="Synthesize and initialize Tududi feature plan")
@@ -1162,18 +1122,6 @@ def main():
     status_p = subparsers.add_parser("status", help="Quick executive health scorecard")
     status_p.add_argument("--root", default=BASE_DIR, help="Target repository root")
 
-    # erp
-    erp_p = subparsers.add_parser("erp", help="Unified PR ERP Multi-Database SQL Bridge (know, payroll, compliance)")
-    erp_subs = erp_p.add_subparsers(dest="erp_subcommand")
-    erp_subs.add_parser("schema", help="Reflect full schema across all attached ERP databases")
-    erp_subs.add_parser("payroll", help="Summary metrics from payroll.db")
-    erp_subs.add_parser("compliance", help="Summary metrics from compliance.db")
-    erp_q = erp_subs.add_parser("query", help="Execute read-only SQL query across attached databases")
-    erp_q.add_argument("sql", help="SQL SELECT statement")
-    erp_q.add_argument("--limit", type=int, default=100, help="Max rows")
-    erp_ask = erp_subs.add_parser("ask", help="Natural language question to SQL execution")
-    erp_ask.add_argument("question", nargs="*", help="Question text")
-
     # llm
     llm_p = subparsers.add_parser("llm", help="Standalone Local LLM Engine Bridge (Zero-Daemon GGUF Execution)")
     llm_subs = llm_p.add_subparsers(dest="llm_subcommand")
@@ -1202,8 +1150,6 @@ def main():
     loop_hlth.add_argument("--max-cycles", type=int, default=1, help="Max loop cycles")
     loop_hlth.add_argument("--root", default=BASE_DIR, help="Target repository root")
 
-    loop_subs.add_parser("erp", help="Autonomous PR ERP Compliance & Statutory Cross-Audit Loop")
-    
     loop_know = loop_subs.add_parser("knowledge", help="Autonomous Knowledge Ingestion & Vector Retrieval Verification Loop")
     loop_know.add_argument("query", nargs="*", help="Test query for retrieval verification")
 
@@ -1332,13 +1278,11 @@ def main():
         "restore": cmd_recover,
         "voice": cmd_voice,
         "bench": cmd_bench,
-        "fleet": cmd_fleet,
         "flight_plan": cmd_flight_plan,
         "docker": cmd_docker,
         "upload_status": cmd_upload_status,
         "sync": cmd_upload_status,
         "status": cmd_status,
-        "erp": cmd_erp,
         "llm": cmd_llm,
         "loop": cmd_loop,
         "browser": cmd_browser,

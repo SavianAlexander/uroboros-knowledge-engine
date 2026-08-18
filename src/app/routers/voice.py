@@ -364,64 +364,6 @@ def generate_podcast_endpoint(req: PodcastDialogueRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-class RadarEvaluateRequest(BaseModel):
-    system: Optional[str] = "G-EURJ"
-    speak_alert: Optional[bool] = False
-
-
-@router.post("/api/voice/radar/evaluate")
-def evaluate_radar_endpoint(req: RadarEvaluateRequest):
-    """Dynamically evaluate tactical threat radar in any Eve solar system."""
-    from src.domain.eve_threat_radar import EveTacticalThreatRadar
-    try:
-        return EveTacticalThreatRadar.evaluate_system_threat(
-            target_system=req.system or "G-EURJ",
-            speak_alert=req.speak_alert or False
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-class MarketArbitrageRequest(BaseModel):
-    commodity: Optional[str] = "Isogen"
-    source_region: Optional[str] = "The Forge"
-    target_region: Optional[str] = "Delve"
-    speak_report: Optional[bool] = False
-
-
-@router.post("/api/voice/market/arbitrage")
-def market_arbitrage_endpoint(req: MarketArbitrageRequest):
-    """Dynamically calculate market arbitrage and regional spread across any commodity/region."""
-    from src.domain.eve_market_arbitrage import EveMarketArbitrage
-    try:
-        return EveMarketArbitrage.analyze_commodity_arbitrage(
-            commodity_name=req.commodity or "Isogen",
-            source_region=req.source_region or "The Forge",
-            target_region=req.target_region or "Delve",
-            speak_report=req.speak_report or False
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-class PIAuditRequest(BaseModel):
-    character: Optional[str] = "Savian Alexander"
-    speak_alert: Optional[bool] = False
-
-
-@router.post("/api/voice/pi/audit")
-def pi_audit_endpoint(req: PIAuditRequest):
-    """Dynamically audit planetary interaction colonies across any pilot roster."""
-    from src.domain.eve_pi_sentinel import EvePISentinel
-    try:
-        return EvePISentinel.audit_planetary_colonies(
-            character_name=req.character or "Savian Alexander",
-            speak_alert=req.speak_alert or False
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 class STTListenRequest(BaseModel):
     duration_seconds: Optional[float] = 3.0
     language: Optional[str] = "en"
@@ -449,29 +391,3 @@ def vault_scan_endpoint():
         return watcher.scan_and_index_delta()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-class FleetAlertRequest(BaseModel):
-    alert_type: Optional[str] = "MINING_COMPRESSION_CYCLE"
-    system: Optional[str] = "G-EURJ"
-    ship: Optional[str] = "Pillar of Autumn"
-    speak_now: Optional[bool] = False
-
-
-@router.post("/api/voice/fleet/alert")
-def fleet_alert_endpoint(req: FleetAlertRequest):
-    """Dispatch and synthesize tactical combat and industrial fleet voice alerts."""
-    from src.domain.eve_fleet_tactical_voice import EVEFleetTacticalVoice
-    try:
-        return EVEFleetTacticalVoice.broadcast_tactical_alert(
-            alert_type=req.alert_type or "MINING_COMPRESSION_CYCLE",
-            system=req.system or "G-EURJ",
-            ship=req.ship or "Pillar of Autumn",
-            speak_now=req.speak_now or False
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-
-

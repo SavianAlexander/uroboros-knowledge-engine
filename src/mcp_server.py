@@ -207,7 +207,7 @@ SPEAK_SCHEMA = {
 SFX_SCHEMA = {
     "type": "object",
     "properties": {
-        "sfx_name": {"type": "string", "description": "Procedural SFX name (warp_spool, shield_critical, armor_bleed, hull_breach, target_lock, cockpit_ambient)", "default": "target_lock"}
+        "sfx_name": {"type": "string", "description": "Procedural UI sound effect (ready, confirm, complete, alert, dismiss, success, ping, warning)", "default": "complete"}
     },
     "required": ["sfx_name"],
 }
@@ -335,7 +335,7 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name="neuro_play_sfx",
-            description="Play procedural tactical cockpit sound effect (warp spool, shield siren, target lock).",
+            description="Play procedural UI earcon sound effect (chime, alert, confirmation, completion).",
             inputSchema=SFX_SCHEMA,
         ),
         types.Tool(

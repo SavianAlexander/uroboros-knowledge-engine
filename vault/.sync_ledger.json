@@ -1,6 +1,6 @@
 {
-  "last_sync_timestamp": "2026-08-17T18:20:08Z",
-  "total_sync_runs": 19,
+  "last_sync_timestamp": "2026-08-18T15:50:44Z",
+  "total_sync_runs": 21,
   "entries": {
     "ecfr_title42_part435_medicaid_magi.md": {
       "sha256": "f50aec0e1a636f1750cb9696af07fbadfe688d4caa99d6e06dcf0fca777c7eae",
@@ -56,24 +56,6 @@
       "last_updated": "2026-08-17T17:48:00Z",
       "bytes": 2808
     },
-    "eve_esi_v2_openapi_spec.md": {
-      "sha256": "0bb9d5158acc7e5bf2faeb1b297ec0343fba46d1a6a93d755eca43cd1bd1e30f",
-      "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-17T17:48:00Z",
-      "bytes": 3807
-    },
-    "eve_sde_relational_schema_ddl.md": {
-      "sha256": "0041030e3b4c6078887b5f3c7048e66d641bbe2696a7963777b660c68b9e3792",
-      "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-17T17:48:00Z",
-      "bytes": 2790
-    },
-    "ccp_game_physics_dogma_spec.md": {
-      "sha256": "d868111bbc8ffeb1c5e4d90e25516c36ad09cc8109d1093f67a4c5d963e357c1",
-      "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-17T17:48:00Z",
-      "bytes": 1545
-    },
     "ley_1_2011_codigo_rentas_internas_puerto_rico.md": {
       "sha256": "0e210cbdc4df360e28a375e547698e9a2974c2aceb9c0ef9b8b0328214f33160",
       "first_harvested": "2026-08-17T16:13:56Z",
@@ -104,12 +86,6 @@
       "last_updated": "2026-08-17T17:48:00Z",
       "bytes": 8972
     },
-    "ecfr_title26_part1_internal_revenue.md": {
-      "sha256": "666d7d00736c96bcc9a99b3e43e5111d747e40215d48b5a275e91ec15f2e6df2",
-      "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-17T17:48:00Z",
-      "bytes": 41421449
-    },
     "ecfr_title29_part1910_labor_osha.md": {
       "sha256": "35b024905afadfa51feebb204b71eb3ac390dbe9a891c43fcce5c6feb6e8b1f3",
       "first_harvested": "2026-08-17T16:27:46Z",
@@ -134,17 +110,17 @@
       "last_updated": "2026-08-17T17:48:00Z",
       "bytes": 20132
     },
-    "eve_universe_114_regions_and_systems_catalog.md": {
-      "sha256": "9d1485cd6fd34770602ed03096ebcf33a3dda80f7ccce95fc2414ee450938045",
-      "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-17T18:20:08Z",
-      "bytes": 16992
-    },
     "codigo_civil_puerto_rico_2020_ley_55.md": {
       "sha256": "2056b7853ed5a733766648e3d81506ab50de517313b06c01f506ee80d14dd000",
       "first_harvested": "2026-08-17T16:27:46Z",
       "last_updated": "2026-08-17T18:20:08Z",
       "bytes": 2712
+    },
+    "ecfr_title26_part1_internal_revenue.md": {
+      "sha256": "62164eb83930655fffd6f52736349d04f9d56f23771b33d39e3e39afb29846b1",
+      "first_harvested": "2026-08-17T16:27:46Z",
+      "last_updated": "2026-08-17T17:48:00Z",
+      "bytes": 41634252
     }
   }
 }

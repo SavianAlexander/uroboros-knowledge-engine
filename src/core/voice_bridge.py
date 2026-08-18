@@ -23,15 +23,10 @@ except Exception:
 
 KOKORO_PERSONAS = {
     "CORTANA_PRIME": "af_sky",
-    "AURA_SHIP_AI": "bf_emma",
     "EXECUTIVE_ADVISOR": "af_heart",
-    "TACTICAL_OFFICER": "af_sarah",
-    "TACTICAL_ADVISOR": "af_sarah",
-    "FLEET_COMMANDER": "am_adam",
-    "INDUSTRY_OVERSEER": "bm_george",
+    "DEV_OPS": "af_sarah",
     "CALM_OPERATIONS": "af_bella",
     "EXECUTIVE_DIRECTOR": "af_heart",
-    "WARP_NAVIGATOR": "bf_isabella",
     "ORACLE_ADVISOR": "af_sky",
     "SOVEREIGN_ORACLE": "af_sky",
     "KOKORO_SKY": "af_sky",
@@ -206,11 +201,7 @@ class VoiceBridge:
         """Synthesize and return procedural SFX audio bytes."""
         try:
             from src.core.voice_sfx import VoiceSFX
-            sfx_bytes = VoiceSFX.synthesize_sfx(sfx_name)
-            if not sfx_bytes:
-                from src.infrastructure.eve_voice_soundboard import render_sfx_to_wav_bytes
-                sfx_bytes = render_sfx_to_wav_bytes(sfx_name)
-            return sfx_bytes
+            return VoiceSFX.synthesize_sfx(sfx_name)
         except Exception:
             return None
 

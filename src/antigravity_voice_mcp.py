@@ -49,7 +49,6 @@ from src.core.voice_dsp import VoiceDSP
 from src.core.audit_hashchain import GLOBAL_AUDIT_HASHCHAIN
 from src.core.voice_command_parser import VoiceCommandParser
 from src.core.voice_telemetry_exporter import AudioTelemetryExporter
-from src.domain.eve_fleet_tactical_voice import EVEFleetTacticalVoice
 
 
 # Global Voice Configuration State
@@ -85,7 +84,7 @@ TOOLS_SCHEMA = [
                 },
                 "dsp_preset": {
                     "type": "string",
-                    "description": "Acoustic DSP preset: 'STUDIO_DIRECT', 'COCKPIT_ACOUSTIC', 'RADIO_BANDPASS_300_3400HZ', 'LONG_RANGE_SQUELCH'.",
+                    "description": "Acoustic DSP preset: 'STUDIO_DIRECT', 'STUDIO_MASTER', 'EXECUTIVE_PRESENCE', 'EXECUTIVE_PRECISION', 'RADIO_BANDPASS_300_3400HZ'.",
                     "default": "STUDIO_DIRECT"
                 },
                 "priority": {
@@ -96,7 +95,7 @@ TOOLS_SCHEMA = [
                 },
                 "sfx_intro": {
                     "type": "string",
-                    "description": "Optional procedural SFX chime before speech: 'target_lock', 'warp_spool', 'shield_critical', 'armor_bleed', 'hull_breach'.",
+                    "description": "Optional procedural SFX chime before speech: 'ready', 'confirm', 'complete', 'alert', 'dismiss', 'success', 'ping', 'warning'.",
                     "default": ""
                 },
                 "blocking": {
@@ -117,7 +116,7 @@ TOOLS_SCHEMA = [
                 "task_name": {"type": "string", "description": "Name or headline of the task/feature."},
                 "state": {"type": "string", "enum": ["STARTED", "COMPLETED", "FAILED", "PAUSED", "AWAITING_INPUT"], "default": "COMPLETED"},
                 "details": {"type": "string", "description": "Optional additional metrics or explanation.", "default": ""},
-                "persona": {"type": "string", "description": "Voice persona to use.", "default": "INDUSTRY_OVERSEER"}
+                "persona": {"type": "string", "description": "Voice persona to use.", "default": "EXECUTIVE_ADVISOR"}
             },
             "required": ["task_name", "state"]
         }
@@ -137,13 +136,13 @@ TOOLS_SCHEMA = [
     },
     {
         "name": "antigravity_play_sfx",
-        "description": "Generate and play pure procedural tactical sound effects (warp spool, target lock, shield siren, hull breach, ambient drone).",
+        "description": "Generate and play pure procedural UI sound effects (chime, confirmation, alert, completion, ping).",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "sfx_name": {
                     "type": "string",
-                    "enum": ["target_lock", "warp_spool", "shield_critical", "armor_bleed", "hull_breach", "cockpit_ambient"],
+                    "enum": ["ready", "confirm", "complete", "alert", "dismiss", "success", "ping", "warning"],
                     "description": "Name of procedural sound effect to generate."
                 }
             },
@@ -373,19 +372,6 @@ TOOLS_SCHEMA = [
         }
     },
     {
-        "name": "antigravity_broadcast_fleet_alert",
-        "description": "Synthesize and broadcast tactical EVE fleet combat communications (cynos, warp disruption bubbles, compression cycles).",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "alert_type": {"type": "string", "description": "Alert type (e.g. 'CYNO_BEACON_ACTIVE', 'INTERDICTOR_BUBBLE_DROP', 'MINING_COMPRESSION_CYCLE', 'FLEET_ANCHOR_COMMAND')."},
-                "system": {"type": "string", "description": "Solar system name.", "default": "G-EURJ"},
-                "speak": {"type": "boolean", "description": "If true, synthesizes and plays audio immediately.", "default": True}
-            },
-            "required": ["alert_type"]
-        }
-    },
-    {
         "name": "antigravity_instant_speak",
         "description": "Speak text with ultra-low latency (<1ms cached, <25ms fresh) directly to the persistent hardware stream.",
         "inputSchema": {
@@ -459,16 +445,6 @@ TOOLS_SCHEMA = [
         }
     },
     {
-        "name": "antigravity_voice_telemetry_sweep",
-        "description": "Execute an empirical ESI fleet telemetry sweep in G-EURJ and speak the acoustic tactical report.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "speak_alert": {"type": "boolean", "description": "Whether to speak the telemetry alert aloud."}
-            }
-        }
-    },
-    {
         "name": "antigravity_voice_record_note",
         "description": "Ingest a spoken brain dump note directly into vault/Notes and index into SQLite FTS5 database.",
         "inputSchema": {
@@ -497,17 +473,6 @@ TOOLS_SCHEMA = [
         }
     },
     {
-        "name": "antigravity_check_threat_radar",
-        "description": "Evaluate nullsec threat radar metrics in G-EURJ or adjacent systems and dispatch klaxon warnings.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "system": {"type": "string", "description": "Solar system to sweep (default G-EURJ)."},
-                "speak_alert": {"type": "boolean", "description": "Whether to speak tactical alert aloud."}
-            }
-        }
-    },
-    {
         "name": "antigravity_stream_pipeline_speak",
         "description": "Synthesize and stream text clauses with ultra-low perceived latency (<180ms TTFS).",
         "inputSchema": {
@@ -517,30 +482,6 @@ TOOLS_SCHEMA = [
                 "persona": {"type": "string", "description": "Voice persona."}
             },
             "required": ["text"]
-        }
-    },
-    {
-        "name": "antigravity_check_market_arbitrage",
-        "description": "Calculate live CCP ESI market arbitrage and regional spread between any source and target regions.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "commodity": {"type": "string", "description": "Commodity, item, or mineral name (e.g. Isogen, Tritanium, Morphite, PLEX)."},
-                "source_region": {"type": "string", "description": "Source market region (e.g. 'The Forge' / Jita, 'Domain' / Amarr, 'Sinq Laison'). Default 'The Forge'."},
-                "target_region": {"type": "string", "description": "Target market region (e.g. 'Delve', 'Fountain', 'Catch'). Default 'Delve'."},
-                "speak_report": {"type": "boolean", "description": "Whether to speak acoustic briefing."}
-            }
-        }
-    },
-    {
-        "name": "antigravity_check_pi_sentinel",
-        "description": "Audit planetary interaction colony status, extractor cycles, and customs offices.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "character": {"type": "string", "description": "Pilot name (default Savian Alexander)."},
-                "speak_alert": {"type": "boolean", "description": "Whether to speak acoustic report."}
-            }
         }
     },
     {
@@ -842,13 +783,6 @@ def _handle_get_audio_telemetry(args: Dict[str, Any]) -> Dict[str, Any]:
     return AudioTelemetryExporter.get_telemetry_snapshot()
 
 
-def _handle_broadcast_fleet_alert(args: Dict[str, Any]) -> Dict[str, Any]:
-    alert_type = args.get("alert_type", "CYNO_BEACON_ACTIVE")
-    system = args.get("system", "G-EURJ")
-    speak_now = args.get("speak", True)
-    return EVEFleetTacticalVoice.broadcast_tactical_alert(alert_type=alert_type, system=system, speak_now=speak_now)
-
-
 def _handle_instant_speak(args: Dict[str, Any]) -> Dict[str, Any]:
     from src.core.instant_audio_streamer import InstantVoiceClient
     text = args.get("text", "")
@@ -905,12 +839,6 @@ def _handle_synthesize_podcast_dialogue(args: Dict[str, Any]) -> Dict[str, Any]:
     return VoicePodcastGenerator.synthesize_dialogue(turns=turns, pause_duration_s=pause_s, play_live=play_live)
 
 
-def _handle_voice_telemetry_sweep(args: Dict[str, Any]) -> Dict[str, Any]:
-    from src.core.voice_fleet_telemetry_daemon import VoiceFleetTelemetryDaemon
-    speak_alert = bool(args.get("speak_alert", True))
-    return VoiceFleetTelemetryDaemon.execute_telemetry_sweep(speak_alert=speak_alert)
-
-
 def _handle_voice_record_note(args: Dict[str, Any]) -> Dict[str, Any]:
     from src.core.voice_knowledge_ingest import VoiceKnowledgeIngest
     title = args.get("title", "Voice Note")
@@ -929,40 +857,12 @@ def _handle_voice_create_task(args: Dict[str, Any]) -> Dict[str, Any]:
     return VoiceKnowledgeIngest.create_voice_task(title=title, note=note, priority=priority, project_id=project_id, speak_confirmation=True)
 
 
-def _handle_check_threat_radar(args: Dict[str, Any]) -> Dict[str, Any]:
-    from src.domain.eve_threat_radar import EveTacticalThreatRadar
-    system = args.get("system", "G-EURJ")
-    speak = bool(args.get("speak_alert", True))
-    return EveTacticalThreatRadar.evaluate_system_threat(target_system=system, speak_alert=speak)
-
-
 def _handle_stream_pipeline_speak(args: Dict[str, Any]) -> Dict[str, Any]:
     from src.core.voice_streaming_pipeline import VoiceStreamingPipeliner
     text = args.get("text", "")
     persona = args.get("persona") or VOICE_CONFIG["default_persona"]
     tokens = [w + " " for w in text.split()]
     return VoiceStreamingPipeliner.stream_and_speak(iter(tokens), persona=persona, sync=False)
-
-
-def _handle_check_market_arbitrage(args: Dict[str, Any]) -> Dict[str, Any]:
-    from src.domain.eve_market_arbitrage import EveMarketArbitrage
-    commodity = args.get("commodity", "Isogen")
-    source_reg = args.get("source_region", "The Forge")
-    target_reg = args.get("target_region", "Delve")
-    speak = bool(args.get("speak_report", True))
-    return EveMarketArbitrage.analyze_commodity_arbitrage(
-        commodity_name=commodity,
-        source_region=source_reg,
-        target_region=target_reg,
-        speak_report=speak
-    )
-
-
-def _handle_check_pi_sentinel(args: Dict[str, Any]) -> Dict[str, Any]:
-    from src.domain.eve_pi_sentinel import EvePISentinel
-    char = args.get("character", "Savian Alexander")
-    speak = bool(args.get("speak_alert", True))
-    return EvePISentinel.audit_planetary_colonies(character_name=char, speak_alert=speak)
 
 
 def _handle_scan_vault_auto_watcher(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -1017,20 +917,15 @@ _TOOL_HANDLERS: Dict[str, Any] = {
     "antigravity_verify_audit_hashchain": _handle_verify_audit_hashchain,
     "antigravity_parse_voice_command": _handle_parse_voice_command,
     "antigravity_get_audio_telemetry": _handle_get_audio_telemetry,
-    "antigravity_broadcast_fleet_alert": _handle_broadcast_fleet_alert,
     "antigravity_instant_speak": _handle_instant_speak,
     "antigravity_prewarm_voice_engine": _handle_prewarm_voice_engine,
     "antigravity_get_instant_streamer_stats": _handle_get_instant_streamer_stats,
     "antigravity_configure_voice": _handle_configure_voice,
     "antigravity_voice_rag_query": _handle_voice_rag_query,
     "antigravity_synthesize_podcast_dialogue": _handle_synthesize_podcast_dialogue,
-    "antigravity_voice_telemetry_sweep": _handle_voice_telemetry_sweep,
     "antigravity_voice_record_note": _handle_voice_record_note,
     "antigravity_voice_create_task": _handle_voice_create_task,
-    "antigravity_check_threat_radar": _handle_check_threat_radar,
     "antigravity_stream_pipeline_speak": _handle_stream_pipeline_speak,
-    "antigravity_check_market_arbitrage": _handle_check_market_arbitrage,
-    "antigravity_check_pi_sentinel": _handle_check_pi_sentinel,
     "antigravity_scan_vault_auto_watcher": _handle_scan_vault_auto_watcher,
     "antigravity_listen_and_transcribe": _handle_listen_and_transcribe,
     "antigravity_get_status": _handle_get_status,

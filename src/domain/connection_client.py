@@ -91,12 +91,6 @@ class ConnectionClient:
             auth_env_var="JIRA_API_TOKEN"
         )
         self.register(
-            name="eve_esi",
-            base_url="https://esi.evetech.net/latest",
-            description="CCP Games EVE Online Swagger Interface (ESI) v2",
-            default_headers={"Accept": "application/json"}
-        )
-        self.register(
             name="puerto_rico_lex",
             base_url="https://bvirtualogp.pr.gov",
             description="Puerto Rico Office of Management and Budget (OGP / OSLPR) Statutory Library",

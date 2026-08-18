@@ -118,19 +118,9 @@ def apply_iir_filter(samples: Any, b: Any, a: Any) -> Any:
 _DSP_PIPELINES: Dict[str, List[Tuple[str, float, float, float]]] = {
     # format: (filter_type, freq, q, gain_db)
     "EXECUTIVE_PRESENCE": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
-    "EXECUTIVE_PRESENCE": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
     "EXECUTIVE_PRECISION": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
-    "AWE_STUDIO_MASTER": [("hp", 60.0, 0.707, 0.0), ("pk", 4500.0, 0.9, 3.0)],
     "STUDIO_MASTER": [("hp", 60.0, 0.707, 0.0), ("pk", 4500.0, 0.9, 3.0)],
-    "COMMANDER_TACTICAL": [("hp", 120.0, 0.8, 0.0), ("pk", 2800.0, 1.4, 5.0)],
-    "FLEET_COMMAND": [("hp", 120.0, 0.8, 0.0), ("pk", 2800.0, 1.4, 5.0)],
-    "HOLOGRAPHIC_AURA": [("hp", 85.0, 0.707, 0.0), ("pk", 3400.0, 1.1, 3.8), ("pk", 8500.0, 1.0, 2.8)],
-    "HOLOGRAPHIC_AURA": [("hp", 85.0, 0.707, 0.0), ("pk", 3400.0, 1.1, 3.8), ("pk", 8500.0, 1.0, 2.8)],
-    "COCKPIT_ACOUSTIC": [("hp", 80.0, 0.707, 0.0), ("pk", 3200.0, 1.2, 3.5)],
-    "AURA_COCKPIT": [("hp", 80.0, 0.707, 0.0), ("pk", 3200.0, 1.2, 3.5)],
     "RADIO_BANDPASS_300_3400HZ": [("hp", 300.0, 0.8, 0.0), ("lp", 3400.0, 0.8, 0.0), ("pk", 2400.0, 1.5, 4.0)],
-    "TACTICAL_RADIO": [("hp", 300.0, 0.8, 0.0), ("lp", 3400.0, 0.8, 0.0), ("pk", 2400.0, 1.5, 4.0)],
-    "LONG_RANGE_SQUELCH": [("hp", 500.0, 1.0, 0.0), ("lp", 2800.0, 1.0, 0.0)],
 }
 
 

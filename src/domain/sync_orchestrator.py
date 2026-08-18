@@ -14,7 +14,6 @@ from src.domain.connectors.ecfr_connector import EcfrConnector
 from src.domain.connectors.federal_register_connector import FederalRegisterConnector
 from src.domain.connectors.jira_openapi_connector import JiraOpenApiConnector
 from src.domain.connectors.curam_spec_connector import CuramSpecConnector
-from src.domain.connectors.eve_esi_connector import EveEsiConnector
 from src.domain.connectors.puerto_rico_lex_connector import PuertoRicoLexConnector
 from src.domain.connectors.uat_iso_connector import UatIsoConnector
 
@@ -81,25 +80,19 @@ class PrimarySourceSyncOrchestrator:
             curam_res = curam.harvest_all()
             harvested_results.extend(curam_res)
 
-        # 5. Harvest CCP Games EVE Online ESI, SDE & Dogma Specifications
-        if not domain_filter or domain_filter in ["eve", "eve_online", "esi", "all"]:
-            eve = EveEsiConnector(output_dir=os.path.join(self.vault_root, "Eve Online", "primary_sources"))
-            eve_res = eve.harvest_all()
-            harvested_results.extend(eve_res)
-
-        # 6. Harvest Puerto Rico Statutory Lex & Tax ERP Codes
+        # 5. Harvest Puerto Rico Statutory Lex & Tax ERP Codes
         if not domain_filter or domain_filter in ["puerto_rico", "pr_lex", "leyes_pr", "all"]:
             pr_lex = PuertoRicoLexConnector(output_dir=os.path.join(self.vault_root, "leyes_pr", "primary_sources"))
             pr_res = pr_lex.harvest_all()
             harvested_results.extend(pr_res)
 
-        # 7. Harvest ISO/IEC/IEEE 29119 & AICPA SOC 2 Testing Standards
+        # 6. Harvest ISO/IEC/IEEE 29119 & AICPA SOC 2 Testing Standards
         if not domain_filter or domain_filter in ["uat", "iso", "soc2", "standards", "all"]:
             uat_iso = UatIsoConnector(output_dir=os.path.join(self.vault_root, "uat_standards", "primary_sources"))
             uat_res = uat_iso.harvest_all()
             harvested_results.extend(uat_res)
 
-        # 8. Process ledger changes and detect diffs
+        # 7. Process ledger changes and detect diffs
         ledger_entries = ledger.setdefault("entries", {})
         touched_paths: List[str] = []
 

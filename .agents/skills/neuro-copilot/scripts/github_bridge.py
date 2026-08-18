@@ -78,6 +78,7 @@ def format_commit(scope="feat", desc="update codebase", tududi_id=None, neuro_ha
 def check_health():
     """Verify local git state, gh CLI authentication, and GitHub connectivity."""
     print("=== Neuro Co-Pilot GitHub Bridge Health Check ===")
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
     
     # 1. Git Status
     git_branch, _, code_b = run_cmd("git rev-parse --abbrev-ref HEAD")
@@ -124,20 +125,6 @@ def check_health():
     ci_path = os.path.join(".github", "workflows", "neuro_copilot_ci.yml")
     has_ci = os.path.exists(ci_path)
     print(f"[GitHub Actions] Neuro CI Workflow: {'Installed' if has_ci else 'Not Installed (run install_ci_workflow)'}")
-
-    # 7. EVE Online Tactical Bridge
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-    eve_audit = os.path.join(repo_root, "vault", "Eve Online", "Fleet", "empirical_esi_audit.json")
-    if os.path.exists(eve_audit):
-        try:
-            with open(eve_audit, "r", encoding="utf-8") as f:
-                eve_data = json.load(f)
-            total_sp = sum(p.get("total_sp", 0) for p in eve_data.values())
-            print(f"[EVE Bridge] Fleet Telemetry: OK ({len(eve_data)} pilots, {total_sp:,} Total SP)")
-        except Exception:
-            print("[EVE Bridge] Fleet Telemetry: Present (Audit file parse error)")
-    else:
-        print("[EVE Bridge] Fleet Telemetry: Not Initialized")
 
     # 8. Nomenclature & Lexical Clarity Bridge
     try:

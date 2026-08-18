@@ -457,53 +457,6 @@ def execute_neuro_contract(bus: InterBridgeEventBus) -> BridgeContract:
     return contract
 
 
-def execute_eve_contract(bus: InterBridgeEventBus) -> BridgeContract:
-    """
-    Executes EVE Online live telemetry, neural remaps & zero-assumption audit.
-    Consumes upstream context from Tududi and Neuro contracts.
-    """
-    t0 = time.time()
-    c_id = f"contract_eve_{int(time.time() * 1000)}"
-    try:
-        import eve_bridge
-        telem = eve_bridge.get_fleet_telemetry(bus.repo_root)
-        audit = eve_bridge.run_zero_assumption_audit(bus.repo_root)
-
-        outputs = {
-            "fleet_status": telem.get("status", "online"),
-            "total_pilots": telem.get("total_pilots", 0),
-            "fleet_total_sp": telem.get("total_fleet_sp", 0),
-            "liquid_isk": telem.get("total_liquid_isk", 0.0),
-            "zero_assumption_status": audit.get("status", "PASS")
-        }
-
-        shared_context = {
-            "eve_fleet_online": True,
-            "eve_pilot_count": telem.get("total_pilots", 0),
-            "eve_audit_passed": audit.get("status") == "PASS"
-        }
-
-        contract = BridgeContract(
-            contract_id=c_id,
-            bridge_name="eve_bridge",
-            duration_ms=(time.time() - t0) * 1000,
-            status="SUCCESS",
-            outputs=outputs,
-            shared_context=shared_context
-        )
-    except Exception as e:
-        contract = BridgeContract(
-            contract_id=c_id,
-            bridge_name="eve_bridge",
-            duration_ms=(time.time() - t0) * 1000,
-            status="WARNING",
-            outputs={"error": str(e)}
-        )
-
-    bus.publish_contract(contract)
-    return contract
-
-
 def execute_process_hygiene_contract(bus: InterBridgeEventBus) -> BridgeContract:
     """Executes OS process hygiene scan and cleanup, publishing Contract H."""
     t0 = time.time()
@@ -700,34 +653,6 @@ def execute_benchmark_contract(bus: InterBridgeEventBus) -> BridgeContract:
     return contract
 
 
-def execute_fleet_watchdog_contract(bus: InterBridgeEventBus) -> BridgeContract:
-    """Executes EVE Fleet Tactical Radar & Character Sweep, publishing Contract N."""
-    t0 = time.time()
-    c_id = f"contract_fleet_watchdog_{int(time.time() * 1000)}"
-    try:
-        import fleet_watchdog_bridge
-        f_res = fleet_watchdog_bridge.get_fleet_radar_telemetry(bus.repo_root)
-        ok = f_res.get("status") in ("PASS", "ONLINE", "SUCCESS", "WARNING")
-        contract = BridgeContract(
-            contract_id=c_id,
-            bridge_name="fleet_watchdog_bridge",
-            duration_ms=(time.time() - t0) * 1000,
-            status="SUCCESS" if ok else "WARNING",
-            outputs={"fleet_status": f_res.get("fleet_status"), "total_pilots": f_res.get("total_pilots"), "fleet_sp": f_res.get("fleet_total_sp")},
-            shared_context={"fleet_online": True, "total_pilots": f_res.get("total_pilots")}
-        )
-    except Exception as e:
-        contract = BridgeContract(
-            contract_id=c_id,
-            bridge_name="fleet_watchdog_bridge",
-            duration_ms=(time.time() - t0) * 1000,
-            status="WARNING",
-            outputs={"error": str(e)}
-        )
-    bus.publish_contract(contract)
-    return contract
-
-
 def execute_curam_contract(bus: InterBridgeEventBus) -> BridgeContract:
     """Executes IBM Cúram SPM CER statutory rules evaluation, publishing Contract O."""
     t0 = time.time()
@@ -863,8 +788,6 @@ async def run_parallel_bridge_pipeline_async(repo_root: str = ".") -> Dict[str, 
         stage_2_tasks = [
             loop.run_in_executor(executor, execute_snapshot_contract, bus),
             loop.run_in_executor(executor, execute_neuro_contract, bus),
-            loop.run_in_executor(executor, execute_eve_contract, bus),
-            loop.run_in_executor(executor, execute_fleet_watchdog_contract, bus),
             loop.run_in_executor(executor, execute_voice_operator_contract, bus),
             loop.run_in_executor(executor, execute_curam_contract, bus),
             loop.run_in_executor(executor, execute_jira_contract, bus),
@@ -930,9 +853,7 @@ def run_all_self_tests_parallel() -> Dict[str, Any]:
         ("benchmark_bridge", "benchmark_bridge"),
         ("curam_bridge", "curam_bridge"),
         ("doctor_bridge", "doctor_bridge"),
-        ("eve_bridge", "eve_bridge"),
         ("file_allocation_bridge", "file_allocation_bridge"),
-        ("fleet_watchdog_bridge", "fleet_watchdog_bridge"),
         ("github_bridge", "github_bridge"),
         ("jira_bridge", "jira_bridge"),
         ("neuro_bridge", "neuro_bridge"),

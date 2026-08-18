@@ -1,11 +1,11 @@
 ---
 name: neuro-copilot
-description: The master integration and orchestration skill for bridging the Uroboros Knowledge Engine (Neuro), the Tududi Task Master, and GitHub CLI / Git Provenance into a unified, dependency-efficient automated engineering workflow. Incorporates universal polyglot clean architecture audits, multi-phase workflow pipeline chaining, parallel asynchronous inter-bridge contracts, PDF/visual layout QA, automated visual UI journeys, client showcase deck generation, security scanning, bloat detection, executive dashboards, voice telemetry, system health diagnostics, latency benchmarks, and EVE fleet radar.
+description: The master integration and orchestration skill for bridging the Uroboros Knowledge Engine (Neuro), the Tududi Task Master, and GitHub CLI / Git Provenance into a unified, dependency-efficient automated engineering workflow. Incorporates universal polyglot clean architecture audits, multi-phase workflow pipeline chaining, parallel asynchronous inter-bridge contracts, PDF/visual layout QA, automated visual UI journeys, client showcase deck generation, security scanning, bloat detection, executive dashboards, voice telemetry, system health diagnostics, and latency benchmarks.
 ---
 
 # Neuro Co-Pilot (Master Autonomous Engineering & Orchestration Suite)
 
-This skill equips the agent with the definitive 16-bridge engineering architecture, uniting the **Neuro Local Knowledge Vault** (`neuro-mcp`), the **Tududi Task Master** (`tududi`), the **GitHub CLI / Git Merkle Provenance Subsystem** (`gh` CLI & standard git commands), the **Unified 360° Health Doctor**, the **Executive Voice Telemetry Intercom**, the **Sub-Millisecond Benchmark Watchdog**, and the **EVE Fleet Radar** into a unified, zero-dependency, parallel asynchronous closed loop.
+This skill equips the agent with the definitive modular engineering architecture, uniting the **Neuro Local Knowledge Vault** (`neuro-mcp`), the **Tududi Task Master** (`tududi`), the **GitHub CLI / Git Merkle Provenance Subsystem** (`gh` CLI & standard git commands), the **Unified 360° Health Doctor**, the **Executive Voice Telemetry Intercom**, and the **Sub-Millisecond Benchmark Watchdog** into a unified, zero-dependency, parallel asynchronous closed loop.
 
 ```mermaid
 graph TD
@@ -27,8 +27,6 @@ graph TD
     subgraph Stage2 ["Stage 2: Context-Informed Parallel Execution"]
         Snapshot["Snapshot & Visual Diff Showcase"]
         NeuroVault["Neuro Local RAG Brain & Vault"]
-        EVE["EVE Tactical Telemetry & Physics"]
-        Fleet["Fleet Watchdog & PI Radar"]
         Voice["Executive Voice Telemetry & SAPI"]
     end
 

@@ -99,25 +99,7 @@ class DomainRegistry:
         if getattr(self, "_initialized", False):
             return
 
-        # 1. Space Simulation & Telemetry Plugin (EVE Online ESI)
-        try:
-            class EveSpaceDomainPlugin(BaseDomainPlugin):
-                @property
-                def manifest(self) -> DomainPluginManifest:
-                    return DomainPluginManifest(
-                        name="eve_tactical",
-                        version="1.0.0",
-                        description="Space Tactical Radar, ESI Telemetry & Market Arbitrage Engine",
-                        keywords=["eve online", "zkillboard", "esi", "jita", "wormhole", "abyssal", "supercapital", "fleet fit"],
-                        capabilities=["tactical_voice", "market_arbitrage", "threat_radar"]
-                    )
-                def get_system_prompt_extension(self, query: str = "") -> Optional[str]:
-                    return "Space Tactical Protocol: Provide exact fitting statistics, market spreads, and celestial threat profiling."
-            self.register(EveSpaceDomainPlugin())
-        except Exception as e:
-            logger.debug(f"[DomainRegistry] Skipped EVE plugin: {e}")
-
-        # 2. Neural Voice & Audio Telemetry Plugin
+        # 1. Neural Voice & Audio Telemetry Plugin
         try:
             class VoiceAudioDomainPlugin(BaseDomainPlugin):
                 @property

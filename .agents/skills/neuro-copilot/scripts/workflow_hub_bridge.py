@@ -353,30 +353,6 @@ def loop_health(daemon: bool = False, interval_sec: int = 60, max_iterations: in
     }
 
 
-def loop_erp() -> Dict[str, Any]:
-    """
-    Autonomous Puerto Rico ERP Compliance & Statutory Audit Loop.
-    Cross-audits compliance.db and payroll.db against statutory rules.
-    """
-    try:
-        import pr_erp_sql_bridge
-        payroll_met = pr_erp_sql_bridge.get_payroll_metrics()
-        compliance_met = pr_erp_sql_bridge.get_compliance_metrics()
-        schema_cat = pr_erp_sql_bridge.get_schema_catalog()
-
-        return {
-            "status": "success",
-            "loop": "erp_statutory_compliance",
-            "payroll_database": payroll_met,
-            "compliance_database": compliance_met,
-            "attached_namespaces": list(schema_cat.keys()),
-            "audit_verdict": "VERIFIED_COMPLIANT",
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        }
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-
 def loop_knowledge(query_test: str = "Bono de Navidad") -> Dict[str, Any]:
     """
     Autonomous Knowledge Ingestion & Semantic Retrieval Verification Loop.
@@ -414,12 +390,7 @@ def self_test():
     assert hlth_rep.get("status") == "success", "Health loop failed"
     print("  [Pass] Closed-Loop Health cycle clean")
 
-    # 3. Test Closed-Loop ERP
-    erp_rep = loop_erp()
-    assert erp_rep.get("status") == "success", "ERP loop failed"
-    print("  [Pass] Closed-Loop ERP cycle clean")
-
-    # 4. Test Closed-Loop Knowledge
+    # 3. Test Closed-Loop Knowledge
     know_rep = loop_knowledge()
     assert know_rep.get("status") == "success", "Knowledge loop failed"
     print("  [Pass] Closed-Loop Knowledge cycle clean")
