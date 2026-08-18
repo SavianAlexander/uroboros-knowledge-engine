@@ -36,32 +36,15 @@ jobs:
             requirements-dev.txt
 
       - name: Determine Test Execution Tier
-        id: test-tier
+        id: test_tier
         env:
           EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref }}
         run: |
-          python -c "
-          import json, os, subprocess
-          res = subprocess.run('python .agents/skills/neuro-copilot/scripts/github_bridge.py classify_changes', shell=True, capture_output=True, text=True)
-          try:
-              d = json.loads(res.stdout)
-          except Exception:
-              d = {'tier': 3, 'run_e2e_ui_tests': True, 'run_domain_tests': True}
-          event = os.environ.get('EVENT_NAME', '')
-          ref = os.environ.get('REF_NAME', '')
-          is_pr = event == 'pull_request'
-          is_release = ref.startswith('refs/tags/v')
-          tier = 3 if (is_pr or is_release) else d.get('tier', 3)
-          run_e2e = 'true' if (is_pr or is_release or d.get('run_e2e_ui_tests', False)) else 'false'
-          run_domain = 'true' if (is_pr or is_release or d.get('run_domain_tests', True)) else 'false'
-          print(f'Detected Tier: {tier} | Run Domain: {run_domain} | Run E2E: {run_e2e}')
-          with open(os.environ['GITHUB_ENV'], 'a') as f:
-              f.write(f'TIER={tier}\nRUN_E2E={run_e2e}\nRUN_DOMAIN={run_domain}\n')
-          "
+          python -c "import json, os, subprocess; res=subprocess.run('python .agents/skills/neuro-copilot/scripts/github_bridge.py classify_changes', shell=True, capture_output=True, text=True); d=json.loads(res.stdout) if res.returncode==0 else {}; event=os.environ.get('EVENT_NAME',''); ref=os.environ.get('REF_NAME',''); is_pr=event=='pull_request'; is_rel=ref.startswith('refs/tags/v'); tier=3 if (is_pr or is_rel) else d.get('tier',3); r_e2e='true' if (is_pr or is_rel or d.get('run_e2e_ui_tests',False)) else 'false'; r_dom='true' if (is_pr or is_rel or d.get('run_domain_tests',True)) else 'false'; print(f'Tier: {tier}, E2E: {r_e2e}, Domain: {r_dom}'); out=os.environ.get('GITHUB_OUTPUT',''); open(out,'a').write(f'tier={tier}\nrun_e2e={r_e2e}\nrun_domain={r_dom}\n') if out else None"
 
       - name: Cache Playwright Browsers
-        if: env.RUN_E2E == 'true' && matrix.python-version == '3.12'
+        if: steps.test_tier.outputs.run_e2e == 'true' && matrix.python-version == '3.12'
         uses: actions/cache@v4
         id: playwright-cache
         with:
@@ -77,7 +60,7 @@ jobs:
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
       - name: Install Playwright Browsers & OS Dependencies
-        if: env.RUN_E2E == 'true' && matrix.python-version == '3.12'
+        if: steps.test_tier.outputs.run_e2e == 'true' && matrix.python-version == '3.12'
         run: |
           python -m playwright install-deps chromium
           python -m playwright install chromium
@@ -91,10 +74,10 @@ jobs:
           python .agents/skills/neuro-copilot/scripts/github_bridge.py audit_skills
 
       - name: Tier 2: Execute Domain Unit Tests & SOC 2 Trust Controls
-        if: env.RUN_DOMAIN == 'true'
+        if: steps.test_tier.outputs.run_domain == 'true'
         run: |
           python run_domain_tests.py || (echo "TEST FAILURE DETECTED, DUMPING LEDGER:" && cat tests/test_audit_ledger.json && echo "DUMPING JUNIT XML:" && cat tests/test_results.xml && exit 1)
 
       - name: Tier 3: Run Playwright E2E UI Tests
-        if: env.RUN_E2E == 'true' && matrix.python-version == '3.12'
+        if: steps.test_tier.outputs.run_e2e == 'true' && matrix.python-version == '3.12'
         run: python run_e2e_ui_tests.py
