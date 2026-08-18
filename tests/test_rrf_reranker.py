@@ -1,6 +1,6 @@
 import unittest
 import time
-from src.domain.reranker import compute_rrf_scores
+from src.domain.reranking import compute_rrf_scores
 
 class TestRRFReranker(unittest.TestCase):
     def test_rrf_fusion_combines_vector_and_fts_rankings(self):

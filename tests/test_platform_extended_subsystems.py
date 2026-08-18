@@ -7,7 +7,7 @@ import unittest
 from fastapi.testclient import TestClient
 from main import app
 from src.domain.code_self_refactor import analyze_and_propose_refactoring
-from src.domain.agent_swarm_manager import decompose_goal_into_agent_swarm
+from src.domain.rag_engine import decompose_goal_into_agent_swarm
 from src.domain.code_doc_aligner import check_code_docstring_alignment
 from src.domain.zk_data_masker import mask_payload_with_zk_proof
 

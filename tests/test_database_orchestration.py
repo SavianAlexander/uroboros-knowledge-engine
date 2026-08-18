@@ -17,7 +17,7 @@ from src.domain.autonomous_sql_router import (
     generate_safe_sql_query,
     execute_autonomous_sql_query
 )
-from src.domain.database_self_healer import (
+from src.domain.knowledge_self_healing import (
     inspect_database_health,
     auto_optimize_indexes,
     detect_client_data_anomalies,

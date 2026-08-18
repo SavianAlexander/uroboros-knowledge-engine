@@ -1,7 +1,7 @@
 import unittest
 from src.domain.knowledge_self_healing import audit_knowledge_self_healing
 from src.domain.pii_privacy_guard import redact_pii_from_text
-from src.domain.cross_lingual_aligner import align_cross_lingual_query
+from src.domain.rag_engine import align_cross_lingual_query
 from fastapi.testclient import TestClient
 from src.app.main import app
 

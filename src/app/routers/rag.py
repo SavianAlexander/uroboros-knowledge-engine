@@ -542,7 +542,7 @@ class GroundingVerifyRequest(BaseModel):
 @router.post("/api/rag/colbert/rerank")
 def colbert_rerank_endpoint(req: ColBERTRerankRequest):
     """ColBERT Late Interaction token-level MaxSim reranking endpoint."""
-    from src.domain.colbert_reranker import rerank_documents_colbert
+    from src.domain.reranking import rerank_documents_colbert
     reranked = rerank_documents_colbert(req.query_tokens, req.candidates)
     return {"total": len(reranked), "results": reranked, "status": "success"}
 
@@ -585,7 +585,7 @@ def entropy_chunking_endpoint(req: EntropyChunkRequest):
 @router.post("/api/rag/speculative/synthesize")
 def speculative_rag_endpoint(req: SpeculativeRAGRequest):
     """Speculative RAG Multi-Hypothesis Synthesis endpoint."""
-    from src.domain.speculative_rag import synthesize_speculative_rag
+    from src.domain.rag_engine import synthesize_speculative_rag
     result = synthesize_speculative_rag(req.query, req.source_chunks)
     return result
 
@@ -613,7 +613,7 @@ class DistractorFilterRequest(BaseModel):
 @router.post("/api/rag/active/refine")
 def active_rag_refine_endpoint(req: ActiveRAGRequest):
     """Active RAG Iterative Query Refinement Loop endpoint."""
-    from src.domain.active_rag import execute_active_rag_loop
+    from src.domain.rag_engine import execute_active_rag_loop
     result = execute_active_rag_loop(req.query, req.initial_chunks, req.confidence_threshold)
     return result
 
@@ -981,7 +981,7 @@ def visual_canvas_endpoint(req: VisualCanvasRequest):
 @router.post("/api/rag/counterfactual/simulate")
 def counterfactual_endpoint(req: CounterfactualRequest):
     """Counterfactual RAG Scenario Simulator endpoint."""
-    from src.domain.counterfactual_rag import simulate_counterfactual_scenario
+    from src.domain.rag_engine import simulate_counterfactual_scenario
     return simulate_counterfactual_scenario(req.base_query, req.base_contexts, req.masked_chunk_indices)
 
 
@@ -1175,7 +1175,7 @@ def code_self_refactor_endpoint(req: CodeRefactorRequest):
 @router.post("/api/rag/swarm/decompose")
 def swarm_decompose_endpoint(req: SwarmDecomposeRequest):
     """Multi-Agent Task Decomposition & Sub-Task Swarm Manager endpoint."""
-    from src.domain.agent_swarm_manager import decompose_goal_into_agent_swarm
+    from src.domain.rag_engine import decompose_goal_into_agent_swarm
     return decompose_goal_into_agent_swarm(req.master_goal)
 
 
@@ -1203,7 +1203,7 @@ def zk_mask_endpoint(req: ZKMaskRequest):
 def api_swarm_rag(req: Dict[str, Any]):
 
     """Cognitive Swarm RAG endpoint (Explorer, Graph, Critic, Synthesizer)."""
-    from src.domain.swarm_rag import execute_swarm_rag
+    from src.domain.rag_engine import execute_swarm_rag
     query = req.get("query", "")
     if not query:
         raise HTTPException(status_code=400, detail="Query string is required")
@@ -1359,7 +1359,7 @@ def api_sparse_dense_fusion_rerank(req: Dict[str, Any]):
 @router.post("/api/rag/noise/mask-entropy")
 def api_mask_entropy_noise(req: Dict[str, Any]):
     """Entropy Differential Noise Masker endpoint."""
-    from src.domain.contextual_noise_mask import mask_low_entropy_noise
+    from src.domain.rag_engine import mask_low_entropy_noise
     text_chunk = req.get("text_chunk", "")
     return mask_low_entropy_noise(text_chunk)
 
@@ -1377,7 +1377,7 @@ def api_sublinear_ann_search(req: Dict[str, Any]):
 @router.post("/api/rag/crosslingual/bridge")
 def api_crosslingual_bridge(req: Dict[str, Any]):
     """Multilingual Latent Vector Projection Bridge endpoint."""
-    from src.domain.crosslingual_bridge import project_multilingual_vector
+    from src.domain.rag_engine import project_multilingual_vector
     text = req.get("text", "")
     src_lang = req.get("source_language", "auto")
     return project_multilingual_vector(text, source_language=src_lang)

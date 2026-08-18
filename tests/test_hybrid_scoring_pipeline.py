@@ -6,7 +6,7 @@ Covers Active RAG Loop, Adaptive Context Budget Allocator, and Distractor Filter
 import unittest
 from fastapi.testclient import TestClient
 from main import app
-from src.domain.active_rag import execute_active_rag_loop, reformulate_query
+from src.domain.rag_engine import execute_active_rag_loop, reformulate_query
 from src.domain.context_budget_allocator import allocate_context_budget
 from src.domain.distractor_filter import filter_distractor_chunks
 

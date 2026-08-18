@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from main import app
 from src.domain.hypergraph_router import route_hypergraph_query
 from src.domain.sparse_dense_fusion import rerank_sparse_dense_fusion
-from src.domain.contextual_noise_mask import mask_low_entropy_noise
+from src.domain.rag_engine import mask_low_entropy_noise
 
 
 class TestComparativeRAGValidation(unittest.TestCase):

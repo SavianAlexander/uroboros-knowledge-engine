@@ -1,5 +1,5 @@
 import unittest
-from src.domain.speculative_rag import synthesize_speculative_drafts
+from src.domain.rag_engine import synthesize_speculative_drafts
 from src.domain.temporal_rag_lineage import get_temporal_knowledge_lineage
 from src.domain.hallucination_guard import evaluate_hallucination_risk
 from fastapi.testclient import TestClient

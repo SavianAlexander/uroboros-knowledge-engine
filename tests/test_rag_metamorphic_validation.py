@@ -6,7 +6,7 @@ Covers ColBERT MaxSim, Matryoshka MRL Compression, and Self-Correction RAG Groun
 import unittest
 from fastapi.testclient import TestClient
 from main import app
-from src.domain.colbert_reranker import colbert_maxsim_score, rerank_documents_colbert
+from src.domain.reranking import colbert_maxsim_score, rerank_documents_colbert
 from src.domain.mrl_compressor import truncate_mrl_embedding, mrl_cosine_similarity
 from src.domain.rag_grounding_guard import verify_rag_grounding, compute_ngram_overlap
 

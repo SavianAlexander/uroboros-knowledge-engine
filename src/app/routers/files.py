@@ -1128,7 +1128,7 @@ def query_data_endpoint(payload: Dict[str, Any] = Body(...)):
 def database_health_endpoint():
     """Runs autonomous database index optimization, anomaly detection, and WAL self-healing."""
     try:
-        from src.domain.database_self_healer import execute_database_self_healing
+        from src.domain.knowledge_self_healing import execute_database_self_healing
         return execute_database_self_healing()
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise

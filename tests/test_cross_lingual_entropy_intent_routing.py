@@ -8,7 +8,7 @@ Self-check unit test suite for Next-Level Comparative RAG Frontier Paradigms v2:
 
 import pytest
 from src.domain.adaptive_context_compressor import compress_context_entropy
-from src.domain.cross_lingual_fusion import cross_lingual_rag_search, expand_cross_lingual_query
+from src.domain.rag_engine import cross_lingual_rag_search, expand_cross_lingual_query
 from src.domain.zk_data_masker import mask_payload_with_zk_proof
 from src.domain.intent_router import route_query_intent, classify_query_intent
 

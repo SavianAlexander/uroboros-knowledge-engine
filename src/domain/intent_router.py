@@ -33,8 +33,8 @@ def _route_query_intent_cached(query: str) -> Tuple[str, str]:
     recommended_pipeline = {
         "code_search": "src.domain.ast_parser.parse_python_ast",
         "executive_summary": "src.domain.raptor_tree_indexer.build_raptor_tree",
-        "counterfactual_audit": "src.domain.counterfactual_rag.execute_counterfactual_rag",
-        "hybrid_fact_retrieval": "src.domain.swarm_rag.execute_swarm_rag"
+        "counterfactual_audit": "src.domain.rag_engine.execute_counterfactual_rag",
+        "hybrid_fact_retrieval": "src.domain.rag_engine.execute_swarm_rag"
     }.get(intent, "src.domain.rag_engine.extract_advanced_rag_context")
     return intent, recommended_pipeline
 

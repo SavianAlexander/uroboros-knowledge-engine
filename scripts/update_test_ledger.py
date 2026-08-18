@@ -81,7 +81,7 @@ FILE_DOMAIN_MAPPING = {
     "tests/test_domain_agent_consensus.py": ["DomainAgentConsensus"],
     "src/domain/entropy_chunker.py": ["DomainSemanticRAG"],
     "src/domain/temporal_rag.py": ["DomainSemanticRAG"],
-    "src/domain/cross_lingual_aligner.py": ["DomainSemanticRAG"],
+    "src/domain/rag_engine.py": ["DomainSemanticRAG", "DomainRAG"],
     "src/domain/self_rag_critique.py": ["DomainSemanticRAG"],
     "src/domain/legal_accuracy_engine.py": ["DomainSemanticRAG"],
     "tests/test_domain_semantic_rag_accuracy.py": ["DomainSemanticRAG"],
@@ -100,7 +100,9 @@ FILE_DOMAIN_MAPPING = {
     "tests/test_domain_hallucination_guardrails.py": ["DomainHallucinationGuardrails"],
     "src/core/model_router.py": ["DomainFrontierReasoning"],
     ".agents/skills/neuro-copilot/scripts/react_agent_bridge.py": ["DomainFrontierReasoning"],
-    "tests/test_domain_29_frontier_reasoning.py": ["DomainFrontierReasoning"]
+    "tests/test_domain_29_frontier_reasoning.py": ["DomainFrontierReasoning"],
+    "src/domain/retrieval_pipeline_dag.py": ["DomainSemanticRAG", "DomainRAG"],
+    "tests/test_domain_sota_rag_dag.py": ["DomainSemanticRAG", "DomainRAG"]
 }
 
 DOMAIN_TEST_MODULES = [
@@ -151,7 +153,8 @@ DOMAIN_TEST_MODULES = [
     "tests.test_universal_crawler",
     "tests.test_crawler_api",
     "tests.test_fusion_engine",
-    "tests.test_domain_29_frontier_reasoning"
+    "tests.test_domain_29_frontier_reasoning",
+    "tests.test_domain_sota_rag_dag"
 ]
 
 BUG_RELATION_TAXONOMY = {
@@ -212,7 +215,7 @@ BUG_RELATION_TAXONOMY = {
     "DomainSemanticRAG": [
         {"test": "test_01_entropy_semantic_boundary_chunking", "component": "src/domain/entropy_chunker.py", "prevents": "Chunking boundaries splitting cohesive topic sentences"},
         {"test": "test_03_temporal_exponential_decay_scoring", "component": "src/domain/temporal_rag.py", "prevents": "Obsolete documents outranking fresh authoritative versions"},
-        {"test": "test_04_cross_lingual_query_alignment", "component": "src/domain/cross_lingual_aligner.py", "prevents": "Multilingual search term mismatch against English vault"},
+        {"test": "test_04_cross_lingual_query_alignment", "component": "src/domain/rag_engine.py", "prevents": "Multilingual search term mismatch against English vault"},
         {"test": "test_05_self_rag_critique_rubric_scoring", "component": "src/domain/self_rag_critique.py", "prevents": "Unhallucinated grounding failure in Self-RAG"},
         {"test": "test_06_legal_accuracy_engine_sanitization_and_nfc", "component": "src/domain/legal_accuracy_engine.py", "prevents": "FTS5 syntax injection in legal queries"}
     ],

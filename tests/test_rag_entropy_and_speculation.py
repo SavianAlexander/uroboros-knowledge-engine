@@ -7,7 +7,7 @@ import unittest
 from fastapi.testclient import TestClient
 from main import app
 from src.domain.entropy_chunker import chunk_by_semantic_entropy
-from src.domain.speculative_rag import synthesize_speculative_rag, generate_hypotheses_from_chunks
+from src.domain.rag_engine import synthesize_speculative_rag, generate_hypotheses_from_chunks
 
 
 class TestRAGEntropyAndSpeculation(unittest.TestCase):

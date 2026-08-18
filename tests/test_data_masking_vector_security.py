@@ -7,7 +7,7 @@ import unittest
 from fastapi.testclient import TestClient
 from main import app
 from src.domain.sublinear_ann_index import search_sublinear_ann
-from src.domain.crosslingual_bridge import project_multilingual_vector
+from src.domain.rag_engine import project_multilingual_vector
 from src.domain.retrieval_feedback_refiner import log_feedback_and_refine
 
 

@@ -8,7 +8,7 @@ Self-check unit test suite for Comparative SOTA RAG Frontier Paradigms:
 """
 
 import pytest
-from src.domain.counterfactual_rag import execute_counterfactual_rag
+from src.domain.rag_engine import execute_counterfactual_rag
 from src.domain.raptor_tree_indexer import build_raptor_tree, search_raptor_tree
 from src.domain.episodic_rag import query_episodic_rag
 from src.domain.binary_colbert import binary_colbert_maxsim, rerank_search_results_colbert

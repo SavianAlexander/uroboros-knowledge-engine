@@ -12,7 +12,7 @@ Exposes clean, cohesive APIs across the 7 Core Domain Subsystems:
 
 # 1. Search & Hybrid Retrieval
 from src.domain.query_intent_classifier import classify_query_intent, route_query_intent
-from src.domain.reranker import reciprocal_rank_fusion, score_rerank_candidates
+from src.domain.reranking import reciprocal_rank_fusion, score_rerank_candidates
 from src.domain.sublinear_ann_index import SublinearANNIndex
 from src.domain.sparse_dense_fusion import fuse_sparse_dense_rankings
 from src.domain.recency_decay import apply_recency_decay
@@ -27,7 +27,7 @@ from src.domain.grounding_scorecard import compute_grounding_scorecard, evaluate
 from src.domain.rag_evaluator import evaluate_rag_triad
 from src.domain.source_citation_generator import generate_grounded_citations
 from src.domain.hallucination_guard import evaluate_hallucination_risk
-from src.domain.counterfactual_rag import execute_counterfactual_rag
+from src.domain.rag_engine import execute_counterfactual_rag
 
 # 3. Knowledge Graph & Traversal
 from src.domain.hypergraph_router import HypergraphRouter

@@ -16,7 +16,7 @@ import know
 
 from src.domain.entropy_chunker import chunk_by_semantic_entropy, compute_jaccard_distance
 from src.domain.temporal_rag import apply_temporal_decay_scoring
-from src.domain.cross_lingual_aligner import align_cross_lingual_query
+from src.domain.rag_engine import align_cross_lingual_query
 from src.domain.self_rag_critique import evaluate_relevance, evaluate_support, critique_rag_passages
 from src.domain.legal_accuracy_engine import LegalAccuracyEngine
 

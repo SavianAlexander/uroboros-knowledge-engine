@@ -23,14 +23,14 @@ from src.domain.louvain_clustering import apply_louvain_communities
 from src.domain.graph_export import export_graph_to_graphml
 from src.domain.decomposed_hybrid_rag import execute_hybrid_decomposed_search, execute_sota_rag_search
 from src.domain.self_rag_critique import critique_rag_passages
-from src.domain.reranker import compute_rrf_scores
+from src.domain.reranking import compute_rrf_scores
 from src.domain.parent_child_retrieval import expand_child_chunks_to_parents
 from src.domain.graph_multihop import find_multihop_pathways
 from src.domain.contextual_hyde import generate_hypothetical_document
 from src.domain.recency_decay import apply_recency_decay
 from src.domain.acl_permission_engine import trim_search_results_by_acl
 from src.domain.pii_privacy_guard import redact_pii_from_text
-from src.domain.cross_lingual_aligner import align_cross_lingual_query
+from src.domain.rag_engine import align_cross_lingual_query
 from src.domain.source_citation_generator import generate_source_citations
 from src.domain.query_intent_classifier import classify_query_intent
 from src.domain.graph_mermaid_generator import generate_mermaid_graph
@@ -996,7 +996,7 @@ def execute_cross_lingual_endpoint(query: str = "", q: str = ""):
     """Aligns multi-lingual search queries to English vault terminology."""
     search_q = query or q or ""
     try:
-        from src.domain.cross_lingual_aligner import align_cross_lingual_query
+        from src.domain.rag_engine import align_cross_lingual_query
         return align_cross_lingual_query(search_q)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
@@ -1117,7 +1117,7 @@ def speculative_rag_endpoint(payload: Dict[str, Any] = Body({})):
     query = payload.get("query", "")
     passages = payload.get("passages", [])
     try:
-        from src.domain.speculative_rag import synthesize_speculative_drafts
+        from src.domain.rag_engine import synthesize_speculative_drafts
         return synthesize_speculative_drafts(query, passages)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
@@ -1290,7 +1290,7 @@ def cross_lingual_search_endpoint(payload: Dict[str, Any] = Body({})):
     query = payload.get("query", "") or payload.get("q", "")
     max_chunks = payload.get("max_chunks", 4)
     try:
-        from src.domain.cross_lingual_fusion import cross_lingual_rag_search
+        from src.domain.rag_engine import cross_lingual_rag_search
         return cross_lingual_rag_search(query, max_chunks=max_chunks)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise

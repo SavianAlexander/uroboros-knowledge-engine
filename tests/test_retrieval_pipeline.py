@@ -176,7 +176,7 @@ def test_eve_infrastructure_package():
 
 
 def test_database_self_healing():
-    from src.domain.database_self_healer import execute_database_self_healing
+    from src.domain.knowledge_self_healing import execute_database_self_healing
     res = execute_database_self_healing()
     assert res["status"] == "success"
     assert "database_health" in res

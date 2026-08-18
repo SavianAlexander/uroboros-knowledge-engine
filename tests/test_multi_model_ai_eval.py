@@ -11,7 +11,7 @@ from src.domain.synthetic_qa_generator import generate_synthetic_qa_triples
 from src.domain.ast_code_rag import parse_codebase_ast
 from src.domain.visual_canvas_rag import extract_visual_canvas_regions
 from src.domain.sse_sync_stream import format_sse_event
-from src.domain.counterfactual_rag import simulate_counterfactual_scenario
+from src.domain.rag_engine import simulate_counterfactual_scenario
 from src.domain.sla_circuit_breaker import execute_with_sla_circuit_breaker
 from src.domain.crypto_audit_ledger import append_crypto_audit_block, verify_crypto_chain_integrity
 

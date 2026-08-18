@@ -9,7 +9,7 @@ Unit test suite for Multimodal Retrieval and Memory features:
 import os
 import pytest
 from src.domain.vector_store import DenseVectorStore
-from src.domain.swarm_rag import execute_swarm_rag
+from src.domain.rag_engine import execute_swarm_rag
 from src.domain.agent_memory import remember, recall, list_memories
 from src.domain.screen_perception import capture_screen_context
 
