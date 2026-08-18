@@ -37,15 +37,28 @@ jobs:
 
       - name: Determine Test Execution Tier
         id: test-tier
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref }}
         run: |
-          python .agents/skills/neuro-copilot/scripts/github_bridge.py classify_changes > /tmp/tier.json
-          cat /tmp/tier.json
-          TIER=$(python -c "import json; d=json.load(open('/tmp/tier.json')); print(3 if '${{ github.event_name }}' == 'pull_request' or '${{ startsWith(github.ref, 'refs/tags/v') }}' == 'true' else d.get('tier', 3))")
-          RUN_E2E=$(python -c "import json; d=json.load(open('/tmp/tier.json')); print('true' if ('${{ github.event_name }}' == 'pull_request' or '${{ startsWith(github.ref, 'refs/tags/v') }}' == 'true' or d.get('run_e2e_ui_tests', False)) else 'false')")
-          RUN_DOMAIN=$(python -c "import json; d=json.load(open('/tmp/tier.json')); print('true' if ('${{ github.event_name }}' == 'pull_request' or '${{ startsWith(github.ref, 'refs/tags/v') }}' == 'true' or d.get('run_domain_tests', True)) else 'false')")
-          echo "TIER=$TIER" >> $GITHUB_ENV
-          echo "RUN_E2E=$RUN_E2E" >> $GITHUB_ENV
-          echo "RUN_DOMAIN=$RUN_DOMAIN" >> $GITHUB_ENV
+          python -c "
+          import json, os, subprocess
+          res = subprocess.run('python .agents/skills/neuro-copilot/scripts/github_bridge.py classify_changes', shell=True, capture_output=True, text=True)
+          try:
+              d = json.loads(res.stdout)
+          except Exception:
+              d = {'tier': 3, 'run_e2e_ui_tests': True, 'run_domain_tests': True}
+          event = os.environ.get('EVENT_NAME', '')
+          ref = os.environ.get('REF_NAME', '')
+          is_pr = event == 'pull_request'
+          is_release = ref.startswith('refs/tags/v')
+          tier = 3 if (is_pr or is_release) else d.get('tier', 3)
+          run_e2e = 'true' if (is_pr or is_release or d.get('run_e2e_ui_tests', False)) else 'false'
+          run_domain = 'true' if (is_pr or is_release or d.get('run_domain_tests', True)) else 'false'
+          print(f'Detected Tier: {tier} | Run Domain: {run_domain} | Run E2E: {run_e2e}')
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f'TIER={tier}\nRUN_E2E={run_e2e}\nRUN_DOMAIN={run_domain}\n')
+          "
 
       - name: Cache Playwright Browsers
         if: env.RUN_E2E == 'true' && matrix.python-version == '3.12'
