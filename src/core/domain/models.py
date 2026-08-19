@@ -9,9 +9,28 @@ class RAGStreamRequest(BaseModel):
     query: Optional[str] = None
     message: Optional[str] = None
     max_chunks: Optional[int] = 5
+    temperature: Optional[float] = 0.3
+    max_tokens: Optional[int] = None
+    model: Optional[str] = None
+    history: Optional[List[Any]] = None
+    messages: Optional[List[Any]] = None
+    session_id: Optional[str] = None
+    web_search: Optional[bool] = False
+    enable_web_search: Optional[bool] = False
+
+    class Config:
+        extra = "allow"
 
     def get_query(self) -> str:
-        return self.query or self.message or ""
+        q = self.query or self.message or ""
+        if not q and self.messages:
+            last = self.messages[-1]
+            q = getattr(last, "content", "") if hasattr(last, "content") else (last.get("content", "") if isinstance(last, dict) else "")
+        if not q and self.history:
+            last = self.history[-1]
+            q = getattr(last, "content", "") if hasattr(last, "content") else (last.get("content", "") if isinstance(last, dict) else "")
+        return q
+
 
 class RevertRequest(BaseModel):
     filepath: Optional[str] = None

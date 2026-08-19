@@ -40,34 +40,48 @@ RE_SENTENCE_BOUNDARIES = getattr(text_utils, "_RE_SENTENCE_BOUNDARIES", re.compi
 router = APIRouter()
 
 
-@router.post("/api/rag/stream")
-@router.post("/api/rag/query")
-def rag_stream_endpoint(req: RAGStreamRequest):
+def classify_adaptive_intent(query: str) -> str:
     """
-    Live Token Streaming RAG endpoint v2.0 with Grounded Sources Metadata:
-    - Context via HyDE + RRF Hybrid Ranking
-    - SSE streaming tokens
+    Classifies user query into adaptive RAG routing modes:
+    - GREETING_CONVERSATIONAL
+    - TECHNICAL_CODE
+    - MATHEMATICAL_ANALYTIC
+    - LEGAL_STATUTORY
+    - GENERAL_RAG
     """
-    q_str = req.get_query()
-    context, sources = extract_rag_context(q_str)
+    if not query or not isinstance(query, str):
+        return "GREETING_CONVERSATIONAL"
 
-    def event_generator():
-        yield f"data: {json.dumps({'type': 'sources', 'sources': sources})}\n\n"
-        time.sleep(0.01)
+    import unicodedata
+    q_clean = unicodedata.normalize("NFC", query).strip().lower()
+    words = set(re.findall(r'\b[\w-]+\b', q_clean))
+    if not words:
+        return "GREETING_CONVERSATIONAL"
 
-        if context:
-            words = re.findall(r'\S+\s*', context[:400])
-            answer_tokens = ["Based ", "on ", "retrieved ", "vault ", "context:\n\n"] + (words if words else [context[:100]])
-        else:
-            answer_tokens = ["No ", "direct ", "document ", "context ", "found ", "in ", "the ", "vault."]
+    greetings = {"hello", "hi", "hey", "greetings", "howdy", "sup", "yo", "goodmorning", "hola"}
+    conversational_phrases = [
+        "how are you", "who are you", "what are you", "what can you do",
+        "how does this work", "how do you work", "help", "introduce yourself",
+        "what is uroboros", "what is this", "tell me about yourself", "good morning", "good evening", "good afternoon"
+    ]
+    if len(words) <= 3 and any(w in greetings for w in words):
+        return "GREETING_CONVERSATIONAL"
+    if any(phrase in q_clean for phrase in conversational_phrases):
+        return "GREETING_CONVERSATIONAL"
 
-        for tok in answer_tokens:
-            yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
-            time.sleep(0.01)
+    legal_kws = ["statute", "statutory", "regulation", "regulatory", "law", "cfr", "legal", "compliance", "sec ", "finra", "sox", "hipaa", "gdpr", "liability", "contract", "clause", "fiduciary", "audit rule"]
+    if any(kw in q_clean for kw in legal_kws):
+        return "LEGAL_STATUTORY"
 
-        yield "data: {\"type\": \"done\"}\n\n"
+    code_kws = ["def ", "class ", "import ", "function", "class", "script", "api", "sql", "react", "bug", "fix", "err", "code", "python", "typescript", "javascript", "exception", "traceback", "refactor", "endpoint", "rust", "compile", "git"]
+    if any(kw in q_clean for kw in code_kws):
+        return "TECHNICAL_CODE"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    math_kws = ["math", "formula", "proof", "calculate", "equation", "matrix", "ratio", "revenue", "quarter", "profit", "margin", "percentage", "sum", "average", "statistics", "integral", "derivative", "variance", "std dev", "dataset"]
+    if any(kw in q_clean for kw in math_kws):
+        return "MATHEMATICAL_ANALYTIC"
+
+    return "GENERAL_RAG"
 
 
 def _stream_llm_chunks(llm, messages: list, req):
@@ -85,25 +99,20 @@ def _stream_llm_chunks(llm, messages: list, req):
             yield chunk["choices"][0]["text"]
 
 
-@router.post("/api/chat/stream")
-def chat_stream_endpoint(req: ChatRequest):
+def _execute_adaptive_rag_stream(user_query: str, req: Any, session_id: Optional[str] = None):
     """
-    Milestone 2 SSE Chat Streaming Endpoint:
-    - Extracts grounded vault document context (HyDE + RRF + Jaccard deduplication 0.70)
-    - Triggers WebSearchFetcher when vault hits < 2 or web_search=True
-    - Streams response tokens via Server-Sent Events (SSE)
-    - Persists user prompt turn and assistant turn into SQLite chat_messages table
+    Unified Adaptive RAG Streaming Engine:
+    - Intent & Context Routing (GREETING_CONVERSATIONAL, TECHNICAL_CODE, MATHEMATICAL_ANALYTIC, LEGAL_STATUTORY, GENERAL_RAG)
+    - Composable RetrievalDAGPipeline execution (Vault + Web)
+    - Zero-Retrieval Adaptive Intelligence
+    - Structured Telemetry Logging
+    - SSE Token Streaming & Message Turn Persistence
     """
-    user_query = req.message or ""
-    if not user_query and req.messages:
-        user_query = req.messages[-1].content
-    if not user_query and req.history:
-        user_query = req.history[-1].content
-
     if not user_query or not user_query.strip():
         raise HTTPException(status_code=422, detail="Missing message or query content")
 
     user_query = user_query.strip()
+    intent = classify_adaptive_intent(user_query)
 
     llm = get_fallback_llm()
     if not is_llm_available() and llm is None:
@@ -119,17 +128,17 @@ def chat_stream_endpoint(req: ChatRequest):
     dag_pipeline = get_retrieval_pipeline()
     enable_web = bool(getattr(req, "web_search", False) or getattr(req, "enable_web_search", False))
     retrieval_res = dag_pipeline.execute(user_query, enable_web=enable_web)
-    local_context = retrieval_res.context_text
-    local_citations = retrieval_res.citations
-    web_sources = retrieval_res.web_sources
+    local_context = retrieval_res.context_text or ""
+    local_citations = retrieval_res.citations or []
+    web_sources = retrieval_res.web_sources or []
 
-    # 3. Session resolution and user message turn persistence
-    session_id = getattr(req, "session_id", None)
-    if not session_id:
+    # 2. Session resolution and user message turn persistence
+    req_session_id = session_id or getattr(req, "session_id", None)
+    if not req_session_id:
         sess = create_chat_session(title=user_query[:30])
-        session_id = sess["id"]
+        req_session_id = sess["id"]
 
-    add_chat_message(session_id=session_id, role="user", content=user_query)
+    add_chat_message(session_id=req_session_id, role="user", content=user_query)
 
     from src.core.model_router import route_prompt_model
     total_words = len(user_query.split()) + (len(local_context.split()) if local_context else 0)
@@ -140,14 +149,89 @@ def chat_stream_endpoint(req: ChatRequest):
     else:
         routing_info = {"model": model_req, "tier": "custom", "num_ctx": 4096}
 
+    # 3. Build System Prompt & Messages Based on Adaptive Intent
+    if intent == "GREETING_CONVERSATIONAL":
+        system_prompt = (
+            "You are Uroboros AI, a world-class senior staff AI research assistant and cognitive operating engine. "
+            "You have direct access to the Uroboros Knowledge Vault, 3D Graph & Wikilink Explorer, Kokoro Neural Voice Synthesis, "
+            "SQLite WAL Search Index with FTS5, and Real-time Multi-Hop RAG Pipeline. "
+            "Provide an engaging, articulate, warm, and helpful response highlighting system capabilities when appropriate."
+        )
+    elif intent == "TECHNICAL_CODE":
+        system_prompt = (
+            "You are Uroboros AI, a world-class senior staff software architect and systems engineer. "
+            "Focus on writing clean, modular, production-grade code with complete docstrings, type annotations, and error handling. "
+            "Adhere to zero-dependency and clean architecture principles. When citing documents, reference source file names."
+        )
+    elif intent == "MATHEMATICAL_ANALYTIC":
+        system_prompt = (
+            "You are Uroboros AI, an advanced mathematical and quantitative research assistant. "
+            "Format mathematical expressions using standard LaTeX notation ($...$ for inline, $$...$$ for block). "
+            "Present tabular data and financial metrics in clean Markdown tables with exact calculations."
+        )
+    elif intent == "LEGAL_STATUTORY":
+        system_prompt = (
+            "You are Uroboros AI, a senior regulatory and legal compliance research assistant. "
+            "Provide precise statutory and regulatory analysis. Ground interpretations strictly in statutory provisions and citations."
+        )
+    else:  # GENERAL_RAG
+        system_prompt = (
+            "You are Uroboros AI, a world-class senior staff AI research assistant and domain expert. "
+            "Provide clear, thorough, highly analytical, and well-structured answers using Markdown headings, "
+            "code snippets, and bullet points. Synthesize information accurately from the provided document context. "
+            "When citing facts from Document Vault Context, explicitly reference the source file name."
+        )
+
+    if getattr(retrieval_res, "domain_instructions", None):
+        system_prompt += f" Domain Guidelines: {retrieval_res.domain_instructions}"
+
+    messages = [{"role": "system", "content": system_prompt}]
+
+    causality_keywords = ["why", "how did", "what caused", "reason", "because"]
+    if any(kw in user_query.lower() for kw in causality_keywords):
+        try:
+            logs = list_workflow_logs(limit=10)
+            if logs:
+                causality_ctx = "\n".join([f"- [{log['executed_at']}] Event: {log['event_type']} (Status: {log['status']}) - {log.get('response_body') or ''}" for log in logs])
+                messages.append({"role": "system", "content": f"Causality Event History Context:\n{causality_ctx}"})
+        except Exception:
+            pass
+
+    try:
+        past_msgs = get_chat_messages(req_session_id, limit=6)
+        if past_msgs and len(past_msgs) > 1:
+            for m in past_msgs[:-1]:
+                messages.append({"role": m.get("role", "user"), "content": m.get("content", "")})
+    except Exception:
+        pass
+
+    if local_context:
+        truncated_local = _smart_extract_context(local_context, user_query, 6000)
+        messages.append({"role": "system", "content": f"Document Vault Context:\n{truncated_local}"})
+    if web_sources:
+        web_str = "\n".join([f"- {w.get('title')}: {w.get('snippet')}" for w in web_sources])
+        messages.append({"role": "system", "content": f"Live Web Context:\n{web_str}"})
+
+    messages.append({"role": "user", "content": user_query})
+
+    final_prompt_str = " ".join([m.get("content", "") for m in messages])
+
+    # 4. Structured Telemetry Logging
+    logger.info(
+        "RAG Execution | query='%s' | intent='%s' | retrieved_chunk_count=%d | final_prompt_len=%d",
+        user_query, intent, len(local_citations), len(final_prompt_str)
+    )
+    logger.info("Final Prompt: %s", json.dumps(messages))
+
     def event_generator():
-        # Yield sources SSE event with model tier metadata
+        # Yield sources SSE event with model tier metadata and intent
         sources_payload = {
             "type": "sources",
-            "session_id": session_id,
+            "session_id": req_session_id,
             "sources": local_citations,
             "local_citations": local_citations,
             "web_sources": web_sources,
+            "intent": intent,
             "model_info": {
                 "model": routing_info.get("model", "qwen2.5:7b"),
                 "tier": routing_info.get("tier", "master_rag"),
@@ -160,88 +244,65 @@ def chat_stream_endpoint(req: ChatRequest):
         full_response_text = ""
         token_count = 0
         t_gen_start = time.perf_counter()
-        
-        system_prompt = (
-            "You are Uroboros AI, a world-class senior staff AI research assistant and domain expert. "
-            "Provide clear, thorough, highly analytical, and well-structured answers using Markdown headings, "
-            "code snippets, and bullet points. Synthesize information accurately from the provided document context. "
-            "When citing facts from Document Vault Context, explicitly reference the source file name."
-        )
-        code_kws = ["code", "python", "function", "class", "script", "api", "sql", "react", "bug", "fix", "err"]
-        math_kws = ["math", "formula", "proof", "calculate", "equation", "matrix", "ratio"]
-        if any(kw in user_query.lower() for kw in code_kws):
-            system_prompt += " Focus on writing clean, modular, production-grade code with complete docstrings, type annotations, and error handling."
-        elif any(kw in user_query.lower() for kw in math_kws):
-            system_prompt += " Format mathematical expressions using standard LaTeX notation ($...$ for inline, $$...$$ for block)."
 
-        if getattr(retrieval_res, "domain_instructions", None):
-            system_prompt += f" Domain Guidelines: {retrieval_res.domain_instructions}"
-
-        messages = [{"role": "system", "content": system_prompt}]
-        causality_keywords = ["why", "how did", "what caused", "reason", "because"]
-        if any(kw in user_query.lower() for kw in causality_keywords):
-            try:
-                logs = list_workflow_logs(limit=10)
-                if logs:
-                    causality_ctx = "\n".join([f"- [{log['executed_at']}] Event: {log['event_type']} (Status: {log['status']}) - {log.get('response_body') or ''}" for log in logs])
-                    messages.append({"role": "system", "content": f"Causality Event History Context:\n{causality_ctx}"})
-            except Exception:
-                pass
-
-        try:
-            past_msgs = get_chat_messages(session_id, limit=6)
-            if past_msgs and len(past_msgs) > 1:
-                for m in past_msgs[:-1]:
-                    messages.append({"role": m.get("role", "user"), "content": m.get("content", "")})
-        except Exception:
-            pass
-
-        if local_context:
-            truncated_local = _smart_extract_context(local_context, user_query, 6000)
-            messages.append({"role": "system", "content": f"Document Vault Context:\n{truncated_local}"})
-        if web_sources:
-            web_str = "\n".join([f"- {w.get('title')}: {w.get('snippet')}" for w in web_sources])
-            messages.append({"role": "system", "content": f"Live Web Context:\n{web_str}"})
-
-        messages.append({"role": "user", "content": user_query})
-
+        streamed_from_llm = False
         if llm:
             try:
                 for tok in _stream_llm_chunks(llm, messages, req):
                     token_count += 1
                     full_response_text += tok
                     yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
+                streamed_from_llm = True
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
                 logger.error("Streaming exception in rag.py: %s", e)
-                fallback_msg = "\n\n**Empirical Retrieved Evidence**:\n"
+                streamed_from_llm = False
+
+        if not streamed_from_llm:
+            if local_citations:
+                fallback_msg = "Based on retrieved vault context:\n\n"
                 for c in local_citations:
-                    fallback_msg += f"- *{c.get('filename', 'Doc')}*: {c.get('snippet', '')}\n"
-                if not local_citations:
-                    fallback_msg = "No local evidence found and local LLM daemon is offline."
-                for tok in fallback_msg.split(" "):
-                    t_sp = tok + " "
-                    token_count += 1
-                    full_response_text += t_sp
-                    yield f"data: {json.dumps({'type': 'token', 'content': t_sp})}\n\n"
-                    time.sleep(0.005)
-        else:
-            fallback_msg = "\n\n**Empirical Retrieved Evidence**:\n"
-            for c in local_citations:
-                fallback_msg += f"- *{c.get('filename', 'Doc')}*: {c.get('snippet', '')}\n"
-            if not local_citations:
-                fallback_msg = "No local evidence found and local LLM daemon is offline."
-            for tok in fallback_msg.split(" "):
-                t_sp = tok + " "
+                    snippet = c.get('snippet') or c.get('citation') or ''
+                    fallback_msg += f"- *{c.get('filename', 'Doc')}*: {snippet}\n"
+            else:
+                # Zero-retrieval Adaptive Intelligence
+                if intent == "GREETING_CONVERSATIONAL":
+                    fallback_msg = (
+                        "Hello! I am Uroboros AI, your cognitive knowledge engine and research assistant. "
+                        "I am connected to your Knowledge Vault, 3D Knowledge Graph, Kokoro Neural Voice Synthesis, "
+                        "and high-performance SQLite WAL / FTS5 search index. How can I help you research, analyze, or build today?"
+                    )
+                elif intent == "TECHNICAL_CODE":
+                    fallback_msg = (
+                        f"I am Uroboros AI. I searched the vault for code references related to '{user_query}', but found no direct records. "
+                        "I can assist with clean architecture, algorithmic optimization, or parsing files into the index."
+                    )
+                elif intent == "MATHEMATICAL_ANALYTIC":
+                    fallback_msg = (
+                        f"I am Uroboros AI. No direct dataset or mathematical tables were found in the vault matching '{user_query}'. "
+                        "I can help formulate quantitative equations or parse structured financial data."
+                    )
+                elif intent == "LEGAL_STATUTORY":
+                    fallback_msg = (
+                        f"I am Uroboros AI. No matching statutory provisions or regulatory rules were found in the vault for '{user_query}'. "
+                        "You can ingest relevant CFR or legal titles to enable pinpoint citations."
+                    )
+                else:
+                    fallback_msg = (
+                        f"I am Uroboros AI. I searched the knowledge vault but found no direct document records matching '{user_query}'. "
+                        "I can assist you with general analysis, code architecture, 3D graph exploration, or ingesting new documents."
+                    )
+
+            for tok in re.findall(r'\S+\s*', fallback_msg):
                 token_count += 1
-                full_response_text += t_sp
-                yield f"data: {json.dumps({'type': 'token', 'content': t_sp})}\n\n"
+                full_response_text += tok
+                yield f"data: {json.dumps({'type': 'token', 'content': tok})}\n\n"
                 time.sleep(0.005)
 
         # Save assistant message turn into SQLite chat_messages table
         msg_record = add_chat_message(
-            session_id=session_id,
+            session_id=req_session_id,
             role="assistant",
             content=full_response_text,
             citations_json=local_citations,
@@ -253,7 +314,7 @@ def chat_stream_endpoint(req: ChatRequest):
         try:
             from src.domain.knowledge_synthesis_loop import get_knowledge_synthesis_loop
             synth_loop = get_knowledge_synthesis_loop()
-            synth_loop.record_synthesis(session_id, user_query, full_response_text, local_citations)
+            synth_loop.record_synthesis(req_session_id, user_query, full_response_text, local_citations)
         except Exception:
             pass
 
@@ -261,17 +322,51 @@ def chat_stream_endpoint(req: ChatRequest):
         tok_speed = round(token_count / dt_gen, 1)
         done_payload = {
             "type": "done",
-            "session_id": session_id,
+            "session_id": req_session_id,
             "message_id": msg_record.get("id") if isinstance(msg_record, dict) else None,
             "tokens_generated": token_count,
             "duration_sec": round(dt_gen, 2),
             "tokens_per_sec": tok_speed,
             "model": routing_info.get("model", "qwen2.5:7b"),
-            "tier": routing_info.get("tier", "master_rag")
+            "tier": routing_info.get("tier", "master_rag"),
+            "intent": intent
         }
         yield f"data: {json.dumps(done_payload)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.post("/api/rag/stream")
+@router.post("/api/rag/query")
+def rag_stream_endpoint(req: RAGStreamRequest):
+    """
+    Live Token Streaming RAG endpoint v2.0 with Grounded Sources Metadata:
+    - Context via Composable RetrievalDAGPipeline (HyDE + RRF + Boundary)
+    - SSE streaming tokens with Adaptive Intent Classification & Zero-Retrieval Intelligence
+    """
+    user_query = req.get_query()
+    return _execute_adaptive_rag_stream(user_query=user_query, req=req, session_id=req.session_id)
+
+
+@router.post("/api/chat/stream")
+def chat_stream_endpoint(req: ChatRequest):
+    """
+    Milestone 2 SSE Chat Streaming Endpoint:
+    - Extracts grounded vault document context via RetrievalDAGPipeline
+    - Triggers WebSearchFetcher when vault hits < 2 or web_search=True
+    - Adaptive Intent & Context Routing (GREETING_CONVERSATIONAL, TECHNICAL_CODE, MATHEMATICAL_ANALYTIC, LEGAL_STATUTORY, GENERAL_RAG)
+    - Zero-Retrieval Adaptive Intelligence when retrieved_chunk_count == 0
+    - Structured Telemetry Logging
+    - Streams response tokens via Server-Sent Events (SSE)
+    - Persists user prompt turn and assistant turn into SQLite chat_messages table
+    """
+    user_query = req.message or ""
+    if not user_query and req.messages:
+        user_query = req.messages[-1].content
+    if not user_query and req.history:
+        user_query = req.history[-1].content
+
+    return _execute_adaptive_rag_stream(user_query=user_query, req=req, session_id=req.session_id)
 
 
 @router.post("/api/chat")

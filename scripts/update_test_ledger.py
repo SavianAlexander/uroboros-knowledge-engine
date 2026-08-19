@@ -110,6 +110,8 @@ FILE_DOMAIN_MAPPING = {
     "tests/test_speech_normalizer_expanded.py": ["DomainVoiceNormalization", "DomainSpeechEngine"],
     "tests/test_voice_normalization_cadence.py": ["DomainVoiceNormalization", "DomainSpeechEngine"],
     "src/core/model_manager.py": ["DomainResourceStability", "DomainLLM"],
+    "src/app/routers/rag.py": ["DomainSemanticRAG", "DomainRAG", "DomainRAGChatE2E"],
+    "tests/test_rag_chat_e2e_pipeline.py": ["DomainRAGChatE2E"],
     "tests/test_process_lifecycle_supervision.py": ["DomainResourceStability"]
 }
 
@@ -164,6 +166,7 @@ DOMAIN_TEST_MODULES = [
     "tests.test_fusion_engine",
     "tests.test_domain_29_frontier_reasoning",
     "tests.test_domain_sota_rag_dag",
+    "tests.test_rag_chat_e2e_pipeline",
     "tests.test_user_acceptance_audit",
     "tests.test_text_utils_and_wal_daemon",
     "tests.test_speech_normalizer",

@@ -876,6 +876,24 @@ export default function ChatView() {
         model: modelConfig
       });
 
+      if (!response.ok) {
+        let errMsg = `Server returned HTTP ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData.detail) errMsg = errData.detail;
+        } catch {}
+        toast('Stream Error', errMsg, 'error');
+        setMessages(prev => {
+          const newMsgs = [...prev];
+          const idx = newMsgs.findIndex(m => m.id === assistantMsgId);
+          if (idx !== -1) {
+            newMsgs[idx] = { ...newMsgs[idx], content: `⚠️ **Error**: ${errMsg}` };
+          }
+          return newMsgs;
+        });
+        return;
+      }
+
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       if (!reader) return;
@@ -897,8 +915,9 @@ export default function ChatView() {
             if (!dataStr) continue;
             try {
               const data = JSON.parse(dataStr);
-              if (data.type === 'token' && data.content) {
-                currentResponse += data.content;
+              const tokenContent = typeof data.content === 'string' ? data.content : (typeof data.token === 'string' ? data.token : null);
+              if ((data.type === 'token' || data.type === 'answer_chunk') && tokenContent !== null) {
+                currentResponse += tokenContent;
                 setMessages(prev => {
                   const newMsgs = [...prev];
                   const idx = newMsgs.findIndex(m => m.id === assistantMsgId);
