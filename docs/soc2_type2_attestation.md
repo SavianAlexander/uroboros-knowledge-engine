@@ -1,3 +1,3 @@
 # Uroboros SOC 2 Type II Attestation Report
-**Attestation Date**: `2026-08-19T02:54:58Z`
+**Attestation Date**: `2026-08-19T03:04:02Z`
 **Status**: `100% COMPLIANT`

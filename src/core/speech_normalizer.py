@@ -661,3 +661,8 @@ class SpeechNormalizer:
         return text.strip()
 
     normalize = normalize_for_speech
+
+
+def normalize_speech_text(text: str) -> str:
+    """Convenience function to normalize text for neural voice synthesis."""
+    return SpeechNormalizer.normalize_for_speech(text)
