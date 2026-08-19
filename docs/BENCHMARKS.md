@@ -17,6 +17,10 @@
 | **MinHash Context Deduplication** | 50 Passages | **0.4 ms** | **1.1 ms** | < 2 MB |
 | **GraphRAG 2-Hop BFS Traversal** | 5,000 Nodes | **1.9 ms** | **5.2 ms** | < 16 MB |
 | **Speculative Intent Routing** | Raw Query Input | **0.3 ms** | **0.9 ms** | < 1 MB |
+| **Speech Normalizer (100+ Phonetic Rules)** | 500-Token Sentence | **0.2 ms** | **0.5 ms** | < 500 KB |
+| **Kokoro-82M ONNX Clause TTFS** | Single Clause / Sentence | **45 ms** | **78 ms** | Buffer Local |
+| **Full-Duplex Voice Call (WebSocket)** | Live Stream Turn | **180 ms** | **295 ms** | < 15 MB |
+| **Instant Barge-In Preemption** | RMS VAD Speech Trigger | **2.5 ms** | **8.0 ms** | Zero Allocation |
 | **Photonic Interferometry Vector Sim** | 1,000 Vectors | **< 1 fs** (simulated) | **< 1 fs** | Buffer Local |
 
 ---
