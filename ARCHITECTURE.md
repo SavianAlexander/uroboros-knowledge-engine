@@ -40,10 +40,10 @@ Uroboros follows strict **Clean Architecture** principles across 4 decoupled lay
 sequenceDiagram
     autonumber
     participant FS as Local Filesystem
-    participant Watch as Watchdog Observer (`watcher.py`)
-    participant Batch as Job Batch Indexer (`batch_index.py`)
-    participant Parse as Multi-Format Parsers (`parsers.py`)
-    participant DB as SQLite Relational Store (`database.py`)
+    participant Watch as Watchdog Observer (watcher.py)
+    participant Batch as Job Batch Indexer (batch_index.py)
+    participant Parse as Multi-Format Parsers (parsers.py)
+    participant DB as SQLite Relational Store (database.py)
     participant FTS as FTS5 Full-Text Virtual Tables
 
     FS->>Watch: File Creation / Modification Event
@@ -55,9 +55,9 @@ sequenceDiagram
         Parse-->>Batch: Skip Re-indexing (Zero Cost)
     else File Modified / New
         Parse->>Batch: Return Clean Text & Structural Metadata
-        Batch->>DB: Write Record to `files` Table
-        Batch->>FTS: Tokenize and Insert Chunks into `fts_file_chunks`
-        Batch->>DB: Write Binary Float Embeddings to `file_chunks`
+        Batch->>DB: Write Record to files Table
+        Batch->>FTS: Tokenize and Insert Chunks into fts_file_chunks
+        Batch->>DB: Write Binary Float Embeddings to file_chunks
     end
 ```
 

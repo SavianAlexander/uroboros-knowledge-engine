@@ -78,9 +78,9 @@ sequenceDiagram
     participant UDP as UDP Multicast (Port 5353)
     participant NodeB as Peer Node B (LAN)
 
-    NodeA->>UDP: Broadcast Presence Beacon (`SHA-256 State Hash`)
+    NodeA->>UDP: Broadcast Presence Beacon (SHA-256 State Hash)
     UDP-->>NodeB: Deliver Beacon Notification
-    NodeB->>NodeA: Issue Delta Hash Query (`GET /api/sync/delta?hash=...`)
+    NodeB->>NodeA: Issue Delta Hash Query (GET /api/sync/delta?hash=...)
     NodeA-->>NodeB: Stream Missing File Chunks (JSON Payload)
     NodeB->>NodeB: Apply Delta Chunks to Local SQLite DB
 ```
