@@ -995,6 +995,18 @@ Keyboard-driven modal providing quick navigation across all application views, i
 High-contrast glassmorphic dark and light themes with responsive UI elements complying with WCAG AA accessibility standards.
 ![Light Mode UI](docs/ux_journey/10_light_mode.png)
 
+#### 11. Full-Duplex Conversational Voice Call Active HUD
+Real-time full-duplex conversational voice mode (`/ws/voice/stream`) featuring Cortana Orb status indicator, live streaming audio waveform visualizer, sub-20ms RMS voice activity detection (VAD), and auto-speak toggle.
+![Live Voice Call Active HUD](docs/ux_journey/11_live_voice_call_hud.png)
+
+#### 12. Neural Audio Playback & Voice Studio Controls
+Integrated Kokoro-82M ONNX neural speech synthesizer with sub-80ms clause streaming, hands-free Web Speech microphone input, and active audio waveform bars.
+![Voice Controls](docs/ux_journey/12_voice_ui_controls.png)
+
+#### 13. Dual-Stream Document Reader & Markdown/PDF Viewer
+Synchronized dual-pane document reader rendering raw Markdown formatting, syntax-highlighted code blocks, PDF rendering, automated table-of-contents navigation, and source citation links.
+![Document Viewer](docs/ux_journey/13_document_viewer.png)
+
 ---
 
 ## 27. Troubleshooting Matrix & Diagnostic Workflows
@@ -1116,6 +1128,11 @@ This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) fi
 | :---: | :---: |
 | ![Settings Maintenance](docs/ux_journey/08_settings_maintenance.png) | ![Command Palette](docs/ux_journey/09_command_palette.png) |
 
-| **Light Mode** |
-| :---: |
-| ![Light Mode](docs/ux_journey/10_light_mode.png) |
+| **Light Mode** | **Live Voice Call HUD** |
+| :---: | :---: |
+| ![Light Mode](docs/ux_journey/10_light_mode.png) | ![Live Voice Call HUD](docs/ux_journey/11_live_voice_call_hud.png) |
+
+| **Voice Studio Controls** | **Document Viewer** |
+| :---: | :---: |
+| ![Voice Controls](docs/ux_journey/12_voice_ui_controls.png) | ![Document Viewer](docs/ux_journey/13_document_viewer.png) |
+
