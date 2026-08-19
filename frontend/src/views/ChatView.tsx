@@ -61,6 +61,16 @@ interface ActiveArtifact {
   sourceMsgId: string;
 }
 
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binaryString = window.atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
 export default function ChatView() {
   const { toast } = useToast();
   const { activeWorkspace } = useApp();
@@ -76,14 +86,24 @@ export default function ChatView() {
   const [temperature, setTemperature] = useState<number>(0.7);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
 
-  // Audio & Interactive State
+  // Audio, Streaming & Barge-In State
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
+  const [autoSpeak, setAutoSpeak] = useState<boolean>(false);
+  const autoSpeakRef = useRef<boolean>(false);
+  useEffect(() => {
+    autoSpeakRef.current = autoSpeak;
+  }, [autoSpeak]);
+
   const voicePersona = 'af_heart';
   const dspPreset = 'STUDIO_MASTER';
   const voiceSpeed = 1.02;
   const [showVoiceStudio, setShowVoiceStudio] = useState<boolean>(false);
   const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
+  const speechAbortRef = useRef<AbortController | null>(null);
+  const speechEndTimeoutRef = useRef<any>(null);
 
 
   const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
@@ -182,12 +202,39 @@ export default function ChatView() {
     return () => controller.abort();
   }, [activeWorkspace]);
 
+  const stopAllAudio = () => {
+    if (speechAbortRef.current) {
+      speechAbortRef.current.abort();
+      speechAbortRef.current = null;
+    }
+    if (speechEndTimeoutRef.current) {
+      clearTimeout(speechEndTimeoutRef.current);
+      speechEndTimeoutRef.current = null;
+    }
+    for (const src of activeSourcesRef.current) {
+      try {
+        src.stop();
+        src.disconnect();
+      } catch {}
+    }
+    activeSourcesRef.current = [];
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current = null;
+    }
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      try {
+        audioCtxRef.current.close();
+      } catch {}
+      audioCtxRef.current = null;
+    }
+    setSpeakingMsgId(null);
+    setIsAudioLoading(false);
+  };
+
   useEffect(() => {
     return () => {
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-        audioPlayerRef.current = null;
-      }
+      stopAllAudio();
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
@@ -197,8 +244,8 @@ export default function ChatView() {
     };
   }, []);
 
-
   const handleNewSession = async () => {
+    stopAllAudio();
     try {
       const s = await api.createChatSession('New Conversation');
       setSessions(prev => [s, ...prev]);
@@ -214,6 +261,7 @@ export default function ChatView() {
 
   const handleDeleteSession = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    stopAllAudio();
     try {
       await api.deleteChatSession(id);
       setSessions(prev => prev.filter(s => s.id !== id));
@@ -235,20 +283,14 @@ export default function ChatView() {
   };
 
   const handleClearMessages = () => {
+    stopAllAudio();
     setMessages([]);
     setActiveArtifact(null);
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.pause();
-      audioPlayerRef.current = null;
-    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
-    setSpeakingMsgId(null);
     toast('Chat Cleared', 'Conversation history cleared', 'info');
   };
-
-
 
   const copyMessageText = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -257,73 +299,149 @@ export default function ChatView() {
     setTimeout(() => setCopiedMsgId(null), 2000);
   };
 
-
   const handleToggleSpeak = async (msgId: string, text: string) => {
     if (speakingMsgId === msgId) {
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-        audioPlayerRef.current = null;
-      }
+      stopAllAudio();
       playCortanaSFX('dismiss');
-      setSpeakingMsgId(null);
       toast('Speech Paused', 'Audio playback stopped', 'info');
       return;
     }
 
-    // Stop active audio
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.pause();
-      audioPlayerRef.current = null;
-    }
+    // Conversational Barge-In: Interrupt previous speech immediately (<5ms)
+    stopAllAudio();
+
+    if (!text || !text.trim()) return;
 
     playCortanaSFX('confirm');
     setSpeakingMsgId(msgId);
     setIsAudioLoading(true);
-    toast('Synthesizing Neural Audio', `Broadcasting with ${voicePersona.replace('_', ' ')} (${dspPreset.replace('_', ' ')})...`, 'info');
-
+    toast('Synthesizing Neural Audio', `Streaming with ${voicePersona.replace('_', ' ')} (${dspPreset.replace('_', ' ')})...`, 'info');
 
     try {
-      const res = await fetch('/v1/audio/speech', {
+      const controller = new AbortController();
+      speechAbortRef.current = controller;
+
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContextClass();
+      audioCtxRef.current = ctx;
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+
+      const res = await fetch('/api/voice/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           input: text,
           voice: voicePersona,
           speed: voiceSpeed,
-          dsp_preset: dspPreset,
-          response_format: 'wav'
-        })
+          dsp_preset: dspPreset
+        }),
+        signal: controller.signal
       });
 
       if (!res.ok) {
-        throw new Error(`TTS HTTP status: ${res.status}`);
+        throw new Error(`TTS Stream HTTP ${res.status}`);
       }
 
-      const blob = await res.blob();
-      const audioUrl = URL.createObjectURL(blob);
-      const audio = new Audio(audioUrl);
-      audioPlayerRef.current = audio;
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('No readable audio stream');
 
-      audio.onended = () => {
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let scheduledTime = ctx.currentTime;
+      let isFirstChunk = true;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) continue;
+
+          try {
+            const chunkData = JSON.parse(trimmedLine);
+            if (chunkData.audio_b64) {
+              const rawBytes = base64ToArrayBuffer(chunkData.audio_b64);
+              const audioBuffer = await ctx.decodeAudioData(rawBytes);
+
+              const source = ctx.createBufferSource();
+              source.buffer = audioBuffer;
+              source.connect(ctx.destination);
+
+              // Sub-80ms start for Clause 0, seamless audio queueing for subsequent clauses
+              const playTime = Math.max(ctx.currentTime, scheduledTime);
+              source.start(playTime);
+              scheduledTime = playTime + audioBuffer.duration;
+
+              activeSourcesRef.current.push(source);
+
+              if (isFirstChunk) {
+                setIsAudioLoading(false);
+                isFirstChunk = false;
+              }
+
+              source.onended = () => {
+                activeSourcesRef.current = activeSourcesRef.current.filter(s => s !== source);
+              };
+            }
+          } catch (parseErr) {
+            console.warn('Malformed voice chunk:', parseErr);
+          }
+        }
+      }
+
+      // Schedule final completion callback after all queued audio buffers finish playing
+      const remainingMs = Math.max(0, (scheduledTime - ctx.currentTime) * 1000) + 100;
+      speechEndTimeoutRef.current = setTimeout(() => {
         setSpeakingMsgId(null);
-        audioPlayerRef.current = null;
-        URL.revokeObjectURL(audioUrl);
-      };
+        setIsAudioLoading(false);
+      }, remainingMs);
 
-      audio.onerror = () => {
-        setSpeakingMsgId(null);
-        audioPlayerRef.current = null;
-        URL.revokeObjectURL(audioUrl);
-      };
-
-      await audio.play();
-    } catch (err) {
-      console.warn('Neural audio playback failed:', err);
-      setSpeakingMsgId(null);
-      audioPlayerRef.current = null;
-      toast('Voice Error', 'Kokoro neural voice streaming encountered a network error', 'error');
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.warn('Streaming neural audio playback failed, falling back:', err);
+        try {
+          const res = await fetch('/v1/audio/speech', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              input: text,
+              voice: voicePersona,
+              speed: voiceSpeed,
+              dsp_preset: dspPreset,
+              response_format: 'wav'
+            })
+          });
+          if (res.ok) {
+            const blob = await res.blob();
+            const audioUrl = URL.createObjectURL(blob);
+            const audio = new Audio(audioUrl);
+            audioPlayerRef.current = audio;
+            audio.onended = () => {
+              setSpeakingMsgId(null);
+              audioPlayerRef.current = null;
+              URL.revokeObjectURL(audioUrl);
+            };
+            audio.onerror = () => {
+              setSpeakingMsgId(null);
+              audioPlayerRef.current = null;
+              URL.revokeObjectURL(audioUrl);
+            };
+            await audio.play();
+            setIsAudioLoading(false);
+            return;
+          }
+        } catch {}
+        toast('Voice Error', 'Kokoro neural voice streaming encountered an error', 'error');
+      }
+      stopAllAudio();
     } finally {
-
       setIsAudioLoading(false);
     }
   };
@@ -420,15 +538,8 @@ export default function ChatView() {
       return;
     }
 
-    // Conversational Barge-In: Immediately interrupt any active AI voice speech
-    if (speakingMsgId || audioPlayerRef.current) {
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-        audioPlayerRef.current = null;
-      }
-      setSpeakingMsgId(null);
-      playCortanaSFX('dismiss');
-    }
+    // Conversational Barge-In: Immediately interrupt any active AI voice speech (<5ms)
+    stopAllAudio();
 
     if (isRecordingVoice) {
       playCortanaSFX('confirm');
@@ -448,15 +559,9 @@ export default function ChatView() {
       recognition.onstart = () => {
         setIsRecordingVoice(true);
         // Secondary barge-in interrupt guarantee
-        if (audioPlayerRef.current) {
-          audioPlayerRef.current.pause();
-          audioPlayerRef.current = null;
-          setSpeakingMsgId(null);
-        }
+        stopAllAudio();
         toast('Voice Active', 'Listening... (Barge-In Active)', 'info');
       };
-
-
 
       recognition.onresult = (event: any) => {
         let transcript = '';
@@ -480,6 +585,8 @@ export default function ChatView() {
   const executeSend = async (textToSend: string) => {
     const trimmed = textToSend.trim();
     if (!trimmed || isStreaming) return;
+
+    stopAllAudio();
 
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: trimmed };
     setMessages(prev => [...prev, userMsg]);
@@ -575,6 +682,9 @@ export default function ChatView() {
         }
         if (done) {
           playCortanaSFX('complete');
+          if (autoSpeakRef.current && currentResponse.trim()) {
+            handleToggleSpeak(assistantMsgId, currentResponse);
+          }
           break;
         }
       }
@@ -1048,6 +1158,22 @@ export default function ChatView() {
               <span>Studio: af_heart</span>
             </button>
 
+            <button
+              onClick={() => {
+                const next = !autoSpeak;
+                setAutoSpeak(next);
+                toast('Auto-Speak', next ? 'Auto-Speak enabled: responses will be spoken aloud' : 'Auto-Speak disabled', 'info');
+              }}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+                autoSpeak
+                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-300 shadow-xs'
+                  : 'bg-slate-100 dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+              title={autoSpeak ? 'Auto-Speak Enabled (Hands-Free Voice)' : 'Enable Auto-Speak for Hands-Free Conversations'}
+            >
+              {autoSpeak ? <Volume2 className="w-3.5 h-3.5 text-emerald-500" /> : <VolumeX className="w-3.5 h-3.5" />}
+              <span>Auto-Speak</span>
+            </button>
 
             <button
               onClick={() => setWebSearchEnabled(!webSearchEnabled)}
@@ -1429,8 +1555,16 @@ export default function ChatView() {
               placeholder="Ask anything about your vault documents, architecture, or research..."
               rows={1}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                if (speakingMsgId) {
+                  stopAllAudio();
+                }
+              }}
               onKeyDown={(e) => {
+                if (speakingMsgId) {
+                  stopAllAudio();
+                }
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSend(e);

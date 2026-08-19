@@ -8,6 +8,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { SearchResultSkeleton } from '../components/Skeletons';
 import { useToast } from '../components/Toast';
 
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const binaryString = window.atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
 export default function SearchView() {
   const { toast } = useToast();
   const { setActiveView } = useApp();
@@ -21,61 +31,172 @@ export default function SearchView() {
   const [playingSnippetId, setPlayingSnippetId] = useState<string | number | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
   const audioPlayerRef = React.useRef<HTMLAudioElement | null>(null);
+  const audioCtxRef = React.useRef<AudioContext | null>(null);
+  const activeSourcesRef = React.useRef<AudioBufferSourceNode[]>([]);
+  const speechAbortRef = React.useRef<AbortController | null>(null);
+  const speechEndTimeoutRef = React.useRef<any>(null);
+
+  const stopAllAudio = () => {
+    if (speechAbortRef.current) {
+      speechAbortRef.current.abort();
+      speechAbortRef.current = null;
+    }
+    if (speechEndTimeoutRef.current) {
+      clearTimeout(speechEndTimeoutRef.current);
+      speechEndTimeoutRef.current = null;
+    }
+    for (const src of activeSourcesRef.current) {
+      try {
+        src.stop();
+        src.disconnect();
+      } catch {}
+    }
+    activeSourcesRef.current = [];
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current = null;
+    }
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      try {
+        audioCtxRef.current.close();
+      } catch {}
+      audioCtxRef.current = null;
+    }
+    setPlayingSnippetId(null);
+    setIsAudioLoading(false);
+  };
 
   React.useEffect(() => {
     return () => {
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-        audioPlayerRef.current = null;
-      }
+      stopAllAudio();
     };
   }, []);
 
   const handleToggleSpeak = async (resId: string | number, text: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (playingSnippetId === resId) {
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-        audioPlayerRef.current = null;
-      }
-      setPlayingSnippetId(null);
+      stopAllAudio();
       toast('Speech Stopped', 'Audio playback stopped', 'info');
       return;
     }
 
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.pause();
-      audioPlayerRef.current = null;
-    }
+    stopAllAudio();
+
+    if (!text || !text.trim()) return;
 
     setPlayingSnippetId(resId);
     setIsAudioLoading(true);
-    toast('Kokoro Voice', 'Synthesizing neural audio playback...', 'info');
+    toast('Kokoro Voice', 'Streaming neural audio snippet...', 'info');
 
     try {
-      const blob = await api.synthesizeVoice(text.slice(0, 1000));
-      const audioUrl = URL.createObjectURL(blob);
-      const audio = new Audio(audioUrl);
-      audioPlayerRef.current = audio;
+      const controller = new AbortController();
+      speechAbortRef.current = controller;
 
-      audio.onended = () => {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContextClass();
+      audioCtxRef.current = ctx;
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+
+      const res = await fetch('/api/voice/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: text.slice(0, 1000),
+          voice: 'af_heart',
+          speed: 1.02,
+          dsp_preset: 'STUDIO_MASTER'
+        }),
+        signal: controller.signal
+      });
+
+      if (!res.ok) {
+        throw new Error(`TTS Stream HTTP ${res.status}`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error('No readable audio stream');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let scheduledTime = ctx.currentTime;
+      let isFirstChunk = true;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) continue;
+
+          try {
+            const chunkData = JSON.parse(trimmedLine);
+            if (chunkData.audio_b64) {
+              const rawBytes = base64ToArrayBuffer(chunkData.audio_b64);
+              const audioBuffer = await ctx.decodeAudioData(rawBytes);
+
+              const source = ctx.createBufferSource();
+              source.buffer = audioBuffer;
+              source.connect(ctx.destination);
+
+              const playTime = Math.max(ctx.currentTime, scheduledTime);
+              source.start(playTime);
+              scheduledTime = playTime + audioBuffer.duration;
+
+              activeSourcesRef.current.push(source);
+
+              if (isFirstChunk) {
+                setIsAudioLoading(false);
+                isFirstChunk = false;
+              }
+
+              source.onended = () => {
+                activeSourcesRef.current = activeSourcesRef.current.filter(s => s !== source);
+              };
+            }
+          } catch (parseErr) {
+            console.warn('Malformed voice chunk:', parseErr);
+          }
+        }
+      }
+
+      const remainingMs = Math.max(0, (scheduledTime - ctx.currentTime) * 1000) + 100;
+      speechEndTimeoutRef.current = setTimeout(() => {
         setPlayingSnippetId(null);
-        audioPlayerRef.current = null;
-        URL.revokeObjectURL(audioUrl);
-      };
+        setIsAudioLoading(false);
+      }, remainingMs);
 
-      audio.onerror = () => {
-        setPlayingSnippetId(null);
-        audioPlayerRef.current = null;
-        URL.revokeObjectURL(audioUrl);
-      };
-
-      await audio.play();
-    } catch (err) {
-      console.warn('Voice playback failed:', err);
-      setPlayingSnippetId(null);
-      audioPlayerRef.current = null;
-      toast('Voice Error', 'Kokoro neural voice synthesis error', 'error');
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.warn('Voice playback failed, falling back:', err);
+        try {
+          const blob = await api.synthesizeVoice(text.slice(0, 1000));
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          audioPlayerRef.current = audio;
+          audio.onended = () => {
+            setPlayingSnippetId(null);
+            audioPlayerRef.current = null;
+            URL.revokeObjectURL(audioUrl);
+          };
+          audio.onerror = () => {
+            setPlayingSnippetId(null);
+            audioPlayerRef.current = null;
+            URL.revokeObjectURL(audioUrl);
+          };
+          await audio.play();
+          setIsAudioLoading(false);
+          return;
+        } catch {}
+        toast('Voice Error', 'Kokoro neural voice synthesis error', 'error');
+      }
+      stopAllAudio();
     } finally {
       setIsAudioLoading(false);
     }
@@ -182,6 +303,7 @@ export default function SearchView() {
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!query.trim()) return;
+    stopAllAudio();
     setIsLoading(true);
     try {
       let res;
@@ -205,6 +327,7 @@ export default function SearchView() {
   };
 
   const handleVoiceSearch = async () => {
+    stopAllAudio();
     try {
       toast('Listening...', 'Processing voice query input...', 'info');
       const res = await api.voiceSearch(query || 'sample audio memo');
@@ -219,6 +342,7 @@ export default function SearchView() {
   };
 
   const handleBenchmarkSearch = async () => {
+    stopAllAudio();
     try {
       toast('Running Search Benchmark', 'Benchmarking FTS5 vs NomIC Vector HNSW latency...', 'info');
       const res = await api.searchBenchmark(query || 'accounting standards');
@@ -230,6 +354,7 @@ export default function SearchView() {
 
   const handleHypergraphSearch = async () => {
     if (!query.trim()) return;
+    stopAllAudio();
     try {
       toast('Querying HyperGraph', `Analyzing N-ary hyper-edges for "${query}"...`, 'info');
       const res = await api.hypergraphSearch(query);
@@ -250,6 +375,7 @@ export default function SearchView() {
 
   const handleGroundedSearch = async () => {
     if (!query.trim()) return;
+    stopAllAudio();
     setIsLoading(true);
     try {
       toast('Grounded Retrieval', 'Evaluating evidentiary tiers & consensus...', 'info');
@@ -343,7 +469,12 @@ export default function SearchView() {
             className="block w-full pl-11 pr-32 py-3.5 bg-white/80 dark:bg-slate-900/60 border border-slate-300/80 dark:border-white/10 rounded-2xl text-slate-900 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/40 focus:ring-2 focus:ring-emerald-500/10 backdrop-blur-md transition-all text-sm shadow-sm"
             placeholder="Search vault documents by semantic concept, full-text keyword, or code snippet..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (playingSnippetId) {
+                stopAllAudio();
+              }
+            }}
           />
           <button 
             type="submit" 

@@ -107,6 +107,7 @@ FILE_DOMAIN_MAPPING = {
     "tests/test_user_acceptance_audit.py": ["DomainUATAudit", "DomainAcceptance"],
     "src/core/speech_normalizer.py": ["DomainVoiceNormalization", "DomainSpeechEngine"],
     "tests/test_speech_normalizer.py": ["DomainVoiceNormalization", "DomainSpeechEngine"],
+    "tests/test_speech_normalizer_expanded.py": ["DomainVoiceNormalization", "DomainSpeechEngine"],
     "tests/test_voice_normalization_cadence.py": ["DomainVoiceNormalization", "DomainSpeechEngine"]
 }
 
@@ -164,6 +165,7 @@ DOMAIN_TEST_MODULES = [
     "tests.test_user_acceptance_audit",
     "tests.test_text_utils_and_wal_daemon",
     "tests.test_speech_normalizer",
+    "tests.test_speech_normalizer_expanded",
     "tests.test_voice_normalization_cadence"
 ]
 

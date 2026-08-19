@@ -54,33 +54,168 @@ def number_to_words(n: int) -> str:
     return " ".join(parts).replace("  ", " ").strip()
 
 
+# ----------------------------------------------------------------------
+# 100+ Deep Expanded Phonetic Acronym & Technical Lexicon Rules
+# ----------------------------------------------------------------------
 PHONETIC_ACRONYM_RULES: List[Tuple[re.Pattern, str]] = [
-    # Required Canonical Phonetic Expansions
-    (re.compile(r"\bSHA-?256\b", re.IGNORECASE), "S-H-A two fifty six"),
-    (re.compile(r"\be-?CFR\b", re.IGNORECASE), "e-C-F-R"),
-    (re.compile(r"\bFTS5\b", re.IGNORECASE), "F-T-S five"),
-    (re.compile(r"\bSQLite\b", re.IGNORECASE), "sequel light"),
-    (re.compile(r"\bSQL\b", re.IGNORECASE), "sequel"),
-    (re.compile(r"\bAPIs\b"), "A-P-Is"),
-    (re.compile(r"\bAPI\b"), "A-P-I"),
-    (re.compile(r"\bJSON\b", re.IGNORECASE), "j-son"),
-    (re.compile(r"\bPRAGMA\b", re.IGNORECASE), "pragma"),
-    (re.compile(r"\bWAL\b"), "write ahead log"),
-    
-    # Infrastructure, Dev & Security Terms
+    # --- Project & Core Architecture ---
+    (re.compile(r"\bUroboros\b", re.IGNORECASE), "Oo-roh-bor-os"),
+    (re.compile(r"\bKokoro\b", re.IGNORECASE), "Koh-koh-roh"),
+    (re.compile(r"\bTududi\b", re.IGNORECASE), "Too-doo-dee"),
+    (re.compile(r"\bAntigravity\b", re.IGNORECASE), "Anti-gravity"),
+    (re.compile(r"\bCortana\b", re.IGNORECASE), "Cor-tah-nah"),
+
+    # --- AI & Machine Learning Lexicon ---
+    (re.compile(r"\bHNSW\b", re.IGNORECASE), "H-N-S-W"),
+    (re.compile(r"\bBM25\b", re.IGNORECASE), "B-M 25"),
+    (re.compile(r"\bRRF\b", re.IGNORECASE), "R-R-F"),
+    (re.compile(r"\bLLaMA[s\-0-9]*\b", re.IGNORECASE), "Lah-ma"),
+    (re.compile(r"\bGGUF\b", re.IGNORECASE), "G-G-U-F"),
+    (re.compile(r"\bONNX\s+Runtime\b", re.IGNORECASE), "on-ix runtime"),
+    (re.compile(r"\bONNX\b", re.IGNORECASE), "on-ix"),
+    (re.compile(r"\bHyDE\b", re.IGNORECASE), "Hyde"),
+    (re.compile(r"\bLoRA[s]?\b", re.IGNORECASE), "Low-rah"),
+    (re.compile(r"\bMixtral\b", re.IGNORECASE), "Mix-trul"),
+    (re.compile(r"\bQwen[0-9\.\-]*\b", re.IGNORECASE), "Kyoo-wen"),
+    (re.compile(r"\bNomic\b", re.IGNORECASE), "Nom-ik"),
+    (re.compile(r"\bColBERT\b", re.IGNORECASE), "Coal-bear"),
+    (re.compile(r"\bTF-?IDF\b", re.IGNORECASE), "T-F I-D-F"),
+    (re.compile(r"\bk-?NN\b", re.IGNORECASE), "k-N-N"),
+    (re.compile(r"\bMoE\b", re.IGNORECASE), "M-o-E"),
+    (re.compile(r"\bVAEs?\b", re.IGNORECASE), "V-A-E"),
+    (re.compile(r"\bGANs?\b"), "G-A-N"),
+    (re.compile(r"\bLSTMs?\b", re.IGNORECASE), "L-S-T-M"),
+    (re.compile(r"\bCNNs?\b"), "C-N-N"),
+    (re.compile(r"\bRNNs?\b"), "R-N-N"),
+    (re.compile(r"\bRLHF\b", re.IGNORECASE), "R-L-H-F"),
+    (re.compile(r"\bDPO\b", re.IGNORECASE), "D-P-O"),
+    (re.compile(r"\bRoPE\b", re.IGNORECASE), "Rope"),
+    (re.compile(r"\bFlashAttention\b", re.IGNORECASE), "Flash Attention"),
+    (re.compile(r"\bSelf-?RAG\b", re.IGNORECASE), "Self-Rag"),
     (re.compile(r"\bLLMs\b", re.IGNORECASE), "L-L-Ms"),
     (re.compile(r"\bLLM\b", re.IGNORECASE), "L-L-M"),
     (re.compile(r"\bRAG\b", re.IGNORECASE), "rag"),
-    (re.compile(r"\bCI/CD\b", re.IGNORECASE), "C-I C-D"),
-    (re.compile(r"\bYAML\b", re.IGNORECASE), "yam-ul"),
-    (re.compile(r"\bMCP\b", re.IGNORECASE), "M-C-P"),
-    (re.compile(r"\bAST\b", re.IGNORECASE), "A-S-T"),
+    (re.compile(r"\bOllama\b", re.IGNORECASE), "Oh-lah-ma"),
+    (re.compile(r"\bCosine\b", re.IGNORECASE), "co-sign"),
+    (re.compile(r"\bBLEU\b", re.IGNORECASE), "blue"),
+    (re.compile(r"\bROUGE\b", re.IGNORECASE), "rooj"),
+    (re.compile(r"\bPerplexity\b", re.IGNORECASE), "perplexity"),
+    (re.compile(r"\bEmbeddings?\b", re.IGNORECASE), "embeddings"),
+
+    # --- Frameworks & Libraries ---
+    (re.compile(r"\bFastAPI\b", re.IGNORECASE), "Fast A-P-I"),
+    (re.compile(r"\bPydantic\b", re.IGNORECASE), "Pie-dan-tik"),
+    (re.compile(r"\bVite\b", re.IGNORECASE), "Veet"),
+    (re.compile(r"\bReact\.?js\b", re.IGNORECASE), "React"),
+    (re.compile(r"\bReact\b"), "React"),
+    (re.compile(r"\bPyTorch\b", re.IGNORECASE), "Pie-Torch"),
+    (re.compile(r"\bNumPy\b", re.IGNORECASE), "Num-pie"),
+    (re.compile(r"\bPandas\b", re.IGNORECASE), "Pan-daz"),
+    (re.compile(r"\bUvicorn\b", re.IGNORECASE), "You-vee-corn"),
+    (re.compile(r"\bPlaywright\b", re.IGNORECASE), "Play-write"),
+    (re.compile(r"\bTailwindCSS\b", re.IGNORECASE), "Tailwind C-S-S"),
+    (re.compile(r"\bTailwind\b", re.IGNORECASE), "Tailwind"),
+    (re.compile(r"\bNext\.?js\b", re.IGNORECASE), "Next J-S"),
+    (re.compile(r"\bWebpack\b", re.IGNORECASE), "Web-pack"),
+    (re.compile(r"\bBabel\b", re.IGNORECASE), "Bab-el"),
+    (re.compile(r"\bFlask\b"), "Flask"),
+    (re.compile(r"\bDjango\b", re.IGNORECASE), "Jang-go"),
+    (re.compile(r"\bScikit-?learn\b", re.IGNORECASE), "Sy-kit learn"),
+    (re.compile(r"\bsklearn\b", re.IGNORECASE), "S-K-learn"),
+    (re.compile(r"\bTensorFlow\b", re.IGNORECASE), "Tensor Flow"),
+    (re.compile(r"\bKeras\b", re.IGNORECASE), "Care-as"),
+    (re.compile(r"\bMatplotlib\b", re.IGNORECASE), "Mat-plot-lib"),
+    (re.compile(r"\bSeaborn\b", re.IGNORECASE), "Sea-born"),
+    (re.compile(r"\bSQLAlchemy\b", re.IGNORECASE), "sequel alchemy"),
+    (re.compile(r"\bCelery\b", re.IGNORECASE), "Celery"),
+    (re.compile(r"\bExpress\.?js\b", re.IGNORECASE), "Express J-S"),
+    (re.compile(r"\bAngular\b", re.IGNORECASE), "Angular"),
+    (re.compile(r"\bVue\.?js\b", re.IGNORECASE), "View J-S"),
+    (re.compile(r"\bSvelte\b", re.IGNORECASE), "Svelt"),
+    (re.compile(r"\bRedux\b", re.IGNORECASE), "Ree-dux"),
+    (re.compile(r"\bTypeScript\b", re.IGNORECASE), "Type-Script"),
+    (re.compile(r"\bJavaScript\b", re.IGNORECASE), "Java-Script"),
+    (re.compile(r"\bNode\.?js\b", re.IGNORECASE), "Node J-S"),
+    (re.compile(r"\bNPM\b", re.IGNORECASE), "N-P-M"),
+    (re.compile(r"\bPytest\b", re.IGNORECASE), "Pie-test"),
+
+    # --- Infrastructure, Dev, DB & Cloud ---
+    (re.compile(r"\bK8s\b", re.IGNORECASE), "K-eights"),
+    (re.compile(r"\bKubernetes\b", re.IGNORECASE), "Kubernetes"),
+    (re.compile(r"\bgRPC\b", re.IGNORECASE), "G-R-P-C"),
+    (re.compile(r"\bProtobuf[s]?\b", re.IGNORECASE), "Proto-buff"),
+    (re.compile(r"\bDocker\b", re.IGNORECASE), "Dock-er"),
+    (re.compile(r"\bOAuth2?\b", re.IGNORECASE), "O-Auth"),
+    (re.compile(r"\bJWTs?\b", re.IGNORECASE), "J-W-T"),
+    (re.compile(r"\bRESTful\b", re.IGNORECASE), "rest-full"),
+    (re.compile(r"\bREST\b"), "rest"),
+    (re.compile(r"\bGraphQL\b", re.IGNORECASE), "Graph Q-L"),
+    (re.compile(r"\bCLIs\b", re.IGNORECASE), "C-L-Is"),
+    (re.compile(r"\bCLI\b", re.IGNORECASE), "C-L-I"),
     (re.compile(r"\bSDKs\b", re.IGNORECASE), "S-D-Ks"),
     (re.compile(r"\bSDK\b", re.IGNORECASE), "S-D-K"),
+    (re.compile(r"\bCI/CD\b", re.IGNORECASE), "C-I C-D"),
+    (re.compile(r"\bGitHub\b", re.IGNORECASE), "Git-Hub"),
+    (re.compile(r"\bGitLab\b", re.IGNORECASE), "Git-Lab"),
+    (re.compile(r"\bGit\b"), "Git"),
+    (re.compile(r"\bPRs\b"), "P-Rs"),
+    (re.compile(r"\bPR\b"), "P-R"),
+    (re.compile(r"\bWAL\b"), "write ahead log"),
+    (re.compile(r"\bFTS5\b", re.IGNORECASE), "F-T-S five"),
+    (re.compile(r"\bPostgreSQL\b", re.IGNORECASE), "Postgres sequel"),
+    (re.compile(r"\bPostgres\b", re.IGNORECASE), "Postgres"),
+    (re.compile(r"\bSQLite\b", re.IGNORECASE), "sequel light"),
+    (re.compile(r"\bSQL\b", re.IGNORECASE), "sequel"),
+    (re.compile(r"\bRedis\b", re.IGNORECASE), "Red-iss"),
+    (re.compile(r"\bSSNs?\b", re.IGNORECASE), "S-S-N"),
+    (re.compile(r"\bUUIDs?\b", re.IGNORECASE), "U-U-I-D"),
+    (re.compile(r"\bGUIDs?\b", re.IGNORECASE), "G-U-I-D"),
     (re.compile(r"\bURLs\b", re.IGNORECASE), "U-R-Ls"),
     (re.compile(r"\bURL\b", re.IGNORECASE), "U-R-L"),
-    (re.compile(r"\bCLI\b", re.IGNORECASE), "C-L-I"),
-    (re.compile(r"\bUUID\b", re.IGNORECASE), "U-U-I-D"),
+    (re.compile(r"\bURIs\b", re.IGNORECASE), "U-R-Is"),
+    (re.compile(r"\bURI\b", re.IGNORECASE), "U-R-I"),
+    (re.compile(r"\bNginx\b", re.IGNORECASE), "Engine-X"),
+    (re.compile(r"\bApache\b", re.IGNORECASE), "Ah-patch-ee"),
+    (re.compile(r"\bTerraform\b", re.IGNORECASE), "Terra-form"),
+    (re.compile(r"\bAnsible\b", re.IGNORECASE), "An-sih-bul"),
+    (re.compile(r"\bLinux\b", re.IGNORECASE), "Linux"),
+    (re.compile(r"\bUbuntu\b", re.IGNORECASE), "Oo-boon-too"),
+    (re.compile(r"\bDebian\b", re.IGNORECASE), "Deb-ee-an"),
+    (re.compile(r"\bCentOS\b", re.IGNORECASE), "Cent-O-S"),
+    (re.compile(r"\bWSL2\b", re.IGNORECASE), "W-S-L two"),
+    (re.compile(r"\bWSL\b", re.IGNORECASE), "W-S-L"),
+    (re.compile(r"\bPOSIX\b", re.IGNORECASE), "Pah-zicks"),
+    (re.compile(r"\bSSH\b", re.IGNORECASE), "S-S-H"),
+    (re.compile(r"\bSSL\b", re.IGNORECASE), "S-S-L"),
+    (re.compile(r"\bTLS\b", re.IGNORECASE), "T-L-S"),
+    (re.compile(r"\bTCP\b", re.IGNORECASE), "T-C-P"),
+    (re.compile(r"\bUDP\b", re.IGNORECASE), "U-D-P"),
+    (re.compile(r"\bIP\b"), "I-P"),
+    (re.compile(r"\bDNS\b", re.IGNORECASE), "D-N-S"),
+    (re.compile(r"\bCORS\b", re.IGNORECASE), "cores"),
+    (re.compile(r"\bCSRF\b", re.IGNORECASE), "C-S-R-F"),
+    (re.compile(r"\bXSS\b", re.IGNORECASE), "cross-site scripting"),
+    (re.compile(r"\bRBAC\b", re.IGNORECASE), "R-back"),
+    (re.compile(r"\bCRUD\b", re.IGNORECASE), "crud"),
+    (re.compile(r"\bACID\b", re.IGNORECASE), "acid"),
+    (re.compile(r"\bIOPS\b", re.IGNORECASE), "eye-ops"),
+    (re.compile(r"\bIPC\b", re.IGNORECASE), "I-P-C"),
+    (re.compile(r"\bRPC\b", re.IGNORECASE), "R-P-C"),
+    (re.compile(r"\bSaaS\b", re.IGNORECASE), "sass"),
+    (re.compile(r"\bPaaS\b", re.IGNORECASE), "pass"),
+    (re.compile(r"\bIaaS\b", re.IGNORECASE), "I-pass"),
+    (re.compile(r"\bAWS\b", re.IGNORECASE), "A-W-S"),
+    (re.compile(r"\bGCP\b", re.IGNORECASE), "G-C-P"),
+    (re.compile(r"\bAzure\b", re.IGNORECASE), "Ah-zhure"),
+    (re.compile(r"\bSHA-?256\b", re.IGNORECASE), "S-H-A two fifty six"),
+    (re.compile(r"\be-?CFR\b", re.IGNORECASE), "e-C-F-R"),
+    (re.compile(r"\bPRAGMA\b", re.IGNORECASE), "pragma"),
+    (re.compile(r"\bAPIs\b"), "A-P-Is"),
+    (re.compile(r"\bAPI\b"), "A-P-I"),
+    (re.compile(r"\bJSON\b", re.IGNORECASE), "j-son"),
+    (re.compile(r"\bYAML\b", re.IGNORECASE), "yam-ul"),
+    (re.compile(r"\bMCP\b", re.IGNORECASE), "M-C-P"),
+    (re.compile(r"\bAST\b"), "A-S-T"),
     (re.compile(r"\bVAD\b", re.IGNORECASE), "V-A-D"),
     (re.compile(r"\bDSP\b", re.IGNORECASE), "D-S-P"),
     (re.compile(r"\bSFX\b", re.IGNORECASE), "sound effects"),
@@ -89,45 +224,24 @@ PHONETIC_ACRONYM_RULES: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\bType\s*II\b", re.IGNORECASE), "Type Two"),
     (re.compile(r"\bHTML\b", re.IGNORECASE), "H-T-M-L"),
     (re.compile(r"\bCSS\b", re.IGNORECASE), "C-S-S"),
-    (re.compile(r"\bDOM\b", re.IGNORECASE), "dom"),
-    (re.compile(r"\bJWT\b", re.IGNORECASE), "J-W-T"),
+    (re.compile(r"\bDOM\b"), "dom"),
     (re.compile(r"\bHTTP\b", re.IGNORECASE), "H-T-T-P"),
     (re.compile(r"\bHTTPS\b", re.IGNORECASE), "H-T-T-P-S"),
-    (re.compile(r"\bREST\b", re.IGNORECASE), "rest"),
     (re.compile(r"\bTTS\b", re.IGNORECASE), "T-T-S"),
     (re.compile(r"\bSTT\b", re.IGNORECASE), "S-T-T"),
-    (re.compile(r"\bONNX\b", re.IGNORECASE), "on-ix"),
-    (re.compile(r"\bOllama\b", re.IGNORECASE), "Oh-lah-ma"),
-    (re.compile(r"\bKokoro\b", re.IGNORECASE), "Koh-koh-roh"),
-    (re.compile(r"\bUroboros\b", re.IGNORECASE), "Oo-roh-bor-os"),
-    (re.compile(r"\bAntigravity\b", re.IGNORECASE), "Anti-gravity"),
-    (re.compile(r"\bTududi\b", re.IGNORECASE), "Too-doo-dee"),
-    (re.compile(r"\bFastAPI\b", re.IGNORECASE), "Fast A-P-I"),
-    (re.compile(r"\bGitHub\b", re.IGNORECASE), "Git-Hub"),
-    (re.compile(r"\bPytest\b", re.IGNORECASE), "Pie-test"),
     (re.compile(r"\bGPU\b", re.IGNORECASE), "G-P-U"),
     (re.compile(r"\bCPU\b", re.IGNORECASE), "C-P-U"),
-    (re.compile(r"\bRAM\b", re.IGNORECASE), "ram"),
-    (re.compile(r"\bUI\b", re.IGNORECASE), "U-I"),
-    (re.compile(r"\bUX\b", re.IGNORECASE), "U-X"),
+    (re.compile(r"\bRAM\b"), "ram"),
+    (re.compile(r"\bUI\b"), "U-I"),
+    (re.compile(r"\bUX\b"), "U-X"),
     (re.compile(r"\bGUI\b", re.IGNORECASE), "gooey"),
     (re.compile(r"\bAES\b", re.IGNORECASE), "A-E-S"),
     (re.compile(r"\bRSA\b", re.IGNORECASE), "R-S-A"),
     (re.compile(r"\bDirectML\b", re.IGNORECASE), "Direct-M-L"),
     (re.compile(r"\bWASAPI\b", re.IGNORECASE), "Wah-sah-pee"),
-    (re.compile(r"\bColBERT\b", re.IGNORECASE), "Coal-bear"),
-    (re.compile(r"\bBM25\b", re.IGNORECASE), "B-M 25"),
-    (re.compile(r"\bHNSW\b", re.IGNORECASE), "H-N-S-W"),
-    (re.compile(r"\bTypeScript\b", re.IGNORECASE), "Type-Script"),
-    (re.compile(r"\bJavaScript\b", re.IGNORECASE), "Java-Script"),
-    (re.compile(r"\bNode\.?js\b", re.IGNORECASE), "Node J-S"),
-    (re.compile(r"\bReact\.?js\b", re.IGNORECASE), "React"),
-    (re.compile(r"\bNPM\b", re.IGNORECASE), "N-P-M"),
-    (re.compile(r"\bVite\b", re.IGNORECASE), "Veet"),
-    (re.compile(r"\b(\d+)\s*fps\b", re.IGNORECASE), r"\1 frames per second"),
-    (re.compile(r"\bFPS\b"), "F-P-S"),
-    
-    # Business & Conversational Common Terms
+    (re.compile(r"\bWASAPI\b", re.IGNORECASE), "Wah-sah-pee"),
+
+    # --- Business, Acronyms & Status Terms ---
     (re.compile(r"\bFYI\b", re.IGNORECASE), "For your information,"),
     (re.compile(r"\bASAP\b", re.IGNORECASE), "as soon as possible"),
     (re.compile(r"\bTL;?DR\b", re.IGNORECASE), "summary,"),
@@ -147,7 +261,6 @@ PHONETIC_ACRONYM_RULES: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\bSLA\b", re.IGNORECASE), "S-L-A"),
     (re.compile(r"\bMRR\b", re.IGNORECASE), "M-R-R"),
     (re.compile(r"\bARR\b", re.IGNORECASE), "A-R-R"),
-    (re.compile(r"\bSaaS\b", re.IGNORECASE), "sass"),
     (re.compile(r"\bMVP\b", re.IGNORECASE), "M-V-P"),
     (re.compile(r"\bPoC\b", re.IGNORECASE), "proof of concept"),
     (re.compile(r"\bRFC\b", re.IGNORECASE), "R-F-C"),
@@ -164,6 +277,7 @@ class SpeechNormalizer:
     - Pre-processes speech text: strips markdown syntax into natural breathing pauses.
     - Summarizes code blocks into natural developer descriptions.
     - Expands technical acronyms phonetically (SHA-256, SQL, eCFR, FTS5, API, JSON, PRAGMA, WAL, $15,000).
+    - Expands version numbers (v1.0.0) and engineering units (MB, GB, ms, GHz, tok/s, QPS).
     """
 
     @classmethod
@@ -219,6 +333,51 @@ class SpeechNormalizer:
         text = re.sub(r"\b(\d+)x\b", r"\1 times", text)
         # Percentages
         text = re.sub(r"(\d+(?:\.\d+)?)%", r"\1 percent", text)
+
+        return text
+
+    @classmethod
+    def expand_units_and_versions(cls, text: str) -> str:
+        """
+        Converts engineering units (MB, GB, TB, ms, GHz, MHz, kHz, QPS, tok/s, px, fps)
+        and semantic version strings (v1.0.0, v2.4) into natural spoken English.
+        """
+        if not text:
+            return ""
+
+        # Semantic Versions: v1.0.0, v2.1.3 -> version 1 point 0 point 0
+        text = re.sub(r"\bv(\d+)\.(\d+)\.(\d+)\b", r"version \1 point \2 point \3", text)
+        text = re.sub(r"\bv(\d+)\.(\d+)\b", r"version \1 point \2", text)
+
+        # Throughput & Tokens: 120 tok/s, 300 QPS, 50 req/sec
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*(?:tok/s|tokens?/sec)\b", r"\1 tokens per second", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*QPS\b", r"\1 queries per second", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*(?:req/sec|req/s|rps)\b", r"\1 requests per second", text)
+
+        # Frame rate & Network bandwidth
+        text = re.sub(r"\b(\d+)\s*fps\b", r"\1 frames per second", text, flags=re.IGNORECASE)
+        text = re.sub(r"\bFPS\b", "F-P-S", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*Gbps\b", r"\1 gigabits per second", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*Mbps\b", r"\1 megabits per second", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*kbps\b", r"\1 kilobits per second", text)
+
+        # Data Sizes: MB, GB, TB, KB
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*TB\b", r"\1 terabytes", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*GB\b", r"\1 gigabytes", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*MB\b", r"\1 megabytes", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*KB\b", r"\1 kilobytes", text)
+
+        # Time & Frequency: ms, GHz, MHz, kHz, Hz, dB
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*ms\b", r"\1 milliseconds", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*GHz\b", r"\1 gigahertz", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*MHz\b", r"\1 megahertz", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*kHz\b", r"\1 kilohertz", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*Hz\b", r"\1 hertz", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*dB\b", r"\1 decibels", text)
+
+        # CSS Dimensions: px, rem, em
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*px\b", r"\1 pixels", text)
+        text = re.sub(r"\b(\d+(?:\.\d+)?)\s*rem\b", r"\1 rem", text)
 
         return text
 
@@ -317,7 +476,7 @@ class SpeechNormalizer:
                     return f" A code snippet {first_item.lower()} "
                 else:
                     return f" A code snippet: {' '.join(spoken_parts[:3])} "
-            
+
             lang_label = lang.capitalize() if lang else "code"
             return f" A code snippet containing {lang_label} instructions. "
 
@@ -473,9 +632,10 @@ class SpeechNormalizer:
         Master Speech Normalization Pipeline:
         1. Summarize and translate code blocks
         2. Expand currencies and numbers ($15,000 -> fifteen thousand dollars)
-        3. Strip markdown syntax into natural pauses
-        4. Phonetically expand technical acronyms (SHA-256, SQL, eCFR, FTS5, API, JSON, PRAGMA, WAL)
-        5. Insert breathing cadence & clean pauses
+        3. Expand engineering units and semantic version strings (v1.0.0 -> version 1 point 0 point 0)
+        4. Strip markdown syntax into natural pauses
+        5. Phonetically expand technical acronyms (HNSW, BM25, FastAPI, K8s, etc.)
+        6. Insert breathing cadence & clean pauses
         """
         if not text:
             return ""
@@ -486,13 +646,16 @@ class SpeechNormalizer:
         # Step 2: Currency & Numbers
         text = cls.expand_currencies_and_numbers(text)
 
-        # Step 3: Markdown syntax
+        # Step 3: Units & Versions
+        text = cls.expand_units_and_versions(text)
+
+        # Step 4: Markdown syntax
         text = cls.strip_markdown(text)
 
-        # Step 4: Technical Acronyms
+        # Step 5: Technical Acronyms
         text = cls.expand_technical_acronyms(text)
 
-        # Step 5: Natural Cadence & Breathing
+        # Step 6: Natural Cadence & Breathing
         text = cls.insert_natural_cadence(text)
 
         return text.strip()
