@@ -15,9 +15,10 @@ Security updates and patches are actively applied to the following versions of U
 
 | Version | Supported | Security Patch Status |
 | :--- | :--- | :--- |
-| **v2.5.x (Master)** | :white_check_mark: **Yes** | Active security monitoring & continuous patch releases |
-| **v2.0.x** | :white_check_mark: **Yes** | Critical security fixes only |
-| **v1.x.x** | :x: No | End of Life (EOL) - Upgrade to v2.5+ recommended |
+| **v3.3.x (Master)** | :white_check_mark: **Yes** | Active security monitoring & continuous patch releases |
+| **v3.0.x - v3.2.x** | :white_check_mark: **Yes** | Security patches and maintenance |
+| **v2.x.x** | :white_check_mark: **Yes** | Critical security fixes only |
+| **v1.x.x** | :x: No | End of Life (EOL) - Upgrade to v3.3+ recommended |
 
 ---
 
