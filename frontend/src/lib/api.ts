@@ -214,9 +214,9 @@ export const api = {
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({
         input: text,
-        voice: voice || 'ALEXANDER_SOVEREIGN',
-        speed: speed || 0.92,
-        dsp_preset: dspPreset || 'EXECUTIVE_PRECISION',
+        voice: voice || 'af_heart',
+        speed: speed !== undefined ? speed : 1.02,
+        dsp_preset: dspPreset || 'STUDIO_MASTER',
         response_format: 'wav'
       })
     }).then(r => {

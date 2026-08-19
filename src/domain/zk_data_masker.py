@@ -1,5 +1,5 @@
 """
-Deterministic Cryptographic Pseudonymization & Hash Verification Engine.
+Cryptographic HMAC-SHA256 Anonymization & Entity Masking Engine.
 Generates salt-hashed verification tokens and masked payloads for sensitive documents.
 Standard: Zero-dependency, pure Python standard library (hashlib, unicodedata, functools).
 """
