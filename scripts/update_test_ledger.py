@@ -112,7 +112,12 @@ FILE_DOMAIN_MAPPING = {
     "src/core/model_manager.py": ["DomainResourceStability", "DomainLLM"],
     "src/app/routers/rag.py": ["DomainSemanticRAG", "DomainRAG", "DomainRAGChatE2E"],
     "tests/test_rag_chat_e2e_pipeline.py": ["DomainRAGChatE2E"],
-    "tests/test_process_lifecycle_supervision.py": ["DomainResourceStability"]
+    "tests/test_process_lifecycle_supervision.py": ["DomainResourceStability"],
+    "tests/test_primary_source_connectors.py": ["DomainPrimarySources"],
+    "tests/test_llm_inference_benchmark.py": ["DomainLLMBenchmark"],
+    "tests/test_audio_hardware_calibration.py": ["DomainVoiceCalibration"],
+    "tests/test_large_scale_stress.py": ["DomainLargeScaleStress"],
+    "tests/test_windows_dist_packaging.py": ["DomainPackaging"]
 }
 
 
@@ -171,7 +176,12 @@ DOMAIN_TEST_MODULES = [
     "tests.test_text_utils_and_wal_daemon",
     "tests.test_speech_normalizer",
     "tests.test_speech_normalizer_expanded",
-    "tests.test_voice_normalization_cadence"
+    "tests.test_voice_normalization_cadence",
+    "tests.test_primary_source_connectors",
+    "tests.test_llm_inference_benchmark",
+    "tests.test_audio_hardware_calibration",
+    "tests.test_large_scale_stress",
+    "tests.test_windows_dist_packaging"
 ]
 
 

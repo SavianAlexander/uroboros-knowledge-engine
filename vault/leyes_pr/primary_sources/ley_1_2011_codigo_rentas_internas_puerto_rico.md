@@ -4,7 +4,7 @@ source_authority: "Oficina de Servicios Legislativos de Puerto Rico (OSLPR) / De
 statute_number: "Ley 1-2011 (Subtítulos A, B, C, D, E, F)"
 governing_jurisdiction: "Estado Libre Asociado de Puerto Rico"
 official_source_url: "https://hacienda.pr.gov / https://sutra.oslpr.org"
-harvested_at: "2026-08-19T04:04:01Z"
+harvested_at: "2026-08-19T14:35:14Z"
 document_status: "STATUTORY_EXCERPT_VIGENTE"
 verification: "OSLPR_LEX_VERIFIED"
 ---

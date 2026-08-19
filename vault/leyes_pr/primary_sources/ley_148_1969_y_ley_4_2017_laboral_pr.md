@@ -3,7 +3,7 @@ title: "Compendio Estatutario Laboral: Ley 4-2017 y Ley 148-1969 de Puerto Rico"
 source_authority: "Departamento del Trabajo y Recursos Humanos (DTRH) / OSLPR"
 statutes: "Ley 4-2017 (Transformación Laboral) & Ley 148-1969 (Bono de Navidad)"
 official_source_url: "https://www.trabajo.pr.gov / https://sutra.oslpr.org"
-harvested_at: "2026-08-19T04:04:01Z"
+harvested_at: "2026-08-19T14:35:14Z"
 document_status: "STATUTORY_EXCERPT_VIGENTE"
 verification: "DTRH_OSLPR_VERIFIED"
 ---

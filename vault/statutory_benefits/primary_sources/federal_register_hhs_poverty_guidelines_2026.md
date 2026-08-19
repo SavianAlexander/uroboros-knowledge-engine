@@ -9,7 +9,7 @@ publication_date: "2026-01-15"
 official_citation: "2026-HHS-FPL-FR-001"
 official_url: "https://www.federalregister.gov/documents/2026/01/15/2026-00755/annual-update-of-the-hhs-poverty-guidelines"
 pdf_url: "https://www.govinfo.gov/content/pkg/FR-2026-01-15/pdf/2026-00755.pdf"
-harvested_at: "2026-08-19T04:04:00Z"
+harvested_at: "2026-08-19T14:35:13Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "FEDERAL_REGISTER_API_V1_VERIFIED"
 ---
