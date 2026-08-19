@@ -216,6 +216,16 @@ function TreeNode({ node, depth, onSelectFile, selectedFile }: any) {
 }
 
 function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
+  const { toast } = useToast();
+
+  const filePath = file?.relative_path || file?.raw?.relative_path || '';
+  const fileExt = filePath.split('.').pop()?.toLowerCase() || 'txt';
+  const isPdf = fileExt === 'pdf';
+  const isMarkdown = fileExt === 'md' || fileExt === 'markdown';
+  const isCsv = fileExt === 'csv' || fileExt === 'tsv';
+  const isImage = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'].includes(fileExt);
+  const isGallupDoc = filePath.includes('Gallup') || Boolean(file?.raw?.relative_path && file.raw.relative_path.includes('Gallup'));
+
   const [content, setContent] = useState<any>(null);
   const [insights, setInsights] = useState<any>(null);
   const [viewTab, setViewTab] = useState<'studio' | 'source' | 'table' | 'image'>('studio');
@@ -228,7 +238,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   
   // Acrobat-Grade In-Page Search & AI X-Ray Overlay State
-  const [inPageSearch, setInPageSearch] = useState<string>('Analytical');
+  const [inPageSearch, setInPageSearch] = useState<string>('');
   const [inPageMatchIndex, setInPageMatchIndex] = useState<number>(1);
   const [isXrayActive, setIsXrayActive] = useState<boolean>(true);
   const [activeTool, setActiveTool] = useState<'pointer' | 'highlight' | 'note'>('pointer');
@@ -256,21 +266,103 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     setIsPanning(false);
   };
 
-  // Live Synced Right-Sidebar Concept & AI Assistant State
-  const [selectedConcept, setSelectedConcept] = useState<any>({
-    term: 'Analytical',
-    entity_type: 'Domain Concept • Signature Theme',
-    definition: "Your Analytical theme challenges other people: 'Prove it. Show me why what you are claiming is true.' You see yourself as objective and dispassionate, insisting that sound theories wither and die unless validated by evidence.",
-    vault_count: 1,
-    related_files: ['GallupReport Roberto Morales Pérez.pdf'],
-    related_concepts: ['Focus', 'CliftonStrengths', 'Gallup', 'Signature Themes', 'Don Clifton']
-  });
+  // Live Synced Right-Sidebar Concept & AI Assistant State (Clean Null Empty State)
+  const [selectedConcept, setSelectedConcept] = useState<any>(null);
   const [sidebarQuery, setSidebarQuery] = useState<string>('');
   const [sidebarAiAnswer, setSidebarAiAnswer] = useState<string>('');
   const [isSidebarThinking, setIsSidebarThinking] = useState<boolean>(false);
-  const [stickyNotes, setStickyNotes] = useState<{ id: string; page: number; text: string; date: string }[]>([
-    { id: 'note-1', page: 0, text: 'Roberto Morales Pérez: Analytical & Focus themes validated.', date: 'Active' }
-  ]);
+  const [stickyNotes, setStickyNotes] = useState<{ id: string; page: number; text: string; date: string }[]>([]);
+  const docAiAbortRef = useRef<AbortController | null>(null);
+
+  // Dynamic Prompt Chips based on Document Type
+  const dynamicQuickChips = useMemo(() => {
+    if (isCsv) {
+      return ['Summarize Dataset', 'Identify Key Anomalies', 'Extract Key Metrics'];
+    }
+    if (['py', 'ts', 'js', 'json', 'sql', 'html', 'css', 'go', 'rs', 'cpp'].includes(fileExt)) {
+      return ['Explain Architecture', 'Audit Logic & Security', 'Extract API Functions'];
+    }
+    return ['Summarize Document', 'Explain Key Concepts', 'Extract Action Items'];
+  }, [fileExt, isCsv]);
+
+  // Real Scoped Document RAG Streaming Engine
+  const executeDocAiQuery = async (queryText: string) => {
+    const trimmed = queryText.trim();
+    if (!trimmed) return;
+
+    setSidebarQuery(trimmed);
+    setIsSidebarThinking(true);
+    setSidebarAiAnswer('');
+
+    docAiAbortRef.current?.abort();
+    const controller = new AbortController();
+    docAiAbortRef.current = controller;
+
+    try {
+      const contextualMessage = `[Document: ${filePath}]\n${trimmed}`;
+      const response = await api.ragStream(contextualMessage, undefined, {
+        signal: controller.signal,
+        temperature: 0.3
+      });
+
+      if (!response.ok) {
+        let errMsg = `Server returned HTTP ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData.detail) errMsg = errData.detail;
+        } catch {}
+        setSidebarAiAnswer(`⚠️ Error querying document: ${errMsg}`);
+        setIsSidebarThinking(false);
+        return;
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) {
+        setIsSidebarThinking(false);
+        return;
+      }
+
+      let accumulated = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (value) buffer += decoder.decode(value, { stream: !done });
+
+        const lines = buffer.split('\n');
+        buffer = done ? '' : (lines.pop() || '');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6).trim();
+            if (!dataStr) continue;
+            try {
+              const data = JSON.parse(dataStr);
+              const token = typeof data.content === 'string' ? data.content : (typeof data.token === 'string' ? data.token : null);
+              if ((data.type === 'token' || data.type === 'answer_chunk') && token !== null) {
+                accumulated += token;
+                setSidebarAiAnswer(accumulated);
+              }
+            } catch {}
+          }
+        }
+        if (done) break;
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        setSidebarAiAnswer(`⚠️ Stream interrupted: ${err.message || 'Network error'}`);
+      }
+    } finally {
+      setIsSidebarThinking(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      docAiAbortRef.current?.abort();
+    };
+  }, []);
 
   // Luxury EPUB Reader Studio Customization State
   const [readerFont, setReaderFont] = useState<'serif' | 'sans' | 'mono' | 'charter'>('serif');
@@ -299,15 +391,6 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const termCache = useRef<{ [key: string]: any }>({});
   const hoverTimeoutRef = useRef<any>(null);
-
-  const { toast } = useToast();
-
-  const filePath = file?.relative_path || '';
-  const fileExt = filePath.split('.').pop()?.toLowerCase() || 'txt';
-  const isPdf = fileExt === 'pdf';
-  const isMarkdown = fileExt === 'md' || fileExt === 'markdown';
-  const isCsv = fileExt === 'csv' || fileExt === 'tsv';
-  const isImage = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'].includes(fileExt);
 
   const binaryUrl = `/api/file/binary?path=${encodeURIComponent(filePath)}`;
 
@@ -421,6 +504,12 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     setPdfInfo(null);
     setEntitiesList([]);
     setActiveHoverCard(null);
+    setSelectedConcept(null);
+    setStickyNotes([]);
+    setSidebarQuery('');
+    setSidebarAiAnswer('');
+    setIsSidebarThinking(false);
+    docAiAbortRef.current?.abort();
     setCurrentPdfPage(0);
     setPdfPageZoom(1);
     setImageZoom(1);
@@ -1667,7 +1756,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                           }}
                         >
                           {/* Page 1 Key Interactive Word Coordinates */}
-                          {currentPdfPage === 0 && (
+                          {currentPdfPage === 0 && (isGallupDoc || (pdfInfo?.ocr_boxes && pdfInfo.ocr_boxes.length > 0)) && (
                             <div className="relative w-full h-full text-left pointer-events-auto">
                               {/* Word 1: GALLUP */}
                               <div
@@ -1747,13 +1836,8 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setSidebarQuery('Explain the significance of the Analytical theme in this report.');
-                                      setIsSidebarThinking(true);
-                                      setTimeout(() => {
-                                        setIsSidebarThinking(false);
-                                        setSidebarAiAnswer('Analytical: Demands evidence, dissects root causes, and validates premises before commitment. It protects systems from faulty assumptions.');
-                                      }, 600);
-                                      toast('AI Explaining', 'Analyzing Analytical theme...', 'info');
+                                      executeDocAiQuery('Explain the significance of the Analytical theme in this report.');
+                                      toast('AI Explaining', 'Analyzing Analytical theme with real RAG stream...', 'info');
                                     }}
                                     className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold flex items-center gap-1 transition-colors shadow-xs"
                                     title="Instant Grounded AI Analysis"
@@ -1828,18 +1912,21 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                                 title="Hover to inspect 'Don Clifton' in right intelligence panel"
                               />
 
-                              {/* On-Page Sticky Note Pin Badge */}
-                              <div
-                                className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 border border-amber-400/80 shadow-xl backdrop-blur-md pointer-events-auto cursor-pointer hover:scale-105 transition-transform"
-                                title="1 Active Page Annotation"
-                                onClick={() => {
-                                  toast('Annotation #1', 'Roberto Morales Pérez: Analytical & Focus themes validated.', 'info');
-                                }}
-                              >
-                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                                <MessageSquare className="w-3.5 h-3.5 text-amber-300" />
-                                <span className="text-[10px] font-mono font-bold text-amber-300">Note #1</span>
-                              </div>
+                              {/* On-Page Sticky Note Pin Badges */}
+                              {stickyNotes.filter(n => n.page === currentPdfPage).map((note, idx) => (
+                                <div
+                                  key={note.id}
+                                  className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 border border-amber-400/80 shadow-xl backdrop-blur-md pointer-events-auto cursor-pointer hover:scale-105 transition-transform"
+                                  title={note.text}
+                                  onClick={() => {
+                                    toast(`Annotation #${idx + 1}`, note.text, 'info');
+                                  }}
+                                >
+                                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                                  <MessageSquare className="w-3.5 h-3.5 text-amber-300" />
+                                  <span className="text-[10px] font-mono font-bold text-amber-300">Note #{idx + 1}</span>
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
@@ -1986,7 +2073,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
           </div>
 
           {/* Section 1: Live Synced Concept Deep-Dive */}
-          {selectedConcept && (
+          {selectedConcept ? (
             <div className="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/30 space-y-3 shadow-lg animate-in fade-in">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 font-bold text-emerald-300 text-sm font-serif-claude">
@@ -2008,28 +2095,30 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
               </div>
 
               {/* Related Cross-Concepts */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[10px] font-mono uppercase text-slate-400">Related Vault Concepts:</span>
-                <div className="flex flex-wrap gap-1">
-                  {['Focus', 'CliftonStrengths', 'Gallup', 'Signature Themes', 'Don Clifton'].map((c, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        setSelectedConcept({
-                          term: c,
-                          entity_type: 'Domain Concept',
-                          definition: `Core strategic concept '${c}' identified in document context and vault semantic index.`,
-                          vault_count: 1,
-                          related_files: [filePath]
-                        });
-                      }}
-                      className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-900 text-slate-300 border border-slate-700/80 hover:bg-emerald-500/20 hover:text-emerald-300 transition-colors"
-                    >
-                      #{c}
-                    </button>
-                  ))}
+              {selectedConcept.related_concepts && selectedConcept.related_concepts.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[10px] font-mono uppercase text-slate-400">Related Vault Concepts:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedConcept.related_concepts.map((c: string, idx: number) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setSelectedConcept({
+                            term: c,
+                            entity_type: 'Domain Concept',
+                            definition: `Core strategic concept '${c}' identified in document context and vault semantic index.`,
+                            vault_count: 1,
+                            related_files: [filePath]
+                          });
+                        }}
+                        className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-900 text-slate-300 border border-slate-700/80 hover:bg-emerald-500/20 hover:text-emerald-300 transition-colors"
+                      >
+                        #{c}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex items-center gap-1.5 pt-2 border-t border-slate-800/80">
@@ -2051,79 +2140,89 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                 </button>
               </div>
             </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-slate-100/50 dark:bg-slate-950/40 border border-slate-200 dark:border-white/5 text-center space-y-1.5 py-5">
+              <Sparkles className="w-4 h-4 mx-auto text-slate-400 opacity-60" />
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-400">No Concept Selected</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">Hover or click terms in Document Studio to inspect entities and semantic linkages.</p>
+            </div>
           )}
 
-          {/* CliftonStrengths Strategic Talent Matrix Visualizer */}
-          <div className="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/25 space-y-3 shadow-lg">
-            <div className="flex items-center justify-between">
-              <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-emerald-400" /> Strategic Talent Matrix
-              </h4>
-              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                5 Themes
-              </span>
-            </div>
+          {/* CliftonStrengths Strategic Talent Matrix Visualizer (Gallup Documents) */}
+          {isGallupDoc && (
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/25 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-emerald-400" /> Strategic Talent Matrix
+                </h4>
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  5 Themes
+                </span>
+              </div>
 
-            <div className="space-y-2">
-              {[
-                { name: 'Analytical', domain: 'Strategic Thinking', score: 96, color: 'bg-amber-400' },
-                { name: 'Focus', domain: 'Executing', score: 92, color: 'bg-emerald-400' },
-                { name: 'Responsibility', domain: 'Executing', score: 88, color: 'bg-teal-400' },
-                { name: 'Achiever', domain: 'Executing', score: 85, color: 'bg-indigo-400' },
-                { name: 'Ideation', domain: 'Strategic Thinking', score: 81, color: 'bg-purple-400' },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => {
-                    setSelectedConcept({
-                      term: item.name,
-                      entity_type: `Domain Concept • ${item.domain}`,
-                      definition: `Core leadership theme '${item.name}' mapped under ${item.domain}. High intensity factor (${item.score}%).`,
-                      vault_count: 1,
-                      related_files: [filePath],
-                      related_concepts: ['Focus', 'CliftonStrengths', 'Gallup', 'Signature Themes']
-                    });
-                  }}
-                  className="p-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 cursor-pointer transition-all space-y-1.5"
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5 font-semibold text-slate-200">
-                      <span className="text-emerald-400 font-mono text-[10px]">#{idx + 1}</span>
-                      <span>{item.name}</span>
+              <div className="space-y-2">
+                {[
+                  { name: 'Analytical', domain: 'Strategic Thinking', score: 96, color: 'bg-amber-400' },
+                  { name: 'Focus', domain: 'Executing', score: 92, color: 'bg-emerald-400' },
+                  { name: 'Responsibility', domain: 'Executing', score: 88, color: 'bg-teal-400' },
+                  { name: 'Achiever', domain: 'Executing', score: 85, color: 'bg-indigo-400' },
+                  { name: 'Ideation', domain: 'Strategic Thinking', score: 81, color: 'bg-purple-400' },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      setSelectedConcept({
+                        term: item.name,
+                        entity_type: `Domain Concept • ${item.domain}`,
+                        definition: `Core leadership theme '${item.name}' mapped under ${item.domain}. High intensity factor (${item.score}%).`,
+                        vault_count: 1,
+                        related_files: [filePath],
+                        related_concepts: ['Focus', 'CliftonStrengths', 'Gallup', 'Signature Themes']
+                      });
+                    }}
+                    className="p-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 cursor-pointer transition-all space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5 font-semibold text-slate-200">
+                        <span className="text-emerald-400 font-mono text-[10px]">#{idx + 1}</span>
+                        <span>{item.name}</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400">{item.domain}</span>
                     </div>
-                    <span className="text-[10px] font-mono text-slate-400">{item.domain}</span>
+                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${item.color} rounded-full transition-all duration-500`}
+                        style={{ width: `${item.score}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${item.color} rounded-full transition-all duration-500`}
-                      style={{ width: `${item.score}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Section 2: Grounded Document Takeaways */}
-          <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20 space-y-2.5">
-            <h4 className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Key Document Takeaways
-            </h4>
-            <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-2">
-              <div className="flex items-start gap-1.5">
-                <span className="text-emerald-500 font-bold">•</span>
-                <span><strong>Analytical Precision:</strong> Requires objective empirical proofs before validating theories.</span>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <span className="text-emerald-500 font-bold">•</span>
-                <span><strong>Laser Focus:</strong> Prioritizes high-leverage execution goals and eliminates tangential distractions.</span>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <span className="text-emerald-500 font-bold">•</span>
-                <span><strong>CliftonStrengths Profile:</strong> 5 foundational talent themes mapped for executive leadership.</span>
+          {isGallupDoc && (
+            <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20 space-y-2.5">
+              <h4 className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Key Document Takeaways
+              </h4>
+              <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-2">
+                <div className="flex items-start gap-1.5">
+                  <span className="text-emerald-500 font-bold">•</span>
+                  <span><strong>Analytical Precision:</strong> Requires objective empirical proofs before validating theories.</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="text-emerald-500 font-bold">•</span>
+                  <span><strong>Laser Focus:</strong> Prioritizes high-leverage execution goals and eliminates tangential distractions.</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="text-emerald-500 font-bold">•</span>
+                  <span><strong>CliftonStrengths Profile:</strong> 5 foundational talent themes mapped for executive leadership.</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Section 3: Interactive Document AI Q&A Assistant */}
           <div className="p-4 rounded-2xl bg-white/70 dark:bg-slate-950/60 border border-slate-200 dark:border-white/5 space-y-3 shadow-xs">
@@ -2133,26 +2232,12 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
 
             {/* Quick Prompt Chips */}
             <div className="flex flex-wrap gap-1">
-              {[
-                'Summarize Top Strengths',
-                'Explain Analytical Theme',
-                'Actionable Advice'
-              ].map((chip, idx) => (
+              {dynamicQuickChips.map((chip, idx) => (
                 <button
                   key={idx}
                   onClick={() => {
-                    setSidebarQuery(chip);
-                    setIsSidebarThinking(true);
-                    setTimeout(() => {
-                      setIsSidebarThinking(false);
-                      if (chip.includes('Strengths')) {
-                        setSidebarAiAnswer('Top themes identified in GallupReport: 1. Analytical (evidence-based rigor), 2. Focus (direct goal targeting), 3. Responsibility, 4. Achiever, 5. Ideation.');
-                      } else if (chip.includes('Analytical')) {
-                        setSidebarAiAnswer('The Analytical theme challenges claims with "Prove it." You see yourself as objective and dispassionate, exposing flawed assumptions.');
-                      } else {
-                        setSidebarAiAnswer('Action recommendations: Leverage Analytical strengths to review architectural specifications, and pair with Focus to enforce sprint goals without drift.');
-                      }
-                    }, 600);
+                    executeDocAiQuery(chip);
+                    toast('AI Querying', `Querying document: ${chip}...`, 'info');
                   }}
                   className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 transition-colors"
                 >
@@ -2168,27 +2253,20 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
                 value={sidebarQuery}
                 onChange={(e) => setSidebarQuery(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && sidebarQuery.trim()) {
-                    setIsSidebarThinking(true);
-                    setTimeout(() => {
-                      setIsSidebarThinking(false);
-                      setSidebarAiAnswer(`Grounded AI Analysis: "${sidebarQuery}" corresponds to the Analytical & Focus methodology outlined in ${filePath}.`);
-                    }, 700);
+                  if (e.key === 'Enter' && sidebarQuery.trim() && !isSidebarThinking) {
+                    executeDocAiQuery(sidebarQuery);
                   }
                 }}
                 className="flex-1 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
               />
               <button
                 onClick={() => {
-                  if (sidebarQuery.trim()) {
-                    setIsSidebarThinking(true);
-                    setTimeout(() => {
-                      setIsSidebarThinking(false);
-                      setSidebarAiAnswer(`Grounded AI Analysis: "${sidebarQuery}" corresponds to the Analytical & Focus methodology outlined in ${filePath}.`);
-                    }, 700);
+                  if (sidebarQuery.trim() && !isSidebarThinking) {
+                    executeDocAiQuery(sidebarQuery);
                   }
                 }}
-                className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs transition-colors"
+                disabled={isSidebarThinking}
+                className="p-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-xs transition-colors"
               >
                 <Sparkles className="w-3.5 h-3.5" />
               </button>
@@ -2196,12 +2274,12 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
 
             {isSidebarThinking && (
               <div className="text-xs text-emerald-400 font-mono animate-pulse flex items-center gap-1.5 p-2 bg-emerald-500/10 rounded-lg">
-                <Brain className="w-3.5 h-3.5 animate-spin" /> Analyzing with local Ollama...
+                <Brain className="w-3.5 h-3.5 animate-spin" /> Querying document RAG stream...
               </div>
             )}
 
             {sidebarAiAnswer && !isSidebarThinking && (
-              <div className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl shadow-xs">
+              <div className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl shadow-xs whitespace-pre-wrap">
                 {sidebarAiAnswer}
               </div>
             )}
