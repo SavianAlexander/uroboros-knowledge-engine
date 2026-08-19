@@ -9,8 +9,9 @@ Validates the 4 Advanced Enterprise Resilience & Security Pillars:
 import os
 import sys
 import json
+import struct
+import array
 import unittest
-import numpy as np
 from fastapi.testclient import TestClient
 
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -105,25 +106,30 @@ class TestEnterpriseResiliencePillars(unittest.TestCase):
         interrupter = VoiceActivityInterrupter(energy_threshold=0.020, playback_echo_suppression_multiplier=2.5)
 
         # Moderate audio frame (RMS ~ 0.030) - speech when idle, but suppressed as echo during playback
-        moderate_samples = np.full(480, int(0.030 * 32767), dtype=np.int16)
-        # Alternate signs to ensure non-zero zero-crossing rate
-        moderate_samples[::2] = -moderate_samples[::2]
+        mod_val = int(0.030 * 32767)
+        moderate_samples = bytearray()
+        for i in range(480):
+            val = mod_val if (i % 2 == 0) else -mod_val
+            moderate_samples.extend(struct.pack('<h', val))
 
         # 1. Idle mode: moderate audio counts as speech
         interrupter.set_output_playback_active(False)
-        res_idle = interrupter.analyze_frame(moderate_samples)
+        res_idle = interrupter.analyze_frame(bytes(moderate_samples))
         self.assertTrue(res_idle["is_speech"])
 
         # 2. Output playback active: moderate audio is suppressed (threshold raised to 0.050)
         interrupter.reset_turn()
         interrupter.set_output_playback_active(True)
-        res_playback = interrupter.analyze_frame(moderate_samples)
+        res_playback = interrupter.analyze_frame(bytes(moderate_samples))
         self.assertFalse(res_playback["is_speech"])
 
         # 3. Very loud intentional user barge-in (RMS ~ 0.080) exceeds even suppressed threshold
-        loud_samples = np.full(480, int(0.080 * 32767), dtype=np.int16)
-        loud_samples[::2] = -loud_samples[::2]
-        res_loud = interrupter.analyze_frame(loud_samples)
+        loud_val = int(0.080 * 32767)
+        loud_samples = bytearray()
+        for i in range(480):
+            val = loud_val if (i % 2 == 0) else -loud_val
+            loud_samples.extend(struct.pack('<h', val))
+        res_loud = interrupter.analyze_frame(bytes(loud_samples))
         self.assertTrue(res_loud["is_speech"])
 
     # =========================================================================
