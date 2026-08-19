@@ -35,6 +35,7 @@ _smart_extract_context = smart_extract_context
 router = APIRouter()
 
 @router.post("/api/rag/stream")
+@router.post("/api/rag/query")
 def rag_stream_endpoint(req: RAGStreamRequest):
     """
     Live Token Streaming RAG endpoint v2.0 with Grounded Sources Metadata:

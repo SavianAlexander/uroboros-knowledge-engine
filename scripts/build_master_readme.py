@@ -12,8 +12,8 @@ readme_content = r"""# Uroboros Knowledge Database Engine (Neuro Alexander)
   <img src="https://img.shields.io/badge/Retrieval%20Subsystems-32-purple.svg?style=flat-square" alt="32 Retrieval Subsystems" />
   <img src="https://img.shields.io/badge/Advanced%20Strategies-13-magenta.svg?style=flat-square" alt="13 Advanced Strategies" />
   <img src="https://img.shields.io/badge/Architecture%20Optimizations-21-indigo.svg?style=flat-square" alt="21 Optimizations" />
-  <img src="https://img.shields.io/badge/Domain%20Modules-141-blue.svg?style=flat-square" alt="141 Domain Modules" />
-  <img src="https://img.shields.io/badge/Test%20Suites-99-emerald.svg?style=flat-square" alt="99 Test Suites" />
+  <img src="https://img.shields.io/badge/Domain%20Modules-251-blue.svg?style=flat-square" alt="251 Domain Modules" />
+  <img src="https://img.shields.io/badge/Test%20Suites-203-emerald.svg?style=flat-square" alt="203 Test Suites" />
   <img src="https://img.shields.io/badge/test%20pass%20rate-100%25-brightgreen.svg?style=flat-square" alt="Test Pass Rate" />
   <img src="https://img.shields.io/badge/code%20style-ponytail-indigo?style=flat-square" alt="Code Style" />
 </p>
@@ -24,7 +24,7 @@ readme_content = r"""# Uroboros Knowledge Database Engine (Neuro Alexander)
 
 **Uroboros Knowledge Engine (Neuro Alexander)** is an enterprise-grade, zero-cloud, single-node knowledge management, semantic retrieval, document intelligence, and multi-hop RAG platform. Built around a modular FastAPI backend, SQLite FTS5 vector storage, local Ollama / GGUF LLM integration, and a React 19 / Vite single-page frontend, Uroboros enables real-time local search, structural parsing, multi-hop RAG reasoning, and graph-based knowledge discovery without requiring external cloud vector databases or heavy third-party runtime dependencies.
 
-Featuring **32 Core Retrieval Subsystems**, **13 Advanced Retrieval Strategies**, **21 Single-Node Architecture Optimizations**, **141 Decoupled Domain Modules**, and **99 Automated Test Suites**, Uroboros provides counterfactual validation, hierarchical RAPTOR indexing, binary ColBERT MaxSim reranking, dynamic SQLite HyperGraph routing, Louvain community clusters, statutory legal audits, semantic document diffing, cryptographic data masking, multi-agent debate synthesis, predictive context pre-caching, and hardware single-instance process memory isolation directly on local hardware.
+Featuring **32 Core Retrieval Subsystems**, **13 Advanced Retrieval Strategies**, **21 Single-Node Architecture Optimizations**, **251 Decoupled Domain Modules**, and **203 Automated Test Suites**, Uroboros provides counterfactual validation, hierarchical RAPTOR indexing, binary ColBERT MaxSim reranking, dynamic SQLite HyperGraph routing, Louvain community clusters, statutory legal audits, semantic document diffing, cryptographic data masking, multi-agent debate synthesis, predictive context pre-caching, and hardware single-instance process memory isolation directly on local hardware.
 
 ---
 
@@ -39,7 +39,7 @@ Featuring **32 Core Retrieval Subsystems**, **13 Advanced Retrieval Strategies**
 - [7. Complete Codebase Directory Layout](#7-complete-codebase-directory-layout)
 - [8. API Router Architecture & Specifications (`src/app/routers/`)](#8-api-router-architecture--specifications-srcapprouters)
 - [9. Complete REST API Specifications & Curl Reference](#9-complete-rest-api-specifications--curl-reference)
-- [10. Complete Taxonomy of All 135 Domain Modules (`src/domain/`)](#10-complete-taxonomy-of-all-135-domain-modules-srcdomain)
+- [10. Complete Taxonomy of Domain Intelligence Modules (`src/domain/`)](#10-complete-taxonomy-of-all-135-domain-modules-srcdomain)
 - [11. Operations & Benchmark Utility Scripts Reference (`scripts/`)](#11-operations--benchmark-utility-scripts-reference-scripts)
 - [12. Document File Format Parsers & Extraction Pipeline](#12-document-file-format-parsers--extraction-pipeline)
 - [13. Complete SQLite Database DDL & Storage Schema](#13-complete-sqlite-database-ddl--storage-schema)
@@ -136,7 +136,7 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 
 ### Core Acceleration & Swarm RAG
 1. **2-Phase Matryoshka Vector Search** ([`src/domain/vector_store.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/vector_store.py)): Coarse-to-fine vector retrieval (32-dim fast pass $\to$ 128-dim rescore).
-2. **Cognitive Swarm RAG Engine** ([`src/domain/swarm_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/swarm_rag.py)): Multi-agent parallel RAG with Explorer, Graph Traversal, Critic, and Synthesizer roles.
+2. **Cognitive Swarm RAG Engine** ([`src/domain/multi_agent_consensus.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/multi_agent_consensus.py)): Multi-agent parallel RAG with Explorer, Graph Traversal, Critic, and Synthesizer roles.
 3. **Agentic Long-Term Memory Store** ([`src/domain/agent_memory.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/agent_memory.py)): Persistent key-value memory database schema.
 4. **Ambient Workspace Screen Perception** ([`src/domain/screen_perception.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/screen_perception.py)): OCR display sampling with zero-dependency fallback.
 
@@ -165,13 +165,13 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 
 ## 3. The 13 Core RAG Retrieval Paradigms
 
-1. **⚔️ Counterfactual RAG & Multi-Scenario Stress Testing** ([`src/domain/counterfactual_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/counterfactual_rag.py)): Generates counter-hypotheses and searches for refutations or edge cases before output.
+1. **⚔️ Counterfactual RAG & Multi-Scenario Stress Testing** ([`src/domain/retrieval/retrieval_pipeline_dag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval/retrieval_pipeline_dag.py)): Generates counter-hypotheses and searches for refutations or edge cases before output.
 2. **🌲 RAPTOR Tree Indexer** ([`src/domain/raptor_tree_indexer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/raptor_tree_indexer.py)): Recursive Abstractive Processing constructing hierarchical multi-level summary trees.
 3. **🕰️ Episodic Memory-Augmented RAG** ([`src/domain/episodic_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/episodic_rag.py)): Interconnects past search sessions and user decisions for temporal context tracking over time.
 4. **⚡ Binary ColBERT MaxSim Reranker** ([`src/domain/binary_colbert.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/binary_colbert.py)): 1-bit binary vector token-level late-interaction similarity matrices (< 5ms).
 5. **🛠️ Inline Self-Correction Grounding Guard** ([`src/domain/auto_correct_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/auto_correct_rag.py)): Identifies ungrounded claims during text generation and patches them with verified context in real time.
 6. **🧹 Semantic Entropy Context Compressor** ([`src/domain/adaptive_context_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/adaptive_context_compressor.py)): Strips filler prose while preserving numbers, code, and entities (saving up to 60% prompt tokens).
-7. **🌐 Zero-Shot Cross-Lingual RAG Fusion** ([`src/domain/cross_lingual_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cross_lingual_fusion.py)): Queries English against multi-lingual document vaults (Spanish, German, French) with zero translation latency.
+7. **🌐 Zero-Shot Cross-Lingual RAG Fusion** ([`src/domain/retrieval/retrieval_pipeline_dag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval/retrieval_pipeline_dag.py)): Queries English against multi-lingual document vaults (Spanish, German, French) with zero translation latency.
 8. **🔐 Quantum-Safe Zero-Knowledge Data Masker** ([`src/domain/zk_data_masker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/zk_data_masker.py)): Salt-hashed zero-knowledge verification proofs for sensitive document payloads.
 9. **🎯 Sub-1ms Speculative Query Intent Router** ([`src/domain/intent_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/intent_router.py)): Classifies intent in sub-1ms and routes execution to the optimal RAG pipeline.
 10. **🔗 Knowledge Graph Self-Healing & Wikilink Synthesizer** ([`src/domain/graph_link_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_link_synthesizer.py)): Scans unlinked concept nodes across raw vault files and automatically inserts missing semantic `[[wikilinks]]`.
@@ -185,7 +185,7 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 
 | # | Innovation Pillar | Module File Path | API Endpoint | Architectural Advantage over External Cloud APIs |
 |---| :--- | :--- | :--- | :--- |
-| **1** | **Speculative RAG Synthesizer** | [`src/domain/speculative_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_rag.py) | `POST /api/search/speculative-rag` | Synthesizes and scores 3 candidate draft representations in parallel, cutting context latency by **~78%**. |
+| **1** | **Speculative RAG Synthesizer** | [`src/domain/speculative_streamer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_streamer.py) | `POST /api/search/speculative-rag` | Synthesizes and scores 3 candidate draft representations in parallel, cutting context latency by **~78%**. |
 | **2** | **Temporal Knowledge Lineage** | [`src/domain/temporal_rag_lineage.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/temporal_rag_lineage.py) | `GET/POST /api/knowledge/temporal-lineage` | Tracks document version history and relationship evolution across time ($t_0 \to t_1 \to t_2$). |
 | **3** | **Hallucination Refusal Guard** | [`src/domain/hallucination_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/hallucination_guard.py) | `POST /api/search/hallucination-guard` | Calculates mathematical Context Confidence Scores ($0.00 - 1.00$); safely refuses low-confidence queries ($< 0.65$). |
 | **4** | **Contradiction & Conflict Resolver** | [`src/domain/conflict_resolver.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/conflict_resolver.py) | `POST /api/knowledge/resolve-conflicts` | Detects opposing dates, numbers, or assertions across document pairs and synthesizes reconciliation reports. |
@@ -193,11 +193,11 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 | **6** | **Multi-Armed Bandit Router** | [`src/domain/bandit_query_router.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/bandit_query_router.py) | `GET/POST /api/search/bandit-route` | Dynamically learns optimal retrieval strategy (FTS5, Vector, HyDE, GraphRAG) via Thompson Sampling. |
 | **7** | **Visual Graph Diagram Generator** | [`src/domain/graph_mermaid_generator.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/graph_mermaid_generator.py) | `GET/POST /api/graph/mermaid` | Converts vault wikilinks into clean **Mermaid.js** graph diagram markdown (`graph TD; NodeA --> NodeB;`). |
 | **8** | **Rerank Score Explainer** | [`src/domain/rerank_score_explainer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/rerank_score_explainer.py) | `POST /api/search/explain-score` | Deconstructs WHY candidate #1 beat #5 (BM25 vs PageRank boost vs Recency multiplier). |
-| **9** | **Exact Source Line Citations** | [`src/domain/source_citation_generator.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/source_citation_generator.py) | `POST /api/search/generate-citations` | Maps retrieved passage text to exact file line numbers (`[report.md#L10-L25](file:///path/to/report.md#L10-L25)`). |
+| **9** | **Exact Source Line Citations** | [`src/domain/source_citation_generator.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/source_citation_generator.py) | `POST /api/search/generate-citations` | Maps retrieved passage text to exact file line numbers (`[report.md#L10-L25](file://...)`). |
 | **10** | **Adaptive Query Intent Classifier** | [`src/domain/query_intent_classifier.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/query_intent_classifier.py) | `GET/POST /api/search/classify-intent` | Categorizes queries into `code_search`, `tabular_math`, `analytical_summary`, `comparative_analysis`, or `factual_lookup`. |
 | **11** | **Knowledge Vault Self-Healing** | [`src/domain/knowledge_self_healing.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/knowledge_self_healing.py) | `GET /api/system/knowledge-healing` | Audits vault graph topology for orphaned nodes and broken wikilinks, outputting a Vault Health Score. |
 | **12** | **PII Privacy & Anonymization** | [`src/domain/privacy_anonymizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/privacy_anonymizer.py) | `POST /api/search/redact-pii` | Automatically redacts Social Security Numbers, Credit Cards, API Keys, and Emails locally. |
-| **13** | **Cross-Lingual Query Alignment** | [`src/domain/cross_lingual_aligner.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cross_lingual_aligner.py) | `GET/POST /api/search/cross-lingual` | Normalizes NFC/NFD diacritics and translates Spanish/French/German query terms to English vault equivalents. |
+| **13** | **Cross-Lingual Query Alignment** | [`src/core/text_utils.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/core/text_utils.py) | `GET/POST /api/search/cross-lingual` | Normalizes NFC/NFD diacritics and translates Spanish/French/German query terms to English vault equivalents. |
 | **14** | **Self-RAG Reflection Tokens** | [`src/domain/self_rag_critique.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/self_rag_critique.py) | `POST /api/search/self-rag` | Evaluates `[IsRel]` and `[IsSup]` reflection tokens to critique context relevance and eliminate hallucinations. |
 | **15** | **MinHash Context Compression** | [`src/domain/near_duplicate_detector.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/near_duplicate_detector.py) | Integrated in RAG engine | Deduplicates overlapping passage text ($Jaccard \ge 0.70$), saving **up to 60% LLM prompt tokens**. |
 | **16** | **Parent-Child Context Retrieval** | [`src/domain/parent_child_retrieval.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/parent_child_retrieval.py) | `GET /api/search/parent-context` | Searches 100-token child chunks for speed, but returns full 1500-character parent context to the LLM. |
@@ -446,14 +446,14 @@ curl -X GET "http://127.0.0.1:8000/api/briefing/daily"
 
 ---
 
-## 10. Complete Taxonomy of All 135 Domain Modules (`src/domain/`)
+## 10. Complete Taxonomy of Domain Intelligence Modules (`src/domain/`)
 
 The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/) consists of 135 modular Python engines categorized into 6 functional clusters:
 
 ### 10.1 Retrieval & Vector Search Intelligence (Modules 1–25)
 1. [`acl_permission_engine.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/acl_permission_engine.py): Security permission trimmer for search candidate hits.
 2. [`acl_vector_guard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/acl_vector_guard.py): Vector-level tenant separation guard.
-3. [`active_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/active_rag.py): Dynamic context lookup during generation steps.
+3. [`rag_engine.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval/rag_engine.py): Dynamic context lookup during generation steps.
 4. [`adaptive_context_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/adaptive_context_compressor.py): Information-entropy context budgeting & compression.
 5. [`anki_card_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/anki_card_synthesizer.py): Spaced repetition flashcard package generator.
 6. [`ast_code_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/ast_code_rag.py): Code AST symbol extraction & RAG.
@@ -470,7 +470,7 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 17. [`code_diff_synthesizer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_diff_synthesizer.py): Git diff structural change analyzer.
 18. [`code_doc_aligner.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_doc_aligner.py): Function-to-docstring alignment mapper.
 19. [`code_self_refactor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/code_self_refactor.py): AST-driven code simplification advisor.
-20. [`colbert_reranker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/colbert_reranker.py): Multi-vector late interaction re-ranker.
+20. [`reranking.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval/reranking.py): Multi-vector late interaction re-ranker.
 21. [`compliance_inspector.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/compliance_inspector.py): Compliance & regulatory rule evaluator.
 22. [`conflict_resolver.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/conflict_resolver.py): Date, number & claim contradiction resolver.
 23. [`context_budget_allocator.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/context_budget_allocator.py): Proportional token context allocator.
@@ -478,12 +478,12 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 25. [`contextual_hyde.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/contextual_hyde.py): Hypothetical Document Embeddings generator.
 
 ### 10.2 Reasoning, Graph & Knowledge Self-Healing (Modules 26–55)
-26. [`contextual_noise_mask.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/contextual_noise_mask.py): Boilerplate text noise filter.
+26. [`adaptive_context_compressor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/adaptive_context_compressor.py): Boilerplate text noise filter.
 27. [`contradiction_resolver.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/contradiction_resolver.py): Fact reconciliation engine.
-28. [`counterfactual_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/counterfactual_rag.py): Counterfactual scenario evaluator.
-29. [`cross_lingual_aligner.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cross_lingual_aligner.py): Accent NFC/NFD normalization & cross-lingual term mapper.
-30. [`cross_lingual_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cross_lingual_fusion.py): Multilingual reciprocal rank fusion.
-31. [`crosslingual_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/crosslingual_bridge.py): Query language bridge.
+28. [`retrieval_pipeline_dag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval/retrieval_pipeline_dag.py): Counterfactual scenario evaluator.
+29. [`text_utils.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/core/text_utils.py): Accent NFC/NFD normalization & cross-lingual term mapper.
+30. [`retrieval_pipeline_dag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval/retrieval_pipeline_dag.py): Multilingual reciprocal rank fusion.
+31. [`crosslingual_bridge.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/core/text_utils.py): Query language bridge.
 32. [`crypto_audit_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/crypto_audit_ledger.py): SHA-256 cryptographic append-only audit trail.
 33. [`daily_briefing.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/daily_briefing.py): Autonomous executive briefing synthesizer.
 34. [`data_provenance_tracker.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/data_provenance_tracker.py): Document lineage & origin tracker.
@@ -520,10 +520,10 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 63. [`semantic_doc_diff.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/semantic_doc_diff.py): Sentence-level semantic claim evolution diff tracker.
 64. [`semantic_drift_monitor.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/semantic_drift_monitor.py): Temporal term concept drift auditor.
 65. [`source_citation_generator.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/source_citation_generator.py): Line-exact Markdown citation generator.
-66. [`speculative_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_rag.py): Speculative candidate draft synthesizer.
+66. [`speculative_streamer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_streamer.py): Speculative candidate draft synthesizer.
 67. [`speculative_streamer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_streamer.py): Parallel speculative pre-tokenized streamer.
 68. [`speculative_warmer.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/speculative_warmer.py): Spotlight search keystroke vector warmer.
-69. [`swarm_rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/swarm_rag.py): Multi-agent cognitive swarm RAG.
+69. [`multi_agent_consensus.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/multi_agent_consensus.py): Multi-agent cognitive swarm RAG.
 70. [`system_scoreboard.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/system_scoreboard.py): Master system health & telemetry scoreboard.
 71. [`temporal_rag_lineage.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/temporal_rag_lineage.py): Document version lineage tracker ($t_0 \to t_1 \to t_2$).
 72. [`vector_store.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/vector_store.py): 2-Phase Matryoshka vector store.
@@ -541,7 +541,7 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 | [`scripts/backup_db.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/backup_db.py) | `python scripts/backup_db.py --output snapshot.db` | Executes non-blocking online SQLite WAL backup |
 | [`scripts/update_test_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/update_test_ledger.py) | `python scripts/update_test_ledger.py --soc2` | Generates SOC 2 Type II attestation & coverage ledger |
 | [`scripts/benchmark_engine.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/benchmark_engine.py) | `python scripts/benchmark_engine.py --runs 100` | Benchmarks retrieval latency, QPS, & precision |
-| [`scripts/chaos_monkey.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/chaos_monkey.py) | `python scripts/chaos_monkey.py --duration 30` | Injects fault concurrency & memory stress |
+| [`scripts/fault_injection_harness.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/fault_injection_harness.py) | `python scripts/fault_injection_harness.py --duration 30` | Injects fault concurrency & memory stress |
 | [`scripts/test_voice_ui_interactive_playwright.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/test_voice_ui_interactive_playwright.py) | `python scripts/test_voice_ui_interactive_playwright.py` | Interactive Playwright browser test for Live Voice Call HUD |
 | [`run_uat_audit.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/run_uat_audit.py) | `python run_uat_audit.py` | Automated 6-journey Playwright UAT audit & visual evidence |
 | [`scripts/audit_ui_playwright.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/audit_ui_playwright.py) | `python scripts/audit_ui_playwright.py` | Automated Playwright end-to-end UI audit |
@@ -861,14 +861,14 @@ python scripts/update_test_ledger.py --soc2
 python scripts/benchmark_engine.py --runs 100
 
 # Execute fault injection and memory stress tests
-python scripts/chaos_monkey.py --duration 30
+python scripts/fault_injection_harness.py --duration 30
 ```
 
 ---
 
 ## 22. Autonomous Co-Pilot & Task Master Integration (Tududi)
 
-Uroboros Knowledge Engine integrates natively with AI Agent skill protocols ([`neuro-copilot`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/SKILL.md) and [`tududi-tasks`](file:///C:/Users/Administrator/.gemini/config/skills/tududi-tasks/SKILL.md)):
+Uroboros Knowledge Engine integrates natively with AI Agent skill protocols ([`neuro-copilot`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/SKILL.md) and [`neuro-copilot / tududi`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/.agents/skills/neuro-copilot/SKILL.md)):
 
 ```mermaid
 graph LR
@@ -889,11 +889,11 @@ graph LR
 
 ## 23. Multilingual Tokenization & CJK Search Processing
 
-Uroboros provides native zero-shot multilingual tokenization and diacritic character equivalence ([`src/domain/cross_lingual_aligner.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cross_lingual_aligner.py)):
+Uroboros provides native zero-shot multilingual tokenization and diacritic character equivalence ([`src/core/text_utils.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/core/text_utils.py)):
 
 - **Unicode NFC/NFD Normalization**: Normalizes accent characters and diacritics (`unicodedata.normalize("NFC", query)`) before querying SQLite FTS5 indexes to ensure accent-insensitive matching.
 - **CJK Bigram & Character Tokenization**: Segments Chinese, Japanese, and Korean text into character n-grams to enable full-text indexing without requiring heavy external CJK segmenters.
-- **Zero-Shot Cross-Lingual RAG Fusion**: Fuses multilingual passage candidates with English query embeddings via [`cross_lingual_fusion.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/cross_lingual_fusion.py).
+- **Zero-Shot Cross-Lingual RAG Fusion**: Fuses multilingual passage candidates with English query embeddings via [`retrieval_pipeline_dag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/domain/retrieval/retrieval_pipeline_dag.py).
 
 ---
 
