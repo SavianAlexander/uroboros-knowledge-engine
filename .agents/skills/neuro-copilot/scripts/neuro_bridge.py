@@ -324,34 +324,23 @@ def vacuum_db_cli():
         return json.dumps({"status": "error", "message": str(e)})
 
 def create_snapshot_cli():
-    """Create a point-in-time cryptographic SQLite snapshot in vault/snapshots/."""
+    """Create a point-in-time cryptographic SQLite snapshot in backups/snapshots/."""
     try:
-        import sqlite3, shutil
+        from src.infrastructure.repositories.snapshots import create_db_snapshot, get_snapshot_path, _compute_file_sha256
         from src.infrastructure.database import DB_FILE
-        vault_snapshots_dir = os.path.join(project_root, "vault", "snapshots")
-        os.makedirs(vault_snapshots_dir, exist_ok=True)
-        timestamp = int(time.time())
         
-        # Calculate SHA256 of current DB
-        hasher = hashlib.sha256()
-        with open(DB_FILE, "rb") as f:
-            while chunk := f.read(65536):
-                hasher.update(chunk)
-        db_hash = hasher.hexdigest()[:8]
-        
-        dest_file = os.path.join(vault_snapshots_dir, f"snapshot_{timestamp}_{db_hash}.db")
-        c_src = sqlite3.connect(DB_FILE)
-        c_dst = sqlite3.connect(dest_file)
-        c_src.backup(c_dst)
-        c_dst.close()
-        c_src.close()
+        timestamp = create_db_snapshot()
+        snap_file = get_snapshot_path(timestamp) or f"{DB_FILE}.snapshot-{timestamp}"
+        db_hash = _compute_file_sha256(snap_file) or ""
+        sha_prefix = db_hash[:8] if db_hash else ""
+        size_bytes = os.path.getsize(snap_file) if (snap_file and os.path.exists(snap_file)) else 0
         
         return json.dumps({
             "status": "success",
             "timestamp": timestamp,
-            "sha256_prefix": db_hash,
-            "snapshot_path": dest_file,
-            "size_bytes": os.path.getsize(dest_file)
+            "sha256_prefix": sha_prefix,
+            "snapshot_path": snap_file,
+            "size_bytes": size_bytes
         }, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
@@ -628,7 +617,7 @@ def main():
     g_parser.add_argument("--entity", required=True, help="Entity name")
 
     subparsers.add_parser("backup", help="Execute 1-click online SQLite database backup")
-    subparsers.add_parser("snapshot", help="Create a cryptographic point-in-time snapshot in vault/snapshots/")
+    subparsers.add_parser("snapshot", help="Create a cryptographic point-in-time snapshot in backups/snapshots/")
     subparsers.add_parser("export_adrs", help="Export canonical ADR records into vault/architecture/")
     subparsers.add_parser("generate_glossary", help="Generate canonical domain terms glossary in vault/glossary/")
     

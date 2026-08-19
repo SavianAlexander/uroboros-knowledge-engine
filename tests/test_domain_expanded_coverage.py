@@ -11,7 +11,7 @@ if root_dir not in sys.path:
 
 import src.infrastructure.database as db_module
 from src.infrastructure.database import get_db, init_db, run_maintenance
-from src.infrastructure.repositories.snapshots import create_db_snapshot
+from src.infrastructure.repositories.snapshots import create_db_snapshot, get_snapshot_path
 from src.infrastructure.parsers import safe_write_file, safe_read_file
 from src.core.domain.services import (
     chunk_text,
@@ -186,7 +186,7 @@ class TestDomainExpandedCoverage(unittest.TestCase):
         """
         ts = create_db_snapshot()
         self.assertIsInstance(ts, int)
-        snap_file = f"{self.db_path}.snapshot-{ts}"
+        snap_file = get_snapshot_path(ts) or f"{self.db_path}.snapshot-{ts}"
         self.assertTrue(os.path.exists(snap_file))
 
     def test_11_fts5_unclosed_quotes_resilience(self):

@@ -12,7 +12,7 @@ from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, HTTPException, Body
 import src.infrastructure.database as _infra_db
 from src.infrastructure.database import get_db, db_status, run_maintenance, calculate_sha256, init_db, get_audit_ledger
-from src.infrastructure.repositories.snapshots import create_db_snapshot, restore_db_snapshot, list_db_snapshots, delete_db_snapshot
+from src.infrastructure.repositories.snapshots import create_db_snapshot, restore_db_snapshot, list_db_snapshots, delete_db_snapshot, get_snapshot_path
 from src.infrastructure.telemetry import GLOBAL_TELEMETRY
 from src.infrastructure.backup_scheduler import create_database_backup, list_backups
 from src.core.model_manager import OllamaClient
@@ -257,7 +257,7 @@ def create_backup_endpoint():
     try:
         run_maintenance()
         ts = create_db_snapshot()
-        snap_path = f"{_infra_db.DB_FILE}.snapshot-{ts}"
+        snap_path = get_snapshot_path(ts) or f"{_infra_db.DB_FILE}.snapshot-{ts}"
         return {"status": "success", "timestamp": ts, "snapshot_timestamp": ts, "snapshot_file": snap_path}
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise

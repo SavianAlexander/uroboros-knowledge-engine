@@ -133,7 +133,7 @@ class TestDomainDB(unittest.TestCase):
         cursor.execute("SELECT COUNT(*) FROM files")
         ts = know.create_db_snapshot()
         self.assertIsNotNone(ts)
-        snap_file = f"{db.DB_FILE}.snapshot-{ts}"
+        snap_file = know.get_snapshot_path(ts) or f"{db.DB_FILE}.snapshot-{ts}"
         self.assertTrue(os.path.exists(snap_file))
         conn.close()
 

@@ -1,5 +1,5 @@
 {
-  "last_sync_timestamp": "2026-08-19T14:46:56Z",
+  "last_sync_timestamp": "2026-08-19T15:38:34Z",
   "total_sync_runs": 22,
   "entries": {
     "ecfr_title42_part435_medicaid_magi.md": {
@@ -39,9 +39,9 @@
       "bytes": 337476
     },
     "federal_register_hhs_poverty_guidelines_2026.md": {
-      "sha256": "4bdc8e00769fce15e477e1c0912293143229b4eead0acec2e979e072583a6719",
+      "sha256": "a1b4a62c24087e2a9a713ed797687750a0394c2cb745b2d1fece9a0685e5c08f",
       "first_harvested": "2026-08-17T16:04:46Z",
-      "last_updated": "2026-08-19T14:46:55Z",
+      "last_updated": "2026-08-19T15:38:33Z",
       "bytes": 2472
     },
     "jira_cloud_v3_openapi_spec.md": {
@@ -57,15 +57,15 @@
       "bytes": 2808
     },
     "ley_1_2011_codigo_rentas_internas_puerto_rico.md": {
-      "sha256": "32347ce946bbba92c1760987345227329a439291937349255b32f310f1af05cd",
+      "sha256": "25f375c5df468eb38ffda78b7b43c500b72b3f74bbe44c327625446a9baa1dac",
       "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-19T14:46:56Z",
+      "last_updated": "2026-08-19T15:38:34Z",
       "bytes": 2747
     },
     "ley_148_1969_y_ley_4_2017_laboral_pr.md": {
-      "sha256": "036df37a55a482155228c8127c2cfb946f07e86da294c70e632d45e675c0a47b",
+      "sha256": "6d6c16f893511370872f5acf5a7d5519d313016da6d789efa95e51723f5e6fe8",
       "first_harvested": "2026-08-17T16:13:56Z",
-      "last_updated": "2026-08-19T14:46:56Z",
+      "last_updated": "2026-08-19T15:38:34Z",
       "bytes": 2041
     },
     "iso_ieee_29119_test_documentation_spec.md": {
@@ -111,9 +111,9 @@
       "bytes": 20132
     },
     "codigo_civil_puerto_rico_2020_ley_55.md": {
-      "sha256": "8e89528b14326dfa2e0b483adb5872cacf69e0c4733ae5c037d4cfa58de37d08",
+      "sha256": "22ee3d98ab8cbc4bc221c8f841c96eff9a0da43585be4c178ea7261754012796",
       "first_harvested": "2026-08-17T16:27:46Z",
-      "last_updated": "2026-08-19T14:46:56Z",
+      "last_updated": "2026-08-19T15:38:34Z",
       "bytes": 2712
     },
     "ecfr_title26_part1_internal_revenue.md": {

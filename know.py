@@ -122,7 +122,7 @@ from src.infrastructure.database import (
 )
 from src.infrastructure.vector_engine import MiniVectorEngine, extract_rag_context, index_directory, search_files
 from src.infrastructure.repositories.chat import add_chat_message, create_chat_session, delete_chat_session, get_chat_messages, get_chat_session, list_chat_sessions, update_chat_session
-from src.infrastructure.repositories.snapshots import create_db_snapshot, delete_db_snapshot, list_db_snapshots, restore_db_snapshot
+from src.infrastructure.repositories.snapshots import create_db_snapshot, delete_db_snapshot, list_db_snapshots, restore_db_snapshot, get_snapshot_path, prune_db_snapshots, MAX_SNAPSHOT_RETENTION
 from src.infrastructure.repositories.workflows import create_workflow_trigger, delete_workflow_trigger, get_workflow_trigger, list_workflow_logs, list_workflow_triggers, log_workflow_execution, update_workflow_trigger
 from src.infrastructure.repositories.files import get_file_revisions, revert_file_revision, save_file_revision
 import src.infrastructure.database as _infra_db
