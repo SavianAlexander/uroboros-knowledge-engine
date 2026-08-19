@@ -25,68 +25,11 @@ DEFAULT_CANONICAL_VOICE = "af_heart"
 DEFAULT_CANONICAL_SPEED = 1.02
 DEFAULT_CANONICAL_DSP = "STUDIO_MASTER"
 
-KOKORO_PERSONAS = {
-    "CANONICAL_STUDIO": "af_heart",
-    "CORTANA_PRIME": "af_heart",
-    "EXECUTIVE_ADVISOR": "af_heart",
-    "DEV_OPS": "af_heart",
-    "CALM_OPERATIONS": "af_heart",
-    "EXECUTIVE_DIRECTOR": "af_heart",
-    "ORACLE_ADVISOR": "af_heart",
-    "SOVEREIGN_ORACLE": "af_heart",
-    "KOKORO_HEART": "af_heart",
-    "KOKORO_SKY": "af_heart",
-    "KOKORO_BELLA": "af_heart",
-    "KOKORO_SARAH": "af_heart",
-    "KOKORO_EMMA": "af_heart",
-    "KOKORO_ADAM": "af_heart",
-    "KOKORO_GEORGE": "af_heart"
-}
-
-
-DOMAIN_PROFILES = {
-    "CORTANA_AI": {
-        "voice": "af_heart",
-        "speed": 1.02,
-        "dsp_preset": "STUDIO_MASTER",
-        "description": "Singular Canonical Neural AI Voice & Studio Master Broadcaster"
-    },
-    "DEV_OPS": {
-        "voice": "af_heart",
-        "speed": 1.02,
-        "dsp_preset": "STUDIO_MASTER",
-        "description": "Concise Developer & CI/CD Terminal Broadcaster"
-    },
-    "DAILY_BRIEF": {
-        "voice": "af_heart",
-        "speed": 1.02,
-        "dsp_preset": "STUDIO_MASTER",
-        "description": "Warm, engaging Task Master & Tududi Productivity Speaker"
-    },
-    "EXECUTIVE_ASSISTANT": {
-        "voice": "af_heart",
-        "speed": 1.02,
-        "dsp_preset": "STUDIO_MASTER",
-        "description": "Authoritative, crystalline Executive Intelligence Voice"
-    },
-    "TACTICAL_COCKPIT": {
-        "voice": "af_heart",
-        "speed": 1.02,
-        "dsp_preset": "STUDIO_MASTER",
-        "description": "Tactical Radar & Operations Alert Voice"
-    },
-    "CALL_INTERCOM": {
-        "voice": "af_heart",
-        "speed": 1.02,
-        "dsp_preset": "STUDIO_MASTER",
-        "description": "Real-Time Full-Duplex Phone Call & Radio Intercom Voice"
-    },
-    "GENERAL": {
-        "voice": "af_heart",
-        "speed": 1.02,
-        "dsp_preset": "STUDIO_MASTER",
-        "description": "Universal Singular Canonical Synthesizer (af_heart Studio Master)"
-    }
+CANONICAL_VOICE_PROFILE = {
+    "voice": "af_heart",
+    "speed": 1.02,
+    "dsp_preset": "STUDIO_MASTER",
+    "description": "Universal Singular Canonical Synthesizer (af_heart Studio Master)"
 }
 
 
@@ -112,18 +55,16 @@ class VoiceBridge:
         voice: Optional[str] = None,
         dsp_preset: Optional[str] = None,
         sfx_intro: Optional[str] = None,
-        blocking: bool = False
+        blocking: bool = False,
+        **kwargs
     ) -> Dict[str, Any]:
         """
         Universal 1-line speech dispatcher for any agent, script, or workflow.
-        Zero-disk in-memory playback path.
+        Zero-disk in-memory playback path using the singular canonical voice profile.
         """
         copilot = cls.get_copilot()
-        profile = DOMAIN_PROFILES.get(domain.upper(), DOMAIN_PROFILES["GENERAL"])
-
-        raw_voice = voice or profile["voice"]
-        selected_voice = KOKORO_PERSONAS.get(raw_voice, raw_voice)
-        selected_dsp = dsp_preset or profile["dsp_preset"]
+        selected_voice = voice or CANONICAL_VOICE_PROFILE["voice"]
+        selected_dsp = dsp_preset or CANONICAL_VOICE_PROFILE["dsp_preset"]
 
         if copilot:
             rec = copilot.speak(

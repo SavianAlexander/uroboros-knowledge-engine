@@ -8,19 +8,14 @@ import re
 import time
 from typing import Dict, Any, List, Optional, Tuple
 
-from src.core.voice_bridge import VoiceBridge, KOKORO_PERSONAS
+from src.core.voice_bridge import VoiceBridge, CANONICAL_VOICE_PROFILE
 from src.core.voice_dsp import VoiceDSP
 from src.core.audit_hashchain import GLOBAL_AUDIT_HASHCHAIN
 
 
 def _exec_set_persona(param: str) -> Tuple[str, Dict[str, Any]]:
-    target_key = "CALM_OPERATIONS"
-    for pkey in KOKORO_PERSONAS.keys():
-        if pkey.lower().replace("_", " ") in param.lower():
-            target_key = pkey
-            break
-    feedback = f"Persona switched to {target_key.replace('_', ' ').title()}."
-    action = {"new_persona": target_key, "voice": KOKORO_PERSONAS.get(target_key, "af_bella")}
+    feedback = "Universal canonical voice profile active (af_heart Studio Master)."
+    action = {"new_persona": "CANONICAL_STUDIO", "voice": CANONICAL_VOICE_PROFILE["voice"], "dsp_preset": CANONICAL_VOICE_PROFILE["dsp_preset"]}
     return feedback, action
 
 

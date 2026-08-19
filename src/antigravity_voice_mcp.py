@@ -32,7 +32,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from src.core.voice_bridge import VoiceBridge, DOMAIN_PROFILES, KOKORO_PERSONAS
+from src.core.voice_bridge import VoiceBridge, CANONICAL_VOICE_PROFILE
 from src.core.voice_normalizer import VoiceNormalizer
 from src.core.voice_persona_blend import VoicePersonaBlender
 from src.core.voice_stt_ear import VoiceEarTranscriber
@@ -53,10 +53,10 @@ from src.core.voice_telemetry_exporter import AudioTelemetryExporter
 
 # Global Voice Configuration State
 VOICE_CONFIG = {
-    "default_persona": "CALM_OPERATIONS",
-    "default_voice": "af_bella",
-    "default_speed": 1.0,
-    "default_dsp": "STUDIO_DIRECT",
+    "default_persona": "CANONICAL_STUDIO",
+    "default_voice": "af_heart",
+    "default_speed": 1.02,
+    "default_dsp": "STUDIO_MASTER",
     "ducking_enabled": True
 }
 
@@ -517,7 +517,7 @@ def _handle_speak(args: Dict[str, Any]) -> Dict[str, Any]:
     t0 = time.time()
     text = args.get("text", "")
     persona = args.get("persona") or VOICE_CONFIG["default_persona"]
-    voice = KOKORO_PERSONAS.get(persona, persona)
+    voice = args.get("voice") or CANONICAL_VOICE_PROFILE["voice"]
     speed = float(args.get("speed", VOICE_CONFIG["default_speed"]))
     dsp_preset = args.get("dsp_preset") or VOICE_CONFIG["default_dsp"]
     priority = args.get("priority", "NORMAL")
@@ -555,8 +555,8 @@ def _handle_announce_task(args: Dict[str, Any]) -> Dict[str, Any]:
     task_name = args.get("task_name", "")
     state = args.get("state", "COMPLETED").upper()
     details = args.get("details", "")
-    persona = args.get("persona", "INDUSTRY_OVERSEER")
-    voice = KOKORO_PERSONAS.get(persona, "bm_george")
+    persona = args.get("persona", "CANONICAL_STUDIO")
+    voice = CANONICAL_VOICE_PROFILE["voice"]
 
     intro_sfx = "target_lock" if state == "COMPLETED" else "shield_critical" if state == "FAILED" else ""
     priority = "CRITICAL" if state == "FAILED" else "HIGH" if state == "STARTED" else "NORMAL"
@@ -597,8 +597,8 @@ def _handle_announce_task(args: Dict[str, Any]) -> Dict[str, Any]:
 def _handle_voice_brief(args: Dict[str, Any]) -> Dict[str, Any]:
     title = args.get("title", "Executive Briefing")
     items = args.get("items", [])
-    persona = args.get("persona", "CALM_OPERATIONS")
-    voice = KOKORO_PERSONAS.get(persona, "af_bella")
+    persona = args.get("persona", "CANONICAL_STUDIO")
+    voice = CANONICAL_VOICE_PROFILE["voice"]
 
     bullet_text = " ... ".join(items)
     combined = f"{title}. ... {bullet_text} ... End of briefing."
@@ -712,7 +712,7 @@ def _handle_read_code(args: Dict[str, Any]) -> Dict[str, Any]:
         voice_res = VoiceBridge.speak(
             text=spoken_text,
             domain="EXECUTIVE_BRIEF",
-            voice=KOKORO_PERSONAS.get(args.get("persona", "CALM_OPERATIONS"), "af_bella")
+            voice=CANONICAL_VOICE_PROFILE["voice"]
         )
         res["voice_dispatch"] = voice_res
     return res
@@ -725,7 +725,7 @@ def _handle_read_email(args: Dict[str, Any]) -> Dict[str, Any]:
         voice_res = VoiceBridge.speak(
             text=cleaned["speech_text"],
             domain="EXECUTIVE_BRIEF",
-            voice=KOKORO_PERSONAS.get(args.get("persona", "CALM_OPERATIONS"), "af_bella")
+            voice=CANONICAL_VOICE_PROFILE["voice"]
         )
         cleaned["voice_dispatch"] = voice_res
     return cleaned
@@ -748,9 +748,9 @@ def _handle_showcase_personas(args: Dict[str, Any]) -> Dict[str, Any]:
 
 def _handle_apply_studio_master(args: Dict[str, Any]) -> Dict[str, Any]:
     text = args.get("text", "")
-    preset = args.get("preset", "EXECUTIVE_PRESENCE")
-    persona = args.get("persona", "ORACLE_ADVISOR")
-    voice = KOKORO_PERSONAS.get(persona, "af_sky")
+    preset = args.get("preset", "STUDIO_MASTER")
+    persona = args.get("persona", "CANONICAL_STUDIO")
+    voice = CANONICAL_VOICE_PROFILE["voice"]
     return VoiceBridge.speak(
         text=text,
         domain="STUDIO_SHOWCASE",
@@ -786,10 +786,9 @@ def _handle_get_audio_telemetry(args: Dict[str, Any]) -> Dict[str, Any]:
 def _handle_instant_speak(args: Dict[str, Any]) -> Dict[str, Any]:
     from src.core.instant_audio_streamer import InstantVoiceClient
     text = args.get("text", "")
-    persona = args.get("persona", "AURA_SHIP_AI")
-    voice = KOKORO_PERSONAS.get(persona, persona)
-    dsp_preset = args.get("dsp_preset", "HOLOGRAPHIC_AURA")
-    speed = float(args.get("speed", 1.0))
+    voice = args.get("voice") or CANONICAL_VOICE_PROFILE["voice"]
+    dsp_preset = args.get("dsp_preset", CANONICAL_VOICE_PROFILE["dsp_preset"])
+    speed = float(args.get("speed", 1.02))
     sync = bool(args.get("sync", False))
     return InstantVoiceClient.speak_instant(text, voice=voice, dsp_preset=dsp_preset, speed=speed, sync=sync)
 
@@ -808,7 +807,7 @@ def _handle_get_instant_streamer_stats(args: Dict[str, Any]) -> Dict[str, Any]:
 def _handle_configure_voice(args: Dict[str, Any]) -> Dict[str, Any]:
     if "default_persona" in args:
         VOICE_CONFIG["default_persona"] = args["default_persona"]
-        VOICE_CONFIG["default_voice"] = KOKORO_PERSONAS.get(args["default_persona"], "af_bella")
+        VOICE_CONFIG["default_voice"] = CANONICAL_VOICE_PROFILE["voice"]
     if "default_speed" in args:
         VOICE_CONFIG["default_speed"] = float(args["default_speed"])
     if "default_dsp" in args:
@@ -881,7 +880,7 @@ def _handle_get_status(args: Dict[str, Any]) -> Dict[str, Any]:
     copilot = VoiceBridge.get_copilot()
     return {
         "engine": "Kokoro-82M ONNX Neural Suite",
-        "supported_personas": KOKORO_PERSONAS,
+        "canonical_voice_profile": CANONICAL_VOICE_PROFILE,
         "preset_blends": VoicePersonaBlender.get_preset_blends(),
         "config": VOICE_CONFIG,
         "active_instance": copilot._local_kokoro_instance is not None if copilot else False,

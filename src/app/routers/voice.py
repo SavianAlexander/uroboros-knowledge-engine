@@ -11,7 +11,7 @@ from typing import Optional, List, Dict, Any
 import io
 import json
 
-from src.core.voice_bridge import VoiceBridge, DOMAIN_PROFILES, KOKORO_PERSONAS
+from src.core.voice_bridge import VoiceBridge, CANONICAL_VOICE_PROFILE
 from src.core.voice_streaming import StreamingNeuralSynthesizer, StreamingAudioCache
 
 router = APIRouter(tags=["Universal Voice Bridge"])
@@ -146,7 +146,7 @@ def list_voices_endpoint():
         "personas": personas,
         "signature_blends": all_blends,
         "dsp_presets": dsp_presets,
-        "domain_profiles": DOMAIN_PROFILES
+        "canonical_voice_profile": CANONICAL_VOICE_PROFILE
     }
 
 
@@ -254,11 +254,10 @@ def get_sfx_endpoint(sfx_name: str):
 
 @router.get("/api/voice/profiles")
 def get_profiles_endpoint():
-    """Get all domain profiles and active configuration."""
+    """Get canonical voice profile and active configuration."""
     return {
         "status": "success",
-        "domain_profiles": DOMAIN_PROFILES,
-        "personas": KOKORO_PERSONAS
+        "canonical_voice_profile": CANONICAL_VOICE_PROFILE
     }
 
 
@@ -308,7 +307,7 @@ def voice_intercom_turn_endpoint(req: VoiceIntercomTurnRequest):
             retrieval_ms = 0
 
         clean_text = clean_text_func(speech_text)
-        voice_id = KOKORO_PERSONAS.get(req.persona, "af_heart")
+        voice_id = CANONICAL_VOICE_PROFILE["voice"]
 
         audio_bytes = VoiceBridge.synthesize_bytes(
             text=clean_text,

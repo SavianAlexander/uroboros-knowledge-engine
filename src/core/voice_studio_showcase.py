@@ -13,55 +13,60 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from src.core.voice_bridge import VoiceBridge, KOKORO_PERSONAS
+from src.core.voice_bridge import VoiceBridge, CANONICAL_VOICE_PROFILE
 from src.core.voice_dsp import VoiceDSP
 from src.core.voice_normalizer import VoiceNormalizer
 
 
 PERSONA_SHOWCASE_DEMOS = {
+    "CANONICAL_STUDIO": {
+        "voice": "af_heart",
+        "dsp": "STUDIO_MASTER",
+        "demo_text": "Universal singular canonical neural voice configuration active. Studio master acoustic broadcast verified."
+    },
     "AURA_SHIP_AI": {
-        "voice": "bf_emma",
-        "dsp": "HOLOGRAPHIC_AURA",
+        "voice": "af_heart",
+        "dsp": "STUDIO_MASTER",
         "demo_text": "Aura Shipboard Intelligence active. All starship defensive shields and warp drives are fully operational."
     },
     "TACTICAL_ADVISOR": {
-        "voice": "af_sarah",
-        "dsp": "COMMANDER_TACTICAL",
+        "voice": "af_heart",
+        "dsp": "STUDIO_MASTER",
         "demo_text": "Tactical Advisor standing by. Hostile fleet signature identified on directional scan at four astronomical units."
     },
     "FLEET_COMMANDER": {
-        "voice": "am_adam",
-        "dsp": "EXECUTIVE_PRESENCE",
+        "voice": "af_heart",
+        "dsp": "STUDIO_MASTER",
         "demo_text": "Fleet Commander on deck. Anchor on the flagship and align to the primary cynosural beacon."
     },
     "INDUSTRY_OVERSEER": {
-        "voice": "bm_george",
-        "dsp": "AWE_STUDIO_MASTER",
+        "voice": "af_heart",
+        "dsp": "STUDIO_MASTER",
         "demo_text": "Industry Overseer online. Deep-space ore compression and planetary reaction batches are synchronized."
     },
     "CALM_OPERATIONS": {
-        "voice": "af_bella",
-        "dsp": "STUDIO_DIRECT",
+        "voice": "af_heart",
+        "dsp": "STUDIO_MASTER",
         "demo_text": "Operations normal. All background database migrations, vector indexing, and unit test suites have passed."
     },
     "EXECUTIVE_DIRECTOR": {
         "voice": "af_heart",
-        "dsp": "EXECUTIVE_PRESENCE",
+        "dsp": "STUDIO_MASTER",
         "demo_text": "Executive Director briefing. Quarterly revenue projections and asset reserves have exceeded target thresholds."
     },
     "WARP_NAVIGATOR": {
-        "voice": "bf_isabella",
-        "dsp": "HOLOGRAPHIC_AURA",
+        "voice": "af_heart",
+        "dsp": "STUDIO_MASTER",
         "demo_text": "Warp trajectory calculated. Safe transit vector plotted through Jita 4-4 with zero gatecamp interference."
     },
     "ORACLE_ADVISOR": {
-        "voice": "af_sky",
-        "dsp": "EXECUTIVE_PRESENCE",
+        "voice": "af_heart",
+        "dsp": "STUDIO_MASTER",
         "demo_text": "The knowledge architecture remains verified. Deterministic verification certifies zero-assumption integrity."
     },
     "SOVEREIGN_ORACLE": {
-        "voice": "af_sky",
-        "dsp": "EXECUTIVE_PRESENCE",
+        "voice": "af_heart",
+        "dsp": "STUDIO_MASTER",
         "demo_text": "The knowledge architecture remains verified. Deterministic verification certifies zero-assumption integrity."
     }
 }
@@ -76,7 +81,7 @@ class VoiceStudioShowcase:
         return {
             "personas": PERSONA_SHOWCASE_DEMOS,
             "dsp_presets": VoiceDSP.get_available_presets(),
-            "standard_voices": KOKORO_PERSONAS,
+            "canonical_profile": CANONICAL_VOICE_PROFILE,
             "sample_rate_hz": 24000,
             "latency_engine": "Win32 C-Level SND_MEMORY (<15ms)"
         }
@@ -84,16 +89,20 @@ class VoiceStudioShowcase:
     @classmethod
     def audition_persona(
         cls,
-        persona_key: str,
+        persona_key: str = "CANONICAL_STUDIO",
         custom_text: Optional[str] = None,
         dsp_override: Optional[str] = None,
         speak_now: bool = True
     ) -> Dict[str, Any]:
         """Audition a single voice persona with its tailored acoustic DSP preset."""
-        profile = PERSONA_SHOWCASE_DEMOS.get(persona_key.upper(), PERSONA_SHOWCASE_DEMOS["CALM_OPERATIONS"])
+        profile = PERSONA_SHOWCASE_DEMOS.get(persona_key.upper(), {
+            "voice": CANONICAL_VOICE_PROFILE["voice"],
+            "dsp": CANONICAL_VOICE_PROFILE["dsp_preset"],
+            "demo_text": "Universal singular canonical neural voice configuration verified."
+        })
         text_to_speak = custom_text or profile["demo_text"]
         dsp = dsp_override or profile["dsp"]
-        voice = profile["voice"]
+        voice = profile.get("voice", CANONICAL_VOICE_PROFILE["voice"])
 
         clean_text = VoiceNormalizer.normalize_for_speech(text_to_speak)
         t0 = time.time()

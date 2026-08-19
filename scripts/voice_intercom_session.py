@@ -17,7 +17,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from src.core.voice_bridge import VoiceBridge, KOKORO_PERSONAS
+from src.core.voice_bridge import VoiceBridge, CANONICAL_VOICE_PROFILE
 from src.core.voice_call_intercom import VoiceCallIntercomEngine
 from src.core.voice_command_parser import VoiceCommandParser
 from src.core.instant_audio_streamer import InstantVoiceClient, get_instant_streamer
@@ -35,7 +35,7 @@ PILOT_STATE = {
 }
 
 
-def generate_conversational_reply(user_text: str, persona: str = "AURA_SHIP_AI") -> str:
+def generate_conversational_reply(user_text: str, persona: str = "CANONICAL_STUDIO") -> str:
     """Generate instant conversational reply using NLP intent matching & live context."""
     user_lower = user_text.lower().strip()
 
@@ -79,8 +79,8 @@ def run_interactive_intercom_session():
     print("Every response will speak immediately out loud through your headset.\n")
 
     # Start active call with connect chime
-    call = VoiceCallIntercomEngine.start_call(persona="AURA_SHIP_AI")
-    print(f"📡 [CALL ACTIVE] Channel ID: {call['call_id']} | Persona: AURA_SHIP_AI")
+    call = VoiceCallIntercomEngine.start_call(persona="CANONICAL_STUDIO")
+    print(f"📡 [CALL ACTIVE] Channel ID: {call['call_id']} | Persona: CANONICAL_STUDIO")
     print("-" * 70 + "\n")
 
     while True:

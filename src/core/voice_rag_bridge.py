@@ -15,7 +15,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from src.domain.decomposed_hybrid_rag import execute_hybrid_decomposed_search as execute_sota_rag_search
-from src.core.voice_bridge import VoiceBridge, KOKORO_PERSONAS
+from src.core.voice_bridge import VoiceBridge, CANONICAL_VOICE_PROFILE
 from src.core.voice_normalizer import VoiceNormalizer
 from src.core.instant_audio_streamer import InstantVoiceClient, get_instant_streamer
 from src.core.voice_memory_ledger import VoiceMemoryLedger
@@ -112,8 +112,8 @@ class VoiceRAGBridge:
     def query_rag_and_speak(
         cls,
         query: str,
-        persona: str = "AURA_SHIP_AI",
-        dsp_preset: str = "HOLOGRAPHIC_AURA",
+        persona: str = "CANONICAL_STUDIO",
+        dsp_preset: str = "STUDIO_MASTER",
         sync: bool = True,
         max_sentences: int = 2
     ) -> Dict[str, Any]:
@@ -133,7 +133,7 @@ class VoiceRAGBridge:
 
         # Normalize for acoustic speech
         clean_text = VoiceNormalizer.normalize_for_speech(speech_text)
-        voice_id = KOKORO_PERSONAS.get(persona, "bf_emma")
+        voice_id = CANONICAL_VOICE_PROFILE["voice"]
 
         # Instant Speech Dispatch
         speech_res = InstantVoiceClient.speak_instant(

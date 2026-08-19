@@ -307,14 +307,9 @@ class KokoroVoiceEngine:
                     # Direct base voice string like af_sky, bf_emma, am_adam, bm_george
                     resolved_voice_name = target_voice_arg
                 else:
-                    from src.core.voice_bridge import KOKORO_PERSONAS
-                    mapped = KOKORO_PERSONAS.get(target_voice_arg) or KOKORO_PERSONAS.get(upper_key)
-                    if mapped:
-                        if mapped in SIGNATURE_PERSONA_BLENDS or mapped in VoicePersonaBlender.load_custom_personas():
-                            voice_vec = VoicePersonaBlender.get_blended_vector(mapped)
-                            resolved_voice_name = mapped
-                        else:
-                            resolved_voice_name = mapped
+                    from src.core.voice_bridge import CANONICAL_VOICE_PROFILE
+                    mapped = CANONICAL_VOICE_PROFILE.get("voice", "af_heart")
+                    resolved_voice_name = mapped
         except Exception:
             pass
 

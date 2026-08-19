@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from src.core.voice_bridge import VoiceBridge, KOKORO_PERSONAS
+from src.core.voice_bridge import VoiceBridge, CANONICAL_VOICE_PROFILE
 from src.core.voice_dsp import VoiceDSP
 from src.core.voice_normalizer import VoiceNormalizer
 from src.core.instant_audio_streamer import InstantVoiceClient, get_instant_streamer
@@ -55,10 +55,10 @@ class VoicePodcastGenerator:
 
         for idx, turn in enumerate(turns):
             speaker = turn.get("speaker", f"Speaker {idx+1}")
-            persona = turn.get("persona", "AURA_SHIP_AI")
+            persona = turn.get("persona", "CANONICAL_STUDIO")
             raw_text = turn.get("text", "")
-            voice_id = KOKORO_PERSONAS.get(persona, persona)
-            dsp_preset = "HOLOGRAPHIC_AURA" if "AURA" in persona else "COMMANDER_TACTICAL" if "COMMANDER" in persona else "EXECUTIVE_PRESENCE"
+            voice_id = CANONICAL_VOICE_PROFILE["voice"]
+            dsp_preset = CANONICAL_VOICE_PROFILE["dsp_preset"]
 
             clean_text = VoiceNormalizer.normalize_for_speech(raw_text)
 

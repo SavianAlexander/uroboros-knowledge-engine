@@ -337,41 +337,45 @@ class InstantVoiceClient:
         engine = KokoroVoiceEngine()
 
         essential_phrases = [
-            ("AURA_SHIP_AI", "bf_emma", "HOLOGRAPHIC_AURA", "Warp drive active."),
-            ("AURA_SHIP_AI", "bf_emma", "HOLOGRAPHIC_AURA", "Shields at twenty five percent."),
-            ("TACTICAL_ADVISOR", "af_sarah", "COMMANDER_TACTICAL", "Hostile signature detected on directional scan."),
-            ("TACTICAL_ADVISOR", "af_sarah", "COMMANDER_TACTICAL", "Interdictor bubble deployed."),
-            ("FLEET_COMMANDER", "am_adam", "FLEET_COMMAND", "Cynosural beacon is active in G-EURJ."),
-            ("FLEET_COMMANDER", "am_adam", "FLEET_COMMAND", "Anchor on the flagship."),
-            ("INDUSTRY_OVERSEER", "bm_george", "STUDIO_MASTER", "Pillar of Autumn ore compression cycle active."),
-            ("CALM_OPERATIONS", "af_bella", "STUDIO_DIRECT", "Affirmative."),
-            ("CALM_OPERATIONS", "af_bella", "STUDIO_DIRECT", "Command acknowledged."),
-            ("ORACLE_ADVISOR", "af_sky", "EXECUTIVE_PRESENCE", "System architecture certified.")
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_MASTER", "Warp drive active."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_MASTER", "Shields at twenty five percent."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_MASTER", "Hostile signature detected on directional scan."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_MASTER", "Interdictor bubble deployed."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_MASTER", "Cynosural beacon is active in G-EURJ."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_MASTER", "Anchor on the flagship."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_MASTER", "Pillar of Autumn ore compression cycle active."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_MASTER", "Affirmative."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_MASTER", "Command acknowledged."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_MASTER", "System architecture certified."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_DIRECT", "Affirmative."),
+            ("CANONICAL_STUDIO", "af_heart", "STUDIO_DIRECT", "Command acknowledged.")
         ]
 
         streamer = get_instant_streamer()
         with _WARM_CACHE_LOCK:
             for persona, voice_id, dsp, phrase in essential_phrases:
-                key = cls.get_cache_key(phrase, voice_id, dsp, 1.0)
-                if key not in _WARM_AUDIO_CACHE:
-                    try:
-                        audio = engine.synthesize_neural_audio(
-                            text=phrase,
-                            voice=voice_id,
-                            dsp_preset=dsp
-                        )
-                        if audio:
-                            _WARM_AUDIO_CACHE[key] = audio
-                    except Exception:
-                        pass
+                for spd in [1.0, 1.02]:
+                    key = cls.get_cache_key(phrase, voice_id, dsp, spd)
+                    if key not in _WARM_AUDIO_CACHE:
+                        try:
+                            audio = engine.synthesize_neural_audio(
+                                text=phrase,
+                                voice=voice_id,
+                                speed=spd,
+                                dsp_preset=dsp
+                            )
+                            if audio:
+                                _WARM_AUDIO_CACHE[key] = audio
+                        except Exception:
+                            pass
 
     @classmethod
     def speak_instant(
         cls,
         text: str,
-        voice: str = "bf_emma",
-        dsp_preset: str = "HOLOGRAPHIC_AURA",
-        speed: float = 1.0,
+        voice: str = "af_heart",
+        dsp_preset: str = "STUDIO_MASTER",
+        speed: float = 1.02,
         sync: bool = False
     ) -> Dict[str, Any]:
         """

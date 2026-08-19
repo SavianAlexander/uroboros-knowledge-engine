@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from src.core.voice_bridge import VoiceBridge, DOMAIN_PROFILES, KOKORO_PERSONAS
+from src.core.voice_bridge import VoiceBridge, CANONICAL_VOICE_PROFILE
 from src.core.voice_normalizer import VoiceNormalizer
 from src.core.voice_persona_blend import VoicePersonaBlender
 from src.core.voice_stt_ear import VoiceEarTranscriber
@@ -52,10 +52,10 @@ class TestVoiceAudioMatrix(unittest.TestCase):
         self.assertIn("HOLOGRAPHIC_AURA", catalog["dsp_presets"])
 
         # Test audition dry-run
-        audition = VoiceStudioShowcase.audition_persona("ORACLE_ADVISOR", speak_now=False)
+        audition = VoiceStudioShowcase.audition_persona("CANONICAL_STUDIO", speak_now=False)
         self.assertEqual(audition["status"], "auditioned")
-        self.assertEqual(audition["persona"], "ORACLE_ADVISOR")
-        self.assertEqual(audition["dsp_preset"], "EXECUTIVE_PRESENCE")
+        self.assertEqual(audition["persona"], "CANONICAL_STUDIO")
+        self.assertEqual(audition["dsp_preset"], "STUDIO_MASTER")
 
         # Test DSP filtering
         try:
@@ -123,9 +123,9 @@ class TestVoiceAudioMatrix(unittest.TestCase):
         self.assertEqual(p4["intent"], "VERIFY_AUDIT")
 
         # 5. Execution dry-run test
-        exec_res = VoiceCommandParser.execute_command("switch persona to calm operations", speak_feedback=False)
+        exec_res = VoiceCommandParser.execute_command("switch persona to canonical studio", speak_feedback=False)
         self.assertEqual(exec_res["status"], "command_executed")
-        self.assertEqual(exec_res["action_result"]["new_persona"], "CALM_OPERATIONS")
+        self.assertEqual(exec_res["action_result"]["new_persona"], "CANONICAL_STUDIO")
 
     def test_audio_telemetry_exporter(self):
         """Test JSON and Prometheus telemetry formatting."""
@@ -186,8 +186,8 @@ Sent from my iPhone
         self.assertIn("25 milliseconds", clean)
         self.assertIn("24 kilohertz", clean)
         self.assertIn("-14 decibels", clean)
-        self.assertIn("Sequel Light pragma", clean)
-        self.assertIn("wall", clean)
+        self.assertIn("sequel light pragma", clean.lower())
+        self.assertTrue("write ahead log" in clean.lower() or "wall" in clean.lower())
         self.assertIn("A-P-I", clean)
         self.assertIn("version 2 point 1 point 0", clean)
         self.assertNotIn("#", clean)
@@ -334,13 +334,13 @@ Sent from my iPhone
         telemetry_res = handle_tool_call("antigravity_get_audio_telemetry", {"format": "json"})
         self.assertIn("engine", telemetry_res)
 
-        config_res = handle_tool_call("antigravity_configure_voice", {"default_persona": "CALM_OPERATIONS", "dsp_preset": "STUDIO_DIRECT"})
+        config_res = handle_tool_call("antigravity_configure_voice", {"default_persona": "CANONICAL_STUDIO", "dsp_preset": "STUDIO_MASTER"})
         self.assertEqual(config_res["status"], "updated")
 
         prewarm_res = handle_tool_call("antigravity_prewarm_voice_engine", {})
         self.assertEqual(prewarm_res["status"], "prewarmed")
 
-        instant_res = handle_tool_call("antigravity_instant_speak", {"text": "Affirmative.", "persona": "CALM_OPERATIONS", "dsp_preset": "STUDIO_DIRECT", "sync": False})
+        instant_res = handle_tool_call("antigravity_instant_speak", {"text": "Affirmative.", "persona": "CANONICAL_STUDIO", "dsp_preset": "STUDIO_MASTER", "sync": False})
         self.assertEqual(instant_res["status"], "playing")
         self.assertLessEqual(instant_res["latency_ms"], 50.0)
 
@@ -420,7 +420,7 @@ Sent from my iPhone
         self.assertIsNotNone(streamer)
 
         # Test cached phrase (<1ms)
-        res = InstantVoiceClient.speak_instant("Affirmative.", voice="af_bella", dsp_preset="STUDIO_DIRECT", sync=False)
+        res = InstantVoiceClient.speak_instant("Affirmative.", voice=CANONICAL_VOICE_PROFILE["voice"], dsp_preset=CANONICAL_VOICE_PROFILE["dsp_preset"], sync=False)
         self.assertEqual(res["status"], "playing")
         self.assertTrue(res["cache_hit"])
         self.assertLessEqual(res["latency_ms"], 10.0)

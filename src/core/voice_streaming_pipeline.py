@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from src.core.voice_bridge import VoiceBridge, KOKORO_PERSONAS
+from src.core.voice_bridge import VoiceBridge, CANONICAL_VOICE_PROFILE
 from src.core.voice_normalizer import VoiceNormalizer
 from src.core.instant_audio_streamer import InstantVoiceClient, get_instant_streamer
 
@@ -66,16 +66,15 @@ class VoiceStreamingPipeliner:
     def stream_and_speak(
         cls,
         token_generator: Iterator[str],
-        persona: str = "AURA_SHIP_AI",
-        dsp_preset: str = "HOLOGRAPHIC_AURA",
+        persona: str = "CANONICAL_STUDIO",
+        dsp_preset: str = "STUDIO_MASTER",
         sync: bool = False
     ) -> Dict[str, Any]:
         """
         Consume a token generator, chunk clauses, and stream audio concurrently.
         """
         t0 = time.perf_counter()
-        from src.core.voice_bridge import KOKORO_PERSONAS
-        voice_id = persona if (persona in KOKORO_PERSONAS or persona.isupper()) else KOKORO_PERSONAS.get(persona, "bf_emma")
+        voice_id = CANONICAL_VOICE_PROFILE["voice"]
 
         buffer = ""
         full_text = ""

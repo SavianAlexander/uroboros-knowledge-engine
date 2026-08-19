@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from src.core.voice_bridge import VoiceBridge, KOKORO_PERSONAS
+from src.core.voice_bridge import VoiceBridge, CANONICAL_VOICE_PROFILE
 from src.core.voice_normalizer import VoiceNormalizer
 from src.core.voice_memory_ledger import VoiceMemoryLedger
 
@@ -161,8 +161,8 @@ class VoiceCallIntercomEngine:
             text=greeting_text,
             domain="TACTICAL_COCKPIT",
             priority="HIGH",
-            voice=KOKORO_PERSONAS.get(persona, "bf_emma"),
-            dsp_preset="COCKPIT_ACOUSTIC"
+            voice=CANONICAL_VOICE_PROFILE["voice"],
+            dsp_preset=CANONICAL_VOICE_PROFILE["dsp_preset"]
         )
 
         VoiceMemoryLedger.log_turn(
@@ -193,8 +193,8 @@ class VoiceCallIntercomEngine:
             text=filler,
             domain="TACTICAL_COCKPIT",
             priority="HIGH",
-            voice=KOKORO_PERSONAS.get(cls._active_call.get("persona", "AURA_SHIP_AI"), "bf_emma"),
-            dsp_preset="COCKPIT_ACOUSTIC"
+            voice=CANONICAL_VOICE_PROFILE["voice"],
+            dsp_preset=CANONICAL_VOICE_PROFILE["dsp_preset"]
         )
         return {"status": "filler_dispatched", "filler": filler}
 
@@ -214,8 +214,8 @@ class VoiceCallIntercomEngine:
         cls._active_call["last_activity"] = time.time()
 
         clean_text = VoiceNormalizer.normalize_for_speech(response_text)
-        persona = cls._active_call.get("persona", "AURA_SHIP_AI")
-        voice = KOKORO_PERSONAS.get(persona, "bf_emma")
+        persona = cls._active_call.get("persona", "CANONICAL_STUDIO")
+        voice = CANONICAL_VOICE_PROFILE["voice"]
 
         # Speak via in-memory streamer
         speak_res = VoiceBridge.speak(
@@ -223,7 +223,7 @@ class VoiceCallIntercomEngine:
             domain="TACTICAL_COCKPIT",
             priority="HIGH",
             voice=voice,
-            dsp_preset="COCKPIT_ACOUSTIC"
+            dsp_preset=CANONICAL_VOICE_PROFILE["dsp_preset"]
         )
 
         # Append Roger Beep if requested
@@ -281,7 +281,8 @@ class VoiceCallIntercomEngine:
             text=closing_text,
             domain="TACTICAL_COCKPIT",
             priority="NORMAL",
-            voice=KOKORO_PERSONAS.get(cls._active_call.get("persona", "AURA_SHIP_AI"), "bf_emma")
+            voice=CANONICAL_VOICE_PROFILE["voice"],
+            dsp_preset=CANONICAL_VOICE_PROFILE["dsp_preset"]
         )
 
         # 2. Play disconnect chime in RAM
