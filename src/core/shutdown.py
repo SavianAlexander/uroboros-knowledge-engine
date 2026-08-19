@@ -37,8 +37,8 @@ def execute_clean_shutdown():
 
     # 3. Close database connections, reap zombie thread connections, and checkpoint WAL
     try:
-        from src.infrastructure.database import reset_db_connections, run_maintenance
-        reset_db_connections()
+        from src.infrastructure.database import close_all_connections, reset_db_connections, run_maintenance
+        close_all_connections()
         run_maintenance(truncate_wal=True)
     except Exception as e:
         logger.debug(f"Shutdown db maintenance note: {e}")

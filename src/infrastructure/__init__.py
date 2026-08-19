@@ -7,6 +7,7 @@ from src.infrastructure.database import (
     get_db_connection,
     init_db,
     reset_db_connections,
+    close_all_connections,
     SQLiteConnectionPool,
     DB_FILE
 )
@@ -44,6 +45,7 @@ __all__ = [
     "get_db_connection",
     "init_db",
     "reset_db_connections",
+    "close_all_connections",
     "SQLiteConnectionPool",
     "DB_FILE",
     "extract_content",

@@ -216,6 +216,92 @@ class TestDomainDB(unittest.TestCase):
             import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_domain_db.py: {e}")
             self.fail(f"run_maintenance raised exception: {e}")
 
+    def test_11_sqlite_connection_pool_lifecycle_and_pragmas(self):
+        """Verify SQLiteConnectionPool explicit lifecycle, in-flight tracking, and resilient WAL pragmas."""
+        pool = db.get_pool(db.DB_FILE, max_connections=4)
+        self.assertIsNotNone(pool)
+
+        # Context manager checkout
+        with pool.acquire() as conn:
+            self.assertEqual(len(pool.in_flight), 1)
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA journal_mode")
+            self.assertEqual(cursor.fetchone()[0].lower(), "wal")
+
+            cursor.execute("PRAGMA busy_timeout")
+            self.assertEqual(cursor.fetchone()[0], 60000)
+
+            cursor.execute("PRAGMA synchronous")
+            self.assertEqual(cursor.fetchone()[0], 1)  # NORMAL = 1
+
+            cursor.execute("PRAGMA cache_size")
+            self.assertEqual(cursor.fetchone()[0], -64000)
+
+            cursor.execute("PRAGMA mmap_size")
+            self.assertEqual(cursor.fetchone()[0], 268435456)
+
+            cursor.execute("PRAGMA wal_autocheckpoint")
+            self.assertEqual(cursor.fetchone()[0], 1000)
+
+        # After exiting context manager, in_flight must be empty and pool must have connection
+        self.assertEqual(len(pool.in_flight), 0)
+
+        # Direct checkout and checkin lifecycle
+        c = pool.get_connection()
+        self.assertEqual(len(pool.in_flight), 1)
+        pool.return_connection(c)
+        self.assertEqual(len(pool.in_flight), 0)
+
+    def test_12_sqlite_connection_pool_concurrency_and_health_recycling(self):
+        """Verify concurrent multi-threaded worker pool checkouts and healthy recycling of closed connections."""
+        import concurrent.futures
+        pool = db.get_pool(db.DB_FILE, max_connections=8)
+
+        def worker(w_id):
+            with pool.acquire() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1 + ?", (w_id,))
+                res = cursor.fetchone()[0]
+                return res
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(worker, i) for i in range(20)]
+            results = [f.result() for f in futures]
+            self.assertEqual(len(results), 20)
+
+        # Test dead connection recycling
+        conn = pool.get_connection()
+        conn.close()  # Intentionally close connection before returning
+        pool.return_connection(conn)
+
+        # Next checkout should discard dead connection and return a fresh healthy connection
+        new_conn = pool.get_connection()
+        self.assertTrue(pool._is_connection_healthy(new_conn))
+        pool.return_connection(new_conn)
+
+    def test_13_get_db_dual_mode_support_and_close_all_connections(self):
+        """Verify get_db supports both context manager and direct usage, and close_all_connections cleans up."""
+        # Context manager usage
+        with know.get_db() as conn1:
+            cursor1 = conn1.cursor()
+            cursor1.execute("SELECT COUNT(*) FROM files")
+            self.assertIsNotNone(cursor1.fetchone())
+
+        # Direct connection returning
+        conn2 = know.get_db()
+        cursor2 = conn2.cursor()
+        cursor2.execute("SELECT COUNT(*) FROM files")
+        self.assertIsNotNone(cursor2.fetchone())
+
+        stats = db.get_database_connection_stats()
+        self.assertGreaterEqual(stats["thread_local_connections_count"], 1)
+
+        # Deterministic teardown
+        db.close_all_connections()
+        post_stats = db.get_database_connection_stats()
+        self.assertEqual(post_stats["thread_local_connections_count"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
 

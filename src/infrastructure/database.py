@@ -30,9 +30,28 @@ SQLite database manager: Connection lifecycle, schema creation, WAL pragmas, sna
 
 logger = logging.getLogger(__name__)
 
-DB_TIMEOUT = 30.0
+DB_TIMEOUT = 60.0
+
+
+def _apply_pragmas(conn: sqlite3.Connection):
+    """Configure resilient WAL pragmas on SQLite connections."""
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA busy_timeout = 60000")
+    conn.execute("PRAGMA synchronous = NORMAL")
+    conn.execute("PRAGMA temp_store = MEMORY")
+    conn.execute("PRAGMA cache_size = -64000")
+    conn.execute("PRAGMA mmap_size = 268435456")
+    conn.execute("PRAGMA wal_autocheckpoint = 1000")
+    conn.execute("PRAGMA threads = 4")
+    conn.execute("PRAGMA journal_size_limit = 67108864")
+    conn.execute("PRAGMA foreign_keys = ON")
+
 
 class SQLiteConnectionPool:
+    """
+    Thread-safe SQLite connection pool with explicit checkout/checkin lifecycle,
+    health validation, transaction auto-rollback on recycling, and deterministic teardown.
+    """
     def __init__(self, db_path: str, max_connections: int = 8, timeout: float = DB_TIMEOUT):
         self.db_path = db_path
         self.timeout = timeout
@@ -40,73 +59,193 @@ class SQLiteConnectionPool:
         self.pool = queue.Queue(maxsize=max_connections)
         self.lock = threading.Lock()
         self.created = 0
+        self.in_flight = set()
+        self._closed = False
 
-    def get_connection(self):
+    def _create_connection(self) -> sqlite3.Connection:
+        if self.db_path and os.path.dirname(self.db_path):
+            os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
+        conn = sqlite3.connect(self.db_path, timeout=self.timeout, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        _apply_pragmas(conn)
+        return conn
+
+    def _is_connection_healthy(self, conn: Any) -> bool:
+        if conn is None:
+            return False
         try:
-            return self.pool.get_nowait()
-        except queue.Empty:
-            with self.lock:
-                if self.created < self.max_connections:
-                    self.created += 1
-                    if self.db_path and os.path.dirname(self.db_path):
-                        os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
-                    conn = sqlite3.connect(self.db_path, timeout=self.timeout, check_same_thread=False)
-                    conn.row_factory = sqlite3.Row
-                    # Enable WAL mode and lightweight memory-mapped I/O per-connection
-                    conn.execute("PRAGMA journal_mode = WAL")
-                    conn.execute("PRAGMA busy_timeout = 30000")
-                    conn.execute("PRAGMA synchronous = NORMAL")
-                    conn.execute("PRAGMA temp_store = MEMORY")
-                    conn.execute("PRAGMA cache_size = -64000")
-                    conn.execute("PRAGMA mmap_size = 268435456")
-                    conn.execute("PRAGMA threads = 4")
-                    conn.execute("PRAGMA wal_autocheckpoint = 2000")
-                    conn.execute("PRAGMA journal_size_limit = 67108864")
+            conn.cursor().execute("SELECT 1")
+            return True
+        except Exception:
+            return False
+
+    def get_connection(self, timeout: Optional[float] = None) -> sqlite3.Connection:
+        """Checkout a connection from pool or create a new one up to max_connections."""
+        if self._closed:
+            raise RuntimeError(f"SQLiteConnectionPool for {self.db_path} is closed.")
+
+        # 1. Try non-blocking checkout from available pool queue
+        while True:
+            try:
+                conn = self.pool.get_nowait()
+                if self._is_connection_healthy(conn):
+                    with self.lock:
+                        self.in_flight.add(conn)
                     return conn
+                else:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                    with self.lock:
+                        self.created = max(0, self.created - 1)
+            except queue.Empty:
+                break
 
-            # Block until a connection is available if we are at max
-            return self.pool.get()
-
-    def return_connection(self, conn):
-        try:
-            if conn and getattr(conn, "in_transaction", False):
+        # 2. If pool empty and capacity remains, instantiate new connection
+        with self.lock:
+            if self.created < self.max_connections and not self._closed:
+                self.created += 1
                 try:
-                    conn.rollback()
+                    conn = self._create_connection()
+                    self.in_flight.add(conn)
+                    return conn
+                except Exception:
+                    self.created = max(0, self.created - 1)
+                    raise
+
+        # 3. If at capacity, wait with timeout
+        wait_time = timeout if timeout is not None else self.timeout
+        try:
+            conn = self.pool.get(timeout=wait_time)
+            if self._is_connection_healthy(conn):
+                with self.lock:
+                    self.in_flight.add(conn)
+                return conn
+            else:
+                try:
+                    conn.close()
                 except Exception:
                     pass
+                with self.lock:
+                    self.created = max(0, self.created - 1)
+                    self.created += 1
+                    conn = self._create_connection()
+                    self.in_flight.add(conn)
+                    return conn
+        except queue.Empty:
+            raise sqlite3.OperationalError(
+                f"SQLiteConnectionPool timed out after {wait_time}s waiting for available connection on {self.db_path}"
+            )
+
+    def return_connection(self, conn: Optional[sqlite3.Connection]):
+        """Checkin a connection back to the pool, recycling state and rolling back transactions."""
+        if conn is None:
+            return
+
+        with self.lock:
+            self.in_flight.discard(conn)
+            if self._closed:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+                return
+
+        # Rollback any uncommitted in-flight transaction
+        try:
+            if getattr(conn, "in_transaction", False):
+                conn.rollback()
+        except Exception:
+            pass
+
+        # Validate health before returning to pool
+        if not self._is_connection_healthy(conn):
+            try:
+                conn.close()
+            except Exception:
+                pass
+            with self.lock:
+                self.created = max(0, self.created - 1)
+            return
+
+        try:
             self.pool.put_nowait(conn)
         except queue.Full:
             try:
                 conn.close()
             except Exception:
                 pass
+            with self.lock:
+                self.created = max(0, self.created - 1)
 
-_db_pools: Dict[str, SQLiteConnectionPool] = {}
+    @contextlib.contextmanager
+    def acquire(self, timeout: Optional[float] = None):
+        """Context manager for explicit checkout/checkin lifecycle."""
+        conn = self.get_connection(timeout=timeout)
+        try:
+            yield conn
+        finally:
+            self.return_connection(conn)
 
-_pool_lock = threading.Lock()
+    @contextlib.contextmanager
+    def connection(self, timeout: Optional[float] = None):
+        """Alias context manager for explicit checkout/checkin lifecycle."""
+        conn = self.get_connection(timeout=timeout)
+        try:
+            yield conn
+        finally:
+            self.return_connection(conn)
 
-def get_pool(db_path: str) -> SQLiteConnectionPool:
-    with _pool_lock:
-        if db_path not in _db_pools:
-            _db_pools[db_path] = SQLiteConnectionPool(db_path)
-        return _db_pools[db_path]
-
-def reset_db_connections():
-    """Clear the connection pools and close all thread-local connections. Useful during init_db and teardown."""
-    with _pool_lock:
-        for pool in _db_pools.values():
-            while not pool.pool.empty():
+    def close_all(self):
+        """Deterministic closure of all pooled and in-flight connections."""
+        with self.lock:
+            self._closed = True
+            while not self.pool.empty():
                 try:
-                    conn = pool.pool.get_nowait()
+                    conn = self.pool.get_nowait()
                     conn.close()
                 except Exception:
                     pass
-            pool.created = 0
+            for conn in list(self.in_flight):
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            self.in_flight.clear()
+            self.created = 0
+            self._closed = False
+
+
+_db_pools: Dict[str, SQLiteConnectionPool] = {}
+_pool_lock = threading.Lock()
+
+_local_connections: Dict[int, Dict[str, Any]] = {}
+_local_connections_lock = threading.Lock()
+
+DB_FILE = os.environ.get("DB_FILE", "knowledge.db")
+_local = threading.local()
+_initialized_dbs = set()
+_db_version = 0
+
+
+def get_pool(db_path: Optional[str] = None, max_connections: int = 8, timeout: float = DB_TIMEOUT) -> SQLiteConnectionPool:
+    target_path = os.path.abspath(db_path or DB_FILE)
+    with _pool_lock:
+        if target_path not in _db_pools:
+            _db_pools[target_path] = SQLiteConnectionPool(target_path, max_connections=max_connections, timeout=timeout)
+        return _db_pools[target_path]
+
+
+def close_all_connections():
+    """Deterministic cleanup of all pooled, in-flight, and thread-local SQLite connections."""
+    with _pool_lock:
+        for pool in list(_db_pools.values()):
+            pool.close_all()
         _db_pools.clear()
-    
-    # Close ALL thread-local connections
+
     with _local_connections_lock:
-        for entry in _local_connections.values():
+        for entry in list(_local_connections.values()):
             try:
                 c = entry.get("conn") if isinstance(entry, dict) else entry
                 if c:
@@ -114,15 +253,26 @@ def reset_db_connections():
             except Exception:
                 pass
         _local_connections.clear()
-    
+
     if hasattr(_local, "connection"):
         _local.connection = None
     _local.connection_path = None
+
     global _initialized_dbs
     _initialized_dbs.clear()
 
 
+def reset_db_connections():
+    """Clear connection pools, in-flight connections, and thread-local connections on teardown and process exit."""
+    close_all_connections()
+
+
+import atexit
+atexit.register(close_all_connections)
+
+
 _db_write_lock = threading.Lock()
+
 
 def with_sqlite_retry(fn: Callable, max_retries: int = 5, initial_delay: float = 0.05, backoff_factor: float = 2.0) -> Any:
     """Execute callable with exponential backoff on transient SQLite write locks / busy states."""
@@ -142,12 +292,14 @@ def with_sqlite_retry(fn: Callable, max_retries: int = 5, initial_delay: float =
     if last_err:
         raise last_err
 
+
 @contextlib.contextmanager
-def get_db_write_connection(db_path: str, timeout: float = DB_TIMEOUT):
+def get_db_write_connection(db_path: Optional[str] = None, timeout: float = DB_TIMEOUT):
     """Acquires a global lock to serialize SQLite writes at Python level with exponential retry backoff."""
-    pool = get_pool(db_path)
+    target_path = db_path or DB_FILE
+    pool = get_pool(target_path, timeout=timeout)
     with _db_write_lock:
-        conn = pool.get_connection()
+        conn = pool.get_connection(timeout=timeout)
         try:
             yield conn
             if getattr(conn, "in_transaction", False):
@@ -162,11 +314,13 @@ def get_db_write_connection(db_path: str, timeout: float = DB_TIMEOUT):
         finally:
             pool.return_connection(conn)
 
+
 @contextlib.contextmanager
-def get_db_connection(db_path: str, timeout: float = DB_TIMEOUT):
+def get_db_connection(db_path: Optional[str] = None, timeout: float = DB_TIMEOUT):
     """Centralized database connection manager that uses a thread-safe connection pool with commit retry."""
-    pool = get_pool(db_path)
-    conn = pool.get_connection()
+    target_path = db_path or DB_FILE
+    pool = get_pool(target_path, timeout=timeout)
+    conn = pool.get_connection(timeout=timeout)
     try:
         yield conn
         if getattr(conn, "in_transaction", False):
@@ -181,11 +335,6 @@ def get_db_connection(db_path: str, timeout: float = DB_TIMEOUT):
     finally:
         pool.return_connection(conn)
 
-DB_FILE = os.environ.get("DB_FILE", "knowledge.db")
-
-_local = threading.local()
-
-_db_version = 0
 
 def get_db_data_version(db_path: Optional[str] = None) -> int:
     """
@@ -206,6 +355,7 @@ def get_db_data_version(db_path: Optional[str] = None) -> int:
     except Exception:
         pass
     return _db_version
+
 
 def get_active_dir() -> str:
     """Return active sandbox or working directory."""
@@ -237,9 +387,6 @@ def get_active_dir() -> str:
     except Exception as e:
         logger.warning("Non-fatal error resolving active directory from DB_FILE path: %s", e)
     return os.getcwd()
-
-_local_connections: Dict[int, Dict[str, Any]] = {}
-_local_connections_lock = threading.Lock()
 
 
 def reap_zombie_connections(idle_timeout_seconds: float = 1800.0) -> Dict[str, Any]:
@@ -303,7 +450,11 @@ def get_database_connection_stats() -> Dict[str, Any]:
         ]
     with _pool_lock:
         pool_stats = {
-            p_path: {"created": pool.created, "available": pool.pool.qsize()}
+            p_path: {
+                "created": pool.created,
+                "available": pool.pool.qsize(),
+                "in_flight": len(pool.in_flight)
+            }
             for p_path, pool in _db_pools.items()
         }
 
@@ -324,8 +475,12 @@ def get_database_connection_stats() -> Dict[str, Any]:
     }
 
 
-def get_db():
-    """Get or establish thread-local SQLite database connection."""
+def get_db() -> sqlite3.Connection:
+    """
+    Get or establish thread-local SQLite database connection.
+    Returns raw sqlite3.Connection supporting both context manager (`with get_db() as conn:`)
+    and direct object usage (`conn = get_db()`).
+    """
     conn = getattr(_local, "connection", None)
     cached_path = getattr(_local, "connection_path", None)
     current_path = os.path.abspath(DB_FILE)
@@ -361,20 +516,12 @@ def get_db():
         attempts = 0
         while attempts < 5:
             try:
-                os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
+                if DB_FILE and os.path.dirname(DB_FILE):
+                    os.makedirs(os.path.dirname(os.path.abspath(DB_FILE)), exist_ok=True)
                 conn = sqlite3.connect(DB_FILE, check_same_thread=False, timeout=DB_TIMEOUT)
                 conn.row_factory = sqlite3.Row
-                conn.execute("PRAGMA journal_mode = WAL")
-                conn.execute("PRAGMA busy_timeout = 5000")
-                conn.execute("PRAGMA synchronous = NORMAL")
-                conn.execute("PRAGMA temp_store = MEMORY")
-                conn.execute("PRAGMA cache_size = -64000")
-                conn.execute("PRAGMA mmap_size = 268435456")
-                conn.execute("PRAGMA threads = 4")
-                conn.execute("PRAGMA wal_autocheckpoint = 2000")
-                conn.execute("PRAGMA foreign_keys = ON")
+                _apply_pragmas(conn)
                 _local.connection = conn
-
                 _local.connection_path = current_path
                 with _local_connections_lock:
                     _local_connections[current_ident] = {
@@ -407,6 +554,7 @@ def get_db():
                     raise e
     return conn
 
+
 def backup_db_online(backup_target_path: str) -> bool:
     """Perform a non-blocking online SQLite database backup using connection backup API."""
     try:
@@ -421,13 +569,16 @@ def backup_db_online(backup_target_path: str) -> bool:
         logger.exception("Failed to execute online database backup: %s", e)
         return False
 
+
 def _ensure_column(cursor, table: str, column: str, type_def: str):
     cursor.execute(f"PRAGMA table_info({table})")
     cols = [row[1] for row in cursor.fetchall()]
     if column not in cols:
         cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {type_def}")
 
+
 _initialized_dbs = set()
+
 
 def init_db():
     """Initialize database tables, pragmas, indices, and schema migrations."""
@@ -441,9 +592,10 @@ def init_db():
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("PRAGMA journal_mode = WAL")
-            cursor.execute("PRAGMA busy_timeout = 5000;")
+            cursor.execute("PRAGMA busy_timeout = 60000;")
             cursor.execute("PRAGMA cache_size = -64000;")
             cursor.execute("PRAGMA mmap_size = 268435456;")
+            cursor.execute("PRAGMA wal_autocheckpoint = 1000;")
             cursor.execute("PRAGMA auto_vacuum = INCREMENTAL;")
             cursor.execute("PRAGMA threads = 4;")
         

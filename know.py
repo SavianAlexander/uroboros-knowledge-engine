@@ -104,7 +104,22 @@ from src.infrastructure.llm import (
     require_llm,
     stream_completion
 )
-from src.infrastructure.database import DB_FILE, DB_TIMEOUT, SQLiteConnectionPool, backup_db_online, db_status, get_active_dir, get_db, get_db_connection, get_pool, init_db, migrate_folder_path, reset_db_connections, run_maintenance
+from src.infrastructure.database import (
+    DB_FILE,
+    DB_TIMEOUT,
+    SQLiteConnectionPool,
+    backup_db_online,
+    close_all_connections,
+    db_status,
+    get_active_dir,
+    get_db,
+    get_db_connection,
+    get_pool,
+    init_db,
+    migrate_folder_path,
+    reset_db_connections,
+    run_maintenance
+)
 from src.infrastructure.vector_engine import MiniVectorEngine, extract_rag_context, index_directory, search_files
 from src.infrastructure.repositories.chat import add_chat_message, create_chat_session, delete_chat_session, get_chat_messages, get_chat_session, list_chat_sessions, update_chat_session
 from src.infrastructure.repositories.snapshots import create_db_snapshot, delete_db_snapshot, list_db_snapshots, restore_db_snapshot
