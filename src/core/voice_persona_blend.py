@@ -23,25 +23,11 @@ if BASE_DIR not in sys.path:
 VOICES_BIN_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.bin")
 VOICES_JSON_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.json")
 
-# Signature Curated Vocal Timbre Persona Blends
+# Singular Canonical Voice Standard Blend
 SIGNATURE_PERSONA_BLENDS: Dict[str, Dict[str, float]] = {
-    # Executive & Command Personas (Presence & Authority)
-    "ALEXANDER_EXECUTIVE": {"am_adam": 0.70, "bm_george": 0.20, "am_michael": 0.10},  # Executive Command: Deep baritone, resonant low-end & vocal clarity
-    "ALEXANDER_SOVEREIGN": {"am_adam": 0.70, "bm_george": 0.20, "am_michael": 0.10},  # Alias for backward compatibility
-    "FREYA_VALKYRIE": {"bf_emma": 0.60, "af_sarah": 0.25, "af_bella": 0.15},          # Resolute Command: Crystalline, articulate noble authority
-    "AURELIUS_STOIC": {"am_adam": 0.80, "bm_lewis": 0.20},                             # Stoic Presence: Deep low-end presence & deliberate pacing
-    "NOCTURNA_SOLON": {"bm_george": 0.65, "am_adam": 0.35},                           # Strategic Analysis: Focused, articulate analysis & strategic gravitas
-    
-    # Classic AI & Signature Personas
-    "CORTANA_PRIME": {"af_sky": 0.60, "af_bella": 0.25, "af_sarah": 0.15},            # Articulate, crystalline, warm Cortana AI
-    "AURA_SHIP_AI": {"bf_emma": 0.85, "bf_isabella": 0.15},                           # British crystalline starship bridge AI
-    "EXECUTIVE_ADVISOR": {"af_bella": 0.70, "af_nicole": 0.30},                       # Warm, engaging productivity & executive tone
-    "TACTICAL_OFFICER": {"am_adam": 0.70, "bm_george": 0.30},                         # Deep, resonant tactical commander
-    "CYBER_EXECUTIVE": {"bf_emma": 0.60, "af_bella": 0.40},                            # Polished, authoritative executive assistant
-    "TACTICAL_COMMANDER": {"am_adam": 0.70, "bm_george": 0.30},                       # Deep resonant leader
-    "COCKPIT_SYNTHESIS": {"bf_emma": 0.85, "af_sarah": 0.15},                          # Sharp, alert AURA AI
-    "CONVERSATIONAL_FLOW": {"af_bella": 0.60, "af_sky": 0.40}                          # Ultra-natural conversational narrator
+    "CANONICAL_STUDIO": {"af_heart": 1.0}
 }
+
 
 CUSTOM_PERSONAS_FILE = os.path.join(BASE_DIR, "data", "custom_voice_personas.json")
 

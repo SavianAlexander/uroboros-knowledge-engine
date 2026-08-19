@@ -32,13 +32,10 @@ CANONICAL_VOICE_PROFILE = {
     "description": "Universal Singular Canonical Synthesizer (af_heart Studio Master)"
 }
 
+# Universal canonical voice lookup (all requests resolve strictly to af_heart)
 KOKORO_PERSONAS = {
-    "AURA_SHIP_AI": "bf_emma",
-    "TACTICAL_ADVISOR": "af_sarah",
-    "INDUSTRY_OVERSEER": "am_adam",
-    "FLEET_COMMANDER": "am_michael",
-    "EXECUTIVE_PRESENCE": "af_heart",
-    "GENERAL": "af_heart"
+    "GENERAL": "af_heart",
+    "CANONICAL_STUDIO": "af_heart"
 }
 
 

@@ -23,51 +23,6 @@ PERSONA_SHOWCASE_DEMOS = {
         "voice": "af_heart",
         "dsp": "STUDIO_MASTER",
         "demo_text": "Universal singular canonical neural voice configuration active. Studio master acoustic broadcast verified."
-    },
-    "AURA_SHIP_AI": {
-        "voice": "af_heart",
-        "dsp": "STUDIO_MASTER",
-        "demo_text": "Aura Shipboard Intelligence active. All starship defensive shields and warp drives are fully operational."
-    },
-    "TACTICAL_ADVISOR": {
-        "voice": "af_heart",
-        "dsp": "STUDIO_MASTER",
-        "demo_text": "Tactical Advisor standing by. Hostile fleet signature identified on directional scan at four astronomical units."
-    },
-    "FLEET_COMMANDER": {
-        "voice": "af_heart",
-        "dsp": "STUDIO_MASTER",
-        "demo_text": "Fleet Commander on deck. Anchor on the flagship and align to the primary cynosural beacon."
-    },
-    "INDUSTRY_OVERSEER": {
-        "voice": "af_heart",
-        "dsp": "STUDIO_MASTER",
-        "demo_text": "Industry Overseer online. Deep-space ore compression and planetary reaction batches are synchronized."
-    },
-    "CALM_OPERATIONS": {
-        "voice": "af_heart",
-        "dsp": "STUDIO_MASTER",
-        "demo_text": "Operations normal. All background database migrations, vector indexing, and unit test suites have passed."
-    },
-    "EXECUTIVE_DIRECTOR": {
-        "voice": "af_heart",
-        "dsp": "STUDIO_MASTER",
-        "demo_text": "Executive Director briefing. Quarterly revenue projections and asset reserves have exceeded target thresholds."
-    },
-    "WARP_NAVIGATOR": {
-        "voice": "af_heart",
-        "dsp": "STUDIO_MASTER",
-        "demo_text": "Warp trajectory calculated. Safe transit vector plotted through Jita 4-4 with zero gatecamp interference."
-    },
-    "ORACLE_ADVISOR": {
-        "voice": "af_heart",
-        "dsp": "STUDIO_MASTER",
-        "demo_text": "The knowledge architecture remains verified. Deterministic verification certifies zero-assumption integrity."
-    },
-    "SOVEREIGN_ORACLE": {
-        "voice": "af_heart",
-        "dsp": "STUDIO_MASTER",
-        "demo_text": "The knowledge architecture remains verified. Deterministic verification certifies zero-assumption integrity."
     }
 }
 
