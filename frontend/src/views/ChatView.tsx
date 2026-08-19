@@ -659,14 +659,25 @@ export default function ChatView() {
       const audioCtx = new AudioContextClass({ sampleRate: 24000 });
       liveCallAudioCtxRef.current = audioCtx;
 
-      const micStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 24000
+      let micStream: MediaStream | null = null;
+      try {
+        if (navigator?.mediaDevices?.getUserMedia) {
+          micStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+              sampleRate: 24000
+            }
+          });
         }
-      });
+      } catch (micErr) {
+        console.warn('Microphone stream access unavailable, fallback to simulated stream node:', micErr);
+        try {
+          const dest = audioCtx.createMediaStreamDestination();
+          micStream = dest.stream;
+        } catch {}
+      }
       liveCallMicStreamRef.current = micStream;
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
