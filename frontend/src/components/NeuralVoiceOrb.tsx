@@ -1,14 +1,14 @@
 import React from 'react';
 import { Mic, Volume2, Square, Sparkles } from 'lucide-react';
 
-interface CortanaOrbProps {
+interface NeuralVoiceOrbProps {
   state: 'idle' | 'listening' | 'speaking' | 'buffering';
   onClick?: () => void;
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
 }
 
-export const playCortanaSFX = async (sfxName: 'ready' | 'confirm' | 'complete' | 'alert' | 'dismiss') => {
+export const playVoiceChimeSFX = async (sfxName: 'ready' | 'confirm' | 'complete' | 'alert' | 'dismiss') => {
   try {
     const res = await fetch(`/api/voice/sfx/${sfxName}`);
     if (res.ok) {
@@ -24,7 +24,7 @@ export const playCortanaSFX = async (sfxName: 'ready' | 'confirm' | 'complete' |
   }
 };
 
-export const CortanaOrb: React.FC<CortanaOrbProps> = ({
+export const NeuralVoiceOrb: React.FC<NeuralVoiceOrbProps> = ({
   state,
   onClick,
   size = 'md',
@@ -50,10 +50,10 @@ export const CortanaOrb: React.FC<CortanaOrbProps> = ({
         className={`relative flex items-center justify-center rounded-full transition-all duration-300 group select-none cursor-pointer ${sizeMap[size]}`}
         title={
           state === 'speaking'
-            ? 'Cortana Speaking (Click to Interrupt)'
+            ? 'Neural Voice Speaking (Click to Interrupt)'
             : state === 'listening'
-            ? 'Cortana Listening (Click to Finish)'
-            : 'Cortana Voice Assistant (Click to Speak)'
+            ? 'Neural Voice Listening (Click to Finish)'
+            : 'Neural Voice Assistant (Click to Speak)'
         }
       >
         {/* Outer Pulsing Holographic Ring */}
@@ -113,7 +113,7 @@ export const CortanaOrb: React.FC<CortanaOrbProps> = ({
       {showLabel && (
         <div className="flex flex-col">
           <span className="text-[11px] font-semibold tracking-wider uppercase text-cyan-400 dark:text-cyan-300">
-            Cortana Prime
+            Neural Voice
           </span>
           <span className="text-[10px] text-slate-400">
             {state === 'speaking'

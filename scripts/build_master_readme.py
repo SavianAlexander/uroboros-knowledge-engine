@@ -545,7 +545,7 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 | [`scripts/test_voice_ui_interactive_playwright.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/test_voice_ui_interactive_playwright.py) | `python scripts/test_voice_ui_interactive_playwright.py` | Interactive Playwright browser test for Live Voice Call HUD |
 | [`run_uat_audit.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/run_uat_audit.py) | `python run_uat_audit.py` | Automated 6-journey Playwright UAT audit & visual evidence |
 | [`scripts/audit_ui_playwright.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/audit_ui_playwright.py) | `python scripts/audit_ui_playwright.py` | Automated Playwright end-to-end UI audit |
-| [`scripts/capture_showcase.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/capture_showcase.py) | `python scripts/capture_showcase.py` | Captures HD application screenshots |
+| [`scripts/capture_ui_showcase.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/capture_ui_showcase.py) | `python scripts/capture_ui_showcase.py` | Captures HD application screenshots |
 | [`scripts/stress_test_domain.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/stress_test_domain.py) | `python scripts/stress_test_domain.py` | Multithreaded domain algorithm stress test |
 
 ---

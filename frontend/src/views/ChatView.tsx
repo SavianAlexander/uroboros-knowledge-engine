@@ -53,7 +53,7 @@ import {
 
 import { useToast } from '../components/Toast';
 import { useApp } from '../store/AppContext';
-import { CortanaOrb, playCortanaSFX } from '../components/CortanaOrb';
+import { NeuralVoiceOrb, playVoiceChimeSFX } from '../components/NeuralVoiceOrb';
 import { AudioVisualizer } from '../components/AudioVisualizer';
 
 
@@ -318,7 +318,7 @@ export default function ChatView() {
   const handleToggleSpeak = async (msgId: string, text: string) => {
     if (speakingMsgId === msgId) {
       stopAllAudio();
-      playCortanaSFX('dismiss');
+      playVoiceChimeSFX('dismiss');
       toast('Speech Paused', 'Audio playback stopped', 'info');
       return;
     }
@@ -328,7 +328,7 @@ export default function ChatView() {
 
     if (!text || !text.trim()) return;
 
-    playCortanaSFX('confirm');
+    playVoiceChimeSFX('confirm');
     setSpeakingMsgId(msgId);
     setIsAudioLoading(true);
     toast('Synthesizing Neural Audio', `Streaming with ${voicePersona.replace('_', ' ')} (${dspPreset.replace('_', ' ')})...`, 'info');
@@ -558,7 +558,7 @@ export default function ChatView() {
     stopAllAudio();
 
     if (isRecordingVoice) {
-      playCortanaSFX('confirm');
+      playVoiceChimeSFX('confirm');
       recognitionRef.current?.stop();
       setIsRecordingVoice(false);
       toast('Voice Stopped', 'Audio dictation stopped.', 'info');
@@ -566,7 +566,7 @@ export default function ChatView() {
     }
 
     try {
-      playCortanaSFX('ready');
+      playVoiceChimeSFX('ready');
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
@@ -651,7 +651,7 @@ export default function ChatView() {
     try {
       stopAllAudio();
       stopLiveCallAudioPlayback();
-      playCortanaSFX('ready');
+      playVoiceChimeSFX('ready');
       setLiveCallStatus('connecting');
       setIsLiveCallActive(true);
       let ws: WebSocket | null = null;
@@ -800,7 +800,7 @@ export default function ChatView() {
   };
 
   const handleEndLiveCall = () => {
-    playCortanaSFX('dismiss');
+    playVoiceChimeSFX('dismiss');
     setIsLiveCallActive(false);
     setLiveCallStatus('idle');
     setLiveCallTtfs(null);
@@ -968,7 +968,7 @@ export default function ChatView() {
           }
         }
         if (done) {
-          playCortanaSFX('complete');
+          playVoiceChimeSFX('complete');
           if (autoSpeakRef.current && currentResponse.trim()) {
             handleToggleSpeak(assistantMsgId, currentResponse);
           }
@@ -1440,7 +1440,7 @@ export default function ChatView() {
               )}
             </button>
 
-            <CortanaOrb
+            <NeuralVoiceOrb
               state={speakingMsgId ? 'speaking' : isRecordingVoice ? 'listening' : isAudioLoading ? 'buffering' : 'idle'}
               onClick={() => {
                 if (speakingMsgId) {
@@ -1529,7 +1529,7 @@ export default function ChatView() {
         {isLiveCallActive && (
           <div className="mx-6 mt-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-purple-950/40 border border-emerald-500/30 shadow-lg backdrop-blur-md flex items-center justify-between animate-fadeIn">
             <div className="flex items-center gap-3">
-              <CortanaOrb
+              <NeuralVoiceOrb
                 state={liveCallStatus === 'speaking' ? 'speaking' : liveCallStatus === 'buffering' ? 'buffering' : 'listening'}
                 size="sm"
                 showLabel={false}

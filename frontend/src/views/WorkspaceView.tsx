@@ -742,7 +742,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
     }
 
     setTtsSpeaking(true);
-    toast('Synthesizing Neural Audio', `Reading aloud with Cortana Prime studio audio (${paragraphs.length} paragraphs)...`, 'info');
+    toast('Synthesizing Neural Audio', `Reading aloud with Neural Voice studio audio (${paragraphs.length} paragraphs)...`, 'info');
 
     try {
       const res = await fetch('/v1/audio/speech', {
@@ -750,7 +750,7 @@ function SplitWorkspace({ file, onClose }: { file: any; onClose: () => void }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           input: fullText,
-          voice: 'CORTANA_PRIME',
+          voice: 'af_heart',
           speed: ttsRate,
           dsp_preset: 'STUDIO_MASTER',
           response_format: 'wav'

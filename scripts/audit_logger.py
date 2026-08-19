@@ -56,13 +56,6 @@ def log_system_audit():
     with open(log_path, "a", encoding="utf-8") as f:
         f.write(log_entry)
 
-    # Run exhaustive file-by-file AST/syntax scan
-    try:
-        from deep_file_scanner import run_exhaustive_file_scan
-        run_exhaustive_file_scan()
-    except Exception as e:
-        print(f"File scanner notice: {e}")
-
     print(f"System audit logged successfully to {log_path}")
 
 if __name__ == "__main__":
