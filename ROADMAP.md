@@ -7,15 +7,15 @@ This document outlines the strategic vision, planned engineering milestones, and
 ## 1. Release Timeline & Vision Overview
 
 ```
-v2.5.0 (Current Stable) ──► v2.6.0 (Q3 2026) ──► v3.0.0 (Q4 2026) ──► v3.5.0 (2027)
-  [21 RAG Pillars]          [GraphRAG 2-Hop]        [Photonic Hardware]     [P2P Mesh Network]
-  [134 Domain Modules]       [Multi-Modal Vision]    [Zero-Knowledge Mesh]   [Sub-1ms Swarm RAG]
-  [React 19 SPA]            [Anki SRS Sync]         [Native ROCm 6.2]       [Quantum Ledger]
+v3.3.0 (Current Stable) ──► v3.4.0 (Q3 2026) ──► v3.5.0 (Q4 2026) ──► v4.0.0 (2027)
+  [Full-Duplex Voice]       [Louvain Graph 3D]      [Bulletproofs ZK]       [Distributed P2P Mesh]
+  [4-Pillar Epistemic]      [Anki .apkg Export]     [Native ROCm GPU]       [Quantum Proof Ledger]
+  [Streaming 20ms VAD]      [Multimodal Vision]     [Sub-1ms Swarm RAG]     [Global Air-Gapped Sync]
 ```
 
 ---
 
-## 2. Near-Term Roadmap (v2.6.0 — Q3 2026)
+## 2. Near-Term Roadmap (v3.4.0 — Q3 2026)
 
 ### 2.1 GraphRAG 2-Hop Visualizer Enhancements
 - **Interactive Node Clustering**: Expand 3D WebGL Graph (`react-force-graph-3d`) to render Louvain community cluster boundaries with dynamic color coding.

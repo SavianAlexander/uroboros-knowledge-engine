@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [3.3.0] - 2026-08-18
+
+### Added
+- **Full-Duplex Conversational Voice Call Engine (`/ws/voice/stream`)**: Pipelined token-to-audio streaming architecture linking local LLM generation directly to Kokoro-82M ONNX clause synthesis with sub-300ms time-to-first-speech.
+- **Streaming 20ms RMS Voice Activity Detection (VAD) & Barge-In Preemption**: Real-time energy-based silence hangover auto-endpointing with sub-10ms instant task cancellation (`asyncio.Task.cancel()`) when user speech begins.
+- **Deep Expanded Phonetic Speech Normalizer (`src/core/speech_normalizer.py`)**: 100+ compiled regex pronunciation expansions covering AI/ML (HNSW, BM25, RRF, HyDE, ColBERT), web/backend frameworks (FastAPI, Pydantic, Vite, React), and cloud/infra (K8s, gRPC, Docker, SQLite WAL, FTS5).
+- **4-Pillar Epistemic Domain Architecture**: Modular reorganization of domain intelligence into clean subpackages:
+  - `src/domain/retrieval/` (Hybrid RAG DAG, binary ColBERT MaxSim, vector store, epistemic tiering)
+  - `src/domain/privacy/` (Quantum-safe ZK data masking, local PII privacy guard, audit hashchain)
+  - `src/domain/synthesis/` (Anki card synthesis, synthetic QA generation, executive briefings)
+  - `src/domain/connectors/` (Standard-library connectors for eCFR, Federal Register, PR Lex, Curam, Jira)
+- **Interactive Automated Playwright UAT Suite (`run_uat_audit.py` & `scripts/test_voice_ui_interactive_playwright.py`)**: Real browser validation across 6 core user journeys with dynamic ephemeral socket binding, Chromium audio device emulation, and automated scorecard generation.
+
+### Standardized & Hardened
+- **Singular Canonical Neural Voice Standard (`af_heart`)**: Standardized all voice synthesis across bridges, routers, and frontend to `af_heart` at 1.02x speed with Studio Master DSP acoustics, eliminating persona fragmentation.
+- **Zero-Stutter SQLite WAL Truncation Daemon**: Cooperative background checkpointing (`PRAGMA wal_checkpoint(TRUNCATE)`) during CPU/GPU idle periods.
+- **Mermaid Diagram Syntax Compliance**: Eliminated inline backticks and illegal tokens across sequence diagrams in `README.md` and `ARCHITECTURE.md`.
+
+---
+
 ## [3.2.0] - 2026-08-15
 
 ### Standardized & Hardened
