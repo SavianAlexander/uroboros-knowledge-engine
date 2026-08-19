@@ -92,7 +92,14 @@ class PrimarySourceSyncOrchestrator:
             uat_res = uat_iso.harvest_all()
             harvested_results.extend(uat_res)
 
-        # 7. Process ledger changes and detect diffs
+        # 7. Harvest EVE Online Universe Topology & Dogma Physics
+        if not domain_filter or domain_filter in ["eve", "gaming", "all"]:
+            from src.domain.connectors.eve_esi_connector import EveEsiConnector
+            eve = EveEsiConnector(output_dir=os.path.join(self.vault_root, "Eve Online", "primary_sources"))
+            eve_res = eve.harvest_all()
+            harvested_results.extend(eve_res)
+
+        # 8. Process ledger changes and detect diffs
         ledger_entries = ledger.setdefault("entries", {})
         touched_paths: List[str] = []
 

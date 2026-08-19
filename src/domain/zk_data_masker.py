@@ -47,6 +47,7 @@ def pseudonymize_payload_salted_sha256(sensitive_text: str, secret_salt: str = "
 mask_payload_with_zk_proof = pseudonymize_payload_salted_sha256
 pseudonymize_records = pseudonymize_payload_salted_sha256
 mask_pii_entities = pseudonymize_payload_salted_sha256
+mask_sensitive_document_data = pseudonymize_payload_salted_sha256
 
 class ZkDataMasker:
     pseudonymize = staticmethod(pseudonymize_payload_salted_sha256)

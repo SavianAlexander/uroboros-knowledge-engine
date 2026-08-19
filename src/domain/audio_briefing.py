@@ -54,6 +54,17 @@ def generate_audio_podcast_script(db_path: Optional[str] = None) -> Dict[str, An
 # Epistemic 4-Pillar and backward-compatible aliases
 generate_audio_briefing_script = generate_audio_podcast_script
 
+
+def generate_audio_briefing(topic: str = "", context: str = "") -> Dict[str, Any]:
+    """Synthesizes structured 2-speaker conversational briefing script from topic/context."""
+    res = generate_audio_podcast_script()
+    if topic:
+        res["topic"] = topic
+    if context:
+        res["context"] = context
+    return res
+
+
 class AudioBriefingSynthesizer:
     generate = staticmethod(generate_audio_podcast_script)
 

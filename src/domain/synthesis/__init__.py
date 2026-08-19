@@ -1,6 +1,7 @@
 """
 Pillar 3: Synthesis & Generation Domain Subpackage.
-Encapsulates Anki flashcard generation, synthetic Q&A generation, executive/daily briefings, and knowledge distillation.
+Encapsulates Anki flashcard generation, synthetic Q&A generation, executive/daily briefings,
+knowledge distillation, code refactoring, diff synthesis, wikilink parsing, and graph visualization.
 """
 from src.domain.anki_card_synthesizer import (
     AnkiCardSynthesizer,
@@ -45,6 +46,10 @@ from src.domain.code_self_refactor import refactor_code_ast
 from src.domain.code_doc_aligner import align_code_and_documentation
 from src.domain.graph_link_synthesizer import synthesize_graph_links
 from src.domain.graph_mermaid_generator import generate_mermaid_graph
+from src.domain.wikilink_parser import extract_wikilinks, build_wikilink_graph
+from src.domain.citation_deep_linker import create_deep_citation_link
+from src.domain.relational_schema_linker import RelationalSchemaLinker
+from src.domain.graph_engine import compute_graph_pagerank, export_graph_to_graphml
 
 __all__ = [
     "AnkiCardSynthesizer",
@@ -72,4 +77,10 @@ __all__ = [
     "align_code_and_documentation",
     "synthesize_graph_links",
     "generate_mermaid_graph",
+    "extract_wikilinks",
+    "build_wikilink_graph",
+    "create_deep_citation_link",
+    "RelationalSchemaLinker",
+    "compute_graph_pagerank",
+    "export_graph_to_graphml",
 ]

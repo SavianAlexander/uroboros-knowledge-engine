@@ -89,3 +89,19 @@ class LegalAccuracyEngine:
                 return False, f"Field '{field}' cannot be null"
 
         return True, "Valid"
+
+
+def audit_legal_accuracy(text: str) -> Dict[str, Any]:
+    """Audits contract and policy documents for statutory citations, obligations, and risk terms."""
+    nfc_text = LegalAccuracyEngine.normalize_text_nfc(text)
+    has_statutes = bool(re.search(r'\b(?:CFR|U\.S\.C\.|Section|§|Article|Statute|Regulation)\b', nfc_text, re.IGNORECASE))
+    has_obligations = bool(re.search(r'\b(?:shall|must|required|prohibited|liability|indemnify)\b', nfc_text, re.IGNORECASE))
+    sha256_hash = hashlib.sha256(nfc_text.encode('utf-8')).hexdigest()
+    return {
+        "status": "success",
+        "sha256": sha256_hash,
+        "nfc_normalized": True,
+        "statutory_citations_detected": has_statutes,
+        "obligations_detected": has_obligations,
+        "char_count": len(nfc_text),
+    }

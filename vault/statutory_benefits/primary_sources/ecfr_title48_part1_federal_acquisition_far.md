@@ -6,7 +6,7 @@ cfr_title: 48
 cfr_part: 1
 domain_key: "federal_acquisition_far"
 official_ecfr_url: "https://www.ecfr.gov/current/title-48/part-1"
-harvested_at: "2026-08-17T17:47:59Z"
+harvested_at: "2026-08-19T04:03:57Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_LIVE_CRAWL"
 verification: "ECFR_LIVE_XML_API_VERIFIED"
 ---

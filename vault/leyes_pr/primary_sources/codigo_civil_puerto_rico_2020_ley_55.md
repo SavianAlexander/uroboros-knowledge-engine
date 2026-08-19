@@ -4,7 +4,7 @@ source_authority: "Oficina de Servicios Legislativos de Puerto Rico (OSLPR)"
 statute_number: "Ley 55-2020"
 governing_jurisdiction: "Estado Libre Asociado de Puerto Rico"
 official_source_url: "https://sutra.oslpr.org / https://oslpr.org"
-harvested_at: "2026-08-17T17:53:00Z"
+harvested_at: "2026-08-19T04:04:01Z"
 document_status: "STATUTORY_EXCERPT_VIGENTE"
 verification: "OSLPR_CIVIL_CODE_VERIFIED"
 ---

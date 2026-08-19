@@ -6,7 +6,7 @@ cfr_title: 29
 cfr_part: 1910
 domain_key: "labor_osha"
 official_ecfr_url: "https://www.ecfr.gov/current/title-29/part-1910"
-harvested_at: "2026-08-17T17:47:56Z"
+harvested_at: "2026-08-19T04:03:56Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_LIVE_CRAWL"
 verification: "ECFR_LIVE_XML_API_VERIFIED"
 ---

@@ -2,7 +2,7 @@
 title: "IBM Cúram Express Rules (CER) XML Document Type Definition (DTD) & Grammar"
 source_authority: "IBM Cúram Social Program Management Architecture Specification"
 spec_version: "CER 8.0.x"
-harvested_at: "2026-08-17T17:48:00Z"
+harvested_at: "2026-08-19T04:04:01Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED"
 verification: "CER_XML_GRAMMAR_VERIFIED"
 ---

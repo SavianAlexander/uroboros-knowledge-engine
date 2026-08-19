@@ -1,6 +1,7 @@
 """
 Pillar 2: Privacy & Security Domain Subpackage.
-Encapsulates zero-knowledge data masking, PII scrubbing, cryptographic audit hashchains, Merkle trees, and ACL permissions.
+Encapsulates zero-knowledge data masking, PII scrubbing, cryptographic audit hashchains,
+Merkle trees, ACL permissions, client dataset cleaning, and verification invariants.
 """
 from src.domain.zk_data_masker import (
     pseudonymize_records,
@@ -28,6 +29,9 @@ from src.domain.acl_vector_guard import AclVectorGuard
 from src.domain.compliance_inspector import ComplianceInspector
 from src.domain.prompt_injection_guard import PromptInjectionGuard, evaluate_prompt_safety
 from src.domain.data_provenance_tracker import DataProvenanceTracker
+from src.domain.client_data_cleaner import cleanse_client_dataset
+from src.domain.boundary_invariants import evaluate_boundary_invariants
+from src.domain.verification_guards import verify_claims_and_consensus
 
 __all__ = [
     "pseudonymize_records",
@@ -49,4 +53,7 @@ __all__ = [
     "PromptInjectionGuard",
     "evaluate_prompt_safety",
     "DataProvenanceTracker",
+    "cleanse_client_dataset",
+    "evaluate_boundary_invariants",
+    "verify_claims_and_consensus",
 ]

@@ -6,7 +6,7 @@ cfr_title: 45
 cfr_part: 98
 domain_key: "ccdf_childcare"
 official_ecfr_url: "https://www.ecfr.gov/current/title-45/part-98"
-harvested_at: "2026-08-17T17:49:28Z"
+harvested_at: "2026-08-19T04:03:36Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_LIVE_CRAWL"
 verification: "ECFR_LIVE_XML_API_VERIFIED"
 ---

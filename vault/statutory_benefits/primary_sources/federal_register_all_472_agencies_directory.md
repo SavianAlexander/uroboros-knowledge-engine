@@ -2,7 +2,7 @@
 title: "Federal Register Complete 472 US Federal Government Agencies Directory"
 source_authority: "Office of the Federal Register (OFR) & GPO (FederalRegister.gov API)"
 total_agencies_registered: 472
-harvested_at: "2026-08-17T17:47:59Z"
+harvested_at: "2026-08-19T04:04:00Z"
 document_status: "OFFICIAL_PRIMARY_SOURCE_UNABRIDGED_DIRECTORY"
 verification: "FEDERAL_REGISTER_API_V1_VERIFIED"
 ---
