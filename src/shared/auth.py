@@ -4,7 +4,10 @@ import hashlib
 import base64
 import json
 import time
+import logging
 from typing import Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 SECRET_KEY = os.environ.get("UROBOROS_JWT_SECRET", "default_env_jwt_signing_token")
 
@@ -53,8 +56,8 @@ def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
         return payload
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in auth.py")
+    except Exception as e:
+        logger.warning("JWT token verification failed: %s", e)
         return None
 
 def verify_api_key(x_api_key: Optional[str] = None, authorization: Optional[str] = None) -> bool:

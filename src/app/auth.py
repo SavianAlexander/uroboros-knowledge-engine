@@ -1,9 +1,13 @@
 import os
+import secrets
+import logging
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel
 from src.core.auth_jwt import verify_jwt, sign_jwt, hash_password, verify_password
 from src.infrastructure.database import get_db
 from src.core.config import is_testing
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -36,8 +40,6 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
-import secrets
-
 @router.post("/api/auth/login")
 def login(req: LoginRequest):
     try:
@@ -67,5 +69,5 @@ def login(req: LoginRequest):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in auth.py: {e}")
+        logger.exception("Login failed due to unexpected error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))

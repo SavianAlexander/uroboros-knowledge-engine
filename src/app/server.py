@@ -2,6 +2,7 @@
 FastAPI application server instantiation, middleware, static asset mounts, and router registrations.
 """
 import os
+import logging
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Depends
 try:
@@ -15,6 +16,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 from src.infrastructure.database import init_db
 from src.app.routers import health, search, rag, files, tags, export, analytics, workflows
+
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,7 +39,7 @@ async def lifespan(app: FastAPI):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in server.py beacon: {e}")
+            logger.warning("Failed to start P2P peer beacon: %s", e)
 
     # Opt-in GPU/CPU Background Summarizer (Disabled by default to prevent hardware lag)
     if os.environ.get("ENABLE_BACKGROUND_SUMMARIZER", "").lower() in ("1", "true", "yes"):
@@ -46,7 +49,7 @@ async def lifespan(app: FastAPI):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error starting background summarizer: {e}")
+            logger.warning("Failed to start background summarizer: %s", e)
 
     # Cooperative Zero-Stutter SQLite WAL Daemon
     wal_worker = None
@@ -57,7 +60,7 @@ async def lifespan(app: FastAPI):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error starting WAL daemon: {e}")
+            logger.warning("Failed to start WAL daemon: %s", e)
 
     try:
         yield
@@ -78,7 +81,7 @@ async def lifespan(app: FastAPI):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in server.py beacon stop: {e}")
+                logger.warning("Failed to cleanly stop P2P beacon: %s", e)
         execute_clean_shutdown()
 
 app = FastAPI(

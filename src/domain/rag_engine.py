@@ -341,8 +341,8 @@ def _fts_fallback_search(sq: str) -> list:
             (like_term, like_term)
         )
         return [dict(row) for row in cursor.fetchall()]
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in fts fallback")
+    except Exception as e:
+        logger.warning("FTS LIKE fallback search failed for %s: %s", sq, e)
         return []
 
 def extract_advanced_rag_context(
@@ -408,8 +408,8 @@ def extract_advanced_rag_context(
                 fts_hits = [dict(row) for row in cursor.fetchall()]
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
-            except Exception:
-                import logging; logging.getLogger(__name__).exception("Swallowed error in rag_engine.py")
+            except Exception as e:
+                logger.warning("FTS query failed for sub-query '%s', attempting fallback: %s", sq, e)
                 fts_hits = _fts_fallback_search(sq)
 
         vec_hits = []
@@ -419,8 +419,8 @@ def extract_advanced_rag_context(
                 vec_hits = [v for v in vec_hits if (v.get("filename") or "").lower().endswith(f".{filters['ext']}")]
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
-        except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in rag_engine.py")
+        except Exception as e:
+            logger.warning("Semantic vector search failed for sub-query '%s': %s", sq, e)
             vec_hits = []
 
         all_fts_hits.extend(fts_hits)

@@ -288,7 +288,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        logger.warning(f"Swallowed error in database.py: {e}")
+        logger.warning("Failed to invalidate global query cache on directory re-indexing: %s", e)
 
     path = Path(dir_path).resolve()
     if not path.is_dir():
@@ -336,7 +336,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                logger.warning(f"Swallowed error in database.py: {e}")
+                logger.warning("Failed to invoke on_complete_callback for empty directory: %s", e)
         return
 
     if total_files > 100 and len(all_files) > 50:
@@ -346,7 +346,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            logger.warning(f"Swallowed error in database.py: {e}")
+            logger.warning("Failed to create pre-indexing database snapshot: %s", e)
 
     modified_tasks = []
     unmodified_tasks = []
@@ -362,8 +362,8 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
             modified_at = stat.st_mtime
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
-        except Exception:
-            logger.exception("Swallowed error in database.py")
+        except Exception as e:
+            logger.warning("Failed to retrieve file stat for %s: %s", filepath, e)
             continue
 
         mime_type, _ = mimetypes.guess_type(filepath)
@@ -444,7 +444,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
                     except (KeyboardInterrupt, MemoryError, SystemExit):
                         raise
                     except Exception as e:
-                        logger.exception(f"Swallowed error in database.py: {e}")
+                        logger.exception("ThreadPool parser failure for task: %s", e)
                         t = futures[future]
                         t['content'] = f"[ThreadPool Error: {str(e)}]"
                         t['acl_permissions'] = get_file_acl(t['filepath'])
@@ -465,8 +465,8 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
             rule_matches = [(r[0], r[1]) for r in cursor.fetchall()]
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        logger.exception("Swallowed error in database.py")
+    except Exception as e:
+        logger.warning("Failed to load auto_rules for tag extraction: %s", e)
         rule_matches = []
 
     all_tasks = modified_tasks + unmodified_tasks
@@ -587,7 +587,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
                                 except (KeyboardInterrupt, MemoryError, SystemExit):
                                     raise
                                 except Exception as e:
-                                    logger.warning(f"Swallowed error in database.py: {e}")
+                                    logger.warning("Failed to insert chunk into fts_file_chunks: %s", e)
 
                     # Decoupled tag sync for unmodified tasks
                     for task in unmodified_tasks:
@@ -610,7 +610,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            logger.warning(f"Swallowed error in database.py: {e}")
+            logger.warning("Failed to invoke on_complete_callback: %s", e)
 
     logger.info(f"Indexing completed. Indexed: {indexed_count}, Updated: {updated_count}")
 

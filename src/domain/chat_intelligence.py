@@ -4,9 +4,12 @@ Provides chat session lifecycle helpers, grounded citation parsing,
 and context token length sliding window truncation logic.
 """
 import json
+import logging
 from typing import List, Dict, Any, Tuple, Optional
 
 from src.core.text_utils import estimate_tokens, truncate_context_window
+
+logger = logging.getLogger(__name__)
 
 def parse_citations_and_metadata(
     citations_raw: Any,
@@ -29,8 +32,8 @@ def parse_citations_and_metadata(
                 citations = [parsed]
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
-        except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in chat_intelligence.py")
+        except Exception as e:
+            logger.warning("Failed to parse citations JSON string: %s", e)
             citations = []
     elif isinstance(citations_raw, list):
         citations = citations_raw
@@ -47,8 +50,8 @@ def parse_citations_and_metadata(
                 metadata = {"raw": parsed}
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
-        except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in chat_intelligence.py")
+        except Exception as e:
+            logger.warning("Failed to parse metadata JSON string: %s", e)
             metadata = {"raw_string": metadata_raw}
     elif isinstance(metadata_raw, dict):
         metadata = metadata_raw

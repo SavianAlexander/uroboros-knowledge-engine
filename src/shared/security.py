@@ -4,8 +4,11 @@ Security utilities including symlink escape, path traversal guards, and ACL perm
 import re
 import os
 import sys
+import logging
 from pathlib import Path
 from fastapi import HTTPException
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = Path("dumps").resolve()
 
@@ -36,7 +39,7 @@ def get_file_acl(filepath: str) -> str:
             mode = oct(stat_info.st_mode)[-3:]
             return f"POSIX_PERM_{mode}"
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in security.py: {e}")
+        logger.warning("Failed to retrieve file ACL permissions for %s: %s", filepath, e)
         return "ACL_UNAVAILABLE"
 
 import tempfile
@@ -102,7 +105,7 @@ def verify_path_containment(path_str: str, base_dir: str = None) -> Path:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in security.py: {e}")
+        logger.exception("Path containment check failed for %s: %s", path_str, e)
         raise HTTPException(status_code=400, detail=f"Invalid path containment check: {str(e)}")
 import re
 

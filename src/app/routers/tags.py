@@ -7,6 +7,7 @@ import time
 import os
 import re
 import sqlite3
+import logging
 from typing import List, Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
@@ -26,6 +27,8 @@ from src.core.domain.models import (
     PeerRequest,
     SyncExchangeRequest,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -114,8 +117,8 @@ def get_active_vault_endpoint():
         return {"active_vault": ACTIVE_DIR}
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).warning("Swallowed error in tags.py")
+    except Exception as e:
+        logger.warning("Failed to resolve active vault: %s", e)
         return {"active_vault": "dumps"}
 
 @router.get("/api/rules")
@@ -376,7 +379,7 @@ def list_sync_peers_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in tags.py: {e}")
+        logger.warning("Failed to fetch active UDP broadcast peers: %s", e)
 
     return {"status": "success", "peers": peers}
 
@@ -443,7 +446,7 @@ def get_sync_delta_endpoint(req: SyncDeltaRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in tags.py: {e}")
+                logger.warning("Failed to read file %s during sync delta: %s", fp, e)
             
             if not sha256_val and content:
                 sha256_val = hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -488,7 +491,7 @@ def get_sync_delta_endpoint(req: SyncDeltaRequest):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in tags.py: {e}")
+            logger.warning("Failed in batched DB sync delta lookup: %s", e)
 
     return {"status": "success", "files": payloads}
 
@@ -536,8 +539,8 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                         remote_hashes = res_data.get("hashes", {})
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
-            except Exception:
-                import logging; logging.getLogger(__name__).warning("Swallowed error in tags.py")
+            except Exception as e:
+                logger.warning("Failed to fetch remote hashes from peer %s: %s", target_peer_clean, e)
                 remote_hashes = None
 
             if remote_hashes is not None:
@@ -563,8 +566,8 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                                 total_bytes += len(content.encode("utf-8"))
                     except (KeyboardInterrupt, MemoryError, SystemExit):
                         raise
-                    except Exception:
-                        import logging; logging.getLogger(__name__).warning("Swallowed error in tags.py")
+                    except Exception as e:
+                        logger.warning("Delta pull failed, attempting manifest fallback from %s: %s", target_peer_clean, e)
                         manifest_url = f"{target_peer_clean}/api/sync/manifest"
                         try:
                             with urllib.request.urlopen(manifest_url, timeout=5.0) as resp:
@@ -580,7 +583,7 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                                         synced.append(fn)
                                         total_bytes += len(content.encode("utf-8"))
                         except Exception as e:
-                            import logging; logging.getLogger(__name__).warning("Swallowed error in tags.py manifest fallback 1")
+                            logger.warning("Manifest fallback 1 failed from %s: %s", target_peer_clean, e)
                             raise e
             else:
                 manifest_url = f"{target_peer_clean}/api/sync/manifest"
@@ -597,7 +600,7 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
                             synced.append(fn)
                             total_bytes += len(content.encode("utf-8"))
                 except Exception as e:
-                    import logging; logging.getLogger(__name__).warning("Swallowed error in tags.py manifest fallback 2")
+                    logger.warning("Manifest fallback 2 failed from %s: %s", target_peer_clean, e)
                     raise e
 
             if synced:
@@ -613,7 +616,7 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.getLogger(__name__).warning(f"Swallowed error in tags.py: {e}")
+            logger.warning("P2P sync exchange error with %s: %s", target_peer, e)
             try:
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -625,7 +628,7 @@ def sync_exchange_endpoint(req: SyncExchangeRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in tags.py: {e}")
+                logger.warning("Failed to record failed sync log for %s: %s", target_peer, e)
             raise HTTPException(status_code=500, detail=f"Failed to reach peer: {str(e)}")
 
     return {

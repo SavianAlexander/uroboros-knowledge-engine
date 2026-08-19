@@ -6,6 +6,7 @@ import unicodedata
 import os
 import time
 import sqlite3
+import logging
 from typing import Optional, Dict, Any, List
 import know
 from src.core.domain.models import (
@@ -14,6 +15,8 @@ from src.core.domain.models import (
     TagDistributionResponse,
     SearchActivityResponse
 )
+
+logger = logging.getLogger(__name__)
 
 import threading
 
@@ -89,8 +92,8 @@ def get_indexing_overview(db_path: Optional[str] = None) -> AnalyticsOverviewRes
         )
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).warning("Swallowed error in analytics_engine.py")
+    except Exception as e:
+        logger.warning("Failed to compute indexing overview analytics: %s", e)
         res = AnalyticsOverviewResponse(
             total_documents=0,
             total_chunks=0,
@@ -146,7 +149,7 @@ def get_storage_breakdown(db_path: Optional[str] = None) -> StorageBreakdownResp
                         CASE 
                             WHEN filepath IS NOT NULL AND filename IS NOT NULL AND LENGTH(filepath) > LENGTH(filename) 
                                  AND (SUBSTR(filepath, LENGTH(filepath) - LENGTH(filename)) = '/' || filename 
-                                      OR SUBSTR(filepath, LENGTH(filepath) - LENGTH(filename)) = '\\' || filename)
+                                      OR SUBSTR(filepath, LENGTH(filepath) - LENGTH(filename)) = '\\\\' || filename)
                             THEN 
                                 CASE 
                                     WHEN LENGTH(filepath) - LENGTH(filename) - 1 = 0 THEN '.'
@@ -173,8 +176,8 @@ def get_storage_breakdown(db_path: Optional[str] = None) -> StorageBreakdownResp
         )
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).warning("Swallowed error in analytics_engine.py")
+    except Exception as e:
+        logger.warning("Failed to compute storage breakdown analytics: %s", e)
         res = StorageBreakdownResponse(
             by_mime={},
             by_extension={},
@@ -245,8 +248,8 @@ def get_tag_distribution(db_path: Optional[str] = None, pool_limit: int = 15) ->
         )
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).warning("Swallowed error in analytics_engine.py")
+    except Exception as e:
+        logger.warning("Failed to compute tag distribution analytics: %s", e)
         res = TagDistributionResponse(
             total_tags=0,
             top_tags=[],
@@ -344,8 +347,8 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
                         avg_latency = float(sum(GLOBAL_TELEMETRY.latencies) / len(GLOBAL_TELEMETRY.latencies))
                 except (KeyboardInterrupt, MemoryError, SystemExit):
                     raise
-                except Exception:
-                    import logging; logging.getLogger(__name__).warning("Swallowed error in analytics_engine.py")
+                except Exception as e:
+                    logger.warning("Failed to compute average search latency from telemetry: %s", e)
                     avg_latency = 0.0
 
             except sqlite3.OperationalError:
@@ -360,8 +363,8 @@ def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse
         )
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).warning("Swallowed error in analytics_engine.py")
+    except Exception as e:
+        logger.warning("Failed to compute search activity analytics: %s", e)
         res = SearchActivityResponse(
             total_queries=0,
             avg_latency_ms=0.0,

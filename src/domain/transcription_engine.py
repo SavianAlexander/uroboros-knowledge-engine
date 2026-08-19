@@ -2,7 +2,10 @@ import os
 import wave
 import struct
 import math
+import logging
 from typing import Dict, Any, List
+
+logger = logging.getLogger(__name__)
 
 BITRATES_V1_L3 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0]
 BITRATES_V2_L3 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0]
@@ -299,7 +302,7 @@ def transcribe_audio_memo(filepath: str, chunk_duration_sec: float = 10.0) -> Di
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in transcription_engine.py: {e}")
+        logger.warning("Failed to parse audio file %s: %s", filepath, e)
 
     if parsed_info and parsed_info.get("chunks"):
         duration_sec = parsed_info["duration_seconds"]

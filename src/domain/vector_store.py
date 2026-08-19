@@ -5,9 +5,12 @@ import struct
 import heapq
 import sqlite3
 import threading
+import logging
 import contextlib
 from typing import List, Dict, Tuple, Any
 from src.infrastructure.database import get_db_connection
+
+logger = logging.getLogger(__name__)
 
 class DenseVectorStore:
     """
@@ -54,9 +57,8 @@ class DenseVectorStore:
                         self.metadata[doc_id] = json.loads(meta_json) if meta_json else {}
                     except (KeyboardInterrupt, MemoryError, SystemExit):
                         raise
-                    except Exception:
-                        import logging; logging.getLogger(__name__).exception("Swallowed error in vector_store.py")
-                        pass # Ignore malformed blobs
+                    except Exception as e:
+                        logger.warning("Ignoring malformed vector blob for doc_id %s: %s", doc_id, e)
 
     def add_vector(self, doc_id: str, vector: List[float], meta: Dict[str, Any] = None):
         """Normalize, cache, and persist document vector embedding."""

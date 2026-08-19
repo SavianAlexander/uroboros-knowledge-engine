@@ -116,7 +116,7 @@ def extract_ocr_text_structured(filepath):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).debug(f"Swallowed notice in ocr.py: {e}")
+        logger.debug("Image EXIF parsing fallback notice in ocr.py: %s", e)
         return f"[Image Parsing Error: {str(e)}]", []
 
 def extract_pdf_ocr(filepath):

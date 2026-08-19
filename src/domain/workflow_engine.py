@@ -64,7 +64,7 @@ def evaluate_condition(
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in workflow_engine.py: {e}")
+            logger.warning("Failed to parse JSON condition in workflow_engine: %s", e)
 
     # Score threshold evaluation for semantic_match
     score_threshold_match = _RE_SCORE_THRESHOLD.search(pattern_str)
@@ -111,8 +111,8 @@ def evaluate_condition(
             return any(compiled.search(cand) for cand in candidate_strings)
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
-        except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in workflow_engine.py")
+        except Exception as e:
+            logger.warning("Invalid regex condition '%s' in workflow_engine: %s", regex_pat, e)
             return False
 
     # Glob fnmatch pattern (e.g. *.pdf, docs/*, confidential-*)

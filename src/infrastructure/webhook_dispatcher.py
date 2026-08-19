@@ -7,6 +7,7 @@ import hmac
 import hashlib
 import asyncio
 import threading
+import logging
 import urllib.request
 import urllib.error
 import socket
@@ -15,6 +16,8 @@ import urllib.parse
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 from src.infrastructure.repositories.workflows import log_workflow_execution
+
+logger = logging.getLogger(__name__)
 
 
 def is_ssrf_safe_url(url: str) -> bool:
@@ -129,8 +132,8 @@ def dispatch_webhook_sync(
                 last_response_body = e.read().decode("utf-8", errors="replace")
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
-            except Exception:
-                import logging; logging.getLogger(__name__).exception("Swallowed error in webhook_dispatcher.py")
+            except Exception as read_err:
+                logger.warning("Failed to read HTTP error response body from webhook: %s", read_err)
                 last_response_body = str(e)
         except urllib.error.URLError as e:
             last_status_code = None
@@ -138,7 +141,7 @@ def dispatch_webhook_sync(
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.getLogger(__name__).exception(f"Swallowed error in webhook_dispatcher.py: {e}")
+            logger.warning("Unexpected error during webhook dispatch to %s: %s", webhook_url, e)
             last_status_code = None
             last_response_body = f"Error: {str(e)}"
 

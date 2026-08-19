@@ -55,7 +55,7 @@ def get_health_status():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to retrieve health status: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/system/env")
@@ -67,8 +67,8 @@ def get_system_env():
         uvicorn_version = uvicorn.__version__
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in health.py")
+    except Exception as e:
+        logger.warning("Failed to determine uvicorn version: %s", e)
         uvicorn_version = "unknown"
 
     return {
@@ -137,6 +137,7 @@ def preload_model_endpoint():
         success = client.preload_model()
         return {"status": "success", "preloaded": success, "message": "Model preloaded into GPU VRAM with 5m keep_alive"}
     except Exception as e:
+        logger.exception("Failed to preload model: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/system/unload-model")
@@ -148,6 +149,7 @@ def unload_model_endpoint():
         success = client.unload_model()
         return {"status": "success", "unloaded": success, "message": "Model flushed from GPU VRAM"}
     except Exception as e:
+        logger.exception("Failed to unload model: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/metrics")
@@ -160,8 +162,8 @@ def _fetch_sync_peers(cursor) -> list:
     try:
         cursor.execute("SELECT name, address FROM sync_peers")
         return [{"name": r[0], "address": r[1]} for r in cursor.fetchall()]
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error fetching sync_peers")
+    except Exception as e:
+        logger.warning("Failed to fetch sync peers: %s", e)
         return []
 
 @router.get("/api/stats")
@@ -224,7 +226,7 @@ def get_system_stats():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to retrieve system statistics: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/db/stats")
@@ -245,7 +247,7 @@ def get_db_stats_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to retrieve DB stats: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/backup")
@@ -260,7 +262,7 @@ def create_backup_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to create snapshot backup: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/snapshots")
@@ -286,7 +288,7 @@ def delete_snapshot_endpoint(timestamp: int):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to delete snapshot %s: %s", timestamp, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/snapshots/restore")
@@ -314,7 +316,7 @@ def execute_system_maintenance_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to execute system maintenance: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -330,7 +332,7 @@ def execute_system_backup_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to execute system backup: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -344,7 +346,7 @@ def list_system_backups_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to list system backups: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -358,7 +360,7 @@ def get_audit_ledger_endpoint(limit: int = 50):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to retrieve audit ledger: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -371,7 +373,7 @@ def get_system_telemetry_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to retrieve system telemetry: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -384,7 +386,7 @@ def get_vector_health_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to audit vector health: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -397,7 +399,7 @@ def get_knowledge_healing_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to audit knowledge self healing: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -410,7 +412,7 @@ def get_live_telemetry_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to retrieve live telemetry APM: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -424,7 +426,7 @@ def repair_vault_indexes_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py: {e}")
+        logger.exception("Failed to validate or repair indexes: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -471,7 +473,7 @@ def compact_system_memory_and_db_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in health.py compact: {e}")
+        logger.exception("Failed to compact system memory and database: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -484,7 +486,7 @@ def list_agent_memories_endpoint(category: Optional[str] = None):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error listing memories: {e}")
+        logger.exception("Failed to list agent memories: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -503,7 +505,7 @@ def store_agent_memory_endpoint(payload: Dict[str, Any] = Body(...)):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error storing memory: {e}")
+        logger.exception("Failed to store agent memory for key %s: %s", key, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -521,7 +523,7 @@ def delete_agent_memory_endpoint(key: str):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error deleting memory: {e}")
+        logger.exception("Failed to delete agent memory for key %s: %s", key, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -534,7 +536,7 @@ def get_vault_merkle_root_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error generating merkle root: {e}")
+        logger.exception("Failed to generate vault merkle root: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -555,7 +557,7 @@ def get_vault_merkle_proof_endpoint(path: str = "", filepath: str = "", filename
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error generating merkle proof: {e}")
+        logger.exception("Failed to generate merkle proof for %s: %s", target, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -568,7 +570,7 @@ def get_system_processes_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error checking processes: {e}")
+        logger.exception("Failed to inspect system processes: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -581,7 +583,7 @@ def kill_zombie_processes_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error reaping zombies: {e}")
+        logger.exception("Failed to reap zombie processes: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -595,7 +597,7 @@ def get_system_stability_vitals_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error gathering stability vitals: {e}")
+        logger.exception("Failed to retrieve system stability vitals: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -608,7 +610,7 @@ def master_zombie_reaper_endpoint(truncate_wal: bool = True):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in master zombie reaper: {e}")
+        logger.exception("Failed in master zombie reaper: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -621,7 +623,7 @@ def verify_audit_hashchain_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error verifying audit hashchain: {e}")
+        logger.exception("Failed to verify audit hashchain: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -634,7 +636,7 @@ def get_semantic_cache_stats_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error getting semantic cache stats: {e}")
+        logger.exception("Failed to get semantic cache stats: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -648,7 +650,7 @@ def clear_semantic_cache_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error clearing semantic cache: {e}")
+        logger.exception("Failed to clear semantic cache: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -661,7 +663,7 @@ def get_hardware_profile_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error getting hardware profile: {e}")
+        logger.exception("Failed to get hardware profile: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -674,7 +676,7 @@ def apply_hardware_tuning_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error applying hardware tuning: {e}")
+        logger.exception("Failed to apply hardware tuning: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

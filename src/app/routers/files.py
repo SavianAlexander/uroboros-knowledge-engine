@@ -53,8 +53,8 @@ def get_active_dir():
         return m_dir
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in files.py")
+    except Exception as e:
+        logger.warning("Failed to load ACTIVE_DIR from config, defaulting to '%s': %s", ACTIVE_DIR, e)
         return ACTIVE_DIR
 
 
@@ -122,7 +122,7 @@ def get_raw_file(path: str):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to retrieve raw file %s: %s", path, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 def resolve_file_on_disk(path: str) -> Optional[str]:
@@ -325,7 +325,7 @@ def save_file_endpoint(req: FileSaveRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in files.py: {e}")
+                logger.warning("Failed to update FTS index for file %s: %s", norm_path, e)
             conn.commit()
 
         try:
@@ -335,7 +335,7 @@ def save_file_endpoint(req: FileSaveRequest):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed cache invalidate error: {e}")
+            logger.warning("Failed to invalidate query cache: %s", e)
 
         index_directory(os.path.dirname(norm_path))
         return {"status": "success", "filepath": norm_path, "path": norm_path}
@@ -344,7 +344,7 @@ def save_file_endpoint(req: FileSaveRequest):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to save file %s: %s", req.get_path(), e)
         raise HTTPException(status_code=500, detail=str(e))
 
 def _populate_db_tree_nodes(base: str, seen: set, tree: list):
@@ -365,8 +365,8 @@ def _populate_db_tree_nodes(base: str, seen: set, tree: list):
                 sz = row[2] if row[2] is not None else (os.path.getsize(fp) if os.path.exists(fp) else 0)
                 tree.append({"filepath": fp, "relative_path": rel, "size": sz})
                 seen.add(abs_p)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to populate DB tree nodes: %s", e)
 
 
 @router.get("/api/file/tree")
@@ -416,7 +416,7 @@ def delete_file_endpoint(req: DeleteFileRequest):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to delete file %s: %s", fp, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/file/rename")
@@ -443,7 +443,7 @@ def rename_file_endpoint(req: RenameRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in files.py: {e}")
+                logger.warning("Failed to remove existing file during rename %s: %s", norm_new, e)
         os.rename(real_old, norm_new)
         with get_db() as conn:
             cursor = conn.cursor()
@@ -455,14 +455,13 @@ def rename_file_endpoint(req: RenameRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in files.py: {e}")
+                logger.warning("Failed to update FTS index during rename for %s: %s", real_old, e)
             try:
                 cursor.execute("UPDATE file_revisions SET filepath = ? WHERE filepath = ? OR filepath = ?", (norm_new, real_old, old_fp))
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
-                logger.exception("Failed to update revision history for rename") # ponytail: direct logger call; ceiling: standard exception log; upgrade: add structured JSON log formatter if centralized logging is configured
+                logger.exception("Failed to update revision history for rename %s: %s", real_old, e)
             conn.commit()
         index_directory(parent_dir)
         return {"status": "success", "old_filepath": real_old, "new_filepath": norm_new, "filepath": norm_new}
@@ -471,7 +470,7 @@ def rename_file_endpoint(req: RenameRequest):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to rename file %s: %s", old_fp, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/bulk_delete")
@@ -488,7 +487,7 @@ def bulk_delete_endpoint(req: BulkDeleteRequest):
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in files.py: {e}")
+            logger.warning("Failed to delete file during bulk delete %s: %s", fp, e)
     return {"status": "success", "deleted": deleted}
 
 @router.post("/api/upload")
@@ -509,7 +508,7 @@ def upload_file_endpoint(file: UploadFile = File(...)):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to upload file %s: %s", file.filename, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 class TranscribeRequest(BaseModel):
@@ -556,7 +555,7 @@ def index_directory_endpoint(req: IndexRequest):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in files.py: {e}")
+        logger.warning("Non-fatal error checking disk space for %s: %s", dir_p, e)
         
     jm = get_job_manager()
     job_id = jm.submit_job(index_directory, dir_p)
@@ -755,7 +754,7 @@ def get_file_ocr_coords_endpoint(path: str, term: Optional[str] = None):
             coords = [{"word": r[0], "x": r[1], "y": r[2], "w": r[3], "h": r[4]} for r in cursor.fetchall()]
             return {"filepath": path, "words_count": len(coords), "coords": coords}
     except Exception as e:
-        logger.exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to retrieve OCR coordinates for %s: %s", path, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/file/insights")
@@ -783,7 +782,7 @@ def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: 
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in files.py: {e}")
+            logger.warning("Failed to fetch document content from DB for insights: %s", e)
 
     content = db_content
     if content is None and fp and os.path.exists(fp):
@@ -792,8 +791,8 @@ def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: 
                 content = f.read()
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
-        except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in files.py")
+        except Exception as e:
+            logger.warning("Failed to read file from disk for insights %s: %s", fp, e)
             content = None
 
     error_prefixes = (
@@ -814,8 +813,8 @@ def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: 
         llm = main_get_fallback_llm()
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in files.py")
+    except Exception as e:
+        logger.warning("Primary LLM unavailable, falling back: %s", e)
         llm = get_fallback_llm()
 
     if not is_llm_available() and llm is None:
@@ -848,7 +847,7 @@ def get_file_insights_endpoint(req: Optional[FileInsightsRequest] = None, path: 
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to generate file insights for %s: %s", fp, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/open")
@@ -863,7 +862,7 @@ def open_file_endpoint(req: OpenFileRequest):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to open file %s: %s", fp, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -913,7 +912,7 @@ def get_vault_duplicates_endpoint(threshold: float = 0.80, mode: str = "files"):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to detect vault duplicates: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -926,7 +925,7 @@ def get_vault_duplicate_chunks_endpoint(threshold: float = 0.80, limit: int = 15
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to detect vault duplicate chunks: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -939,7 +938,7 @@ def get_graph_pagerank_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to compute graph PageRank: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -953,7 +952,7 @@ def parse_multimodal_document_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in files.py: {e}")
+        logger.exception("Failed to parse multimodal document layout: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -973,7 +972,7 @@ def get_code_callgraph_endpoint(filepath: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in callgraph: {e}")
+        logger.exception("Failed to analyze code callgraph for %s: %s", filepath, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -988,7 +987,7 @@ def analyze_code_snippet_endpoint(payload: Dict[str, Any] = Body(...)):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in code analyze: {e}")
+        logger.exception("Failed to extract code structure for %s: %s", filename, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1003,7 +1002,7 @@ def synthesize_wikilinks_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in synthesize_wikilinks: {e}")
+        logger.exception("Failed to synthesize wikilinks: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1018,7 +1017,7 @@ def semantic_diff_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in semantic_diff: {e}")
+        logger.exception("Failed to compute semantic document diff: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1032,7 +1031,7 @@ def legal_audit_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in legal_audit: {e}")
+        logger.exception("Failed to audit legal accuracy: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1047,7 +1046,7 @@ def audio_briefing_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in audio_briefing: {e}")
+        logger.exception("Failed to generate audio briefing: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1062,7 +1061,7 @@ def zk_mask_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in zk_mask: {e}")
+        logger.exception("Failed to mask sensitive document data: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1080,7 +1079,7 @@ def orchestrate_data_endpoint(payload: Dict[str, Any] = Body(...)):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in orchestrate_data: {e}")
+        logger.exception("Failed to orchestrate client dataset %s: %s", name, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1093,7 +1092,7 @@ def list_datasets_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in list_datasets: {e}")
+        logger.exception("Failed to list orchestrated datasets: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1109,7 +1108,7 @@ def query_data_endpoint(payload: Dict[str, Any] = Body(...)):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in query_data: {e}")
+        logger.exception("Failed to execute autonomous SQL query: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1122,7 +1121,7 @@ def database_health_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in database_health: {e}")
+        logger.exception("Failed to check database health: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1138,7 +1137,7 @@ def data_relationships_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in data_relationships: {e}")
+        logger.exception("Failed to discover data relationships: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1153,7 +1152,7 @@ def data_join_endpoint(payload: Dict[str, Any] = Body(...)):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in data_join: {e}")
+        logger.exception("Failed to synthesize data join: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1169,7 +1168,7 @@ def data_clean_endpoint(payload: Dict[str, Any] = Body(...)):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in data_clean: {e}")
+        logger.exception("Failed to cleanse client dataset %s: %s", dataset_name, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1185,7 +1184,7 @@ def data_profile_endpoint(payload: Dict[str, Any] = Body(...)):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in data_profile: {e}")
+        logger.exception("Failed to profile client dataset %s: %s", dataset_name, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

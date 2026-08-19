@@ -9,6 +9,8 @@ import logging
 import urllib.request
 from typing import List, Dict, Any, Optional
 
+logger = logging.getLogger(__name__)
+
 MULTICAST_GROUP = "239.255.255.250"
 UDP_PORT = 8098
 BROADCAST_INTERVAL = 3.0
@@ -161,7 +163,7 @@ def get_local_document_hashes(vault_dir: Optional[str] = None) -> Dict[str, Dict
                     except (KeyboardInterrupt, MemoryError, SystemExit):
                         raise
                     except Exception as e:
-                        import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
+                        logger.warning("Failed to compute SHA-256 digest for %s: %s", fp, e)
 
                 if not sha256_val and content:
                     sha256_val = hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -183,7 +185,7 @@ def get_local_document_hashes(vault_dir: Optional[str] = None) -> Dict[str, Dict
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
+        logger.warning("Failed to retrieve document records for P2P sync hashes: %s", e)
 
     try:
         from src.infrastructure.database import get_active_dir
@@ -210,11 +212,11 @@ def get_local_document_hashes(vault_dir: Optional[str] = None) -> Dict[str, Dict
                         except (KeyboardInterrupt, MemoryError, SystemExit):
                             raise
                         except Exception as e:
-                            import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
+                            logger.warning("Failed to hash unindexed file %s for P2P sync: %s", full_p, e)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in p2p_sync.py: {e}")
+        logger.warning("Failed during filesystem walk for P2P sync hashes: %s", e)
 
     return hashes
 

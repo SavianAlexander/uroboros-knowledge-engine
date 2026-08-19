@@ -3,10 +3,13 @@ Zero-dependency Web Search Fetcher using Python standard library modules only.
 Provides WebSearchFetcher class and fetch_web_context function.
 """
 import json
+import logging
 import urllib.request
 import urllib.parse
 from html.parser import HTMLParser
 from typing import List, Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 class HTMLSnippetParser(HTMLParser):
     """Simple HTML tag stripper for web search snippet text parsing."""
@@ -32,8 +35,8 @@ def strip_html_tags(html_str: str) -> str:
         return parser.get_text()
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in web_search.py")
+    except Exception as e:
+        logger.warning("Failed to parse HTML snippet tags in web_search.py: %s", e)
         return html_str
 
 def fetch_web_context(query: str, max_results: int = 3, timeout: float = 4.0) -> List[Dict[str, Any]]:

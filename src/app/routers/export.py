@@ -43,7 +43,7 @@ def export_stats_csv_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        logger.exception(f"Swallowed error in export.py: {e}")
+        logger.exception("Failed to export system stats CSV: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -58,8 +58,8 @@ def _fetch_export_rows(cursor, query: str):
             rows = cursor.fetchall()
             if rows:
                 return rows
-        except Exception:
-            logger.exception("Swallowed error in export.py: FTS query fallback triggered")
+        except Exception as e:
+            logger.warning("FTS query failed during export, falling back to standard select: %s", e)
     cursor.execute("SELECT filepath, filename, file_size, modified_at FROM files LIMIT 100")
     return cursor.fetchall()
 
@@ -87,7 +87,7 @@ def export_results_endpoint(query: str = "", format: str = "csv"):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in export.py: {e}")
+        logger.exception("Failed to export search results: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -112,7 +112,7 @@ def export_pdf_report_endpoint(style_template: str = "compact"):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in export.py: {e}")
+        logger.exception("Failed to export PDF report: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -151,7 +151,7 @@ def export_vault_json_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in export.py: {e}")
+        logger.exception("Failed to export vault JSON inventory: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -186,7 +186,7 @@ def get_vault_export_manifest_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        logger.exception(f"Swallowed error generating manifest: {e}")
+        logger.exception("Failed to generate vault export manifest: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -237,5 +237,5 @@ def export_vault_package_zip_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        logger.exception(f"Swallowed error creating vault package: {e}")
+        logger.exception("Failed to create vault export package: %s", e)
         raise HTTPException(status_code=500, detail=str(e))

@@ -217,7 +217,7 @@ def get_active_dir() -> str:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        logger.warning(f"Swallowed error in database.py: {e}")
+        logger.warning("Non-fatal error resolving active directory from main module: %s", e)
     try:
         with get_db() as conn:
             cursor = conn.cursor()
@@ -228,14 +228,14 @@ def get_active_dir() -> str:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in database.py: {e}")
+        logger.warning("Non-fatal error resolving active directory from DB: %s", e)
     try:
         if DB_FILE:
             return os.path.dirname(os.path.abspath(DB_FILE))
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in database.py: {e}")
+        logger.warning("Non-fatal error resolving active directory from DB_FILE path: %s", e)
     return os.getcwd()
 
 _local_connections: Dict[int, Dict[str, Any]] = {}
@@ -417,8 +417,8 @@ def backup_db_online(backup_target_path: str) -> bool:
         return True
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in database.py")
+    except Exception as e:
+        logger.exception("Failed to execute online database backup: %s", e)
         return False
 
 def _ensure_column(cursor, table: str, column: str, type_def: str):
@@ -842,7 +842,7 @@ def log_audit_event(event_type: str, description: str, metadata: dict = None):
                         VALUES (?, ?, ?, ?)
                     """, (event_type, description, time.time(), metadata_str))
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error logging audit event: {e}")
+        logger.exception("Failed to log audit event %s: %s", event_type, e)
 
 
 def _parse_audit_metadata(r: sqlite3.Row) -> dict:
@@ -870,7 +870,7 @@ def get_audit_ledger(limit: int = 50) -> list:
                 cursor.execute("SELECT id, event_type, description, timestamp, metadata_json FROM system_audit_ledger ORDER BY timestamp DESC LIMIT ?", (limit,))
                 return [_parse_audit_metadata(r) for r in cursor.fetchall()]
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error getting audit ledger: {e}")
+        logger.exception("Failed to retrieve audit ledger: %s", e)
         return []
 
 

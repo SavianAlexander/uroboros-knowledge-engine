@@ -30,7 +30,7 @@ def get_analytics_overview_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        logger.exception(f"Swallowed error in analytics.py: {e}")
+        logger.exception("Failed to retrieve analytics overview: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve analytics overview: {str(e)}"
@@ -44,7 +44,7 @@ def get_analytics_storage_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        logger.exception(f"Swallowed error in analytics.py: {e}")
+        logger.exception("Failed to retrieve storage breakdown: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve storage breakdown: {str(e)}"
@@ -58,7 +58,7 @@ def get_analytics_tags_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in analytics.py: {e}")
+        logger.exception("Failed to retrieve tag distribution: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve tag distribution: {str(e)}"
@@ -72,7 +72,7 @@ def get_analytics_search_activity_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in analytics.py: {e}")
+        logger.exception("Failed to retrieve search activity telemetry: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve search activity telemetry: {str(e)}"
@@ -96,7 +96,7 @@ def get_sync_events_stream_endpoint(
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in sync stream: {e}")
+        logger.exception("Failed to stream sync events: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to stream sync events: {str(e)}"

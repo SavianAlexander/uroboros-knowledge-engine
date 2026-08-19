@@ -5,6 +5,7 @@ import os
 import re
 import time
 import sqlite3
+import logging
 import threading
 import contextlib
 from itertools import combinations
@@ -38,6 +39,8 @@ from src.domain.graph_mermaid_generator import generate_mermaid_graph
 from src.domain.rerank_score_explainer import explain_candidate_score
 from src.domain.binary_colbert import rerank_search_results_colbert
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
@@ -48,8 +51,8 @@ def _get_global_cache():
         return GLOBAL_QUERY_CACHE
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in search.py")
+    except Exception as e:
+        logger.warning("Failed to access global query cache: %s", e)
         return None
 
 
@@ -338,7 +341,7 @@ def search_endpoint(
             try:
                 results = rerank_search_results_colbert(target_q, results, top_k=len(results))
             except Exception as e:
-                import logging; logging.warning(f"Binary ColBERT rerank notice in search.py: {e}")
+                logger.warning("Binary ColBERT rerank notice in search.py: %s", e)
 
         try:
             with get_db() as conn:
@@ -351,7 +354,7 @@ def search_endpoint(
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in search.py: {e}")
+            logger.warning("Failed to record search history: %s", e)
         search_time_ms = round((time.time() - start_time) * 1000, 2)
         res_dict = {"query": raw_q, "mode": mode, "results": results, "total": len(results), "search_time_ms": search_time_ms}
         try:
@@ -365,12 +368,12 @@ def search_endpoint(
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in search.py: {e}")
+            logger.warning("Failed to write to search cache: %s", e)
         return res_dict
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to execute search for %s: %s", raw_q, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -394,7 +397,7 @@ def get_search_history_endpoint(limit: int = 20):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to retrieve search history: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -630,13 +633,13 @@ def get_graph_data_endpoint(
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in search.py: {e}")
+            logger.warning("Failed to compute graph version key: %s", e)
 
         return _build_graph_cached(limit, include_wikilinks, include_clusters, version_key, cluster_max_docs=c_max)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to retrieve graph data: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -671,6 +674,7 @@ def get_graph_cluster_summaries_endpoint(
         nodes = graph.get("nodes", [])
         return synthesize_community_summaries(nodes)
     except Exception as e:
+        logger.exception("Failed to synthesize community summaries: %s", e)
         return {"status": "error", "message": str(e), "communities": []}
 
 
@@ -731,7 +735,7 @@ def autocomplete_suggest(token: str = "", q: str = "", query: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in search.py: {e}")
+        logger.warning("Failed to fetch autocomplete suggestions: %s", e)
 
     matched = [s for s in suggestions if clean in s["text"].lower()]
     res_list = matched or suggestions
@@ -815,7 +819,7 @@ def get_query_bookmarks_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to list query bookmarks: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -843,7 +847,7 @@ def create_query_bookmark_endpoint(req: BookmarkRequest):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to create query bookmark %s: %s", name, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -867,7 +871,7 @@ def delete_query_bookmark_endpoint(name: Optional[str] = None, id: Optional[int]
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to delete query bookmark: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -884,7 +888,7 @@ def execute_sota_rag_endpoint(query: str = "", q: str = "", top_k: int = 5):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to execute SOTA RAG search for %s: %s", search_q, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -898,7 +902,7 @@ def execute_self_rag_critique_endpoint(query: str = "", chunks: List[str] = []):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to execute self RAG critique: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -913,7 +917,7 @@ def get_parent_context_endpoint(file_ids: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to expand parent contexts for file IDs %s: %s", file_ids, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -926,7 +930,7 @@ def get_graph_multihop_endpoint(start_doc: str, target_doc: Optional[str] = None
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to find multihop pathways: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -941,7 +945,7 @@ def get_search_hyde_endpoint(query: str = "", q: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to generate HyDE document for %s: %s", search_q, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -957,7 +961,7 @@ def execute_recency_rerank_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to execute recency rerank: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -973,7 +977,7 @@ def execute_acl_trimmed_search_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to trim search results by ACL: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -987,7 +991,7 @@ def execute_redact_pii_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to redact PII from text: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1002,7 +1006,7 @@ def execute_cross_lingual_endpoint(query: str = "", q: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to align cross-lingual query for %s: %s", search_q, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1017,7 +1021,7 @@ def generate_citations_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to generate citations: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1038,7 +1042,7 @@ def classify_intent_endpoint(query: str = "", q: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to classify search intent for %s: %s", search_q, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1052,7 +1056,7 @@ def generate_graph_mermaid_endpoint(focus_doc: str = "", max_nodes: int = 15):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to generate graph mermaid: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1066,7 +1070,7 @@ def explain_score_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to explain candidate score: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1080,7 +1084,7 @@ def resolve_conflicts_endpoint(topic: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to resolve knowledge conflicts for topic %s: %s", topic, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1094,7 +1098,7 @@ def precache_context_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to precache graph neighborhood for %s: %s", source_doc, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1108,7 +1112,7 @@ def bandit_route_endpoint(intent: str = "FACTUAL"):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to select bandit route for intent %s: %s", intent, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1123,7 +1127,7 @@ def speculative_rag_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to synthesize speculative drafts: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1137,7 +1141,7 @@ def temporal_lineage_endpoint(filename: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to get temporal lineage for %s: %s", filename, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1152,7 +1156,7 @@ def hallucination_guard_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to evaluate hallucination risk: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1166,7 +1170,7 @@ def semantic_drift_endpoint(term: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to audit semantic concept drift for %s: %s", term, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1180,7 +1184,7 @@ def generate_flashcards_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to synthesize flashcards: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1195,7 +1199,7 @@ def multi_agent_debate_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py: {e}")
+        logger.exception("Failed to execute multi-agent debate: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1208,7 +1212,7 @@ def get_vault_timeline_endpoint(topic: str = "", limit: int = 25):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in search.py timeline: {e}")
+        logger.exception("Failed to generate vault timeline for topic %s: %s", topic, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1223,7 +1227,7 @@ def voice_search_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in voice_search_endpoint: {e}")
+        logger.exception("Failed to execute voice search: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1237,7 +1241,7 @@ def graph_community_clusters_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in graph_community_clusters: {e}")
+        logger.exception("Failed to detect community clusters: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1251,7 +1255,7 @@ def graph_knowledge_gaps_endpoint():
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in graph_knowledge_gaps: {e}")
+        logger.exception("Failed to discover knowledge gaps: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1266,7 +1270,7 @@ def hypergraph_search_endpoint(query: str = "", entities: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in hypergraph_search: {e}")
+        logger.exception("Failed to route hypergraph query for %s: %s", query, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1281,7 +1285,7 @@ def auto_correct_rag_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in auto_correct_rag: {e}")
+        logger.exception("Failed to auto correct RAG grounding: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1296,7 +1300,7 @@ def cross_lingual_search_endpoint(payload: Dict[str, Any] = Body({})):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in cross_lingual_search: {e}")
+        logger.exception("Failed to execute cross-lingual search: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1310,7 +1314,7 @@ def parse_smart_filter_endpoint(query: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in smart_filter: {e}")
+        logger.exception("Failed to parse smart filter for query %s: %s", query, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1327,7 +1331,7 @@ def grounded_search_endpoint(payload: Dict[str, Any] = Body(...)):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in grounded_search: {e}")
+        logger.exception("Failed to execute grounded search for %s: %s", query, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

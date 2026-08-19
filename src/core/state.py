@@ -2,10 +2,13 @@ import os
 import json
 import time
 import sqlite3
+import logging
 import threading
 from contextlib import contextmanager
 import math
 from src.infrastructure.database import DB_FILE, get_db_connection
+
+logger = logging.getLogger(__name__)
 
 @contextmanager
 def db_conn():
@@ -37,8 +40,8 @@ class QueryCache:
                 cursor = conn.cursor()
                 cursor.execute("CREATE TABLE IF NOT EXISTS query_cache (query_key TEXT PRIMARY KEY, response_json TEXT, cached_at REAL)")
                 conn.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to initialize query_cache table: %s", e)
 
     def get(self, key):
         with self.lock:
@@ -64,7 +67,7 @@ class QueryCache:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in state.py: {e}")
+                logger.warning("Failed to retrieve entry from persistent query cache: %s", e)
             self.misses += 1
             return None
 
@@ -143,7 +146,7 @@ class QueryCache:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in state.py: {e}")
+                logger.warning("Failed to store entry in persistent query cache: %s", e)
 
     def invalidate(self):
         with self.lock:
@@ -160,7 +163,7 @@ class QueryCache:
                     raise
                 except Exception as e:
                     if attempt == 4:
-                        import logging; logging.warning(f"Swallowed error in state.py: {e}")
+                        logger.warning("Failed to invalidate persistent query cache after 5 attempts: %s", e)
                     time.sleep(0.1 * (attempt + 1))
 
     clear = invalidate
@@ -182,7 +185,7 @@ class QueryCache:
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.warning(f"Swallowed error in state.py: {e}")
+                logger.warning("Failed to query cache size stats: %s", e)
             return {
                 "hits": self.hits,
                 "misses": self.misses,

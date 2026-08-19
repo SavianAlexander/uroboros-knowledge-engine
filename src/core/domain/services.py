@@ -10,6 +10,8 @@ from collections import Counter, defaultdict
 from functools import lru_cache
 from typing import List, Dict, Tuple, Any, Optional
 
+logger = logging.getLogger(__name__)
+
 from src.shared.regex import (
     RE_NEAR_SYNTAX,
     RE_TOKEN_SPLIT,
@@ -75,7 +77,7 @@ def generate_hyde_expansion(query: str) -> str:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in services.py: {e}")
+        logger.warning("Failed to expand query with HyDE in services.py: %s", e)
     return query
 
 def generate_key_takeaways(text: str, num_bullets: int = 3) -> List[str]:
@@ -123,8 +125,8 @@ def _safe_match(pat: str, text: str) -> bool:
             return bool(re.search(regex_pat, text, re.IGNORECASE))
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
-        except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in services.py")
+        except Exception as e:
+            logger.warning("Failed regex fnmatch translation for pattern %s: %s", pat, e)
             return pat.lower() in text.lower()
 
 def extract_ai_tags(content: str, filename: str, rule_matches: Optional[List[Tuple[str, str]]] = None) -> List[str]:
@@ -176,7 +178,7 @@ def extract_ai_tags(content: str, filename: str, rule_matches: Optional[List[Tup
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in services.py: {e}")
+        logger.warning("Failed to extract AI tags from content: %s", e)
     return tags
 
 def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> List[str]:

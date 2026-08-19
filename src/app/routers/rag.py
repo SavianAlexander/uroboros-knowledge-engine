@@ -210,7 +210,7 @@ def chat_stream_endpoint(req: ChatRequest):
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
-                import logging; logging.error(f"Streaming exception in rag.py: {e}")
+                logger.error("Streaming exception in rag.py: %s", e)
                 fallback_msg = "\n\n**Empirical Retrieved Evidence**:\n"
                 for c in local_citations:
                     fallback_msg += f"- *{c.get('filename', 'Doc')}*: {c.get('snippet', '')}\n"
@@ -486,7 +486,7 @@ def get_session_episodic_memory_endpoint(session_id: str, query: str = ""):
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in episodic memory: {e}")
+        logger.exception("Failed to query episodic memory for session %s: %s", session_id, e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

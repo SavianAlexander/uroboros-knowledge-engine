@@ -1,7 +1,10 @@
 import os
 import re
+import logging
 from datetime import datetime
 from typing import Dict, Any, List
+
+logger = logging.getLogger(__name__)
 
 def extract_text_from_image(filepath: str) -> Dict[str, Any]:
     """
@@ -139,8 +142,8 @@ def extract_text_from_image(filepath: str) -> Dict[str, Any]:
             mtime_iso = datetime.fromtimestamp(os.path.getmtime(filepath)).isoformat()
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
-        except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in ocr_engine.py")
+        except Exception as e:
+            logger.warning("Failed to retrieve image file stat in fallback OCR for %s: %s", filepath, e)
             size_bytes = 0
             mtime_iso = "unknown"
 

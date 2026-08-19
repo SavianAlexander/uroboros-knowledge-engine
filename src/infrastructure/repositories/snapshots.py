@@ -21,7 +21,7 @@ def create_db_snapshot() -> int:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.warning(f"Swallowed error in database.py: {e}")
+        logger.warning("Failed to truncate WAL before snapshot creation: %s", e)
     timestamp = int(time.time())
     dest = f"{target_db}.snapshot-{timestamp}"
     if os.path.exists(dest):
@@ -36,19 +36,19 @@ def create_db_snapshot() -> int:
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
-        import logging; logging.getLogger(__name__).exception(f"Swallowed error in database.py: {e}")
+        logger.warning("SQLite backup API failed during snapshot creation, falling back to file copy: %s", e)
         try:
             if c_dst: c_dst.close()
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in database.py: {e}")
+            logger.warning("Failed to close destination connection on fallback: %s", e)
         try:
             if c_src: c_src.close()
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in database.py: {e}")
+            logger.warning("Failed to close source connection on fallback: %s", e)
         c_dst = None
         c_src = None
         shutil.copy2(target_db, dest)
@@ -71,7 +71,7 @@ def restore_db_snapshot(timestamp: int) -> bool:
                 try:
                     os.remove(wal_file)
                 except Exception as e:
-                    logger.debug(f"Snapshot restore WAL purge notice: {e}")
+                    logger.debug("Snapshot restore WAL purge notice: %s", e)
 
         c_src = None
         c_dst = None
@@ -84,7 +84,7 @@ def restore_db_snapshot(timestamp: int) -> bool:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            logger.debug(f"Snapshot backup API fallback notice: {e}")
+            logger.debug("Snapshot backup API fallback notice: %s", e)
             try:
                 if c_dst: c_dst.close()
             except Exception:
@@ -111,7 +111,7 @@ def restore_db_snapshot(timestamp: int) -> bool:
                     with conn:
                         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
             except Exception as e:
-                logger.debug(f"Snapshot post-restore checkpoint notice: {e}")
+                logger.debug("Snapshot post-restore checkpoint notice: %s", e)
 
         return restored
     return False
@@ -127,7 +127,7 @@ def delete_db_snapshot(timestamp: int) -> bool:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            import logging; logging.warning(f"Swallowed error in database.py: {e}")
+            logger.warning("Failed to delete snapshot file %s: %s", src, e)
     return False
 
 def list_db_snapshots() -> List[Dict[str, Any]]:
@@ -142,6 +142,6 @@ def list_db_snapshots() -> List[Dict[str, Any]]:
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
-            logger.warning(f"Swallowed error in database.py: {e}")
+            logger.warning("Failed to read snapshot file metadata for %s: %s", f, e)
     snapshots.sort(key=lambda x: x["timestamp"], reverse=True)
     return snapshots

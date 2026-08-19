@@ -4,7 +4,10 @@ import hmac
 import hashlib
 import json
 import time
+import logging
 from typing import Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 # Dynamic JWT Secret Key loaded from environment with local fallback
 SECRET_KEY = os.environ.get("JWT_SECRET", "uroboros_secure_runtime_key_2026").encode("utf-8")
@@ -56,8 +59,8 @@ def verify_jwt(token: str) -> Optional[Dict[str, Any]]:
         return payload
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in auth_jwt.py")
+    except Exception as e:
+        logger.warning("Failed to decode JWT payload: %s", e)
         return None
 
 def hash_password(password: str, salt: Optional[str] = None) -> str:
