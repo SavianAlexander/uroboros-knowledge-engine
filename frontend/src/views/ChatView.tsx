@@ -98,7 +98,7 @@ export default function ChatView() {
     autoSpeakRef.current = autoSpeak;
   }, [autoSpeak]);
 
-  const voicePersona = 'af_heart';
+  const canonicalVoice = 'af_heart';
   const dspPreset = 'STUDIO_MASTER';
   const voiceSpeed = 1.02;
   const [showVoiceStudio, setShowVoiceStudio] = useState<boolean>(false);
@@ -331,7 +331,7 @@ export default function ChatView() {
     playVoiceChimeSFX('confirm');
     setSpeakingMsgId(msgId);
     setIsAudioLoading(true);
-    toast('Synthesizing Neural Audio', `Streaming with ${voicePersona.replace('_', ' ')} (${dspPreset.replace('_', ' ')})...`, 'info');
+    toast('Synthesizing Neural Audio', `Streaming with ${canonicalVoice.replace('_', ' ')} (${dspPreset.replace('_', ' ')})...`, 'info');
 
     try {
       const controller = new AbortController();
@@ -349,7 +349,7 @@ export default function ChatView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           input: text,
-          voice: voicePersona,
+          voice: canonicalVoice,
           speed: voiceSpeed,
           dsp_preset: dspPreset
         }),
@@ -428,7 +428,7 @@ export default function ChatView() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               input: text,
-              voice: voicePersona,
+              voice: canonicalVoice,
               speed: voiceSpeed,
               dsp_preset: dspPreset,
               response_format: 'wav'
@@ -663,7 +663,7 @@ export default function ChatView() {
 
         ws.onopen = () => {
           setLiveCallStatus('listening');
-          ws?.send(JSON.stringify({ action: 'call_start', persona: voicePersona, dsp_preset: dspPreset }));
+          ws?.send(JSON.stringify({ action: 'call_start', voice: canonicalVoice, persona: canonicalVoice, dsp_preset: dspPreset }));
           toast('Live Call Connected', 'Hands-free voice link active. Speak naturally.', 'success');
         };
 

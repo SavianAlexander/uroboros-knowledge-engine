@@ -51,10 +51,12 @@ function copyRecursive(src, dest) {
 
 function syncAssets() {
   const assetsDir = path.resolve(__dirname, '..', 'src', 'assets');
+  const rootAssetsDir = path.resolve(__dirname, '..', 'assets');
   const rootDir = path.resolve(__dirname, '..');
 
-  // Copy dist contents to src/assets/
+  // Copy dist contents to src/assets/ and assets/
   copyRecursive(distDir, assetsDir);
+  copyRecursive(distDir, rootAssetsDir);
 
   // Copy index.html, style.css, app.js and chunks/ to root directory
   for (const f of ['index.html', 'style.css', 'app.js']) {
@@ -67,7 +69,7 @@ function syncAssets() {
   if (fs.existsSync(chunksSrc)) {
     copyRecursive(chunksSrc, path.join(rootDir, 'chunks'));
   }
-  console.log('✓ 100% SHA-256 bitwise parity synchronized to src/assets/ and workspace root');
+  console.log('✓ 100% SHA-256 bitwise parity synchronized to src/assets/, assets/, and workspace root');
 }
 
 if (fs.existsSync(distDir)) {

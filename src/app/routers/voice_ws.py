@@ -108,7 +108,7 @@ async def _handle_ws_text_message(
 
     action = payload.get("action", "turn")
     text = payload.get("text", "")
-    persona = payload.get("persona") or session.persona
+    persona = payload.get("voice") or payload.get("persona") or session.persona
     dsp_preset = payload.get("dsp_preset") or session.dsp_preset
 
     if action in ("call_start", "start"):
@@ -293,7 +293,7 @@ def execute_voice_agent_turn(payload: Dict[str, Any]):
     """Executes a single conversational turn in the hands-free voice agent loop."""
     text = payload.get("text", "")
     session_id = payload.get("session_id", f"http-session-{int(time.time())}")
-    persona = payload.get("persona")
+    persona = payload.get("voice") or payload.get("persona")
     dsp_preset = payload.get("dsp_preset")
 
     if not text:
