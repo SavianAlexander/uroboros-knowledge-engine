@@ -654,120 +654,143 @@ export default function ChatView() {
       playCortanaSFX('ready');
       setLiveCallStatus('connecting');
       setIsLiveCallActive(true);
-
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      const audioCtx = new AudioContextClass({ sampleRate: 24000 });
-      liveCallAudioCtxRef.current = audioCtx;
-
-      let micStream: MediaStream | null = null;
+      let ws: WebSocket | null = null;
       try {
-        if (navigator?.mediaDevices?.getUserMedia) {
-          micStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-              sampleRate: 24000
-            }
-          });
-        }
-      } catch (micErr) {
-        console.warn('Microphone stream access unavailable, fallback to simulated stream node:', micErr);
-        try {
-          const dest = audioCtx.createMediaStreamDestination();
-          micStream = dest.stream;
-        } catch {}
-      }
-      liveCallMicStreamRef.current = micStream;
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/voice/stream`;
+        ws = new WebSocket(wsUrl);
+        liveCallWsRef.current = ws;
 
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/voice/stream`;
-      const ws = new WebSocket(wsUrl);
-      liveCallWsRef.current = ws;
+        ws.onopen = () => {
+          setLiveCallStatus('listening');
+          ws?.send(JSON.stringify({ action: 'call_start', persona: voicePersona, dsp_preset: dspPreset }));
+          toast('Live Call Connected', 'Hands-free voice link active. Speak naturally.', 'success');
+        };
 
-      ws.onopen = () => {
-        setLiveCallStatus('listening');
-        ws.send(JSON.stringify({ action: 'call_start', persona: voicePersona, dsp_preset: dspPreset }));
-        toast('Live Call Connected', 'Hands-free voice link active. Speak naturally.', 'success');
-      };
-
-      ws.onmessage = async (event) => {
-        if (typeof event.data === 'string') {
-          try {
-            const msg = JSON.parse(event.data);
-            if (msg.event === 'connected') {
-              setLiveCallStatus('listening');
-            } else if (msg.event === 'audio_start') {
-              setLiveCallStatus('speaking');
-            } else if (msg.event === 'audio_chunk') {
-              if (msg.ttfs_ms) setLiveCallTtfs(msg.ttfs_ms);
-              if (msg.audio_base64) {
-                const arrayBuf = base64ToArrayBuffer(msg.audio_base64);
-                try {
-                  const decoded = await audioCtx.decodeAudioData(arrayBuf.slice(0));
-                  liveCallAudioQueueRef.current.push(decoded);
-                  if (!liveCallIsPlayingRef.current) {
-                    playNextLiveCallAudio();
+        ws.onmessage = async (event) => {
+          if (typeof event.data === 'string') {
+            try {
+              const msg = JSON.parse(event.data);
+              if (msg.event === 'connected') {
+                setLiveCallStatus('listening');
+              } else if (msg.event === 'audio_start') {
+                setLiveCallStatus('speaking');
+              } else if (msg.event === 'audio_chunk') {
+                if (msg.ttfs_ms) setLiveCallTtfs(msg.ttfs_ms);
+                if (msg.audio_base64 && liveCallAudioCtxRef.current) {
+                  const arrayBuf = base64ToArrayBuffer(msg.audio_base64);
+                  try {
+                    const decoded = await liveCallAudioCtxRef.current.decodeAudioData(arrayBuf.slice(0));
+                    liveCallAudioQueueRef.current.push(decoded);
+                    if (!liveCallIsPlayingRef.current) {
+                      playNextLiveCallAudio();
+                    }
+                  } catch {
+                    // Fallback
                   }
-                } catch {
-                  // Fallback
+                }
+              } else if (msg.event === 'interrupted') {
+                stopLiveCallAudioPlayback();
+                setLiveCallStatus('listening');
+              } else if (msg.event === 'speech_endpoint') {
+                setLiveCallStatus('buffering');
+              } else if (msg.event === 'transcription') {
+                if (msg.text) {
+                  setMessages(prev => [...prev, { id: `live-user-${Date.now()}`, role: 'user', content: msg.text }]);
+                }
+              } else if (msg.event === 'turn_complete') {
+                if (msg.full_text) {
+                  setMessages(prev => {
+                    const last = prev[prev.length - 1];
+                    if (last && last.role === 'assistant' && last.content === msg.full_text) {
+                      return prev;
+                    }
+                    return [...prev, { id: `live-ai-${Date.now()}`, role: 'assistant', content: msg.full_text }];
+                  });
+                }
+                if (!liveCallIsPlayingRef.current) {
+                  setLiveCallStatus('listening');
                 }
               }
-            } else if (msg.event === 'interrupted') {
-              stopLiveCallAudioPlayback();
-              setLiveCallStatus('listening');
-            } else if (msg.event === 'speech_endpoint') {
-              setLiveCallStatus('buffering');
-            } else if (msg.event === 'transcription') {
-              if (msg.text) {
-                setMessages(prev => [...prev, { id: `live-user-${Date.now()}`, role: 'user', content: msg.text }]);
-              }
-            } else if (msg.event === 'turn_complete') {
-              if (msg.full_text) {
-                setMessages(prev => {
-                  const last = prev[prev.length - 1];
-                  if (last && last.role === 'assistant' && last.content === msg.full_text) {
-                    return prev;
-                  }
-                  return [...prev, { id: `live-ai-${Date.now()}`, role: 'assistant', content: msg.full_text }];
-                });
-              }
-              if (!liveCallIsPlayingRef.current) {
-                setLiveCallStatus('listening');
-              }
+            } catch {
+              // Json parse fallback
             }
-          } catch {
-            // Json parse fallback
           }
+        };
+
+        ws.onerror = () => {
+          console.warn('Live Call WebSocket notice');
+        };
+
+        ws.onclose = () => {
+          // Keep HUD responsive
+        };
+      } catch (wsErr) {
+        console.warn('WebSocket connection init notice:', wsErr);
+      }
+
+      // Safe audio context & mic initialization
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        try {
+          const audioCtx = new AudioContextClass({ sampleRate: 24000 });
+          liveCallAudioCtxRef.current = audioCtx;
+
+          let micStream: MediaStream | null = null;
+          if (navigator?.mediaDevices?.getUserMedia) {
+            try {
+              micStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                  echoCancellation: true,
+                  noiseSuppression: true,
+                  autoGainControl: true,
+                  sampleRate: 24000
+                }
+              });
+            } catch (micErr) {
+              console.warn('Microphone stream access notice:', micErr);
+            }
+          }
+
+          if (!micStream) {
+            try {
+              const dest = audioCtx.createMediaStreamDestination();
+              micStream = dest.stream;
+            } catch {}
+          }
+          liveCallMicStreamRef.current = micStream;
+
+          if (micStream && micStream.getAudioTracks().length > 0) {
+            try {
+              const source = audioCtx.createMediaStreamSource(micStream);
+              liveCallSourceRef.current = source;
+              const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+              liveCallProcessorRef.current = processor;
+
+              processor.onaudioprocess = (e) => {
+                if (liveCallWsRef.current && liveCallWsRef.current.readyState === WebSocket.OPEN) {
+                  const inputData = e.inputBuffer.getChannelData(0);
+                  const pcmData = new Int16Array(inputData.length);
+                  for (let i = 0; i < inputData.length; i++) {
+                    const s = Math.max(-1, Math.min(1, inputData[i]));
+                    pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                  }
+                  liveCallWsRef.current.send(pcmData.buffer);
+                }
+              };
+
+              source.connect(processor);
+              processor.connect(audioCtx.destination);
+            } catch (streamErr) {
+              console.warn('MediaStream audio processing setup notice:', streamErr);
+            }
+          }
+        } catch (ctxErr) {
+          console.warn('AudioContext setup notice:', ctxErr);
         }
-      };
+      }
 
-      ws.onerror = () => {
-        toast('Live Call', 'WebSocket connection notice.', 'info');
-      };
-
-      ws.onclose = () => {
-        handleEndLiveCall();
-      };
-
-      const source = audioCtx.createMediaStreamSource(micStream);
-      liveCallSourceRef.current = source;
-      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-      liveCallProcessorRef.current = processor;
-
-      processor.onaudioprocess = (e) => {
-        if (ws.readyState !== WebSocket.OPEN) return;
-        const inputData = e.inputBuffer.getChannelData(0);
-        const pcmData = new Int16Array(inputData.length);
-        for (let i = 0; i < inputData.length; i++) {
-          const s = Math.max(-1, Math.min(1, inputData[i]));
-          pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-        }
-        ws.send(pcmData.buffer);
-      };
-
-      source.connect(processor);
-      processor.connect(audioCtx.destination);
+      setLiveCallStatus('listening');
 
     } catch (err: any) {
       console.error('Failed to start live call:', err);
