@@ -20,7 +20,7 @@ graph TD
     Normalizer --> Lexical["Lexical Phonetic Dictionary (DevOps, EVE, Math, Units)"]
     Normalizer --> Stripper["Markdown Stripper & Code Block Isolator"]
     Normalizer --> Bridge["Universal Voice Bridge (src/core/voice_bridge.py)"]
-    Bridge --> Kokoro["Kokoro-82M ONNX In-Process Engine (models/kokoro/kokoro-v0_19.onnx)"]
+    Bridge --> Kokoro["Kokoro-82M ONNX In-Process Engine (models/kokoro/kokoro-v1.0.onnx)"]
     Kokoro --> Master["True-Peak Mastering & Soft Saturation Limiter (-1.0 dBFS)"]
     Master --> Queue["Non-Interrupting Priority Audio Queue (CRITICAL Preemption)"]
     Queue --> Player["Windows 16-bit PCM Audio Output (SoundPlayer / DirectAudio)"]

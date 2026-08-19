@@ -21,9 +21,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-LOCAL_ONNX_GPU_MODEL_PATH = os.path.join(BASE_DIR, "models", "kokoro", "kokoro-v0_19_directml_gpu.onnx")
-LOCAL_ONNX_MODEL_PATH = os.path.join(BASE_DIR, "models", "kokoro", "kokoro-v0_19.onnx")
-LOCAL_VOICES_BIN_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.bin")
+LOCAL_ONNX_GPU_MODEL_PATH = os.path.join(BASE_DIR, "models", "kokoro", "kokoro-v1.0.onnx")
+LOCAL_ONNX_MODEL_PATH = os.path.join(BASE_DIR, "models", "kokoro", "kokoro-v1.0.onnx")
+LOCAL_VOICES_BIN_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices-v1.0.bin") if os.path.exists(os.path.join(BASE_DIR, "models", "kokoro", "voices-v1.0.bin")) else os.path.join(BASE_DIR, "models", "kokoro", "voices.bin")
 
 DEFAULT_KOKORO_TTS_URL = "http://localhost:8880/v1/audio/speech"
 DEFAULT_VOICE_MODEL = "kokoro"
