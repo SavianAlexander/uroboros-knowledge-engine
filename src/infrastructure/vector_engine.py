@@ -547,7 +547,7 @@ def index_directory(dir_path: str, progress_callback: Optional[Callable[[str, in
                             updated_count += 1
                         else:
                             cursor.execute("""
-                                INSERT INTO files (user_id, filepath, filename, file_size, mime_type, sha256, modified_at, content, acl_permissions, notes)
+                                INSERT OR REPLACE INTO files (user_id, filepath, filename, file_size, mime_type, sha256, modified_at, content, acl_permissions, notes)
                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
                             """, (user_id, filepath, filename, file_size, mime_type, sha256, modified_at, content, acl_permissions))
                             file_id = cursor.lastrowid

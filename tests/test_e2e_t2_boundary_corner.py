@@ -175,10 +175,12 @@ class TestE2ETier2BoundaryCorner(unittest.TestCase):
                     errors.append(f"Reader failed: {resp.status_code}")
 
         def writer_task(tid):
+            sub = self.sandbox_dir / f"w_{tid}"
+            sub.mkdir(parents=True, exist_ok=True)
             for i in range(3):
-                fw = self.sandbox_dir / f"wal_w_{tid}_{i}.txt"
+                fw = sub / f"wal_w_{i}.txt"
                 fw.write_text(f"Dynamic content {tid}-{i}", encoding="utf-8")
-                know.index_directory(self.sandbox_dir_str)
+                know.index_directory(str(sub))
 
         threads = [
             threading.Thread(target=reader_task),

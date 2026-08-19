@@ -254,7 +254,10 @@ class TestE2ETier4RealWorldWorkloads(unittest.TestCase):
         self.assertEqual(resp_restore.status_code, 200)
         self.assertEqual(resp_restore.json().get("status"), "success")
 
-        # Step 4: Re-create disk files if needed and Re-index Workspace Directory
+        # Step 4: Reset DB connections and Re-create disk files if needed
+        from src.infrastructure.database import reset_db_connections
+        reset_db_connections()
+
         doc1.write_text("Critical disaster recovery test payload alpha.", encoding="utf-8")
         doc2.write_text("Critical disaster recovery test payload beta.", encoding="utf-8")
         know.index_directory(self.sandbox_dir_str)
