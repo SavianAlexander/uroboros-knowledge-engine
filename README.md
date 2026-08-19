@@ -338,7 +338,7 @@ sequenceDiagram
 c:\Users\Administrator\Desktop\Neuro Alexander
 ├── src/
 │   ├── app/
-│   │   ├── routers/                   # Modular FastAPI REST API Endpoints (10 Routers)
+│   │   ├── routers/                   # Modular FastAPI REST API Endpoints (12 Routers)
 │   │   │   ├── analytics.py           # System metrics, tag distributions, & telemetry
 │   │   │   ├── briefing.py            # Autonomous executive daily briefing synthesis
 │   │   │   ├── export.py               # Document & database snapshot exports
@@ -348,6 +348,8 @@ c:\Users\Administrator\Desktop\Neuro Alexander
 │   │   │   ├── rag.py                  # Conversational RAG, stream queries, & 32-SOTA endpoints
 │   │   │   ├── search.py               # Lexical FTS5, hybrid BM25, & RAG API endpoints
 │   │   │   ├── tags.py                 # Automated AI tag management & alias routing
+│   │   │   ├── voice.py                # Kokoro-82M ONNX neural voice synthesis & audio streaming
+│   │   │   ├── voice_ws.py             # Full-duplex real-time conversational voice call WebSocket
 │   │   │   └── workflows.py            # System workflow triggers & background task execution
 │   │   └── server.py                  # FastAPI application initialization & middleware stack
 │   ├── core/                          # Core Runtime Services & Model Routing
@@ -357,8 +359,15 @@ c:\Users\Administrator\Desktop\Neuro Alexander
 │   │   ├── embeddings.py              # Ollama / Nomic embedding generation with caching
 │   │   ├── jobs.py                    # Background job worker queue & scheduling
 │   │   ├── model_manager.py           # Local LLM model routing, fallback & health checks
+│   │   ├── speech_normalizer.py       # Neural speech normalizer & phonetic regex expansions
+│   │   ├── voice_streaming_pipeline.py# Async pipelined token-to-audio streaming engine
+│   │   ├── voice_vad_interrupter.py   # Streaming 20ms RMS VAD & sub-10ms barge-in canceller
 │   │   └── state.py                   # In-memory vector cache & thread-safe state registry
-│   ├── domain/                        # 135 Specialized Intelligence Domain Engines
+│   ├── domain/                        # 4-Pillar Epistemic Domain Architecture
+│   │   ├── retrieval/                 # Hybrid RAG DAG, binary ColBERT MaxSim, vector store
+│   │   ├── privacy/                   # Quantum-safe ZK data masking & PII privacy guard
+│   │   ├── synthesis/                 # Anki card synthesis, synthetic QA, executive briefing
+│   │   └── connectors/                # eCFR, Federal Register, PR Lex, Curam, Jira connectors
 │   └── infrastructure/                # System Infrastructure & Storage Lifecycles
 │       ├── database.py                # Bounded SQLite connection pool & WAL maintenance
 │       ├── system_stability_guard.py  # Memory Footprint & Garbage Collection Guard
@@ -367,9 +376,10 @@ c:\Users\Administrator\Desktop\Neuro Alexander
 │       └── p2p_sync.py                # UDP Multicast peer discovery & HTTP delta sync
 ├── frontend/                          # React 19 + Vite + Tailwind CSS SPA Application
 ├── scripts/                           # Developer Maintenance, Architecture & Audit Scripts
-├── tests/                             # 98 Unit & Integration Test Suites
+├── tests/                             # 102+ Unit & Integration Test Suites
 ├── know.py                            # SQLite database schema, FTS5 indexer, & CLI interface
 ├── batch_index.py                     # Job-based resumable per-file batch indexer
+├── run_uat_audit.py                   # Automated Playwright 6-journey UAT audit harness
 ├── pytest.ini                         # Crash-prevention Pytest configuration
 ├── docker-compose.yml                 # Container deployment configuration
 ├── requirements.txt                   # Backend Python package dependencies
@@ -380,7 +390,7 @@ c:\Users\Administrator\Desktop\Neuro Alexander
 
 ## 8. API Router Architecture & Specifications (`src/app/routers/`)
 
-The REST API layer is split cleanly into 10 specialized routers inside [`src/app/routers/`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/):
+The REST API and WebSocket layer is split cleanly into 12 specialized routers inside [`src/app/routers/`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/):
 
 | Router Module | File Path | Endpoint Prefix | Primary Responsibilities |
 | :--- | :--- | :--- | :--- |
@@ -393,6 +403,8 @@ The REST API layer is split cleanly into 10 specialized routers inside [`src/app
 | **RAG Router** | [`src/app/routers/rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/rag.py) | `/api/rag` | Conversational RAG queries, SSE token streaming, & line citation generation. |
 | **Search Router** | [`src/app/routers/search.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/search.py) | `/api/search` | Lexical FTS5, BM25, vector search, & all 21 RAG innovation endpoints. |
 | **Tags Router** | [`src/app/routers/tags.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/tags.py) | `/api/tags` | Categorical tag creation, synonym alias resolution, & auto-tag rules. |
+| **Voice Router** | [`src/app/routers/voice.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/voice.py) | `/api/voice` | Kokoro-82M ONNX neural speech synthesis, sub-80ms audio clause streaming. |
+| **Voice WS Router** | [`src/app/routers/voice_ws.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/voice_ws.py) | `/ws/voice` | Full-duplex real-time voice call session with 20ms RMS VAD & sub-10ms barge-in. |
 | **Workflows Router** | [`src/app/routers/workflows.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/workflows.py) | `/api/workflows` | Background indexing triggers, self-healing tasks, & P2P network sync. |
 
 ---
@@ -528,6 +540,8 @@ The core domain layer inside [`src/domain/`](file:///c:/Users/Administrator/Desk
 | [`scripts/update_test_ledger.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/update_test_ledger.py) | `python scripts/update_test_ledger.py --soc2` | Generates SOC 2 Type II attestation & coverage ledger |
 | [`scripts/benchmark_engine.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/benchmark_engine.py) | `python scripts/benchmark_engine.py --runs 100` | Benchmarks retrieval latency, QPS, & precision |
 | [`scripts/chaos_monkey.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/chaos_monkey.py) | `python scripts/chaos_monkey.py --duration 30` | Injects fault concurrency & memory stress |
+| [`scripts/test_voice_ui_interactive_playwright.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/test_voice_ui_interactive_playwright.py) | `python scripts/test_voice_ui_interactive_playwright.py` | Interactive Playwright browser test for Live Voice Call HUD |
+| [`run_uat_audit.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/run_uat_audit.py) | `python run_uat_audit.py` | Automated 6-journey Playwright UAT audit & visual evidence |
 | [`scripts/audit_ui_playwright.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/audit_ui_playwright.py) | `python scripts/audit_ui_playwright.py` | Automated Playwright end-to-end UI audit |
 | [`scripts/capture_showcase.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/capture_showcase.py) | `python scripts/capture_showcase.py` | Captures HD application screenshots |
 | [`scripts/stress_test_domain.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/scripts/stress_test_domain.py) | `python scripts/stress_test_domain.py` | Multithreaded domain algorithm stress test |
