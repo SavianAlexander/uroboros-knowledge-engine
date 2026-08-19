@@ -137,95 +137,17 @@ def _token_to_64bitpack(token_str: str) -> int:
     return bitpack
 
 
-def _quantize_to_binary_bitpack(vector: List[float]) -> int:
-    """Quantizes a float vector into a 64-bit integer bitpack based on sign (> 0 -> 1)."""
-    if not vector or not isinstance(vector, (list, tuple)):
-        return 0
-    return _quantize_tuple_to_bitpack(tuple(vector[:64]))
+from src.domain.binary_colbert import (
+    _quantize_to_binary_bitpack,
+    quantize_embeddings_batch,
+    hamming_distance,
+    compute_maxsim_from_bitpacks,
+    binary_colbert_maxsim,
+    text_to_token_bitpacks,
+    batch_binary_colbert_maxsim,
+    rerank_search_results_colbert,
+)
 
-
-def hamming_distance(bitpack_a: int, bitpack_b: int) -> int:
-    """Computes Hamming distance between two 64-bit integer bitpacks via native C-level bit_count popcount."""
-    a = int(bitpack_a) if isinstance(bitpack_a, (int, float)) else 0
-    b = int(bitpack_b) if isinstance(bitpack_b, (int, float)) else 0
-    return (a ^ b).bit_count()
-
-
-def compute_maxsim_from_bitpacks(q_bitpacks: List[int], d_bitpacks: List[int]) -> float:
-    """Core inner loop evaluating MaxSim directly on pre-quantized 64-bit integer token arrays."""
-    if not q_bitpacks or not d_bitpacks:
-        return 0.0
-    
-    total_maxsim = 0.0
-    for q_bits in q_bitpacks:
-        min_h_dist = 64
-        for d_bits in d_bitpacks:
-            h_dist = (q_bits ^ d_bits).bit_count()
-            if h_dist < min_h_dist:
-                min_h_dist = h_dist
-                if min_h_dist == 0:
-                    break
-        total_maxsim += (64.0 - min_h_dist) / 64.0
-
-    return round(total_maxsim / float(len(q_bitpacks)), 4)
-
-
-def binary_colbert_maxsim(query_token_vecs: List[List[float]], doc_token_vecs: List[List[float]]) -> float:
-    """Computes ColBERT MaxSim score over 1-bit quantized binary token vector matrices."""
-    valid_q = [qv for qv in query_token_vecs if isinstance(qv, (list, tuple))]
-    valid_d = [dv for dv in doc_token_vecs if isinstance(dv, (list, tuple))]
-    if not valid_q or not valid_d:
-        return 0.0
-
-    q_bitpacks = [_quantize_to_binary_bitpack(qv) for qv in valid_q]
-    d_bitpacks = [_quantize_to_binary_bitpack(dv) for dv in valid_d]
-    if not q_bitpacks or not d_bitpacks:
-        return 0.0
-
-    return compute_maxsim_from_bitpacks(q_bitpacks, d_bitpacks)
-
-
-def text_to_token_bitpacks(text: str) -> List[int]:
-    """Projects text tokens into 64-bit binary bitpacks via cached cryptographic hashing."""
-    if not text or not isinstance(text, str):
-        return []
-    words = [w.strip() for w in text.lower().split() if w.strip()]
-    return [_token_to_64bitpack(w) for w in words[:128]]
-
-
-def batch_binary_colbert_maxsim(query_bitpacks: List[int], doc_bitpacks_list: List[List[int]]) -> List[float]:
-    """Evaluates ColBERT MaxSim across multiple document bitpack lists in a single vectorized pass."""
-    if not query_bitpacks:
-        return [0.0] * len(doc_bitpacks_list)
-    return [compute_maxsim_from_bitpacks(query_bitpacks, d_bitpacks) for d_bitpacks in doc_bitpacks_list]
-
-
-def rerank_search_results_colbert(query: str, results: List[Dict[str, Any]], top_k: int = 20) -> List[Dict[str, Any]]:
-    """Reranks search result dictionaries using Binary ColBERT MaxSim token late-interaction."""
-    if not results or not query:
-        return results or []
-
-    q_bitpacks = text_to_token_bitpacks(query)
-    if not q_bitpacks:
-        return results
-
-    scored_results = []
-    for item in results:
-        snippet = item.get("snippet", "") or item.get("content", "") or item.get("title", "") or ""
-        d_bitpacks = text_to_token_bitpacks(snippet)
-        if not d_bitpacks:
-            scored_results.append((float(item.get("score", 0.0) or 0.0), item))
-            continue
-        sim = compute_maxsim_from_bitpacks(q_bitpacks, d_bitpacks)
-        orig_score = float(item.get("score", 0.0) or 0.0)
-        combined = 0.5 * orig_score + 0.5 * sim
-        item_copy = dict(item)
-        item_copy["colbert_score"] = sim
-        item_copy["score"] = round(combined, 4)
-        scored_results.append((combined, item_copy))
-
-    scored_results.sort(key=lambda x: x[0], reverse=True)
-    return [x[1] for x in scored_results[:top_k]]
 
 
 def dot_product(v1: List[float], v2: List[float]) -> float:

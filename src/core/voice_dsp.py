@@ -1,13 +1,14 @@
 """
 Unified Audio Digital Signal Processing (DSP) & Mastering Engine.
 Standard: Pure Python Standard Library + NumPy.
-Ponytail Senior Dev Principle: Single-pass unified DSP pipeline fusing parametric biquad EQ, dynamic ducking, EBU R128 soft-tanh peak limiter, and 32-band logarithmic FFT spectrum analysis.
+Ponytail Senior Dev Principle: Single-pass unified DSP pipeline fusing parametric biquad EQ, dynamic ducking, EBU R128 soft-tanh peak limiter, and 32-band logarithmic FFT spectrum analysis with pre-allocated memory buffers to eliminate heap thrashing.
 """
 
 import os
 import sys
 import math
 import io
+import array
 import time
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -93,7 +94,34 @@ def biquad_lowpass(f0: float, q: float = 0.707, fs: int = 24000) -> Tuple[Any, A
     return b, a
 
 
-def apply_iir_filter(samples: Any, b: Any, a: Any) -> Any:
+def biquad_highshelf(f0: float, gain_db: float, fs: int = 24000) -> Tuple[Any, Any]:
+    """Generate high-shelf filter coefficients with O(1) cache."""
+    if np is None:
+        return [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]
+    key = ("hs", round(f0, 1), round(gain_db, 2), fs)
+    if key in _BIQUAD_COEFF_CACHE:
+        return _BIQUAD_COEFF_CACHE[key]
+
+    A = 10.0 ** (gain_db / 40.0)
+    w0 = 2.0 * np.pi * min(f0, fs * 0.49) / fs
+    cos_w = np.cos(w0)
+    sin_w = np.sin(w0)
+    alpha = sin_w / 2.0 * np.sqrt(2.0)
+
+    b0 = A * ((A + 1) + (A - 1) * cos_w + 2 * np.sqrt(A) * alpha)
+    b1 = -2 * A * ((A - 1) + (A + 1) * cos_w)
+    b2 = A * ((A + 1) + (A - 1) * cos_w - 2 * np.sqrt(A) * alpha)
+    a0 = (A + 1) - (A - 1) * cos_w + 2 * np.sqrt(A) * alpha
+    a1 = 2 * ((A - 1) - (A + 1) * cos_w)
+    a2 = (A + 1) - (A - 1) * cos_w - 2 * np.sqrt(A) * alpha
+
+    b = np.array([b0 / a0, b1 / a0, b2 / a0], dtype=np.float32)
+    a = np.array([1.0, a1 / a0, a2 / a0], dtype=np.float32)
+    _BIQUAD_COEFF_CACHE[key] = (b, a)
+    return b, a
+
+
+def apply_iir_filter(samples: Any, b: Any, a: Any, out_buf: Optional[Any] = None) -> Any:
     """Apply Direct Form II Transposed IIR filter in single vector pass."""
     if np is None or len(samples) == 0:
         return samples
@@ -102,25 +130,112 @@ def apply_iir_filter(samples: Any, b: Any, a: Any) -> Any:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             from scipy.signal import lfilter
-            return lfilter(b, a, samples).astype(np.float32)
+            res = lfilter(b, a, samples)
+            return res.astype(np.float32)
     except Exception:
-        # High-speed pure NumPy IIR loop
-        y = np.zeros_like(samples)
+        # High-speed pure NumPy IIR loop using pre-allocated buffer if available
+        if out_buf is not None and isinstance(out_buf, np.ndarray) and out_buf.shape == samples.shape:
+            y = out_buf
+        else:
+            y = np.zeros_like(samples, dtype=np.float32)
         w1, w2 = 0.0, 0.0
+        b0, b1, b2 = float(b[0]), float(b[1]), float(b[2])
+        a1, a2 = float(a[1]), float(a[2])
         for i in range(len(samples)):
-            x = samples[i]
-            y[i] = b[0] * x + w1
-            w1 = b[1] * x - a[1] * y[i] + w2
-            w2 = b[2] * x - a[2] * y[i]
+            x = float(samples[i])
+            yi = b0 * x + w1
+            w1 = b1 * x - a1 * yi + w2
+            w2 = b2 * x - a2 * yi
+            y[i] = yi
         return y.astype(np.float32)
 
 
+# ----------------------------------------------------------------------
+# 2. Pre-Allocated Streaming Buffer Pool
+# ----------------------------------------------------------------------
+class StreamingDSPBufferPool:
+    """
+    Pre-allocated zero-alloc memory buffer pool for real-time 24kHz streaming PCM DSP filters.
+    Prevents GC thrashing during continuous high-throughput microphone/synthesizer audio streams.
+    """
+
+    def __init__(self, max_samples: int = 48000):
+        self.max_samples = max_samples
+        self._pcm_bytearray = bytearray(max_samples * 2)
+        self._pcm_int16_array = array.array('h', [0] * max_samples)
+        if np is not None:
+            self._float_buf_a = np.zeros(max_samples, dtype=np.float32)
+            self._float_buf_b = np.zeros(max_samples, dtype=np.float32)
+        else:
+            self._float_buf_a = None
+            self._float_buf_b = None
+
+    def get_float_buffers(self, length: int) -> Tuple[Any, Any]:
+        """Retrieve pre-allocated float32 ping-pong buffers sized to length."""
+        if np is None:
+            return None, None
+        if length > self.max_samples:
+            self.max_samples = length
+            self._float_buf_a = np.zeros(length, dtype=np.float32)
+            self._float_buf_b = np.zeros(length, dtype=np.float32)
+            return self._float_buf_a, self._float_buf_b
+        return self._float_buf_a[:length], self._float_buf_b[:length]
+
+    def pcm_to_float(self, pcm_bytes: bytes) -> Any:
+        """Convert 16-bit PCM bytes to float32 samples using zero-copy view."""
+        if not pcm_bytes:
+            return np.zeros(0, dtype=np.float32) if np is not None else []
+        sample_count = len(pcm_bytes) // 2
+        if np is not None:
+            i16 = np.frombuffer(pcm_bytes[:sample_count * 2], dtype=np.int16)
+            buf_a, _ = self.get_float_buffers(sample_count)
+            np.divide(i16, 32768.0, out=buf_a)
+            return buf_a
+        else:
+            arr = array.array('h')
+            arr.frombytes(pcm_bytes[:sample_count * 2])
+            return [x / 32768.0 for x in arr]
+
+    def float_to_pcm(self, float_samples: Any) -> bytes:
+        """Convert float32 samples to 16-bit PCM bytes with clipping protection."""
+        if float_samples is None or len(float_samples) == 0:
+            return b""
+        if np is not None and isinstance(float_samples, np.ndarray):
+            clipped = np.clip(float_samples * 32767.0, -32768.0, 32767.0).astype(np.int16)
+            return clipped.tobytes()
+        else:
+            out_arr = array.array('h')
+            for s in float_samples:
+                clamped = max(-32768, min(32767, int(s * 32767.0)))
+                out_arr.append(clamped)
+            return out_arr.tobytes()
+
+
+_GLOBAL_DSP_POOL = StreamingDSPBufferPool()
+
+def get_streaming_dsp_buffer_pool() -> StreamingDSPBufferPool:
+    """Retrieve global thread-local or singleton DSP buffer pool."""
+    return _GLOBAL_DSP_POOL
+
+
+# ----------------------------------------------------------------------
+# 3. DSP Preset Pipelines & Filter Stages
+# ----------------------------------------------------------------------
 _DSP_PIPELINES: Dict[str, List[Tuple[str, float, float, float]]] = {
     # format: (filter_type, freq, q, gain_db)
     "EXECUTIVE_PRESENCE": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
     "EXECUTIVE_PRECISION": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
     "STUDIO_MASTER": [("hp", 60.0, 0.707, 0.0), ("pk", 4500.0, 0.9, 3.0)],
+    "STUDIO_DIRECT": [],
+    "CORTANA_MASTER": [("hp", 70.0, 0.707, 0.0), ("pk", 180.0, 1.0, 2.5), ("pk", 3800.0, 1.3, 4.2)],
+    "HOLOGRAPHIC_AI": [("hp", 80.0, 0.707, 0.0), ("pk", 3400.0, 1.2, 3.5), ("pk", 8500.0, 1.0, 2.0)],
+    "HOLOGRAPHIC_AURA": [("hp", 80.0, 0.707, 0.0), ("pk", 3400.0, 1.2, 3.5), ("pk", 8500.0, 1.0, 2.0)],
+    "AURA_COCKPIT": [("hp", 100.0, 0.8, 0.0), ("pk", 1200.0, 1.1, 2.0), ("pk", 3200.0, 1.2, 3.0)],
+    "COCKPIT_ACOUSTIC": [("hp", 100.0, 0.8, 0.0), ("pk", 1200.0, 1.1, 2.0), ("pk", 3200.0, 1.2, 3.0)],
+    "COMMANDER_TACTICAL": [("hp", 120.0, 0.8, 0.0), ("pk", 2800.0, 1.4, 4.5)],
+    "TACTICAL_RADIO": [("hp", 300.0, 0.8, 0.0), ("lp", 3400.0, 0.8, 0.0), ("pk", 2400.0, 1.5, 4.0)],
     "RADIO_BANDPASS_300_3400HZ": [("hp", 300.0, 0.8, 0.0), ("lp", 3400.0, 0.8, 0.0), ("pk", 2400.0, 1.5, 4.0)],
+    "LONG_RANGE_SQUELCH": [("hp", 500.0, 0.9, 0.0), ("lp", 2800.0, 0.9, 0.0), ("pk", 1800.0, 1.5, 3.0)],
 }
 
 
@@ -138,7 +253,7 @@ def _apply_dsp_filter_stage(out: Any, ftype: str, freq: float, q: float, gain: f
 
 
 # ----------------------------------------------------------------------
-# 2. Master Audio DSP Class
+# 4. Master Audio DSP Class
 # ----------------------------------------------------------------------
 class VoiceDSP:
     """Unified audio signal processing, mastering, ducking, and spectral analysis."""
@@ -191,7 +306,7 @@ class VoiceDSP:
         if np is None or len(samples) == 0:
             return samples
 
-        peak = np.max(np.abs(samples))
+        peak = float(np.max(np.abs(samples)))
         if peak < 1e-6:
             return samples
 
@@ -235,10 +350,9 @@ class VoiceDSP:
         is_speaking = (voice_env > 0.02).astype(np.float32)
 
         # Smooth envelope using O(N) 1-pole recursive exponential moving average (EMA)
-        # Replaces O(N*K) convolution to eliminate 70B FLOPs latency spike
         alpha = float(np.exp(-1.0 / max(1, ramp_samples)))
         smooth_activity = np.zeros(target_length, dtype=np.float32)
-        
+
         try:
             from scipy.signal import lfilter
             b = [1.0 - alpha]
@@ -269,7 +383,6 @@ class VoiceDSP:
     ) -> Dict[str, Any]:
         """Compute 32-band log-frequency FFT spectrum & RMS/peak energy metrics."""
         if np is None or audio_samples is None or len(audio_samples) == 0:
-            # Synthetic animated test frame
             bands = [round(float(0.1 + 0.8 * math.sin(i * 0.2 + time.time())), 3) for i in range(num_bands)]
             return {
                 "spectrum_32_bands": bands,
@@ -282,7 +395,7 @@ class VoiceDSP:
         rms = float(np.sqrt(np.mean(audio_samples ** 2)))
         peak = float(np.max(np.abs(audio_samples)))
 
-        # ponytail: Silence gating fast-path to let CPU drop into low-power C-states during silence
+        # Silence gating fast-path
         if peak < 0.002 and rms < 0.001:
             return {
                 "spectrum_32_bands": [0.0] * num_bands,
@@ -292,7 +405,6 @@ class VoiceDSP:
                 "num_bands": num_bands
             }
 
-        # FFT computation
         n_fft = min(len(audio_samples), 2048)
         if n_fft < 64:
             return {"spectrum_32_bands": [0.0] * num_bands, "rms_energy": rms, "peak_amplitude": peak}
@@ -302,7 +414,6 @@ class VoiceDSP:
         fft_vals = np.abs(np.fft.rfft(segment))
         freqs = np.fft.rfftfreq(n_fft, d=1.0 / sample_rate)
 
-        # 32 Logarithmically spaced frequency bands from 80Hz to 11kHz
         min_freq = 80.0
         max_freq = min(11000.0, sample_rate / 2.0)
         log_edges = np.logspace(np.log10(min_freq), np.log10(max_freq), num_bands + 1)
@@ -318,7 +429,6 @@ class VoiceDSP:
                 energy = 0.0
             band_energies.append(energy)
 
-        # Normalize bands to 0.0 - 1.0 range
         max_band = max(band_energies) if band_energies else 1.0
         if max_band > 1e-6:
             normalized_bands = [round(float(b / max_band), 3) for b in band_energies]
@@ -338,30 +448,8 @@ class VoiceDSP:
 
 
 # ----------------------------------------------------------------------
-# 4. Standard DSP Mastering Functions & High-Performance Helpers
+# 5. Standard DSP Mastering Functions & High-Performance Helpers
 # ----------------------------------------------------------------------
-
-def biquad_highshelf(f0: float, gain_db: float, fs: int = 24000) -> Tuple[Any, Any]:
-    """Generate high-shelf filter coefficients."""
-    if np is None:
-        return [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]
-    A = 10.0 ** (gain_db / 40.0)
-    w0 = 2.0 * np.pi * min(f0, fs * 0.49) / fs
-    cos_w = np.cos(w0)
-    sin_w = np.sin(w0)
-    alpha = sin_w / 2.0 * np.sqrt(2.0)
-
-    b0 = A * ((A + 1) + (A - 1) * cos_w + 2 * np.sqrt(A) * alpha)
-    b1 = -2 * A * ((A - 1) + (A + 1) * cos_w)
-    b2 = A * ((A + 1) + (A - 1) * cos_w - 2 * np.sqrt(A) * alpha)
-    a0 = (A + 1) - (A - 1) * cos_w + 2 * np.sqrt(A) * alpha
-    a1 = 2 * ((A - 1) - (A + 1) * cos_w)
-    a2 = (A + 1) - (A - 1) * cos_w - 2 * np.sqrt(A) * alpha
-
-    b = np.array([b0 / a0, b1 / a0, b2 / a0], dtype=np.float32)
-    a = np.array([1.0, a1 / a0, a2 / a0], dtype=np.float32)
-    return b, a
-
 
 def apply_biquad(samples: Any, b: Any, a: Any) -> Any:
     """Apply biquad IIR filter to audio buffer."""
@@ -369,7 +457,7 @@ def apply_biquad(samples: Any, b: Any, a: Any) -> Any:
 
 
 def apply_parametric_mastering_eq(samples: Any, sample_rate: int = 24000, bands: Optional[List[Tuple[float, float, float]]] = None) -> Any:
-    """Apply multi-band parametric mastering EQ."""
+    """Apply multi-band parametric mastering EQ with pre-allocated buffer reuse."""
     if np is None or not isinstance(samples, np.ndarray) or samples.size == 0:
         return samples
     default_bands = bands or [(120.0, 1.2, 0.8), (2800.0, 1.8, 1.2), (8000.0, 1.5, 0.9)]

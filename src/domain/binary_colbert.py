@@ -1,14 +1,21 @@
 """
 Binary ColBERT MaxSim Late-Interaction Reranking Engine.
 Computes token-level late-interaction similarity matrices using 1-bit binary vector quantization.
-Zero-dependency, stdlib implementation.
+Zero-dependency, stdlib implementation with native hardware POPCNT (int.bit_count()) acceleration.
 """
 import functools
 import hashlib
 from typing import Tuple, List, Dict, Any, Optional
 
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+
 @functools.lru_cache(maxsize=8192)
 def _quantize_tuple_to_bitpack(vec_tuple: Tuple[float, ...]) -> int:
+    """Quantizes a float vector tuple into a 64-bit integer bitpack based on sign (> 0 -> 1)."""
     bitpack = 0
     for i, val in enumerate(vec_tuple[:64]):
         if isinstance(val, (int, float)) and val > 0.0:
@@ -30,11 +37,76 @@ def _quantize_to_binary_bitpack(vector: List[float]) -> int:
     return _quantize_tuple_to_bitpack(tuple(vector[:64]))
 
 
+def quantize_embeddings_batch(embeddings: List[List[float]]) -> List[int]:
+    """
+    Accelerated batch vector quantization of float vector matrices into 64-bit integer bitpacks.
+    Uses fast bitwise vector packing with NumPy SIMD if available and fallback to memoized C-loop.
+    """
+    if embeddings is None or len(embeddings) == 0:
+        return []
+
+    if np is not None and isinstance(embeddings, np.ndarray) and embeddings.ndim == 2:
+        cols = min(64, embeddings.shape[1])
+        bool_mask = embeddings[:, :cols] > 0.0
+        if cols < 64:
+            padded = np.pad(bool_mask, ((0, 0), (0, 64 - cols)), mode='constant')
+        else:
+            padded = bool_mask
+        packed = np.packbits(padded, axis=-1, bitorder='little')
+        return [int(x) for x in packed.view(np.uint64).ravel().tolist()]
+
+    results = []
+    for vec in embeddings:
+        if not vec or not isinstance(vec, (list, tuple)):
+            results.append(0)
+        elif len(vec) <= 64:
+            results.append(_quantize_tuple_to_bitpack(tuple(vec)))
+        else:
+            results.append(_quantize_tuple_to_bitpack(tuple(vec[:64])))
+    return results
+
+
 def hamming_distance(bitpack_a: int, bitpack_b: int) -> int:
     """Computes Hamming distance between two 64-bit integer bitpacks via native C-level bit_count popcount."""
     a = int(bitpack_a) if isinstance(bitpack_a, (int, float)) else 0
     b = int(bitpack_b) if isinstance(bitpack_b, (int, float)) else 0
     return (a ^ b).bit_count()
+
+
+def compute_maxsim_from_bitpacks(q_bitpacks: List[int], d_bitpacks: List[int]) -> float:
+    """
+    Core inner loop: evaluates ColBERT MaxSim directly on pre-quantized 64-bit integer token arrays
+    using hardware POPCNT (int.bit_count()) with matrix reduction and fast early pruning.
+    """
+    if not q_bitpacks or not d_bitpacks:
+        return 0.0
+
+    d_set = set(d_bitpacks) if len(d_bitpacks) > 1 else None
+    unique_d = list(d_set) if d_set is not None else d_bitpacks
+
+    total_maxsim = 0.0
+    memo_q = {}
+    for q_bits in q_bitpacks:
+        if q_bits in memo_q:
+            total_maxsim += memo_q[q_bits]
+            continue
+
+        if d_set is not None and q_bits in d_set:
+            sim = 1.0
+        else:
+            min_h_dist = 64
+            for d_bits in unique_d:
+                h_dist = (q_bits ^ d_bits).bit_count()
+                if h_dist < min_h_dist:
+                    min_h_dist = h_dist
+                    if min_h_dist == 0:
+                        break
+            sim = (64 - 2 * min_h_dist) / 64.0
+
+        memo_q[q_bits] = sim
+        total_maxsim += sim
+
+    return round(total_maxsim / float(len(q_bitpacks)), 4)
 
 
 def binary_colbert_maxsim(query_token_vecs: List[List[float]], doc_token_vecs: List[List[float]]) -> float:
@@ -48,33 +120,12 @@ def binary_colbert_maxsim(query_token_vecs: List[List[float]], doc_token_vecs: L
     if not valid_q or not valid_d:
         return 0.0
 
-    q_bitpacks = [_quantize_to_binary_bitpack(qv) for qv in valid_q]
-    d_bitpacks = [_quantize_to_binary_bitpack(dv) for dv in valid_d]
+    q_bitpacks = quantize_embeddings_batch(valid_q)
+    d_bitpacks = quantize_embeddings_batch(valid_d)
     if not q_bitpacks or not d_bitpacks:
         return 0.0
 
     return compute_maxsim_from_bitpacks(q_bitpacks, d_bitpacks)
-
-
-def compute_maxsim_from_bitpacks(q_bitpacks: List[int], d_bitpacks: List[int]) -> float:
-    """
-    Core inner loop: evaluates MaxSim directly on pre-quantized 64-bit integer token arrays.
-    """
-    if not q_bitpacks or not d_bitpacks:
-        return 0.0
-    
-    total_maxsim = 0.0
-    for q_bits in q_bitpacks:
-        min_h_dist = 64
-        for d_bits in d_bitpacks:
-            h_dist = (q_bits ^ d_bits).bit_count()
-            if h_dist < min_h_dist:
-                min_h_dist = h_dist
-                if min_h_dist == 0:
-                    break
-        total_maxsim += (64.0 - min_h_dist) / 64.0
-
-    return round(total_maxsim / float(len(q_bitpacks)), 4)
 
 
 def text_to_token_bitpacks(text: str) -> List[int]:
@@ -84,7 +135,7 @@ def text_to_token_bitpacks(text: str) -> List[int]:
     """
     if not text or not isinstance(text, str):
         return []
-    
+
     words = [w.strip() for w in text.lower().split() if w.strip()]
     return [_token_to_64bitpack(w) for w in words[:128]]
 
@@ -95,11 +146,8 @@ def batch_binary_colbert_maxsim(query_bitpacks: List[int], doc_bitpacks_list: Li
     """
     if not query_bitpacks:
         return [0.0] * len(doc_bitpacks_list)
-    
-    scores = []
-    for d_bitpacks in doc_bitpacks_list:
-        scores.append(compute_maxsim_from_bitpacks(query_bitpacks, d_bitpacks))
-    return scores
+
+    return [compute_maxsim_from_bitpacks(query_bitpacks, d_bitpacks) for d_bitpacks in doc_bitpacks_list]
 
 
 def rerank_search_results_colbert(query: str, results: List[Dict[str, Any]], top_k: int = 20) -> List[Dict[str, Any]]:
@@ -125,13 +173,13 @@ def rerank_search_results_colbert(query: str, results: List[Dict[str, Any]], top
         # Blend existing score with ColBERT late-interaction score
         existing_score = float(item.get("score", 0.5) or 0.5)
         combined_score = round(0.4 * existing_score + 0.6 * colbert_score, 4)
-        
+
         updated_item = dict(item)
         updated_item["colbert_maxsim_score"] = colbert_score
+        updated_item["colbert_score"] = colbert_score
         updated_item["score"] = combined_score
         scored_results.append((combined_score, updated_item))
 
     # Sort descending by blended ColBERT score
     scored_results.sort(key=lambda x: x[0], reverse=True)
     return [r[1] for r in scored_results[:top_k]]
-
