@@ -34,15 +34,19 @@ class VoiceActivityInterrupter:
         energy_threshold: float = 0.018,
         zcr_threshold: float = 0.005,
         consecutive_frames_to_trigger: int = 2,
-        silence_hangover_ms: float = 450.0
+        silence_hangover_ms: float = 450.0,
+        playback_echo_suppression_multiplier: float = 2.5
     ):
         self.sample_rate = sample_rate
         self.frame_duration_ms = frame_duration_ms
         self.frame_size = int(sample_rate * (frame_duration_ms / 1000.0))
+        self.base_energy_threshold = energy_threshold
         self.energy_threshold = energy_threshold
         self.zcr_threshold = zcr_threshold
         self.consecutive_frames_to_trigger = consecutive_frames_to_trigger
         self.silence_hangover_ms = silence_hangover_ms
+        self.playback_echo_suppression_multiplier = playback_echo_suppression_multiplier
+        self.is_output_playback_active = False
 
         self.consecutive_speech_count = 0
         self.is_speech_active = False
@@ -52,6 +56,17 @@ class VoiceActivityInterrupter:
         self.interruption_triggered_this_turn = False
         self.is_interrupted = False
         self.last_interruption_time: Optional[float] = None
+
+    def set_output_playback_active(self, active: bool):
+        """
+        Dynamically adapt energy threshold when assistant audio is streaming out.
+        Suppresses acoustic echo feedback loops while preserving intentional user barge-ins.
+        """
+        self.is_output_playback_active = bool(active)
+        if self.is_output_playback_active:
+            self.energy_threshold = round(self.base_energy_threshold * self.playback_echo_suppression_multiplier, 4)
+        else:
+            self.energy_threshold = self.base_energy_threshold
 
     def reset_turn(self):
         """Reset buffer and state flags for next conversational turn."""
@@ -252,3 +267,19 @@ class VoiceActivityInterrupter:
             "interruption_latency_ms": elapsed_ms,
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
         }
+
+
+# Enterprise and Epistemic Aliases
+VoiceVADInterrupter = VoiceActivityInterrupter
+_global_interrupter: Optional[VoiceActivityInterrupter] = None
+_interrupter_lock = threading.Lock()
+
+def get_voice_vad_interrupter(**kwargs) -> VoiceActivityInterrupter:
+    """Returns thread-safe singleton instance of VoiceActivityInterrupter / VoiceVADInterrupter."""
+    global _global_interrupter
+    if _global_interrupter is None:
+        with _interrupter_lock:
+            if _global_interrupter is None:
+                _global_interrupter = VoiceActivityInterrupter(**kwargs)
+    return _global_interrupter
+

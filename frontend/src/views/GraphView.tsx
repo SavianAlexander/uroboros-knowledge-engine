@@ -60,6 +60,8 @@ export default function GraphView() {
   const [categoryFilters, setCategoryFilters] = useState<Record<string, boolean>>({
     document: true, tag: true, concept: true,
   });
+  const [egoMode, setEgoMode] = useState<boolean>(false);
+  const [egoDepth, setEgoDepth] = useState<1 | 2>(1);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   const debouncedSetFilter = useCallback(debounce((val: string) => setFilter(val), 150), []);
@@ -117,12 +119,41 @@ export default function GraphView() {
   }, [loading]);
 
   const filteredNodes = useMemo(() => {
-    return nodes.filter(n => {
+    let base = nodes.filter(n => {
       if (!categoryFilters[n.type]) return false;
       if (filter && !n.name.toLowerCase().includes(filter.toLowerCase())) return false;
       return true;
     });
-  }, [nodes, filter, categoryFilters]);
+
+    if (egoMode) {
+      const seedNodeId = selectedNode?.id || (base.length > 0 ? base[0].id : null);
+      if (seedNodeId) {
+        const hop1Set = new Set<string>([seedNodeId]);
+        edges.forEach(e => {
+          const sid = typeof e.source === 'object' ? e.source.id : e.source;
+          const tid = typeof e.target === 'object' ? e.target.id : e.target;
+          if (sid === seedNodeId) hop1Set.add(tid);
+          if (tid === seedNodeId) hop1Set.add(sid);
+        });
+
+        let activeSet = hop1Set;
+        if (egoDepth === 2) {
+          const hop2Set = new Set<string>(hop1Set);
+          edges.forEach(e => {
+            const sid = typeof e.source === 'object' ? e.source.id : e.source;
+            const tid = typeof e.target === 'object' ? e.target.id : e.target;
+            if (hop1Set.has(sid)) hop2Set.add(tid);
+            if (hop1Set.has(tid)) hop2Set.add(sid);
+          });
+          activeSet = hop2Set;
+        }
+
+        base = base.filter(n => activeSet.has(n.id));
+      }
+    }
+
+    return base;
+  }, [nodes, filter, categoryFilters, egoMode, egoDepth, selectedNode, edges]);
 
   const filteredEdges = useMemo(() => {
     const nodeIds = new Set(filteredNodes.map(n => n.id));
@@ -270,6 +301,57 @@ export default function GraphView() {
               </button>
             ))}
           </div>
+
+          {/* Ego-Centric Subgraph Mode Controls */}
+          <div className="flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl p-1 shadow-lg">
+            <button
+              onClick={() => {
+                const nextMode = !egoMode;
+                setEgoMode(nextMode);
+                toast(nextMode ? 'Ego Mode Active' : 'Global Mode Active', nextMode ? `Focused on ${selectedNode ? selectedNode.name : 'seed node'} (${egoDepth}-Hop)` : 'Showing global knowledge graph', 'info');
+              }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all ${
+                egoMode
+                  ? 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Toggle Ego-Centric Subgraph Mode"
+            >
+              {egoMode ? 'Ego View' : 'Global'}
+            </button>
+            {egoMode && (
+              <div className="flex gap-0.5 border-l border-slate-200 dark:border-white/10 pl-1">
+                <button
+                  onClick={() => {
+                    setEgoDepth(1);
+                    toast('Ego Depth', '1-Hop immediate neighborhood', 'info');
+                  }}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                    egoDepth === 1
+                      ? 'bg-purple-500/30 text-purple-300'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  title="1-Hop Neighbors"
+                >
+                  1H
+                </button>
+                <button
+                  onClick={() => {
+                    setEgoDepth(2);
+                    toast('Ego Depth', '2-Hop expanded neighborhood', 'info');
+                  }}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                    egoDepth === 2
+                      ? 'bg-purple-500/30 text-purple-300'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  title="2-Hop Neighbors"
+                >
+                  2H
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 pointer-events-auto">
@@ -329,7 +411,7 @@ export default function GraphView() {
 
       {/* Bottom Counter Bar */}
       <div className="absolute bottom-4 left-4 flex gap-3 text-xs text-slate-400 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2 pointer-events-none z-20 shadow-lg font-mono">
-        <span>{filteredNodes.length} nodes</span>
+        <span>{filteredNodes.length} nodes {egoMode ? `(Ego ${egoDepth}-Hop)` : ''}</span>
         <span>•</span>
         <span>{filteredEdges.length} semantic edges</span>
         <span>•</span>

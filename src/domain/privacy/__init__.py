@@ -28,6 +28,7 @@ from src.domain.acl_permission_engine import AclPermissionEngine
 from src.domain.acl_vector_guard import AclVectorGuard
 from src.domain.compliance_inspector import ComplianceInspector
 from src.domain.prompt_injection_guard import PromptInjectionGuard, evaluate_prompt_safety
+from src.domain.privacy.context_sanitizer import ContextSanitizer, sanitize_context_for_rag
 from src.domain.data_provenance_tracker import DataProvenanceTracker
 from src.domain.client_data_cleaner import cleanse_client_dataset
 from src.domain.boundary_invariants import evaluate_boundary_invariants
@@ -52,6 +53,8 @@ __all__ = [
     "ComplianceInspector",
     "PromptInjectionGuard",
     "evaluate_prompt_safety",
+    "ContextSanitizer",
+    "sanitize_context_for_rag",
     "DataProvenanceTracker",
     "cleanse_client_dataset",
     "evaluate_boundary_invariants",

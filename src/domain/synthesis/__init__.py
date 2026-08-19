@@ -49,6 +49,11 @@ from src.domain.graph_mermaid_generator import generate_mermaid_graph
 from src.domain.wikilink_parser import extract_wikilinks, build_wikilink_graph
 from src.domain.citation_deep_linker import create_deep_citation_link
 from src.domain.relational_schema_linker import RelationalSchemaLinker
+from src.domain.synthesis.merkle_provenance import (
+    MerkleProvenanceEngine,
+    generate_merkle_provenance,
+    verify_merkle_provenance,
+)
 from src.domain.graph_engine import compute_graph_pagerank, export_graph_to_graphml
 
 __all__ = [
@@ -83,4 +88,7 @@ __all__ = [
     "RelationalSchemaLinker",
     "compute_graph_pagerank",
     "export_graph_to_graphml",
+    "MerkleProvenanceEngine",
+    "generate_merkle_provenance",
+    "verify_merkle_provenance",
 ]

@@ -164,11 +164,15 @@ def _execute_adaptive_rag_stream(user_query: str, req: Any, session_id: Optional
     except Exception:
         pass
 
+    from src.domain.privacy.context_sanitizer import ContextSanitizer
+
     if local_context:
-        truncated_local = _smart_extract_context(local_context, user_query, 6000)
+        clean_local = ContextSanitizer.sanitize_text(local_context)
+        truncated_local = _smart_extract_context(clean_local, user_query, 6000)
         messages.append({"role": "system", "content": f"Document Vault Context:\n{truncated_local}"})
     if web_sources:
-        web_str = "\n".join([f"- {w.get('title')}: {w.get('snippet')}" for w in web_sources])
+        clean_web_snippets = [f"- {w.get('title')}: {ContextSanitizer.sanitize_text(str(w.get('snippet') or ''))}" for w in web_sources]
+        web_str = "\n".join(clean_web_snippets)
         messages.append({"role": "system", "content": f"Live Web Context:\n{web_str}"})
 
     messages.append({"role": "user", "content": user_query})
@@ -323,6 +327,8 @@ def chat_endpoint(req: ChatRequest):
     user_query = user_query.strip()
     expanded_query = expand_query_with_llm(user_query)
     local_context, local_citations = extract_advanced_rag_context(expanded_query, max_chunks=5, jaccard_threshold=0.70)
+    from src.domain.privacy.context_sanitizer import ContextSanitizer
+    local_context = ContextSanitizer.sanitize_text(local_context) if local_context else ""
 
     sources = [{"filename": c.get("filename", ""), "similarity": c.get("similarity", 0.0)} for c in local_citations]
 
@@ -614,3 +620,68 @@ def reformulate_query_endpoint(payload: Dict[str, Any] = Body(...)):
     query_str = payload.get("query", "")
     from src.domain.conversation_rag_rewriter import reformulate_conversational_query
     return reformulate_conversational_query(history, query_str)
+
+
+class ProvenanceRequest(BaseModel):
+    query: str = Field(..., description="The user query")
+    response: Optional[str] = Field("", description="The synthesized response answer")
+    citations: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="Source chunks and citations")
+    model_info: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Model parameters and execution metadata")
+    session_id: Optional[str] = Field(None, description="Optional chat session ID")
+
+
+@router.post("/api/rag/provenance")
+def create_rag_provenance_endpoint(req: ProvenanceRequest):
+    """
+    Generates a cryptographically verifiable JSON Merkle certificate for a RAG inference.
+    """
+    from src.domain.synthesis.merkle_provenance import MerkleProvenanceEngine
+
+    query = (req.query or "").strip()
+    if not query:
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+
+    resp_text = req.response or ""
+    citations = req.citations or []
+
+    # If response is empty but session_id is provided, resolve from chat history
+    if not resp_text and req.session_id:
+        try:
+            msgs = get_chat_messages(req.session_id, limit=5)
+            for m in reversed(msgs):
+                if m.get("role") == "assistant" and m.get("content"):
+                    resp_text = m["content"]
+                    if not citations and m.get("citations_json"):
+                        citations = m["citations_json"] if isinstance(m["citations_json"], list) else json.loads(m["citations_json"])
+                    break
+        except Exception:
+            pass
+
+    if not resp_text:
+        resp_text = f"Synthesized grounded response for: '{query}'"
+
+    cert = MerkleProvenanceEngine.generate_certificate(
+        query=query,
+        response=resp_text,
+        citations=citations,
+        model_info=req.model_info or {"model": "qwen2.5:7b", "tier": "master_rag"},
+        session_id=req.session_id
+    )
+    return cert
+
+
+@router.get("/api/rag/provenance")
+def get_rag_provenance_endpoint(query: str, session_id: Optional[str] = None):
+    """GET endpoint to fetch or generate Merkle provenance certificate for a query."""
+    req = ProvenanceRequest(query=query, session_id=session_id)
+    return create_rag_provenance_endpoint(req)
+
+
+@router.post("/api/rag/provenance/verify")
+def verify_rag_provenance_endpoint(certificate: Dict[str, Any] = Body(...)):
+    """
+    Cryptographically verifies the authenticity and mathematical integrity of a Merkle certificate.
+    """
+    from src.domain.synthesis.merkle_provenance import MerkleProvenanceEngine
+    return MerkleProvenanceEngine.verify_certificate(certificate)
+

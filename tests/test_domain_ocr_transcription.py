@@ -53,7 +53,6 @@ class TestDomainOCRTranscription(unittest.TestCase):
             img = Image.new("RGB", (200, 100), color=(255, 255, 255))
             img.save(test_img_path)
         except Exception:
-                pass
             with open(test_img_path, "wb") as f:
                 f.write(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82")
 

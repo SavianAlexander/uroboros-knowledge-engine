@@ -119,7 +119,11 @@ FILE_DOMAIN_MAPPING = {
     "tests/test_llm_inference_benchmark.py": ["DomainLLMBenchmark"],
     "tests/test_audio_hardware_calibration.py": ["DomainVoiceCalibration"],
     "tests/test_large_scale_stress.py": ["DomainLargeScaleStress"],
-    "tests/test_windows_dist_packaging.py": ["DomainPackaging"]
+    "tests/test_windows_dist_packaging.py": ["DomainPackaging"],
+    "src/domain/privacy/context_sanitizer.py": ["DomainEnterpriseResilience"],
+    "src/domain/synthesis/merkle_provenance.py": ["DomainEnterpriseResilience"],
+    "src/core/voice_vad_interrupter.py": ["DomainEnterpriseResilience", "DomainVoiceNormalization"],
+    "tests/test_enterprise_resilience_pillars.py": ["DomainEnterpriseResilience"]
 }
 
 
@@ -183,7 +187,8 @@ DOMAIN_TEST_MODULES = [
     "tests.test_llm_inference_benchmark",
     "tests.test_audio_hardware_calibration",
     "tests.test_large_scale_stress",
-    "tests.test_windows_dist_packaging"
+    "tests.test_windows_dist_packaging",
+    "tests.test_enterprise_resilience_pillars"
 ]
 
 

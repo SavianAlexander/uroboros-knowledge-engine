@@ -438,15 +438,18 @@ def extract_advanced_rag_context(
         fname = hit.get("filename", "document.txt")
         fpath = hit.get("filepath", "")
         content = (hit.get("content") or hit.get("snippet") or "").strip()
+        from src.domain.privacy.context_sanitizer import ContextSanitizer
+        sanitized_content = ContextSanitizer.sanitize_text(content)
 
         # Parent-Child Chunk Expansion & Sentence-Boundary Smart Trimming
-        hierarchical = chunk_text_hierarchical(content, parent_size=600, child_size=150)
+        hierarchical = chunk_text_hierarchical(sanitized_content, parent_size=600, child_size=150)
         if hierarchical:
             raw_snippet = hierarchical[0]["parent_content"]
         else:
-            raw_snippet = content[:600] if len(content) > 600 else content
+            raw_snippet = sanitized_content[:600] if len(sanitized_content) > 600 else sanitized_content
 
         snippet = trim_to_sentence_boundary(raw_snippet, max_chars=600)
+        snippet = ContextSanitizer.sanitize_text(snippet)
 
         citation_str = f"[Source: {fname} (Chunk #{idx})]"
         citations.append({
@@ -537,9 +540,11 @@ STATIC_RAG_SYSTEM_PREFIX = (
 
 def build_augmented_prompt(query: str, context: str) -> str:
     """Formats retrieved context and user query into a grounded RAG prompt with static prefix KV-cache pinning."""
-    if not context or not context.strip():
+    from src.domain.privacy.context_sanitizer import ContextSanitizer
+    clean_ctx = ContextSanitizer.sanitize_text(context) if context else ""
+    if not clean_ctx or not clean_ctx.strip():
         return f"{STATIC_RAG_SYSTEM_PREFIX}\n\nQuestion: {query.strip()}\n\nAnswer:"
-    return f"{STATIC_RAG_SYSTEM_PREFIX}\n\nContext:\n{context.strip()}\n\nQuestion: {query.strip()}\n\nAnswer:"
+    return f"{STATIC_RAG_SYSTEM_PREFIX}\n\nContext:\n{clean_ctx.strip()}\n\nQuestion: {query.strip()}\n\nAnswer:"
 
 
 def get_rag_engine_capabilities() -> Dict[str, Any]:
