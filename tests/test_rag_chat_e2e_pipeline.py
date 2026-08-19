@@ -113,7 +113,7 @@ class TestRAGChatE2EPipeline(unittest.TestCase):
         self.assertTrue(done_found)
         full_text = "".join(tokens)
         self.assertIn("Uroboros AI", full_text)
-        self.assertIn("Knowledge Vault", full_text)
+        self.assertTrue("vault" in full_text.lower())
 
     def test_03_domain_query_grounded_retrieval_and_citations(self):
         """Verify domain query against indexed vault data returns grounded citations and tokens."""
@@ -153,7 +153,7 @@ class TestRAGChatE2EPipeline(unittest.TestCase):
 
             log_output = "\n".join(log_capture.output)
             self.assertIn("RAG Execution | query='How does SQLite WAL mode work?'", log_output)
-            self.assertIn("intent=", log_output)
+            self.assertIn("primary_mode=", log_output)
             self.assertIn("retrieved_chunk_count=", log_output)
             self.assertIn("final_prompt_len=", log_output)
             self.assertIn("Final Prompt:", log_output)

@@ -40,48 +40,28 @@ RE_SENTENCE_BOUNDARIES = getattr(text_utils, "_RE_SENTENCE_BOUNDARIES", re.compi
 router = APIRouter()
 
 
-def classify_adaptive_intent(query: str) -> str:
+from src.domain.retrieval.adaptive_prompt_synthesizer import (
+    AdaptivePromptSynthesizer,
+    SemanticAffinityProfile
+)
+
+def classify_adaptive_intent(query: str, grounding_confidence: float = 0.0, candidate_count: int = 0) -> str:
     """
-    Classifies user query into adaptive RAG routing modes:
+    Classifies user query dynamically using continuous multi-dimensional cognitive affinity scoring:
     - GREETING_CONVERSATIONAL
     - TECHNICAL_CODE
     - MATHEMATICAL_ANALYTIC
     - LEGAL_STATUTORY
     - GENERAL_RAG
     """
-    if not query or not isinstance(query, str):
+    if not query or not isinstance(query, str) or not query.strip():
         return "GREETING_CONVERSATIONAL"
-
-    import unicodedata
-    q_clean = unicodedata.normalize("NFC", query).strip().lower()
-    words = set(re.findall(r'\b[\w-]+\b', q_clean))
-    if not words:
-        return "GREETING_CONVERSATIONAL"
-
-    greetings = {"hello", "hi", "hey", "greetings", "howdy", "sup", "yo", "goodmorning", "hola"}
-    conversational_phrases = [
-        "how are you", "who are you", "what are you", "what can you do",
-        "how does this work", "how do you work", "help", "introduce yourself",
-        "what is uroboros", "what is this", "tell me about yourself", "good morning", "good evening", "good afternoon"
-    ]
-    if len(words) <= 3 and any(w in greetings for w in words):
-        return "GREETING_CONVERSATIONAL"
-    if any(phrase in q_clean for phrase in conversational_phrases):
-        return "GREETING_CONVERSATIONAL"
-
-    legal_kws = ["statute", "statutory", "regulation", "regulatory", "law", "cfr", "legal", "compliance", "sec ", "finra", "sox", "hipaa", "gdpr", "liability", "contract", "clause", "fiduciary", "audit rule"]
-    if any(kw in q_clean for kw in legal_kws):
-        return "LEGAL_STATUTORY"
-
-    code_kws = ["def ", "class ", "import ", "function", "class", "script", "api", "sql", "react", "bug", "fix", "err", "code", "python", "typescript", "javascript", "exception", "traceback", "refactor", "endpoint", "rust", "compile", "git"]
-    if any(kw in q_clean for kw in code_kws):
-        return "TECHNICAL_CODE"
-
-    math_kws = ["math", "formula", "proof", "calculate", "equation", "matrix", "ratio", "revenue", "quarter", "profit", "margin", "percentage", "sum", "average", "statistics", "integral", "derivative", "variance", "std dev", "dataset"]
-    if any(kw in q_clean for kw in math_kws):
-        return "MATHEMATICAL_ANALYTIC"
-
-    return "GENERAL_RAG"
+    profile = AdaptivePromptSynthesizer.analyze_query(
+        query=query,
+        grounding_confidence=grounding_confidence,
+        candidate_count=candidate_count
+    )
+    return profile.primary_mode
 
 
 def _stream_llm_chunks(llm, messages: list, req):
@@ -102,7 +82,8 @@ def _stream_llm_chunks(llm, messages: list, req):
 def _execute_adaptive_rag_stream(user_query: str, req: Any, session_id: Optional[str] = None):
     """
     Unified Adaptive RAG Streaming Engine:
-    - Intent & Context Routing (GREETING_CONVERSATIONAL, TECHNICAL_CODE, MATHEMATICAL_ANALYTIC, LEGAL_STATUTORY, GENERAL_RAG)
+    - Continuous Semantic Affinity Scoring (Conversational, Code, Math, Legal, Grounded Retrieval)
+    - Dynamic Context-Weighted System Prompt Synthesis
     - Composable RetrievalDAGPipeline execution (Vault + Web)
     - Zero-Retrieval Adaptive Intelligence
     - Structured Telemetry Logging
@@ -112,7 +93,6 @@ def _execute_adaptive_rag_stream(user_query: str, req: Any, session_id: Optional
         raise HTTPException(status_code=422, detail="Missing message or query content")
 
     user_query = user_query.strip()
-    intent = classify_adaptive_intent(user_query)
 
     llm = get_fallback_llm()
     if not is_llm_available() and llm is None:
@@ -132,7 +112,16 @@ def _execute_adaptive_rag_stream(user_query: str, req: Any, session_id: Optional
     local_citations = retrieval_res.citations or []
     web_sources = retrieval_res.web_sources or []
 
-    # 2. Session resolution and user message turn persistence
+    # 2. Continuous Multi-Dimensional Semantic Affinity Profiling
+    grounding_conf = getattr(retrieval_res.metrics, "grounding_confidence", 1.0)
+    profile = AdaptivePromptSynthesizer.analyze_query(
+        query=user_query,
+        grounding_confidence=grounding_conf,
+        candidate_count=len(local_citations)
+    )
+    intent = profile.primary_mode
+
+    # 3. Session resolution and user message turn persistence
     req_session_id = session_id or getattr(req, "session_id", None)
     if not req_session_id:
         sess = create_chat_session(title=user_query[:30])
@@ -149,41 +138,11 @@ def _execute_adaptive_rag_stream(user_query: str, req: Any, session_id: Optional
     else:
         routing_info = {"model": model_req, "tier": "custom", "num_ctx": 4096}
 
-    # 3. Build System Prompt & Messages Based on Adaptive Intent
-    if intent == "GREETING_CONVERSATIONAL":
-        system_prompt = (
-            "You are Uroboros AI, a world-class senior staff AI research assistant and cognitive operating engine. "
-            "You have direct access to the Uroboros Knowledge Vault, 3D Graph & Wikilink Explorer, Kokoro Neural Voice Synthesis, "
-            "SQLite WAL Search Index with FTS5, and Real-time Multi-Hop RAG Pipeline. "
-            "Provide an engaging, articulate, warm, and helpful response highlighting system capabilities when appropriate."
-        )
-    elif intent == "TECHNICAL_CODE":
-        system_prompt = (
-            "You are Uroboros AI, a world-class senior staff software architect and systems engineer. "
-            "Focus on writing clean, modular, production-grade code with complete docstrings, type annotations, and error handling. "
-            "Adhere to zero-dependency and clean architecture principles. When citing documents, reference source file names."
-        )
-    elif intent == "MATHEMATICAL_ANALYTIC":
-        system_prompt = (
-            "You are Uroboros AI, an advanced mathematical and quantitative research assistant. "
-            "Format mathematical expressions using standard LaTeX notation ($...$ for inline, $$...$$ for block). "
-            "Present tabular data and financial metrics in clean Markdown tables with exact calculations."
-        )
-    elif intent == "LEGAL_STATUTORY":
-        system_prompt = (
-            "You are Uroboros AI, a senior regulatory and legal compliance research assistant. "
-            "Provide precise statutory and regulatory analysis. Ground interpretations strictly in statutory provisions and citations."
-        )
-    else:  # GENERAL_RAG
-        system_prompt = (
-            "You are Uroboros AI, a world-class senior staff AI research assistant and domain expert. "
-            "Provide clear, thorough, highly analytical, and well-structured answers using Markdown headings, "
-            "code snippets, and bullet points. Synthesize information accurately from the provided document context. "
-            "When citing facts from Document Vault Context, explicitly reference the source file name."
-        )
-
-    if getattr(retrieval_res, "domain_instructions", None):
-        system_prompt += f" Domain Guidelines: {retrieval_res.domain_instructions}"
+    # 4. Synthesize Dynamic Adaptive System Prompt
+    system_prompt = AdaptivePromptSynthesizer.synthesize_adaptive_system_prompt(
+        profile=profile,
+        domain_guidelines=getattr(retrieval_res, "domain_instructions", None)
+    )
 
     messages = [{"role": "system", "content": system_prompt}]
 
@@ -214,17 +173,16 @@ def _execute_adaptive_rag_stream(user_query: str, req: Any, session_id: Optional
 
     messages.append({"role": "user", "content": user_query})
 
-    final_prompt_str = " ".join([m.get("content", "") for m in messages])
-
-    # 4. Structured Telemetry Logging
+    # Structured Telemetry Logging
+    final_prompt_str = json.dumps(messages)
     logger.info(
-        "RAG Execution | query='%s' | intent='%s' | retrieved_chunk_count=%d | final_prompt_len=%d",
-        user_query, intent, len(local_citations), len(final_prompt_str)
+        "RAG Execution | query='%s' | primary_mode='%s' | affinities=(conv=%.2f, code=%.2f, math=%.2f, legal=%.2f, ground=%.2f) | retrieved_chunk_count=%d | final_prompt_len=%d",
+        user_query, profile.primary_mode, profile.conversational, profile.code_engineering, profile.quantitative_math, profile.legal_statutory, profile.grounded_retrieval, len(local_citations), len(final_prompt_str)
     )
-    logger.info("Final Prompt: %s", json.dumps(messages))
+    logger.info("Final Prompt: %s", final_prompt_str)
 
     def event_generator():
-        # Yield sources SSE event with model tier metadata and intent
+        # Yield sources SSE event with model tier metadata
         sources_payload = {
             "type": "sources",
             "session_id": req_session_id,
@@ -232,6 +190,13 @@ def _execute_adaptive_rag_stream(user_query: str, req: Any, session_id: Optional
             "local_citations": local_citations,
             "web_sources": web_sources,
             "intent": intent,
+            "affinities": {
+                "conversational": profile.conversational,
+                "code_engineering": profile.code_engineering,
+                "quantitative_math": profile.quantitative_math,
+                "legal_statutory": profile.legal_statutory,
+                "grounded_retrieval": profile.grounded_retrieval
+            },
             "model_info": {
                 "model": routing_info.get("model", "qwen2.5:7b"),
                 "tier": routing_info.get("tier", "master_rag"),
@@ -260,40 +225,11 @@ def _execute_adaptive_rag_stream(user_query: str, req: Any, session_id: Optional
                 streamed_from_llm = False
 
         if not streamed_from_llm:
-            if local_citations:
-                fallback_msg = "Based on retrieved vault context:\n\n"
-                for c in local_citations:
-                    snippet = c.get('snippet') or c.get('citation') or ''
-                    fallback_msg += f"- *{c.get('filename', 'Doc')}*: {snippet}\n"
-            else:
-                # Zero-retrieval Adaptive Intelligence
-                if intent == "GREETING_CONVERSATIONAL":
-                    fallback_msg = (
-                        "Hello! I am Uroboros AI, your cognitive knowledge engine and research assistant. "
-                        "I am connected to your Knowledge Vault, 3D Knowledge Graph, Kokoro Neural Voice Synthesis, "
-                        "and high-performance SQLite WAL / FTS5 search index. How can I help you research, analyze, or build today?"
-                    )
-                elif intent == "TECHNICAL_CODE":
-                    fallback_msg = (
-                        f"I am Uroboros AI. I searched the vault for code references related to '{user_query}', but found no direct records. "
-                        "I can assist with clean architecture, algorithmic optimization, or parsing files into the index."
-                    )
-                elif intent == "MATHEMATICAL_ANALYTIC":
-                    fallback_msg = (
-                        f"I am Uroboros AI. No direct dataset or mathematical tables were found in the vault matching '{user_query}'. "
-                        "I can help formulate quantitative equations or parse structured financial data."
-                    )
-                elif intent == "LEGAL_STATUTORY":
-                    fallback_msg = (
-                        f"I am Uroboros AI. No matching statutory provisions or regulatory rules were found in the vault for '{user_query}'. "
-                        "You can ingest relevant CFR or legal titles to enable pinpoint citations."
-                    )
-                else:
-                    fallback_msg = (
-                        f"I am Uroboros AI. I searched the knowledge vault but found no direct document records matching '{user_query}'. "
-                        "I can assist you with general analysis, code architecture, 3D graph exploration, or ingesting new documents."
-                    )
-
+            fallback_msg = AdaptivePromptSynthesizer.synthesize_fallback_response(
+                query=user_query,
+                profile=profile,
+                citations=local_citations
+            )
             for tok in re.findall(r'\S+\s*', fallback_msg):
                 token_count += 1
                 full_response_text += tok
