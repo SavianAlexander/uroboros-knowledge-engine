@@ -108,7 +108,9 @@ FILE_DOMAIN_MAPPING = {
     "src/core/speech_normalizer.py": ["DomainVoiceNormalization", "DomainSpeechEngine"],
     "tests/test_speech_normalizer.py": ["DomainVoiceNormalization", "DomainSpeechEngine"],
     "tests/test_speech_normalizer_expanded.py": ["DomainVoiceNormalization", "DomainSpeechEngine"],
-    "tests/test_voice_normalization_cadence.py": ["DomainVoiceNormalization", "DomainSpeechEngine"]
+    "tests/test_voice_normalization_cadence.py": ["DomainVoiceNormalization", "DomainSpeechEngine"],
+    "src/core/model_manager.py": ["DomainResourceStability", "DomainLLM"],
+    "tests/test_process_lifecycle_supervision.py": ["DomainResourceStability"]
 }
 
 

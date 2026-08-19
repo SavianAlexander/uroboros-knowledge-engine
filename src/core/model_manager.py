@@ -5,6 +5,8 @@ import time
 import subprocess
 import threading
 import logging
+import atexit
+import signal
 from typing import Any, Dict, List, Optional
 from fastapi import HTTPException
 import functools
@@ -157,41 +159,278 @@ class GpuInferenceGuard:
         except Exception:
             pass
 
-def ensure_single_llama_server_instance():
-    """
-    Scans Windows processes and terminates duplicate llama-server.exe instances,
-    guaranteeing at most 1 active llama-server process runs in memory.
-    Uses native tasklist.exe for 10ms sub-millisecond execution.
-    """
-    global _last_cleanup_time
-    now = time.time()
-    if now - _last_cleanup_time < 10.0:
-        return
+MODELS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models")
+DEFAULT_PID_PATH = os.path.join(MODELS_DIR, ".llama_server.pid")
 
-    with _process_cleanup_lock:
-        _last_cleanup_time = now
+
+def is_pid_alive(pid: Optional[int]) -> bool:
+    """Checks whether a process with the given PID is actively running."""
+    if pid is None or pid <= 0:
+        return False
+    if os.name == "nt":
+        if ctypes and wintypes:
+            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+            STILL_ACTIVE = 259
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+            if not handle:
+                ERROR_ACCESS_DENIED = 5
+                return ctypes.GetLastError() == ERROR_ACCESS_DENIED
+            try:
+                exit_code = wintypes.DWORD()
+                if kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                    return exit_code.value == STILL_ACTIVE
+                return False
+            finally:
+                kernel32.CloseHandle(handle)
         try:
-            if os.name == "nt":
-                cmd = ["tasklist", "/FI", "IMAGENAME eq llama-server.exe", "/FO", "CSV", "/NH"]
-                out = subprocess.check_output(cmd, text=True, timeout=2).strip()
-                if not out or "No tasks" in out:
-                    return
-                pids = []
-                for line in out.splitlines():
-                    parts = line.split(",")
-                    if len(parts) >= 2:
-                        pid_str = parts[1].strip('"').strip()
-                        if pid_str.isdigit():
-                            pids.append(int(pid_str))
-                if len(pids) > 0:
-                    logging.info(f"Purging legacy llama-server.exe processes ({pids}) to preserve VRAM for Ollama.")
-                    for pid in pids:
-                        try:
-                            subprocess.run(["taskkill", "/F", "/PID", str(pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                        except Exception as ke:
-                            logging.debug(f"Purge llama-server PID {pid}: {ke}")
+            os.kill(pid, 0)
+            return True
+        except (OSError, PermissionError):
+            return False
+    else:
+        try:
+            os.kill(pid, 0)
+            return True
+        except OSError:
+            return False
+
+
+class LlamaServerProcessSupervisor:
+    """
+    Supervised process lifecycle manager for llama-server.exe.
+    Maintains an atomic PID lockfile, direct child process handles, graceful SIGTERM/Win32 termination,
+    and deterministic cleanup on exit.
+    """
+    _server_proc: Optional[subprocess.Popen] = None
+    _lock: threading.Lock = threading.Lock()
+    _last_audit_time: float = 0.0
+    _pid_file_path: str = DEFAULT_PID_PATH
+
+    def __init__(self, pid_file_path: Optional[str] = None):
+        if pid_file_path:
+            self._pid_file_path = pid_file_path
+
+    @property
+    def server_proc(self) -> Optional[subprocess.Popen]:
+        return self._server_proc
+
+    @server_proc.setter
+    def server_proc(self, proc: Optional[subprocess.Popen]):
+        self._server_proc = proc
+
+    @classmethod
+    def get_pid_path(cls) -> str:
+        return cls._pid_file_path
+
+    @classmethod
+    def set_pid_path(cls, path: str):
+        cls._pid_file_path = path
+
+    @classmethod
+    def read_pid(cls) -> Optional[int]:
+        """Reads PID from atomic lockfile."""
+        path = cls.get_pid_path()
+        try:
+            if os.path.exists(path):
+                with open(path, "r", encoding="utf-8") as f:
+                    val = f.read().strip()
+                    if val.isdigit():
+                        return int(val)
         except Exception:
             pass
+        return None
+
+    @classmethod
+    def write_pid(cls, pid: int) -> bool:
+        """Atomically writes PID lockfile."""
+        path = cls.get_pid_path()
+        try:
+            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+            temp_path = f"{path}.tmp.{os.getpid()}"
+            with open(temp_path, "w", encoding="utf-8") as f:
+                f.write(str(pid))
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
+            os.replace(temp_path, path)
+            return True
+        except Exception as e:
+            logging.debug(f"Failed writing llama_server PID file: {e}")
+            return False
+
+    @classmethod
+    def remove_pid(cls) -> bool:
+        """Safely removes PID lockfile."""
+        path = cls.get_pid_path()
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+                return True
+        except Exception:
+            pass
+        return False
+
+    @classmethod
+    def register_process(cls, proc: subprocess.Popen):
+        """Directly supervises child process handle and updates atomic PID lockfile."""
+        with cls._lock:
+            cls._server_proc = proc
+            if proc and hasattr(proc, "pid") and proc.pid:
+                cls.write_pid(proc.pid)
+
+    @classmethod
+    def get_active_pid(cls) -> Optional[int]:
+        """Returns the PID of an active supervised or locked llama-server instance."""
+        with cls._lock:
+            if cls._server_proc is not None:
+                if cls._server_proc.poll() is None:
+                    return cls._server_proc.pid
+                cls._server_proc = None
+
+            pid = cls.read_pid()
+            if pid and is_pid_alive(pid):
+                return pid
+            elif pid:
+                cls.remove_pid()
+            return None
+
+    @classmethod
+    def terminate_process(cls, pid: int, timeout: float = 5.0) -> bool:
+        """
+        Gracefully terminates a process by PID with configurable timeout before forceful kill.
+        Uses native Win32/POSIX signaling without brittle shell command strings.
+        """
+        if pid <= 0 or pid == os.getpid():
+            return False
+
+        if not is_pid_alive(pid):
+            return True
+
+        # Check if direct child process
+        if cls._server_proc is not None and getattr(cls._server_proc, "pid", None) == pid:
+            try:
+                cls._server_proc.terminate()
+                try:
+                    cls._server_proc.wait(timeout=timeout)
+                    cls._server_proc = None
+                    return True
+                except subprocess.TimeoutExpired:
+                    cls._server_proc.kill()
+                    cls._server_proc.wait(timeout=1.0)
+                    cls._server_proc = None
+                    return True
+            except Exception as e:
+                logging.debug(f"Direct child process termination error: {e}")
+
+        # Terminate external PID
+        try:
+            if os.name == "nt":
+                if ctypes and wintypes:
+                    PROCESS_TERMINATE = 0x0001
+                    SYNCHRONIZE = 0x00100000
+                    WAIT_OBJECT_0 = 0x00000000
+                    handle = ctypes.windll.kernel32.OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, False, pid)
+                    if handle:
+                        try:
+                            ctypes.windll.kernel32.TerminateProcess(handle, 1)
+                            wait_ms = int(timeout * 1000)
+                            ctypes.windll.kernel32.WaitForSingleObject(handle, wait_ms)
+                        finally:
+                            ctypes.windll.kernel32.CloseHandle(handle)
+                else:
+                    os.kill(pid, signal.SIGTERM)
+            else:
+                os.kill(pid, signal.SIGTERM)
+        except Exception as e:
+            logging.debug(f"Graceful termination signal failed for PID {pid}: {e}")
+
+        # Liveness check loop
+        start = time.time()
+        while time.time() - start < timeout:
+            if not is_pid_alive(pid):
+                return True
+            time.sleep(0.05)
+
+        # Force kill fallback if still alive
+        if is_pid_alive(pid):
+            try:
+                if os.name != "nt":
+                    os.kill(pid, signal.SIGKILL)
+                else:
+                    if ctypes and wintypes:
+                        handle = ctypes.windll.kernel32.OpenProcess(0x0001, False, pid)
+                        if handle:
+                            try:
+                                ctypes.windll.kernel32.TerminateProcess(handle, 9)
+                            finally:
+                                ctypes.windll.kernel32.CloseHandle(handle)
+                    else:
+                        os.kill(pid, signal.SIGTERM)
+            except Exception:
+                pass
+
+        return not is_pid_alive(pid)
+
+    @classmethod
+    def stop_server(cls, timeout: float = 5.0) -> bool:
+        """Stops the active server instance, terminates child processes, and cleans up PID lockfiles."""
+        with cls._lock:
+            success = True
+            if cls._server_proc is not None:
+                pid = getattr(cls._server_proc, "pid", None)
+                if pid:
+                    success = cls.terminate_process(pid, timeout=timeout)
+                cls._server_proc = None
+
+            locked_pid = cls.read_pid()
+            if locked_pid and locked_pid != os.getpid():
+                if is_pid_alive(locked_pid):
+                    success = cls.terminate_process(locked_pid, timeout=timeout) and success
+                cls.remove_pid()
+            return success
+
+    @classmethod
+    def ensure_single_instance(cls, timeout: float = 5.0):
+        """
+        Supervises active instance state, pruning dead PID locks and terminating duplicate
+        or legacy instances to guarantee at most 1 active llama-server process in memory.
+        """
+        now = time.time()
+        if now - cls._last_audit_time < 5.0:
+            return
+
+        with cls._lock:
+            cls._last_audit_time = now
+            active_pid = cls.read_pid()
+            if active_pid:
+                if not is_pid_alive(active_pid):
+                    cls.remove_pid()
+                elif cls._server_proc is None or cls._server_proc.pid != active_pid:
+                    # External active instance detected, terminate to preserve single-flight Ollama VRAM
+                    if active_pid != os.getpid():
+                        logging.info(f"Purging external llama-server process (PID: {active_pid}) to preserve VRAM.")
+                        cls.terminate_process(active_pid, timeout=timeout)
+                        cls.remove_pid()
+
+
+def cleanup_llama_server():
+    """Deterministic exit handler ensuring zero orphaned child processes or stale PID locks."""
+    try:
+        LlamaServerProcessSupervisor.stop_server(timeout=3.0)
+    except Exception:
+        pass
+
+
+# Register deterministic atexit teardown handler
+atexit.register(cleanup_llama_server)
+
+
+def ensure_single_llama_server_instance():
+    """Backward-compatible proxy invoking LlamaServerProcessSupervisor."""
+    LlamaServerProcessSupervisor.ensure_single_instance()
 
 
 def _sanitize_keep_alive(val: Any) -> Any:
