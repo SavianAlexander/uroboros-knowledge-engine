@@ -276,13 +276,32 @@ def search_graph(entity_name: str):
 import time
 
 def backup_db_cli():
-    """Execute 1-click online SQLite database backup using online backup API."""
+    """Execute 1-click online SQLite database backup using online backup API with retention pruning."""
     try:
+        import glob
         from know import backup_db_online
-        dest_file = os.path.join(project_root, "docs", f"vault_backup_{int(time.time())}.db")
-        os.makedirs(os.path.dirname(dest_file), exist_ok=True)
+        backup_dir = os.path.join(project_root, "backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        dest_file = os.path.join(backup_dir, f"vault_backup_{int(time.time())}.db")
         backup_db_online(dest_file)
-        return json.dumps({"status": "success", "backup_destination": dest_file}, indent=2)
+
+        # Automatic retention pruning keeping at most 3 backups in backups/
+        existing_backups = sorted(
+            glob.glob(os.path.join(backup_dir, "vault_backup_*.db")),
+            key=os.path.getmtime
+        )
+        if len(existing_backups) > 3:
+            for old_bak in existing_backups[:-3]:
+                try:
+                    os.remove(old_bak)
+                except Exception:
+                    pass
+
+        return json.dumps({
+            "status": "success",
+            "backup_destination": dest_file,
+            "retained_count": min(len(existing_backups), 3)
+        }, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
 

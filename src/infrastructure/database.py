@@ -560,8 +560,11 @@ def backup_db_online(backup_target_path: str) -> bool:
     try:
         os.makedirs(os.path.dirname(os.path.abspath(backup_target_path)), exist_ok=True)
         with get_db_connection(DB_FILE, timeout=DB_TIMEOUT) as src_conn:
-            with get_db_connection(backup_target_path, timeout=DB_TIMEOUT) as dst_conn:
+            dst_conn = sqlite3.connect(backup_target_path, timeout=DB_TIMEOUT)
+            try:
                 src_conn.backup(dst_conn, pages=100, sleep=0.01)
+            finally:
+                dst_conn.close()
         return True
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
