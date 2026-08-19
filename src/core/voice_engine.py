@@ -27,7 +27,7 @@ LOCAL_VOICES_BIN_PATH = os.path.join(BASE_DIR, "models", "kokoro", "voices.bin")
 
 DEFAULT_KOKORO_TTS_URL = "http://localhost:8880/v1/audio/speech"
 DEFAULT_VOICE_MODEL = "kokoro"
-DEFAULT_VOICE_NAME = "CORTANA_PRIME"
+DEFAULT_VOICE_NAME = "af_heart"
 
 
 
@@ -264,9 +264,9 @@ class KokoroVoiceEngine:
         self,
         text: str,
         voice: Optional[Any] = None,
-        speed: float = 1.0,
+        speed: float = 1.02,
         response_format: str = "wav",
-        dsp_preset: str = "STUDIO_DIRECT"
+        dsp_preset: str = "STUDIO_MASTER"
     ) -> Optional[bytes]:
         """
         Synthesize audio via Local In-Process ONNX (with direct 512-D blended persona tensor resolution) -> Containerized HTTP -> SAPI.
@@ -276,10 +276,14 @@ class KokoroVoiceEngine:
 
         # Normalize text once upfront for consistent phonetics and maximum cache hits
         try:
-            from src.core.voice_normalizer import VoiceNormalizer
-            clean_text = VoiceNormalizer.normalize_for_speech(text)
+            from src.core.speech_normalizer import SpeechNormalizer
+            clean_text = SpeechNormalizer.normalize_for_speech(text)
         except Exception:
-            clean_text = str(text).strip()
+            try:
+                from src.core.voice_normalizer import VoiceNormalizer
+                clean_text = VoiceNormalizer.normalize_for_speech(text)
+            except Exception:
+                clean_text = str(text).strip()
 
         if not clean_text:
             return None
@@ -485,21 +489,24 @@ class KokoroVoiceEngine:
         # Seamlessly prepend procedural SFX chime into the audio buffer if requested
         if sfx_intro and audio_bytes:
             try:
-                from src.infrastructure.eve_voice_soundboard import SFX_LIBRARY, render_sfx_to_wav_bytes
+                from src.core.voice_sfx import VoiceSFX
                 import io
                 import soundfile as sf
                 import numpy as np
 
-                if sfx_intro in SFX_LIBRARY:
-                    sfx_wav = render_sfx_to_wav_bytes(sfx_intro)
-                    if sfx_wav:
-                        sfx_data, fs1 = sf.read(io.BytesIO(sfx_wav))
-                        speech_data, fs2 = sf.read(io.BytesIO(audio_bytes))
-                        silence = np.zeros(int(fs1 * 0.10), dtype=np.float32)
-                        combined = np.concatenate([sfx_data.astype(np.float32), silence, speech_data.astype(np.float32)])
-                        buf = io.BytesIO()
-                        sf.write(buf, combined, fs1, format="WAV", subtype="PCM_16")
-                        audio_bytes = buf.getvalue()
+                sfx_wav = VoiceSFX.synthesize_sfx(sfx_intro)
+                if sfx_wav:
+                    sfx_data, fs1 = sf.read(io.BytesIO(sfx_wav))
+                    speech_data, fs2 = sf.read(io.BytesIO(audio_bytes))
+                    if sfx_data.ndim > 1 and speech_data.ndim == 1:
+                        speech_data = np.column_stack([speech_data, speech_data])
+                    elif sfx_data.ndim == 1 and speech_data.ndim > 1:
+                        sfx_data = np.column_stack([sfx_data, sfx_data])
+                    silence = np.zeros((int(fs1 * 0.10), sfx_data.shape[1]) if sfx_data.ndim > 1 else int(fs1 * 0.10), dtype=np.float32)
+                    combined = np.concatenate([sfx_data.astype(np.float32), silence, speech_data.astype(np.float32)])
+                    buf = io.BytesIO()
+                    sf.write(buf, combined, fs1, format="WAV", subtype="PCM_16")
+                    audio_bytes = buf.getvalue()
             except Exception:
                 pass
 

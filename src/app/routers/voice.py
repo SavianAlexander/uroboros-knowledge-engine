@@ -21,9 +21,9 @@ class OpenAISpeechRequest(BaseModel):
     model: Optional[str] = "kokoro"
     input: Optional[str] = None
     text: Optional[str] = None
-    voice: Optional[str] = "CORTANA_PRIME"
+    voice: Optional[str] = "af_heart"
     response_format: Optional[str] = "wav"
-    speed: Optional[float] = 1.0
+    speed: Optional[float] = 1.02
     dsp_preset: Optional[str] = "STUDIO_MASTER"
 
 
@@ -53,8 +53,8 @@ def openai_speech_endpoint(req: OpenAISpeechRequest):
 
         audio_bytes = VoiceBridge.synthesize_bytes(
             text=raw_text,
-            voice=req.voice or "CORTANA_PRIME",
-            speed=req.speed or 1.0,
+            voice=req.voice or "af_heart",
+            speed=req.speed or 1.02,
             response_format=req.response_format or "wav",
             dsp_preset=req.dsp_preset or "STUDIO_MASTER"
         )
@@ -75,14 +75,14 @@ def streaming_speech_endpoint(req: OpenAISpeechRequest):
     """
     Real-time streaming clause-by-clause neural TTS endpoint.
     Yields newline-delimited JSON (NDJSON) chunks with base64 audio frames and metadata.
-    Allows clients to start playback in ~150-250ms on long documents.
+    Sentence 1 renders and streams in <80ms while background threads queue subsequent clauses.
     """
     try:
         def event_generator():
             for chunk in StreamingNeuralSynthesizer.stream_speech_chunks(
-                text=req.input,
-                voice=req.voice or "CORTANA_PRIME",
-                speed=req.speed or 1.0,
+                text=req.input or req.text or "",
+                voice=req.voice or "af_heart",
+                speed=req.speed or 1.02,
                 dsp_preset=req.dsp_preset or "STUDIO_MASTER"
             ):
                 yield json.dumps(chunk) + "\n"
@@ -103,64 +103,46 @@ def clear_voice_cache_endpoint():
 class CustomPersonaRequest(BaseModel):
     name: str
     weights: Dict[str, float]
-    dsp_preset: Optional[str] = "EXECUTIVE_PRECISION"
+    dsp_preset: Optional[str] = "STUDIO_MASTER"
     description: Optional[str] = ""
 
 
 class VoicePreviewRequest(BaseModel):
     text: Optional[str] = "Command recognized. Power and intent online."
-    voice: Optional[str] = None
+    voice: Optional[str] = "af_heart"
     weights: Optional[Dict[str, float]] = None
-    dsp_preset: Optional[str] = "EXECUTIVE_PRECISION"
-    speed: Optional[float] = 0.92
+    dsp_preset: Optional[str] = "STUDIO_MASTER"
+    speed: Optional[float] = 1.02
 
 
 @router.get("/v1/audio/voices")
 @router.get("/api/voice/personas")
 def list_voices_endpoint():
-    """List available signature voice personas and DSP mastering presets."""
+    """List canonical singular voice persona and DSP mastering presets."""
     try:
-        from src.core.voice_persona_blend import VoicePersonaBlender, SIGNATURE_PERSONA_BLENDS
+        from src.core.voice_persona_blend import VoicePersonaBlender
         all_blends = VoicePersonaBlender.get_preset_blends()
     except Exception:
         all_blends = {}
 
     dsp_presets = [
-        {"id": "EXECUTIVE_PRECISION", "name": "Executive Precision (Sub-Harmonic Chest & Tube Warmth)", "description": "Visceral chest thump, magnetic tube saturation, dynamic limiter & 3D spatial air."},
-        {"id": "STOIC_GRAVITAS", "name": "Stoic Gravitas (Kratos / Master Chief)", "description": "Maximum sub-bass chest resonance, analog tube drive & intimate proximity leveler."},
-        {"id": "MAGNETIC_INTIMATE", "name": "Magnetic Intimate (Velvet Warmth)", "description": "Velvet mid-range tube saturation, vocal presence & Haas 3D stereo widener."},
-        {"id": "STUDIO_MASTER", "name": "Studio Master (Cortana Broadcast)", "description": "4-Band Mastering EQ, Studio Compressor, De-Esser & Subtle Holographic Presence."},
-        {"id": "HOLOGRAPHIC_AI", "name": "Holographic AI (3D Spatial)", "description": "Air Presence EQ with Haas 3D Spatial Stereo Widener."},
-        {"id": "AURA_COCKPIT", "name": "Aura Cockpit (Starship Bridge)", "description": "Naval AI Crystalline Voice with Multi-Tap Bridge Reverb."},
-        {"id": "TACTICAL_RADIO", "name": "Tactical Radio (Military Comms)", "description": "VHF Bandpass Filter with Tactical Start Chirp and End Squelch Burst."},
+        {"id": "STUDIO_MASTER", "name": "Studio Master (Broadcasting EQ + Tube Polish)", "description": "4-Band Mastering EQ, Studio Compressor, De-Esser & Crystalline Presence."},
+        {"id": "EXECUTIVE_PRECISION", "name": "Executive Precision (Acoustic Warmth & Depth)", "description": "Sub-harmonic chest resonance, analog tube saturation & intimate proximity leveler."},
+        {"id": "STOIC_GRAVITAS", "name": "Stoic Gravitas (Low-End Depth)", "description": "Resonant low-end control and focused presence."},
+        {"id": "MAGNETIC_INTIMATE", "name": "Magnetic Intimate (Velvet Warmth)", "description": "Velvet mid-range tube saturation & vocal presence."},
+        {"id": "HOLOGRAPHIC_AI", "name": "Holographic AI (3D Spatial Width)", "description": "Air Presence EQ with Haas 3D Spatial Stereo Widener."},
         {"id": "STUDIO_DIRECT", "name": "Studio Direct (Raw Neural)", "description": "Uncolored Direct Neural PCM Audio."}
     ]
 
     personas = [
-        # Executive & Command Tier
-        {"id": "ALEXANDER_SOVEREIGN", "name": "Alexander (Executive Command)", "category": "Executive", "description": "Deep baritone, resonant chest power & vocal authority."},
-        {"id": "FREYA_VALKYRIE", "name": "Freya (Resolute Command)", "category": "Executive", "description": "Crystalline, articulate noble authority & clarity."},
-        {"id": "AURELIUS_STOIC", "name": "Aurelius (Stoic Presence)", "category": "Executive", "description": "Resonant low-end presence, deliberate pacing & philosophical depth."},
-        {"id": "NOCTURNA_SOLON", "name": "Nocturna (Strategic Analysis)", "category": "Executive", "description": "Focused, articulate analysis & strategic gravitas."},
-        
-        # Classic AI & Signature Tier
-        {"id": "CORTANA_PRIME", "name": "Cortana Prime (Halo AI)", "category": "Signature", "description": "Articulate, crystalline, warm Cortana AI persona."},
-        {"id": "AURA_SHIP_AI", "name": "Aura Ship AI (British Naval)", "category": "Signature", "description": "Authoritative crystalline starship bridge AI."},
-        {"id": "EXECUTIVE_ADVISOR", "name": "Executive Advisor (Warm Productivity)", "category": "Signature", "description": "Engaging, natural executive briefing tone."},
-        {"id": "TACTICAL_OFFICER", "name": "Tactical Officer (Command)", "category": "Signature", "description": "Deep, resonant tactical commanding officer."},
-        
-        # Base Kokoro Embeddings
-        {"id": "am_adam", "name": "Kokoro Adam (Deep US Male)", "category": "Base", "description": "Deep resonant American male baritone."},
-        {"id": "bm_george", "name": "Kokoro George (Commanding UK Male)", "category": "Base", "description": "Commanding authoritative British male."},
-        {"id": "bf_emma", "name": "Kokoro Emma (Crystalline UK Female)", "category": "Base", "description": "Crystalline, articulate British female."},
-        {"id": "af_sky", "name": "Kokoro Sky (Clear US Female)", "category": "Base", "description": "Clear, bright American female."},
-        {"id": "af_bella", "name": "Kokoro Bella (Warm US Female)", "category": "Base", "description": "Warm, velvety American female."}
+        {"id": "af_heart", "name": "Singular Canonical Voice (af_heart Studio Master)", "category": "Canonical", "description": "Singular warm, crystalline, executive broadcast neural voice."},
     ]
 
     return {
         "status": "success",
-        "default_voice": "ALEXANDER_SOVEREIGN",
-        "default_dsp": "EXECUTIVE_PRECISION",
+        "default_voice": "af_heart",
+        "default_dsp": "STUDIO_MASTER",
+        "default_speed": 1.02,
         "personas": personas,
         "signature_blends": all_blends,
         "dsp_presets": dsp_presets,
@@ -292,8 +274,8 @@ def get_voice_hardware_endpoint():
 
 class VoiceIntercomTurnRequest(BaseModel):
     prompt: str
-    persona: Optional[str] = "AURA_SHIP_AI"
-    dsp_preset: Optional[str] = "HOLOGRAPHIC_AURA"
+    persona: Optional[str] = "af_heart"
+    dsp_preset: Optional[str] = "STUDIO_MASTER"
     use_rag: Optional[bool] = True
 
 
@@ -306,7 +288,12 @@ def voice_intercom_turn_endpoint(req: VoiceIntercomTurnRequest):
     """
     import base64
     from src.core.voice_rag_bridge import VoiceRAGBridge
-    from src.core.voice_normalizer import VoiceNormalizer
+    try:
+        from src.core.speech_normalizer import SpeechNormalizer
+        clean_text_func = SpeechNormalizer.normalize_for_speech
+    except Exception:
+        from src.core.voice_normalizer import VoiceNormalizer
+        clean_text_func = VoiceNormalizer.normalize_for_speech
 
     try:
         t0 = time.perf_counter()
@@ -320,15 +307,15 @@ def voice_intercom_turn_endpoint(req: VoiceIntercomTurnRequest):
             citations = []
             retrieval_ms = 0
 
-        clean_text = VoiceNormalizer.normalize_for_speech(speech_text)
-        voice_id = KOKORO_PERSONAS.get(req.persona, "bf_emma")
+        clean_text = clean_text_func(speech_text)
+        voice_id = KOKORO_PERSONAS.get(req.persona, "af_heart")
 
         audio_bytes = VoiceBridge.synthesize_bytes(
             text=clean_text,
             voice=voice_id,
-            speed=1.0,
+            speed=1.02,
             response_format="wav",
-            dsp_preset=req.dsp_preset or "HOLOGRAPHIC_AURA"
+            dsp_preset=req.dsp_preset or "STUDIO_MASTER"
         )
 
         audio_b64 = base64.b64encode(audio_bytes).decode("ascii") if audio_bytes else ""

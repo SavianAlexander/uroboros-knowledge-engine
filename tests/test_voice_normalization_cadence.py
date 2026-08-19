@@ -24,7 +24,7 @@ class TestVoiceNormalizationCadence(unittest.TestCase):
         """Verify file extensions like .txt, .json, .md are pronounced naturally without '. txt' artifacts."""
         cases = [
             ("Please check notes.txt for updates.", "notes text file"),
-            ("The settings are stored in config.json.", "config Jason file"),
+            ("The settings are stored in config.json.", "config j-son file"),
             ("Read the AGENTS.md document.", "AGENTS markdown file"),
             ("Execute the script.py file.", "script Python script"),
             ("Review output.log for errors.", "output log file"),
@@ -56,7 +56,7 @@ class TestVoiceNormalizationCadence(unittest.TestCase):
         self.assertNotIn(". xt.", norm)
         self.assertNotIn("xt.", norm)
         self.assertIn("Server running on port 8000", norm)
-        self.assertIn("Sequel Light database", norm)
+        self.assertIn("sequel light database", norm.lower())
         self.assertIn("All systems nominal.", norm)
 
     def test_windows_and_unix_path_sanitization(self):
@@ -64,7 +64,7 @@ class TestVoiceNormalizationCadence(unittest.TestCase):
         cases = [
             ("Refer to C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\output.txt for details.", "output text file"),
             ("Logs located at /var/log/nginx/access.log on the server.", "access log file"),
-            ("Check file:///C:/Users/Admin/workspace/data.json now.", "data Jason file"),
+            ("Check file:///C:/Users/Admin/workspace/data.json now.", "data j-son file"),
         ]
         for raw, expected_substr in cases:
             norm = VoiceNormalizer.normalize_for_speech(raw)

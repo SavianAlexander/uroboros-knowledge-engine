@@ -21,65 +21,71 @@ except Exception:
     KokoroVoiceEngine = None
     KokoroVoiceCopilot = None
 
+DEFAULT_CANONICAL_VOICE = "af_heart"
+DEFAULT_CANONICAL_SPEED = 1.02
+DEFAULT_CANONICAL_DSP = "STUDIO_MASTER"
+
 KOKORO_PERSONAS = {
-    "CORTANA_PRIME": "af_sky",
+    "CANONICAL_STUDIO": "af_heart",
+    "CORTANA_PRIME": "af_heart",
     "EXECUTIVE_ADVISOR": "af_heart",
-    "DEV_OPS": "af_sarah",
-    "CALM_OPERATIONS": "af_bella",
+    "DEV_OPS": "af_heart",
+    "CALM_OPERATIONS": "af_heart",
     "EXECUTIVE_DIRECTOR": "af_heart",
-    "ORACLE_ADVISOR": "af_sky",
-    "SOVEREIGN_ORACLE": "af_sky",
-    "KOKORO_SKY": "af_sky",
-    "KOKORO_BELLA": "af_bella",
-    "KOKORO_SARAH": "af_sarah",
-    "KOKORO_EMMA": "bf_emma",
-    "KOKORO_ADAM": "am_adam",
-    "KOKORO_GEORGE": "bm_george"
+    "ORACLE_ADVISOR": "af_heart",
+    "SOVEREIGN_ORACLE": "af_heart",
+    "KOKORO_HEART": "af_heart",
+    "KOKORO_SKY": "af_heart",
+    "KOKORO_BELLA": "af_heart",
+    "KOKORO_SARAH": "af_heart",
+    "KOKORO_EMMA": "af_heart",
+    "KOKORO_ADAM": "af_heart",
+    "KOKORO_GEORGE": "af_heart"
 }
 
 
 DOMAIN_PROFILES = {
     "CORTANA_AI": {
-        "voice": "af_sky",
+        "voice": "af_heart",
         "speed": 1.02,
         "dsp_preset": "STUDIO_MASTER",
-        "description": "Cortana-Grade Neural AI Assistant & Master Broadcaster"
+        "description": "Singular Canonical Neural AI Voice & Studio Master Broadcaster"
     },
     "DEV_OPS": {
-        "voice": "af_sarah",
-        "speed": 1.05,
+        "voice": "af_heart",
+        "speed": 1.02,
         "dsp_preset": "STUDIO_MASTER",
         "description": "Concise Developer & CI/CD Terminal Broadcaster"
     },
     "DAILY_BRIEF": {
         "voice": "af_heart",
-        "speed": 1.00,
+        "speed": 1.02,
         "dsp_preset": "STUDIO_MASTER",
         "description": "Warm, engaging Task Master & Tududi Productivity Speaker"
     },
     "EXECUTIVE_ASSISTANT": {
-        "voice": "af_sky",
-        "speed": 1.00,
+        "voice": "af_heart",
+        "speed": 1.02,
         "dsp_preset": "STUDIO_MASTER",
         "description": "Authoritative, crystalline Executive Intelligence Voice"
     },
     "TACTICAL_COCKPIT": {
-        "voice": "af_sarah",
-        "speed": 1.10,
-        "dsp_preset": "TACTICAL_RADIO",
-        "description": "Military-grade Tactical Radar & Combat Alert Voice"
+        "voice": "af_heart",
+        "speed": 1.02,
+        "dsp_preset": "STUDIO_MASTER",
+        "description": "Tactical Radar & Operations Alert Voice"
     },
     "CALL_INTERCOM": {
-        "voice": "af_sky",
-        "speed": 1.05,
+        "voice": "af_heart",
+        "speed": 1.02,
         "dsp_preset": "STUDIO_MASTER",
         "description": "Real-Time Full-Duplex Phone Call & Radio Intercom Voice"
     },
     "GENERAL": {
-        "voice": "af_sky",
-        "speed": 1.00,
+        "voice": "af_heart",
+        "speed": 1.02,
         "dsp_preset": "STUDIO_MASTER",
-        "description": "Universal Multi-Purpose Neural Synthesizer"
+        "description": "Universal Singular Canonical Synthesizer (af_heart Studio Master)"
     }
 }
 
@@ -147,13 +153,13 @@ class VoiceBridge:
         text: str,
         voice: Optional[str] = None,
         dsp_preset: Optional[str] = None,
-        speed: float = 1.0,
+        speed: float = 1.02,
         sync: bool = False
     ) -> Dict[str, Any]:
         """Ultra-low latency instant voice dispatch (<1ms cached, <25ms fresh)."""
         from src.core.instant_audio_streamer import InstantVoiceClient
-        v = voice or "bf_emma"
-        d = dsp_preset or "HOLOGRAPHIC_AURA"
+        v = voice or "af_heart"
+        d = dsp_preset or "STUDIO_MASTER"
         return InstantVoiceClient.speak_instant(text, voice=v, dsp_preset=d, speed=speed, sync=sync)
 
     @classmethod
@@ -176,8 +182,8 @@ class VoiceBridge:
     def synthesize_bytes(
         cls,
         text: str,
-        voice: str = "CORTANA_PRIME",
-        speed: float = 1.0,
+        voice: str = "af_heart",
+        speed: float = 1.02,
         response_format: str = "wav",
         dsp_preset: Optional[str] = "STUDIO_MASTER"
     ) -> Optional[bytes]:
