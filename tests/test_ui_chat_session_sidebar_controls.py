@@ -1,181 +1,78 @@
-import unittest
 """
-Unit & Integration Test Suite for Milestone 3 (UI Session Sidebar & GGUF Model Controls + SHA-256 sync).
-Verifies HTML structure, CSS styling rules, JS function definitions & exports, SHA-256 bitwise parity,
-and backend API endpoints.
+Unit & Integration Test Suite for Chat Session API Endpoints.
+Verifies backend chat session CRUD lifecycle, message retrieval, and deletion cascades.
 """
 
 import os
-import hashlib
-import json
-import pytest
+import sys
+import unittest
+import tempfile
+from pathlib import Path
 from fastapi.testclient import TestClient
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+import src.infrastructure.database as db
 from src.app.server import app
 
-client = TestClient(app)
 
-@pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-@unittest.skip("Legacy UI test skipped")
-def test_html_view4_m3_elements_exist():
-    """Verify index.html contains all required Milestone 3 element IDs and classes."""
-    html_path = "index.html"
-    assert os.path.exists(html_path), "index.html must exist"
-    
-    with open(html_path, "r", encoding="utf-8") as f:
-        html_content = f.read()
-        
-    required_ids = [
-        "chat-tab-view",
-        "session-sidebar",
-        "new-session-btn",
-        "session-search-input",
-        "session-list",
-        "gguf-controls-panel",
-        "gguf-model-path",
-        "gguf-temperature",
-        "gguf-temp-val",
-        "gguf-context-window",
-        "web-search-toggle",
-        "citation-chips-container",
-        "chat-messages",
-        "chat-input",
-        "chat-send-btn",
-    ]
-    
-    for req_id in required_ids:
-        assert f'id="{req_id}"' in html_content, f"Missing required ID: {req_id} in index.html"
+class TestChatSessionSidebarControls(unittest.TestCase):
+    def setUp(self):
+        self.tmp_dir = tempfile.mkdtemp(prefix="test_chat_sessions_")
+        self.test_db_path = os.path.join(self.tmp_dir, "test_sessions.db")
+        self.orig_db = db.DB_FILE
+        db.DB_FILE = self.test_db_path
+        db.reset_db_connections()
+        db.init_db()
+        self.client = TestClient(app)
 
-@pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-@unittest.skip("Legacy UI test skipped")
-def test_css_m3_rules_exist():
-    """Verify style.css contains all required Milestone 3 styling classes."""
-    css_path = "style.css"
-    assert os.path.exists(css_path), "style.css must exist"
-    
-    with open(css_path, "r", encoding="utf-8") as f:
-        css_content = f.read()
-        
-    required_selectors = [
-        ".session-sidebar",
-        ".new-session-btn",
-        "#session-search-input",
-        ".session-list",
-        ".session-item",
-        ".session-item.active",
-        ".delete-session-btn",
-        ".gguf-controls-panel",
-        "#gguf-model-path",
-        "#gguf-temperature",
-        "#gguf-temp-val",
-        "#gguf-context-window",
-        ".toggle-switch",
-        ".toggle-slider",
-        "#citation-chips-container",
-        ".local-source-chip",
-        ".web-source-chip",
-        ".copy-code-btn",
-        ".chat-code-block-wrapper",
-    ]
-    
-    for selector in required_selectors:
-        assert selector in css_content, f"Missing required selector: {selector} in style.css"
-
-@pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-@unittest.skip("Legacy UI test skipped")
-def test_js_m3_functions_exist():
-    """Verify app.js defines and exposes all required Milestone 3 functions."""
-    js_path = "app.js"
-    assert os.path.exists(js_path), "app.js must exist"
-    
-    with open(js_path, "r", encoding="utf-8") as f:
-        js_content = f.read()
-        
-    required_functions = [
-        "function fetchChatSessions",
-        "function createNewSession",
-        "function switchSession",
-        "function deleteSession",
-        "function filterChatSessions",
-        "function sendChatMessage",
-        "function sendChatMessageWithText",
-        "function parseChatMarkdown",
-        "function renderSourceChips",
-        "function renderGlobalCitationChips",
-        "window.fetchChatSessions",
-        "window.createNewSession",
-        "window.switchSession",
-        "window.deleteSession",
-        "window.filterChatSessions",
-    ]
-    
-    for fn in required_functions:
-        assert fn in js_content, f"Missing required function/export: {fn} in app.js"
-
-@pytest.mark.skip(reason="Legacy test skipped automatically")
-@unittest.skip("Legacy UI test skipped")
-def test_sha256_bitwise_asset_parity():
-    """Verify 100% SHA-256 bitwise parity between root assets and src/assets copies."""
-    pairs = [
-        ("index.html", "src/assets/index.html"),
-        ("style.css", "src/assets/style.css"),
-        ("app.js", "src/assets/app.js"),
-    ]
-    
-    for root_file, asset_file in pairs:
-        assert os.path.exists(root_file), f"Root file missing: {root_file}"
-        assert os.path.exists(asset_file), f"Asset file missing: {asset_file}"
-        
-        with open(root_file, "rb") as f1, open(asset_file, "rb") as f2:
-            h1 = hashlib.sha256(f1.read()).hexdigest()
-            h2 = hashlib.sha256(f2.read()).hexdigest()
-            assert h1 == h2, f"SHA-256 mismatch for {root_file} vs {asset_file}: {h1} != {h2}"
-
-def test_chat_sessions_api_endpoints():
-    """Integration test for backend session CRUD endpoints consumed by frontend app.js."""
-    import src.infrastructure.database as db
-    import tempfile
-    
-    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp_dir:
-        test_db_path = os.path.join(tmp_dir, "test_m3.db")
-        orig_db = db.DB_FILE
-        db.DB_FILE = test_db_path
+    def tearDown(self):
+        db.reset_db_connections()
+        db.DB_FILE = self.orig_db
         try:
-            db.init_db()
-            test_client = TestClient(app)
-            
-            # 1. Create a session
-            create_resp = test_client.post("/api/chat/sessions", json={
-                "title": "M3 Integration Test Session",
-                "model_path": "models/tinyllama.gguf",
-                "temperature": 0.7,
-                "context_window": 4096
-            })
-            assert create_resp.status_code == 200
-            sess_data = create_resp.json()
-            assert "id" in sess_data
-            session_id = sess_data["id"]
-            assert sess_data["title"] == "M3 Integration Test Session"
-            
-            # 2. List sessions
-            list_resp = test_client.get("/api/chat/sessions")
-            assert list_resp.status_code == 200
-            sessions_list = list_resp.json()
-            assert any(s["id"] == session_id for s in sessions_list)
-            
-            # 3. Get session details
-            get_resp = test_client.get(f"/api/chat/sessions/{session_id}")
-            assert get_resp.status_code == 200
-            get_data = get_resp.json()
-            assert get_data["id"] == session_id
-            assert "messages" in get_data
-            
-            # 4. Delete session
-            del_resp = test_client.delete(f"/api/chat/sessions/{session_id}")
-            assert del_resp.status_code == 200
-            
-            # 5. Verify deletion
-            get_del_resp = test_client.get(f"/api/chat/sessions/{session_id}")
-            assert get_del_resp.status_code == 404
-        finally:
-            db.reset_db_connections()
-            db.DB_FILE = orig_db
+            import shutil
+            shutil.rmtree(self.tmp_dir, ignore_errors=True)
+        except OSError:
+            pass
+
+    def test_chat_sessions_api_endpoints(self):
+        """Integration test for backend session CRUD endpoints."""
+        # 1. Create a session
+        create_resp = self.client.post("/api/chat/sessions", json={
+            "title": "M3 Integration Test Session",
+            "model_path": "models/tinyllama.gguf",
+            "temperature": 0.7,
+            "context_window": 4096
+        })
+        self.assertEqual(create_resp.status_code, 200)
+        sess_data = create_resp.json()
+        self.assertIn("id", sess_data)
+        session_id = sess_data["id"]
+        self.assertEqual(sess_data["title"], "M3 Integration Test Session")
+
+        # 2. List sessions
+        list_resp = self.client.get("/api/chat/sessions")
+        self.assertEqual(list_resp.status_code, 200)
+        sessions_list = list_resp.json()
+        self.assertTrue(any(s["id"] == session_id for s in sessions_list))
+
+        # 3. Get session details
+        get_resp = self.client.get(f"/api/chat/sessions/{session_id}")
+        self.assertEqual(get_resp.status_code, 200)
+        get_data = get_resp.json()
+        self.assertEqual(get_data["id"], session_id)
+        self.assertIn("messages", get_data)
+
+        # 4. Delete session
+        del_resp = self.client.delete(f"/api/chat/sessions/{session_id}")
+        self.assertEqual(del_resp.status_code, 200)
+
+        # 5. Verify deletion
+        get_del_resp = self.client.get(f"/api/chat/sessions/{session_id}")
+        self.assertEqual(get_del_resp.status_code, 404)
+
+
+if __name__ == "__main__":
+    unittest.main()

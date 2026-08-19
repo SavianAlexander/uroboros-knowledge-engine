@@ -41,8 +41,7 @@ class TestPathTraversalProtections(unittest.TestCase):
                     except Exception: pass
                     os.remove(fpath)
                 except Exception as e:
-                    import logging; logging.error(f"Swallowed error in test_adversarial_path_traversal.py: {e}")
-
+                pass
     def test_get_file_raw_traversal(self):
         response = self.client.get("/api/file/raw", params={"path": self.outside_path})
         self.assertEqual(response.status_code, 400)
@@ -155,15 +154,13 @@ class TestPathTraversalProtections(unittest.TestCase):
             try:
                 os.remove(outside_sync_file)
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in test_adversarial_path_traversal.py: {e}")
-
+                pass
         inside_sync_file = os.path.join(config.ACTIVE_DIR, "outside_sync.txt")
         if os.path.exists(inside_sync_file):
             try:
                 os.remove(inside_sync_file)
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in test_adversarial_path_traversal.py: {e}")
-
+                pass
         # Patch urlopen and make the request
         with patch("urllib.request.urlopen", return_value=mock_response):
             response = self.client.post("/api/sync/exchange", json={"target_peer": "http://localhost:8000"})
@@ -176,7 +173,6 @@ class TestPathTraversalProtections(unittest.TestCase):
             try:
                 os.remove(inside_sync_file)
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in test_adversarial_path_traversal.py: {e}")
-
+                pass
 if __name__ == "__main__":
     unittest.main()

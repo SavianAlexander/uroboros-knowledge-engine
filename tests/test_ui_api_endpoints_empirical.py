@@ -59,8 +59,7 @@ class TestUIAPIEndpointsEmpirical(unittest.TestCase):
                 except Exception: pass
                 os.remove(renamed_file)
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in test_ui_api_endpoints_empirical.py: {e}")
-
+                pass
         # Create a specific file to rename
         target_file = os.path.join(self.test_dir, "rename_target.txt")
         with open(target_file, "w", encoding="utf-8") as f:

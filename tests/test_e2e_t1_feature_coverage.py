@@ -71,17 +71,17 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
 
         if self.sandbox_dir.exists():
             try:
-                shutil.rmtree(self.sandbox_dir)
-            except Exception as e:
-                import logging; logging.error(f"Swallowed error in test_e2e_t1_feature_coverage.py: {e}")
+                shutil.rmtree(self.sandbox_dir, ignore_errors=True)
+            except OSError:
+                pass
         self.sandbox_dir.mkdir(parents=True, exist_ok=True)
 
     def tearDown(self):
         if hasattr(self, "sandbox_dir") and self.sandbox_dir.exists():
             try:
-                shutil.rmtree(self.sandbox_dir)
-            except Exception as e:
-                import logging; logging.error(f"Swallowed error in test_e2e_t1_feature_coverage.py: {e}")
+                shutil.rmtree(self.sandbox_dir, ignore_errors=True)
+            except OSError:
+                pass
         if hasattr(self, "db_file"):
             self._cleanup_db_files(self.db_file)
 
@@ -126,14 +126,12 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
         resp2 = self.client.get("/api/search/history")
         self.assertEqual(resp2.status_code, 200)
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_v1_file_tree_and_workspace_preview(self):
         """T1.1.5 — File Tree Directory Navigation & Workspace split-screen preview."""
         filepath = self.sandbox_dir / "workspace_doc.txt"
         filepath.write_text("Workspace Document Content for Split Screen Preview", encoding="utf-8")
 
-        self.client.post("/api/index", json={"dir_path": self.sandbox_dir_str})
+        self.client.post("/api/file/index", json={"directory": self.sandbox_dir_str})
 
         resp_tree = self.client.get("/api/file/tree")
         self.assertEqual(resp_tree.status_code, 200)
@@ -143,14 +141,12 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
         data_raw = resp_raw.json()
         self.assertIn("Workspace Document Content", data_raw.get("content", ""))
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_v1_document_ai_insights(self):
         """T1.1.6 — Workspace Split-Screen Document AI Insights Panel."""
         filepath = self.sandbox_dir / "report.txt"
         filepath.write_text("Artificial Intelligence and Quantum Computing Research 2026.", encoding="utf-8")
 
-        self.client.post("/api/index", json={"dir_path": self.sandbox_dir_str})
+        self.client.post("/api/file/index", json={"directory": self.sandbox_dir_str})
 
         resp = self.client.post("/api/file/insights", json={"filepath": str(filepath)})
         self.assertIn(resp.status_code, [200, 501])
@@ -169,8 +165,6 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
     # -------------------------------------------------------------------------
     # View 2: Search & Explorer
     # -------------------------------------------------------------------------
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_v2_file_drag_and_drop_upload(self):
         """T1.2.1 — Drag-and-Drop File Upload endpoint."""
         filename = "uploaded_report.txt"
@@ -215,7 +209,7 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
         """T1.2.4 — FTS5 Keyword vs BM25 Semantic Search Switcher."""
         filepath = self.sandbox_dir / "search_target.txt"
         filepath.write_text("Quantum computing algorithms and neural network optimization.", encoding="utf-8")
-        self.client.post("/api/index", json={"dir_path": self.sandbox_dir_str})
+        self.client.post("/api/file/index", json={"directory": self.sandbox_dir_str})
 
         resp_kw = self.client.get("/api/search", params={"q": "quantum", "mode": "keyword"})
         self.assertEqual(resp_kw.status_code, 200)
@@ -238,8 +232,6 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
         self.assertEqual(resp_pdf.status_code, 200)
         self.assertIn("application/pdf", resp_pdf.headers.get("content-type", ""))
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_v2_bulk_delete_controller(self):
         """T1.2.7 — Bulk Delete Execution Controller."""
         f1 = self.sandbox_dir / "del1.txt"
@@ -247,20 +239,18 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
         f1.write_text("Delete file 1", encoding="utf-8")
         f2.write_text("Delete file 2", encoding="utf-8")
 
-        self.client.post("/api/index", json={"dir_path": self.sandbox_dir_str})
+        know.index_directory(self.sandbox_dir_str)
 
         resp = self.client.post("/api/bulk_delete", json={"filepaths": [str(f1), str(f2)]})
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(f1.exists())
         self.assertFalse(f2.exists())
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_v2_floating_file_inspector_notes_and_tags(self):
         """T1.2.8 — Floating File Inspector, Notes, Tags, and Suggested Tags."""
         f = self.sandbox_dir / "inspect_doc.txt"
         f.write_text("Confidential financial statement 2026.", encoding="utf-8")
-        self.client.post("/api/index", json={"dir_path": self.sandbox_dir_str})
+        know.index_directory(self.sandbox_dir_str)
 
         resp_tag = self.client.post("/api/file/tag", json={"filepath": str(f), "tag": "finance"})
         self.assertEqual(resp_tag.status_code, 200)
@@ -395,8 +385,6 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
         resp_logs = self.client.get("/api/sync/logs")
         self.assertEqual(resp_logs.status_code, 200)
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_v5_database_snapshot_vault_operations(self):
         """T1.5.6 — Database Snapshot Vault Operations."""
         resp_create = self.client.post("/api/snapshots")
@@ -427,11 +415,9 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
         self.assertIn("os_platform", data)
         self.assertIn("uvicorn_version", data)
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_v6_directory_reindex_and_maintenance(self):
         """T1.6.2 — Maintenance Directory Re-index & DB Diagnostics."""
-        resp_idx = self.client.post("/api/index", json={"dir_path": self.sandbox_dir_str})
+        resp_idx = self.client.post("/api/file/index", json={"directory": self.sandbox_dir_str})
         self.assertEqual(resp_idx.status_code, 200)
 
         resp_db = self.client.get("/api/db/stats")
@@ -439,27 +425,6 @@ class TestE2ETier1FeatureCoverage(unittest.TestCase):
         data_db = resp_db.json()
         self.assertIn("page_count", data_db)
         self.assertEqual(data_db.get("journal_mode"), "wal")
-
-    # -------------------------------------------------------------------------
-    # SHA-256 Bitwise Asset Parity
-    # -------------------------------------------------------------------------
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
-    def test_sha256_bitwise_asset_parity(self):
-        """Verify 100% SHA-256 Bitwise Asset Parity between root UI files and src/assets/."""
-        files_to_check = ["index.html", "style.css", "app.js"]
-        for fname in files_to_check:
-            root_file = Path(fname)
-            asset_file = Path(f"src/assets/{fname}")
-            self.assertTrue(root_file.exists(), f"Root file missing: {fname}")
-            self.assertTrue(asset_file.exists(), f"Asset copy missing: src/assets/{fname}")
-
-            root_hash = hashlib.sha256(root_file.read_bytes()).hexdigest()
-            asset_hash = hashlib.sha256(asset_file.read_bytes()).hexdigest()
-            self.assertEqual(
-                root_hash, asset_hash,
-                f"Asset Parity Failure! {fname} ({root_hash[:8]}) != src/assets/{fname} ({asset_hash[:8]})"
-            )
 
 
 if __name__ == "__main__":

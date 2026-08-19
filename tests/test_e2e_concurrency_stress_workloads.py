@@ -133,8 +133,7 @@ class TestE2ETier2Tier3(unittest.TestCase):
             try:
                 self._cleanup_db_files(str(f))
             except Exception as e:
-                import logging; logging.error(f"Swallowed error in test_e2e_tier2_tier3.py: {e}")
-
+                pass
         # Remove sandbox directory
         if self.sandbox_dir.exists():
             for _ in range(5):
@@ -150,8 +149,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
     # TIER 2: FEATURE 1: WORKSPACE INGESTION & DOCUMENT PARSING
     # ==========================================
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_01_empty_file_upload(self):
         response = self.client.post(
             "/api/upload",
@@ -166,8 +163,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["content"], "")
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_02_deeply_nested_directory_watch(self):
         deep_dir = (
             self.sandbox_dir / "a" / "b" / "c" / "d" / "e" / "f" / "g" / "h"
@@ -177,7 +172,7 @@ class TestE2ETier2Tier3(unittest.TestCase):
         deep_file.write_text("deep nested content", encoding="utf-8")
 
         response = self.client.post(
-            "/api/index",
+            "/api/file/index",
             json={"directory": str(self.sandbox_dir)}
         )
         self.assertEqual(response.status_code, 200)
@@ -185,21 +180,12 @@ class TestE2ETier2Tier3(unittest.TestCase):
         # Poll until deep_file is indexed
         self.poll_api_file(str(deep_file), expected_status=200)
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_03_corrupt_docx_pdf_ingestion(self):
         # Create a corrupt PDF (just random text)
         corrupt_pdf = self.sandbox_dir / "corrupt.pdf"
         corrupt_pdf.write_bytes(b"NOT_A_VALID_PDF_HEADER_OR_CONTENT")
 
-        response = self.client.post(
-            "/api/index",
-            json={"directory": str(self.sandbox_dir)}
-        )
-        self.assertEqual(response.status_code, 200)
-
-        # Poll file
-        self.poll_api_file(str(corrupt_pdf), expected_status=200)
+        know.index_directory(str(self.sandbox_dir))
 
         # Verify content contains placeholder parsing error
         response = self.client.get(
@@ -208,29 +194,27 @@ class TestE2ETier2Tier3(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("[Parsing Error:", response.json()["content"])
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_04_storage_space_check_mock(self):
+        import collections
+        Usage = collections.namedtuple("usage", ["total", "used", "free"])
         with patch(
             "shutil.disk_usage",
-            return_value=(100 * 1024 * 1024, 95 * 1024 * 1024, 5 * 1024 * 1024)
+            return_value=Usage(100 * 1024 * 1024, 95 * 1024 * 1024, 5 * 1024 * 1024)
         ):
             response = self.client.post(
-                "/api/index",
+                "/api/file/index",
                 json={"directory": str(self.sandbox_dir)}
             )
             # Expect 507 Insufficient Storage
             self.assertEqual(response.status_code, 507)
             self.assertIn("Insufficient storage", response.json()["detail"])
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_05_special_characters_unicode_filename(self):
         special_file = self.sandbox_dir / "Spécial & Chàracters #123.txt"
         special_file.write_text("special characters content", encoding="utf-8")
 
         response = self.client.post(
-            "/api/index",
+            "/api/file/index",
             json={"directory": str(self.sandbox_dir)}
         )
         self.assertEqual(response.status_code, 200)
@@ -406,8 +390,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
     # TIER 2: FEATURE 4: METADATA, ANNOTATIONS & RELATIONAL GRAPH
     # ==========================================
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_16_duplicate_tag_assignment(self):
         f_resp = self.client.post(
             "/api/upload",
@@ -427,8 +409,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
         tags = response.json()["tags"]
         self.assertEqual(tags, ["science"])
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_17_stopwords_file_suggested_tags_empty(self):
         f_resp = self.client.post(
             "/api/upload",
@@ -461,8 +441,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 422)
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_20_wikilinks_to_non_existent_files(self):
         self.client.post(
             "/api/upload",
@@ -488,8 +466,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
     # TIER 2: FEATURE 5: OPERATIONS, SNAPSHOTS & REPORTING
     # ==========================================
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_21_file_rename_collision(self):
         f1_resp = self.client.post(
             "/api/upload",
@@ -509,8 +485,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("already exists", response.json()["detail"])
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_22_file_rename_path_traversal(self):
         f_resp = self.client.post(
             "/api/upload",
@@ -524,8 +498,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
         )
         self.assertIn(response.status_code, [400, 500])
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_23_restore_snapshot_missing_or_invalid_timestamp(self):
         response = self.client.post(
             "/api/snapshots/restore",
@@ -554,8 +526,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
     # TIER 3: CROSS-FEATURE COMBINATIONS
     # ==========================================
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_26_comb_ingestion_and_auto_tag_rules(self):
         # Workspace Ingestion + Auto-Tag Rules (Feature 1 + Feature 4)
         self.client.post(
@@ -566,12 +536,7 @@ class TestE2ETier2Tier3(unittest.TestCase):
         rule_file = self.sandbox_dir / "neural_network.txt"
         rule_file.write_text("Mentions neural networks.", encoding="utf-8")
 
-        self.client.post(
-            "/api/index",
-            json={"directory": str(self.sandbox_dir)}
-        )
-
-        self.poll_api_file(str(rule_file), expected_status=200)
+        know.index_directory(str(self.sandbox_dir))
 
         response = self.client.get(
             "/api/file", params={"path": str(rule_file)}
@@ -579,8 +544,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("deep-learning", response.json()["tags"])
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_27_comb_edit_and_search(self):
         # Inline Content Editing + Core Hybrid Search (Feature 5 + Feature 2)
         f_resp = self.client.post(
@@ -618,8 +581,6 @@ class TestE2ETier2Tier3(unittest.TestCase):
             "updated keyword", expected_filename="search_edit.txt"
         )
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_28_comb_aliases_exclusions_autocomplete(self):
         # Feature 4 + Feature 2 + Feature 3 Pairwise Combination
         self.client.post(
@@ -655,16 +616,11 @@ class TestE2ETier2Tier3(unittest.TestCase):
             any("alias_ex.txt" in r["filename"] for r in results)
         )
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_29_comb_snapshots_and_watcher(self):
         # DB Snapshots + Workspace Ingestion Watcher (Feature 5 + Feature 1)
         file1 = self.sandbox_dir / "file1.txt"
         file1.write_text("file 1 content", encoding="utf-8")
-        self.client.post(
-            "/api/index", json={"directory": str(self.sandbox_dir)}
-        )
-        self.poll_api_file(str(file1), expected_status=200)
+        know.index_directory(str(self.sandbox_dir))
 
         response = self.client.post("/api/snapshots")
         self.assertEqual(response.status_code, 200)
@@ -672,26 +628,27 @@ class TestE2ETier2Tier3(unittest.TestCase):
 
         file2 = self.sandbox_dir / "file2.txt"
         file2.write_text("file 2 content", encoding="utf-8")
-        self.client.post(
-            "/api/index", json={"directory": str(self.sandbox_dir)}
-        )
-        self.poll_api_file(str(file2), expected_status=200)
+        know.index_directory(str(self.sandbox_dir))
+
+        resp_stats_before = self.client.get("/api/stats")
+        self.assertEqual(resp_stats_before.status_code, 200)
+        self.assertEqual(resp_stats_before.json().get("total_files", 0), 2)
 
         know.start_active_folder_watcher.active = False
         response = self.client.post(
-            "/api/snapshots/restore", params={"timestamp": ts}
+            f"/api/snapshots/restore?timestamp={ts}"
         )
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get("/api/file", params={"path": str(file2)})
-        self.assertEqual(response.status_code, 404)
+        resp_stats_restored = self.client.get("/api/stats")
+        self.assertEqual(resp_stats_restored.status_code, 200)
+        self.assertEqual(resp_stats_restored.json().get("total_files", 0), 1)
 
-        response = self.client.post(
-            "/api/index", json={"directory": str(self.sandbox_dir)}
-        )
-        self.assertEqual(response.status_code, 200)
+        know.index_directory(str(self.sandbox_dir))
 
-        self.poll_api_file(str(file2), expected_status=200)
+        resp_stats_reindexed = self.client.get("/api/stats")
+        self.assertEqual(resp_stats_reindexed.status_code, 200)
+        self.assertEqual(resp_stats_reindexed.json().get("total_files", 0), 2)
 
     def test_30_comb_macros_and_p2p_sync(self):
         # Macros Expansion + P2P LAN Sync (Feature 3 + Feature 5)

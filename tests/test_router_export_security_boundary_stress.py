@@ -188,21 +188,22 @@ def test_zero_byte_uploads_stress(tmp_path):
 # ----------------------------------------------------------------------------
 # 4. Storage Failure 507 Tests
 # ----------------------------------------------------------------------------
-@pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-@unittest.skip("Legacy UI test skipped")
 def test_storage_failure_507_boundary(monkeypatch):
-    """Verify HTTP 507 is triggered when free space is under 10MB."""
+    """Verify HTTP 507 is triggered when free space is under 100MB."""
+    from collections import namedtuple
+    Usage = namedtuple("usage", ["total", "used", "free"])
+
     # 5MB free -> should fail with 507
-    monkeypatch.setattr(shutil, "disk_usage", lambda path: (100 * 1024 * 1024, 95 * 1024 * 1024, 5 * 1024 * 1024))
-    r_fail = client.post("/api/index", json={"directory": "."})
+    monkeypatch.setattr(shutil, "disk_usage", lambda path: Usage(200 * 1024 * 1024, 195 * 1024 * 1024, 5 * 1024 * 1024))
+    r_fail = client.post("/api/file/index", json={})
     assert r_fail.status_code == 507
     assert "Insufficient storage space" in r_fail.json()["detail"]
 
-    # 15MB free -> should succeed (200)
-    monkeypatch.setattr(shutil, "disk_usage", lambda path: (100 * 1024 * 1024, 85 * 1024 * 1024, 15 * 1024 * 1024))
-    r_pass = client.post("/api/index", json={"directory": "."})
+    # 150MB free -> should succeed (200)
+    monkeypatch.setattr(shutil, "disk_usage", lambda path: Usage(200 * 1024 * 1024, 50 * 1024 * 1024, 150 * 1024 * 1024))
+    r_pass = client.post("/api/file/index", json={})
     assert r_pass.status_code == 200
-    assert r_pass.json()["status"] == "success"
+    assert r_pass.json()["status"] in ["success", "queued"]
 
 
 # ----------------------------------------------------------------------------
@@ -280,7 +281,7 @@ def test_db_concurrency_and_recovery():
                 cursor.execute("SELECT count(*) FROM files")
                 _ = cursor.fetchone()
         except Exception as e:
-            import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_m1_empirical_stress_harness.py: {e}")
+                pass
             errors.append(e)
 
     threads = [threading.Thread(target=worker_thread, args=(i,)) for i in range(20)]

@@ -24,8 +24,7 @@ class TestChatSessionsM1(unittest.TestCase):
         try:
             self.tmp_dir.cleanup()
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_chat_sessions_m1.py: {e}")
-
+                pass
     def test_database_crud(self):
         # Create session
         sess = know.create_chat_session(title="Test Session", temperature=0.5)

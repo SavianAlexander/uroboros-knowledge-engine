@@ -4,6 +4,8 @@ import time
 import subprocess
 import warnings
 
+os.environ["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -33,7 +35,6 @@ def get_modified_git_files():
                     modified_files.append(os.path.basename(parts[-1]))
         return modified_files
     except Exception:
-        import logging; logging.getLogger(__name__).exception("Swallowed error in run_domain_tests.py")
         return []
 
 def main_runner():

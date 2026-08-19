@@ -351,7 +351,7 @@ class TestDomainExpandedCoverage(unittest.TestCase):
             run_maintenance()
             success = True
         except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in test_domain_expanded_coverage.py")
+                pass
             success = False
         self.assertTrue(success)
 

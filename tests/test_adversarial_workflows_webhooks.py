@@ -25,6 +25,7 @@ if root_dir not in sys.path:
 
 from fastapi.testclient import TestClient
 import src.infrastructure.database as db_infra
+import src.infrastructure.repositories.workflows as db_workflows
 from src.app.server import app
 from src.domain.workflow_engine import (
     evaluate_condition,
@@ -70,8 +71,8 @@ class MockAdversarialWebhookHandler(BaseHTTPRequestHandler):
                 self.wfile.write(MockAdversarialWebhookHandler.response_body_override.encode("utf-8"))
             else:
                 self.wfile.write(b'{"status": "received"}')
-        except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_adversarial_workflows_webhooks.py: {e}")
+        except OSError:
+            pass
 
     def log_message(self, format, *args):
         pass
@@ -108,8 +109,7 @@ class TestAdversarialWorkflowsWebhooks(unittest.TestCase):
                 except Exception: pass
                 os.remove(cls.db_path)
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_adversarial_workflows_webhooks.py: {e}")
-
+                pass
     def setUp(self):
         MockAdversarialWebhookHandler.response_status = 200
         MockAdversarialWebhookHandler.response_delay = 0.0
@@ -315,8 +315,6 @@ class TestAdversarialWorkflowsWebhooks(unittest.TestCase):
         self.assertIn(f"sha256={expected_sig}", req["headers"].get("X-Uroboros-Signature", ""))
         self.assertEqual(req["headers"].get("Authorization"), f"Bearer {secret}")
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_12_webhook_dispatcher_large_response_truncation(self):
         """Verify response bodies over 2000 characters are truncated safely in workflow_logs."""
         large_body = "A" * 5000
@@ -334,16 +332,14 @@ class TestAdversarialWorkflowsWebhooks(unittest.TestCase):
         self.assertIsNotNone(log_id)
 
         # Retrieve log from DB and verify truncation to 2000 chars
-        logs = db_infra.list_workflow_logs(limit=10)
+        logs = db_workflows.list_workflow_logs(limit=10)
         matching_log = next((l for l in logs if l["id"] == log_id), None)
         self.assertIsNotNone(matching_log)
         self.assertLessEqual(len(matching_log["response_body"]), 2000)
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_13_webhook_dispatcher_background_thread_execution(self):
         """Verify background non-blocking webhook dispatching."""
-        trigger = db_infra.create_workflow_trigger(
+        trigger = db_workflows.create_workflow_trigger(
             name="Background Dispatch Test",
             event_type="bg_event",
             webhook_url=self.webhook_url,
@@ -365,11 +361,9 @@ class TestAdversarialWorkflowsWebhooks(unittest.TestCase):
     # 3. Database Schema & Concurrency Adversarial Tests
     # -------------------------------------------------------------------------
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_14_database_log_execution_nonexistent_trigger(self):
         """Verify log_workflow_execution handles nonexistent trigger_id safely via FK check fallback."""
-        log_id = db_infra.log_workflow_execution(
+        log_id = db_workflows.log_workflow_execution(
             trigger_id=999999,  # Nonexistent trigger ID
             event_type="orphaned_log",
             payload_json=json.dumps({"orphaned": True}),
@@ -381,34 +375,30 @@ class TestAdversarialWorkflowsWebhooks(unittest.TestCase):
         )
 
         self.assertGreater(log_id, 0)
-        logs = db_infra.list_workflow_logs(limit=10)
+        logs = db_workflows.list_workflow_logs(limit=10)
         matching_log = next((l for l in logs if l["id"] == log_id), None)
         self.assertIsNotNone(matching_log)
         self.assertIsNone(matching_log["trigger_id"])
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_15_database_update_and_delete_edge_cases(self):
         """Verify updating with empty kwargs and deleting nonexistent triggers."""
-        trigger = db_infra.create_workflow_trigger(
+        trigger = db_workflows.create_workflow_trigger(
             name="Edge Trigger",
             event_type="edge_event",
             webhook_url="https://example.com/edge"
         )
 
         # Update with no fields provided returns existing trigger unchanged
-        updated = db_infra.update_workflow_trigger(trigger["id"])
+        updated = db_workflows.update_workflow_trigger(trigger["id"])
         self.assertEqual(updated["id"], trigger["id"])
         self.assertEqual(updated["name"], "Edge Trigger")
 
         # Update nonexistent trigger returns None
-        self.assertIsNone(db_infra.update_workflow_trigger(999999, name="Ghost"))
+        self.assertIsNone(db_workflows.update_workflow_trigger(999999, name="Ghost"))
 
         # Delete nonexistent trigger returns False
-        self.assertFalse(db_infra.delete_workflow_trigger(999999))
+        self.assertFalse(db_workflows.delete_workflow_trigger(999999))
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_16_database_concurrency_stress(self):
         """Verify concurrent SQLite WAL trigger creation, updates, and log writes from 10 parallel threads."""
         errors = []
@@ -416,7 +406,7 @@ class TestAdversarialWorkflowsWebhooks(unittest.TestCase):
         def worker_task(thread_id: int):
             try:
                 # Create trigger
-                t = db_infra.create_workflow_trigger(
+                t = db_workflows.create_workflow_trigger(
                     name=f"Thread-{thread_id} Trigger",
                     event_type=f"thread_event_{thread_id}",
                     webhook_url=f"http://127.0.0.1/thread_{thread_id}"
@@ -424,10 +414,10 @@ class TestAdversarialWorkflowsWebhooks(unittest.TestCase):
                 tid = t["id"]
 
                 # Update trigger
-                db_infra.update_workflow_trigger(tid, is_active=False)
+                db_workflows.update_workflow_trigger(tid, is_active=False)
 
                 # Log execution
-                db_infra.log_workflow_execution(
+                db_workflows.log_workflow_execution(
                     trigger_id=tid,
                     event_type=f"thread_event_{thread_id}",
                     payload_json=json.dumps({"thread": thread_id}),
@@ -435,11 +425,10 @@ class TestAdversarialWorkflowsWebhooks(unittest.TestCase):
                 )
 
                 # List triggers
-                triggers = db_infra.list_workflow_triggers(event_type=f"thread_event_{thread_id}")
+                triggers = db_workflows.list_workflow_triggers(event_type=f"thread_event_{thread_id}")
                 if not triggers:
                     errors.append(f"Thread {thread_id} failed to query created trigger")
             except Exception as e:
-                import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_adversarial_workflows_webhooks.py: {e}")
                 errors.append(f"Thread {thread_id} raised exception: {str(e)}")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:

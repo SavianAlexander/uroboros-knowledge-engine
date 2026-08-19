@@ -74,13 +74,14 @@ def run_audit(target_dir, quiet=False):
         "pytest.ini", "ROADMAP.md", "SECURITY.md", "SUPPORT.md", "setup.ps1",
         "uroboros_engine.spec", "build_desktop_app.py", "batch_index.py", "test_single_book.py",
         "vectors.db", "start_copilot.py", "app.js.gz", "index.html.gz", "style.css.gz", ".coverage",
-        "apply_system_hardening.bat", "requirements-dev.txt", "unittest_output.txt"
+        "apply_system_hardening.bat", "requirements-dev.txt", "unittest_output.txt",
+        "run_uat_audit.py", "uat_audit_report.json", "app.js.br", "index.html.br", "style.css.br"
     }
     excess_root = [
         f.name for f in all_files
         if f.parent == target_dir
         and f.name not in allowed_root_files
-        and not (f.name.endswith((".db", ".db-wal", ".db-shm", ".gz")) or ".snapshot-" in f.name or f.name.startswith(("test_", "e2e_", "adversarial_")))
+        and not (f.name.endswith((".db", ".db-wal", ".db-shm", ".gz", ".br")) or ".snapshot-" in f.name or f.name.startswith(("test_", "e2e_", "adversarial_")))
     ]
     if excess_root:
         penalty = min(20.0, len(excess_root) * 2.0)
@@ -171,8 +172,8 @@ def run_check_secrets(target_dir, quiet=False):
                                     "type": desc,
                                     "snippet": line.strip()[:60]
                                 })
-                except Exception as e:
-                    import logging; logging.error(f"Swallowed error in architecture_cli.py: {e}")
+                except OSError:
+                    pass
 
     if not quiet:
         print(f"\n=== Secret Scan Results ({len(findings)} found) ===")
@@ -336,7 +337,6 @@ def run_db_backup(target_dir):
             print(f"[OK] Database safe snapshot created: {dest_path}")
         except Exception as e:
             # Fallback to copy file
-            import logging; logging.getLogger(__name__).exception(f"Swallowed error in architecture_cli.py: {e}")
             shutil.copy2(db, dest_path)
             print(f"[OK] Database file copied to backup: {dest_path} (Notice: {e})")
 
@@ -419,8 +419,8 @@ def run_deploy_check(target_dir):
         res = subprocess.run(["git", "status", "--porcelain"], cwd=target_dir, capture_output=True, text=True)
         if res.stdout.strip():
             git_clean = False
-    except Exception as e:
-        import logging; logging.error(f"Swallowed error in architecture_cli.py: {e}")
+    except Exception:
+        pass
     checks.append(("Git Working Tree Clean", git_clean, "Uncommitted changes pending" if not git_clean else "Clean"))
 
     ready = True

@@ -6,6 +6,8 @@ import csv
 import unittest
 import xml.etree.ElementTree as ET
 
+os.environ["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
+
 if hasattr(sys.stdout, "reconfigure"):
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")

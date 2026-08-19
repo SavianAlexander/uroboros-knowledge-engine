@@ -1,22 +1,24 @@
-import src.core.config as config
-import src.infrastructure.database as db
-import pytest
-# tests/test_adversarial_verification.py
 import os
 import sys
 import unittest
-import subprocess
 from pathlib import Path
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 
-# Add project root to sys.path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
+import src.core.config as config
+import src.infrastructure.database as db
+from src.infrastructure.database import reset_db_connections
 import know
 import main
 
+
 class TestLeakageWarningGuard(unittest.TestCase):
+    """Domain test verifying error-containing files bypass LLM insights to prevent leakage."""
+
     @classmethod
     def setUpClass(cls):
         db.DB_FILE = "test_verification_leakage.db"
@@ -26,22 +28,19 @@ class TestLeakageWarningGuard(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        reset_db_connections()
         for suffix in ["", "-wal", "-shm"]:
             fpath = f"test_verification_leakage.db{suffix}"
             if os.path.exists(fpath):
                 try:
-                    try:
-                        from src.infrastructure.database import reset_db_connections
-                        reset_db_connections()
-                    except Exception: pass
                     os.remove(fpath)
-                except Exception as e:
-                    import logging; logging.error(f"Swallowed error in test_adversarial_verification.py: {e}")
+                except OSError:
+                    pass
 
     def setUp(self):
         self.conn = know.get_db()
         self.cursor = self.conn.cursor()
-        
+
         self.error_cases = [
             ("dumps/parsing_error.txt", "[Parsing Error: failed to parse pdf]"),
             ("dumps/ocr_setup_error.png", "[OCR Setup Error: WinRT not initialized]"),
@@ -49,7 +48,7 @@ class TestLeakageWarningGuard(unittest.TestCase):
             ("dumps/ocr_not_supported.bmp", "[OCR not supported on this platform]"),
             ("dumps/threadpool_error.txt", "[ThreadPool Error: queue full]"),
         ]
-        
+
         with self.conn:
             self.cursor.execute("DELETE FROM files")
             for filepath, content in self.error_cases:
@@ -57,7 +56,7 @@ class TestLeakageWarningGuard(unittest.TestCase):
                     "INSERT OR REPLACE INTO files (filepath, filename, file_size, modified_at, content, sha256) VALUES (?, ?, ?, ?, ?, ?)",
                     (filepath, filepath, len(content), 1234567, content, filepath)
                 )
-        
+
         self.client = TestClient(main.app)
 
     def tearDown(self):
@@ -65,6 +64,7 @@ class TestLeakageWarningGuard(unittest.TestCase):
 
     @patch("src.core.model_manager.get_fallback_llm")
     def test_error_contents_bypass_llm_from_db(self, mock_get_llm):
+        """Verify files with parser error markers return informative notice without calling LLM."""
         mock_get_llm.side_effect = AssertionError("LLM should not be called!")
 
         for filepath, _ in self.error_cases:
@@ -72,14 +72,14 @@ class TestLeakageWarningGuard(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             data = response.json()
             self.assertEqual(data["insights"], "*This document contains no readable text content to extract insights.*")
-            
+
         mock_get_llm.assert_not_called()
 
     @patch("src.core.model_manager.get_fallback_llm")
     def test_error_contents_bypass_llm_from_disk_fallback(self, mock_get_llm):
+        """Verify files on disk with error markers bypass LLM even when DB record is cleared."""
         mock_get_llm.side_effect = AssertionError("LLM should not be called!")
 
-        # Create temporary files on disk containing the error strings
         for filepath, content in self.error_cases:
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(content)
@@ -88,7 +88,7 @@ class TestLeakageWarningGuard(unittest.TestCase):
                 # Clear DB to trigger disk fallback
                 with know.get_db() as conn:
                     conn.cursor().execute("DELETE FROM files")
-                
+
                 response = self.client.post("/api/file/insights", json={"filepath": filepath})
                 self.assertEqual(response.status_code, 200)
                 data = response.json()
@@ -96,26 +96,12 @@ class TestLeakageWarningGuard(unittest.TestCase):
             finally:
                 if os.path.exists(filepath):
                     try:
-                        from src.infrastructure.database import reset_db_connections
-                        reset_db_connections()
-                    except Exception: pass
-                    os.remove(filepath)
+                        os.remove(filepath)
+                    except OSError:
+                        pass
 
         mock_get_llm.assert_not_called()
 
-class TestJSMarkdownParser(unittest.TestCase):
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
-    def test_js_markdown_parser_via_node(self):
-        js_file = Path(__file__).resolve().parent / "js" / "test_markdown.js"
-        result = subprocess.run(["node", str(js_file)], capture_output=True, text=True)
-        print("STDOUT from Node.js tests:")
-        print(result.stdout)
-        print("STDERR from Node.js tests:")
-        print(result.stderr)
-        self.assertEqual(result.returncode, 0, f"Node.js tests failed: {result.stderr}")
-        self.assertIn("PASS: Standard Ordered List", result.stdout)
-        self.assertIn("PASS: Non-sequential Ordered List", result.stdout)
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,9 +24,10 @@ from starlette.testclient import TestClient
 from fastapi import APIRouter, HTTPException, Query, Body, Request
 
 import main
-from main import app
+app = main.app
 import src.infrastructure.database as db_infra
 from src.infrastructure.database import get_db, init_db, reset_db_connections
+import know
 
 # ============================================================================
 # Core Domain Calculators & Helper Functions (Self-Contained Micro-Units)
@@ -172,7 +173,9 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
         self.tmp_dir = tempfile.mkdtemp()
         self.test_db = os.path.join(self.tmp_dir, "test_analytics.db")
         self.old_db = db_infra.DB_FILE
+        self.old_know_db = know.DB_FILE
         db_infra.DB_FILE = self.test_db
+        know.DB_FILE = self.test_db
         config.ACTIVE_DIR = self.tmp_dir
         reset_db_connections()
         init_db()
@@ -181,11 +184,12 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
     def tearDown(self):
         reset_db_connections()
         db_infra.DB_FILE = self.old_db
+        know.DB_FILE = self.old_know_db
         try:
             import shutil
             shutil.rmtree(self.tmp_dir, ignore_errors=True)
-        except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_e2e_analytics_graph_workflows.py: {e}")
+        except OSError:
+            pass
 
     def test_01_analytics_metrics_calculator_unit(self):
         """
@@ -219,8 +223,6 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
         with self.assertRaises(ValueError):
             format_bytes_bva(-100)
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_03_analytics_summary_endpoint(self):
         """
         Preconditions: TestClient connected to API app; empty and populated database states.
@@ -251,8 +253,6 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
         self.assertEqual(data2["total_documents"], 1)
         self.assertEqual(data2["storage_total_bytes"], 5000)
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_04_analytics_storage_endpoint(self):
         """
         Preconditions: Database populated with files across multiple MIME types.
@@ -274,8 +274,6 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
         self.assertEqual(data["by_mime"]["text/x-python"], 1)
         self.assertEqual(data["by_mime"]["application/pdf"], 1)
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_05_analytics_tags_endpoint_and_cache_invalidation(self):
         """
         Preconditions: Database with file records and tag assignments.
@@ -300,8 +298,6 @@ class TestR1AnalyticsIntelligence(unittest.TestCase):
         dist = resp2.json()["top_tags"]
         self.assertTrue(any(t["tag"] == "finance" for t in dist))
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_06_analytics_search_activity_logger_integration(self):
         """
         Preconditions: Search query history logged in database table.
@@ -352,8 +348,7 @@ class TestR2KnowledgeGraphWikilinks(unittest.TestCase):
             import shutil
             shutil.rmtree(self.tmp_dir, ignore_errors=True)
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_e2e_analytics_graph_workflows.py: {e}")
-
+                pass
     def test_01_wikilink_parser_regex_isolation(self):
         """
         Preconditions: Sample text string containing standard, aliased, anchored, and unclosed wikilinks.
@@ -504,8 +499,7 @@ class TestR3WorkflowTriggersWebhooks(unittest.TestCase):
             import shutil
             shutil.rmtree(self.tmp_dir, ignore_errors=True)
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_e2e_analytics_graph_workflows.py: {e}")
-
+                pass
     def test_01_workflow_rule_evaluator_unit(self):
         """
         Preconditions: Workflow rule definitions and event object payloads.
@@ -614,7 +608,9 @@ class TestE2EAnalyticsGraphWorkflowsScenario(unittest.TestCase):
         self.tmp_dir = tempfile.mkdtemp()
         self.test_db = os.path.join(self.tmp_dir, "test_scenario.db")
         self.old_db = db_infra.DB_FILE
+        self.old_know_db = know.DB_FILE
         db_infra.DB_FILE = self.test_db
+        know.DB_FILE = self.test_db
         config.ACTIVE_DIR = self.tmp_dir
         reset_db_connections()
         init_db()
@@ -623,20 +619,22 @@ class TestE2EAnalyticsGraphWorkflowsScenario(unittest.TestCase):
     def tearDown(self):
         reset_db_connections()
         db_infra.DB_FILE = self.old_db
+        know.DB_FILE = self.old_know_db
         try:
             import shutil
             shutil.rmtree(self.tmp_dir, ignore_errors=True)
-        except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_e2e_analytics_graph_workflows.py: {e}")
+        except OSError:
+            pass
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_01_scenario_enterprise_ingest_analytics_graph_workflow(self):
         """
         Preconditions: Full system components (ingest, wikilinks, analytics, graph, workflows) active.
         Invariants: Ingesting markdown documents extracts wikilinks, updates analytics metrics, populates graph nodes, and triggers webhook events.
         Outcomes: Verifies end-to-end integration scenario across all 3 domain subsystems.
         """
+        from src.domain.analytics_engine import clear_analytics_cache
+        clear_analytics_cache()
+
         content = "Executive summary referencing [[ArchitectureOverview]] and [[SecuritySpec]]."
         wikilinks = extract_wikilinks(content)
         self.assertEqual(len(wikilinks), 2)

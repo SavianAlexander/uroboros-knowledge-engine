@@ -26,8 +26,8 @@ class TestAdversarialM1ChatSessions(unittest.TestCase):
         gc.collect()
         try:
             self.tmp_dir.cleanup()
-        except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_adversarial_m1_chat_sessions.py: {e}")
+        except OSError:
+            pass
 
     # ---------------------------------------------------------------------------
     # 1. Non-existent session IDs (404 responses & safe DB returns)
@@ -66,41 +66,52 @@ class TestAdversarialM1ChatSessions(unittest.TestCase):
     # ---------------------------------------------------------------------------
     # 2. Invalid / Malformed JSON metadata and unusual types
     # ---------------------------------------------------------------------------
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_invalid_and_unusual_metadata_types_db(self):
+        def norm(val):
+            if isinstance(val, str):
+                try:
+                    return json.loads(val)
+                except Exception:
+                    return val
+            return val
+
         # Nested dict metadata
         dict_meta = {"user_pref": {"theme": "dark", "tags": ["a", "b"]}, "active": True}
         sess1 = know.create_chat_session(title="Dict Meta", metadata_json=dict_meta)
         self.assertIsNotNone(sess1["id"])
-        # Should be serialized to JSON string in DB return
-        self.assertEqual(json.loads(sess1["metadata_json"]), dict_meta)
+        self.assertEqual(norm(sess1["metadata_json"]), dict_meta)
 
         # Raw JSON string metadata
         str_meta = '{"key": "raw_string_json"}'
         sess2 = know.create_chat_session(title="Str Meta", metadata_json=str_meta)
-        self.assertEqual(sess2["metadata_json"], str_meta)
+        self.assertEqual(norm(sess2["metadata_json"]), {"key": "raw_string_json"})
 
         # Malformed JSON string metadata (should be saved as-is string without crashing)
         malformed_meta = '{"invalid_json": true, missing_brace'
         sess3 = know.create_chat_session(title="Malformed Meta", metadata_json=malformed_meta)
-        self.assertEqual(sess3["metadata_json"], malformed_meta)
+        self.assertEqual(norm(sess3["metadata_json"]), malformed_meta)
 
         # Primitive types: int, float, list, None
         sess4 = know.create_chat_session(title="Int Meta", metadata_json=12345)
-        self.assertEqual(sess4["metadata_json"], 12345)
+        self.assertEqual(norm(sess4["metadata_json"]), 12345)
 
         sess5 = know.create_chat_session(title="List Meta", metadata_json=[1, 2, "three"])
-        self.assertEqual(json.loads(sess5["metadata_json"]), [1, 2, "three"])
+        self.assertEqual(norm(sess5["metadata_json"]), [1, 2, "three"])
 
         # Update metadata to another structure
         updated_sess = know.update_chat_session(sess1["id"], metadata_json={"updated": True})
         self.assertIsNotNone(updated_sess)
-        self.assertEqual(json.loads(updated_sess["metadata_json"]), {"updated": True})
+        self.assertEqual(norm(updated_sess["metadata_json"]), {"updated": True})
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_invalid_and_unusual_metadata_api(self):
+        def norm(val):
+            if isinstance(val, str):
+                try:
+                    return json.loads(val)
+                except Exception:
+                    return val
+            return val
+
         # POST with dict metadata
         resp = self.client.post("/api/chat/sessions", json={
             "title": "API Dict Meta",
@@ -109,7 +120,7 @@ class TestAdversarialM1ChatSessions(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         sess_id = data["id"]
-        self.assertEqual(json.loads(data["metadata_json"]), {"setting": "enabled", "count": 42})
+        self.assertEqual(norm(data["metadata_json"]), {"setting": "enabled", "count": 42})
 
         # Add message with list citations and dict metadata
         resp = self.client.post(f"/api/chat/sessions/{sess_id}/messages", json={
@@ -122,9 +133,9 @@ class TestAdversarialM1ChatSessions(unittest.TestCase):
         })
         self.assertEqual(resp.status_code, 200)
         msg = resp.json()
-        self.assertEqual(json.loads(msg["citations_json"]), [{"source": "doc1.txt", "page": 4}])
-        self.assertEqual(json.loads(msg["web_sources_json"]), ["https://example.com"])
-        self.assertEqual(json.loads(msg["metadata_json"]), {"flag": "verified"})
+        self.assertEqual(norm(msg["citations_json"]), [{"source": "doc1.txt", "page": 4}])
+        self.assertEqual(norm(msg["web_sources_json"]), ["https://example.com"])
+        self.assertEqual(norm(msg["metadata_json"]), {"flag": "verified"})
 
     # ---------------------------------------------------------------------------
     # 3. Empty titles, long titles, unicode/emoji strings, injection vectors

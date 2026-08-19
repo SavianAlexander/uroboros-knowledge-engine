@@ -21,6 +21,7 @@ if root_dir not in sys.path:
 
 from fastapi.testclient import TestClient
 import src.infrastructure.database as db_infra
+import src.infrastructure.repositories.workflows as db_workflows
 from src.app.server import app
 from src.core.domain.models import WorkflowTriggerCreate
 from src.domain.workflow_engine import (
@@ -84,26 +85,21 @@ class TestDomainWorkflowTriggers(unittest.TestCase):
         try:
             db_infra.reset_db_connections()
             if os.path.exists(cls.db_path):
-                try:
-                    from src.infrastructure.database import reset_db_connections
-                    reset_db_connections()
-                except Exception: pass
+                db_infra.reset_db_connections()
                 os.remove(cls.db_path)
-        except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_domain_workflow_triggers.py: {e}")
+        except OSError:
+            pass
 
     def setUp(self):
         MockWebhookHandler.received_requests.clear()
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_01_database_crud_operations(self):
         """
         Preconditions: Isolated SQLite workflow database initialized.
         Invariants: Workflow trigger records enforce name, event type, pattern, secret header, and execution log tracking.
         Outcomes: Verifies create, get, list, update, execution logging, and deletion in database layer.
         """
-        trigger = db_infra.create_workflow_trigger(
+        trigger = db_workflows.create_workflow_trigger(
             name="Test Document Ingestion Rule",
             event_type="document_ingested",
             webhook_url="https://example.com/webhook",
@@ -118,18 +114,18 @@ class TestDomainWorkflowTriggers(unittest.TestCase):
         self.assertEqual(trigger["is_active"], 1)
 
         trigger_id = trigger["id"]
-        fetched = db_infra.get_workflow_trigger(trigger_id)
+        fetched = db_workflows.get_workflow_trigger(trigger_id)
         self.assertIsNotNone(fetched)
         self.assertEqual(fetched["id"], trigger_id)
 
-        triggers = db_infra.list_workflow_triggers(event_type="document_ingested")
+        triggers = db_workflows.list_workflow_triggers(event_type="document_ingested")
         self.assertTrue(any(t["id"] == trigger_id for t in triggers))
 
-        updated = db_infra.update_workflow_trigger(trigger_id, name="Updated Rule", is_active=False)
+        updated = db_workflows.update_workflow_trigger(trigger_id, name="Updated Rule", is_active=False)
         self.assertEqual(updated["name"], "Updated Rule")
         self.assertEqual(updated["is_active"], 0)
 
-        log_id = db_infra.log_workflow_execution(
+        log_id = db_workflows.log_workflow_execution(
             trigger_id=trigger_id,
             event_type="document_ingested",
             payload_json=json.dumps({"test": "data"}),
@@ -140,12 +136,12 @@ class TestDomainWorkflowTriggers(unittest.TestCase):
             retry_count=0
         )
         self.assertGreater(log_id, 0)
-        logs = db_infra.list_workflow_logs(trigger_id=trigger_id)
+        logs = db_workflows.list_workflow_logs(trigger_id=trigger_id)
         self.assertTrue(any(l["id"] == log_id for l in logs))
 
-        deleted = db_infra.delete_workflow_trigger(trigger_id)
+        deleted = db_workflows.delete_workflow_trigger(trigger_id)
         self.assertTrue(deleted)
-        self.assertIsNone(db_infra.get_workflow_trigger(trigger_id))
+        self.assertIsNone(db_workflows.get_workflow_trigger(trigger_id))
 
     def test_02_condition_matching_engine(self):
         """
@@ -232,15 +228,13 @@ class TestDomainWorkflowTriggers(unittest.TestCase):
         self.assertEqual(resp_del.status_code, 200)
         self.assertEqual(resp_del.json()["status"], "deleted")
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_05_rest_api_event_trigger_and_logs(self):
         """
         Preconditions: Active workflow trigger created in database for matching tag event.
         Invariants: Triggering an event evaluates rules, dispatches webhooks synchronously, and appends execution logs.
         Outcomes: Verifies POST /api/v1/workflows/trigger-event and execution log listing endpoint.
         """
-        t_data = db_infra.create_workflow_trigger(
+        t_data = db_workflows.create_workflow_trigger(
             name="Event Trigger Test",
             event_type="tag_assigned",
             webhook_url=self.webhook_url,

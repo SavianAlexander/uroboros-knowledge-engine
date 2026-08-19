@@ -24,11 +24,18 @@ import threading
 _analytics_cache: Dict[tuple, tuple] = {}
 _cache_lock = threading.Lock()
 CACHE_TTL_SECONDS = 3.0
-from src.infrastructure.database import get_db_connection, DB_FILE
+from src.infrastructure.database import get_db_connection
+
+
+def _get_target_db(db_path: Optional[str] = None) -> str:
+    if db_path is not None:
+        return db_path
+    import src.infrastructure.database as _db_infra
+    return getattr(_db_infra, "DB_FILE", getattr(know, "DB_FILE", "knowledge.db"))
+
 
 def _connect(db_path: Optional[str] = None):
-    target_path = db_path if db_path is not None else DB_FILE
-    return get_db_connection(target_path)
+    return get_db_connection(_get_target_db(db_path))
 
 
 def clear_analytics_cache() -> None:
@@ -52,7 +59,7 @@ def _set_cached(cache_key: tuple, res: Any, now: float) -> None:
 
 
 def get_indexing_overview(db_path: Optional[str] = None) -> AnalyticsOverviewResponse:
-    target_path = db_path if db_path is not None else know.DB_FILE
+    target_path = _get_target_db(db_path)
     db_ver = getattr(know, "_db_version", 0)
     cache_key = ("indexing_overview", target_path, db_ver)
     now = time.time()
@@ -107,7 +114,7 @@ def get_indexing_overview(db_path: Optional[str] = None) -> AnalyticsOverviewRes
 
 
 def get_storage_breakdown(db_path: Optional[str] = None) -> StorageBreakdownResponse:
-    target_path = db_path if db_path is not None else know.DB_FILE
+    target_path = _get_target_db(db_path)
     db_ver = getattr(know, "_db_version", 0)
     cache_key = ("storage_breakdown", target_path, db_ver)
     now = time.time()
@@ -189,7 +196,7 @@ def get_storage_breakdown(db_path: Optional[str] = None) -> StorageBreakdownResp
 
 
 def get_tag_distribution(db_path: Optional[str] = None, pool_limit: int = 15) -> TagDistributionResponse:
-    target_path = db_path if db_path is not None else know.DB_FILE
+    target_path = _get_target_db(db_path)
     db_ver = getattr(know, "_db_version", 0)
     pool_size = max(5, min(100, pool_limit))
     cache_key = ("tag_distribution", target_path, db_ver, pool_size)
@@ -261,7 +268,7 @@ def get_tag_distribution(db_path: Optional[str] = None, pool_limit: int = 15) ->
 
 
 def get_search_activity(db_path: Optional[str] = None) -> SearchActivityResponse:
-    target_path = db_path if db_path is not None else know.DB_FILE
+    target_path = _get_target_db(db_path)
     db_ver = getattr(know, "_db_version", 0)
     cache_key = ("search_activity", target_path, db_ver)
     now = time.time()

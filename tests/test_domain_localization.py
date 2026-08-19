@@ -1,4 +1,3 @@
-import pytest
 """
 Domain 19: Localization (i18n), Unicode Normalization (NFC/NFD), and Script Expansion Suite.
 Validates multi-language text tokenization (CJK, Arabic RTL, Cyrillic, Devanagari, German),
@@ -20,8 +19,8 @@ import know
 import src.infrastructure.database as db_module
 from src.infrastructure.database import get_db, init_db, reset_db_connections
 from src.infrastructure.vector_engine import index_directory
-from src.infrastructure.parsers import safe_write_file, safe_read_file
-from src.core.domain.services import chunk_text, sanitise_fts_query
+from src.infrastructure.parsers import safe_write_file
+from src.core.domain.services import sanitise_fts_query
 
 
 class TestDomainLocalization(unittest.TestCase):
@@ -44,8 +43,6 @@ class TestDomainLocalization(unittest.TestCase):
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_01_unicode_nfc_nfd_normalization_equivalence(self):
         """
         Preconditions: NFC (composed) and NFD (decomposed) strings with accented characters.
@@ -54,15 +51,13 @@ class TestDomainLocalization(unittest.TestCase):
         """
         nfc_str = "café résumé"
         nfd_str = unicodedata.normalize("NFD", nfc_str)
-        
+
         self.assertNotEqual(nfc_str, nfd_str)
-        
+
         sanitized_nfc = unicodedata.normalize("NFC", sanitise_fts_query(nfc_str))
         sanitized_nfd = unicodedata.normalize("NFC", sanitise_fts_query(nfd_str))
         self.assertEqual(sanitized_nfc, sanitized_nfd, "NFC/NFD Unicode Normalization Equivalence Violated!")
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_02_arabic_rtl_and_cjk_tokenization(self):
         """
         Preconditions: Temporary sandbox seeded with Arabic (RTL) and CJK (Chinese, Japanese) documents.
@@ -71,7 +66,7 @@ class TestDomainLocalization(unittest.TestCase):
         """
         arabic_text = "البحث العلمي والذكاء الاصطناعي في قاعدة البيانات"
         cjk_text = "人工知能と機械学習のナレッジエンジン検索"
-        
+
         arabic_file = os.path.join(self.test_dir, "arabic_doc.txt")
         cjk_file = os.path.join(self.test_dir, "cjk_doc.txt")
 
@@ -90,8 +85,6 @@ class TestDomainLocalization(unittest.TestCase):
             row_cjk = cursor.fetchone()
             self.assertIsNotNone(row_cjk)
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_03_german_compound_word_string_expansion(self):
         """
         Preconditions: Document containing German compound word (63 characters).
@@ -101,7 +94,7 @@ class TestDomainLocalization(unittest.TestCase):
         compound_word = "Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz"
         fpath = os.path.join(self.test_dir, "german.txt")
         safe_write_file(fpath, f"Deutsches Gesetz: {compound_word}")
-        
+
         index_directory(self.test_dir)
 
         with get_db() as conn:
@@ -110,8 +103,6 @@ class TestDomainLocalization(unittest.TestCase):
             row = cursor.fetchone()
             self.assertIsNotNone(row)
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_04_zwj_family_emoji_indexing(self):
         """
         Preconditions: Document containing Zero-Width Joiner (ZWJ) multi-character emoji sequences.

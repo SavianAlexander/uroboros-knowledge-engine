@@ -28,6 +28,7 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 import src.infrastructure.database as db_infra
+import src.infrastructure.repositories.workflows as db_workflows
 from src.infrastructure.webhook_dispatcher import (
     compute_hmac_signature,
     dispatch_webhook_sync,
@@ -60,28 +61,28 @@ class DelayedWebhookHandler(BaseHTTPRequestHandler):
         }
         DelayedWebhookHandler.received_requests.append(req_info)
 
-        self.send_response(DelayedWebhookHandler.return_status)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(b'{"status": "received"}')
+        try:
+            self.send_response(DelayedWebhookHandler.return_status)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"status": "received"}')
+        except OSError:
+            pass
 
     def log_message(self, format, *args):
         pass
 
 
-class TestVerificationM2Harness(unittest.TestCase):
+class TestWorkflowTriggerWebhookVerification(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.temp_dir = tempfile.mkdtemp()
-        cls.db_path = os.path.join(cls.temp_dir, "verification_m2_test.db")
+        cls.db_path = os.path.join(cls.temp_dir, "test_verification_m2.db")
         cls.orig_db_file = db_infra.DB_FILE
         db_infra.DB_FILE = cls.db_path
         db_infra.init_db()
 
-        DelayedWebhookHandler.received_requests = []
-        DelayedWebhookHandler.delay_seconds = 0.0
-        DelayedWebhookHandler.return_status = 200
-
+        # Start background delayed mock webhook HTTP server
         cls.server = HTTPServer(("127.0.0.1", 0), DelayedWebhookHandler)
         cls.port = cls.server.server_port
         cls.server_thread = Thread(target=cls.server.serve_forever, daemon=True)
@@ -91,32 +92,28 @@ class TestVerificationM2Harness(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.server.shutdown()
-        cls.server.server_close()
+        cls.server_thread.join(timeout=1.0)
+        db_infra.reset_db_connections()
         db_infra.DB_FILE = cls.orig_db_file
         try:
             if os.path.exists(cls.db_path):
-                try:
-                    from src.infrastructure.database import reset_db_connections
-                    reset_db_connections()
-                except Exception: pass
+                db_infra.reset_db_connections()
                 os.remove(cls.db_path)
-        except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_verification_m2_1_harness.py: {e}")
+        except OSError:
+            pass
 
     def setUp(self):
         DelayedWebhookHandler.received_requests.clear()
         DelayedWebhookHandler.delay_seconds = 0.0
         DelayedWebhookHandler.return_status = 200
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_01_non_blocking_async_execution_without_event_loop(self):
         """
         Verify dispatch_webhook_background returns immediately (< 50ms)
         when receiver delays response by 1.5 seconds (Thread mode).
         """
         # Create a real trigger in DB first
-        trigger = db_infra.create_workflow_trigger(
+        trigger = db_workflows.create_workflow_trigger(
             name="Async Thread Test Rule",
             event_type="document_ingested",
             webhook_url=self.webhook_url,
@@ -154,18 +151,16 @@ class TestVerificationM2Harness(unittest.TestCase):
         self.assertEqual(json.loads(req["body"].decode("utf-8")), payload)
 
         # Verify log entry was recorded in DB
-        logs = db_infra.list_workflow_logs(trigger_id=trigger_id)
+        logs = db_workflows.list_workflow_logs(trigger_id=trigger_id)
         self.assertGreaterEqual(len(logs), 1)
         self.assertEqual(logs[0]["status"], "success")
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_02_non_blocking_async_execution_with_running_event_loop(self):
         """
         Verify dispatch_webhook_background returns immediately when called inside
         a running asyncio event loop (asyncio loop mode).
         """
-        trigger = db_infra.create_workflow_trigger(
+        trigger = db_workflows.create_workflow_trigger(
             name="Async Loop Test Rule",
             event_type="tag_assigned",
             webhook_url=self.webhook_url,
@@ -206,7 +201,7 @@ class TestVerificationM2Harness(unittest.TestCase):
         self.assertEqual(json.loads(req["body"].decode("utf-8")), payload)
 
         # Verify DB log
-        logs = db_infra.list_workflow_logs(trigger_id=trigger_id)
+        logs = db_workflows.list_workflow_logs(trigger_id=trigger_id)
         self.assertGreaterEqual(len(logs), 1)
         self.assertEqual(logs[0]["status"], "success")
 

@@ -53,7 +53,7 @@ class TestDomainOCRTranscription(unittest.TestCase):
             img = Image.new("RGB", (200, 100), color=(255, 255, 255))
             img.save(test_img_path)
         except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in test_domain_ocr_transcription.py")
+                pass
             with open(test_img_path, "wb") as f:
                 f.write(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82")
 
@@ -76,7 +76,7 @@ class TestDomainOCRTranscription(unittest.TestCase):
             img = Image.new("RGB", (300, 200), color=(0, 0, 0))
             img.save(blank_img_path)
         except Exception:
-            import logging; logging.getLogger(__name__).exception("Swallowed error in test_domain_ocr_transcription.py")
+                pass
             with open(blank_img_path, "wb") as f:
                 f.write(b"NOT_A_VALID_IMAGE_HEADER_BYTES_12345")
 

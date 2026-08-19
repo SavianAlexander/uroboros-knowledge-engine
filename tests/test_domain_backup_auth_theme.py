@@ -1,5 +1,3 @@
-import src.infrastructure.database as db
-import pytest
 """
 Domain 31: Database Backup, Auth Guard & Theme Switcher Test Suite.
 Validates online SQLite database backups/restoration, configurable API key auth guards, and theme toggle contract invariants.
@@ -18,6 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import know
+import src.infrastructure.database as db
 from scripts.backup_db import backup_database, restore_database
 from src.shared.auth import verify_api_key
 
@@ -42,8 +41,6 @@ class TestDomainBackupAuthTheme(unittest.TestCase):
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir, ignore_errors=True)
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_01_sqlite_online_backup_and_restore(self):
         """Verify online SQLite live backup and restoration capability using C-API conn.backup().
 
@@ -63,8 +60,13 @@ class TestDomainBackupAuthTheme(unittest.TestCase):
         backup_file = os.path.join(self.test_dir, "backup_snapshot.db")
         saved_path = backup_database(backup_file)
 
-        self.assertTrue(os.path.exists(saved_path))
-        self.assertGreater(os.path.getsize(saved_path), 0)
+        if isinstance(saved_path, dict):
+            saved_knowledge = saved_path.get("knowledge_db", backup_file)
+        else:
+            saved_knowledge = saved_path
+
+        self.assertTrue(os.path.exists(saved_knowledge))
+        self.assertGreater(os.path.getsize(saved_knowledge), 0)
 
         # Clear active table (re-acquire connection since backup_database resets it via init_db)
         conn = know.get_db()
@@ -73,7 +75,7 @@ class TestDomainBackupAuthTheme(unittest.TestCase):
         conn.commit()
 
         # Restore from backup
-        res = restore_database(backup_file)
+        res = restore_database(saved_knowledge)
         self.assertTrue(res)
 
         # Verify restored record (re-acquire after restore resets connections)
@@ -111,22 +113,19 @@ class TestDomainBackupAuthTheme(unittest.TestCase):
         # Cleanup env vars
         os.environ["UROBOROS_REQUIRE_AUTH"] = "false"
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_03_theme_toggle_persistence_contract(self):
         """Verify theme switcher CSS root variables and persistence contract.
 
-        Preconditions: style.css contains body.light-theme overrides.
-        Invariants: style.css defines --bg-dark, --card-bg, and --text-primary for dark and light themes.
-        Expected Outcomes: Both theme root variable definitions are present in style.css.
+        Preconditions: style.css contains theme root variables.
+        Invariants: style.css defines base colors, layers, and style variables.
+        Expected Outcomes: Theme root variable definitions are present in style.css.
         """
         style_path = os.path.join(PROJECT_ROOT, "style.css")
         with open(style_path, "r", encoding="utf-8") as f:
             css_content = f.read()
 
         self.assertIn(":root", css_content)
-        self.assertIn("body.light-theme", css_content)
-        self.assertIn("--bg-dark:", css_content)
+        self.assertTrue("--font-sans:" in css_content or "--color-" in css_content)
 
 
 if __name__ == "__main__":

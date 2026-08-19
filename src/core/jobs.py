@@ -71,7 +71,8 @@ class JobManager:
             
         return job_id
 
-    def _run_job(self, job_id: str, task_func: Callable, timeout_seconds: Optional[float], *args, **kwargs):
+    def _run_job(self, _job_id: str, task_func: Callable, timeout_seconds: Optional[float], *args, **kwargs):
+        job_id = _job_id
         with self._jobs_lock:
             if job_id not in self.jobs:
                 return

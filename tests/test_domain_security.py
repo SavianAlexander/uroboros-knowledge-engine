@@ -49,8 +49,6 @@ class TestDomainSecurity(unittest.TestCase):
         self.assertNotIn("NOT", sanitized.split())
         self.assertNotIn("NEAR", sanitized.split())
 
-    @pytest.mark.skip(reason="Legacy test skipped automatically")
-    @unittest.skip("Legacy UI test skipped")
     def test_02_path_traversal_containment(self):
         """Verify path traversal containment validation for target directory paths.
 
@@ -65,7 +63,6 @@ class TestDomainSecurity(unittest.TestCase):
         try:
             main.verify_path_containment(valid_path)
         except Exception as e:
-            import logging; logging.getLogger(__name__).exception(f"Swallowed error in test_domain_security.py: {e}")
             self.fail(f"Valid path containment failed: {e}")
 
         invalid_path = os.path.abspath(os.path.join(self.test_dir, "..", "secret.txt"))
@@ -107,7 +104,7 @@ class TestDomainSecurity(unittest.TestCase):
             cursor.execute("SELECT * FROM fts_files WHERE fts_files MATCH ?", (raw_query,))
             _ = cursor.fetchall()
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_domain_security.py: {e}")
+                pass
         conn.close()
 
     def test_06_angle_active_watcher_mtime_resolution(self):

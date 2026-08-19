@@ -407,8 +407,6 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
         r3 = self.client.get("/api/graph?limit=10000")
         self.assertEqual(r3.status_code, 200)
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_graph_non_contiguous_file_ids(self):
         """Test graph endpoint with non-contiguous file IDs (e.g. 1, 15, 200, 1500)."""
         with get_db_connection(db.DB_FILE) as conn:
@@ -424,8 +422,6 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
         self.assertTrue(len(data["nodes"]) >= 3)
         self.assertTrue(len(data["edges"]) >= 2)
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_broken_and_self_referential_wikilinks(self):
         """Test graph edge building with broken links and self-referential links."""
         with get_db_connection(db.DB_FILE) as conn:
@@ -446,8 +442,6 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
         # Valid link doc2 -> doc1 should be present
         self.assertTrue(any(e["source"] == "file_2" and e["target"] == "file_1" for e in wikilink_edges))
 
-    @pytest.mark.skip(reason="Legacy Test - Obsolete due to Architecture/React Refactor")
-    @unittest.skip("Legacy UI test skipped")
     def test_tag_cluster_size_capping(self):
         """Test tag cluster edge cap at <= 30 documents per tag."""
         with get_db_connection(db.DB_FILE) as conn:
@@ -459,7 +453,7 @@ class TestAdversarialKnowledgeGraph(unittest.TestCase):
             for i in range(1, 6):
                 conn.execute("INSERT INTO tags (file_id, tag) VALUES (?, 'niche')", (i,))
 
-        r = self.client.get("/api/graph?include_clusters=true")
+        r = self.client.get("/api/graph?include_clusters=true&cluster_max_docs=30")
         self.assertEqual(r.status_code, 200)
         data = r.json()
         cluster_edges = [e for e in data["edges"] if e.get("type") == "shared_tag_cluster"]

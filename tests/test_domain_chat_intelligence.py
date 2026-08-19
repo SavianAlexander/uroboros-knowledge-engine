@@ -38,8 +38,7 @@ class TestDomainChatIntelligence(unittest.TestCase):
         try:
             self.tmp_dir.cleanup()
         except Exception as e:
-            import logging; logging.error(f"Swallowed error in test_domain_chat_intelligence.py: {e}")
-
+                pass
     def test_01_chat_session_lifecycle_crud(self):
         """
         Preconditions: Isolated SQLite database initialized in temporary directory.
