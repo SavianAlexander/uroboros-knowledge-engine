@@ -338,14 +338,17 @@ sequenceDiagram
 c:\Users\Administrator\Desktop\Neuro Alexander
 ├── src/
 │   ├── app/
-│   │   ├── routers/                   # Modular FastAPI REST API Endpoints (12 Routers)
+│   │   ├── routers/                   # Modular FastAPI REST API Endpoints (14 Modular Sub-Routers)
 │   │   │   ├── analytics.py           # System metrics, tag distributions, & telemetry
 │   │   │   ├── briefing.py            # Autonomous executive daily briefing synthesis
+│   │   │   ├── crawler.py             # Resilient domain web crawler & URL extractor
+│   │   │   ├── datasets.py            # Tabular dataset orchestration, SQL querying, & profiling
 │   │   │   ├── export.py               # Document & database snapshot exports
 │   │   │   ├── files.py                # Workspace file CRUD & revision history
 │   │   │   ├── health.py               # Liveness, readiness, & hardware health endpoints
 │   │   │   ├── ocr.py                  # OCR extraction & coordinate mapping
-│   │   │   ├── rag.py                  # Conversational RAG, stream queries, & 32-SOTA endpoints
+│   │   │   ├── rag.py                  # Conversational RAG, multi-turn chat sessions, & SSE streams
+│   │   │   ├── retrieval_ops.py        # Granular operational RAG stages (ColBERT, MRL, Grounding, etc.)
 │   │   │   ├── search.py               # Lexical FTS5, hybrid BM25, & RAG API endpoints
 │   │   │   ├── tags.py                 # Automated AI tag management & alias routing
 │   │   │   ├── voice.py                # Kokoro-82M ONNX neural voice synthesis & audio streaming
@@ -390,18 +393,21 @@ c:\Users\Administrator\Desktop\Neuro Alexander
 
 ## 8. API Router Architecture & Specifications (`src/app/routers/`)
 
-The REST API and WebSocket layer is split cleanly into 12 specialized routers inside [`src/app/routers/`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/):
+The REST API and WebSocket layer is split cleanly into 14 specialized modular routers inside [`src/app/routers/`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/):
 
 | Router Module | File Path | Endpoint Prefix | Primary Responsibilities |
 | :--- | :--- | :--- | :--- |
 | **Analytics Router** | [`src/app/routers/analytics.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/analytics.py) | `/api/analytics` | Telemetry metrics, tag usage stats, storage breakdown, & query distribution. |
 | **Briefing Router** | [`src/app/routers/briefing.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/briefing.py) | `/api/briefing` | Executive daily briefing synthesis, audio summaries, & SRS flashcard generation. |
+| **Crawler Router** | [`src/app/routers/crawler.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/crawler.py) | `/api/crawler` | Resilient web crawling, proxy rotation, HTML extraction, & Markdown conversion. |
+| **Datasets Router** | [`src/app/routers/datasets.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/datasets.py) | `/api/data` | Tabular dataset orchestration, natural language SQL queries, multi-table joins, & statistical profiling. |
 | **Export Router** | [`src/app/routers/export.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/export.py) | `/api/export` | GraphML graph exports, Markdown vault zipping, & SQLite database snapshots. |
 | **Files Router** | [`src/app/routers/files.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/files.py) | `/api/file` | File CRUD, workspace explorer, revision history, & multimodal form parsing. |
 | **Health Router** | [`src/app/routers/health.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/health.py) | `/api/health` | Hardware CPU/RAM/VRAM telemetry, liveness probes, & database WAL status. |
 | **OCR Router** | [`src/app/routers/ocr.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/ocr.py) | `/api/ocr` | Asynchronous image/PDF OCR extraction & spatial bounding box mapping. |
-| **RAG Router** | [`src/app/routers/rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/rag.py) | `/api/rag` | Conversational RAG queries, SSE token streaming, & line citation generation. |
-| **Search Router** | [`src/app/routers/search.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/search.py) | `/api/search` | Lexical FTS5, BM25, vector search, & all 21 RAG innovation endpoints. |
+| **RAG Router** | [`src/app/routers/rag.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/rag.py) | `/api/rag`, `/api/chat` | Conversational RAG queries, multi-turn chat sessions, SSE token streaming, & line citation generation. |
+| **Retrieval Ops Router** | [`src/app/routers/retrieval_ops.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/retrieval_ops.py) | `/api/rag` | Granular operational RAG stages: ColBERT reranking, MRL compression, grounding verification, entropy chunking, & governance. |
+| **Search Router** | [`src/app/routers/search.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/search.py) | `/api/search` | Lexical FTS5, BM25, vector search, & RAG innovation endpoints. |
 | **Tags Router** | [`src/app/routers/tags.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/tags.py) | `/api/tags` | Categorical tag creation, synonym alias resolution, & auto-tag rules. |
 | **Voice Router** | [`src/app/routers/voice.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/voice.py) | `/api/voice` | Kokoro-82M ONNX neural speech synthesis, sub-80ms audio clause streaming. |
 | **Voice WS Router** | [`src/app/routers/voice_ws.py`](file:///c:/Users/Administrator/Desktop/Neuro%20Alexander/src/app/routers/voice_ws.py) | `/ws/voice` | Full-duplex real-time voice call session with 20ms RMS VAD & sub-10ms barge-in. |

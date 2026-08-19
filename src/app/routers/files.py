@@ -5,9 +5,10 @@ import re
 import os
 import shutil
 import mimetypes
+import difflib
 from pathlib import Path
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException, UploadFile, File, Body, Response
 from fastapi.responses import FileResponse
 import logging
@@ -214,10 +215,12 @@ def render_pdf_page(path: str, page: int = 0, dpi: int = 150):
         raise
     except Exception as e:
         logger.exception("Error rendering PDF page %s: %s", page, e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 class TermInsightRequest(BaseModel):
-    term: str
-    context: Optional[str] = ""
-    path: Optional[str] = ""
+    term: str = Field(..., description="Term or keyword to retrieve insights and definitions for")
+    context: Optional[str] = Field("", description="Surrounding sentence or document context")
+    path: Optional[str] = Field("", description="Origin file path of the term")
 
 @router.post("/api/intelligence/term-insight")
 def get_term_insight(req: TermInsightRequest):
@@ -512,7 +515,7 @@ def upload_file_endpoint(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 class TranscribeRequest(BaseModel):
-    filepath: str
+    filepath: str = Field(..., description="Path to audio file to transcribe")
 
 @router.post("/api/transcribe")
 def transcribe_audio_endpoint(req: TranscribeRequest):
@@ -523,7 +526,6 @@ def transcribe_audio_endpoint(req: TranscribeRequest):
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
 
-    # Auto-index transcript into SQLite database
     transcript_file = req.filepath + ".txt"
     with open(transcript_file, "w", encoding="utf-8") as f:
         f.write(result["transcript"])
@@ -537,7 +539,6 @@ from src.core.jobs import get_job_manager
 @router.post("/api/file/index")
 def index_directory_endpoint(req: IndexRequest):
     """Trigger background indexing and extraction across all supported files in active directory."""
-    # ponytail: direct local path fallback; ceiling: local filesystem; upgrade: add cloud storage adapter if S3 or remote storage URI is provided
     dir_p = req.directory if req.directory else get_active_dir()
 
     if req.directory:
@@ -612,7 +613,6 @@ def get_file_diff_endpoint(
     Compute structured Myers diff and similarity ratio between file revision snapshots or two files.
     Zero-dependency stdlib difflib implementation.
     """
-    import difflib
     if file_a and file_b:
         verify_path_containment(file_a)
         verify_path_containment(file_b)
@@ -657,7 +657,6 @@ def get_file_diff_endpoint(
     
     rev_map = {r["id"]: r["content"] for r in revisions if "id" in r and "content" in r}
     
-    # Text 1
     if rev1 is not None and rev1 in rev_map:
         text1 = rev_map[rev1]
         name1 = f"Revision #{rev1}"
@@ -668,7 +667,6 @@ def get_file_diff_endpoint(
         text1 = ""
         name1 = "Initial (Empty)"
 
-    # Text 2
     if rev2 is not None and rev2 in rev_map:
         text2 = rev_map[rev2]
         name2 = f"Revision #{rev2}"
@@ -718,15 +716,13 @@ def revert_file_revision_endpoint(req: RevertRequest):
         verify_path_containment(fp)
         success = revert_file_revision(fp, req.revision_id)
         if not success:
-            print(f"[REVERT_FAILED]: path='{fp}', revision_id={req.revision_id}", flush=True)
             raise HTTPException(status_code=400, detail="Revision ID not found or path mismatch")
         return {"status": "success", "reverted_to": req.revision_id}
     except HTTPException:
         raise
     except Exception as e:
-        import traceback; traceback.print_exc()
+        logger.exception("Failed to revert file %s: %s", req.get_path(), e)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/api/file/ocr-coords")
 def get_file_ocr_coords_endpoint(path: str, term: Optional[str] = None):
@@ -865,13 +861,6 @@ def open_file_endpoint(req: OpenFileRequest):
         logger.exception("Failed to open file %s: %s", fp, e)
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
-
-
-
-
-
 @router.get("/api/file/readability")
 def file_readability_endpoint(filepath: str = "", path: str = ""):
     """Calculates Flesch Reading Ease, Flesch-Kincaid Grade Level, and Sentiment Polarity for a document."""
@@ -893,11 +882,9 @@ def file_readability_endpoint(filepath: str = "", path: str = ""):
         with open(fp, "r", encoding="utf-8", errors="ignore") as f:
             content = f.read()
 
-    from src.domain.readability_analyzer import analyze_readability
     result = analyze_readability(content)
     result["filepath"] = fp
     return result
-
 
 @router.get("/api/vault/duplicates")
 def get_vault_duplicates_endpoint(threshold: float = 0.80, mode: str = "files"):
@@ -907,14 +894,12 @@ def get_vault_duplicates_endpoint(threshold: float = 0.80, mode: str = "files"):
             from src.domain.near_duplicate_detector import detect_near_duplicate_chunks
             return detect_near_duplicate_chunks(similarity_threshold=threshold)
         else:
-            from src.domain.near_duplicate_detector import detect_near_duplicates
             return detect_near_duplicates(similarity_threshold=threshold)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
         logger.exception("Failed to detect vault duplicates: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/api/vault/duplicate-chunks")
 def get_vault_duplicate_chunks_endpoint(threshold: float = 0.80, limit: int = 150):
@@ -928,12 +913,10 @@ def get_vault_duplicate_chunks_endpoint(threshold: float = 0.80, limit: int = 15
         logger.exception("Failed to detect vault duplicate chunks: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/api/graph/pagerank")
 def get_graph_pagerank_endpoint():
     """Computes global PageRank centrality scores across vault document wikilinks."""
     try:
-        from src.domain.graph_pagerank import compute_graph_pagerank
         return compute_graph_pagerank()
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
@@ -941,20 +924,17 @@ def get_graph_pagerank_endpoint():
         logger.exception("Failed to compute graph PageRank: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/api/file/parse-multimodal")
 def parse_multimodal_document_endpoint(payload: Dict[str, Any] = Body({})):
     """Extracts structured tables, key-value form fields, and checkboxes from document text."""
     text = payload.get("text", "")
     try:
-        from src.domain.multimodal_ocr_parser import parse_multimodal_document_layout
         return parse_multimodal_document_layout(text)
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:
         logger.exception("Failed to parse multimodal document layout: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/api/code/callgraph")
 def get_code_callgraph_endpoint(filepath: str = ""):
@@ -975,7 +955,6 @@ def get_code_callgraph_endpoint(filepath: str = ""):
         logger.exception("Failed to analyze code callgraph for %s: %s", filepath, e)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/api/code/analyze")
 def analyze_code_snippet_endpoint(payload: Dict[str, Any] = Body(...)):
     """Extracts AST structure, function calls, and cyclomatic complexity from code string."""
@@ -989,7 +968,6 @@ def analyze_code_snippet_endpoint(payload: Dict[str, Any] = Body(...)):
     except Exception as e:
         logger.exception("Failed to extract code structure for %s: %s", filename, e)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.post("/api/file/synthesize-wikilinks")
 def synthesize_wikilinks_endpoint(payload: Dict[str, Any] = Body({})):
@@ -1005,7 +983,6 @@ def synthesize_wikilinks_endpoint(payload: Dict[str, Any] = Body({})):
         logger.exception("Failed to synthesize wikilinks: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/api/file/semantic-diff")
 def semantic_diff_endpoint(payload: Dict[str, Any] = Body({})):
     """Computes semantic statement-level diff between original and updated document versions."""
@@ -1020,7 +997,6 @@ def semantic_diff_endpoint(payload: Dict[str, Any] = Body({})):
         logger.exception("Failed to compute semantic document diff: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/api/file/legal-audit")
 def legal_audit_endpoint(payload: Dict[str, Any] = Body({})):
     """Audits contract and policy documents for statutory citations, obligations, and risk terms."""
@@ -1033,7 +1009,6 @@ def legal_audit_endpoint(payload: Dict[str, Any] = Body({})):
     except Exception as e:
         logger.exception("Failed to audit legal accuracy: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.post("/api/file/audio-briefing")
 def audio_briefing_endpoint(payload: Dict[str, Any] = Body({})):
@@ -1049,7 +1024,6 @@ def audio_briefing_endpoint(payload: Dict[str, Any] = Body({})):
         logger.exception("Failed to generate audio briefing: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/api/file/zk-mask")
 def zk_mask_endpoint(payload: Dict[str, Any] = Body({})):
     """Masks sensitive document data and generates SHA-256 HMAC Zero-Knowledge commitments."""
@@ -1063,128 +1037,3 @@ def zk_mask_endpoint(payload: Dict[str, Any] = Body({})):
     except Exception as e:
         logger.exception("Failed to mask sensitive document data: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/api/data/orchestrate")
-def orchestrate_data_endpoint(payload: Dict[str, Any] = Body(...)):
-    """Autonomously ingests polymorphic client data, infers schema, and provisions dynamic SQLite tables."""
-    name = payload.get("dataset_name", "client_dataset")
-    content = payload.get("raw_content", "")
-    format_hint = payload.get("format_hint")
-    if not content:
-        raise HTTPException(status_code=400, detail="raw_content is required")
-    try:
-        from src.domain.polymorphic_data_orchestrator import provision_dynamic_dataset
-        return provision_dynamic_dataset(name, content, format_hint)
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        logger.exception("Failed to orchestrate client dataset %s: %s", name, e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/api/data/datasets")
-def list_datasets_endpoint():
-    """Lists all dynamically orchestrated client datasets with discovered schemas."""
-    try:
-        from src.domain.polymorphic_data_orchestrator import list_orchestrated_datasets
-        return {"datasets": list_orchestrated_datasets()}
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        logger.exception("Failed to list orchestrated datasets: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/api/data/query")
-def query_data_endpoint(payload: Dict[str, Any] = Body(...)):
-    """Autonomously routes natural language questions to dynamic client tables via Text-to-SQL."""
-    query = payload.get("query", "")
-    if not query:
-        raise HTTPException(status_code=400, detail="query is required")
-    try:
-        from src.domain.autonomous_sql_router import execute_autonomous_sql_query
-        return execute_autonomous_sql_query(query)
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        logger.exception("Failed to execute autonomous SQL query: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/api/data/health")
-def database_health_endpoint():
-    """Runs autonomous database index optimization, anomaly detection, and WAL self-healing."""
-    try:
-        from src.domain.knowledge_self_healing import execute_database_self_healing
-        return execute_database_self_healing()
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        logger.exception("Failed to check database health: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/api/data/relationships")
-def data_relationships_endpoint():
-    """Discovers foreign keys and relational linkages across dynamically provisioned client datasets."""
-    try:
-        from src.domain.relational_schema_linker import discover_foreign_key_relationships, generate_mermaid_er_diagram
-        return {
-            "relationships": discover_foreign_key_relationships(),
-            "er_diagram": generate_mermaid_er_diagram()
-        }
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        logger.exception("Failed to discover data relationships: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/api/data/join")
-def data_join_endpoint(payload: Dict[str, Any] = Body(...)):
-    """Synthesizes and executes multi-table SQL JOIN queries across related client datasets."""
-    query = payload.get("query", "")
-    dataset_names = payload.get("dataset_names")
-    try:
-        from src.domain.relational_schema_linker import synthesize_multi_table_join
-        return synthesize_multi_table_join(query, dataset_names)
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        logger.exception("Failed to synthesize data join: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/api/data/clean")
-def data_clean_endpoint(payload: Dict[str, Any] = Body(...)):
-    """Executes automated missing value imputation, date normalization, and deduplication on a client dataset."""
-    dataset_name = payload.get("dataset_name", "")
-    if not dataset_name:
-        raise HTTPException(status_code=400, detail="dataset_name is required")
-    try:
-        from src.domain.client_data_cleaner import cleanse_client_dataset
-        return cleanse_client_dataset(dataset_name)
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        logger.exception("Failed to cleanse client dataset %s: %s", dataset_name, e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/api/data/profile")
-def data_profile_endpoint(payload: Dict[str, Any] = Body(...)):
-    """Computes automated exploratory data analysis, Pearson correlations, and statistical summaries."""
-    dataset_name = payload.get("dataset_name", "")
-    if not dataset_name:
-        raise HTTPException(status_code=400, detail="dataset_name is required")
-    try:
-        from src.domain.statistical_data_profiler import profile_client_dataset
-        return profile_client_dataset(dataset_name)
-    except (KeyboardInterrupt, MemoryError, SystemExit):
-        raise
-    except Exception as e:
-        logger.exception("Failed to profile client dataset %s: %s", dataset_name, e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-

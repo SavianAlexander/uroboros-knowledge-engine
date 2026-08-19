@@ -15,7 +15,6 @@ from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 from src.infrastructure.database import init_db
-from src.app.routers import health, search, rag, files, tags, export, analytics, workflows
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +147,7 @@ def get_style_bundle():
 from fastapi import Depends
 from src.app.auth import verify_api_key
 
-from src.app.routers import health, search, rag, files, tags, export, analytics, workflows, briefing, ocr, voice, voice_ws, crawler
+from src.app.routers import health, search, rag, retrieval_ops, files, datasets, tags, export, analytics, workflows, briefing, ocr, voice, voice_ws, crawler
 
 app.include_router(health.router) # Health remains unprotected
 app.include_router(voice.router) # Voice and OpenAI audio API
@@ -156,7 +155,9 @@ app.include_router(voice_ws.router) # Real-Time Audio Spectrum & Call WebSocket
 app.include_router(crawler.router, dependencies=[Depends(verify_api_key)])
 app.include_router(search.router, dependencies=[Depends(verify_api_key)])
 app.include_router(rag.router, dependencies=[Depends(verify_api_key)])
+app.include_router(retrieval_ops.router, dependencies=[Depends(verify_api_key)])
 app.include_router(files.router, dependencies=[Depends(verify_api_key)])
+app.include_router(datasets.router, dependencies=[Depends(verify_api_key)])
 app.include_router(tags.router, dependencies=[Depends(verify_api_key)])
 app.include_router(export.router, dependencies=[Depends(verify_api_key)])
 app.include_router(analytics.router, dependencies=[Depends(verify_api_key)])
