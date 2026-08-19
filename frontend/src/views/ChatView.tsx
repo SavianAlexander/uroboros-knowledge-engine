@@ -44,7 +44,11 @@ import {
   Headphones,
   SlidersHorizontal,
   Activity,
-  Brain
+  Brain,
+  Phone,
+  PhoneCall,
+  PhoneOff,
+  Radio
 } from 'lucide-react';
 
 import { useToast } from '../components/Toast';
@@ -105,6 +109,18 @@ export default function ChatView() {
   const speechAbortRef = useRef<AbortController | null>(null);
   const speechEndTimeoutRef = useRef<any>(null);
 
+  // Full-Duplex Conversational Voice Call (Gemini Live Mode) State
+  const [isLiveCallActive, setIsLiveCallActive] = useState<boolean>(false);
+  const [liveCallStatus, setLiveCallStatus] = useState<'idle' | 'connecting' | 'listening' | 'speaking' | 'buffering'>('idle');
+  const [liveCallTtfs, setLiveCallTtfs] = useState<number | null>(null);
+  const liveCallWsRef = useRef<WebSocket | null>(null);
+  const liveCallAudioCtxRef = useRef<AudioContext | null>(null);
+  const liveCallMicStreamRef = useRef<MediaStream | null>(null);
+  const liveCallProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const liveCallSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const liveCallAudioQueueRef = useRef<AudioBuffer[]>([]);
+  const liveCallPlayingSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const liveCallIsPlayingRef = useRef<boolean>(false);
 
   const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
   const [collapsedThoughts, setCollapsedThoughts] = useState<Record<string, boolean>>({});
@@ -581,6 +597,224 @@ export default function ChatView() {
       setIsRecordingVoice(false);
     }
   };
+
+  const playNextLiveCallAudio = () => {
+    if (!liveCallAudioCtxRef.current || liveCallAudioQueueRef.current.length === 0) {
+      liveCallIsPlayingRef.current = false;
+      if (isLiveCallActive) {
+        setLiveCallStatus('listening');
+      }
+      return;
+    }
+
+    liveCallIsPlayingRef.current = true;
+    setLiveCallStatus('speaking');
+    const audioBuffer = liveCallAudioQueueRef.current.shift()!;
+    const ctx = liveCallAudioCtxRef.current;
+
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(ctx.destination);
+    liveCallPlayingSourceRef.current = source;
+
+    source.onended = () => {
+      playNextLiveCallAudio();
+    };
+
+    source.start(0);
+  };
+
+  const stopLiveCallAudioPlayback = () => {
+    try {
+      if (liveCallPlayingSourceRef.current) {
+        liveCallPlayingSourceRef.current.stop();
+        liveCallPlayingSourceRef.current.disconnect();
+        liveCallPlayingSourceRef.current = null;
+      }
+    } catch {
+      // Ignored
+    }
+    liveCallAudioQueueRef.current = [];
+    liveCallIsPlayingRef.current = false;
+  };
+
+  const handleToggleLiveCall = async () => {
+    if (isLiveCallActive) {
+      handleEndLiveCall();
+      return;
+    }
+
+    try {
+      stopAllAudio();
+      stopLiveCallAudioPlayback();
+      playCortanaSFX('ready');
+      setLiveCallStatus('connecting');
+      setIsLiveCallActive(true);
+
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const audioCtx = new AudioContextClass({ sampleRate: 24000 });
+      liveCallAudioCtxRef.current = audioCtx;
+
+      const micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 24000
+        }
+      });
+      liveCallMicStreamRef.current = micStream;
+
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/voice/stream`;
+      const ws = new WebSocket(wsUrl);
+      liveCallWsRef.current = ws;
+
+      ws.onopen = () => {
+        setLiveCallStatus('listening');
+        ws.send(JSON.stringify({ action: 'call_start', persona: voicePersona, dsp_preset: dspPreset }));
+        toast('Live Call Connected', 'Hands-free voice link active. Speak naturally.', 'success');
+      };
+
+      ws.onmessage = async (event) => {
+        if (typeof event.data === 'string') {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.event === 'connected') {
+              setLiveCallStatus('listening');
+            } else if (msg.event === 'audio_start') {
+              setLiveCallStatus('speaking');
+            } else if (msg.event === 'audio_chunk') {
+              if (msg.ttfs_ms) setLiveCallTtfs(msg.ttfs_ms);
+              if (msg.audio_base64) {
+                const arrayBuf = base64ToArrayBuffer(msg.audio_base64);
+                try {
+                  const decoded = await audioCtx.decodeAudioData(arrayBuf.slice(0));
+                  liveCallAudioQueueRef.current.push(decoded);
+                  if (!liveCallIsPlayingRef.current) {
+                    playNextLiveCallAudio();
+                  }
+                } catch {
+                  // Fallback
+                }
+              }
+            } else if (msg.event === 'interrupted') {
+              stopLiveCallAudioPlayback();
+              setLiveCallStatus('listening');
+            } else if (msg.event === 'speech_endpoint') {
+              setLiveCallStatus('buffering');
+            } else if (msg.event === 'transcription') {
+              if (msg.text) {
+                setMessages(prev => [...prev, { id: `live-user-${Date.now()}`, role: 'user', content: msg.text }]);
+              }
+            } else if (msg.event === 'turn_complete') {
+              if (msg.full_text) {
+                setMessages(prev => {
+                  const last = prev[prev.length - 1];
+                  if (last && last.role === 'assistant' && last.content === msg.full_text) {
+                    return prev;
+                  }
+                  return [...prev, { id: `live-ai-${Date.now()}`, role: 'assistant', content: msg.full_text }];
+                });
+              }
+              if (!liveCallIsPlayingRef.current) {
+                setLiveCallStatus('listening');
+              }
+            }
+          } catch {
+            // Json parse fallback
+          }
+        }
+      };
+
+      ws.onerror = () => {
+        toast('Live Call', 'WebSocket connection notice.', 'info');
+      };
+
+      ws.onclose = () => {
+        handleEndLiveCall();
+      };
+
+      const source = audioCtx.createMediaStreamSource(micStream);
+      liveCallSourceRef.current = source;
+      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+      liveCallProcessorRef.current = processor;
+
+      processor.onaudioprocess = (e) => {
+        if (ws.readyState !== WebSocket.OPEN) return;
+        const inputData = e.inputBuffer.getChannelData(0);
+        const pcmData = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          const s = Math.max(-1, Math.min(1, inputData[i]));
+          pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+        ws.send(pcmData.buffer);
+      };
+
+      source.connect(processor);
+      processor.connect(audioCtx.destination);
+
+    } catch (err: any) {
+      console.error('Failed to start live call:', err);
+      toast('Call Error', err.message || 'Microphone access failed.', 'warning');
+      handleEndLiveCall();
+    }
+  };
+
+  const handleEndLiveCall = () => {
+    playCortanaSFX('dismiss');
+    setIsLiveCallActive(false);
+    setLiveCallStatus('idle');
+    setLiveCallTtfs(null);
+
+    stopLiveCallAudioPlayback();
+
+    if (liveCallWsRef.current) {
+      try {
+        if (liveCallWsRef.current.readyState === WebSocket.OPEN) {
+          liveCallWsRef.current.send(JSON.stringify({ action: 'barge_in' }));
+        }
+        liveCallWsRef.current.close();
+      } catch {}
+      liveCallWsRef.current = null;
+    }
+
+    if (liveCallProcessorRef.current) {
+      try {
+        liveCallProcessorRef.current.disconnect();
+      } catch {}
+      liveCallProcessorRef.current = null;
+    }
+
+    if (liveCallSourceRef.current) {
+      try {
+        liveCallSourceRef.current.disconnect();
+      } catch {}
+      liveCallSourceRef.current = null;
+    }
+
+    if (liveCallMicStreamRef.current) {
+      liveCallMicStreamRef.current.getTracks().forEach(track => track.stop());
+      liveCallMicStreamRef.current = null;
+    }
+
+    if (liveCallAudioCtxRef.current) {
+      try {
+        liveCallAudioCtxRef.current.close();
+      } catch {}
+      liveCallAudioCtxRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      handleEndLiveCall();
+    };
+  }, []);
 
   const executeSend = async (textToSend: string) => {
     const trimmed = textToSend.trim();
@@ -1130,6 +1364,29 @@ export default function ChatView() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Full-Duplex Conversational Voice Call (Gemini Live Mode) Toggle */}
+            <button
+              onClick={handleToggleLiveCall}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
+                isLiveCallActive
+                  ? 'bg-rose-500/20 border-rose-500/50 text-rose-600 dark:text-rose-300 ring-2 ring-rose-500/30 animate-pulse'
+                  : 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:from-emerald-500/30 hover:to-teal-500/30'
+              }`}
+              title={isLiveCallActive ? 'End Live Voice Call' : 'Start Full-Duplex Hands-Free Voice Call (Gemini Live Mode)'}
+            >
+              {isLiveCallActive ? (
+                <>
+                  <PhoneOff className="w-3.5 h-3.5 text-rose-500" />
+                  <span>End Live Call</span>
+                </>
+              ) : (
+                <>
+                  <PhoneCall className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Live Call</span>
+                </>
+              )}
+            </button>
+
             <CortanaOrb
               state={speakingMsgId ? 'speaking' : isRecordingVoice ? 'listening' : isAudioLoading ? 'buffering' : 'idle'}
               onClick={() => {
@@ -1214,6 +1471,56 @@ export default function ChatView() {
             </button>
           </div>
         </div>
+
+        {/* Full-Duplex Conversational Call HUD Banner */}
+        {isLiveCallActive && (
+          <div className="mx-6 mt-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-purple-950/40 border border-emerald-500/30 shadow-lg backdrop-blur-md flex items-center justify-between animate-fadeIn">
+            <div className="flex items-center gap-3">
+              <CortanaOrb
+                state={liveCallStatus === 'speaking' ? 'speaking' : liveCallStatus === 'buffering' ? 'buffering' : 'listening'}
+                size="sm"
+                showLabel={false}
+              />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-ping" />
+                    Live Call Active
+                  </span>
+                  {liveCallTtfs && (
+                    <span className="text-[10px] font-mono text-slate-400">
+                      TTFS: {liveCallTtfs}ms
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs font-medium text-slate-200 mt-0.5">
+                  {liveCallStatus === 'speaking'
+                    ? 'AI Speaking... (Barge-in anytime to interrupt)'
+                    : liveCallStatus === 'buffering'
+                    ? 'Synthesizing voice response...'
+                    : 'AI Listening... (Speak naturally without pressing buttons)'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <AudioVisualizer
+                isPlaying={liveCallStatus === 'speaking' || liveCallStatus === 'listening'}
+                colorTheme={liveCallStatus === 'speaking' ? 'purple' : 'emerald'}
+                barCount={24}
+                height={28}
+              />
+              <button
+                onClick={handleEndLiveCall}
+                className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs"
+                title="End Call"
+              >
+                <PhoneOff className="w-3.5 h-3.5" />
+                <span>Disconnect</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Singular Canonical Voice & Studio DSP Status Bar */}
         {showVoiceStudio && (

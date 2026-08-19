@@ -335,3 +335,113 @@ class VoiceDSP:
             "dominant_freq_hz": round(dominant_freq, 1),
             "num_bands": num_bands
         }
+
+
+# ----------------------------------------------------------------------
+# 4. Standard DSP Mastering Functions & High-Performance Helpers
+# ----------------------------------------------------------------------
+
+def biquad_highshelf(f0: float, gain_db: float, fs: int = 24000) -> Tuple[Any, Any]:
+    """Generate high-shelf filter coefficients."""
+    if np is None:
+        return [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]
+    A = 10.0 ** (gain_db / 40.0)
+    w0 = 2.0 * np.pi * min(f0, fs * 0.49) / fs
+    cos_w = np.cos(w0)
+    sin_w = np.sin(w0)
+    alpha = sin_w / 2.0 * np.sqrt(2.0)
+
+    b0 = A * ((A + 1) + (A - 1) * cos_w + 2 * np.sqrt(A) * alpha)
+    b1 = -2 * A * ((A - 1) + (A + 1) * cos_w)
+    b2 = A * ((A + 1) + (A - 1) * cos_w - 2 * np.sqrt(A) * alpha)
+    a0 = (A + 1) - (A - 1) * cos_w + 2 * np.sqrt(A) * alpha
+    a1 = 2 * ((A - 1) - (A + 1) * cos_w)
+    a2 = (A + 1) - (A - 1) * cos_w - 2 * np.sqrt(A) * alpha
+
+    b = np.array([b0 / a0, b1 / a0, b2 / a0], dtype=np.float32)
+    a = np.array([1.0, a1 / a0, a2 / a0], dtype=np.float32)
+    return b, a
+
+
+def apply_biquad(samples: Any, b: Any, a: Any) -> Any:
+    """Apply biquad IIR filter to audio buffer."""
+    return apply_iir_filter(samples, b, a)
+
+
+def apply_parametric_mastering_eq(samples: Any, sample_rate: int = 24000, bands: Optional[List[Tuple[float, float, float]]] = None) -> Any:
+    """Apply multi-band parametric mastering EQ."""
+    if np is None or not isinstance(samples, np.ndarray) or samples.size == 0:
+        return samples
+    default_bands = bands or [(120.0, 1.2, 0.8), (2800.0, 1.8, 1.2), (8000.0, 1.5, 0.9)]
+    out = samples.copy()
+    for f0, gain_db, q in default_bands:
+        b, a = biquad_peaking(f0, gain_db, q, fs=sample_rate)
+        out = apply_iir_filter(out, b, a)
+    return out
+
+
+def apply_studio_compression_limiting(samples: Any, threshold_db: float = -12.0, ratio: float = 3.0, sample_rate: int = 24000) -> Any:
+    """Apply smooth soft-knee compressor / limiter."""
+    if np is None or not isinstance(samples, np.ndarray) or samples.size == 0:
+        return samples
+    thresh_lin = 10.0 ** (threshold_db / 20.0)
+    out = samples.copy()
+    abs_s = np.abs(out)
+    over = abs_s > thresh_lin
+    if np.any(over):
+        gain = np.ones_like(out)
+        excess = abs_s[over] - thresh_lin
+        compressed = thresh_lin + (excess / max(1.0, ratio))
+        gain[over] = compressed / np.maximum(abs_s[over], 1e-6)
+        out = out * gain
+    return np.tanh(out * 1.05)
+
+
+def apply_dynamic_deesser(samples: Any, s_freq: float = 6500.0, threshold_db: float = -18.0, sample_rate: int = 24000) -> Any:
+    """Apply high-frequency dynamic de-esser."""
+    if np is None or not isinstance(samples, np.ndarray) or samples.size == 0:
+        return samples
+    b_s, a_s = biquad_peaking(s_freq, -4.5, q=2.5, fs=sample_rate)
+    return apply_iir_filter(samples, b_s, a_s)
+
+
+VoiceDSPMaster = VoiceDSP
+
+
+def apply_holographic_spatial_widener(samples: Any, width: float = 1.15, sample_rate: int = 24000, delay_ms: float = 14.0, wet: float = 0.08) -> Any:
+    """Apply psychoacoustic Haas-effect stereo widening."""
+    if np is None or not isinstance(samples, np.ndarray) or samples.size == 0:
+        return samples
+    delay_samples = int(sample_rate * (delay_ms / 1000.0))
+    left = samples.copy()
+    right = np.zeros_like(samples)
+    if delay_samples < len(samples):
+        right[delay_samples:] = samples[:-delay_samples]
+    stereo = np.stack([np.clip(left * float(width), -1.0, 1.0), np.clip(right, -1.0, 1.0)], axis=-1)
+    return stereo
+
+
+def apply_subharmonic_chest_resonance(samples: Any, sample_rate: int = 24000, sub_freq: float = 75.0, blend: float = 0.25) -> Any:
+    """Apply warm subharmonic chest resonance filter."""
+    if np is None or not isinstance(samples, np.ndarray) or samples.size == 0:
+        return samples
+    b, a = biquad_peaking(sub_freq, 3.2, q=1.2, fs=sample_rate)
+    filtered = apply_iir_filter(samples, b, a)
+    res = (1.0 - blend) * samples + blend * filtered
+    return np.clip(res, -1.0, 1.0)
+
+
+def apply_magnetic_tube_saturation(samples: Any, drive: float = 1.35, warmth: float = 0.20) -> Any:
+    """Apply harmonic magnetic tube saturation and soft-clipping."""
+    if np is None or not isinstance(samples, np.ndarray) or samples.size == 0:
+        return samples
+    driven = samples * drive
+    saturated = np.tanh(driven)
+    warm = (1.0 - warmth) * saturated + warmth * (saturated - 0.1 * saturated ** 2)
+    return np.clip(warm * 0.95, -0.96, 0.96)
+
+
+def process_tactical_dsp_pipeline(samples: Any, sample_rate: int = 24000, preset: str = "STUDIO_MASTER") -> Tuple[Any, int]:
+    """Master single-pass DSP pipeline."""
+    mastered = VoiceDSP.apply_dsp_preset(samples, preset=preset, fs=sample_rate)
+    return mastered, sample_rate

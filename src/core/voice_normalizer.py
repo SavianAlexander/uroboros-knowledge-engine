@@ -753,7 +753,7 @@ class VoiceNormalizer:
 
         # 1. Apply Studio DSP Mastering Rack
         try:
-            from src.infrastructure.eve_voice_dsp import process_tactical_dsp_pipeline
+            from src.core.voice_dsp import process_tactical_dsp_pipeline
             mastered, _ = process_tactical_dsp_pipeline(samples, sample_rate=sample_rate, preset=dsp_preset)
             samples = mastered
         except Exception:

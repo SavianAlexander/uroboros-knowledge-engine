@@ -59,7 +59,8 @@ class VoiceAgentLoop:
         cls,
         session_id: Optional[str] = None,
         persona: str = "ORACLE_ADVISOR",
-        dsp_preset: str = "EXECUTIVE_PRESENCE"
+        dsp_preset: str = "EXECUTIVE_PRESENCE",
+        synthesize_welcome: bool = False
     ) -> Dict[str, Any]:
         """Initializes a new hands-free conversational voice session with automatic stale session pruning."""
         sid = session_id or f"voice-session-{uuid.uuid4().hex[:8]}"
@@ -77,22 +78,25 @@ class VoiceAgentLoop:
                 "is_active": True
             }
 
-        # Play welcome chime earcon
-        welcome_audio = VoiceBridge.synthesize_bytes(
-            "Voice link established. Assistant online and listening.",
-            voice=persona,
-            speed=1.0,
-            dsp_preset=dsp_preset
-        )
-
-
+        welcome_audio_len = 0
+        if synthesize_welcome:
+            try:
+                welcome_audio = VoiceBridge.synthesize_bytes(
+                    "Voice link established. Assistant online and listening.",
+                    voice=persona,
+                    speed=1.0,
+                    dsp_preset=dsp_preset
+                )
+                welcome_audio_len = len(welcome_audio) if welcome_audio else 0
+            except Exception:
+                pass
 
         return {
             "status": "active",
             "session_id": sid,
             "persona": persona,
             "dsp_preset": dsp_preset,
-            "welcome_audio_bytes_length": len(welcome_audio),
+            "welcome_audio_bytes_length": welcome_audio_len,
             "created_at": now
         }
 
