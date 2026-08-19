@@ -212,15 +212,15 @@ Uroboros incorporates 32 complete architectural engines divided into Core Accele
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as "FastAPI / Model Manager"
-    participant OS as "Windows Task Manager (PowerShell)"
-    participant Llama as "Llama Server Process"
-    participant RAM as "System RAM / VRAM Pool"
+    participant App as FastAPI / Model Manager
+    participant OS as Windows Task Manager (PowerShell)
+    participant Llama as Llama Server Process
+    participant RAM as System RAM / VRAM Pool
 
-    App->>OS: Query Running Processes (`llama-server.exe`)
+    App->>OS: Query Running Processes (llama-server.exe)
     OS-->>App: Return Active Process List & PIDs
     alt Multiple Duplicate Instances Detected
-        App->>OS: Force Terminate Older PID (`taskkill /F /PID`)
+        App->>OS: Force Terminate Older PID (taskkill /F /PID)
         OS-->>RAM: Free Duplicate VRAM Allocation (~1.58 GB)
         App->>App: Enforce Single-Instance Process Lock
     else Single Instance Running
@@ -228,7 +228,7 @@ sequenceDiagram
     end
     App->>Llama: Execute Inference Request
     Llama-->>RAM: Cap Allocation at ~490 MB
-    Note over Llama,RAM: Auto-Unload Model Weights after 5m Inactivity (`OLLAMA_KEEP_ALIVE=5m`)
+    Note over Llama,RAM: Auto-Unload Model Weights after 5m Inactivity (OLLAMA_KEEP_ALIVE=5m)
 ```
 
 ---
@@ -273,13 +273,13 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     autonumber
-    participant File as "Workspace File"
-    participant Parser as "Infrastructure Parsers"
-    participant Dedupe as "SHA-256 Hash Check"
-    participant Chunker as "Entropy Chunker"
-    participant Embed as "Ollama Nomic Embeddings"
-    participant DB as "SQLite WAL Database"
-    participant FTS as "FTS5 Virtual Table"
+    participant File as Workspace File
+    participant Parser as Infrastructure Parsers
+    participant Dedupe as SHA-256 Hash Check
+    participant Chunker as Entropy Chunker
+    participant Embed as Ollama Nomic Embeddings
+    participant DB as SQLite WAL Database
+    participant FTS as FTS5 Virtual Table
 
     File->>Parser: Submit Document (PDF/DOCX/Audio/Image)
     Parser->>Parser: Validate Header & Structural Layout
@@ -290,9 +290,9 @@ sequenceDiagram
         Dedupe->>Chunker: Pass Raw Content
         Chunker->>Chunker: Segment Text at Information Entropy Boundaries
         Chunker->>Embed: Generate 768-dim Vector Arrays (Batch Size 64)
-        Embed-->>DB: Write to `file_chunks` with Binary Vector Serialization
-        Chunker-->>DB: Write File Record to `files` Table
-        Chunker-->>FTS: Insert Tokenized Content to `fts_file_chunks`
+        Embed-->>DB: Write to file_chunks with Binary Vector Serialization
+        Chunker-->>DB: Write File Record to files Table
+        Chunker-->>FTS: Insert Tokenized Content to fts_file_chunks
         DB-->>File: Return Ingestion Complete (OK)
     end
 ```
@@ -302,16 +302,16 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant User as "Client Web SPA"
-    participant Router as "Intent Router"
-    participant FTS as "FTS5 Lexical Search"
-    participant Vec as "Vector Cosine Store"
-    participant RRF as "Reciprocal Rank Fusion"
-    participant Guard as "Self-RAG Grounding Guard"
-    participant LLM as "Local LLM (Qwen 7B/14B)"
+    participant User as Client Web SPA
+    participant Router as Intent Router
+    participant FTS as FTS5 Lexical Search
+    participant Vec as Vector Cosine Store
+    participant RRF as Reciprocal Rank Fusion
+    participant Guard as Self-RAG Grounding Guard
+    participant LLM as Local LLM (Qwen 7B/14B)
 
     User->>Router: Send Query ("What is revenue recognition?")
-    Router->>Router: Classify Intent & Extract Query Operators (`ext:`, `tag:`)
+    Router->>Router: Classify Intent & Extract Query Operators (ext:, tag:)
     par Sparse Lexical Search
         Router->>FTS: BM25 Query Match
         FTS-->>RRF: Sparse Ranked Results
