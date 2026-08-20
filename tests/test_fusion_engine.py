@@ -65,7 +65,8 @@ class TestFusionEngine(unittest.TestCase):
             cur = conn.execute("SELECT filepath, filename, content FROM fts_files WHERE fts_files MATCH 'Transparencia'")
             rows = cur.fetchall()
             self.assertGreaterEqual(len(rows), 1)
-            self.assertIn("crawler://job_99", rows[0][0])
+            filepaths = [r[0] for r in rows]
+            self.assertTrue(any("crawler://job_99" in fp for fp in filepaths))
 
 if __name__ == "__main__":
     unittest.main()

@@ -54,18 +54,14 @@ from src.domain.readability_analyzer import analyze_readability_metrics
 from src.domain.statistical_data_profiler import profile_tabular_dataset
 from src.domain.transcription_engine import TranscriptionEngine
 
-# 4-Pillar Epistemic Domain Subpackages
-from src.domain import retrieval
-from src.domain import privacy
-from src.domain import synthesis
+# Specialized Domain Subpackages
 from src.domain import connectors
+from src.domain import universal_crawler
 
 __all__ = [
-    # 4 Pillars
-    "retrieval",
-    "privacy",
-    "synthesis",
+    # Subpackages
     "connectors",
+    "universal_crawler",
     # Search
     "classify_query_intent",
     "route_query_intent",

@@ -1,3 +1,4 @@
+import unittest
 """
 Comprehensive 4-Tier Opaque-Box E2E Verification Suite for
 Empirically True, Real-World Grounded Retrieval & Epistemic Invariant Engine.
@@ -47,7 +48,7 @@ from src.domain.grounded_retrieval_engine import (
 # ==============================================================================
 # TIER 1: FEATURE COVERAGE (60 Tests: 5 per Feature F1..F12)
 # ==============================================================================
-class TestTier1FeatureCoverage:
+class TestTier1FeatureCoverage(unittest.TestCase):
 
     # --- F1: Epistemic Evidentiary Tier Classifier (5 tests) ---
     def test_t1_f1_tier1_statutory_and_standards(self):
@@ -483,7 +484,7 @@ class TestTier1FeatureCoverage:
 # ==============================================================================
 # TIER 2: BOUNDARY & CORNER CASES (60 Tests: 5 per Feature F1..F12)
 # ==============================================================================
-class TestTier2BoundaryCornerCases:
+class TestTier2BoundaryCornerCases(unittest.TestCase):
 
     # --- F1 Boundaries (5 tests) ---
     def test_t2_f1_empty_filename_with_content(self):
@@ -868,7 +869,7 @@ class TestTier2BoundaryCornerCases:
 # ==============================================================================
 # TIER 3: CROSS-FEATURE PAIRWISE INTERACTIONS (12 Tests)
 # ==============================================================================
-class TestTier3CrossFeatureInteractions:
+class TestTier3CrossFeatureInteractions(unittest.TestCase):
 
     def test_t3_cf1_epistemic_tier_with_temporal_decay(self):
         # 15y-old Tier 1 document (1.00 * ~0.35 = 0.35) vs fresh Tier 4 document (0.35 * 1.0 = 0.35)
@@ -979,7 +980,7 @@ class TestTier3CrossFeatureInteractions:
 # ==============================================================================
 # TIER 4: REAL-WORLD APPLICATION SCENARIOS (6 Tests)
 # ==============================================================================
-class TestTier4RealWorldScenarios:
+class TestTier4RealWorldScenarios(unittest.TestCase):
 
     def test_t4_scenario1_transatlantic_distributed_database_replication(self):
         """

@@ -1,3 +1,4 @@
+import unittest
 """
 Comprehensive End-to-End Integration Test Suite for Grounded Retrieval Engine.
 Integrates:
@@ -34,7 +35,7 @@ from src.domain.grounded_retrieval_engine import (
 )
 
 
-class TestGroundedRetrievalEngineEndToEnd:
+class TestGroundedRetrievalEngineEndToEnd(unittest.TestCase):
 
     def test_full_pipeline_accepted_grounded_query(self):
         """
@@ -155,7 +156,7 @@ class TestGroundedRetrievalEngineEndToEnd:
         assert len(res["diagnostic_report"]["invariant_violations"]) >= 1
 
 
-class TestTopLevelExecutionAPIs:
+class TestTopLevelExecutionAPIs(unittest.TestCase):
 
     def test_execute_grounded_retrieval_with_passages(self):
         """Verifies top-level execute_grounded_retrieval function with explicit passages."""
@@ -195,7 +196,7 @@ class TestTopLevelExecutionAPIs:
         assert res["grounding_status"] == STATUS_REFUSED
 
 
-class TestMultiPhasePipelineChaining:
+class TestMultiPhasePipelineChaining(unittest.TestCase):
 
     def test_dense_propositions_to_consensus_to_scorecard(self):
         """

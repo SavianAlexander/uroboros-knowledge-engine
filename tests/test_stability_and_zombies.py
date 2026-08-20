@@ -1,3 +1,4 @@
+import unittest
 """
 Automated Test Suite: System Stability Governor, Windows Job Object Process Supervisor & Zombie Reaper.
 Standard: Pure Python Standard Library + pytest + FastAPI TestClient.
@@ -31,7 +32,7 @@ def cleanup_connections():
     reset_db_connections()
 
 
-class TestProcessSupervisorAndJobObjects:
+class TestProcessSupervisorAndJobObjects(unittest.TestCase):
     """Validate child process tracking, exit code reaping, and Windows Job Object assignment."""
 
     def test_spawn_and_reap_child_process(self):
@@ -63,7 +64,7 @@ class TestProcessSupervisorAndJobObjects:
         assert "lifetime_reaped_children" in stats
 
 
-class TestDeadThreadConnectionReaper:
+class TestDeadThreadConnectionReaper(unittest.TestCase):
     """Validate that connections opened by dead/terminated threads are identified and reaped."""
 
     def test_reap_zombie_thread_connection(self):
@@ -94,7 +95,7 @@ class TestDeadThreadConnectionReaper:
         assert any(r["reason"] == "dead_thread" for r in reap_res["reaped_connections"])
 
 
-class TestJobManagerStabilityAndReaping:
+class TestJobManagerStabilityAndReaping(unittest.TestCase):
     """Validate background job queue, cancellation, timeouts, and stale job memory eviction."""
 
     def test_job_submission_and_completion(self):
@@ -151,7 +152,7 @@ class TestJobManagerStabilityAndReaping:
         assert stats["lifetime_reaped_jobs"] >= 8
 
 
-class TestAsyncStreamReaper:
+class TestAsyncStreamReaper(unittest.TestCase):
     """Validate async stream tracking, chunk counting, and unregistering."""
 
     def test_stream_lifecycle(self):
@@ -171,7 +172,7 @@ class TestAsyncStreamReaper:
         assert stats_after["lifetime_reaped_streams"] >= 1
 
 
-class TestStabilityGovernorAndAPI:
+class TestStabilityGovernorAndAPI(unittest.TestCase):
     """Validate system vitals collection, 1-shot master reap, and FastAPI endpoints."""
 
     def test_stability_governor_vitals(self):

@@ -1,3 +1,4 @@
+import unittest
 """
 Empirical Verification Test Suite: Mathematical Monotonicity, Multiplier Veto, and Performance Benchmark (Milestone M4).
 Zero-mock, rigorous mathematical, physical, and concurrency verification for Boundary Invariants.
@@ -64,7 +65,7 @@ from src.domain.boundary_invariants import (
 # 1. INVARIANT MULTIPLIER BINARY VETO & STRUCTURED DIAGNOSTICS
 # ==============================================================================
 
-class TestInvariantMultiplierBinaryVetoAndDiagnostics:
+class TestInvariantMultiplierBinaryVetoAndDiagnostics(unittest.TestCase):
     """
     Verifies that M_invariant is strictly in {0.0, 1.0} and that any single violation
     instantly zeros the multiplier while producing comprehensive structured diagnostics.
@@ -86,66 +87,65 @@ class TestInvariantMultiplierBinaryVetoAndDiagnostics:
         assert len(res["violations"]) == 0
         assert len(res["diagnostics"]) == 0
 
-    @pytest.mark.parametrize("violated_claim,expected_inv,expected_violation_type", [
-        (
-            {"type": "OPTICAL", "distance_km": 10000.0, "reported_latency_ms": 1.0, "medium": "silica_fiber"},
-            INV_SPEED_OF_LIGHT,
-            VIOLATION_SPEED_OF_LIGHT
-        ),
-        (
-            {"type": "USL", "node_count": 10, "alpha": 0.1, "beta": 0.0, "claimed_speedup": 25.0},
-            INV_USL,
-            VIOLATION_SUPERLINEAR_SPEEDUP
-        ),
-        (
-            {"type": "USL", "node_count": 100, "alpha": 0.05, "beta": 0.01, "claimed_speedup": 8.0},
-            INV_USL,
-            VIOLATION_COHERENCY_RETROGRADE
-        ),
-        (
-            {"type": "CAP", "partition_active": True, "consistency": "linearizable", "availability": "100%"},
-            INV_CAP_PACELC,
-            VIOLATION_CAP_PARTITION
-        ),
-        (
-            {"type": "CAP", "n_replicas": 5, "r_quorum": 2, "w_quorum": 2, "strong_consistency": True},
-            INV_CAP_PACELC,
-            VIOLATION_QUORUM_DEFICIT
-        ),
-        (
-            {"type": "CARNOT", "t_hot_k": 500.0, "t_cold_k": 300.0, "claimed_efficiency": 0.80},
-            INV_CARNOT,
-            VIOLATION_CARNOT_SECOND_LAW
-        ),
-        (
-            {"type": "LANDAUER", "bit_count": 1, "t_kelvin": 300.0, "claimed_energy_joules": 1e-25},
-            INV_LANDAUER,
-            VIOLATION_LANDAUER_THERMODYNAMIC
-        ),
-        (
-            {"type": "SHANNON", "bandwidth_hz": 1e6, "snr_linear": 1.0, "claimed_bps": 10e6},
-            INV_SHANNON,
-            VIOLATION_SHANNON_CAPACITY
-        )
-    ])
-    def test_single_violation_triggers_exact_zero_veto(self, violated_claim, expected_inv, expected_violation_type):
+    def test_single_violation_triggers_exact_zero_veto(self):
         """Any single physical violation among valid claims must veto the entire multiplier to 0.0."""
+        cases = [
+            (
+                {"type": "OPTICAL", "distance_km": 10000.0, "reported_latency_ms": 1.0, "medium": "silica_fiber"},
+                INV_SPEED_OF_LIGHT,
+                VIOLATION_SPEED_OF_LIGHT
+            ),
+            (
+                {"type": "USL", "node_count": 10, "alpha": 0.1, "beta": 0.0, "claimed_speedup": 25.0},
+                INV_USL,
+                VIOLATION_SUPERLINEAR_SPEEDUP
+            ),
+            (
+                {"type": "USL", "node_count": 100, "alpha": 0.05, "beta": 0.01, "claimed_speedup": 8.0},
+                INV_USL,
+                VIOLATION_COHERENCY_RETROGRADE
+            ),
+            (
+                {"type": "CAP", "partition_active": True, "consistency": "linearizable", "availability": "100%"},
+                INV_CAP_PACELC,
+                VIOLATION_CAP_PARTITION
+            ),
+            (
+                {"type": "CAP", "n_replicas": 5, "r_quorum": 2, "w_quorum": 2, "strong_consistency": True},
+                INV_CAP_PACELC,
+                VIOLATION_QUORUM_DEFICIT
+            ),
+            (
+                {"type": "CARNOT", "t_hot_k": 500.0, "t_cold_k": 300.0, "claimed_efficiency": 0.80},
+                INV_CARNOT,
+                VIOLATION_CARNOT_SECOND_LAW
+            ),
+            (
+                {"type": "LANDAUER", "bit_count": 1, "t_kelvin": 300.0, "claimed_energy_joules": 1e-25},
+                INV_LANDAUER,
+                VIOLATION_LANDAUER_THERMODYNAMIC
+            ),
+            (
+                {"type": "SHANNON", "bandwidth_hz": 1e6, "snr_linear": 1.0, "claimed_bps": 10e6},
+                INV_SHANNON,
+                VIOLATION_SHANNON_CAPACITY
+            )
+        ]
         valid_backdrop = [
             {"type": "OPTICAL", "distance_km": 1000.0, "reported_latency_ms": 20.0},
             {"type": "CARNOT", "t_hot_k": 800.0, "t_cold_k": 400.0, "claimed_efficiency": 0.35},
             {"type": "SHANNON", "bandwidth_hz": 20e6, "snr_linear": 100.0, "claimed_bps": 50e6}
         ]
-        payload = valid_backdrop + [violated_claim]
-        res = evaluate_all_boundary_invariants(payload)
-
-        assert res["valid"] is False
-        assert res["multiplier"] == 0.0
-        assert isinstance(res["multiplier"], float)
-        assert len(res["violations"]) == 1
-        assert res["violations"][0]["invariant"] == expected_inv
-        assert res["violations"][0]["violation_type"] == expected_violation_type
-        assert len(res["diagnostics"]) == 1
-        assert len(res["diagnostics"][0]) > 0
+        for violated_claim, expected_inv, expected_violation_type in cases:
+            with self.subTest(claim_type=violated_claim["type"]):
+                payload = valid_backdrop + [violated_claim]
+                res = evaluate_all_boundary_invariants(payload)
+                self.assertFalse(res["valid"])
+                self.assertEqual(res["multiplier"], 0.0)
+                self.assertEqual(len(res["violations"]), 1)
+                self.assertEqual(res["violations"][0]["invariant"], expected_inv)
+                self.assertEqual(res["violations"][0]["violation_type"], expected_violation_type)
+                self.assertEqual(len(res["diagnostics"]), 1)
 
     def test_multi_violation_comprehensive_diagnostics(self):
         """All 6 invariants violated simultaneously: multiplier is 0.0 and all 6 diagnostics are recorded."""
@@ -193,7 +193,7 @@ class TestInvariantMultiplierBinaryVetoAndDiagnostics:
 # 2. MATHEMATICAL MONOTONICITY: SHANNON CHANNEL CAPACITY
 # ==============================================================================
 
-class TestShannonCapacityMonotonicity:
+class TestShannonCapacityMonotonicity(unittest.TestCase):
     """
     Verifies Shannon channel capacity C(B, SNR) = B * log2(1 + SNR) mathematical monotonicity:
     - Strictly increasing with Bandwidth B for fixed SNR > 0.
@@ -268,7 +268,7 @@ class TestShannonCapacityMonotonicity:
 # 3. MATHEMATICAL MONOTONICITY: CARNOT EFFICIENCY
 # ==============================================================================
 
-class TestCarnotEfficiencyMonotonicity:
+class TestCarnotEfficiencyMonotonicity(unittest.TestCase):
     """
     Verifies Carnot maximum efficiency eta = 1 - (T_cold / T_hot) mathematical properties:
     - Strictly monotonically decreasing with ratio r = T_cold / T_hot.
@@ -330,7 +330,7 @@ class TestCarnotEfficiencyMonotonicity:
 # 4. MATHEMATICAL MONOTONICITY: LANDAUER ERASURE ENERGY
 # ==============================================================================
 
-class TestLandauerEnergyMonotonicity:
+class TestLandauerEnergyMonotonicity(unittest.TestCase):
     """
     Verifies Landauer minimum energy E_min(T, N) = N * k_B * T * ln(2):
     - Strictly monotonically increasing with Temperature T for fixed N >= 1.
@@ -379,7 +379,7 @@ class TestLandauerEnergyMonotonicity:
 # 5. MATHEMATICAL MONOTONICITY: OPTICAL PROPAGATION & USL
 # ==============================================================================
 
-class TestOpticalAndUSLMonotonicity:
+class TestOpticalAndUSLMonotonicity(unittest.TestCase):
     """
     Verifies:
     - Optical propagation time strictly monotonic with distance, curvature factor, and refractive index.
@@ -449,7 +449,7 @@ class TestOpticalAndUSLMonotonicity:
 # 6. CONCURRENCY & HIGH-THROUGHPUT PERFORMANCE BENCHMARK
 # ==============================================================================
 
-class TestPerformanceAndConcurrency:
+class TestPerformanceAndConcurrency(unittest.TestCase):
     """
     Stress-tests evaluation performance (< 1ms per claim evaluation) and verifies
     zero-contention concurrent evaluation across multi-threaded execution pools.
@@ -539,7 +539,7 @@ class TestPerformanceAndConcurrency:
 # 7. ADVERSARIAL NUMERICAL LIMITS & EXTREME VALUES
 # ==============================================================================
 
-class TestAdversarialNumericalLimits:
+class TestAdversarialNumericalLimits(unittest.TestCase):
     """
     Tests extreme numerical limits, IEEE 754 float extremes (inf, nan),
     astronomical/cryogenic boundaries, and malformed structures.

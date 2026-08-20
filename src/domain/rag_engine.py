@@ -438,7 +438,7 @@ def extract_advanced_rag_context(
         fname = hit.get("filename", "document.txt")
         fpath = hit.get("filepath", "")
         content = (hit.get("content") or hit.get("snippet") or "").strip()
-        from src.domain.privacy.context_sanitizer import ContextSanitizer
+        from src.domain.context_sanitizer import ContextSanitizer
         sanitized_content = ContextSanitizer.sanitize_text(content)
 
         # Parent-Child Chunk Expansion & Sentence-Boundary Smart Trimming
@@ -540,7 +540,7 @@ STATIC_RAG_SYSTEM_PREFIX = (
 
 def build_augmented_prompt(query: str, context: str) -> str:
     """Formats retrieved context and user query into a grounded RAG prompt with static prefix KV-cache pinning."""
-    from src.domain.privacy.context_sanitizer import ContextSanitizer
+    from src.domain.context_sanitizer import ContextSanitizer
     clean_ctx = ContextSanitizer.sanitize_text(context) if context else ""
     if not clean_ctx or not clean_ctx.strip():
         return f"{STATIC_RAG_SYSTEM_PREFIX}\n\nQuestion: {query.strip()}\n\nAnswer:"

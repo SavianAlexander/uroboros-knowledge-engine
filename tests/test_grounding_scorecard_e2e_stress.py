@@ -1,3 +1,4 @@
+import unittest
 """
 Verification 2 Empirical Verification & Adversarial Stress Suite (Milestone M5).
 Validates:
@@ -50,7 +51,7 @@ from src.domain.grounded_retrieval_engine import (
 # 1. MATHEMATICAL CONSISTENCY & STRICT MONOTONICITY TESTS
 # ==============================================================================
 
-class TestMathematicalConsistencyAndMonotonicity:
+class TestMathematicalConsistencyAndMonotonicity(unittest.TestCase):
     """Verifies mathematical properties: monotonicity, boundedness, exact boundary transitions."""
 
     def test_epistemic_authority_strict_monotonicity(self):
@@ -199,10 +200,9 @@ class TestMathematicalConsistencyAndMonotonicity:
 # 2. TIER 1 HIGH-CONFIDENCE CONSENSUS CORPORA (S >= 0.85 & ACCEPTED)
 # ==============================================================================
 
-class TestHighConfidenceTier1ConsensusCorpora:
+class TestHighConfidenceTier1ConsensusCorpora(unittest.TestCase):
     """Verifies that high-confidence Tier 1 consensus queries consistently achieve S >= 0.85 and ACCEPTED."""
 
-    @pytest.fixture
     def rfc_corpus(self):
         return [
             {
@@ -231,7 +231,6 @@ class TestHighConfidenceTier1ConsensusCorpora:
             }
         ]
 
-    @pytest.fixture
     def iso_corpus(self):
         return [
             {
@@ -252,7 +251,9 @@ class TestHighConfidenceTier1ConsensusCorpora:
             }
         ]
 
-    def test_rfc_http_consensus_query_exceeds_85_confidence(self, rfc_corpus):
+    def test_rfc_http_consensus_query_exceeds_85_confidence(self, rfc_corpus=None):
+        if rfc_corpus is None:
+            rfc_corpus = self.rfc_corpus()
         engine = GroundedRetrievalEngine(top_k=3, refusal_threshold=0.65)
         res = engine.evaluate_grounding("HTTP 200 OK semantics", candidate_passages=rfc_corpus)
 
@@ -266,7 +267,9 @@ class TestHighConfidenceTier1ConsensusCorpora:
         assert res["diagnostic_report"]["refusal_status"] is False
         assert len(res["diagnostic_report"]["epistemic_deficits"]) == 0
 
-    def test_iso_security_consensus_query_exceeds_85_confidence(self, iso_corpus):
+    def test_iso_security_consensus_query_exceeds_85_confidence(self, iso_corpus=None):
+        if iso_corpus is None:
+            iso_corpus = self.iso_corpus()
         engine = GroundedRetrievalEngine(top_k=2, refusal_threshold=0.65)
         res = engine.evaluate_grounding("ISO 27001 access control requirements", candidate_passages=iso_corpus)
 
@@ -299,7 +302,7 @@ class TestHighConfidenceTier1ConsensusCorpora:
 # 3. UNGROUNDED, LOW-TIER, CONTRADICTORY & INVARIANT REFUSAL SUITE
 # ==============================================================================
 
-class TestAdversarialRefusalAndDiagnosticReporting:
+class TestAdversarialRefusalAndDiagnosticReporting(unittest.TestCase):
     """Verifies that ungrounded, low-tier, contradictory, or invariant-violating queries produce REFUSED with complete diagnostics."""
 
     def test_pure_tier4_commentary_refusal_with_epistemic_deficits(self):
@@ -458,7 +461,7 @@ class TestAdversarialRefusalAndDiagnosticReporting:
 # 4. HIGH-THROUGHPUT SLA BENCHMARK (< 5MS PER EVALUATION)
 # ==============================================================================
 
-class TestHighThroughputBenchmarkSLA:
+class TestHighThroughputBenchmarkSLA(unittest.TestCase):
     """Benchmark SLA performance: ensures < 5ms per end-to-end grounding evaluation."""
 
     def test_single_query_evaluation_latency_sla(self):
@@ -564,7 +567,7 @@ class TestHighThroughputBenchmarkSLA:
 # 5. INTEGRATION CONTRACTS & EDGE CASE DEFENSE
 # ==============================================================================
 
-class TestEdgeCaseAndContractDefense:
+class TestEdgeCaseAndContractDefense(unittest.TestCase):
     """Verifies edge cases, malformed payloads, zero evidence, and public API compliance."""
 
     def test_null_empty_whitespace_query_handling(self):

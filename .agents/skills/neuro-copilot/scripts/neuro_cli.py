@@ -669,56 +669,13 @@ def cmd_browser(args):
             for r in res.get("restored_files", []):
                 print(f"    [+] Restored: {r}")
         print("==========================================================================")
-        print("✅ [SUCCESS] Browser preferences restored from backup!")
-        return 0
     elif sub == "test":
         return browser_optimizer_bridge.run_self_test()
     return 0
 
 
-def cmd_curam(args):
-    """IBM Cúram Social Program Management (SPM) & CER Decision Engine Bridge."""
-    import curam_bridge
-    sub = getattr(args, "curam_subcommand", None) or "evaluate"
-    if sub == "evaluate":
-        ev = getattr(args, "evidence", None)
-        if not ev:
-            print("Please provide --evidence (JSON string or file path)")
-            return 1
-        if os.path.isfile(ev):
-            with open(ev, "r", encoding="utf-8") as f:
-                ev = f.read()
-        print(curam_bridge.evaluate_cer_cli(ev))
-    elif sub == "fpl":
-        print(curam_bridge.get_fpl_table_cli(getattr(args, "size", 1)))
-    return 0
-
-
-def cmd_jira(args):
-    """Jira Issue & QA Test Case Management Bridge (Xray & Zephyr Standards)."""
-    import jira_bridge
-    sub = getattr(args, "jira_subcommand", None) or "generate"
-    if sub == "generate":
-        print(jira_bridge.generate_jira_tests_cli(getattr(args, "domain", "MEDICAID_MAGI"), getattr(args, "format", "json")))
-    elif sub == "export":
-        print(jira_bridge.export_jira_spec_file(getattr(args, "domain", "MEDICAID_MAGI")))
-    return 0
-
-
-def cmd_uat(args):
-    """User Acceptance Testing (UAT) & Sign-Off Certification Bridge."""
-    import uat_bridge
-    sub = getattr(args, "uat_subcommand", None) or "run"
-    if sub == "run":
-        doms = getattr(args, "domains", ["MEDICAID_MAGI", "SNAP", "TANF"])
-        print(uat_bridge.run_uat_suite_cli(doms))
-    elif sub == "certificate":
-        print(uat_bridge.export_uat_certificate_cli(getattr(args, "approver", "Chief Information Officer / Product Owner SME")))
-    return 0
-
-
 def cmd_sync_sources(args):
-    """Execute live primary source harvesting and synchronization (eCFR, Federal Register, Jira OpenAPI, IBM CER)."""
+    """Execute knowledge vault document synchronization and RAG index updating."""
     try:
         from src.domain.sync_orchestrator import PrimarySourceSyncOrchestrator
         domain = getattr(args, "domain", None)
@@ -1162,36 +1119,9 @@ def main():
     b_tune.add_argument("--close", action="store_true", help="Cleanly close running browser processes to lock settings")
     b_rest = browser_subs.add_parser("restore", help="Restore previous browser settings from backup")
     b_rest.add_argument("--browser", choices=["brave", "chrome", "edge", "all"], default="all", help="Target browser")
-    browser_subs.add_parser("test", help="Run automated self-test assertions")
-
-    # curam (IBM Cúram SPM & CER Rules)
-    curam_p = subparsers.add_parser("curam", help="IBM Cúram SPM & CER Decision Engine Bridge")
-    curam_subs = curam_p.add_subparsers(dest="curam_subcommand")
-    curam_eval = curam_subs.add_parser("evaluate", help="Evaluate evidence against CER decision tables")
-    curam_eval.add_argument("--evidence", required=True, help="JSON string or file path containing evidence")
-    curam_fpl = curam_subs.add_parser("fpl", help="Retrieve statutory FPL poverty tables")
-    curam_fpl.add_argument("--size", type=int, default=1, help="Household size")
-
-    # jira (Jira Test Cases & Traceability)
-    jira_p = subparsers.add_parser("jira", help="Jira Issue & QA Test Case Specification Bridge (Xray/Zephyr)")
-    jira_subs = jira_p.add_subparsers(dest="jira_subcommand")
-    jira_gen = jira_subs.add_parser("generate", help="Generate Jira Xray/Zephyr test case specs")
-    jira_gen.add_argument("--domain", default="MEDICAID_MAGI", help="Target domain/program")
-    jira_gen.add_argument("--format", default="json", choices=["json", "markdown"], help="Output format")
-    jira_exp = jira_subs.add_parser("export", help="Export test specification to docs/jira/")
-    jira_exp.add_argument("--domain", default="MEDICAID_MAGI", help="Target domain/program")
-
-    # uat (User Acceptance Testing & Merkle Sign-Off)
-    uat_p = subparsers.add_parser("uat", help="User Acceptance Testing (UAT) & Sign-Off Certification Bridge")
-    uat_subs = uat_p.add_subparsers(dest="uat_subcommand")
-    uat_run = uat_subs.add_parser("run", help="Execute UAT test scenario matrix")
-    uat_run.add_argument("--domains", nargs="+", default=["MEDICAID_MAGI", "SNAP", "TANF"], help="Target domains")
-    uat_cert = uat_subs.add_parser("certificate", help="Generate official UAT Sign-Off Certificate")
-    uat_cert.add_argument("--approver", default="Chief Information Officer / Product Owner SME", help="Approver title")
-
-    # sync_sources (Primary Source Live Harvesting & Sync)
-    sync_src_p = subparsers.add_parser("sync_sources", help="Harvest and synchronize live upstream primary sources (eCFR, Federal Register, Jira OpenAPI, IBM CER, EVE ESI, Puerto Rico Lex, ISO/SOC2)")
-    sync_src_p.add_argument("--domain", choices=["ecfr", "federal_register", "jira", "curam", "statutory", "eve", "puerto_rico", "uat", "all"], help="Filter synchronization to a specific primary source domain")
+    # sync_sources (Vault Document Harvesting & Sync)
+    sync_src_p = subparsers.add_parser("sync_sources", help="Harvest and synchronize Knowledge Vault documents and update RAG index")
+    sync_src_p.add_argument("--domain", help="Filter synchronization to a specific vault subfolder")
     sync_src_p.add_argument("--no-index", action="store_true", help="Skip automatic RAG vector indexing after harvesting")
 
     # spawn / subagent (Autonomous Hands-Free Subagent Delegation)
@@ -1286,9 +1216,6 @@ def main():
         "llm": cmd_llm,
         "loop": cmd_loop,
         "browser": cmd_browser,
-        "curam": cmd_curam,
-        "jira": cmd_jira,
-        "uat": cmd_uat,
         "sync_sources": cmd_sync_sources,
         "connection": cmd_connection,
         "spawn": cmd_spawn,

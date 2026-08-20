@@ -351,7 +351,6 @@ class TestDomainExpandedCoverage(unittest.TestCase):
             run_maintenance()
             success = True
         except Exception:
-                pass
             success = False
         self.assertTrue(success)
 

@@ -1,6 +1,6 @@
 import unittest
 from src.domain.semantic_drift_monitor import audit_semantic_concept_drift
-from src.domain.anki_card_synthesizer import synthesize_anki_flashcards
+from src.domain.synthetic_qa_generator import extract_empirical_qa_triples
 from src.domain.multi_agent_debate import execute_multi_agent_debate
 from fastapi.testclient import TestClient
 from src.app.main import app
@@ -13,11 +13,11 @@ class TestDriftDebateAndAnki(unittest.TestCase):
         res = audit_semantic_concept_drift("test")
         self.assertEqual(res["status"], "success")
 
-    def test_02_synthesize_anki_flashcards(self):
-        passages = [{"filename": "note.md", "content": "Referencing [[Project Phoenix]] concept."}]
-        res = synthesize_anki_flashcards(passages)
+    def test_02_synthesize_qa_cards(self):
+        doc = "Project Phoenix is a resilient local knowledge engine that operates with zero cloud dependencies."
+        res = extract_empirical_qa_triples(doc)
         self.assertEqual(res["status"], "success")
-        self.assertGreater(res["cards_generated"], 0)
+        self.assertGreater(len(res["triples"]), 0)
 
     def test_03_execute_multi_agent_debate(self):
         passages = [{"filename": "doc.md", "content": "Context argument text"}]

@@ -1,3 +1,4 @@
+import unittest
 """
 Empirical Verification Test Suite for Milestone M5:
 Grounding Scorecard, Refusal Gate & Engine Integration.
@@ -89,7 +90,7 @@ from src.domain.boundary_invariants import (
 # PILLAR 1: MONTE CARLO WEIGHT SWEEPS & EXACT 0.65 BOUNDARY SENSITIVITY
 # ==============================================================================
 
-class TestPillar1BoundarySensitivityAndMonteCarlo:
+class TestPillar1BoundarySensitivityAndMonteCarlo(unittest.TestCase):
     """
     Empirical validation of score formula S = 0.45 * W + 0.35 * C + 0.20 * T
     and exact 0.650 refusal gate boundary under 10,000 Monte Carlo iterations.
@@ -251,7 +252,7 @@ class TestPillar1BoundarySensitivityAndMonteCarlo:
 # PILLAR 2: ADVERSARIAL INVARIANT INJECTION & BINARY MULTIPLIER ZEROING
 # ==============================================================================
 
-class TestPillar2AdversarialInvariantInjection:
+class TestPillar2AdversarialInvariantInjection(unittest.TestCase):
     """
     Stress-testing invariant multiplier M_inv = 0.0 binary veto.
     Ensures any single boundary violation completely zeroes S_grounding = 0.0
@@ -440,7 +441,7 @@ class TestPillar2AdversarialInvariantInjection:
 # PILLAR 3: ADVERSARIAL CONTRADICTION INJECTION & DISSENTING LEDGER AUDIT
 # ==============================================================================
 
-class TestPillar3AdversarialContradictionInjection:
+class TestPillar3AdversarialContradictionInjection(unittest.TestCase):
     """
     Stress-testing cross-document contradiction detection:
     Numerical discrepancies, polarity inversions, status collisions,
@@ -659,7 +660,7 @@ class TestPillar3AdversarialContradictionInjection:
 # PILLAR 4: E2E RETRIEVAL UNDER DECEPTIVE QUERIES & MIXED-TIER PAYLOADS
 # ==============================================================================
 
-class TestPillar4DeceptiveQueriesAndMixedPayloads:
+class TestPillar4DeceptiveQueriesAndMixedPayloads(unittest.TestCase):
     """
     Stress-testing end-to-end retrieval pipelines under adversarial, deceptive queries
     and heterogeneous mixed-tier passage payloads.

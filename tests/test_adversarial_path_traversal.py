@@ -41,7 +41,7 @@ class TestPathTraversalProtections(unittest.TestCase):
                     except Exception: pass
                     os.remove(fpath)
                 except Exception as e:
-                pass
+                    pass
     def test_get_file_raw_traversal(self):
         response = self.client.get("/api/file/raw", params={"path": self.outside_path})
         self.assertEqual(response.status_code, 400)

@@ -1,100 +1,100 @@
 {
-  "ledger_id": "ledger_1787068186",
-  "timestamp": "2026-08-18T15:49:46Z",
-  "total_bridges_executed": 15,
+  "ledger_id": "ledger_1787199190",
+  "timestamp": "2026-08-20T04:13:10Z",
+  "total_bridges_executed": 12,
   "all_contracts_verified": true,
   "shared_memory_snapshot": {
-    "tududi_completion_percentage": "98.9%",
-    "tududi_total_tasks": 1929,
-    "tududi_completed_tasks": 1907,
+    "tududi_completion_percentage": "98.3%",
+    "tududi_total_tasks": 2038,
+    "tududi_completed_tasks": 2004,
     "tududi_active_tasks_count": 15,
     "performance_optimal": true,
     "visual_layout_qa_passed": true,
     "visual_audit_report": "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\visual_audit\\visual_page_audit.md",
-    "file_allocation_clean": false,
-    "file_allocation_violations": 1,
-    "architecture_score": 100,
-    "architecture_grade": "A+",
-    "clean_architecture_verified": true,
+    "file_allocation_clean": true,
+    "file_allocation_violations": 0,
+    "system_healthy": true,
+    "health_score": "100%",
     "nomenclature_clean": true,
     "nomenclature_violations_count": 0,
-    "system_healthy": true,
-    "health_score": "83%",
-    "git_merkle_sha256": "f7e8d9062d9c34d4a6dea45bf130ef6b1aa7a83cac055974e157d9318d4922c4",
-    "git_commit_msg": "feat: update codebase [Neuro Hash: f7e8d9062d9c]",
-    "git_modified_files_count": 26,
+    "architecture_score": 95,
+    "architecture_grade": "A+",
+    "clean_architecture_verified": true,
+    "git_merkle_sha256": "aad761ce92ddeb4c5a58b1ae23126af37a49e1aff08eb902989bd4929faba084",
+    "git_commit_msg": "feat: update codebase [Neuro Hash: aad761ce92dd]",
+    "git_modified_files_count": 1,
     "github_uploaded": true,
     "github_upload_status": "\ud83d\udfe1 Uploaded to GitHub (Uncommitted Local Changes)",
     "github_branch": "master",
-    "github_head_commit": "04b888e",
+    "github_head_commit": "01aaa4df",
     "github_remote_url": "https://github.com/SavianAlexander/uroboros-knowledge-engine.git",
     "os_process_hygiene_score": "100%",
     "os_orphans_cleared": 0,
     "neuro_vault_online": true,
     "neuro_indexed_files": 0,
-    "snapshot_views_count": 22,
+    "snapshot_views_count": 25,
     "client_deck_path": "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\ux_journey\\client_showcase.html",
     "client_showcase_package": "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\ux_journey\\client_showcase_package.zip",
     "voice_ready": true
   },
   "contracts": {
     "tududi_bridge": {
-      "contract_id": "contract_tududi_1787068169402",
+      "contract_id": "contract_tududi_1787199181044",
       "bridge_name": "tududi_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:29Z",
+      "timestamp": "2026-08-20T04:13:01Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 480.1967144012451,
+      "duration_ms": 126.27077102661133,
       "inputs": {},
       "outputs": {
-        "total_tasks": 1929,
-        "completed_tasks": 1907,
-        "completion_percentage": "98.9%",
+        "total_tasks": 2038,
+        "completed_tasks": 2004,
+        "completion_percentage": "98.3%",
         "project_name": "Neuro Alexander"
       },
       "shared_context": {
-        "tududi_completion_percentage": "98.9%",
-        "tududi_total_tasks": 1929,
-        "tududi_completed_tasks": 1907,
+        "tududi_completion_percentage": "98.3%",
+        "tududi_total_tasks": 2038,
+        "tududi_completed_tasks": 2004,
         "tududi_active_tasks_count": 15
       },
       "consumed_contracts": [],
       "artifacts": [],
-      "contract_hash": "7e31ebeae5ec7eca1a78a161cb79f3054e1c1cee16eb4a4b5010d96337755048"
+      "contract_hash": "0f7b72528868c04537046ea0d9b719a4e0cbc6da5570a49df3d4f0ef29407dc9"
     },
     "benchmark_bridge": {
-      "contract_id": "contract_benchmark_1787068169403",
+      "contract_id": "contract_benchmark_1787199181046",
       "bridge_name": "benchmark_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:30Z",
+      "timestamp": "2026-08-20T04:13:02Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 1282.5019359588623,
+      "duration_ms": 1219.6166515350342,
       "inputs": {},
       "outputs": {
-        "benchmark_status": "WARNING",
-        "total_duration_ms": 1171.72
+        "benchmark_status": "PASS",
+        "total_duration_ms": 1109.52
       },
       "shared_context": {
         "performance_optimal": true
       },
       "consumed_contracts": [],
       "artifacts": [],
-      "contract_hash": "9574e4d426478f2578318129079da05a9e7f14cb82f21ee7971f507963c92ead"
+      "contract_hash": "bade69ab7ff916a658795b38359c0f239bb97d95ff609723f76425a086b5c1c2"
     },
     "visual_audit_bridge": {
-      "contract_id": "contract_visual_audit_1787068169402",
+      "contract_id": "contract_visual_audit_1787199181044",
       "bridge_name": "visual_audit_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:32Z",
+      "timestamp": "2026-08-20T04:13:02Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 3072.889566421509,
+      "duration_ms": 1254.7357082366943,
       "inputs": {},
       "outputs": {
-        "documents_checked": 5,
-        "pages_rendered": 24,
+        "documents_checked": 0,
+        "pages_rendered": 0,
         "flaws_detected": 0,
         "report_file": "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\visual_audit\\visual_page_audit.md"
       },
@@ -106,64 +106,61 @@
       "artifacts": [
         "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\visual_audit\\visual_page_audit.md"
       ],
-      "contract_hash": "caab224e888e34de0b1a141d2cb26744367fe2afaa3c0a06636f4531430faa5c"
+      "contract_hash": "f1489afb54dd3522da1623063ca60786281a316bfe0a80a98cec1e713ee1f9ce"
     },
     "file_allocation_bridge": {
-      "contract_id": "contract_file_allocation_1787068169403",
+      "contract_id": "contract_file_allocation_1787199181045",
       "bridge_name": "file_allocation_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:33Z",
+      "timestamp": "2026-08-20T04:13:02Z",
       "execution_mode": "async_parallel",
-      "status": "WARNING",
-      "duration_ms": 3648.9570140838623,
+      "status": "SUCCESS",
+      "duration_ms": 1424.9448776245117,
       "inputs": {},
       "outputs": {
-        "file_allocation_status": "WARNING",
-        "total_violations": 1,
+        "file_allocation_status": "CLEAN",
+        "total_violations": 0,
         "root_violations_count": 0,
         "misplaced_tests_count": 0,
-        "orphan_artifacts_count": 1
+        "orphan_artifacts_count": 0
       },
       "shared_context": {
-        "file_allocation_clean": false,
-        "file_allocation_violations": 1
+        "file_allocation_clean": true,
+        "file_allocation_violations": 0
       },
       "consumed_contracts": [],
       "artifacts": [],
-      "contract_hash": "8442cf8fe8d57fe7eb9850656e80ba7c18681f4893abbec6210b65d08c30e73f"
+      "contract_hash": "d13106d1900177b12dc0e570fab48c473f3935e15fd89936783907da105eed82"
     },
-    "architecture_bridge": {
-      "contract_id": "contract_arch_1787068169400",
-      "bridge_name": "architecture_bridge",
+    "doctor_bridge": {
+      "contract_id": "contract_doctor_1787199181046",
+      "bridge_name": "doctor_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:33Z",
+      "timestamp": "2026-08-20T04:13:02Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 3771.564722061157,
+      "duration_ms": 1749.711036682129,
       "inputs": {},
       "outputs": {
-        "compliance_score": 100,
-        "grade": "A+",
-        "clean_architecture_verified": true,
-        "secrets_detected": 0
+        "health_score": "100%",
+        "status": "NOMINAL"
       },
       "shared_context": {
-        "architecture_score": 100,
-        "architecture_grade": "A+",
-        "clean_architecture_verified": true
+        "system_healthy": true,
+        "health_score": "100%"
       },
       "consumed_contracts": [],
       "artifacts": [],
-      "contract_hash": "82da070aaa251eb00aec3b1a06db80dd8282e7e4b939ef4b2c20067e9310e0a7"
+      "contract_hash": "df0cf23e7142bdf3e7906f2993046fabc5b415499953c39d2a38c389f2440de7"
     },
     "nomenclature_bridge": {
-      "contract_id": "contract_nomenclature_1787068169403",
+      "contract_id": "contract_nomenclature_1787199181045",
       "bridge_name": "nomenclature_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:33Z",
+      "timestamp": "2026-08-20T04:13:03Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 3784.0847969055176,
+      "duration_ms": 2011.5737915039062,
       "inputs": {},
       "outputs": {
         "nomenclature_status": "CLEAN",
@@ -176,71 +173,74 @@
       },
       "consumed_contracts": [],
       "artifacts": [],
-      "contract_hash": "0417ed671d47496c2d455a458acdbf0182effb257421e8f13021889d93e77c05"
+      "contract_hash": "b401c6c083b8a4e820ea2e8774419159fb6a39e550692e5316294db2a44e23e8"
     },
-    "doctor_bridge": {
-      "contract_id": "contract_doctor_1787068169403",
-      "bridge_name": "doctor_bridge",
+    "architecture_bridge": {
+      "contract_id": "contract_arch_1787199181043",
+      "bridge_name": "architecture_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:33Z",
+      "timestamp": "2026-08-20T04:13:03Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 4084.6035480499268,
+      "duration_ms": 2013.6237144470215,
       "inputs": {},
       "outputs": {
-        "health_score": "83%",
-        "status": "WARNING"
+        "compliance_score": 95,
+        "grade": "A+",
+        "clean_architecture_verified": true,
+        "secrets_detected": 0
       },
       "shared_context": {
-        "system_healthy": true,
-        "health_score": "83%"
+        "architecture_score": 95,
+        "architecture_grade": "A+",
+        "clean_architecture_verified": true
       },
       "consumed_contracts": [],
       "artifacts": [],
-      "contract_hash": "73b45cfcb4d5f5524ee81397edf7a6e24df394655623c872a377d84ea8d09f5d"
+      "contract_hash": "742f0fbfaf3864fd24e25950317c0957c625f1dc151cd70922799f9dec30a79b"
     },
     "github_bridge": {
-      "contract_id": "contract_github_1787068169402",
+      "contract_id": "contract_github_1787199181044",
       "bridge_name": "github_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:34Z",
+      "timestamp": "2026-08-20T04:13:04Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 4786.197662353516,
+      "duration_ms": 3681.283712387085,
       "inputs": {},
       "outputs": {
-        "merkle_sha256": "f7e8d9062d9c34d4",
-        "commit_message": "feat: update codebase [Neuro Hash: f7e8d9062d9c]",
-        "modified_files_count": 26,
+        "merkle_sha256": "aad761ce92ddeb4c",
+        "commit_message": "feat: update codebase [Neuro Hash: aad761ce92dd]",
+        "modified_files_count": 1,
         "diff_issues_count": 0,
         "uploaded_to_github": true,
         "github_upload_status": "\ud83d\udfe1 Uploaded to GitHub (Uncommitted Local Changes)",
         "unpushed_commits": 0,
         "branch": "master",
-        "head_commit": "04b888e"
+        "head_commit": "01aaa4df"
       },
       "shared_context": {
-        "git_merkle_sha256": "f7e8d9062d9c34d4a6dea45bf130ef6b1aa7a83cac055974e157d9318d4922c4",
-        "git_commit_msg": "feat: update codebase [Neuro Hash: f7e8d9062d9c]",
-        "git_modified_files_count": 26,
+        "git_merkle_sha256": "aad761ce92ddeb4c5a58b1ae23126af37a49e1aff08eb902989bd4929faba084",
+        "git_commit_msg": "feat: update codebase [Neuro Hash: aad761ce92dd]",
+        "git_modified_files_count": 1,
         "github_uploaded": true,
         "github_upload_status": "\ud83d\udfe1 Uploaded to GitHub (Uncommitted Local Changes)",
         "github_branch": "master",
-        "github_head_commit": "04b888e",
+        "github_head_commit": "01aaa4df",
         "github_remote_url": "https://github.com/SavianAlexander/uroboros-knowledge-engine.git"
       },
       "consumed_contracts": [],
       "artifacts": [],
-      "contract_hash": "2a4482fbce0c8da8d5282a1a598883bf2c69ad4ee2999685aa13641ede1a56b7"
+      "contract_hash": "29b2339698f3b752a272e2083b56e49775c126e9966accd74a9ce797989b3342"
     },
     "process_hygiene_bridge": {
-      "contract_id": "contract_process_hygiene_1787068169402",
+      "contract_id": "contract_process_hygiene_1787199181045",
       "bridge_name": "process_hygiene_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:41Z",
+      "timestamp": "2026-08-20T04:13:07Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 11696.869850158691,
+      "duration_ms": 5957.1533203125,
       "inputs": {},
       "outputs": {
         "hygiene_status": "success",
@@ -254,67 +254,16 @@
       },
       "consumed_contracts": [],
       "artifacts": [],
-      "contract_hash": "7bc14b57e8429b2d73f5cc6e6e7f26616bfdc5601ebd3675de93443dbf02cc50"
-    },
-    "curam_bridge": {
-      "contract_id": "contract_curam_1787068181101",
-      "bridge_name": "curam_bridge",
-      "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:41Z",
-      "execution_mode": "async_parallel",
-      "status": "WARNING",
-      "duration_ms": 4.543542861938477,
-      "inputs": {},
-      "outputs": {
-        "error": "No module named 'src.domain.curam_engine'"
-      },
-      "shared_context": {},
-      "consumed_contracts": [],
-      "artifacts": [],
-      "contract_hash": "10857048c1d7fe95504c27ed9b5bf5c08acb5c3dc7e664f5d8c1711525062972"
-    },
-    "uat_bridge": {
-      "contract_id": "contract_uat_1787068181102",
-      "bridge_name": "uat_bridge",
-      "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:41Z",
-      "execution_mode": "async_parallel",
-      "status": "WARNING",
-      "duration_ms": 12.51983642578125,
-      "inputs": {},
-      "outputs": {
-        "error": "No module named 'src.domain.uat_engine'"
-      },
-      "shared_context": {},
-      "consumed_contracts": [],
-      "artifacts": [],
-      "contract_hash": "141863ad9d8182246bd6bff466d4b6ecb7dc77f19da0dd93d428d93a63154e12"
-    },
-    "jira_bridge": {
-      "contract_id": "contract_jira_1787068181102",
-      "bridge_name": "jira_bridge",
-      "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:41Z",
-      "execution_mode": "async_parallel",
-      "status": "WARNING",
-      "duration_ms": 13.582229614257812,
-      "inputs": {},
-      "outputs": {
-        "error": "No module named 'src.domain.jira_engine'"
-      },
-      "shared_context": {},
-      "consumed_contracts": [],
-      "artifacts": [],
-      "contract_hash": "9e39d5db528736fe3d2b1ad3a32836e6cb7b6a1cbd58ac0aebbbd9e3e3b519a4"
+      "contract_hash": "eb9a7c4902f7b644ca629e3c161728e01e6abc3d5179216c03386d2bd44993e2"
     },
     "neuro_bridge": {
-      "contract_id": "contract_neuro_1787068181100",
+      "contract_id": "contract_neuro_1787199187003",
       "bridge_name": "neuro_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:41Z",
+      "timestamp": "2026-08-20T04:13:07Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 162.1410846710205,
+      "duration_ms": 22.704362869262695,
       "inputs": {
         "head_commit": "HEAD"
       },
@@ -329,53 +278,53 @@
         "neuro_indexed_files": 0
       },
       "consumed_contracts": [
-        "contract_github_1787068169402",
-        "contract_tududi_1787068169402"
+        "contract_github_1787199181044",
+        "contract_tududi_1787199181044"
       ],
       "artifacts": [],
-      "contract_hash": "a2cfe63f6d13f97edd85e75e0793d5d316e4700638a7de2260a8a5569f08e133"
+      "contract_hash": "cb6906d8c62e15ac8ef7a228a31d50166a842b7633510cb12613422974ebf5ef"
     },
     "snapshot_bridge": {
-      "contract_id": "contract_snapshot_1787068181100",
+      "contract_id": "contract_snapshot_1787199187003",
       "bridge_name": "snapshot_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:41Z",
+      "timestamp": "2026-08-20T04:13:07Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 692.2621726989746,
+      "duration_ms": 581.4146995544434,
       "inputs": {
-        "upstream_tududi_completion": "98.9%"
+        "upstream_tududi_completion": "98.3%"
       },
       "outputs": {
-        "views_mapped": 22,
+        "views_mapped": 25,
         "deck_path": "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\ux_journey\\client_showcase.html",
         "readme_synced": true,
         "package_zip": "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\ux_journey\\client_showcase_package.zip",
-        "package_size": "3393.8 KB"
+        "package_size": "4340.1 KB"
       },
       "shared_context": {
-        "snapshot_views_count": 22,
+        "snapshot_views_count": 25,
         "client_deck_path": "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\ux_journey\\client_showcase.html",
         "client_showcase_package": "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\ux_journey\\client_showcase_package.zip"
       },
       "consumed_contracts": [
-        "contract_arch_1787068169400",
-        "contract_tududi_1787068169402"
+        "contract_arch_1787199181043",
+        "contract_tududi_1787199181044"
       ],
       "artifacts": [
         "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\ux_journey\\client_showcase.html",
         "C:\\Users\\Administrator\\Desktop\\Neuro Alexander\\docs\\ux_journey\\client_showcase_package.zip"
       ],
-      "contract_hash": "58fa9641205633c8f315267235fccbb672c372b25b195641f3eb1b782d21830a"
+      "contract_hash": "7a31251c4f99246e88cf6216a57a6c708d6eb2d48eafe26a8aa736e33d2593a9"
     },
     "voice_operator_bridge": {
-      "contract_id": "contract_voice_operator_1787068181101",
+      "contract_id": "contract_voice_operator_1787199187003",
       "bridge_name": "voice_operator_bridge",
       "protocol_version": "1.0.0-PRO",
-      "timestamp": "2026-08-18T15:49:46Z",
+      "timestamp": "2026-08-20T04:13:10Z",
       "execution_mode": "async_parallel",
       "status": "SUCCESS",
-      "duration_ms": 5013.145685195923,
+      "duration_ms": 3640.509605407715,
       "inputs": {},
       "outputs": {
         "voice_status": "ready",
@@ -386,7 +335,7 @@
       },
       "consumed_contracts": [],
       "artifacts": [],
-      "contract_hash": "8565ba92618e5140aafd76926c0efba75c5648475a17c6e985bdeb737a72bf05"
+      "contract_hash": "420c09ebdc34cde5a06268451fb518db237543316cb7f8cf5b0f180984fd2a4a"
     }
   }
 }

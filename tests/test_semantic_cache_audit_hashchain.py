@@ -1,3 +1,4 @@
+import unittest
 """
 Automated Test Suite: L1 Semantic RAG Cache & Cryptographic Audit Hashchain Verification.
 Standard: Pure Python Standard Library + pytest + FastAPI TestClient.
@@ -21,7 +22,7 @@ def cleanup_connections():
     reset_db_connections()
 
 
-class TestSemanticQueryCache:
+class TestSemanticQueryCache(unittest.TestCase):
     """Validate L1 semantic cache put, get, hit count, and invalidation."""
 
     def test_semantic_cache_put_and_get(self):
@@ -62,7 +63,7 @@ class TestSemanticQueryCache:
         assert "total_lifetime_hits" in stats
 
 
-class TestAuditHashchainCryptographicIntegrity:
+class TestAuditHashchainCryptographicIntegrity(unittest.TestCase):
     """Validate SHA-256 block hash chaining and tamper detection."""
 
     def test_record_sealed_audit_event(self):
@@ -92,7 +93,7 @@ class TestAuditHashchainCryptographicIntegrity:
         assert len(verification["tampered_blocks"]) == 0
 
 
-class TestAdvancedAPIs:
+class TestAdvancedAPIs(unittest.TestCase):
     """Validate FastAPI endpoints for audit hashchain verification and semantic cache."""
 
     def test_fastapi_endpoints(self):

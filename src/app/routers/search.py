@@ -1176,11 +1176,21 @@ def semantic_drift_endpoint(term: str = ""):
 
 @router.post("/api/knowledge/generate-flashcards")
 def generate_flashcards_endpoint(payload: Dict[str, Any] = Body({})):
-    """Synthesizes Anki-compatible Q&A flashcards from vault passages and wikilinks."""
+    """Synthesizes structured Q&A cards from vault passages and wikilinks."""
     passages = payload.get("passages", [])
     try:
-        from src.domain.anki_card_synthesizer import synthesize_anki_flashcards
-        return synthesize_anki_flashcards(passages)
+        from src.domain.synthetic_qa_generator import extract_empirical_qa_triples
+        cards = []
+        for p in passages:
+            txt = p.get("content", "") if isinstance(p, dict) else str(p)
+            res = extract_empirical_qa_triples(txt)
+            for t in res.get("triples", []):
+                cards.append({
+                    "front": t["question"],
+                    "back": t["answer"],
+                    "context": t.get("source_sentence", "")
+                })
+        return {"status": "success", "cards_generated": len(cards), "cards": cards}
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
     except Exception as e:

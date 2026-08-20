@@ -1,3 +1,4 @@
+import unittest
 """
 Comprehensive Unit & Integration Test Suite for Boundary Invariants (Milestone M4).
 Covers:
@@ -59,7 +60,7 @@ from src.domain.boundary_invariants import (
 # 1. F7: SPEED-OF-LIGHT OPTICAL FIBER & VACUUM PROPAGATION TESTS
 # ==============================================================================
 
-class TestOpticalLatencyInvariant:
+class TestOpticalLatencyInvariant(unittest.TestCase):
 
     def test_haversine_distance_geodesic(self):
         # London (51.5074 N, 0.1278 W) to New York (40.7128 N, 74.0060 W)
@@ -186,7 +187,7 @@ class TestOpticalLatencyInvariant:
 # 2. F8: UNIVERSAL SCALABILITY LAW (USL) TESTS
 # ==============================================================================
 
-class TestUniversalScalabilityLawInvariant:
+class TestUniversalScalabilityLawInvariant(unittest.TestCase):
 
     def test_positive_usl_concurrency_scaling(self):
         # N=16, alpha=0.02 (2% contention), beta=0.0005 (0.05% coherency)
@@ -282,7 +283,7 @@ class TestUniversalScalabilityLawInvariant:
 # 3. F9: CAP & PACELC LATENCY-CONSISTENCY BOUNDS TESTS
 # ==============================================================================
 
-class TestCapPacelcInvariant:
+class TestCapPacelcInvariant(unittest.TestCase):
 
     def test_cap_partition_consistency_availability_exclusivity(self):
         # 1. Partition active + Strong Consistency + 100% Availability -> CAP VIOLATION
@@ -385,7 +386,7 @@ class TestCapPacelcInvariant:
 # 4. F10: CARNOT THERMODYNAMIC & LANDAUER ERASURE LIMITS TESTS
 # ==============================================================================
 
-class TestCarnotAndLandauerInvariants:
+class TestCarnotAndLandauerInvariants(unittest.TestCase):
 
     def test_positive_carnot_efficiency(self):
         # T_hot = 600K, T_cold = 300K -> eta_max = 1 - (300/600) = 50.0%
@@ -466,7 +467,7 @@ class TestCarnotAndLandauerInvariants:
 # 5. F11: SHANNON CHANNEL CAPACITY CEILING TESTS
 # ==============================================================================
 
-class TestShannonChannelCapacityInvariant:
+class TestShannonChannelCapacityInvariant(unittest.TestCase):
 
     def test_positive_shannon_capacity(self):
         # 20 MHz channel, SNR = 30 dB (SNR_linear = 1000)
@@ -529,7 +530,7 @@ class TestShannonChannelCapacityInvariant:
 # 6. UNIFIED INVARIANT EVALUATOR & NATURAL LANGUAGE CLAIM PARSER TESTS
 # ==============================================================================
 
-class TestUnifiedInvariantEvaluatorAndParser:
+class TestUnifiedInvariantEvaluatorAndParser(unittest.TestCase):
 
     def test_parse_claims_from_text(self):
         # Multi-claim paragraph

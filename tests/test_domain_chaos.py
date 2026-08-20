@@ -51,7 +51,6 @@ class TestDomainChaos(unittest.TestCase):
             self.assertIsNotNone(row)
             conn.close()
         except Exception as e:
-                pass
             self.fail(f"Corrupt binary payload ingestion crashed engine: {e}")
 
     def test_02_chaos_simulated_read_lock_recovery(self):

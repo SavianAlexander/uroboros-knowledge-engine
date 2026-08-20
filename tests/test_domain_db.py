@@ -107,7 +107,6 @@ class TestDomainDB(unittest.TestCase):
         try:
             conn.close()
         except Exception as e:
-                pass
             self.fail(f"Double-close raised exception: {e}")
 
     def test_05_connection_timeout_guard(self):
@@ -213,7 +212,6 @@ class TestDomainDB(unittest.TestCase):
         try:
             know.run_maintenance()
         except Exception as e:
-                pass
             self.fail(f"run_maintenance raised exception: {e}")
 
     def test_11_sqlite_connection_pool_lifecycle_and_pragmas(self):

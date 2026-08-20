@@ -1,3 +1,4 @@
+import unittest
 """
 Empirical Challenger Adversarial Test Suite.
 Zero-mock, rigorous mathematical and physical boundary challenge harness.
@@ -30,7 +31,7 @@ from src.domain.grounded_retrieval_engine import (
 # ==============================================================================
 # 1. OPTICAL LATENCY ADVERSARIAL STRESS SUITE
 # ==============================================================================
-class TestAdversarialOpticalLatency:
+class TestAdversarialOpticalLatency(unittest.TestCase):
 
     def test_negative_distance_and_latency(self):
         for neg_d in [-1e-9, -1.0, -100.0, -1e6]:
@@ -79,7 +80,7 @@ class TestAdversarialOpticalLatency:
 # ==============================================================================
 # 2. UNIVERSAL SCALABILITY LAW (USL) ADVERSARIAL STRESS SUITE
 # ==============================================================================
-class TestAdversarialUSL:
+class TestAdversarialUSL(unittest.TestCase):
 
     def test_invalid_node_counts(self):
         for n in [0, -1, -50, -1000]:
@@ -131,7 +132,7 @@ class TestAdversarialUSL:
 # ==============================================================================
 # 3. CARNOT & LANDAUER THERMODYNAMICS ADVERSARIAL STRESS SUITE
 # ==============================================================================
-class TestAdversarialThermodynamics:
+class TestAdversarialThermodynamics(unittest.TestCase):
 
     def test_carnot_hot_le_cold(self):
         # Equal temperatures -> eta = 0. Any positive work without delta_T violates 2nd Law.
@@ -181,7 +182,7 @@ class TestAdversarialThermodynamics:
 # ==============================================================================
 # 4. SHANNON CAPACITY ADVERSARIAL STRESS SUITE
 # ==============================================================================
-class TestAdversarialShannonCapacity:
+class TestAdversarialShannonCapacity(unittest.TestCase):
 
     def test_zero_and_negative_bandwidth_and_snr(self):
         assert check_shannon_capacity_invariant(bandwidth_hz=0.0, snr_linear=100.0, claimed_bps=10.0)["is_physically_possible"] is False
@@ -219,7 +220,7 @@ class TestAdversarialShannonCapacity:
 # ==============================================================================
 # 5. CAP / PACELC & QUORUM ADVERSARIAL STRESS SUITE
 # ==============================================================================
-class TestAdversarialDistributedQuorum:
+class TestAdversarialDistributedQuorum(unittest.TestCase):
 
     def test_quorum_matrix_exhaustive_boundary(self):
         # Test odd node counts 3, 5, 7, 9, 11
@@ -245,7 +246,7 @@ class TestAdversarialDistributedQuorum:
 # ==============================================================================
 # 6. ENGINE COMPOSITE CONFIDENCE & REFUSAL GATE STRESS SUITE
 # ==============================================================================
-class TestAdversarialEngineIntegration:
+class TestAdversarialEngineIntegration(unittest.TestCase):
 
     def test_invariant_veto_multi_violation_diagnostics(self):
         engine = GroundedRetrievalEngine()

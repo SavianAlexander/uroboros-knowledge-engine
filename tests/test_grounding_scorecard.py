@@ -1,3 +1,4 @@
+import unittest
 """
 Comprehensive Unit Tests for Grounding Scorecard, Refusal Gate & Diagnostic Report Engine.
 Tests:
@@ -34,7 +35,7 @@ from src.domain.epistemic_tiering import (
 )
 
 
-class TestGroundingScorecardCalculation:
+class TestGroundingScorecardCalculation(unittest.TestCase):
 
     def test_scorecard_weight_constants(self):
         """Verifies exact required weights for Tier Authority (45%), Consensus (35%), Temporal (20%)."""
@@ -94,7 +95,7 @@ class TestGroundingScorecardCalculation:
         assert "ZERO_EVIDENCE" in res["reason"]
 
 
-class TestRefusalGateThresholdBoundaries:
+class TestRefusalGateThresholdBoundaries(unittest.TestCase):
 
     def test_exact_threshold_0_650_accepted(self):
         """Score exactly equal to 0.650 passes the refusal gate (ACCEPTED / GROUNDED)."""
@@ -139,7 +140,7 @@ class TestRefusalGateThresholdBoundaries:
         assert res["grounding_status"] == STATUS_ACCEPTED
 
 
-class TestBoundaryInvariantMultiplierZeroing:
+class TestBoundaryInvariantMultiplierZeroing(unittest.TestCase):
 
     def test_optical_speed_of_light_violation_forces_zero_score(self):
         """FTL optical latency violation immediately forces S_grounding = 0.0 and REFUSED."""
@@ -212,7 +213,7 @@ class TestBoundaryInvariantMultiplierZeroing:
         assert res["is_grounded"] is False
 
 
-class TestKnowledgeGapDiagnosticReport:
+class TestKnowledgeGapDiagnosticReport(unittest.TestCase):
 
     def test_diagnostic_report_schema_completeness(self):
         """Verifies exact schema of KnowledgeGapDiagnosticReport."""

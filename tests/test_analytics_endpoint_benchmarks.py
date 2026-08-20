@@ -16,6 +16,7 @@ Measures both REST TestClient Endpoint Latency and Direct Engine Latency (p50, p
 
 import os
 import sys
+import unittest
 from src.infrastructure.database import get_db_connection
 import time
 import math
@@ -251,6 +252,14 @@ def main():
         know.reset_db_connections()
         db.DB_FILE = original_db
         clear_analytics_cache()
+
+class TestAnalyticsEndpointBenchmarks(unittest.TestCase):
+    def test_analytics_endpoints_smoke(self):
+        client = TestClient(app)
+        res = client.get("/api/analytics/overview")
+        self.assertIn(res.status_code, [200, 404])
+        res_tags = client.get("/api/analytics/tags")
+        self.assertIn(res_tags.status_code, [200, 404])
 
 if __name__ == "__main__":
     main()

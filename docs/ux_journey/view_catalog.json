@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-08-18T15:49:41Z",
-  "total_views_discovered": 22,
+  "timestamp": "2026-08-20T04:13:07Z",
+  "total_views_discovered": 25,
   "categories": [
     "Configuration & Maintenance",
     "Core Application",
@@ -200,6 +200,30 @@
       "category": "Theme & Mobile Variants",
       "selector": null,
       "description": "Captured interface showcase for Light Mode"
+    },
+    {
+      "id": "captured_11_live_voice_call_hud",
+      "title": "Live Voice Call Hud",
+      "path": "/11_live_voice_call_hud",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Captured interface showcase for Live Voice Call Hud"
+    },
+    {
+      "id": "captured_12_voice_ui_controls",
+      "title": "Voice Ui Controls",
+      "path": "/12_voice_ui_controls",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Captured interface showcase for Voice Ui Controls"
+    },
+    {
+      "id": "captured_13_document_viewer",
+      "title": "Document Viewer",
+      "path": "/13_document_viewer",
+      "category": "Core Application",
+      "selector": null,
+      "description": "Captured interface showcase for Document Viewer"
     }
   ]
 }

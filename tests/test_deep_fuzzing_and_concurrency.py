@@ -137,7 +137,6 @@ class TestDeepFuzzingAndConcurrency(unittest.TestCase):
                 count = cursor.fetchone()[0]
                 self.assertEqual(count, 5)
         except Exception as e:
-                pass
             self.fail(f"TF-IDF zero-variance matrix math crashed: {e}")
 
     def test_05_extract_ai_tags_fuzzing(self):
@@ -291,7 +290,6 @@ class TestDeepFuzzingAndConcurrency(unittest.TestCase):
             snaps = list_db_snapshots()
             self.assertIsInstance(snaps, list)
         except Exception as e:
-                pass
             self.fail(f"Snapshot creation/listing failed: {e}")
 
     def test_13_fuzz_ocr_coordinate_parser_with_corrupt_data(self):

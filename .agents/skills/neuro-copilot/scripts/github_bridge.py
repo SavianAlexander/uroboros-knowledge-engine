@@ -1370,7 +1370,7 @@ def neuro_ingest_cli(target_path: str):
     if not target_path or not os.path.exists(target_path):
         return json.dumps({"status": "error", "message": f"Target path '{target_path}' not found"})
     try:
-        from know import index_directory
+        from src.infrastructure.vector_engine import index_directory
         count = index_directory(target_path)
         return json.dumps({"status": "success", "target": target_path, "indexed": count}, indent=2)
     except Exception as e:

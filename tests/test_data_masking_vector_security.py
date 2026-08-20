@@ -29,7 +29,9 @@ class TestQuantumRAGValidation(unittest.TestCase):
         self.assertEqual(res["latent_dimension"], 64)
 
     def test_03_feedback_refiner(self):
-        res = log_feedback_and_refine("chk_100", feedback_signal="click")
+        import time
+        cid = f"chk_test_isolated_{int(time.time()*1000)}"
+        res = log_feedback_and_refine(cid, feedback_signal="click")
         self.assertEqual(res["status"], "success")
         self.assertEqual(res["updated_affinity"], 1.05)
 
@@ -37,7 +39,7 @@ class TestQuantumRAGValidation(unittest.TestCase):
         res_ann = self.client.post("/api/rag/ann/search", json={"query_vec": [0.1] * 64, "index_vectors": [{"id": "v1", "vector": [0.1] * 64}]})
         self.assertEqual(res_ann.status_code, 200)
 
-        res_fb = self.client.post("/api/rag/feedback/refine", json={"chunk_id": "chk_100", "feedback_signal": "copy"})
+        res_fb = self.client.post("/api/rag/feedback/refine", json={"chunk_id": "chk_endpoint_test", "feedback_signal": "copy"})
         self.assertEqual(res_fb.status_code, 200)
 
 

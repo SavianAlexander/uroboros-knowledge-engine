@@ -28,7 +28,6 @@ from src.core.voice_stt_ear import VoiceEarTranscriber
 from src.core.voice_persona_blend import VoicePersonaBlender, SIGNATURE_PERSONA_BLENDS
 from src.core.voice_podcast_generator import VoicePodcastGenerator
 from src.core.voice_bridge import VoiceBridge
-from src.domain.eve_fleet_tactical_voice import EVEFleetTacticalVoice, FLEET_TACTICAL_TEMPLATES
 from src.infrastructure.database import get_db
 from src.infrastructure.vector_engine import search_files
 
@@ -255,24 +254,6 @@ class TestVoicePersonaBlenderRealData(unittest.TestCase):
             self.assertIsNotNone(vec)
             self.assertEqual(vec.shape, (511, 1, 256))
             self.assertTrue(np.all(np.isfinite(vec)))
-
-
-class TestEVEFleetTacticalVoiceRealData(unittest.TestCase):
-    """Validate EVE tactical combat and industrial voice alert generation and synthesis."""
-
-    def test_broadcast_tactical_alert_real_templates(self):
-        for alert_type in ["MINING_COMPRESSION_CYCLE", "CYNO_BEACON_ACTIVE", "FLEET_ANCHOR_COMMAND"]:
-            res = EVEFleetTacticalVoice.broadcast_tactical_alert(
-                alert_type=alert_type,
-                system="G-EURJ",
-                ship="Pillar of Autumn",
-                speak_now=False
-            )
-            self.assertEqual(res["status"], "tactical_alert_broadcast")
-            self.assertEqual(res["alert_type"], alert_type)
-            self.assertEqual(res["system"], "G-EURJ")
-            self.assertIn("text", res)
-            self.assertIn("G-E-U-R-J", res["text"])
 
 
 class TestVoicePodcastAndIntercomRealData(unittest.TestCase):

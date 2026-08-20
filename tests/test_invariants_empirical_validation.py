@@ -1,3 +1,4 @@
+import unittest
 """
 Adversarial Empirical Challenge Harness for Milestone M4:
 Physical, Mathematical & Computational Boundary Invariant Guards (Features F7, F8, F9, F10, F11).
@@ -63,7 +64,7 @@ from src.domain.boundary_invariants import (
 # 1. EMPIRICAL CHALLENGE: SPEED OF LIGHT & GEODESIC INVARIANTS (F7)
 # ==============================================================================
 
-class TestEmpiricalOpticalLatencyChallenge:
+class TestEmpiricalOpticalLatencyChallenge(unittest.TestCase):
     """Stress-tests optical fiber, vacuum latency, and geodesic mathematics."""
 
     def test_antipodal_geodesic_distance_precision(self):
@@ -160,7 +161,7 @@ class TestEmpiricalOpticalLatencyChallenge:
 # 2. EMPIRICAL CHALLENGE: UNIVERSAL SCALABILITY LAW (USL) & CONCURRENCY (F8)
 # ==============================================================================
 
-class TestEmpiricalUslChallenge:
+class TestEmpiricalUslChallenge(unittest.TestCase):
     """Stress-tests USL, Amdahl's Law, and Gunther's coherency retrograde curves."""
 
     def test_extreme_node_count_sweeps(self):
@@ -228,7 +229,7 @@ class TestEmpiricalUslChallenge:
 # 3. EMPIRICAL CHALLENGE: CAP, PACELC & DISTRIBUTED QUORUM INVARIANTS (F9)
 # ==============================================================================
 
-class TestEmpiricalCapPacelcChallenge:
+class TestEmpiricalCapPacelcChallenge(unittest.TestCase):
     """Stress-tests CAP partition exclusivity, PACELC Lipton-Sandberg, and Quorum boundaries."""
 
     def test_monte_carlo_quorum_overlap_boundary_sweep(self):
@@ -301,7 +302,7 @@ class TestEmpiricalCapPacelcChallenge:
 # 4. EMPIRICAL CHALLENGE: THERMODYNAMICS & LANDAUER PRINCIPLE (F10)
 # ==============================================================================
 
-class TestEmpiricalThermodynamicsChallenge:
+class TestEmpiricalThermodynamicsChallenge(unittest.TestCase):
     """Stress-tests Carnot 2nd law efficiency and Landauer information erasure energy limits."""
 
     def test_near_absolute_zero_carnot_asymptote(self):
@@ -353,7 +354,7 @@ class TestEmpiricalThermodynamicsChallenge:
 # 5. EMPIRICAL CHALLENGE: SHANNON-HARTLEY CHANNEL CAPACITY (F11)
 # ==============================================================================
 
-class TestEmpiricalShannonCapacityChallenge:
+class TestEmpiricalShannonCapacityChallenge(unittest.TestCase):
     """Stress-tests Shannon-Hartley capacity ceiling across extreme SNR and bandwidths."""
 
     def test_negative_db_snr_low_capacity_regime(self):
@@ -393,7 +394,7 @@ class TestEmpiricalShannonCapacityChallenge:
 # 6. EMPIRICAL CHALLENGE: NATURAL LANGUAGE CLAIM PARSER & DECEPTIVE PROMPTS
 # ==============================================================================
 
-class TestEmpiricalParserAndDeceptiveTextChallenge:
+class TestEmpiricalParserAndDeceptiveTextChallenge(unittest.TestCase):
     """Stress-tests regex heuristics against deceptive text, complex units, and multi-claim payloads."""
 
     def test_complex_unit_conversions_optical_latency(self):
@@ -464,7 +465,7 @@ class TestEmpiricalParserAndDeceptiveTextChallenge:
 # 7. EMPIRICAL CHALLENGE: ADVERSARIAL EDGE CASES & NUMERICAL STABILITY
 # ==============================================================================
 
-class TestEmpiricalBoundaryEdgeCases:
+class TestEmpiricalBoundaryEdgeCases(unittest.TestCase):
     """Stress-tests corner cases, zero-quantities, numerical singularity, and contract resilience."""
 
     def test_optical_zero_distance_and_sub_unity_curvature(self):

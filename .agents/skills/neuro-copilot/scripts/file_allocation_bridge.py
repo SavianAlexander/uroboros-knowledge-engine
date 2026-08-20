@@ -27,11 +27,11 @@ if BASE_DIR not in sys.path:
 ALLOWED_ROOT_FILES = {
     # Core entry points & runners
     "know.py", "main.py", "batch_index.py", "desktop_app.py", "start_copilot.py",
-    "run_domain_tests.py", "run_e2e_ui_tests.py",
+    "run_domain_tests.py", "run_e2e_ui_tests.py", "run_uat_audit.py",
     "run.bat", "run.ps1", "setup.ps1", "apply_system_hardening.bat",
     
     # Root UI bundles (100% bitwise parity with src/assets)
-    "index.html", "index.html.gz", "style.css", "style.css.gz", "app.js", "app.js.gz",
+    "index.html", "index.html.gz", "index.html.br", "style.css", "style.css.gz", "style.css.br", "app.js", "app.js.gz", "app.js.br",
     
     # Core Documentation & Project Governance
     "README.md", "README.es.md", "ARCHITECTURE.md", "AGENTS.md", "CHANGELOG.md",
@@ -43,6 +43,7 @@ ALLOWED_ROOT_FILES = {
     "docker-compose.yml", "docker-compose.test.yml",
     "Dockerfile", "Dockerfile.frontend", "Dockerfile.test",
     "nginx.conf", "pytest.ini", "requirements.txt", "requirements-dev.txt", "uroboros_engine.spec",
+    "uat_audit_report.json",
     ".gitignore", ".gitattributes", ".editorconfig", ".env.example", ".dockerignore",
     
     # Canonical Knowledge & Vector Databases

@@ -1,3 +1,4 @@
+import unittest
 """
 Automated Test Suite for Cortana-Grade Neural Audio Pipeline & Broadcast DSP Mastering Rack.
 Standard: Pure Python Standard Library + pytest + FastAPI TestClient + NumPy.
@@ -29,16 +30,18 @@ from src.core.voice_dsp import (
 from src.core.voice_bridge import VoiceBridge
 
 
-@pytest.fixture
-def test_signal():
+def get_test_signal():
     # 1-second 24kHz synthetic signal with mix of frequencies
     fs = 24000
     t = np.linspace(0, 1.0, fs, endpoint=False)
     sig = 0.3 * np.sin(2 * np.pi * 200 * t) + 0.2 * np.sin(2 * np.pi * 2800 * t) + 0.2 * np.sin(2 * np.pi * 7500 * t)
     return sig.astype(np.float32)
 
+def test_signal():
+    return get_test_signal()
 
-class TestVoicePersonaBlender:
+
+class TestVoicePersonaBlender(unittest.TestCase):
     """Validate 512-D Kokoro voice embedding vector interpolation."""
 
 
@@ -75,7 +78,7 @@ class TestVoicePersonaBlender:
         assert vec.shape == (511, 1, 256)
 
 
-class TestBroadcastDSPMasteringRack:
+class TestBroadcastDSPMasteringRack(unittest.TestCase):
     """Validate acoustic DSP mastering filters, compressors, and spatial wideners."""
 
     def test_biquad_coefficients(self):
@@ -84,31 +87,35 @@ class TestBroadcastDSPMasteringRack:
         assert len(b) == 3 and len(a) == 3
         assert np.all(np.isfinite(b)) and np.all(np.isfinite(a))
 
-    def test_parametric_mastering_eq(self, test_signal):
+    def test_parametric_mastering_eq(self, test_signal=None):
+        test_signal = test_signal if test_signal is not None else get_test_signal()
         eq = apply_parametric_mastering_eq(test_signal, sample_rate=24000)
         assert eq is not None
         assert len(eq) == len(test_signal)
         assert np.all(np.isfinite(eq))
 
-    def test_studio_compression_and_limiting(self, test_signal):
-        # Scale to high volume to test compression limiting
+    def test_studio_compression_and_limiting(self, test_signal=None):
+        test_signal = test_signal if test_signal is not None else get_test_signal()
         hot_signal = test_signal * 3.0
         limited = apply_studio_compression_limiting(hot_signal, sample_rate=24000, threshold_db=-14.0)
         assert np.all(np.isfinite(limited))
         assert np.max(np.abs(limited)) <= 0.99  # Peak limiter ceiling
 
-    def test_dynamic_deesser(self, test_signal):
+    def test_dynamic_deesser(self, test_signal=None):
+        test_signal = test_signal if test_signal is not None else get_test_signal()
         deessed = apply_dynamic_deesser(test_signal, sample_rate=24000)
         assert len(deessed) == len(test_signal)
         assert np.all(np.isfinite(deessed))
 
-    def test_holographic_spatial_widener(self, test_signal):
+    def test_holographic_spatial_widener(self, test_signal=None):
+        test_signal = test_signal if test_signal is not None else get_test_signal()
         stereo = apply_holographic_spatial_widener(test_signal, sample_rate=24000, delay_ms=14.0, wet=0.08)
         assert stereo.ndim == 2
         assert stereo.shape == (len(test_signal), 2)
         assert np.all(np.isfinite(stereo))
 
-    def test_process_tactical_dsp_presets(self, test_signal):
+    def test_process_tactical_dsp_presets(self, test_signal=None):
+        test_signal = test_signal if test_signal is not None else get_test_signal()
         for preset in ["STUDIO_MASTER", "CORTANA_MASTER", "HOLOGRAPHIC_AI", "AURA_COCKPIT", "TACTICAL_RADIO", "STUDIO_DIRECT"]:
             out, sr = process_tactical_dsp_pipeline(test_signal, sample_rate=24000, preset=preset)
             assert out is not None
@@ -116,7 +123,7 @@ class TestBroadcastDSPMasteringRack:
             assert np.all(np.isfinite(out))
 
 
-class TestVoiceNormalizerPhonetics:
+class TestVoiceNormalizerPhonetics(unittest.TestCase):
     """Validate technical jargon phonetics and cadence normalizer."""
 
     def test_strip_markdown(self):
@@ -138,7 +145,8 @@ class TestVoiceNormalizerPhonetics:
         assert "O of N log N" in normalized
         assert "is not equal to" in normalized
 
-    def test_master_audio_buffer(self, test_signal):
+    def test_master_audio_buffer(self, test_signal=None):
+        test_signal = test_signal if test_signal is not None else get_test_signal()
         mastered = VoiceNormalizer.master_audio_buffer(test_signal, sample_rate=24000, dsp_preset="STUDIO_MASTER")
         assert mastered is not None
         assert np.all(np.isfinite(mastered))
@@ -201,7 +209,7 @@ Sent from my iPhone"""
 
 
 
-class TestVoiceBridgeAndAPI:
+class TestVoiceBridgeAndAPI(unittest.TestCase):
     """Validate high-level VoiceBridge synthesis and FastAPI endpoints."""
 
     def test_voice_bridge_synthesize_bytes(self):
@@ -270,7 +278,7 @@ class TestVoiceBridgeAndAPI:
         assert len(lines) >= 2
 
 
-class TestVoiceSFXAndEarcons:
+class TestVoiceSFXAndEarcons(unittest.TestCase):
     """Validate procedural mathematical synthesis of Cortana UI sound cues."""
 
     def test_synthesize_all_sfx(self):
@@ -289,7 +297,7 @@ class TestVoiceSFXAndEarcons:
         assert wav[:4] == b"RIFF"
 
 
-class TestStreamingNeuralSynthesizerAndCache:
+class TestStreamingNeuralSynthesizerAndCache(unittest.TestCase):
     """Validate clause splitting, streaming generation, and LRU cache."""
 
     def test_clause_splitting(self):
@@ -310,7 +318,7 @@ class TestStreamingNeuralSynthesizerAndCache:
         assert StreamingAudioCache.get("test clause", "CORTANA_PRIME", 1.0, "STUDIO_MASTER") is None
 
 
-class TestExecutiveDSPAndPersonas:
+class TestExecutiveDSPAndPersonas(unittest.TestCase):
     """Validate Executive Voice Personas, Sub-Harmonic Chest DSP, and Custom Persona CRUD."""
 
     def test_sovereign_persona_vectors(self):

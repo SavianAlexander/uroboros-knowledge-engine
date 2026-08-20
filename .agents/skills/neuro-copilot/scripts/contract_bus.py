@@ -653,106 +653,15 @@ def execute_benchmark_contract(bus: InterBridgeEventBus) -> BridgeContract:
     return contract
 
 
-def execute_curam_contract(bus: InterBridgeEventBus) -> BridgeContract:
-    """Executes IBM Cúram SPM CER statutory rules evaluation, publishing Contract O."""
-    t0 = time.time()
-    c_id = f"contract_curam_{int(time.time() * 1000)}"
-    try:
-        import curam_bridge
-        res = curam_bridge.execute_contract()
-        ok = res.get("status") == "SUCCESS"
-        contract = BridgeContract(
-            contract_id=c_id,
-            bridge_name="curam_bridge",
-            duration_ms=(time.time() - t0) * 1000,
-            status="SUCCESS" if ok else "WARNING",
-            outputs={"cer_status": res.get("cer_engine_status"), "medicaid_eligible": res.get("medicaid_eligible")},
-            shared_context={"curam_cer_operational": ok}
-        )
-    except Exception as e:
-        contract = BridgeContract(
-            contract_id=c_id,
-            bridge_name="curam_bridge",
-            duration_ms=(time.time() - t0) * 1000,
-            status="WARNING",
-            outputs={"error": str(e)}
-        )
-    bus.publish_contract(contract)
-    return contract
-
-
-def execute_jira_contract(bus: InterBridgeEventBus) -> BridgeContract:
-    """Executes Jira Xray/Zephyr QA test case synthesis, publishing Contract P."""
-    t0 = time.time()
-    c_id = f"contract_jira_{int(time.time() * 1000)}"
-    try:
-        import jira_bridge
-        res = jira_bridge.execute_contract()
-        ok = res.get("status") == "SUCCESS"
-        contract = BridgeContract(
-            contract_id=c_id,
-            bridge_name="jira_bridge",
-            duration_ms=(time.time() - t0) * 1000,
-            status="SUCCESS" if ok else "WARNING",
-            outputs={"total_test_cases": res.get("total_test_cases_managed"), "xray_ready": res.get("xray_zephyr_ready")},
-            shared_context={"jira_test_matrix_ready": ok}
-        )
-    except Exception as e:
-        contract = BridgeContract(
-            contract_id=c_id,
-            bridge_name="jira_bridge",
-            duration_ms=(time.time() - t0) * 1000,
-            status="WARNING",
-            outputs={"error": str(e)}
-        )
-    bus.publish_contract(contract)
-    return contract
-
-
-def execute_uat_contract(bus: InterBridgeEventBus) -> BridgeContract:
-    """Executes User Acceptance Testing (UAT) & Merkle certification, publishing Contract Q."""
-    t0 = time.time()
-    c_id = f"contract_uat_{int(time.time() * 1000)}"
-    try:
-        import uat_bridge
-        res = uat_bridge.execute_contract()
-        ok = res.get("status") == "SUCCESS"
-        contract = BridgeContract(
-            contract_id=c_id,
-            bridge_name="uat_bridge",
-            duration_ms=(time.time() - t0) * 1000,
-            status="SUCCESS" if ok else "WARNING",
-            outputs={
-                "pass_rate": res.get("pass_rate"),
-                "total_scenarios": res.get("total_uat_scenarios"),
-                "verdict": res.get("acceptance_verdict")
-            },
-            shared_context={
-                "uat_verified": ok,
-                "uat_merkle_provenance": res.get("merkle_provenance_hash")
-            }
-        )
-    except Exception as e:
-        contract = BridgeContract(
-            contract_id=c_id,
-            bridge_name="uat_bridge",
-            duration_ms=(time.time() - t0) * 1000,
-            status="WARNING",
-            outputs={"error": str(e)}
-        )
-    bus.publish_contract(contract)
-    return contract
-
-
 # -------------------------------------------------------------------------
 # Parallel Asynchronous DAG Orchestrator
 # -------------------------------------------------------------------------
 
 async def run_parallel_bridge_pipeline_async(repo_root: str = ".") -> Dict[str, Any]:
     """
-    Executes all 16 bridges concurrently using an asynchronous DAG pipeline:
+    Executes core bridges concurrently using an asynchronous DAG pipeline:
     - Stage 1 (Parallel Independent Execution): Architecture, Tududi, GitHub, Visual Audit, Process Hygiene, Nomenclature, File Allocation, Doctor, Benchmark
-    - Stage 2 (Parallel Context-Informed Execution): Snapshot Showcase, Neuro Vault, EVE Bridge, Fleet Watchdog, Voice Operator
+    - Stage 2 (Parallel Context-Informed Execution): Snapshot Showcase, Neuro Vault, Voice Operator
     - Stage 3 (Ledger Compilation & Audit Verification): Persist cryptographically signed ledger
     """
     t_start = time.time()
@@ -784,14 +693,11 @@ async def run_parallel_bridge_pipeline_async(repo_root: str = ".") -> Dict[str, 
 
     # Stage 2: Run Downstream Bridges Consuming Stage 1 Contract Context
     print("[Stage 2/3] Launching Context-Informed Bridges (Parallel Async Execution)...")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         stage_2_tasks = [
             loop.run_in_executor(executor, execute_snapshot_contract, bus),
             loop.run_in_executor(executor, execute_neuro_contract, bus),
-            loop.run_in_executor(executor, execute_voice_operator_contract, bus),
-            loop.run_in_executor(executor, execute_curam_contract, bus),
-            loop.run_in_executor(executor, execute_jira_contract, bus),
-            loop.run_in_executor(executor, execute_uat_contract, bus)
+            loop.run_in_executor(executor, execute_voice_operator_contract, bus)
         ]
         s2_results = await asyncio.gather(*stage_2_tasks)
 
@@ -851,11 +757,9 @@ def run_all_self_tests_parallel() -> Dict[str, Any]:
         ("architecture_bridge", "architecture_bridge"),
         ("ast_graph_bridge", "ast_graph_bridge"),
         ("benchmark_bridge", "benchmark_bridge"),
-        ("curam_bridge", "curam_bridge"),
         ("doctor_bridge", "doctor_bridge"),
         ("file_allocation_bridge", "file_allocation_bridge"),
         ("github_bridge", "github_bridge"),
-        ("jira_bridge", "jira_bridge"),
         ("neuro_bridge", "neuro_bridge"),
         ("nomenclature_bridge", "nomenclature_bridge"),
         ("process_hygiene_bridge", "process_hygiene_bridge"),
@@ -863,7 +767,6 @@ def run_all_self_tests_parallel() -> Dict[str, Any]:
         ("snapshot_bridge", "snapshot_bridge"),
         ("system_recovery_bridge", "system_recovery_bridge"),
         ("tududi_bridge", "tududi_bridge"),
-        ("uat_bridge", "uat_bridge"),
         ("visual_audit_bridge", "visual_audit_bridge"),
         ("voice_operator_bridge", "voice_operator_bridge"),
         ("workflow_hub_bridge", "workflow_hub_bridge"),

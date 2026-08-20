@@ -37,11 +37,6 @@ class TestConnectionClient(unittest.TestCase):
         """Verify built-in connections are pre-registered."""
         conn_list = self.client.list_connections()
         names = [c["name"] for c in conn_list]
-        self.assertIn("ecfr", names)
-        self.assertIn("federal_register", names)
-        self.assertIn("jira_schema", names)
-        self.assertIn("jira_cloud", names)
-        self.assertIn("eve_esi", names)
         self.assertIn("ollama", names)
 
     def test_02_register_custom_connection(self):
@@ -62,15 +57,15 @@ class TestConnectionClient(unittest.TestCase):
 
     def test_03_url_builder_and_rate_limiting(self):
         """Verify URL string construction and param encoding."""
-        profile = self.client.get_connection("federal_register")
-        url = self.client._build_url(profile, "documents.json", {"term": "poverty guidelines", "per_page": 5})
-        self.assertIn("https://www.federalregister.gov/api/v1/documents.json", url)
-        self.assertIn("term=poverty+guidelines", url)
-        self.assertIn("per_page=5", url)
+        self.client.register("test_api", "https://api.example.com/v1")
+        profile = self.client.get_connection("test_api")
+        url = self.client._build_url(profile, "search", {"query": "machine learning", "page": 1})
+        self.assertIn("https://api.example.com/v1/search", url)
+        self.assertIn("query=machine+learning", url)
+        self.assertIn("page=1", url)
 
     def test_04_sync_and_rag_pipeline_and_ledger(self):
         """Verify one-shot sync_and_rag creates vault file, calculates SHA-256, and logs to ledger."""
-        # Register a mock connection using file URL or local handler
         test_vault_sub = "test_domain/primary_sources"
         test_filename = "test_statute.md"
         test_content = "Section 101: All eligible citizens receive statutory benefit calculations."
@@ -121,7 +116,7 @@ class TestConnectionClient(unittest.TestCase):
 
     def test_05_ping_telemetry(self):
         """Verify ping health check returns structured latency response."""
-        res = self.client.ping("ecfr")
+        res = self.client.ping("ollama")
         self.assertIn("name", res)
         self.assertIn("status", res)
         self.assertIn("latency_ms", res)

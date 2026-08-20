@@ -30,9 +30,10 @@ def discover_knowledge_gaps() -> Dict[str, Any]:
                 content = r["content"] or ""
                 matches = RE_WIKILINKS.findall(content)
                 for m in matches:
-                    target = m.strip().lower()
+                    link_text = m[0] if isinstance(m, tuple) else m
+                    target = str(link_text).strip().lower()
                     if target and not any(target in ft for ft in file_titles):
-                        unlinked_wikilinks.add(m.strip())
+                        unlinked_wikilinks.add(str(link_text).strip())
 
             # Find orphan files (zero tags and zero wikilinks)
             cursor.execute("SELECT f.id, f.filename, f.filepath FROM files f WHERE f.id NOT IN (SELECT file_id FROM tags)")

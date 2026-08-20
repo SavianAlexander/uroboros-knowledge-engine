@@ -19,9 +19,9 @@ if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
 from src.app.server import app
-from src.domain.privacy.context_sanitizer import ContextSanitizer, sanitize_context_for_rag
+from src.domain.context_sanitizer import ContextSanitizer, sanitize_context_for_rag
 from src.core.voice_vad_interrupter import VoiceActivityInterrupter, VoiceVADInterrupter, get_voice_vad_interrupter
-from src.domain.synthesis.merkle_provenance import MerkleProvenanceEngine, generate_merkle_provenance, verify_merkle_provenance
+from src.domain.merkle_provenance import MerkleProvenanceEngine, generate_merkle_provenance, verify_merkle_provenance
 from src.domain.rag_engine import build_augmented_prompt, extract_advanced_rag_context
 
 

@@ -3,9 +3,10 @@ Domain models and request/response schemas supporting dual field naming (filepat
 """
 
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class RAGStreamRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
     query: Optional[str] = None
     message: Optional[str] = None
     max_chunks: Optional[int] = 5
@@ -17,9 +18,6 @@ class RAGStreamRequest(BaseModel):
     session_id: Optional[str] = None
     web_search: Optional[bool] = False
     enable_web_search: Optional[bool] = False
-
-    class Config:
-        extra = "allow"
 
     def get_query(self) -> str:
         q = self.query or self.message or ""

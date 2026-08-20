@@ -2,108 +2,108 @@
   "project_id": 13,
   "tasks": [
     {
-      "id": 1984,
-      "name": "Clean up tests and verify 100% PASS on test suites and self-tests",
+      "id": 2096,
+      "name": "5. Commit changes, push to master, verify 100% remote CI pass & finalize task",
       "status": 0,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1983,
-      "name": "Delete EVE vault documents and scripts",
-      "status": 2,
+      "id": 2095,
+      "name": "4. Run database health & system integrity verification (run_domain_tests.py & verify_truth_and_integrity.py)",
+      "status": 0,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1982,
-      "name": "Purge EVE tool handlers from antigravity_voice_mcp.py, neuro_cli, and contract_bus.py",
-      "status": 2,
+      "id": 2094,
+      "name": "3. Verify official Playwright React UI test coverage (run_uat_audit.py & test_react_e2e_playwright.py)",
+      "status": 0,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1981,
-      "name": "Delete EVE infrastructure, domain connectors, and tactical voice modules",
-      "status": 2,
+      "id": 2093,
+      "name": "2. Replace crude swallowed error loggers with structured error handling",
+      "status": 0,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1980,
-      "name": "Unmount EVE router from server.py and delete routers/eve.py",
-      "status": 2,
+      "id": 2092,
+      "name": "1. Locate and clean obsolete skipped Vanilla JS test stubs & dead server threads across tests/",
+      "status": 0,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1979,
-      "name": "Decouple & Remove EVE Online Subsystems from Neuro System",
+      "id": 2091,
+      "name": "Clean 64 Obsolete Vanilla JS Test Stubs & Dead Server Threads",
       "status": 0,
       "priority": 0,
-      "due_date": null
+      "due_date": "2026-08-19 00:00:00.000 +00:00"
     },
     {
-      "id": 1977,
-      "name": "Run domain tests and contract bus verification to certify clean removal",
+      "id": 2090,
+      "name": "Clean 64 Obsolete Vanilla JS Test Stubs & Dead Server Threads",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-19 00:00:00.000 +00:00"
+    },
+    {
+      "id": 2089,
+      "name": "Clean 64 Obsolete Vanilla JS Test Stubs & Dead Server Threads",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-19 00:00:00.000 +00:00"
+    },
+    {
+      "id": 2085,
+      "name": "Wire Real Document RAG in WorkspaceView & Remove Mock Stubs",
+      "status": 2,
+      "priority": 0,
+      "due_date": "2026-08-19 00:00:00.000 +00:00"
+    },
+    {
+      "id": 2084,
+      "name": "Wire Real Document RAG in WorkspaceView & Remove Mock Stubs",
+      "status": 0,
+      "priority": 0,
+      "due_date": "2026-08-19 00:00:00.000 +00:00"
+    },
+    {
+      "id": 2083,
+      "name": "Git Provenance & Remote CI Gate",
       "status": 2,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1976,
-      "name": "Remove pr_erp_sql_bridge and purge references from neuro_cli and workflow_hub_bridge",
+      "id": 2082,
+      "name": "Database Health & Test Suite Verification",
       "status": 2,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1975,
-      "name": "Delete Project #7 (Vantage PR Compliance System) from Tududi",
+      "id": 2081,
+      "name": "Harmonize Voice Naming in React UI (ChatView.tsx) & Build Assets",
       "status": 2,
       "priority": 1,
       "due_date": null
     },
     {
-      "id": 1974,
-      "name": "Decommission & Remove Vantage PR Integration from Neuro System",
+      "id": 2080,
+      "name": "Purge Legacy Test Rows in knowledge.db & VACUUM",
       "status": 2,
-      "priority": 0,
+      "priority": 1,
       "due_date": null
     },
     {
-      "id": 1973,
-      "name": "Phase 11: Authentication Hardening, PBKDF2 Password Hashing, WebSocket Async Offload & MCP FTS5 Fixes",
+      "id": 2079,
+      "name": "Synchronize assets/chunks for 100% Bitwise Parity across all 3 directories",
       "status": 2,
-      "priority": 0,
-      "due_date": null
-    },
-    {
-      "id": 1972,
-      "name": "Phase 10: Memory Leak Elimination, Inverted Index Deduplication, DDL Cleanup & Multimodal Image Encoding",
-      "status": 2,
-      "priority": 0,
-      "due_date": null
-    },
-    {
-      "id": 1971,
-      "name": "Phase 9: Concurrency Hardening, Thread-Safe LRU Caches & Mutex Synchronization",
-      "status": 2,
-      "priority": 0,
-      "due_date": null
-    },
-    {
-      "id": 1970,
-      "name": "Phase 8: Vector Search Threshold Normalization, Memory-Bounded PageRank & Temp Sandbox Containment",
-      "status": 2,
-      "priority": 0,
-      "due_date": null
-    },
-    {
-      "id": 1969,
-      "name": "Phase 7: Audio DSP 1-Pole Filter Optimization, Dynamic GPU Telemetry, React Context Memoization & Voice Persona Mapping",
-      "status": 2,
-      "priority": 0,
+      "priority": 1,
       "due_date": null
     }
   ]

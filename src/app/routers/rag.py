@@ -40,7 +40,7 @@ RE_SENTENCE_BOUNDARIES = getattr(text_utils, "_RE_SENTENCE_BOUNDARIES", re.compi
 router = APIRouter()
 
 
-from src.domain.retrieval.adaptive_prompt_synthesizer import (
+from src.domain.adaptive_prompt_synthesizer import (
     AdaptivePromptSynthesizer,
     SemanticAffinityProfile
 )
@@ -164,7 +164,7 @@ def _execute_adaptive_rag_stream(user_query: str, req: Any, session_id: Optional
     except Exception:
         pass
 
-    from src.domain.privacy.context_sanitizer import ContextSanitizer
+    from src.domain.context_sanitizer import ContextSanitizer
 
     if local_context:
         clean_local = ContextSanitizer.sanitize_text(local_context)
@@ -327,7 +327,7 @@ def chat_endpoint(req: ChatRequest):
     user_query = user_query.strip()
     expanded_query = expand_query_with_llm(user_query)
     local_context, local_citations = extract_advanced_rag_context(expanded_query, max_chunks=5, jaccard_threshold=0.70)
-    from src.domain.privacy.context_sanitizer import ContextSanitizer
+    from src.domain.context_sanitizer import ContextSanitizer
     local_context = ContextSanitizer.sanitize_text(local_context) if local_context else ""
 
     sources = [{"filename": c.get("filename", ""), "similarity": c.get("similarity", 0.0)} for c in local_citations]
@@ -635,7 +635,7 @@ def create_rag_provenance_endpoint(req: ProvenanceRequest):
     """
     Generates a cryptographically verifiable JSON Merkle certificate for a RAG inference.
     """
-    from src.domain.synthesis.merkle_provenance import MerkleProvenanceEngine
+    from src.domain.merkle_provenance import MerkleProvenanceEngine
 
     query = (req.query or "").strip()
     if not query:
@@ -682,6 +682,6 @@ def verify_rag_provenance_endpoint(certificate: Dict[str, Any] = Body(...)):
     """
     Cryptographically verifies the authenticity and mathematical integrity of a Merkle certificate.
     """
-    from src.domain.synthesis.merkle_provenance import MerkleProvenanceEngine
+    from src.domain.merkle_provenance import MerkleProvenanceEngine
     return MerkleProvenanceEngine.verify_certificate(certificate)
 

@@ -62,7 +62,7 @@ class TestDomainSOC2(unittest.TestCase):
                                 if pat.search(content):
                                     leaks.append(f_path)
                     except Exception as e:
-                pass
+                        pass
         self.assertEqual(len(leaks), 0, f"SOC 2 Security Violation: Secrets detected in {leaks}")
 
     def test_02_soc2_availability_resource_guard(self):

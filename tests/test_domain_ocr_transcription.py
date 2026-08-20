@@ -75,7 +75,6 @@ class TestDomainOCRTranscription(unittest.TestCase):
             img = Image.new("RGB", (300, 200), color=(0, 0, 0))
             img.save(blank_img_path)
         except Exception:
-                pass
             with open(blank_img_path, "wb") as f:
                 f.write(b"NOT_A_VALID_IMAGE_HEADER_BYTES_12345")
 

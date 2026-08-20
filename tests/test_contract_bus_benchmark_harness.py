@@ -128,9 +128,20 @@ async def main_async():
     print("=======================================================")
 
     # Write results to json for reporting
-    out_file = os.path.join(REPO_ROOT, ".agents", "challenger_m3_1", "benchmark_results.json")
+    out_dir = os.path.join(REPO_ROOT, ".agents", "challenger_m3_1")
+    os.makedirs(out_dir, exist_ok=True)
+    out_file = os.path.join(out_dir, "benchmark_results.json")
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump({"sequential": seq_stats, "concurrency": conc_stats}, f, indent=2)
+
+
+import unittest
+
+class TestContractBusBenchmarkHarness(unittest.TestCase):
+    def test_benchmark_harness_single_run(self):
+        rep = asyncio.run(run_parallel_bridge_pipeline_async(repo_root=REPO_ROOT))
+        self.assertIsNotNone(rep)
+        self.assertIn("total_duration_ms", rep)
 
 
 if __name__ == "__main__":

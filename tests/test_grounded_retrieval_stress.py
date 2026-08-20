@@ -1,3 +1,4 @@
+import unittest
 """
 Adversarial Stress & Empirical Challenge Suite for Grounded Retrieval Engine.
 Empirical Challenger 2 Verification Suite.
@@ -39,7 +40,7 @@ from src.domain.grounded_retrieval_engine import (
 )
 
 
-class TestAdversarialPropositionalDeconstruction:
+class TestAdversarialPropositionalDeconstruction(unittest.TestCase):
     """Stress testing propositional deconstruction and breadcrumb hierarchy."""
 
     def test_deeply_nested_unicode_hierarchy_breadcrumb(self):
@@ -110,7 +111,7 @@ class TestAdversarialPropositionalDeconstruction:
         assert "Another valid proposition statement containing first-principles" in props[1]["statement"]
 
 
-class TestAdversarialContradictionResolutionMatrix:
+class TestAdversarialContradictionResolutionMatrix(unittest.TestCase):
     """Stress testing cross-document consensus and contradiction matrix."""
 
     def test_isolated_numerical_discrepancy(self):
@@ -182,7 +183,7 @@ class TestAdversarialContradictionResolutionMatrix:
         assert res_single["consensus_score"] == 0.70
 
 
-class TestAdversarialSupersedingAndDecayClamping:
+class TestAdversarialSupersedingAndDecayClamping(unittest.TestCase):
     """Stress testing superseding chains, date formats, and temporal decay clamping."""
 
     def test_superseded_hard_cap_strict_enforcement(self):
@@ -252,7 +253,7 @@ class TestAdversarialSupersedingAndDecayClamping:
         assert decay_ancient == 0.05
 
 
-class TestAdversarialGroundingScorecardAndRefusalGate:
+class TestAdversarialGroundingScorecardAndRefusalGate(unittest.TestCase):
     """Stress testing the composite grounding confidence scorecard and refusal gates."""
 
     def test_adversarial_candidate_set_all_commentary(self):

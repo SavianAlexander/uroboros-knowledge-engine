@@ -1134,11 +1134,10 @@ This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) fi
 | :---: | :---: |
 | ![Settings Maintenance](docs/ux_journey/08_settings_maintenance.png) | ![Command Palette](docs/ux_journey/09_command_palette.png) |
 
-| **Light Mode** | **Live Voice Call HUD** |
+| **Light Mode** | **Live Voice Call Hud** |
 | :---: | :---: |
-| ![Light Mode](docs/ux_journey/10_light_mode.png) | ![Live Voice Call HUD](docs/ux_journey/11_live_voice_call_hud.png) |
+| ![Light Mode](docs/ux_journey/10_light_mode.png) | ![Live Voice Call Hud](docs/ux_journey/11_live_voice_call_hud.png) |
 
-| **Voice Studio Controls** | **Document Viewer** |
+| **Voice Ui Controls** | **Document Viewer** |
 | :---: | :---: |
-| ![Voice Controls](docs/ux_journey/12_voice_ui_controls.png) | ![Document Viewer](docs/ux_journey/13_document_viewer.png) |
-
+| ![Voice Ui Controls](docs/ux_journey/12_voice_ui_controls.png) | ![Document Viewer](docs/ux_journey/13_document_viewer.png) |

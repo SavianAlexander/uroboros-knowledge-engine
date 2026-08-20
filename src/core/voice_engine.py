@@ -212,15 +212,12 @@ class KokoroVoiceEngine:
         self._init_local_kokoro()
 
     def _init_local_kokoro(self):
-        """Initialize in-process ONNX model with DirectML GPU acceleration and CPU fallback."""
-        model_to_use = LOCAL_ONNX_GPU_MODEL_PATH if os.path.exists(LOCAL_ONNX_GPU_MODEL_PATH) else LOCAL_ONNX_MODEL_PATH
+        """Initialize in-process ONNX model with clean multi-threaded CPU execution and zero error spam."""
+        provider = os.getenv("ONNX_PROVIDER", "CPUExecutionProvider")
+        os.environ["ONNX_PROVIDER"] = provider
+        model_to_use = LOCAL_ONNX_GPU_MODEL_PATH if (provider == "DmlExecutionProvider" and os.path.exists(LOCAL_ONNX_GPU_MODEL_PATH)) else LOCAL_ONNX_MODEL_PATH
         if os.path.exists(model_to_use) and os.path.exists(LOCAL_VOICES_BIN_PATH):
             try:
-                import onnxruntime as rt
-                available_providers = rt.get_available_providers()
-                if "DmlExecutionProvider" in available_providers and not os.getenv("ONNX_PROVIDER"):
-                    os.environ["ONNX_PROVIDER"] = "DmlExecutionProvider"
-
                 from kokoro_onnx import Kokoro
                 self._local_kokoro_instance = Kokoro(model_to_use, LOCAL_VOICES_BIN_PATH)
             except Exception:

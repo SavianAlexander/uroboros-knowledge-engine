@@ -1,3 +1,4 @@
+import unittest
 """
 Tier 5 Adversarial Verification & Stress Test Suite for Grounded Retrieval & Consensus Matrix Engine.
 Milestone M6 Final Verification Suite.
@@ -90,7 +91,7 @@ from src.domain.grounded_retrieval_engine import (
 # ==============================================================================
 # 1. EPISTEMIC TIERING & RRF FUSION ADVERSARIAL STRESS
 # ==============================================================================
-class TestTier5EpistemicTieringAdversarial:
+class TestTier5EpistemicTieringAdversarial(unittest.TestCase):
     """Adversarial stress tests for epistemic tiering and mathematical RRF fusion."""
 
     def test_null_empty_and_non_string_filenames(self):
@@ -200,7 +201,7 @@ class TestTier5EpistemicTieringAdversarial:
 # ==============================================================================
 # 2. TEMPORAL VALIDITY & STALENESS DECAY ADVERSARIAL STRESS
 # ==============================================================================
-class TestTier5TemporalDecayAdversarial:
+class TestTier5TemporalDecayAdversarial(unittest.TestCase):
     """Adversarial stress tests for temporal validity, superseding markers, and exponential decay."""
 
     def test_far_future_and_ancient_dates(self):
@@ -279,7 +280,7 @@ class TestTier5TemporalDecayAdversarial:
 # ==============================================================================
 # 3. DENSE PROPOSITIONS & BREADCRUMB ADVERSARIAL STRESS
 # ==============================================================================
-class TestTier5DensePropositionsAdversarial:
+class TestTier5DensePropositionsAdversarial(unittest.TestCase):
     """Adversarial stress tests for propositional deconstruction and breadcrumbs."""
 
     def test_decimal_ip_address_and_url_preservation(self):
@@ -370,7 +371,7 @@ class TestTier5DensePropositionsAdversarial:
 # ==============================================================================
 # 4. CROSS-DOCUMENT CONSENSUS & CONTRADICTION MATRIX ADVERSARIAL STRESS
 # ==============================================================================
-class TestTier5ConsensusMatrixAdversarial:
+class TestTier5ConsensusMatrixAdversarial(unittest.TestCase):
     """Adversarial stress tests for consensus extraction, pairwise NLI, and 4-tier contradiction resolution."""
 
     def test_five_way_conflicting_numerical_passages(self):
@@ -470,7 +471,7 @@ class TestTier5ConsensusMatrixAdversarial:
 # ==============================================================================
 # 5. PHYSICAL & COMPUTATIONAL BOUNDARY INVARIANTS ADVERSARIAL STRESS
 # ==============================================================================
-class TestTier5BoundaryInvariantsAdversarial:
+class TestTier5BoundaryInvariantsAdversarial(unittest.TestCase):
     """Adversarial stress tests for first-principles physical and computational boundary guards."""
 
     # --- F7: Speed-of-Light Optical Invariants ---
@@ -602,7 +603,7 @@ class TestTier5BoundaryInvariantsAdversarial:
 # ==============================================================================
 # 6. GROUNDING SCORECARD & REFUSAL GATE ADVERSARIAL STRESS
 # ==============================================================================
-class TestTier5GroundingScorecardAndRefusalGateAdversarial:
+class TestTier5GroundingScorecardAndRefusalGateAdversarial(unittest.TestCase):
     """Adversarial stress tests for Grounding Scorecard, refusal threshold gating, and diagnostics."""
 
     def test_refusal_boundary_precision(self):

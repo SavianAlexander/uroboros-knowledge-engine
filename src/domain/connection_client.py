@@ -64,38 +64,7 @@ class ConnectionClient:
     # -------------------------------------------------------------------------
 
     def _init_built_in_connections(self):
-        """Register the standard suite of primary source authorities."""
-        self.register(
-            name="ecfr",
-            base_url="https://www.ecfr.gov/api",
-            description="Official eCFR.gov Federal Regulations API (Titles 1-50)",
-            default_headers={"Accept": "application/json, application/xml, text/xml"}
-        )
-        self.register(
-            name="federal_register",
-            base_url="https://www.federalregister.gov/api/v1",
-            description="Official FederalRegister.gov API (HHS Poverty Guidelines, COLA, Executive Orders)",
-            default_headers={"Accept": "application/json"}
-        )
-        self.register(
-            name="jira_schema",
-            base_url="https://dac-static.atlassian.com",
-            description="Official Atlassian Swagger/OpenAPI v3 Specification Repository",
-            default_headers={"Accept": "application/json"}
-        )
-        self.register(
-            name="jira_cloud",
-            base_url=os.environ.get("JIRA_BASE_URL", "https://your-domain.atlassian.net"),
-            description="Jira Cloud REST API v3 Dispatcher",
-            default_headers={"Accept": "application/json", "Content-Type": "application/json"},
-            auth_env_var="JIRA_API_TOKEN"
-        )
-        self.register(
-            name="puerto_rico_lex",
-            base_url="https://bvirtualogp.pr.gov",
-            description="Puerto Rico Office of Management and Budget (OGP / OSLPR) Statutory Library",
-            default_headers={"Accept": "text/html, application/pdf"}
-        )
+        """Register the standard local LLM connection profile."""
         self.register(
             name="ollama",
             base_url=os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
@@ -258,14 +227,6 @@ class ConnectionClient:
             # Special health endpoints
             if profile.name == "ollama":
                 self.fetch_json("ollama", "api/tags")
-            elif profile.name == "federal_register":
-                self.fetch_json("federal_register", "documents.json", params={"per_page": 1})
-            elif profile.name == "ecfr":
-                self.fetch_json("ecfr", "versioner/v1/titles.json")
-            elif profile.name == "eve_esi":
-                self.fetch_json("eve_esi", "status/", params={"datasource": "tranquility"})
-            elif profile.name == "jira_schema":
-                self.fetch_text("jira_schema", "cloud/jira/platform/swagger-v3.v3.json")
             else:
                 self.fetch_text(profile.name, "")
             latency_ms = round((time.time() - t0) * 1000, 2)

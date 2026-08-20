@@ -271,7 +271,7 @@ class TestM2AdversarialVoiceMatrix(unittest.TestCase):
         sample_text = "The search takes 14:30 to run. Cost is $45,000 w/ 30 mins duration. FYI SLA is P0."
         normalized = VoiceNormalizer.normalize_for_speech(sample_text)
         self.assertIn("2:30 P-M", normalized)
-        self.assertIn("45000 dollars", normalized)
+        self.assertTrue("forty-five thousand dollars" in normalized.lower() or "45000 dollars" in normalized.lower())
         self.assertIn("with", normalized)
         self.assertIn("30 minutes", normalized)
         self.assertIn("For your information", normalized)

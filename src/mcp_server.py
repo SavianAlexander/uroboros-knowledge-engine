@@ -444,8 +444,38 @@ async def _mcp_tool_trigger_workflow(args: dict) -> list[types.TextContent]:
 
 
 async def _mcp_tool_stats(args: dict) -> list[types.TextContent]:
-    from know import db_status
-    stats = db_status()
+    def _fetch_stats():
+        from src.infrastructure.database import get_db_connection, init_db
+        from src.infrastructure.repositories.snapshots import list_db_snapshots
+        db_path = os.environ.get("DB_FILE", str(PROJECT_ROOT / "knowledge.db"))
+        try:
+            with get_db_connection(db_path, timeout=2.0) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='files'")
+                if not cursor.fetchone():
+                    init_db()
+                cursor.execute("SELECT COUNT(*) FROM files")
+                file_count = cursor.fetchone()[0]
+                cursor.execute("PRAGMA page_count")
+                page_count = cursor.fetchone()[0]
+                cursor.execute("PRAGMA page_size")
+                page_size = cursor.fetchone()[0]
+                cursor.execute("PRAGMA freelist_count")
+                freelist_count = cursor.fetchone()[0]
+                cursor.execute("PRAGMA data_version")
+                dv_row = cursor.fetchone()
+                data_version = int(dv_row[0]) if dv_row and dv_row[0] is not None else 0
+                return {
+                    "file_count": file_count,
+                    "db_size_bytes": page_count * page_size,
+                    "freelist_pages": freelist_count,
+                    "data_version": data_version,
+                    "snapshots_count": len(list_db_snapshots())
+                }
+        except Exception as e:
+            return {"error": str(e), "status": "unavailable"}
+
+    stats = await asyncio.to_thread(_fetch_stats)
     return [types.TextContent(type="text", text=json.dumps(stats, indent=2))]
 
 
@@ -512,66 +542,79 @@ async def _mcp_tool_play_sfx(args: dict) -> list[types.TextContent]:
 
 
 async def _mcp_tool_act(args: dict) -> list[types.TextContent]:
-    import react_agent_bridge
-    res = react_agent_bridge.run_react_agent_loop(args.get("task", ""), max_steps=args.get("steps", 6))
+    def _run():
+        import react_agent_bridge
+        return react_agent_bridge.run_react_agent_loop(args.get("task", ""), max_steps=args.get("steps", 6))
+    res = await asyncio.to_thread(_run)
     return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
 
 
 async def _mcp_tool_symbol_graph(args: dict) -> list[types.TextContent]:
-    import ast_graph_bridge
-    res = ast_graph_bridge.query_symbol_graph(args.get("symbol", ""))
+    def _run():
+        import ast_graph_bridge
+        return ast_graph_bridge.query_symbol_graph(args.get("symbol", ""))
+    res = await asyncio.to_thread(_run)
     return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
 
 
 async def _mcp_tool_doctor(args: dict) -> list[types.TextContent]:
-    import doctor_bridge
-    res = doctor_bridge.generate_health_scorecard()
+    def _run():
+        import doctor_bridge
+        return doctor_bridge.generate_health_scorecard()
+    res = await asyncio.to_thread(_run)
     return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
 
 
 async def _mcp_tool_reap_zombies(args: dict) -> list[types.TextContent]:
-    import process_hygiene_bridge
-    res = process_hygiene_bridge.clean_process_hygiene()
+    def _run():
+        import process_hygiene_bridge
+        return process_hygiene_bridge.clean_process_hygiene()
+    res = await asyncio.to_thread(_run)
     return [types.TextContent(type="text", text=json.dumps(res, indent=2))]
 
 
 async def _mcp_tool_consensus_debate(args: dict) -> list[types.TextContent]:
     prompt = (args or {}).get("prompt", "")
-    try:
-        scripts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".agents", "skills", "neuro-copilot", "scripts"))
-        if scripts_dir not in sys.path:
-            sys.path.insert(0, scripts_dir)
-        from frontier_reasoning_bridge import ConsensusArbiter
-        res = ConsensusArbiter.run_debate(prompt)
-        out = (
-            f"## 🏛️ Multi-Agent Consensus Debate Verdict\n\n"
-            f"**Consensus Confidence Score**: `{res.consensus_score:.2f}`\n"
-            f"**Passed**: `{'✅ True' if res.passed else '❌ False'}`\n\n"
-            f"### 🛡️ Hardened Solution:\n{res.arbiter_verdict}\n\n"
-            f"### ⚔️ Red-Team Critic Audit:\n{res.critic_critique}\n"
-        )
-        return [types.TextContent(type="text", text=out)]
-    except Exception as e:
-        return [types.TextContent(type="text", text=f"Error in consensus debate: {e}")]
+    def _run():
+        try:
+            scripts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".agents", "skills", "neuro-copilot", "scripts"))
+            if scripts_dir not in sys.path:
+                sys.path.insert(0, scripts_dir)
+            from frontier_reasoning_bridge import ConsensusArbiter
+            res = ConsensusArbiter.run_debate(prompt)
+            return (
+                f"## 🏛️ Multi-Agent Consensus Debate Verdict\n\n"
+                f"**Consensus Confidence Score**: `{res.consensus_score:.2f}`\n"
+                f"**Passed**: `{'✅ True' if res.passed else '❌ False'}`\n\n"
+                f"### 🛡️ Hardened Solution:\n{res.arbiter_verdict}\n\n"
+                f"### ⚔️ Red-Team Critic Audit:\n{res.critic_critique}\n"
+            )
+        except Exception as e:
+            return f"Error in consensus debate: {e}"
+    out = await asyncio.to_thread(_run)
+    return [types.TextContent(type="text", text=out)]
 
 
 async def _mcp_tool_graph_of_thoughts(args: dict) -> list[types.TextContent]:
     goal = (args or {}).get("goal", "")
-    try:
-        scripts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".agents", "skills", "neuro-copilot", "scripts"))
-        if scripts_dir not in sys.path:
-            sys.path.insert(0, scripts_dir)
-        from frontier_reasoning_bridge import GraphOfThoughtsEngine
-        got = GraphOfThoughtsEngine(goal)
-        got.build_standard_decomposition()
-        nodes = got.execute_dag()
-        out = f"## 🕸️ Graph-of-Thoughts DAG Execution ({len(nodes)} Nodes)\n\n"
-        for nid, n in nodes.items():
-            out += f"### Node `{nid}` ({n.thought_type})\n**Task**: {n.prompt}\n```\n{n.result}\n```\n\n"
-        out += f"### 🎯 Final Synthesized Solution:\n{got.get_final_result()}\n"
-        return [types.TextContent(type="text", text=out)]
-    except Exception as e:
-        return [types.TextContent(type="text", text=f"Error in Graph of Thoughts: {e}")]
+    def _run():
+        try:
+            scripts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".agents", "skills", "neuro-copilot", "scripts"))
+            if scripts_dir not in sys.path:
+                sys.path.insert(0, scripts_dir)
+            from frontier_reasoning_bridge import GraphOfThoughtsEngine
+            got = GraphOfThoughtsEngine(goal)
+            got.build_standard_decomposition()
+            nodes = got.execute_dag()
+            out = f"## 🕸️ Graph-of-Thoughts DAG Execution ({len(nodes)} Nodes)\n\n"
+            for nid, n in nodes.items():
+                out += f"### Node `{nid}` ({n.thought_type})\n**Task**: {n.prompt}\n```\n{n.result}\n```\n\n"
+            out += f"### 🎯 Final Synthesized Solution:\n{got.get_final_result()}\n"
+            return out
+        except Exception as e:
+            return f"Error in Graph of Thoughts: {e}"
+    out = await asyncio.to_thread(_run)
+    return [types.TextContent(type="text", text=out)]
 
 
 _MCP_TOOL_HANDLERS = {

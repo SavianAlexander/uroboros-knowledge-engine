@@ -266,6 +266,8 @@ def compute_authority_weighted_rrf(
 
     # Sort descending by grounded score
     results.sort(key=lambda x: (x["grounded_score"], x["raw_rrf_score"]), reverse=True)
+    for idx, r in enumerate(results, 1):
+        r["final_rank"] = idx
 
     return results
 

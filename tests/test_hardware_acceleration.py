@@ -1,3 +1,4 @@
+import unittest
 """
 Automated Test Suite: Host Hardware Acceleration & Resource Governor Engine.
 Standard: Pure Python Standard Library + pytest + FastAPI TestClient.
@@ -23,7 +24,7 @@ def cleanup_connections():
     reset_db_connections()
 
 
-class TestHardwareAccelerationEngine:
+class TestHardwareAccelerationEngine(unittest.TestCase):
     """Validate CPU multi-threading, SQLite 4GB mmap, 256MB RAM cache & hardware profile discovery."""
 
     def test_apply_os_environment_optimizations(self):
@@ -75,7 +76,7 @@ class TestHardwareAccelerationEngine:
         assert "sqlite_pragmas" in res
 
 
-class TestHardwareFastAPIEndpoints:
+class TestHardwareFastAPIEndpoints(unittest.TestCase):
     """Validate FastAPI REST endpoints for hardware profile and tuning."""
 
     def test_hardware_api_endpoints(self):

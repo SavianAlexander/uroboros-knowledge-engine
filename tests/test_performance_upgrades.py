@@ -124,23 +124,6 @@ class TestPerformanceUpgrades(unittest.TestCase):
         self.assertAlmostEqual(dot_product(normalized[0], normalized[0]), 1.0, places=5)
         self.assertAlmostEqual(dot_product(normalized[1], normalized[1]), 1.0, places=5)
 
-    def test_eve_sde_o1_lookup_and_search(self):
-        from src.infrastructure.eve_sde import get_ship_hull, search_ship_hulls
-        hulk = get_ship_hull("Hulk")
-        self.assertIsNotNone(hulk)
-        self.assertEqual(hulk["class"], "Exhumer")
-        self.assertEqual(hulk["race"], "ORE")
-
-        # Case insensitive lookup
-        mack = get_ship_hull("mackinaw")
-        self.assertIsNotNone(mack)
-        self.assertEqual(mack["class"], "Exhumer")
-
-        # Search query
-        dreads = search_ship_hulls("Dreadnought", limit=5)
-        self.assertTrue(len(dreads) > 0)
-        self.assertTrue(any(d["name"] in ("Revelation", "Naglfar") for d in dreads))
-
     def test_semantic_rag_cache_prenormalization(self):
         from src.core.rag_query_cache import SemanticRAGQueryCache
         cache = SemanticRAGQueryCache(max_entries=10, similarity_threshold=0.95)
@@ -192,22 +175,6 @@ class TestPerformanceUpgrades(unittest.TestCase):
         cos_scores = batch_cosine_similarity(q, matrix)
         self.assertEqual(len(cos_scores), 3)
         self.assertAlmostEqual(cos_scores[0], 1.0, places=4)
-
-    def test_eve_asset_valuation_aggregation(self):
-        from src.infrastructure.eve_market import compute_asset_valuation
-        sample_items = [
-            {"type_id": 17478, "quantity": 2, "name": "Hulk"},
-            {"type_id": 12068, "quantity": 100, "name": "Scordite"},
-        ]
-        mock_prices = {
-            "17478": {"average_price": 350000000.0, "adjusted_price": 340000000.0},
-            "12068": {"average_price": 45.0, "adjusted_price": 42.0},
-        }
-        res = compute_asset_valuation(sample_items, prices=mock_prices)
-        self.assertEqual(res["total_items"], 2)
-        self.assertEqual(res["total_valuation"], 700004500.0)
-        self.assertEqual(len(res["top_items"]), 2)
-        self.assertEqual(res["top_items"][0]["name"], "Hulk")
 
     def test_biquad_coeff_cache(self):
         from src.core.voice_dsp import biquad_highpass, _BIQUAD_COEFF_CACHE

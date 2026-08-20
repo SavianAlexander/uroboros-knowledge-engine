@@ -1,21 +1,21 @@
 {
-  "timestamp": "2026-08-18T15:50:38Z",
-  "total_duration_ms": 1119.83,
+  "timestamp": "2026-08-20T04:13:02Z",
+  "total_duration_ms": 1109.52,
   "status": "PASS",
   "benchmarks": {
     "sqlite_wal": {
       "status": "PASS",
       "iterations": 50,
-      "avg_read_latency_ms": 0.002,
-      "avg_write_latency_ms": 0.002,
-      "total_duration_ms": 0.65
+      "avg_read_latency_ms": 0.246,
+      "avg_write_latency_ms": 0.162,
+      "total_duration_ms": 21.82
     },
     "ast_parsing": {
       "status": "PASS",
       "files_sampled": 3,
-      "symbols_extracted": 1280,
-      "avg_file_parse_ms": 18.631,
-      "total_duration_ms": 1117.85
+      "symbols_extracted": 1300,
+      "avg_file_parse_ms": 18.1,
+      "total_duration_ms": 1085.97
     },
     "contract_merkle_dispatch": {
       "status": "PASS",

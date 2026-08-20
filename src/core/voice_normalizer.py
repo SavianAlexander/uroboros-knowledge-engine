@@ -19,6 +19,46 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
+
+def number_to_words(n: int) -> str:
+    """Convert an integer to natural English words."""
+    if n == 0:
+        return "zero"
+    if n < 0:
+        return "minus " + number_to_words(abs(n))
+
+    ones = [
+        "", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+        "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"
+    ]
+    tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+    thousands = ["", "thousand", "million", "billion", "trillion"]
+
+    def helper(num: int) -> str:
+        if num == 0:
+            return ""
+        elif num < 20:
+            return ones[num] + " "
+        elif num < 100:
+            return tens[num // 10] + ("-" + ones[num % 10] if num % 10 != 0 else "") + " "
+        else:
+            return ones[num // 100] + " hundred " + (helper(num % 100) if num % 100 != 0 else "")
+
+    parts = []
+    i = 0
+    while n > 0:
+        rem = n % 1000
+        if rem != 0:
+            word = helper(rem).strip()
+            if thousands[i]:
+                word += " " + thousands[i]
+            parts.insert(0, word)
+        n //= 1000
+        i += 1
+
+    return " ".join(parts).replace("  ", " ").strip()
+
+
 # Comprehensive Technical, EVE Online, DevOps & Everyday Business Lexicon
 LEXICAL_PHONETIC_REPLACEMENTS: List[Tuple[re.Pattern, str]] = [
     # Daily Business, Productivity & Executive Terms
@@ -68,31 +108,161 @@ LEXICAL_PHONETIC_REPLACEMENTS: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\bP1\b", re.IGNORECASE), "priority one high"),
     (re.compile(r"\bP2\b", re.IGNORECASE), "priority two medium"),
 
-    # DevOps & Infrastructure & Algorithms
-    (re.compile(r"\bSHA-?256\b", re.IGNORECASE), "S-H-A two fifty six"),
-    (re.compile(r"\be-?CFR\b", re.IGNORECASE), "e-C-F-R"),
-    (re.compile(r"\bFTS5\b", re.IGNORECASE), "F-T-S five"),
-    (re.compile(r"\bSQLite\b", re.IGNORECASE), "sequel light"),
-    (re.compile(r"\bSQL\b", re.IGNORECASE), "sequel"),
-    (re.compile(r"\bAPIs\b"), "A-P-Is"),
-    (re.compile(r"\bAPI\b"), "A-P-I"),
-    (re.compile(r"\bJSON\b", re.IGNORECASE), "j-son"),
-    (re.compile(r"\bPRAGMA\b", re.IGNORECASE), "pragma"),
-    (re.compile(r"\bWAL\b"), "write ahead log"),
+    # --- Project & Core Architecture ---
+    (re.compile(r"\bUroboros\b", re.IGNORECASE), "Oo-roh-bor-os"),
+    (re.compile(r"\bKokoro\b", re.IGNORECASE), "Koh-koh-roh"),
+    (re.compile(r"\bTududi\b", re.IGNORECASE), "Too-doo-dee"),
+    (re.compile(r"\bAntigravity\b", re.IGNORECASE), "Anti-gravity"),
+    (re.compile(r"\bCortana\b", re.IGNORECASE), "Cor-tah-nah"),
+
+    # --- AI & Machine Learning Lexicon ---
+    (re.compile(r"\bHNSW\b", re.IGNORECASE), "H-N-S-W"),
+    (re.compile(r"\bBM25\b", re.IGNORECASE), "B-M 25"),
+    (re.compile(r"\bRRF\b", re.IGNORECASE), "R-R-F"),
+    (re.compile(r"\bLLaMA[s\-0-9]*\b", re.IGNORECASE), "Lah-ma"),
+    (re.compile(r"\bGGUF\b", re.IGNORECASE), "G-G-U-F"),
+    (re.compile(r"\bONNX\s+Runtime\b", re.IGNORECASE), "on-ix runtime"),
+    (re.compile(r"\bONNX\b", re.IGNORECASE), "on-ix"),
+    (re.compile(r"\bHyDE\b", re.IGNORECASE), "Hyde"),
+    (re.compile(r"\bLoRA[s]?\b", re.IGNORECASE), "Low-rah"),
+    (re.compile(r"\bMixtral\b", re.IGNORECASE), "Mix-trul"),
+    (re.compile(r"\bQwen[0-9\.\-]*\b", re.IGNORECASE), "Kyoo-wen"),
+    (re.compile(r"\bNomic\b", re.IGNORECASE), "Nom-ik"),
+    (re.compile(r"\bColBERT\b", re.IGNORECASE), "Coal-bear"),
+    (re.compile(r"\bTF-?IDF\b", re.IGNORECASE), "T-F I-D-F"),
+    (re.compile(r"\bk-?NN\b", re.IGNORECASE), "k-N-N"),
+    (re.compile(r"\bMoE\b", re.IGNORECASE), "M-o-E"),
+    (re.compile(r"\bVAEs?\b", re.IGNORECASE), "V-A-E"),
+    (re.compile(r"\bGANs?\b"), "G-A-N"),
+    (re.compile(r"\bLSTMs?\b", re.IGNORECASE), "L-S-T-M"),
+    (re.compile(r"\bCNNs?\b"), "C-N-N"),
+    (re.compile(r"\bRNNs?\b"), "R-N-N"),
+    (re.compile(r"\bRLHF\b", re.IGNORECASE), "R-L-H-F"),
+    (re.compile(r"\bDPO\b", re.IGNORECASE), "D-P-O"),
+    (re.compile(r"\bRoPE\b", re.IGNORECASE), "Rope"),
+    (re.compile(r"\bFlashAttention\b", re.IGNORECASE), "Flash Attention"),
+    (re.compile(r"\bSelf-?RAG\b", re.IGNORECASE), "Self-Rag"),
     (re.compile(r"\bLLMs\b", re.IGNORECASE), "L-L-Ms"),
     (re.compile(r"\bLLM\b", re.IGNORECASE), "L-L-M"),
     (re.compile(r"\bRAG\b", re.IGNORECASE), "rag"),
+    (re.compile(r"\bOllama\b", re.IGNORECASE), "Oh-lah-ma"),
+    (re.compile(r"\bCosine\b", re.IGNORECASE), "co-sign"),
+    (re.compile(r"\bBLEU\b", re.IGNORECASE), "blue"),
+    (re.compile(r"\bROUGE\b", re.IGNORECASE), "rooj"),
+    (re.compile(r"\bPerplexity\b", re.IGNORECASE), "perplexity"),
+    (re.compile(r"\bEmbeddings?\b", re.IGNORECASE), "embeddings"),
+
+    # --- Frameworks & Libraries ---
+    (re.compile(r"\bFastAPI\b", re.IGNORECASE), "Fast A-P-I"),
+    (re.compile(r"\bPydantic\b", re.IGNORECASE), "Pie-dan-tik"),
+    (re.compile(r"\bVite\b", re.IGNORECASE), "Veet"),
+    (re.compile(r"\bReact\.?js\b", re.IGNORECASE), "React"),
+    (re.compile(r"\bReact\b"), "React"),
+    (re.compile(r"\bPyTorch\b", re.IGNORECASE), "Pie-Torch"),
+    (re.compile(r"\bNumPy\b", re.IGNORECASE), "Num-pie"),
+    (re.compile(r"\bPandas\b", re.IGNORECASE), "Pan-daz"),
+    (re.compile(r"\bUvicorn\b", re.IGNORECASE), "You-vee-corn"),
+    (re.compile(r"\bPlaywright\b", re.IGNORECASE), "Play-write"),
+    (re.compile(r"\bTailwindCSS\b", re.IGNORECASE), "Tailwind C-S-S"),
+    (re.compile(r"\bTailwind\b", re.IGNORECASE), "Tailwind"),
+    (re.compile(r"\bNext\.?js\b", re.IGNORECASE), "Next J-S"),
+    (re.compile(r"\bWebpack\b", re.IGNORECASE), "Web-pack"),
+    (re.compile(r"\bBabel\b", re.IGNORECASE), "Bab-el"),
+    (re.compile(r"\bFlask\b"), "Flask"),
+    (re.compile(r"\bDjango\b", re.IGNORECASE), "Jang-go"),
+    (re.compile(r"\bScikit-?learn\b", re.IGNORECASE), "Sy-kit learn"),
+    (re.compile(r"\bsklearn\b", re.IGNORECASE), "S-K-learn"),
+    (re.compile(r"\bTensorFlow\b", re.IGNORECASE), "Tensor Flow"),
+    (re.compile(r"\bKeras\b", re.IGNORECASE), "Care-as"),
+    (re.compile(r"\bMatplotlib\b", re.IGNORECASE), "Mat-plot-lib"),
+    (re.compile(r"\bSeaborn\b", re.IGNORECASE), "Sea-born"),
+    (re.compile(r"\bSQLAlchemy\b", re.IGNORECASE), "sequel alchemy"),
+    (re.compile(r"\bCelery\b", re.IGNORECASE), "Celery"),
+    (re.compile(r"\bExpress\.?js\b", re.IGNORECASE), "Express J-S"),
+    (re.compile(r"\bAngular\b", re.IGNORECASE), "Angular"),
+    (re.compile(r"\bVue\.?js\b", re.IGNORECASE), "View J-S"),
+    (re.compile(r"\bSvelte\b", re.IGNORECASE), "Svelt"),
+    (re.compile(r"\bRedux\b", re.IGNORECASE), "Ree-dux"),
+    (re.compile(r"\bTypeScript\b", re.IGNORECASE), "Type-Script"),
+    (re.compile(r"\bJavaScript\b", re.IGNORECASE), "Java-Script"),
+    (re.compile(r"\bNode\.?js\b", re.IGNORECASE), "Node J-S"),
+    (re.compile(r"\bNPM\b", re.IGNORECASE), "N-P-M"),
+    (re.compile(r"\bPytest\b", re.IGNORECASE), "Pie-test"),
+
+    # --- Infrastructure, Dev, DB & Cloud ---
+    (re.compile(r"\bK8s\b", re.IGNORECASE), "K-eights"),
+    (re.compile(r"\bKubernetes\b", re.IGNORECASE), "Kubernetes"),
+    (re.compile(r"\bgRPC\b", re.IGNORECASE), "G-R-P-C"),
+    (re.compile(r"\bProtobuf[s]?\b", re.IGNORECASE), "Proto-buff"),
+    (re.compile(r"\bDocker\b", re.IGNORECASE), "Dock-er"),
+    (re.compile(r"\bOAuth2?\b", re.IGNORECASE), "O-Auth"),
+    (re.compile(r"\bJWTs?\b", re.IGNORECASE), "J-W-T"),
+    (re.compile(r"\bRESTful\b", re.IGNORECASE), "rest-full"),
+    (re.compile(r"\bREST\b"), "rest"),
+    (re.compile(r"\bGraphQL\b", re.IGNORECASE), "Graph Q-L"),
+    (re.compile(r"\bCLIs\b", re.IGNORECASE), "C-L-Is"),
+    (re.compile(r"\bCLI\b", re.IGNORECASE), "C-L-I"),
+    (re.compile(r"\bSDKs\b", re.IGNORECASE), "S-D-Ks"),
+    (re.compile(r"\bSDK\b", re.IGNORECASE), "S-D-K"),
     (re.compile(r"\bCI/CD\b", re.IGNORECASE), "C-I C-D"),
+    (re.compile(r"\bGitHub\b", re.IGNORECASE), "Git-Hub"),
+    (re.compile(r"\bGitLab\b", re.IGNORECASE), "Git-Lab"),
+    (re.compile(r"\bGit\b"), "Git"),
+    (re.compile(r"\bPRs\b"), "P-Rs"),
+    (re.compile(r"\bPR\b"), "P-R"),
+    (re.compile(r"\bWAL\b"), "write ahead log"),
+    (re.compile(r"\bFTS5\b", re.IGNORECASE), "F-T-S five"),
+    (re.compile(r"\bPostgreSQL\b", re.IGNORECASE), "Postgres sequel"),
+    (re.compile(r"\bPostgres\b", re.IGNORECASE), "Postgres"),
+    (re.compile(r"\bSQLite\b", re.IGNORECASE), "sequel light"),
+    (re.compile(r"\bSQL\b", re.IGNORECASE), "sequel"),
+    (re.compile(r"\bRedis\b", re.IGNORECASE), "Red-iss"),
+    (re.compile(r"\bSSNs?\b", re.IGNORECASE), "S-S-N"),
+    (re.compile(r"\bUUIDs?\b", re.IGNORECASE), "U-U-I-D"),
+    (re.compile(r"\bGUIDs?\b", re.IGNORECASE), "G-U-I-D"),
+    (re.compile(r"\bURLs\b", re.IGNORECASE), "U-R-Ls"),
+    (re.compile(r"\bURL\b", re.IGNORECASE), "U-R-L"),
+    (re.compile(r"\bURIs\b", re.IGNORECASE), "U-R-Is"),
+    (re.compile(r"\bURI\b", re.IGNORECASE), "U-R-I"),
+    (re.compile(r"\bNginx\b", re.IGNORECASE), "Engine-X"),
+    (re.compile(r"\bApache\b", re.IGNORECASE), "Ah-patch-ee"),
+    (re.compile(r"\bTerraform\b", re.IGNORECASE), "Terra-form"),
+    (re.compile(r"\bAnsible\b", re.IGNORECASE), "An-sih-bul"),
+    (re.compile(r"\bLinux\b", re.IGNORECASE), "Linux"),
+    (re.compile(r"\bUbuntu\b", re.IGNORECASE), "Oo-boon-too"),
+    (re.compile(r"\bDebian\b", re.IGNORECASE), "Deb-ee-an"),
+    (re.compile(r"\bCentOS\b", re.IGNORECASE), "Cent-O-S"),
+    (re.compile(r"\bWSL2\b", re.IGNORECASE), "W-S-L two"),
+    (re.compile(r"\bWSL\b", re.IGNORECASE), "W-S-L"),
+    (re.compile(r"\bPOSIX\b", re.IGNORECASE), "Pah-zicks"),
+    (re.compile(r"\bSSH\b", re.IGNORECASE), "S-S-H"),
+    (re.compile(r"\bSSL\b", re.IGNORECASE), "S-S-L"),
+    (re.compile(r"\bTLS\b", re.IGNORECASE), "T-L-S"),
+    (re.compile(r"\bTCP\b", re.IGNORECASE), "T-C-P"),
+    (re.compile(r"\bUDP\b", re.IGNORECASE), "U-D-P"),
+    (re.compile(r"\bIP\b"), "I-P"),
+    (re.compile(r"\bDNS\b", re.IGNORECASE), "D-N-S"),
+    (re.compile(r"\bCORS\b", re.IGNORECASE), "cores"),
+    (re.compile(r"\bCSRF\b", re.IGNORECASE), "C-S-R-F"),
+    (re.compile(r"\bXSS\b", re.IGNORECASE), "cross-site scripting"),
+    (re.compile(r"\bRBAC\b", re.IGNORECASE), "R-back"),
+    (re.compile(r"\bCRUD\b", re.IGNORECASE), "crud"),
+    (re.compile(r"\bACID\b", re.IGNORECASE), "acid"),
+    (re.compile(r"\bIOPS\b", re.IGNORECASE), "eye-ops"),
+    (re.compile(r"\bIPC\b", re.IGNORECASE), "I-P-C"),
+    (re.compile(r"\bRPC\b", re.IGNORECASE), "R-P-C"),
+    (re.compile(r"\bAWS\b", re.IGNORECASE), "A-W-S"),
+    (re.compile(r"\bGCP\b", re.IGNORECASE), "G-C-P"),
+    (re.compile(r"\bAzure\b", re.IGNORECASE), "Ah-zhure"),
+    (re.compile(r"\bSHA-?256\b", re.IGNORECASE), "S-H-A two fifty six"),
+    (re.compile(r"\be-?CFR\b", re.IGNORECASE), "e-C-F-R"),
+    (re.compile(r"\bPRAGMA\b", re.IGNORECASE), "pragma"),
+    (re.compile(r"\bAPIs\b"), "A-P-Is"),
+    (re.compile(r"\bAPI\b"), "A-P-I"),
+    (re.compile(r"\bJSON\b", re.IGNORECASE), "j-son"),
     (re.compile(r"\bYAML\b", re.IGNORECASE), "yam-ul"),
     (re.compile(r"\bMCP\b", re.IGNORECASE), "M-C-P"),
-    (re.compile(r"\bPostgreSQL\b", re.IGNORECASE), "Postgres sequel"),
-    (re.compile(r"\bAST\b", re.IGNORECASE), "A-S-T"),
-    (re.compile(r"\bSDK\b", re.IGNORECASE), "S-D-K"),
-    (re.compile(r"\bSDKs\b", re.IGNORECASE), "S-D-Ks"),
-    (re.compile(r"\bURL\b", re.IGNORECASE), "U-R-L"),
-    (re.compile(r"\bURLs\b", re.IGNORECASE), "U-R-Ls"),
-    (re.compile(r"\bCLI\b", re.IGNORECASE), "C-L-I"),
-    (re.compile(r"\bUUID\b", re.IGNORECASE), "U-U-I-D"),
+    (re.compile(r"\bAST\b"), "A-S-T"),
     (re.compile(r"\bVAD\b", re.IGNORECASE), "V-A-D"),
     (re.compile(r"\bDSP\b", re.IGNORECASE), "D-S-P"),
     (re.compile(r"\bSFX\b", re.IGNORECASE), "sound effects"),
@@ -101,49 +271,37 @@ LEXICAL_PHONETIC_REPLACEMENTS: List[Tuple[re.Pattern, str]] = [
     (re.compile(r"\bType\s*II\b", re.IGNORECASE), "Type Two"),
     (re.compile(r"\bHTML\b", re.IGNORECASE), "H-T-M-L"),
     (re.compile(r"\bCSS\b", re.IGNORECASE), "C-S-S"),
-    (re.compile(r"\bDOM\b", re.IGNORECASE), "dom"),
-    (re.compile(r"\bJWT\b", re.IGNORECASE), "J-W-T"),
-    (re.compile(r"\bEPUB\b", re.IGNORECASE), "E-pub"),
+    (re.compile(r"\bDOM\b"), "dom"),
     (re.compile(r"\bHTTP\b", re.IGNORECASE), "H-T-T-P"),
     (re.compile(r"\bHTTPS\b", re.IGNORECASE), "H-T-T-P-S"),
-    (re.compile(r"\bREST\b", re.IGNORECASE), "rest"),
-    (re.compile(r"\bWSL\b", re.IGNORECASE), "W-S-L"),
-    (re.compile(r"\bSAPI\b", re.IGNORECASE), "Sap-ee"),
     (re.compile(r"\bTTS\b", re.IGNORECASE), "T-T-S"),
     (re.compile(r"\bSTT\b", re.IGNORECASE), "S-T-T"),
-    (re.compile(r"\bONNX\b", re.IGNORECASE), "on-ix"),
-    (re.compile(r"\bOllama\b", re.IGNORECASE), "Oh-lah-ma"),
-    (re.compile(r"\bKokoro\b", re.IGNORECASE), "Koh-koh-roh"),
-    (re.compile(r"\bUroboros\b", re.IGNORECASE), "Oo-roh-bor-os"),
-    (re.compile(r"\bAntigravity\b", re.IGNORECASE), "Anti-gravity"),
-    (re.compile(r"\bTududi\b", re.IGNORECASE), "Too-doo-dee"),
-    (re.compile(r"\bFastAPI\b", re.IGNORECASE), "Fast A-P-I"),
-    (re.compile(r"\bGitHub\b", re.IGNORECASE), "Git-Hub"),
-    (re.compile(r"\bPytest\b", re.IGNORECASE), "Pie-test"),
-    (re.compile(r"\bCortana\b", re.IGNORECASE), "Cor-tah-nah"),
     (re.compile(r"\bGPU\b", re.IGNORECASE), "G-P-U"),
     (re.compile(r"\bCPU\b", re.IGNORECASE), "C-P-U"),
-    (re.compile(r"\bRAM\b", re.IGNORECASE), "ram"),
-    (re.compile(r"\bUI\b", re.IGNORECASE), "U-I"),
-    (re.compile(r"\bUX\b", re.IGNORECASE), "U-X"),
+    (re.compile(r"\bRAM\b"), "ram"),
+    (re.compile(r"\bUI\b"), "U-I"),
+    (re.compile(r"\bUX\b"), "U-X"),
     (re.compile(r"\bGUI\b", re.IGNORECASE), "gooey"),
     (re.compile(r"\bAES\b", re.IGNORECASE), "A-E-S"),
     (re.compile(r"\bRSA\b", re.IGNORECASE), "R-S-A"),
-    (re.compile(r"\bRegex\b", re.IGNORECASE), "reg-ex"),
-    (re.compile(r"\bAsync\b", re.IGNORECASE), "ay-sync"),
-    (re.compile(r"\bNPM\b", re.IGNORECASE), "N-P-M"),
-    (re.compile(r"\bVite\b", re.IGNORECASE), "Veet"),
-    (re.compile(r"\bWebpack\b", re.IGNORECASE), "Web-pack"),
-    (re.compile(r"\bTypeScript\b", re.IGNORECASE), "Type-Script"),
-    (re.compile(r"\bJavaScript\b", re.IGNORECASE), "Java-Script"),
-    (re.compile(r"\bNode\.?js\b", re.IGNORECASE), "Node J-S"),
-    (re.compile(r"\bReact\.?js\b", re.IGNORECASE), "React"),
-    (re.compile(r"\bVue\.?js\b", re.IGNORECASE), "View J-S"),
-    (re.compile(r"\bHNSW\b", re.IGNORECASE), "H-N-S-W"),
-    (re.compile(r"\bColBERT\b", re.IGNORECASE), "Coal-bear"),
-    (re.compile(r"\bBM25\b", re.IGNORECASE), "B-M 25"),
     (re.compile(r"\bDirectML\b", re.IGNORECASE), "Direct-M-L"),
     (re.compile(r"\bWASAPI\b", re.IGNORECASE), "Wah-sah-pee"),
+
+    # --- Units & Versions ---
+    (re.compile(r"\bv(\d+)\.(\d+)\.(\d+)\b", re.IGNORECASE), r"version \1 point \2 point \3"),
+    (re.compile(r"\bv(\d+)\.(\d+)\b", re.IGNORECASE), r"version \1 point \2"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*(?:tok/s|tokens?/sec)\b", re.IGNORECASE), r"\1 tokens per second"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*QPS\b", re.IGNORECASE), r"\1 queries per second"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*Gbps\b", re.IGNORECASE), r"\1 gigabits per second"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*Mbps\b", re.IGNORECASE), r"\1 megabits per second"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*MB\b", re.IGNORECASE), r"\1 megabytes"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*GB\b", re.IGNORECASE), r"\1 gigabytes"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*TB\b", re.IGNORECASE), r"\1 terabytes"),
+    (re.compile(r"\bVRAM\b", re.IGNORECASE), "V-ram"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*GHz\b", re.IGNORECASE), r"\1 gigahertz"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*MHz\b", re.IGNORECASE), r"\1 megahertz"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*kHz\b", re.IGNORECASE), r"\1 kilohertz"),
+    (re.compile(r"\b(\d+(?:\.\d+)?)\s*ms\b", re.IGNORECASE), r"\1 milliseconds"),
     (re.compile(r"\b(\d+)\s*fps\b", re.IGNORECASE), r"\1 frames per second"),
     (re.compile(r"\bFPS\b"), "F-P-S"),
 
@@ -383,16 +541,34 @@ class VoiceNormalizer:
         text = re.sub(r"(?:^|\s)[\-\*]?\s*\[\s*\]\s*", " Pending task: ", text)
 
         # Financial Currencies ($1,250,500.50, $500M, $2.5B, €100, £50)
-        text = re.sub(r"\$(\d+(?:\.\d+)?)\s*B\b", r"\1 billion dollars", text)
-        text = re.sub(r"\$(\d+(?:\.\d+)?)\s*M\b", r"\1 million dollars", text)
-        text = re.sub(r"\$(\d+(?:\.\d+)?)\s*k\b", r"\1 thousand dollars", text)
-        text = re.sub(r"\$(\d{1,3}(?:,\d{3})+)\.(\d{2})\b", lambda m: f"{m.group(1).replace(',', '')} dollars and {m.group(2)} cents", text)
-        text = re.sub(r"\$(\d{1,3}(?:,\d{3})+)\b", lambda m: f"{m.group(1).replace(',', '')} dollars", text)
-        text = re.sub(r"\$(\d+)\.(\d{2})\b", r"\1 dollars and \2 cents", text)
-        text = re.sub(r"\$(\d+)\b", r"\1 dollars", text)
-        text = re.sub(r"€(\d+)\b", r"\1 euros", text)
-        text = re.sub(r"£(\d+)\b", r"\1 pounds", text)
-        text = re.sub(r"¥(\d+)\b", r"\1 yen", text)
+        text = re.sub(r"\$(\d+(?:\.\d+)?)\s*[bB]\b", r"\1 billion dollars", text)
+        text = re.sub(r"\$(\d+(?:\.\d+)?)\s*[mM]\b", r"\1 million dollars", text)
+        text = re.sub(r"\$(\d+(?:\.\d+)?)\s*[kK]\b", r"\1 thousand dollars", text)
+
+        def _curr_cents_sub(m):
+            num_str = m.group(1).replace(",", "")
+            cents_str = m.group(2)
+            try:
+                n = int(num_str)
+                c = int(cents_str)
+                cents_words = number_to_words(c)
+                return f"{number_to_words(n)} dollars and {cents_words} cents"
+            except ValueError:
+                return m.group(0)
+
+        def _curr_sub(m):
+            num_str = m.group(1).replace(",", "")
+            try:
+                n = int(num_str)
+                return f"{number_to_words(n)} dollars"
+            except ValueError:
+                return m.group(0)
+
+        text = re.sub(r"\$(\d{1,3}(?:,\d{3})+|\d+)\.(\d{2})\b", _curr_cents_sub, text)
+        text = re.sub(r"\$(\d{1,3}(?:,\d{3})+|\d+)\b", _curr_sub, text)
+        text = re.sub(r"€(\d+)\b", lambda m: f"{number_to_words(int(m.group(1)))} euros", text)
+        text = re.sub(r"£(\d+)\b", lambda m: f"{number_to_words(int(m.group(1)))} pounds", text)
+        text = re.sub(r"¥(\d+)\b", lambda m: f"{number_to_words(int(m.group(1)))} yen", text)
 
         # Multipliers: 10x, 100x -> 10 times, 100 times
         text = re.sub(r"\b(\d+)x\b", r"\1 times", text)
@@ -702,8 +878,20 @@ class VoiceNormalizer:
                 if len(lines) > 4:
                     return " Data output provided. "
                 return " " + " ".join(lines) + " "
+
+            if "def " in code_content or "function " in code_content:
+                fn_match = re.search(r"(?:def|function)\s+([a-zA-Z0-9_]+)", code_content)
+                if fn_match:
+                    fn_name = fn_match.group(1).replace("_", " ")
+                    return f" A code snippet defining function {fn_name}. "
+            elif "class " in code_content:
+                cls_match = re.search(r"class\s+([a-zA-Z0-9_]+)", code_content)
+                if cls_match:
+                    cls_name = cls_match.group(1)
+                    return f" A code snippet defining class {cls_name}. "
+
             spoken = cls.convert_code_to_spoken_english(code_content, lang=lang)
-            return f" Code snippet: {spoken} " if spoken else ""
+            return f" A code snippet: {spoken} " if spoken else ""
 
         text = re.sub(r"```(\w*)[ \t]*\r?\n([\s\S]*?)```", code_block_handler, text)
         text = re.sub(r"~~~(\w*)[ \t]*\r?\n([\s\S]*?)~~~", code_block_handler, text)
@@ -778,4 +966,12 @@ class VoiceNormalizer:
             )
 
         return np.clip(samples, -1.0, 1.0).astype(np.float32)
+
+
+# Backward-compatibility alias
+SpeechNormalizer = VoiceNormalizer
+
+def normalize_speech_text(text: str) -> str:
+    """Convenience functional wrapper for VoiceNormalizer."""
+    return VoiceNormalizer.normalize_for_speech(text)
 

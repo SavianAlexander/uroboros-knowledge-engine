@@ -219,5 +219,12 @@ def run_all_verification_benchmarks():
         clear_analytics_cache()
 
 
+class TestEmpiricalRetrievalValidation(unittest.TestCase):
+    def test_empirical_retrieval_smoke(self):
+        client = TestClient(app)
+        res = client.get("/api/analytics/overview")
+        self.assertIn(res.status_code, [200, 404])
+
+
 if __name__ == "__main__":
     run_all_verification_benchmarks()

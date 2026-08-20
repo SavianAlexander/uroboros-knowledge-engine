@@ -158,7 +158,7 @@ def get_topic_context(topic: str, max_files: int = 8) -> str:
         return json.dumps({"status": "error", "message": "Topic required"})
     try:
         from src.domain.rag_engine import extract_advanced_rag_context
-        from know import get_db
+        from src.infrastructure.database import get_db
         
         context, citations = extract_advanced_rag_context(topic, max_chunks=max_files)
         
@@ -219,7 +219,7 @@ def ingest_path(target_path: str):
     if not target_path or not os.path.exists(target_path):
         return json.dumps({"status": "error", "message": f"Target path '{target_path}' not found"})
     try:
-        from know import index_directory
+        from src.infrastructure.vector_engine import index_directory
         count = index_directory(target_path)
         return json.dumps({"status": "success", "target": target_path, "indexed": count}, indent=2)
     except Exception as e:
@@ -228,7 +228,7 @@ def ingest_path(target_path: str):
 def get_vault_stats():
     """Retrieve vault file count, database size, and RAG status."""
     try:
-        from know import db_status
+        from src.infrastructure.database import db_status
         stats = db_status()
         return json.dumps({"status": "success", "vault_stats": stats}, indent=2)
     except Exception as e:
@@ -263,7 +263,7 @@ def hyde_expand(query_text: str):
 def search_graph(entity_name: str):
     """Retrieve Knowledge Graph Wikilinks and co-occurring connections for an entity."""
     try:
-        from know import get_db
+        from src.infrastructure.database import get_db
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("SELECT filename, filepath FROM files WHERE filename LIKE ? OR filepath LIKE ? LIMIT 10", (f"%{entity_name}%", f"%{entity_name}%"))
@@ -279,7 +279,7 @@ def backup_db_cli():
     """Execute 1-click online SQLite database backup using online backup API with retention pruning."""
     try:
         import glob
-        from know import backup_db_online
+        from src.infrastructure.database import backup_db_online
         backup_dir = os.path.join(project_root, "backups")
         os.makedirs(backup_dir, exist_ok=True)
         dest_file = os.path.join(backup_dir, f"vault_backup_{int(time.time())}.db")
@@ -308,7 +308,7 @@ def backup_db_cli():
 def export_graph_svg():
     """Export Knowledge Graph topology as DOT/SVG syntax representation."""
     try:
-        from know import get_db
+        from src.infrastructure.database import get_db
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("SELECT filename FROM files LIMIT 15")
@@ -385,7 +385,7 @@ def export_canonical_adrs():
                 f.write(f"# {name.replace('-', ' ')}\n\n## Status\nACCEPTED\n\n## Summary\n{summary}\n\n## Provenance\n- **Standard**: Ponytail Senior Dev\n- **Project**: Neuro Alexander (Project #13)\n")
             created.append(file_path)
             
-        from know import index_directory
+        from src.infrastructure.vector_engine import index_directory
         indexed = index_directory(adr_dir)
         
         return json.dumps({
@@ -420,7 +420,7 @@ def generate_domain_glossary():
         with open(glossary_file, "w", encoding="utf-8") as f:
             f.write(content)
             
-        from know import index_directory
+        from src.infrastructure.vector_engine import index_directory
         indexed = index_directory(glossary_dir)
         
         return json.dumps({
@@ -463,7 +463,7 @@ def ingest_git_history(limit: int = 20):
         with open(target_file, "w", encoding="utf-8") as f:
             f.write(summary_md)
 
-        from know import index_directory
+        from src.infrastructure.vector_engine import index_directory
         count = index_directory(vault_git_dir)
 
         return json.dumps({
@@ -485,7 +485,7 @@ def ingest_tududi_roadmap():
         exp_res = json.loads(tududi_bridge.export_roadmap_markdown())
         roadmap_file = exp_res.get("file_path")
         
-        from know import index_directory
+        from src.infrastructure.vector_engine import index_directory
         vault_roadmap_dir = os.path.dirname(roadmap_file)
         indexed_count = index_directory(vault_roadmap_dir)
         
@@ -509,7 +509,7 @@ def export_plan_to_note(title: str, content: str):
         with open(note_file, "w", encoding="utf-8") as f:
             f.write(f"# {title}\n\n{content}\n")
             
-        from know import index_directory
+        from src.infrastructure.vector_engine import index_directory
         index_directory(notes_dir)
         
         return json.dumps({
