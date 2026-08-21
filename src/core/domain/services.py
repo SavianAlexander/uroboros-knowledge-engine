@@ -475,9 +475,9 @@ def semantic_markdown_chunker(
     hierarchy = semantic_markdown_chunker_hierarchical(
         text=text,
         filepath=filepath,
-        parent_size=max(max_chunk_size, 800),
-        child_size=max(200, min(max_chunk_size, 400)),
-        child_overlap=overlap
+        parent_size=max(max_chunk_size * 2, 800),
+        child_size=max_chunk_size,
+        child_overlap=min(overlap, max_chunk_size - 1)
     )
     if return_hierarchy:
         return hierarchy

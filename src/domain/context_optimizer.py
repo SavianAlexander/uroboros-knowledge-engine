@@ -231,6 +231,7 @@ class ContextCompactor:
             curr_chars += len(block_text)
 
             citations.append({
+                "citation": f"{d_title} ({s_header})",
                 "doc_title": d_title,
                 "section_header": s_header,
                 "filename": b.get("filename", ""),

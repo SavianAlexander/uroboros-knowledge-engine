@@ -1880,8 +1880,8 @@ class MiniVectorEngine:
         isolated = []
         for cand in candidates:
             item = dict(cand)
-            item_tenant = item.get("tenant_id") or tenant_id
-            if item_tenant == tenant_id:
+            item_tenant = item.get("tenant_id")
+            if item_tenant == tenant_id or str(item_tenant) == str(tenant_id) or item_tenant in ["default", None]:
                 item["tenant_isolated"] = True
                 isolated.append(item)
 

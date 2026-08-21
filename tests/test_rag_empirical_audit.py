@@ -1,4 +1,4 @@
-"""
+r"""
 Empirical Diagnostic Test Suite for Upgraded Situational Hybrid RAG Pipeline.
 Verifies:
 1. Test A: Zero-Keyword Semantic Retrieval (Synonym-only dense embedding retrieval)
