@@ -149,6 +149,8 @@ def generate_embedding(text: str) -> List[float]:
         return res[0]
     return _fallback_hash_embedding(text)
 
+generate_batch_embeddings = generate_embeddings_batch
+
 def l2_normalize(v: List[float]) -> List[float]:
     """L2 normalize vector to unit length using accelerated math.fsum."""
     if not v:

@@ -127,17 +127,27 @@ def search_files(query: str) -> List[Dict[str, Any]]:
                 logging.warning(f"Fallback search error in vector_engine.py: {e}")
         return []
 
-def index_file(filepath: str) -> bool:
+def index_file(
+    filepath: str,
+    user_id: int = 0,
+    tenant_id: str = "default",
+    allowed_roles: Optional[List[str]] = None,
+    user_acl: Optional[List[str]] = None,
+    classification: str = "internal"
+) -> bool:
     """
     Incremental single-file indexer: parses one file, generates embeddings,
     and updates SQLite/FTS/Tags in an isolated transaction without scanning the entire directory.
+    Enforces multi-tenant RBAC metadata storage on files, file_chunks, and parent_chunks.
     """
     p = Path(filepath).resolve()
     if not p.is_file() or p.name == db.DB_FILE or p.name.startswith('.'):
         return False
 
     from src.core.context import get_current_user_id
-    user_id = get_current_user_id() or 0
+    effective_user_id = user_id or get_current_user_id() or 0
+    roles_json = json.dumps(allowed_roles or ["*"])
+    acl_json = json.dumps(user_acl or ["*"])
 
     try:
         stat = p.stat()
@@ -168,10 +178,12 @@ def index_file(filepath: str) -> bool:
             content, coords = extract_content(str(p), suffix)
         elif suffix in {'.wav', '.mp3'}:
             meta = parse_audio_metadata(str(p))
-            content = f"[Audio Metadata] samplerate:{meta.get('samplerate', 0)} channels:{meta.get('channels', 0)}"
+            content = f"{meta.get('title', '')} {meta.get('artist', '')} {meta.get('album', '')}"
+        elif suffix == '.db':
+            content = f"SQLite Database File: {p.name}"
 
-    acl_permissions = get_file_acl(str(p))
-
+    acl_permissions = "read,write"
+    
     rule_matches = []
     try:
         with get_db() as conn:
@@ -183,32 +195,45 @@ def index_file(filepath: str) -> bool:
 
     matched_tags = extract_ai_tags(content, p.name, rule_matches=rule_matches)
 
-    # Chunks & Embeddings with Hierarchical Semantic Markdown Chunking & Attribute Extraction
-    from src.core.embeddings import generate_embedding
+    # 1. Semantic Hierarchical Chunking (Parent Sections + Child Sub-chunks)
     from src.core.domain.services import semantic_markdown_chunker_hierarchical
-    
-    hierarchy = semantic_markdown_chunker_hierarchical(content, filepath=str(p), parent_size=900, child_size=250, child_overlap=50)
-    parent_sections = hierarchy.get("parent_chunks", [])
-    child_chunks = hierarchy.get("child_chunks", [])
-    
-    chunk_data = []
-    for c_obj in child_chunks:
-        emb = generate_embedding(c_obj["content"])
-        emb_json = json.dumps(emb) if emb else None
-        chunk_hash = hashlib.sha256(c_obj["content"].encode('utf-8')).hexdigest()[:16]
-        chunk_data.append((
-            c_obj.get("parent_id"),
-            c_obj["chunk_index"],
-            c_obj["content"],
-            emb_json,
-            chunk_hash,
-            c_obj.get("parent_header", ""),
-            c_obj.get("doc_title", p.name),
-            c_obj.get("intent_type", "general"),
-            c_obj.get("entities_json", "[]"),
-            c_obj.get("domain_scope", "general"),
-            c_obj.get("attributes_json", "{}")
-        ))
+    hierarchical_data = semantic_markdown_chunker_hierarchical(content, filepath=str(p))
+    parent_sections = hierarchical_data["parent_chunks"]
+    child_sub_chunks = hierarchical_data["child_chunks"]
+
+    # Fallback to standard chunker if hierarchical produced no chunks
+    if not child_sub_chunks:
+        from src.core.domain.services import chunk_text_situational
+        from src.core.embeddings import generate_batch_embeddings, extract_chunk_attributes
+        standard_chunks = chunk_text_situational(content, max_chunk_size=400, overlap=50)
+        chunk_embeddings = generate_batch_embeddings(standard_chunks) if standard_chunks else []
+        chunk_data = []
+        for idx, (c_text, emb) in enumerate(zip(standard_chunks, chunk_embeddings)):
+            attrs = extract_chunk_attributes(c_text, doc_title=p.name)
+            c_hash = hashlib.sha256(c_text.encode('utf-8')).hexdigest()[:16]
+            chunk_data.append((
+                None, idx, c_text, json.dumps(emb) if emb else "[]", c_hash,
+                "General", p.name, attrs["intent_type"], attrs["entities_json"], attrs["domain_scope"], attrs["attributes_json"]
+            ))
+    else:
+        from src.core.embeddings import generate_batch_embeddings
+        child_texts = [c["content"] for c in child_sub_chunks]
+        child_embeddings = generate_batch_embeddings(child_texts)
+        chunk_data = []
+        for c_obj, emb in zip(child_sub_chunks, child_embeddings):
+            chunk_data.append((
+                c_obj["parent_id"],
+                c_obj["chunk_index"],
+                c_obj["content"],
+                json.dumps(emb) if emb else "[]",
+                c_obj.get("chunk_hash") or hashlib.sha256(c_obj["content"].encode('utf-8')).hexdigest()[:16],
+                c_obj.get("parent_header", ""),
+                c_obj.get("doc_title", p.name),
+                c_obj.get("intent_type", "general"),
+                c_obj.get("entities_json", "[]"),
+                c_obj.get("domain_scope", "general"),
+                c_obj.get("attributes_json", "{}")
+            ))
 
     # Atomic DB Update
     str_fp = str(p)
@@ -221,9 +246,10 @@ def index_file(filepath: str) -> bool:
                 file_id = row[0]
                 cursor.execute("""
                     UPDATE files
-                    SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?, acl_permissions = ?, insights = NULL
+                    SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?,
+                        acl_permissions = ?, user_id = ?, tenant_id = ?, allowed_roles = ?, user_acl = ?, classification = ?, insights = NULL
                     WHERE id = ?
-                """, (p.name, file_size, mime_type, sha256, modified_at, content, acl_permissions, file_id))
+                """, (p.name, file_size, mime_type, sha256, modified_at, content, acl_permissions, effective_user_id, tenant_id, roles_json, acl_json, classification, file_id))
 
                 cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (str_fp,))
                 cursor.execute("""
@@ -238,9 +264,9 @@ def index_file(filepath: str) -> bool:
                 cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
             else:
                 cursor.execute("""
-                    INSERT INTO files (user_id, filepath, filename, file_size, mime_type, sha256, modified_at, content, acl_permissions, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
-                """, (user_id, str_fp, p.name, file_size, mime_type, sha256, modified_at, content, acl_permissions))
+                    INSERT INTO files (user_id, filepath, filename, file_size, mime_type, sha256, modified_at, content, acl_permissions, tenant_id, allowed_roles, user_acl, classification, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+                """, (effective_user_id, str_fp, p.name, file_size, mime_type, sha256, modified_at, content, acl_permissions, tenant_id, roles_json, acl_json, classification))
                 file_id = cursor.lastrowid
                 cursor.execute("""
                     INSERT INTO fts_files (filepath, filename, content, notes)
@@ -259,9 +285,9 @@ def index_file(filepath: str) -> bool:
             for p_sec in parent_sections:
                 try:
                     cursor.execute("""
-                        INSERT OR REPLACE INTO parent_chunks (id, file_id, section_header, content, doc_title, domain_scope, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """, (p_sec["id"], file_id, p_sec["section_header"], p_sec["content"], p_sec["doc_title"], p_sec["domain_scope"], time.time()))
+                        INSERT OR REPLACE INTO parent_chunks (id, file_id, section_header, content, doc_title, domain_scope, tenant_id, allowed_roles, user_acl, classification, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (p_sec["id"], file_id, p_sec["section_header"], p_sec["content"], p_sec["doc_title"], p_sec["domain_scope"], tenant_id, roles_json, acl_json, classification, time.time()))
                 except Exception:
                     pass
 
@@ -269,10 +295,11 @@ def index_file(filepath: str) -> bool:
                 cursor.execute('''
                     INSERT INTO file_chunks (
                         file_id, parent_id, chunk_index, content, embedding_json, chunk_hash,
-                        parent_header, doc_title, intent_type, entities_json, domain_scope, attributes_json
+                        parent_header, doc_title, intent_type, entities_json, domain_scope, attributes_json,
+                        tenant_id, allowed_roles, user_acl, classification
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (file_id, p_id, c_idx, c_content, emb_json, c_hash, p_hdr, d_title, i_type, ent_json, d_scope, attr_json))
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (file_id, p_id, c_idx, c_content, emb_json, c_hash, p_hdr, d_title, i_type, ent_json, d_scope, attr_json, tenant_id, roles_json, acl_json, classification))
                 chunk_id = cursor.lastrowid
                 try:
                     cursor.execute(
@@ -679,6 +706,7 @@ class MiniVectorEngine:
                 cursor.execute('''
                     SELECT c.id, c.file_id, c.parent_id, c.chunk_index, c.content, c.embedding_json,
                            c.parent_header, c.doc_title, c.intent_type, c.entities_json, c.domain_scope, c.attributes_json,
+                           c.tenant_id, c.allowed_roles, c.user_acl, c.classification,
                            f.filepath, f.filename, f.modified_at
                     FROM file_chunks c
                     JOIN files f ON c.file_id = f.id
@@ -709,6 +737,10 @@ class MiniVectorEngine:
                         "entities_json": r['entities_json'] if 'entities_json' in r_keys else "[]",
                         "domain_scope": r['domain_scope'] if 'domain_scope' in r_keys else "general",
                         "attributes_json": r['attributes_json'] if 'attributes_json' in r_keys else "{}",
+                        "tenant_id": r['tenant_id'] if 'tenant_id' in r_keys else "default",
+                        "allowed_roles": r['allowed_roles'] if 'allowed_roles' in r_keys else '["*"]',
+                        "user_acl": r['user_acl'] if 'user_acl' in r_keys else '["*"]',
+                        "classification": r['classification'] if 'classification' in r_keys else "internal",
                         "modified_at": r['modified_at'],
                         "full_emb": full_norm,
                         "mrl_256": mrl_256
@@ -721,11 +753,11 @@ class MiniVectorEngine:
             cls._cached_chunks = []
 
     @staticmethod
-    def search_semantic(query: str, top_k: int = 10) -> List[Dict[str, Any]]:
+    def search_semantic(query: str, top_k: int = 10, auth_context: Optional[Any] = None) -> List[Dict[str, Any]]:
         """
         Sub-3ms High-Performance Vector Search with Matryoshka Representation Learning (MRL).
         Uses 256-dim MRL slicing for candidate filtering and full-dimension L2 dot product for scoring.
-        Enforces embedding dimension validation to prevent mathematical drift across model changes.
+        Enforces embedding dimension validation and multi-tenant RBAC pre-filtering before scoring.
         """
         if not query or not query.strip():
             return []
@@ -744,8 +776,17 @@ class MiniVectorEngine:
         if not cached_chunks:
             return []
 
+        auth_obj = None
+        if auth_context:
+            from src.domain.rag_security import AuthContext, RBACFilterBuilder
+            auth_obj = auth_context if isinstance(auth_context, AuthContext) else AuthContext.from_dict(auth_context)
+
         results = []
         for item in cached_chunks:
+            # RBAC Pre-Filter: Discard unauthorized tenant or role chunks before computing similarity
+            if auth_obj and not RBACFilterBuilder.matches_auth(item, auth_obj):
+                continue
+
             item_emb = item.get("full_emb", [])
             if len(item_emb) != len(q_full):
                 continue
@@ -771,14 +812,13 @@ class MiniVectorEngine:
                     "doc_title": item.get("doc_title", item["filename"]),
                     "intent_type": item.get("intent_type", "general"),
                     "entities_json": item.get("entities_json", "[]"),
-                    "domain_scope": item.get("domain_scope", "general"),
-                    "attributes_json": item.get("attributes_json", "{}"),
-                    "modified_at": item["modified_at"],
-                    "tags": [],
-                    "score": round(full_score, 4),
-                    "rrf_score": round(full_score, 6),
-                    "vector_score": round(full_score, 6),
-                    "bm25_score": round(full_score, 6)
+                    "tenant_id": item.get("tenant_id", "default"),
+                    "allowed_roles": item.get("allowed_roles", '["*"]'),
+                    "user_acl": item.get("user_acl", '["*"]'),
+                    "modified_at": item.get("modified_at"),
+                    "score": round(float(full_score), 4),
+                    "mrl_score": round(float(mrl_score), 4),
+                    "search_type": "semantic"
                 })
 
         results.sort(key=lambda x: x["score"], reverse=True)

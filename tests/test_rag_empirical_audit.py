@@ -17,7 +17,7 @@ import sqlite3
 import json
 from typing import Dict, List, Any, Tuple
 
-from src.infrastructure.database import init_db, DB_FILE, reset_db_connections, get_db_write_connection
+from src.infrastructure.database import init_db, DB_FILE, reset_db_connections, get_db_write_connection, get_db_connection
 from src.infrastructure.vector_engine import index_file, MiniVectorEngine
 from src.domain.rag_engine import extract_advanced_rag_context, rrf_rerank
 from src.domain.situational_query_analyzer import SituationalQueryAnalyzer, SituationalQueryPlan
@@ -38,6 +38,13 @@ class TestRAGEmpiricalAudit(unittest.TestCase):
     def setUp(self):
         reset_db_connections()
         init_db()
+        import src.infrastructure.database as db
+        with get_db_connection(db.DB_FILE) as conn:
+            with conn:
+                conn.execute("DELETE FROM files WHERE filepath LIKE '%Temp%' OR filepath LIKE '%tmp%'")
+                conn.execute("DELETE FROM parent_chunks WHERE file_id NOT IN (SELECT id FROM files)")
+                conn.execute("DELETE FROM file_chunks WHERE file_id NOT IN (SELECT id FROM files)")
+        MiniVectorEngine.reset_cache()
 
     def tearDown(self):
         reset_db_connections()

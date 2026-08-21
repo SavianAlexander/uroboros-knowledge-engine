@@ -6,6 +6,7 @@ Context Assembly & Optimization Layer:
 - GroundedGuardrail: Strict confidence threshold gating (0.35) with deterministic fallback.
 """
 
+import re
 import sqlite3
 import logging
 from typing import List, Dict, Any, Tuple, Optional
@@ -261,3 +262,82 @@ class GroundedGuardrail:
             f"Insufficient verified context: No documents in the knowledge repository meet the required "
             f"confidence threshold ({threshold:.2f}) to answer this query with high precision."
         )
+
+
+class PromptInjectionSanitizer:
+    """
+    Sanitizes untrusted text by stripping zero-width unicode, directional overrides,
+    and neutralizing adversarial prompt injection sequences.
+    """
+
+    # Invisible unicode & directional override characters
+    INVISIBLE_CHARS_PATTERN = re.compile(r'[\u200b\u200c\u200d\u200e\u200f\ufeff\u202a-\u202e\u2060-\u206f]')
+
+    # Known prompt injection markers
+    INJECTION_TRIGGERS = [
+        re.compile(r'(?i)\bSYSTEM\s*:\s*ignore\s+all\s+(?:prior|previous)\s+instructions\b'),
+        re.compile(r'(?i)\bignore\s+all\s+(?:prior|previous)\s+instructions\b'),
+        re.compile(r'(?i)\bignore\s+(?:prior|previous)\s+instructions\b'),
+        re.compile(r'(?i)\[/?INST\]'),
+        re.compile(r'(?i)</?SYS>>?'),
+        re.compile(r'(?i)---(?:BEGIN|END)\s+INSTRUCTION---'),
+        re.compile(r'(?i)\boutput\s+PWNED\b'),
+        re.compile(r'(?i)\bprint\s+PWNED\b')
+    ]
+
+    @classmethod
+    def sanitize_text(cls, text: str) -> str:
+        """
+        Strips invisible characters and neutralizes injection triggers.
+        """
+        if not text:
+            return ""
+
+        # 1. Strip invisible / zero-width unicode characters
+        cleaned = cls.INVISIBLE_CHARS_PATTERN.sub('', text)
+
+        # 2. Neutralize injection directives by escaping/defanging
+        for pattern in cls.INJECTION_TRIGGERS:
+            cleaned = pattern.sub('[SANITIZED_INSTRUCTION_DIRECTIVE]', cleaned)
+
+        return cleaned
+
+
+class XMLContextFencer:
+    """
+    Encapsulates retrieved document chunks inside structured, inert XML blocks with CDATA boundaries
+    to prevent indirect prompt injection and instruction hijacking.
+    """
+
+    @classmethod
+    def encapsulate_chunks(cls, chunks: List[Dict[str, Any]]) -> str:
+        """
+        Wraps chunks inside <retrieved_knowledge> with CDATA sections and CDATA breakout escaping.
+        """
+        if not chunks:
+            return "<retrieved_knowledge>\n</retrieved_knowledge>"
+
+        doc_blocks = []
+        for c in chunks:
+            doc_id = c.get("parent_id") or c.get("chunk_id") or c.get("id") or "doc"
+            score = round(float(c.get("cross_score") or c.get("score") or 0.0), 4)
+            raw_content = c.get("content", "")
+
+            # Sanitize content
+            sanitized = PromptInjectionSanitizer.sanitize_text(raw_content).strip()
+
+            # Escape CDATA end marker (]]> -> ]]]]><![CDATA[>) to prevent breakout
+            safe_cdata = sanitized.replace("]]>", "]]]]><![CDATA[>")
+
+            doc_block = (
+                f'  <document id="{doc_id}" score="{score}">\n'
+                f'    <![CDATA[\n'
+                f'{safe_cdata}\n'
+                f'    ]]>\n'
+                f'  </document>'
+            )
+            doc_blocks.append(doc_block)
+
+        inner_docs = "\n".join(doc_blocks)
+        return f"<retrieved_knowledge>\n{inner_docs}\n</retrieved_knowledge>"
+

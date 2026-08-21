@@ -43,6 +43,13 @@ class TestAdvancedContextArchitecture(unittest.TestCase):
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
+        import src.infrastructure.database as db
+        with get_db_connection(db.DB_FILE) as conn:
+            with conn:
+                conn.execute("DELETE FROM files WHERE filepath LIKE '%Temp%' OR filepath LIKE '%tmp%'")
+                conn.execute("DELETE FROM parent_chunks WHERE file_id NOT IN (SELECT id FROM files)")
+                conn.execute("DELETE FROM file_chunks WHERE file_id NOT IN (SELECT id FROM files)")
+        MiniVectorEngine.reset_cache()
 
     def tearDown(self):
         reset_db_connections()

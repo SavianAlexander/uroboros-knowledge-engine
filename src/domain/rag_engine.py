@@ -350,15 +350,16 @@ def extract_advanced_rag_context(
     max_chunks: int = 5,
     jaccard_threshold: float = 0.70,
     return_trace: bool = False,
-    confidence_threshold: Optional[float] = None
+    confidence_threshold: Optional[float] = None,
+    auth_context: Optional[Any] = None
 ) -> Any:
     """
     Orchestrates full Situational Attribute-Aware Hybrid RAG pipeline:
     1. Situational Query Analysis & Attribute Extraction (Intent, Environments, Tech, Filters)
     2. Multi-hop situational sub-query decomposition
     3. Technical synonym expansion & HyDE generation
-    4. Sparse FTS5 BM25 search across files and chunk breadcrumbs
-    5. Dense Vector Search with MRL Matryoshka representations
+    4. Sparse FTS5 BM25 search across files and chunk breadcrumbs with RBAC pre-filtering
+    5. Dense Vector Search with MRL Matryoshka representations & RBAC pre-filtering
     6. Reciprocal Rank Fusion (RRF k=60)
     7. Situational Cross-Encoder Reranking (Term density, n-gram proximity, attribute congruency)
     8. Relevance Gating (Discards low-confidence distractors)
@@ -371,6 +372,11 @@ def extract_advanced_rag_context(
 
     raw_q = str(query).strip()
     
+    from src.domain.rag_security import AuthContext, RBACFilterBuilder
+    auth_obj = None
+    if auth_context:
+        auth_obj = auth_context if isinstance(auth_context, AuthContext) else AuthContext.from_dict(auth_context)
+
     from src.domain.situational_query_analyzer import SituationalQueryAnalyzer
     from src.domain.situational_cross_reranker import SituationalCrossReranker
     from src.infrastructure.database import get_db
@@ -622,12 +628,13 @@ async def async_extract_advanced_rag_context(
     query: str,
     max_chunks: int = 5,
     confidence_threshold: Optional[float] = None,
-    return_trace: bool = False
+    return_trace: bool = False,
+    auth_context: Optional[Any] = None
 ) -> Any:
     """
     High-Concurrency Async Retrieval Orchestrator:
     - Runs AsyncQueryTransformer (HyDE + Step-Back + Sub-queries) concurrently.
-    - Executes parallel dense vector search and sparse FTS via asyncio.gather.
+    - Executes parallel dense vector search and sparse FTS via asyncio.gather with Multi-Tenant RBAC pre-filtering.
     - Caps cross-encoder candidates to top 15 post-RRF for sub-50ms latency.
     - Resolves Parent-Child chunks with Lost-in-the-Middle layout.
     """
@@ -635,6 +642,7 @@ async def async_extract_advanced_rag_context(
     from src.domain.query_transformer import AsyncQueryTransformer
     from src.domain.situational_query_analyzer import SituationalQueryAnalyzer
     from src.domain.situational_cross_reranker import SituationalCrossReranker
+    from src.domain.rag_security import AuthContext, RBACFilterBuilder
     from src.infrastructure.vector_engine import MiniVectorEngine
     from src.domain.context_optimizer import (
         ParentResolver,
@@ -648,6 +656,10 @@ async def async_extract_advanced_rag_context(
         return ("", [], {}) if return_trace else ("", [])
 
     raw_q = str(query).strip()
+    auth_obj = None
+    if auth_context:
+        auth_obj = auth_context if isinstance(auth_context, AuthContext) else AuthContext.from_dict(auth_context)
+
     query_plan = SituationalQueryAnalyzer.analyze_situational_query(raw_q)
     filters = query_plan.extracted_filters
 
@@ -659,7 +671,7 @@ async def async_extract_advanced_rag_context(
     loop = asyncio.get_event_loop()
 
     def _run_dense(q_str: str):
-        hits = MiniVectorEngine.search_semantic(q_str, top_k=10)
+        hits = MiniVectorEngine.search_semantic(q_str, top_k=10, auth_context=auth_obj)
         if "ext" in filters:
             hits = [v for v in hits if (v.get("filename") or "").lower().endswith(f".{filters['ext']}")]
         if "env" in filters:
@@ -674,10 +686,29 @@ async def async_extract_advanced_rag_context(
         try:
             conn = get_db()
             cursor = conn.cursor()
-            cursor.execute("SELECT id, filepath, filename, content, modified_at FROM fts_files WHERE fts_files MATCH ? LIMIT 10", (sanitized,))
-            return [dict(r) for r in cursor.fetchall()]
+            chunk_sql = (
+                "SELECT c.id as chunk_id, c.file_id as id, c.parent_id, c.content, c.parent_header, "
+                "c.doc_title, c.intent_type, c.entities_json, c.domain_scope, c.attributes_json, "
+                "c.tenant_id, c.allowed_roles, c.user_acl, "
+                "f.filepath, f.filename, f.modified_at "
+                "FROM fts_file_chunks fts "
+                "JOIN file_chunks c ON fts.chunk_id = c.id "
+                "JOIN files f ON c.file_id = f.id "
+                "WHERE fts_file_chunks MATCH ? ORDER BY bm25(fts_file_chunks) ASC LIMIT 10"
+            )
+            cursor.execute(chunk_sql, (sanitized,))
+            hits = [dict(r) for r in cursor.fetchall()]
+            if not hits:
+                cursor.execute("SELECT id, filepath, filename, content, modified_at FROM fts_files WHERE fts_files MATCH ? LIMIT 10", (sanitized,))
+                hits = [dict(r) for r in cursor.fetchall()]
+            if auth_obj:
+                hits = [h for h in hits if RBACFilterBuilder.matches_auth(h, auth_obj)]
+            return hits
         except Exception:
-            return _fts_fallback_search(q_str)
+            hits = _fts_fallback_search(q_str)
+            if auth_obj:
+                hits = [h for h in hits if RBACFilterBuilder.matches_auth(h, auth_obj)]
+            return hits
 
     dense_tasks = [loop.run_in_executor(None, _run_dense, q) for q in all_queries[:4]]
     sparse_tasks = [loop.run_in_executor(None, _run_sparse, q) for q in all_queries[:3]]
