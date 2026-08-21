@@ -145,7 +145,14 @@ FILE_DOMAIN_MAPPING = {
     "src/core/structured_engine.py": ["DomainTenToolStack"],
     "src/domain/optimization/dspy_rag.py": ["DomainTenToolStack"],
     "src/infrastructure/observability/tracer.py": ["DomainTenToolStack"],
-    "tests/test_ten_tool_stack.py": ["DomainTenToolStack"]
+    "tests/test_ten_tool_stack.py": ["DomainTenToolStack"],
+    "src/domain/back_office/job_queue.py": ["DomainTwoTierRAGArchitecture"],
+    "src/domain/back_office/colibri_client.py": ["DomainTwoTierRAGArchitecture"],
+    "src/domain/back_office/tasks.py": ["DomainTwoTierRAGArchitecture"],
+    "src/domain/back_office/worker_daemon.py": ["DomainTwoTierRAGArchitecture"],
+    "src/domain/front_office/interactive_runtime.py": ["DomainTwoTierRAGArchitecture"],
+    "src/app/routers/back_office.py": ["DomainTwoTierRAGArchitecture"],
+    "tests/test_two_tier_rag_architecture.py": ["DomainTwoTierRAGArchitecture"]
 }
 
 DOMAIN_TEST_MODULES = [
@@ -213,10 +220,22 @@ DOMAIN_TEST_MODULES = [
     "tests.test_oss_rag_stack",
     "tests.test_prompt_engineering_stack",
     "tests.test_web_ingestion_crawler",
-    "tests.test_ten_tool_stack"
+    "tests.test_ten_tool_stack",
+    "tests.test_two_tier_rag_architecture"
 ]
 
 BUG_RELATION_TAXONOMY = {
+    "DomainTwoTierRAGArchitecture": [
+        {"test": "test_01_front_office_fast_chat_latency", "component": "src/domain/front_office/interactive_runtime.py", "prevents": "Front-office conversational latency degradation"},
+        {"test": "test_02_front_office_deep_job_dispatch", "component": "src/domain/front_office/interactive_runtime.py", "prevents": "Front-office blocking on heavy batch inference dispatch"},
+        {"test": "test_03_job_queue_priority_and_state_transitions", "component": "src/domain/back_office/job_queue.py", "prevents": "Job queue priority starvation and state machine transition bugs"},
+        {"test": "test_04_colibri_client_generation_and_fallback", "component": "src/domain/back_office/colibri_client.py", "prevents": "Colibrì 744B MoE endpoint timeout or daemon offline crash"},
+        {"test": "test_05_contextual_chunk_prepending_task", "component": "src/domain/back_office/tasks.py", "prevents": "Contextual Retrieval chunk context loss and truncation"},
+        {"test": "test_06_graphrag_community_summarization_task", "component": "src/domain/back_office/tasks.py", "prevents": "GraphRAG entity cluster summarization dropout"},
+        {"test": "test_07_mipro_eval_synthesizer_task", "component": "src/domain/back_office/tasks.py", "prevents": "DSPy MIPROv2 synthetic QA dataset generation failure"},
+        {"test": "test_08_cooperative_worker_daemon_zero_stutter", "component": "src/domain/back_office/worker_daemon.py", "prevents": "Worker daemon CPU/GPU starvation and UI desktop stutter"},
+        {"test": "test_09_fastapi_back_office_endpoints", "component": "src/app/routers/back_office.py", "prevents": "Back-office REST API endpoint routing and serialization failure"}
+    ],
     "DomainTenToolStack": [
         {"test": "test_01_crawl4ai_web_crawler", "component": "src/domain/ingestion/crawlers/web_crawler.py", "prevents": "Web crawl failure and table preservation regression"},
         {"test": "test_02_marker_pdf_parser", "component": "src/domain/ingestion/parsers/pdf_parser.py", "prevents": "Layout-aware PDF parsing corruption"},

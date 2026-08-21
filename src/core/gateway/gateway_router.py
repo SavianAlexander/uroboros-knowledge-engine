@@ -81,7 +81,9 @@ class ModelGatewayRouter:
 
     async def acompletion(
         self,
-        messages: List[Dict[str, str]],
+        messages: Optional[List[Dict[str, str]]] = None,
+        prompt: Optional[str] = None,
+        system_prompt: Optional[str] = None,
         model: Optional[str] = None,
         temperature: float = 0.0,
         max_tokens: int = 1024,
@@ -89,7 +91,15 @@ class ModelGatewayRouter:
     ) -> GatewayCompletionResponse:
         """
         Asynchronously generates completions using primary router with Ollama failover.
+        Supports both messages list and prompt/system_prompt string arguments.
         """
+        if not messages:
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            if prompt:
+                messages.append({"role": "user", "content": prompt})
+
         target_model = model or self.default_model
         start_time = asyncio.get_event_loop().time()
 
@@ -120,8 +130,21 @@ class ModelGatewayRouter:
         # 2. Local Fallback Engine: Ollama / Deterministic Synthesizer
         return await self._fallback_ollama_completion(messages, target_model, start_time)
 
-    def completion(self, messages: List[Dict[str, str]], **kwargs) -> GatewayCompletionResponse:
-        """Synchronous wrapper for completion."""
+    def completion(
+        self,
+        messages: Optional[List[Dict[str, str]]] = None,
+        prompt: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        **kwargs
+    ) -> GatewayCompletionResponse:
+        """Synchronous wrapper for completion supporting messages list or prompt string."""
+        if not messages:
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            if prompt:
+                messages.append({"role": "user", "content": prompt})
+
         try:
             try:
                 loop = asyncio.get_running_loop()
@@ -131,8 +154,8 @@ class ModelGatewayRouter:
             if loop and loop.is_running():
                 import concurrent.futures
                 with concurrent.futures.ThreadPoolExecutor() as pool:
-                    return pool.submit(asyncio.run, self.acompletion(messages, **kwargs)).result()
-            return asyncio.run(self.acompletion(messages, **kwargs))
+                    return pool.submit(asyncio.run, self.acompletion(messages=messages, **kwargs)).result()
+            return asyncio.run(self.acompletion(messages=messages, **kwargs))
         except Exception as e:
             logger.warning("Completion synchronous execution fallback: %s", e)
             return self._sync_mock_completion(messages, kwargs.get("model", self.default_model))

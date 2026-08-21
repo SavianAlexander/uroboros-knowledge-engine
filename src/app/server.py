@@ -147,7 +147,7 @@ def get_style_bundle():
 from fastapi import Depends
 from src.app.auth import verify_api_key
 
-from src.app.routers import health, search, rag, retrieval_ops, files, datasets, tags, export, analytics, workflows, briefing, ocr, voice, voice_ws, crawler
+from src.app.routers import health, search, rag, retrieval_ops, files, datasets, tags, export, analytics, workflows, briefing, ocr, voice, voice_ws, crawler, back_office
 
 app.include_router(health.router) # Health remains unprotected
 app.include_router(voice.router) # Voice and OpenAI audio API
@@ -164,6 +164,7 @@ app.include_router(analytics.router, dependencies=[Depends(verify_api_key)])
 app.include_router(workflows.router, dependencies=[Depends(verify_api_key)])
 app.include_router(briefing.router, dependencies=[Depends(verify_api_key)])
 app.include_router(ocr.router, dependencies=[Depends(verify_api_key)])
+app.include_router(back_office.router, dependencies=[Depends(verify_api_key)])
 from src.app import auth
 app.include_router(auth.router)
 
