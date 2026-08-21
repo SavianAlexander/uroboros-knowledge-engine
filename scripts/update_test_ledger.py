@@ -137,7 +137,9 @@ FILE_DOMAIN_MAPPING = {
     "src/domain/optimization/compile_prompts.py": ["DomainPromptEngineeringStack"],
     "src/domain/retrieval/structured_extractor.py": ["DomainPromptEngineeringStack"],
     "src/domain/generation/outlines_generator.py": ["DomainPromptEngineeringStack"],
-    "tests/test_prompt_engineering_stack.py": ["DomainPromptEngineeringStack"]
+    "tests/test_prompt_engineering_stack.py": ["DomainPromptEngineeringStack"],
+    "src/domain/ingestion/crawlers/web_crawler.py": ["DomainWebIngestionCrawler", "DomainOSSRAGStack"],
+    "tests/test_web_ingestion_crawler.py": ["DomainWebIngestionCrawler"]
 }
 
 DOMAIN_TEST_MODULES = [
@@ -203,10 +205,19 @@ DOMAIN_TEST_MODULES = [
     "tests.test_windows_dist_packaging",
     "tests.test_enterprise_resilience_pillars",
     "tests.test_oss_rag_stack",
-    "tests.test_prompt_engineering_stack"
+    "tests.test_prompt_engineering_stack",
+    "tests.test_web_ingestion_crawler"
 ]
 
 BUG_RELATION_TAXONOMY = {
+    "DomainWebIngestionCrawler": [
+        {"test": "test_01_crawled_document_schema_and_hashing", "component": "src/domain/ingestion/crawlers/web_crawler.py", "prevents": "Schema invalidity and corrupted delta hash in web ingestion"},
+        {"test": "test_02_async_multi_url_crawl", "component": "src/domain/ingestion/crawlers/web_crawler.py", "prevents": "Concurrency deadlock or blocking I/O during multi-URL crawl"},
+        {"test": "test_03_markdown_table_and_code_preservation", "component": "src/domain/ingestion/crawlers/web_crawler.py", "prevents": "Loss of table structures and code blocks during HTML-to-Markdown conversion"},
+        {"test": "test_04_delta_hashing_and_skip_logic", "component": "src/domain/ingestion/crawlers/web_crawler.py", "prevents": "Redundant re-indexing and token waste on unmodified pages"},
+        {"test": "test_05_crawl_to_chunk_pipeline", "component": "src/domain/ingestion/chunker.py", "prevents": "Metadata stripping when piping crawled markdown to chunker"},
+        {"test": "test_06_end_to_end_crawl_and_qdrant_indexing", "component": "src/infrastructure/storage/qdrant_store.py", "prevents": "Payload loss and cross-tenant leakage during vector store indexing"}
+    ],
     "DomainPromptEngineeringStack": [
         {"test": "test_01_dspy_signatures_and_programmatic_module", "component": "src/domain/pipeline/dspy_modules.py", "prevents": "Brittle string template prompt regression and missing sub-queries"},
         {"test": "test_02_offline_prompt_compiler_and_citation_metric", "component": "src/domain/optimization/compile_prompts.py", "prevents": "Hallucinated citation anchors and metric degradation"},
