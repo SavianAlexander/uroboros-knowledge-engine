@@ -20,7 +20,6 @@ root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
-import pytest
 from concurrent.futures import ThreadPoolExecutor
 
 import know
@@ -778,5 +777,5 @@ if __name__ == "__main__":
         generate_soc2_report(time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
     else:
         run_ledger_audit()
-        if "--all" in sys.argv or sys.stdout.isatty():
+        if "--show-tui" in sys.argv:
             render_tui()

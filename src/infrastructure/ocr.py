@@ -92,7 +92,7 @@ def extract_ocr_text_structured(filepath):
             return text.strip(), []
     except (KeyboardInterrupt, MemoryError, SystemExit):
         raise
-    except Exception as e:
+    except BaseException as e:
         logger.debug(f"pytesseract OCR fallback unavailable: {e}")
 
     # Try EXIF / Metadata extraction fallback

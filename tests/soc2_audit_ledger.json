@@ -1,5 +1,5 @@
 {
-  "attestation_date": "2026-08-21T06:35:14Z",
+  "attestation_date": "2026-08-21T12:33:38Z",
   "compliance_status": "FULLY COMPLIANT (TYPE II ATTESTATION READY)",
   "trust_services_criteria": {
     "Security": "COMPLIANT (Zero secret leaks, path containment)",

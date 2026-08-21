@@ -1089,7 +1089,22 @@ Uroboros incorporates zero-downtime database snapshot backup and cold-restore ca
 | :--- | :--- | :--- | :--- | :--- |
 | **Edge / Embedded** | 4 GB | CPU-only | 32-dim Matryoshka vector search + SQLite FTS5 | $P_{50} < 3.2\text{ms}$ |
 | **Standard Workstation** | 8–16 GB | 4–8 GB (RTX 3060) | `qwen2.5:7b` (Q4_K_M) + `nomic-embed-text` | $P_{50} < 1.8\text{ms}$ vector, sub-10ms TTFT |
-| **Enterprise Server** | 32–64 GB | 16–24 GB (RTX 4090) | Full 768-dim float vectors + ColBERT 1-bit MaxSim | Sub-1ms vector search, 100+ QPS concurrent |
+| **Enterprise Dual-Tier** | 32–64 GB | 24 GB (AMD RX 7900 XTX / RTX 4090) | **Tier 1**: ROCm/Ollama in VRAM (60–100 tok/s)<br>**Tier 2**: Colibrì GLM-5.2 744B MoE (429 GB NVMe) | Sub-1ms vector search, 100+ QPS concurrent |
+
+### 31.1 Two-Tier Inference Architecture & Memory Multi-Tiering
+
+Uroboros operates a decoupled Two-Tier LLM Architecture for optimal balance of latency, throughput, and reasoning depth:
+
+1. **Tier 1 (Fast Interactive Reflexes - GPU VRAM)**:
+   - Powered by **AMD ROCm 7.1 / Ollama** running directly on the **AMD Radeon RX 7900 XTX (24 GB GDDR6)**.
+   - Dedicated to low-latency conversational queries, tool calling, daily summaries, and code completion at **60–100+ tokens/second**.
+
+2. **Tier 2 (Deep Trillion-Parameter Oracle Reasoning - 3-Tier Colibrì Engine)**:
+   - Powered by the **GLM-5.2 744B INT4 MoE Container** (`mastouri/GLM-5.2-colibri-int4-g64-with-int8-mtp`) in `C:\colibri_models\glm52_i4`.
+   - Utilizes a 3-Tier Multi-Tiering memory hierarchy:
+     - **Tier 1 (GPU VRAM @ 960 GB/s)**: Dense attention core + 320 hot routed experts via Vulkan compute shaders (`colibri_vk.exe`) with Resizable BAR.
+     - **Tier 2 (System RAM @ 50 GB/s)**: Dynamic warm expert LRU cache.
+     - **Tier 3 (NVMe SSD @ 7 GB/s)**: 19,456 cold deep-knowledge experts streamed asynchronously on demand.
 
 ---
 
