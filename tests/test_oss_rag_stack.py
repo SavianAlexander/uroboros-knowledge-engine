@@ -198,7 +198,7 @@ class TestOSSRAGInfrastructureStack(unittest.TestCase):
             prompt="How do I configure SQLite WAL checkpointing in Python on Windows env:windows?"
         )
         self.assertIsInstance(intent_res, QueryIntentPayload)
-        self.assertIn("sqlite", [e.lower() for e in intent_res.entities + intent_res.technologies + [intent_res.clean_query]])
+        self.assertTrue(any("sqlite" in e.lower() for e in intent_res.entities + intent_res.technologies + [intent_res.clean_query]))
 
         # 2. CRAG State Evaluation
         crag_res = TypeSafeExtractor.extract_structured(

@@ -225,8 +225,10 @@ class ProductionChunker:
             chunker = SemanticChunker(threshold=0.75, chunk_size=chunk_size)
         elif strategy_str == "sentence":
             chunker = SentenceChunker(chunk_size=chunk_size, chunk_overlap=overlap)
+        elif strategy_str == "token":
+            chunker = TokenChunker(chunk_size=chunk_size, chunk_overlap=overlap)
         else:
-            chunker = RecursiveChunker(chunk_size=chunk_size, chunk_overlap=overlap)
+            chunker = RecursiveChunker(chunk_size=chunk_size)
 
         raw_chunks = chunker.chunk(text)
         payloads: List[ChunkPayload] = []
