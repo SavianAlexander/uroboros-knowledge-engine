@@ -203,10 +203,19 @@ RE_KNOWN_ENTITIES = re.compile(
     re.IGNORECASE
 )
 
-def extract_chunk_attributes(chunk_text: str, doc_title: str = "", parent_headers: str = "") -> Dict[str, Any]:
+RE_TRUST_PRICING = re.compile(r'(\$|€|£|¥|\b(price|pricing|cost|costs|rate|rates|fee|fees|subscription|tier|tiers|license|licensing|budget|per-user|per-seat|billing|estimation|hidden fees?)\b)', re.IGNORECASE)
+RE_TRUST_PROBLEMS = re.compile(r'\b(problem|problems|troubleshoot|failure|failures|failed|failure mode|symptom|symptoms|edge-case|bug|bugs|error|errors|crash|timeout|leak|diagnostic|diagnostics|workaround|issue|issues)\b', re.IGNORECASE)
+RE_TRUST_NOT_A_FIT = re.compile(r'\b(not[- ]a[- ]fit|who should avoid|when to avoid|avoid|disqualifier|disqualifiers|anti-persona|anti-personas|limitation|limitations|system limitation|unsupported|not recommended|drawback|drawbacks|downside)\b', re.IGNORECASE)
+RE_TRUST_REPAIR_REPLACE = re.compile(r'\b(repair vs replace|repair vs\. replace|replace vs repair|upgrade vs|rebuild vs|migrate vs|trade-off decision|trade-off matrix|lifecycle criteria|migration threshold|when to replace)\b', re.IGNORECASE)
+RE_TRUST_ENV_CONTEXT = re.compile(r'\b(environment constraint|environment context|freezing climate|climate|temperature|hardware tier|runtime prerequisite|prerequisite|prerequisites|operating system|windows|linux|macos)\b', re.IGNORECASE)
+RE_SOURCE_THIRD_PARTY = re.compile(r'\b(review|reviews|rating|ratings|case-study|case study|post-mortem|user review|customer review|feedback|community)\b', re.IGNORECASE)
+
+def extract_chunk_attributes(chunk_text: str, doc_title: str = "", parent_headers: str = "", filepath: str = "") -> Dict[str, Any]:
     """
     Automatically extracts structured metadata attributes from chunk text and breadcrumb context:
     - intent_type: troubleshooting, pricing, technical_spec, procedural, doubt_objection, conceptual, general
+    - trust_type: pricing, problems, not_a_fit, repair_vs_replace, environment_context, general
+    - source_type: primary_doc, third_party_corroboration
     - entities: detected technologies, operating systems, frameworks, and system components
     - domain_scope: engineering/backend, frontend/ui, devops/infra, data/security, general
     - answer_summary: concise answer-first synthesis of the primary takeaway
@@ -226,6 +235,21 @@ def extract_chunk_attributes(chunk_text: str, doc_title: str = "", parent_header
     sorted_intents = sorted(intent_scores.items(), key=lambda x: x[1], reverse=True)
     best_intent, best_score = sorted_intents[0]
     intent_type = best_intent if best_score > 0 else "general"
+
+    # 1B. 5-Pillar Trust Taxonomy Classification
+    trust_scores = {
+        "pricing": len(RE_TRUST_PRICING.findall(combined_text)),
+        "problems": len(RE_TRUST_PROBLEMS.findall(combined_text)),
+        "not_a_fit": len(RE_TRUST_NOT_A_FIT.findall(combined_text)),
+        "repair_vs_replace": len(RE_TRUST_REPAIR_REPLACE.findall(combined_text)),
+        "environment_context": len(RE_TRUST_ENV_CONTEXT.findall(combined_text)),
+    }
+    sorted_trust = sorted(trust_scores.items(), key=lambda x: x[1], reverse=True)
+    best_trust, best_trust_score = sorted_trust[0]
+    trust_type = best_trust if best_trust_score > 0 else "general"
+
+    # 1C. Source Type Detection
+    source_type = "third_party_corroboration" if (RE_SOURCE_THIRD_PARTY.search(filepath) or RE_SOURCE_THIRD_PARTY.search(combined_text)) else "primary_doc"
 
     # 2. Entity & Technology extraction
     raw_entities = RE_KNOWN_ENTITIES.findall(combined_text)
@@ -250,12 +274,16 @@ def extract_chunk_attributes(chunk_text: str, doc_title: str = "", parent_header
 
     return {
         "intent_type": intent_type,
+        "trust_type": trust_type,
+        "source_type": source_type,
         "entities": entities,
         "entities_json": json.dumps(entities),
         "domain_scope": scope,
         "answer_lead": answer_lead,
         "attributes": {
             "intent": intent_type,
+            "trust_type": trust_type,
+            "source_type": source_type,
             "entities": entities,
             "scope": scope,
             "has_code": "```" in chunk_text,
@@ -263,6 +291,8 @@ def extract_chunk_attributes(chunk_text: str, doc_title: str = "", parent_header
         },
         "attributes_json": json.dumps({
             "intent": intent_type,
+            "trust_type": trust_type,
+            "source_type": source_type,
             "entities": entities,
             "scope": scope,
             "has_code": "```" in chunk_text,
@@ -309,7 +339,7 @@ def semantic_markdown_chunker_hierarchical(
         # Generate deterministic parent_id
         parent_hash = hashlib.sha256(f"{filepath}:{len(parent_sections)}:{raw_body[:100]}".encode('utf-8')).hexdigest()[:16]
         parent_id = f"parent_{parent_hash}"
-        attrs = extract_chunk_attributes(raw_body, doc_title=doc_title, parent_headers=breadcrumb)
+        attrs = extract_chunk_attributes(raw_body, doc_title=doc_title, parent_headers=breadcrumb, filepath=filepath)
 
         return {
             "id": parent_id,
@@ -318,6 +348,8 @@ def semantic_markdown_chunker_hierarchical(
             "doc_title": doc_title or "Document",
             "domain_scope": attrs["domain_scope"],
             "intent_type": attrs["intent_type"],
+            "trust_type": attrs.get("trust_type", "general"),
+            "source_type": attrs.get("source_type", "primary_doc"),
             "entities": attrs["entities"],
             "entities_json": attrs["entities_json"],
             "attributes_json": attrs["attributes_json"]
@@ -382,7 +414,7 @@ def semantic_markdown_chunker_hierarchical(
         # If parent is already small enough, treat as 1 child
         if len(p_text) <= child_size:
             enriched = f"[Context: {p_hdr}]\n{p_text}" if p_hdr else p_text
-            attrs = extract_chunk_attributes(p_text, doc_title=doc_title, parent_headers=p_hdr)
+            attrs = extract_chunk_attributes(p_text, doc_title=doc_title, parent_headers=p_hdr, filepath=filepath)
             child_chunks.append({
                 "parent_id": p_id,
                 "chunk_index": len(child_chunks),
@@ -391,6 +423,8 @@ def semantic_markdown_chunker_hierarchical(
                 "parent_header": p_hdr,
                 "doc_title": doc_title or parent["doc_title"],
                 "intent_type": attrs["intent_type"],
+                "trust_type": attrs.get("trust_type", "general"),
+                "source_type": attrs.get("source_type", "primary_doc"),
                 "entities": attrs["entities"],
                 "entities_json": attrs["entities_json"],
                 "domain_scope": attrs["domain_scope"],
@@ -405,7 +439,7 @@ def semantic_markdown_chunker_hierarchical(
             if not sub_raw:
                 continue
             enriched = f"[Context: {p_hdr}]\n{sub_raw}" if p_hdr else sub_raw
-            attrs = extract_chunk_attributes(sub_raw, doc_title=doc_title, parent_headers=p_hdr)
+            attrs = extract_chunk_attributes(sub_raw, doc_title=doc_title, parent_headers=p_hdr, filepath=filepath)
             child_chunks.append({
                 "parent_id": p_id,
                 "chunk_index": len(child_chunks),
@@ -414,6 +448,8 @@ def semantic_markdown_chunker_hierarchical(
                 "parent_header": p_hdr,
                 "doc_title": doc_title or parent["doc_title"],
                 "intent_type": attrs["intent_type"],
+                "trust_type": attrs.get("trust_type", "general"),
+                "source_type": attrs.get("source_type", "primary_doc"),
                 "entities": attrs["entities"],
                 "entities_json": attrs["entities_json"],
                 "domain_scope": attrs["domain_scope"],

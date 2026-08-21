@@ -92,6 +92,26 @@ class SituationalCrossReranker:
                 if tech in combined_search_text:
                     attr_score += 0.35
 
+            # 3d. 5-Pillar Trust Taxonomy & Micro-Moment Boosting
+            trust_type = (item.get("trust_type") or "").lower()
+            source_type = (item.get("source_type") or "primary_doc").lower()
+            
+            # Check for doubt/evaluation in query (e.g. "avoid", "not a fit", "downside", "freezing climate", "worth it")
+            q_lower = query.lower()
+            is_doubt_eval = any(w in q_lower for w in ["avoid", "why shouldn't", "not a fit", "drawback", "limitation", "freezing climate", "climate", "worth", "cost", "problem"])
+            
+            if is_doubt_eval:
+                if trust_type in ["not_a_fit", "environment_context", "problems"]:
+                    attr_score += 0.50  # Strong boost for disqualifier and environmental constraints
+                elif trust_type in ["pricing", "repair_vs_replace"]:
+                    attr_score += 0.35
+            elif trust_type != "general":
+                attr_score += 0.20
+
+            # 3e. Multi-Source Corroboration Boost
+            if source_type == "third_party_corroboration":
+                attr_score += 0.25
+
             # 4. Header & Breadcrumb Context Alignment
             header_alignment = 0.0
             if any(t in doc_title or t in parent_hdr for t in content_q_terms):

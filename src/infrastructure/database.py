@@ -651,18 +651,24 @@ def init_db():
             _ensure_column(cursor, "file_chunks", "allowed_roles", "TEXT DEFAULT '[\"*\"]'")
             _ensure_column(cursor, "file_chunks", "user_acl", "TEXT DEFAULT '[\"*\"]'")
             _ensure_column(cursor, "file_chunks", "classification", "TEXT DEFAULT 'internal'")
+            _ensure_column(cursor, "file_chunks", "trust_type", "TEXT DEFAULT 'general'")
+            _ensure_column(cursor, "file_chunks", "source_type", "TEXT DEFAULT 'primary_doc'")
 
             _ensure_column(cursor, "parent_chunks", "tenant_id", "TEXT DEFAULT 'default'")
             _ensure_column(cursor, "parent_chunks", "allowed_roles", "TEXT DEFAULT '[\"*\"]'")
             _ensure_column(cursor, "parent_chunks", "user_acl", "TEXT DEFAULT '[\"*\"]'")
             _ensure_column(cursor, "parent_chunks", "classification", "TEXT DEFAULT 'internal'")
+            _ensure_column(cursor, "parent_chunks", "trust_type", "TEXT DEFAULT 'general'")
+            _ensure_column(cursor, "parent_chunks", "source_type", "TEXT DEFAULT 'primary_doc'")
 
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_hash ON file_chunks(chunk_hash)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_parent ON file_chunks(parent_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_intent ON file_chunks(intent_type)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_domain ON file_chunks(domain_scope)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_tenant ON file_chunks(tenant_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_trust_source ON file_chunks(trust_type, source_type)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_parent_chunks_tenant ON parent_chunks(tenant_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_parent_chunks_trust_source ON parent_chunks(trust_type, source_type)')
 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS tf_idf_index (
@@ -713,6 +719,8 @@ def init_db():
             _ensure_column(cursor, "files", "allowed_roles", "TEXT DEFAULT '[\"*\"]'")
             _ensure_column(cursor, "files", "user_acl", "TEXT DEFAULT '[\"*\"]'")
             _ensure_column(cursor, "files", "classification", "TEXT DEFAULT 'internal'")
+            _ensure_column(cursor, "files", "trust_type", "TEXT DEFAULT 'general'")
+            _ensure_column(cursor, "files", "source_type", "TEXT DEFAULT 'primary_doc'")
 
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_user_id ON files(user_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_files_tenant_id ON files(tenant_id)')

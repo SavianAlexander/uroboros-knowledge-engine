@@ -133,12 +133,14 @@ def index_file(
     tenant_id: str = "default",
     allowed_roles: Optional[List[str]] = None,
     user_acl: Optional[List[str]] = None,
-    classification: str = "internal"
+    classification: str = "internal",
+    trust_type: Optional[str] = None,
+    source_type: Optional[str] = None
 ) -> bool:
     """
     Incremental single-file indexer: parses one file, generates embeddings,
     and updates SQLite/FTS/Tags in an isolated transaction without scanning the entire directory.
-    Enforces multi-tenant RBAC metadata storage on files, file_chunks, and parent_chunks.
+    Enforces multi-tenant RBAC metadata storage and 5-Pillar Trust Taxonomy on files, file_chunks, and parent_chunks.
     """
     p = Path(filepath).resolve()
     if not p.is_file() or p.name == db.DB_FILE or p.name.startswith('.'):
@@ -196,24 +198,32 @@ def index_file(
     matched_tags = extract_ai_tags(content, p.name, rule_matches=rule_matches)
 
     # 1. Semantic Hierarchical Chunking (Parent Sections + Child Sub-chunks)
-    from src.core.domain.services import semantic_markdown_chunker_hierarchical
+    from src.core.domain.services import semantic_markdown_chunker_hierarchical, extract_chunk_attributes
     hierarchical_data = semantic_markdown_chunker_hierarchical(content, filepath=str(p))
     parent_sections = hierarchical_data["parent_chunks"]
     child_sub_chunks = hierarchical_data["child_chunks"]
 
+    # Global doc trust/source attribution
+    doc_attrs = extract_chunk_attributes(content[:1000], doc_title=p.name, filepath=str(p))
+    effective_doc_trust = trust_type or doc_attrs.get("trust_type", "general")
+    effective_doc_source = source_type or doc_attrs.get("source_type", "primary_doc")
+
     # Fallback to standard chunker if hierarchical produced no chunks
     if not child_sub_chunks:
         from src.core.domain.services import chunk_text_situational
-        from src.core.embeddings import generate_batch_embeddings, extract_chunk_attributes
+        from src.core.embeddings import generate_batch_embeddings
         standard_chunks = chunk_text_situational(content, max_chunk_size=400, overlap=50)
         chunk_embeddings = generate_batch_embeddings(standard_chunks) if standard_chunks else []
         chunk_data = []
         for idx, (c_text, emb) in enumerate(zip(standard_chunks, chunk_embeddings)):
-            attrs = extract_chunk_attributes(c_text, doc_title=p.name)
+            attrs = extract_chunk_attributes(c_text, doc_title=p.name, filepath=str(p))
             c_hash = hashlib.sha256(c_text.encode('utf-8')).hexdigest()[:16]
+            c_trust = trust_type or attrs.get("trust_type", "general")
+            c_source = source_type or attrs.get("source_type", "primary_doc")
             chunk_data.append((
                 None, idx, c_text, json.dumps(emb) if emb else "[]", c_hash,
-                "General", p.name, attrs["intent_type"], attrs["entities_json"], attrs["domain_scope"], attrs["attributes_json"]
+                "General", p.name, attrs["intent_type"], attrs["entities_json"], attrs["domain_scope"], attrs["attributes_json"],
+                c_trust, c_source
             ))
     else:
         from src.core.embeddings import generate_batch_embeddings
@@ -221,6 +231,8 @@ def index_file(
         child_embeddings = generate_batch_embeddings(child_texts)
         chunk_data = []
         for c_obj, emb in zip(child_sub_chunks, child_embeddings):
+            c_trust = trust_type or c_obj.get("trust_type", "general")
+            c_source = source_type or c_obj.get("source_type", "primary_doc")
             chunk_data.append((
                 c_obj["parent_id"],
                 c_obj["chunk_index"],
@@ -232,7 +244,9 @@ def index_file(
                 c_obj.get("intent_type", "general"),
                 c_obj.get("entities_json", "[]"),
                 c_obj.get("domain_scope", "general"),
-                c_obj.get("attributes_json", "{}")
+                c_obj.get("attributes_json", "{}"),
+                c_trust,
+                c_source
             ))
 
     # Atomic DB Update
@@ -247,9 +261,10 @@ def index_file(
                 cursor.execute("""
                     UPDATE files
                     SET filename = ?, file_size = ?, mime_type = ?, sha256 = ?, modified_at = ?, content = ?,
-                        acl_permissions = ?, user_id = ?, tenant_id = ?, allowed_roles = ?, user_acl = ?, classification = ?, insights = NULL
+                        acl_permissions = ?, user_id = ?, tenant_id = ?, allowed_roles = ?, user_acl = ?, classification = ?,
+                        trust_type = ?, source_type = ?, insights = NULL
                     WHERE id = ?
-                """, (p.name, file_size, mime_type, sha256, modified_at, content, acl_permissions, effective_user_id, tenant_id, roles_json, acl_json, classification, file_id))
+                """, (p.name, file_size, mime_type, sha256, modified_at, content, acl_permissions, effective_user_id, tenant_id, roles_json, acl_json, classification, effective_doc_trust, effective_doc_source, file_id))
 
                 cursor.execute("DELETE FROM fts_files WHERE filepath = ?", (str_fp,))
                 cursor.execute("""
@@ -264,9 +279,9 @@ def index_file(
                 cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
             else:
                 cursor.execute("""
-                    INSERT INTO files (user_id, filepath, filename, file_size, mime_type, sha256, modified_at, content, acl_permissions, tenant_id, allowed_roles, user_acl, classification, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
-                """, (effective_user_id, str_fp, p.name, file_size, mime_type, sha256, modified_at, content, acl_permissions, tenant_id, roles_json, acl_json, classification))
+                    INSERT INTO files (user_id, filepath, filename, file_size, mime_type, sha256, modified_at, content, acl_permissions, tenant_id, allowed_roles, user_acl, classification, trust_type, source_type, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+                """, (effective_user_id, str_fp, p.name, file_size, mime_type, sha256, modified_at, content, acl_permissions, tenant_id, roles_json, acl_json, classification, effective_doc_trust, effective_doc_source))
                 file_id = cursor.lastrowid
                 cursor.execute("""
                     INSERT INTO fts_files (filepath, filename, content, notes)
@@ -284,22 +299,32 @@ def index_file(
 
             for p_sec in parent_sections:
                 try:
+                    p_trust = trust_type or p_sec.get("trust_type", "general")
+                    p_source = source_type or p_sec.get("source_type", "primary_doc")
                     cursor.execute("""
-                        INSERT OR REPLACE INTO parent_chunks (id, file_id, section_header, content, doc_title, domain_scope, tenant_id, allowed_roles, user_acl, classification, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (p_sec["id"], file_id, p_sec["section_header"], p_sec["content"], p_sec["doc_title"], p_sec["domain_scope"], tenant_id, roles_json, acl_json, classification, time.time()))
+                        INSERT OR REPLACE INTO parent_chunks (id, file_id, section_header, content, doc_title, domain_scope, tenant_id, allowed_roles, user_acl, classification, trust_type, source_type, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (p_sec["id"], file_id, p_sec["section_header"], p_sec["content"], p_sec["doc_title"], p_sec["domain_scope"], tenant_id, roles_json, acl_json, classification, p_trust, p_source, time.time()))
                 except Exception:
                     pass
 
-            for p_id, c_idx, c_content, emb_json, c_hash, p_hdr, d_title, i_type, ent_json, d_scope, attr_json in chunk_data:
+            for p_id, c_idx, c_content, emb_json, c_hash, p_hdr, d_title, i_type, ent_json, d_scope, attr_json, c_trust, c_source in chunk_data:
                 cursor.execute('''
                     INSERT INTO file_chunks (
                         file_id, parent_id, chunk_index, content, embedding_json, chunk_hash,
                         parent_header, doc_title, intent_type, entities_json, domain_scope, attributes_json,
-                        tenant_id, allowed_roles, user_acl, classification
+                        tenant_id, allowed_roles, user_acl, classification, trust_type, source_type
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (file_id, p_id, c_idx, c_content, emb_json, c_hash, p_hdr, d_title, i_type, ent_json, d_scope, attr_json, tenant_id, roles_json, acl_json, classification))
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (file_id, p_id, c_idx, c_content, emb_json, c_hash, p_hdr, d_title, i_type, ent_json, d_scope, attr_json, tenant_id, roles_json, acl_json, classification, c_trust, c_source))
+                chunk_id = cursor.lastrowid
+                try:
+                    cursor.execute(
+                        "INSERT INTO fts_file_chunks (chunk_id, file_id, content) VALUES (?, ?, ?)",
+                        (chunk_id, file_id, f"{d_title} {p_hdr} {c_content}")
+                    )
+                except Exception:
+                    pass
                 chunk_id = cursor.lastrowid
                 try:
                     cursor.execute(
@@ -706,7 +731,7 @@ class MiniVectorEngine:
                 cursor.execute('''
                     SELECT c.id, c.file_id, c.parent_id, c.chunk_index, c.content, c.embedding_json,
                            c.parent_header, c.doc_title, c.intent_type, c.entities_json, c.domain_scope, c.attributes_json,
-                           c.tenant_id, c.allowed_roles, c.user_acl, c.classification,
+                           c.tenant_id, c.allowed_roles, c.user_acl, c.classification, c.trust_type, c.source_type,
                            f.filepath, f.filename, f.modified_at
                     FROM file_chunks c
                     JOIN files f ON c.file_id = f.id
@@ -734,6 +759,8 @@ class MiniVectorEngine:
                         "parent_header": r['parent_header'] if 'parent_header' in r_keys else "",
                         "doc_title": r['doc_title'] if 'doc_title' in r_keys else r['filename'],
                         "intent_type": r['intent_type'] if 'intent_type' in r_keys else "general",
+                        "trust_type": r['trust_type'] if 'trust_type' in r_keys else "general",
+                        "source_type": r['source_type'] if 'source_type' in r_keys else "primary_doc",
                         "entities_json": r['entities_json'] if 'entities_json' in r_keys else "[]",
                         "domain_scope": r['domain_scope'] if 'domain_scope' in r_keys else "general",
                         "attributes_json": r['attributes_json'] if 'attributes_json' in r_keys else "{}",
