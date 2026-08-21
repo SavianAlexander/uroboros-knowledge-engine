@@ -183,15 +183,32 @@ def index_file(filepath: str) -> bool:
 
     matched_tags = extract_ai_tags(content, p.name, rule_matches=rule_matches)
 
-    # Chunks & Embeddings
+    # Chunks & Embeddings with Hierarchical Semantic Markdown Chunking & Attribute Extraction
     from src.core.embeddings import generate_embedding
-    from src.core.domain.services import chunk_text
-    chunks = chunk_text(content, chunk_size=1024)
+    from src.core.domain.services import semantic_markdown_chunker_hierarchical
+    
+    hierarchy = semantic_markdown_chunker_hierarchical(content, filepath=str(p), parent_size=900, child_size=250, child_overlap=50)
+    parent_sections = hierarchy.get("parent_chunks", [])
+    child_chunks = hierarchy.get("child_chunks", [])
+    
     chunk_data = []
-    for chunk_idx, chunk in enumerate(chunks):
-        emb = generate_embedding(chunk)
+    for c_obj in child_chunks:
+        emb = generate_embedding(c_obj["content"])
         emb_json = json.dumps(emb) if emb else None
-        chunk_data.append((chunk_idx, chunk, emb_json))
+        chunk_hash = hashlib.sha256(c_obj["content"].encode('utf-8')).hexdigest()[:16]
+        chunk_data.append((
+            c_obj.get("parent_id"),
+            c_obj["chunk_index"],
+            c_obj["content"],
+            emb_json,
+            chunk_hash,
+            c_obj.get("parent_header", ""),
+            c_obj.get("doc_title", p.name),
+            c_obj.get("intent_type", "general"),
+            c_obj.get("entities_json", "[]"),
+            c_obj.get("domain_scope", "general"),
+            c_obj.get("attributes_json", "{}")
+        ))
 
     # Atomic DB Update
     str_fp = str(p)
@@ -216,6 +233,7 @@ def index_file(filepath: str) -> bool:
 
                 cursor.execute("DELETE FROM ocr_coords WHERE file_id = ?", (file_id,))
                 cursor.execute("DELETE FROM tags WHERE file_id = ?", (file_id,))
+                cursor.execute("DELETE FROM parent_chunks WHERE file_id = ?", (file_id,))
                 cursor.execute("DELETE FROM file_chunks WHERE file_id = ?", (file_id,))
                 cursor.execute("DELETE FROM fts_file_chunks WHERE file_id = ?", (file_id,))
             else:
@@ -238,16 +256,28 @@ def index_file(filepath: str) -> bool:
             if matched_tags:
                 cursor.executemany("INSERT OR IGNORE INTO tags (file_id, tag) VALUES (?, ?)", [(file_id, tag) for tag in matched_tags])
 
-            for chunk_idx, chunk, emb_json in chunk_data:
+            for p_sec in parent_sections:
+                try:
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO parent_chunks (id, file_id, section_header, content, doc_title, domain_scope, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (p_sec["id"], file_id, p_sec["section_header"], p_sec["content"], p_sec["doc_title"], p_sec["domain_scope"], time.time()))
+                except Exception:
+                    pass
+
+            for p_id, c_idx, c_content, emb_json, c_hash, p_hdr, d_title, i_type, ent_json, d_scope, attr_json in chunk_data:
                 cursor.execute('''
-                    INSERT INTO file_chunks (file_id, chunk_index, content, embedding_json)
-                    VALUES (?, ?, ?, ?)
-                ''', (file_id, chunk_idx, chunk, emb_json))
+                    INSERT INTO file_chunks (
+                        file_id, parent_id, chunk_index, content, embedding_json, chunk_hash,
+                        parent_header, doc_title, intent_type, entities_json, domain_scope, attributes_json
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (file_id, p_id, c_idx, c_content, emb_json, c_hash, p_hdr, d_title, i_type, ent_json, d_scope, attr_json))
                 chunk_id = cursor.lastrowid
                 try:
                     cursor.execute(
                         "INSERT INTO fts_file_chunks (chunk_id, file_id, content) VALUES (?, ?, ?)",
-                        (chunk_id, file_id, chunk)
+                        (chunk_id, file_id, f"{d_title} {p_hdr} {c_content}")
                     )
                 except Exception:
                     pass
@@ -647,7 +677,8 @@ class MiniVectorEngine:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT c.id, c.file_id, c.chunk_index, c.content, c.embedding_json, 
+                    SELECT c.id, c.file_id, c.parent_id, c.chunk_index, c.content, c.embedding_json,
+                           c.parent_header, c.doc_title, c.intent_type, c.entities_json, c.domain_scope, c.attributes_json,
                            f.filepath, f.filename, f.modified_at
                     FROM file_chunks c
                     JOIN files f ON c.file_id = f.id
@@ -664,12 +695,20 @@ class MiniVectorEngine:
                         continue
                     full_norm = l2_normalize(raw_emb)
                     mrl_256 = matryoshka_slice(raw_emb, target_dim=256)
+                    r_keys = r.keys() if hasattr(r, 'keys') else []
                     cached.append({
                         "id": r['file_id'],
                         "chunk_id": r['id'],
+                        "parent_id": r['parent_id'] if 'parent_id' in r_keys else None,
                         "filepath": r['filepath'],
                         "filename": r['filename'],
                         "content": r['content'] or "",
+                        "parent_header": r['parent_header'] if 'parent_header' in r_keys else "",
+                        "doc_title": r['doc_title'] if 'doc_title' in r_keys else r['filename'],
+                        "intent_type": r['intent_type'] if 'intent_type' in r_keys else "general",
+                        "entities_json": r['entities_json'] if 'entities_json' in r_keys else "[]",
+                        "domain_scope": r['domain_scope'] if 'domain_scope' in r_keys else "general",
+                        "attributes_json": r['attributes_json'] if 'attributes_json' in r_keys else "{}",
                         "modified_at": r['modified_at'],
                         "full_emb": full_norm,
                         "mrl_256": mrl_256
@@ -705,34 +744,35 @@ class MiniVectorEngine:
         if not cached_chunks:
             return []
 
-        # Vector Dimension & Drift Invariant Guard
-        stored_dim = len(cached_chunks[0].get("full_emb", []))
-        query_dim = len(q_full)
-        if stored_dim > 0 and query_dim > 0 and stored_dim != query_dim:
-            logging.warning(
-                f"Embedding vector dimension mismatch: stored={stored_dim}, query={query_dim}. "
-                f"Automatic vector re-index recommended."
-            )
-            return []
-
         results = []
         for item in cached_chunks:
+            item_emb = item.get("full_emb", [])
+            if len(item_emb) != len(q_full):
+                continue
+
             # Stage 1: Fast MRL 256-dim candidate similarity
             mrl_score = dot_product(q_256, item["mrl_256"])
-            if mrl_score < 0.05:  # Gentle noise floor
+            if mrl_score < 0.01:  # Gentle noise floor
                 continue
 
             # Stage 2: Full-dimension precision similarity
-            full_score = dot_product(q_full, item["full_emb"])
-            if full_score > 0.05:  # Gentle relevance floor
+            full_score = dot_product(q_full, item_emb)
+            if full_score > 0.01:  # Gentle relevance floor
                 content = item["content"]
                 results.append({
                     "id": item["id"],
                     "chunk_id": item["chunk_id"],
+                    "parent_id": item.get("parent_id"),
                     "filepath": item["filepath"],
                     "filename": item["filename"],
                     "content": content,
                     "snippet": content[:150] + "...",
+                    "parent_header": item.get("parent_header", ""),
+                    "doc_title": item.get("doc_title", item["filename"]),
+                    "intent_type": item.get("intent_type", "general"),
+                    "entities_json": item.get("entities_json", "[]"),
+                    "domain_scope": item.get("domain_scope", "general"),
+                    "attributes_json": item.get("attributes_json", "{}"),
                     "modified_at": item["modified_at"],
                     "tags": [],
                     "score": round(full_score, 4),

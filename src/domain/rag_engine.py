@@ -348,42 +348,57 @@ def _fts_fallback_search(sq: str) -> list:
 def extract_advanced_rag_context(
     query: str,
     max_chunks: int = 5,
-    jaccard_threshold: float = 0.70
-) -> Tuple[str, List[Dict[str, Any]]]:
+    jaccard_threshold: float = 0.70,
+    return_trace: bool = False,
+    confidence_threshold: Optional[float] = None
+) -> Any:
     """
-    Orchestrates full Advanced RAG pipeline with core algorithmic stages:
-    1. SQL Metadata Filter Pushdown (tag:, ext: filters)
-    2. Multi-hop query decomposition into sub-queries
-    3. Technical synonym expansion & Porter stemming
-    4. HyDE query expansion & FTS5 character sanitization
-    5. Okapi BM25 Probabilistic Hybrid Retrieval
-    6. Reciprocal Rank Fusion (RRF) re-ranking
-    7. Pass-2 Mechanical Precision Re-ranking (term coverage + phrase proximity + recency decay)
-    8. Word-level Jaccard snippet deduplication (threshold >= 0.70)
-    9. Parent-Child Chunk Context Resolution & Sentence-Boundary Trimming
-    Returns (context_text, citations_list).
+    Orchestrates full Situational Attribute-Aware Hybrid RAG pipeline:
+    1. Situational Query Analysis & Attribute Extraction (Intent, Environments, Tech, Filters)
+    2. Multi-hop situational sub-query decomposition
+    3. Technical synonym expansion & HyDE generation
+    4. Sparse FTS5 BM25 search across files and chunk breadcrumbs
+    5. Dense Vector Search with MRL Matryoshka representations
+    6. Reciprocal Rank Fusion (RRF k=60)
+    7. Situational Cross-Encoder Reranking (Term density, n-gram proximity, attribute congruency)
+    8. Relevance Gating (Discards low-confidence distractors)
+    9. Word-level Jaccard snippet deduplication
+    10. Contextual Breadcrumb & Answer-First Context Assembly
+    Returns (context_text, citations_list) or (context_text, citations_list, trace_dict).
     """
     if not query or not str(query).strip():
-        return "", []
+        return ("", [], {}) if return_trace else ("", [])
 
     raw_q = str(query).strip()
-    cleaned_q, filters = parse_metadata_filters(raw_q)
-    target_q = cleaned_q or raw_q
+    
+    from src.domain.situational_query_analyzer import SituationalQueryAnalyzer
+    from src.domain.situational_cross_reranker import SituationalCrossReranker
     from src.infrastructure.database import get_db
-
     from src.infrastructure.vector_engine import MiniVectorEngine
     from src.core.domain.services import chunk_text_hierarchical, expand_synonyms
 
-    synonym_expanded_q = expand_synonyms(target_q)
-    sub_queries = decompose_multihop_query(synonym_expanded_q or target_q)
+    # 1. Situational Query Analysis & Pre-Retrieval Transformation
+    query_plan = SituationalQueryAnalyzer.analyze_situational_query(raw_q)
+    target_q = query_plan.core_semantic_query or raw_q
+    filters = query_plan.extracted_filters
+
+    sub_queries = list(query_plan.sub_queries)
+    synonym_expanded = expand_synonyms(target_q)
+    if synonym_expanded and synonym_expanded not in sub_queries:
+        sub_queries.append(synonym_expanded)
+
+    logger.info(
+        f"[QUERY_ANALYSIS] raw='{raw_q}' intent='{query_plan.intent_type}' "
+        f"entities={query_plan.environments + query_plan.technologies} "
+        f"filters={filters} sub_queries={sub_queries}"
+    )
 
     all_fts_hits = []
     all_vec_hits = []
 
-    for sq in sub_queries:
+    for sq in sub_queries[:4]:
         expanded_q = generate_hyde_expansion(sq)
         sanitized_q = sanitize_fts_query(sq) or sanitize_fts_query(expanded_q)
-
 
         fts_hits = []
         if sanitized_q:
@@ -398,9 +413,15 @@ def extract_advanced_rag_context(
                 if "ext" in filters:
                     sql_where.append("files.filename LIKE ?")
                     sql_params.append(f"%.{filters['ext']}")
+                if "env" in filters:
+                    sql_where.append("files.content LIKE ?")
+                    sql_params.append(f"%{filters['env']}%")
+                if "tech" in filters:
+                    sql_where.append("files.content LIKE ?")
+                    sql_params.append(f"%{filters['tech']}%")
 
                 query_sql = (
-                    "SELECT files.filepath, files.filename, files.content, files.modified_at "
+                    "SELECT files.id, files.filepath, files.filename, files.content, files.modified_at "
                     "FROM fts_files JOIN files ON fts_files.filepath = files.filepath "
                     f"WHERE {' AND '.join(sql_where)} ORDER BY bm25(fts_files) ASC LIMIT 10"
                 )
@@ -417,6 +438,24 @@ def extract_advanced_rag_context(
             vec_hits = MiniVectorEngine.search_semantic(expanded_q or sq)
             if "ext" in filters:
                 vec_hits = [v for v in vec_hits if (v.get("filename") or "").lower().endswith(f".{filters['ext']}")]
+            if "env" in filters:
+                target_env = filters["env"].lower()
+                vec_hits = [
+                    v for v in vec_hits
+                    if target_env in (v.get("content") or "").lower()
+                    or target_env in (v.get("entities_json") or "").lower()
+                    or target_env in (v.get("parent_header") or "").lower()
+                    or target_env in (v.get("doc_title") or "").lower()
+                ]
+            if "tech" in filters:
+                target_tech = filters["tech"].lower()
+                vec_hits = [
+                    v for v in vec_hits
+                    if target_tech in (v.get("content") or "").lower()
+                    or target_tech in (v.get("entities_json") or "").lower()
+                    or target_tech in (v.get("parent_header") or "").lower()
+                    or target_tech in (v.get("doc_title") or "").lower()
+                ]
         except (KeyboardInterrupt, MemoryError, SystemExit):
             raise
         except Exception as e:
@@ -426,39 +465,72 @@ def extract_advanced_rag_context(
         all_fts_hits.extend(fts_hits)
         all_vec_hits.extend(vec_hits)
 
+    logger.info(
+        f"[RETRIEVAL_DENSE] count={len(all_vec_hits)} "
+        f"hits={[{'id': v.get('chunk_id') or v.get('id'), 'file': v.get('filename'), 'score': v.get('score')} for v in all_vec_hits[:5]]}"
+    )
+    logger.info(
+        f"[RETRIEVAL_SPARSE] count={len(all_fts_hits)} "
+        f"hits={[{'id': f.get('id') or f.get('filepath'), 'file': f.get('filename'), 'score': f.get('score', 0.0)} for f in all_fts_hits[:5]]}"
+    )
+
+    # 2. Reciprocal Rank Fusion
     fused_hits = rrf_rerank(all_fts_hits, all_vec_hits, k=60)
-    precision_hits = precision_cross_rerank(target_q, fused_hits)
-    deduped_hits = jaccard_deduplicate(precision_hits, threshold=jaccard_threshold)
+    logger.info(
+        f"[RRF_FUSION] k=60 count={len(fused_hits)} "
+        f"hits={[{'id': h.get('chunk_id') or h.get('id'), 'file': h.get('filename'), 'rrf_score': h.get('rrf_score')} for h in fused_hits[:5]]}"
+    )
 
-    citations = []
-    context_blocks = []
+    # 3. Situational Cross-Encoder Reranking & Relevance Threshold Gating
+    cross_hits = SituationalCrossReranker.rerank(
+        query=raw_q,
+        candidates=fused_hits,
+        query_plan=query_plan,
+        min_relevance_threshold=0.20
+    )
+    logger.info(
+        f"[RERANK_CROSS_ENCODER] count={len(cross_hits)} "
+        f"hits={[{'id': c.get('chunk_id') or c.get('id'), 'file': c.get('filename'), 'cross_score': c.get('cross_score'), 'confidence': c.get('relevance_confidence')} for c in cross_hits[:5]]}"
+    )
 
-    for idx, hit in enumerate(deduped_hits[:max_chunks], start=1):
-        score = hit.get("rrf_score", 0.0)
-        fname = hit.get("filename", "document.txt")
-        fpath = hit.get("filepath", "")
-        content = (hit.get("content") or hit.get("snippet") or "").strip()
-        from src.domain.context_sanitizer import ContextSanitizer
-        sanitized_content = ContextSanitizer.sanitize_text(content)
+    # 4. Word-Level Jaccard Deduplication
+    deduped_hits = jaccard_deduplicate(cross_hits, threshold=jaccard_threshold)
 
-        # Parent-Child Chunk Expansion & Sentence-Boundary Smart Trimming
-        hierarchical = chunk_text_hierarchical(sanitized_content, parent_size=600, child_size=150)
-        if hierarchical:
-            raw_snippet = hierarchical[0]["parent_content"]
-        else:
-            raw_snippet = sanitized_content[:600] if len(sanitized_content) > 600 else sanitized_content
+    # 5. Grounded Confidence Guardrail Check
+    from src.domain.context_optimizer import (
+        ParentResolver,
+        AlternatingRankSorter,
+        ContextCompactor,
+        GroundedGuardrail,
+        RELEVANCE_THRESHOLD
+    )
 
-        snippet = trim_to_sentence_boundary(raw_snippet, max_chars=600)
-        snippet = ContextSanitizer.sanitize_text(snippet)
+    top_relevance = cross_hits[0].get("cross_score", 0.0) if cross_hits else 0.0
+    active_threshold = confidence_threshold if confidence_threshold is not None else 0.05
+    if not cross_hits or (confidence_threshold is not None and top_relevance < confidence_threshold):
+        fallback_msg = GroundedGuardrail.get_fallback_insufficient_context_message(raw_q, threshold=active_threshold)
+        if return_trace:
+            return fallback_msg, [], {
+                "query_analysis": {
+                    "raw_query": raw_q,
+                    "core_semantic_query": target_q,
+                    "intent_type": query_plan.intent_type,
+                    "filters": filters
+                },
+                "status": "REFUSAL_INSUFFICIENT_CONTEXT",
+                "top_score": top_relevance,
+                "threshold": active_threshold
+            }
+        return fallback_msg, []
 
-        citation_str = f"[Source: {fname} (Chunk #{idx})]"
-        citations.append({
-            "citation": citation_str,
-            "filename": fname,
-            "filepath": fpath,
-            "confidence_score": score
-        })
-        context_blocks.append(f"{citation_str}\n{snippet}")
+    # 6. Two-Tier Hierarchical Parent-Child Context Resolution & Deduplication
+    resolved_parents = ParentResolver.resolve_parents_from_child_hits(deduped_hits[:max_chunks * 2])
+    
+    # 7. 'Lost in the Middle' Attention Optimization ([R1, R3, R5, ..., R6, R4, R2])
+    reordered_parents = AlternatingRankSorter.reorder_lost_in_the_middle(resolved_parents[:max_chunks])
+
+    # 8. Context Compaction & Strict Inline Citation Attribution
+    context_text, citations = ContextCompactor.compact_context_blocks(reordered_parents, max_char_budget=12000)
 
     # 2-Hop GraphRAG Traversal
     graph_context_blocks = []
@@ -469,7 +541,6 @@ def extract_advanced_rag_context(
         fpaths = [hit.get("filepath") for hit in deduped_hits[:3] if hit.get("filepath")]
         if fpaths:
             placeholders = ",".join(["?"] * len(fpaths))
-            # O(1) Bipartite Graph Traversal: Files -> Tags -> Files
             cursor.execute(f"""
                 SELECT DISTINCT f1.filepath, f2.filename 
                 FROM files f1 
@@ -485,15 +556,151 @@ def extract_advanced_rag_context(
                 
             for hit in deduped_hits[:3]:
                 fpath = hit.get("filepath", "")
-                neighbors = neighbors_map.get(fpath, [])[:3]  # Enforce LIMIT 3 per node
+                neighbors = neighbors_map.get(fpath, [])[:3]
                 if neighbors:
                     graph_context_blocks.append(f"[Graph Context: '{hit.get('filename')}' connected to: {', '.join(neighbors)}]")
     except Exception:
         pass
 
-    context_text = "\n\n".join(context_blocks)
     if graph_context_blocks:
         context_text = "\n".join(graph_context_blocks) + "\n\n" + context_text
+
+    if return_trace:
+        trace_payload = {
+            "query_analysis": {
+                "raw_query": raw_q,
+                "core_semantic_query": target_q,
+                "intent_type": query_plan.intent_type,
+                "environments": query_plan.environments,
+                "technologies": query_plan.technologies,
+                "extracted_filters": filters,
+                "sub_queries": sub_queries
+            },
+            "dense_retrieval": all_vec_hits,
+            "sparse_retrieval": all_fts_hits,
+            "rrf_fusion": fused_hits,
+            "rerank_cross_encoder": cross_hits,
+            "deduped_candidates": deduped_hits,
+            "resolved_parents": resolved_parents,
+            "reordered_parents": reordered_parents
+        }
+        return context_text, citations, trace_payload
+
+    return context_text, citations
+
+
+async def async_extract_advanced_rag_context(
+    query: str,
+    max_chunks: int = 5,
+    confidence_threshold: Optional[float] = None,
+    return_trace: bool = False
+) -> Any:
+    """
+    High-Concurrency Async Retrieval Orchestrator:
+    - Runs AsyncQueryTransformer (HyDE + Step-Back + Sub-queries) concurrently.
+    - Executes parallel dense vector search and sparse FTS via asyncio.gather.
+    - Caps cross-encoder candidates to top 15 post-RRF for sub-50ms latency.
+    - Resolves Parent-Child chunks with Lost-in-the-Middle layout.
+    """
+    import asyncio
+    from src.domain.query_transformer import AsyncQueryTransformer
+    from src.domain.situational_query_analyzer import SituationalQueryAnalyzer
+    from src.domain.situational_cross_reranker import SituationalCrossReranker
+    from src.infrastructure.vector_engine import MiniVectorEngine
+    from src.domain.context_optimizer import (
+        ParentResolver,
+        AlternatingRankSorter,
+        ContextCompactor,
+        GroundedGuardrail,
+        RELEVANCE_THRESHOLD
+    )
+
+    if not query or not str(query).strip():
+        return ("", [], {}) if return_trace else ("", [])
+
+    raw_q = str(query).strip()
+    query_plan = SituationalQueryAnalyzer.analyze_situational_query(raw_q)
+    filters = query_plan.extracted_filters
+
+    # 1. Async Query Transformation (HyDE + Step-Back + Sub-queries)
+    trans_plan = await AsyncQueryTransformer.transform_query_async(raw_q)
+    all_queries = list(set([raw_q, trans_plan["step_back_query"]] + trans_plan["sub_queries"] + ([trans_plan["hyde_passage"]] if trans_plan["hyde_passage"] else [])))
+
+    # 2. Parallel Vector & Sparse Search Execution
+    loop = asyncio.get_event_loop()
+
+    def _run_dense(q_str: str):
+        hits = MiniVectorEngine.search_semantic(q_str, top_k=10)
+        if "ext" in filters:
+            hits = [v for v in hits if (v.get("filename") or "").lower().endswith(f".{filters['ext']}")]
+        if "env" in filters:
+            target_env = filters["env"].lower()
+            hits = [v for v in hits if target_env in (v.get("content") or "").lower() or target_env in (v.get("entities_json") or "").lower()]
+        return hits
+
+    def _run_sparse(q_str: str):
+        sanitized = sanitize_fts_query(q_str)
+        if not sanitized:
+            return []
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, filepath, filename, content, modified_at FROM fts_files WHERE fts_files MATCH ? LIMIT 10", (sanitized,))
+            return [dict(r) for r in cursor.fetchall()]
+        except Exception:
+            return _fts_fallback_search(q_str)
+
+    dense_tasks = [loop.run_in_executor(None, _run_dense, q) for q in all_queries[:4]]
+    sparse_tasks = [loop.run_in_executor(None, _run_sparse, q) for q in all_queries[:3]]
+
+    dense_results, sparse_results = await asyncio.gather(
+        asyncio.gather(*dense_tasks),
+        asyncio.gather(*sparse_tasks)
+    )
+
+    all_vec_hits = [hit for batch in dense_results for hit in batch]
+    all_fts_hits = [hit for batch in sparse_results for hit in batch]
+
+    # 3. Reciprocal Rank Fusion
+    fused_hits = rrf_rerank(all_fts_hits, all_vec_hits, k=60)
+
+    # 4. Cross-Encoder Rerank (Capped to Top 15 Candidates for Minimal Latency)
+    cross_hits = SituationalCrossReranker.rerank(
+        query=raw_q,
+        candidates=fused_hits[:15],
+        query_plan=query_plan,
+        min_relevance_threshold=0.15
+    )
+
+    # 5. Grounded Confidence Guardrail Check
+    top_score = cross_hits[0].get("cross_score", 0.0) if cross_hits else 0.0
+    active_threshold = confidence_threshold if confidence_threshold is not None else 0.05
+    if not cross_hits or (confidence_threshold is not None and top_score < confidence_threshold):
+        fallback_msg = GroundedGuardrail.get_fallback_insufficient_context_message(raw_q, threshold=active_threshold)
+        if return_trace:
+            return fallback_msg, [], {"status": "REFUSAL_INSUFFICIENT_CONTEXT", "top_score": top_score, "threshold": active_threshold}
+        return fallback_msg, []
+
+    # 6. Deduplication & Parent Resolution
+    deduped_hits = jaccard_deduplicate(cross_hits, threshold=0.70)
+    resolved_parents = ParentResolver.resolve_parents_from_child_hits(deduped_hits[:max_chunks * 2])
+
+    # 7. 'Lost in the Middle' Sorter
+    reordered_parents = AlternatingRankSorter.reorder_lost_in_the_middle(resolved_parents[:max_chunks])
+
+    # 8. Context Compaction
+    context_text, citations = ContextCompactor.compact_context_blocks(reordered_parents, max_char_budget=12000)
+
+    if return_trace:
+        return context_text, citations, {
+            "transform_plan": trans_plan,
+            "dense_count": len(all_vec_hits),
+            "sparse_count": len(all_fts_hits),
+            "fused_count": len(fused_hits),
+            "cross_count": len(cross_hits),
+            "top_score": top_score
+        }
+
     return context_text, citations
 
 

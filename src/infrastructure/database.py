@@ -625,8 +625,32 @@ def init_db():
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_file_id ON file_chunks(file_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_file_chunk ON file_chunks(file_id, chunk_index)')
 
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS parent_chunks (
+                    id TEXT PRIMARY KEY,
+                    file_id INTEGER NOT NULL,
+                    section_header TEXT,
+                    content TEXT NOT NULL,
+                    doc_title TEXT,
+                    domain_scope TEXT,
+                    created_at REAL,
+                    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
+                )
+            """)
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_parent_chunks_file ON parent_chunks(file_id)')
+
+            _ensure_column(cursor, "file_chunks", "parent_id", "TEXT")
             _ensure_column(cursor, "file_chunks", "chunk_hash", "TEXT")
+            _ensure_column(cursor, "file_chunks", "parent_header", "TEXT")
+            _ensure_column(cursor, "file_chunks", "doc_title", "TEXT")
+            _ensure_column(cursor, "file_chunks", "intent_type", "TEXT")
+            _ensure_column(cursor, "file_chunks", "entities_json", "TEXT")
+            _ensure_column(cursor, "file_chunks", "domain_scope", "TEXT")
+            _ensure_column(cursor, "file_chunks", "attributes_json", "TEXT")
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_hash ON file_chunks(chunk_hash)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_parent ON file_chunks(parent_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_intent ON file_chunks(intent_type)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_file_chunks_domain ON file_chunks(domain_scope)')
 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS tf_idf_index (

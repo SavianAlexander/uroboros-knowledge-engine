@@ -37,6 +37,8 @@ def get_db_connection():
     """Attempt to locate and connect to Tududi SQLite database."""
     candidates = [
         os.environ.get("TUDUDI_DB_PATH", ""),
+        r"C:\Users\Administrator\Desktop\Task Master\tududi_db\production.sqlite3",
+        os.path.join(os.path.dirname(project_root), "Task Master", "tududi_db", "production.sqlite3"),
         "tududi.sqlite",
         os.path.expanduser("~/.tududi/tududi.sqlite"),
         os.path.join(project_root, "tududi.sqlite")

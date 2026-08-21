@@ -6,6 +6,8 @@ import unicodedata
 import re
 import math
 import logging
+import hashlib
+import os
 from collections import Counter, defaultdict
 from functools import lru_cache
 from typing import List, Dict, Tuple, Any, Optional
@@ -181,57 +183,281 @@ def extract_ai_tags(content: str, filename: str, rule_matches: Optional[List[Tup
         logger.warning("Failed to extract AI tags from content: %s", e)
     return tags
 
-def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> List[str]:
+import json
+import os
+
+RE_INTENT_TROUBLESHOOTING = re.compile(r'\b(error|bug|issue|fail|failed|failure|fix|fixed|resolve|resolved|exception|traceback|crash|timeout|corrupt|corrupted|malformed|panic|debug)\b', re.IGNORECASE)
+RE_INTENT_PRICING = re.compile(r'(\$|€|£|¥|\b(price|pricing|cost|costs|tier|tiers|plan|plans|subscription|billing|rate|fee|fees|quota|credits|discount)\b)', re.IGNORECASE)
+RE_INTENT_TECH_SPEC = re.compile(r'\b(api|endpoint|endpoints|schema|schemas|interface|interfaces|spec|specification|parameter|parameters|payload|datatype|struct|typedef|signature|contract|protocol|rfc|architecture)\b', re.IGNORECASE)
+RE_INTENT_PROCEDURAL = re.compile(r'\b(step|steps|how\s+to|guide|tutorial|install|installation|configure|configuration|setup|deploy|deployment|command|run|build|start|execute|migrate)\b', re.IGNORECASE)
+RE_INTENT_DOUBT = re.compile(r'\b(limitation|limitations|caveat|caveats|warning|caution|trade-off|tradeoff|drawback|risk|ceiling|prohibited|forbidden|disadvantage|faq)\b', re.IGNORECASE)
+RE_INTENT_CONCEPTUAL = re.compile(r'\b(overview|introduction|concept|concepts|theory|principle|principles|definition|definitions|what\s+is|background|vision|mission|philosophy)\b', re.IGNORECASE)
+
+RE_SCOPE_FRONTEND = re.compile(r'\b(react|frontend|ui|css|html|dom|component|tailwind|layout)\b', re.IGNORECASE)
+RE_SCOPE_DEVOPS = re.compile(r'\b(docker|wsl|wsl2|kubernetes|ci|deploy|deployment|server|linux|nginx)\b', re.IGNORECASE)
+RE_SCOPE_BACKEND = re.compile(r'\b(fastapi|sqlite|sqlite3|python|backend|api|endpoint|database|engine|service|router)\b', re.IGNORECASE)
+RE_SCOPE_SECURITY = re.compile(r'\b(soc2|security|jwt|auth|audit|merkle|acl|hashchain|compliance)\b', re.IGNORECASE)
+
+RE_KNOWN_ENTITIES = re.compile(
+    r'\b(windows|linux|macos|darwin|ubuntu|debian|wsl|wsl2|docker|docker-desktop|kubernetes|sqlite|sqlite3|fastapi|uvicorn|python|react|node|nodejs|typescript|javascript|ollama|kokoro|onnx|pytorch|cuda|tensorrt|playwright|jest|pytest|git|github|actions|soc2|iso29119|jwt|rest|graphql|fts5|rrf|bm25|hyde)\b',
+    re.IGNORECASE
+)
+
+def extract_chunk_attributes(chunk_text: str, doc_title: str = "", parent_headers: str = "") -> Dict[str, Any]:
     """
-    Split text into AST heading-aware and Markdown table-preserving chunks.
-    Keeps Markdown tables (| ... |) intact within unified chunk boundaries.
+    Automatically extracts structured metadata attributes from chunk text and breadcrumb context:
+    - intent_type: troubleshooting, pricing, technical_spec, procedural, doubt_objection, conceptual, general
+    - entities: detected technologies, operating systems, frameworks, and system components
+    - domain_scope: engineering/backend, frontend/ui, devops/infra, data/security, general
+    - answer_summary: concise answer-first synthesis of the primary takeaway
+    """
+    combined_text = f"{doc_title} {parent_headers} {chunk_text}"
+    
+    # 1. Intent Classification with multi-pattern density
+    intent_scores = {
+        "troubleshooting": len(RE_INTENT_TROUBLESHOOTING.findall(combined_text)),
+        "pricing": len(RE_INTENT_PRICING.findall(combined_text)),
+        "technical_spec": len(RE_INTENT_TECH_SPEC.findall(combined_text)),
+        "procedural": len(RE_INTENT_PROCEDURAL.findall(combined_text)),
+        "doubt_objection": len(RE_INTENT_DOUBT.findall(combined_text)),
+        "conceptual": len(RE_INTENT_CONCEPTUAL.findall(combined_text)),
+    }
+    
+    sorted_intents = sorted(intent_scores.items(), key=lambda x: x[1], reverse=True)
+    best_intent, best_score = sorted_intents[0]
+    intent_type = best_intent if best_score > 0 else "general"
+
+    # 2. Entity & Technology extraction
+    raw_entities = RE_KNOWN_ENTITIES.findall(combined_text)
+    entities = sorted(list(set(e.lower() for e in raw_entities)))
+
+    # 3. Domain scope classification using token boundary regexes
+    scope = "general"
+    if RE_SCOPE_BACKEND.search(combined_text):
+        scope = "backend_engineering"
+    elif RE_SCOPE_FRONTEND.search(combined_text):
+        scope = "frontend_ui"
+    elif RE_SCOPE_DEVOPS.search(combined_text):
+        scope = "devops_infrastructure"
+    elif RE_SCOPE_SECURITY.search(combined_text):
+        scope = "security_compliance"
+
+    # 4. Answer-First synthesis / leading declaration
+    clean_lines = [l.strip() for l in chunk_text.splitlines() if l.strip() and not l.strip().startswith(('#', '|', '```'))]
+    answer_lead = clean_lines[0] if clean_lines else ""
+    if len(answer_lead) > 200:
+        answer_lead = answer_lead[:197] + "..."
+
+    return {
+        "intent_type": intent_type,
+        "entities": entities,
+        "entities_json": json.dumps(entities),
+        "domain_scope": scope,
+        "answer_lead": answer_lead,
+        "attributes": {
+            "intent": intent_type,
+            "entities": entities,
+            "scope": scope,
+            "has_code": "```" in chunk_text,
+            "has_table": "|" in chunk_text
+        },
+        "attributes_json": json.dumps({
+            "intent": intent_type,
+            "entities": entities,
+            "scope": scope,
+            "has_code": "```" in chunk_text,
+            "has_table": "|" in chunk_text
+        })
+    }
+
+def semantic_markdown_chunker_hierarchical(
+    text: str,
+    filepath: str = "",
+    parent_size: int = 900,
+    child_size: int = 250,
+    child_overlap: int = 50
+) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Two-Tier Hierarchical AST Chunker:
+    1. Parent Chunks: Section-level comprehensive context (code blocks, tables, and procedural steps intact).
+    2. Child Chunks: High-granularity sub-chunks for precise vector embedding and BM25 indexing,
+       linked via unique parent_id references.
     """
     if not text or not text.strip():
-        return []
+        return {"parent_chunks": [], "child_chunks": []}
     if len(text) > 10_000_000:
         text = text[:10_000_000]
 
-    lines = text.splitlines(keepends=True)
-    if len(lines) == 1 and len(lines[0]) > chunk_size:
-        stride = max(1, chunk_size - overlap)
-        single_line = lines[0]
-        return [single_line[i:i + chunk_size] for i in range(0, len(single_line), stride)]
+    raw_lines = text.splitlines(keepends=True)
+    header_stack: List[Tuple[int, str]] = []
+    doc_title = os.path.splitext(os.path.basename(filepath))[0].replace("_", " ").replace("-", " ").title() if filepath else ""
 
-    chunks = []
-    curr_chunk = []
+    parent_sections: List[Dict[str, Any]] = []
+    curr_lines: List[str] = []
     curr_size = 0
+    in_code_block = False
     in_table = False
+    active_breadcrumb = ""
 
-    for line in lines:
-        is_header = line.lstrip().startswith(('# ', '## ', '### ', '#### '))
-        is_table_row = line.strip().startswith('|') and line.strip().endswith('|')
+    def flush_parent(lines_buffer: List[str], breadcrumb: str) -> Optional[Dict[str, Any]]:
+        if not lines_buffer:
+            return None
+        raw_body = "".join(lines_buffer).strip()
+        if not raw_body:
+            return None
 
+        # Generate deterministic parent_id
+        parent_hash = hashlib.sha256(f"{filepath}:{len(parent_sections)}:{raw_body[:100]}".encode('utf-8')).hexdigest()[:16]
+        parent_id = f"parent_{parent_hash}"
+        attrs = extract_chunk_attributes(raw_body, doc_title=doc_title, parent_headers=breadcrumb)
+
+        return {
+            "id": parent_id,
+            "section_header": breadcrumb or doc_title or "General",
+            "content": raw_body,
+            "doc_title": doc_title or "Document",
+            "domain_scope": attrs["domain_scope"],
+            "intent_type": attrs["intent_type"],
+            "entities": attrs["entities"],
+            "entities_json": attrs["entities_json"],
+            "attributes_json": attrs["attributes_json"]
+        }
+
+    for line in raw_lines:
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_code_block = not in_code_block
+
+        is_table_row = stripped.startswith("|") and stripped.endswith("|")
         if is_table_row:
             in_table = True
         elif in_table and not is_table_row:
             in_table = False
 
-        # Do not break chunk inside a markdown table unless max size reached
-        if (is_header or (curr_size >= chunk_size and not in_table)) and curr_chunk:
-            chunks.append("".join(curr_chunk))
-            # Keep overlap lines if not in table
-            overlap_buf = []
-            buf_len = 0
-            for prev_line in reversed(curr_chunk):
-                if buf_len + len(prev_line) > overlap:
-                    break
-                overlap_buf.insert(0, prev_line)
-                buf_len += len(prev_line)
-            curr_chunk = overlap_buf
-            curr_size = buf_len
+        is_header = False
+        header_level = 0
+        header_text = ""
+        if not in_code_block and stripped.startswith("#"):
+            match = re.match(r'^(#{1,6})\s+(.+)$', stripped)
+            if match:
+                is_header = True
+                header_level = len(match.group(1))
+                header_text = match.group(2).strip()
+                if header_level == 1:
+                    doc_title = header_text
 
-        curr_chunk.append(line)
+                while header_stack and header_stack[-1][0] >= header_level:
+                    header_stack.pop()
+                header_stack.append((header_level, header_text))
+                active_breadcrumb = " > ".join(h[1] for h in header_stack)
+
+        should_split = (
+            (is_header and curr_lines and not in_code_block) or
+            (curr_size >= parent_size and not in_code_block and not in_table)
+        )
+
+        if should_split and curr_lines:
+            p_obj = flush_parent(curr_lines, active_breadcrumb)
+            if p_obj:
+                parent_sections.append(p_obj)
+            curr_lines = []
+            curr_size = 0
+
+        curr_lines.append(line)
         curr_size += len(line)
 
-    if curr_chunk:
-        chunks.append("".join(curr_chunk))
+    if curr_lines:
+        p_obj = flush_parent(curr_lines, active_breadcrumb)
+        if p_obj:
+            parent_sections.append(p_obj)
 
-    return chunks
+    # 2. Generate Granular Child Chunks linked to each Parent
+    child_chunks: List[Dict[str, Any]] = []
+    for p_idx, parent in enumerate(parent_sections):
+        p_text = parent["content"]
+        p_hdr = parent["section_header"]
+        p_id = parent["id"]
+        
+        # If parent is already small enough, treat as 1 child
+        if len(p_text) <= child_size:
+            enriched = f"[Context: {p_hdr}]\n{p_text}" if p_hdr else p_text
+            attrs = extract_chunk_attributes(p_text, doc_title=doc_title, parent_headers=p_hdr)
+            child_chunks.append({
+                "parent_id": p_id,
+                "chunk_index": len(child_chunks),
+                "content": enriched,
+                "raw_content": p_text,
+                "parent_header": p_hdr,
+                "doc_title": doc_title or parent["doc_title"],
+                "intent_type": attrs["intent_type"],
+                "entities": attrs["entities"],
+                "entities_json": attrs["entities_json"],
+                "domain_scope": attrs["domain_scope"],
+                "attributes_json": attrs["attributes_json"]
+            })
+            continue
+
+        # Granular sliding window within parent section
+        step = max(1, child_size - child_overlap)
+        for c_start in range(0, len(p_text), step):
+            sub_raw = p_text[c_start : c_start + child_size].strip()
+            if not sub_raw:
+                continue
+            enriched = f"[Context: {p_hdr}]\n{sub_raw}" if p_hdr else sub_raw
+            attrs = extract_chunk_attributes(sub_raw, doc_title=doc_title, parent_headers=p_hdr)
+            child_chunks.append({
+                "parent_id": p_id,
+                "chunk_index": len(child_chunks),
+                "content": enriched,
+                "raw_content": sub_raw,
+                "parent_header": p_hdr,
+                "doc_title": doc_title or parent["doc_title"],
+                "intent_type": attrs["intent_type"],
+                "entities": attrs["entities"],
+                "entities_json": attrs["entities_json"],
+                "domain_scope": attrs["domain_scope"],
+                "attributes_json": attrs["attributes_json"]
+            })
+
+    return {
+        "parent_chunks": parent_sections,
+        "child_chunks": child_chunks
+    }
+
+def semantic_markdown_chunker(
+    text: str,
+    filepath: str = "",
+    max_chunk_size: int = 800,
+    overlap: int = 120,
+    return_hierarchy: bool = False
+) -> Any:
+    """
+    Markdown-Aware Hierarchical AST & Semantic Boundary Chunker:
+    - Returns child chunks linked to parent sections, or full hierarchy if return_hierarchy=True.
+    """
+    hierarchy = semantic_markdown_chunker_hierarchical(
+        text=text,
+        filepath=filepath,
+        parent_size=max(max_chunk_size, 800),
+        child_size=max(200, min(max_chunk_size, 400)),
+        child_overlap=overlap
+    )
+    if return_hierarchy:
+        return hierarchy
+    return hierarchy["child_chunks"]
+
+def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150) -> List[str]:
+    """
+    Split text into AST heading-aware and Markdown table-preserving chunks.
+    Maintains 100% backward compatibility returning List[str].
+    """
+    if not text or not str(text).strip():
+        return []
+    semantic_chunks = semantic_markdown_chunker(text, max_chunk_size=chunk_size, overlap=overlap)
+    if semantic_chunks:
+        return [c.get("raw_content", c["content"]) for c in semantic_chunks]
+    step = max(1, chunk_size - overlap)
+    return [text[i:i + chunk_size] for i in range(0, len(text), step)]
 
 def parse_query_operators(q_str: str) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
     """Parse search operators (e.g. tag:foo, size:>1mb, -word, NEAR(...))."""
@@ -500,6 +726,22 @@ _SYNONYM_DICT = {
     "functions": "function",
     "repo": "repository",
     "repositories": "repository",
+    "queue": "buffer",
+    "circular": "ring",
+    "tasks": "items",
+    "task": "item",
+    "executors": "workers",
+    "executor": "worker",
+    "messages": "payloads",
+    "message": "payload",
+    "asynchronously": "concurrently",
+    "concurrent": "asynchronous",
+    "concurrency": "threading",
+    "deletion": "unlinking",
+    "delete": "unlink",
+    "lock": "locking",
+    "locks": "locking",
+    "permission": "lock",
 }
 
 @lru_cache(maxsize=2048)
