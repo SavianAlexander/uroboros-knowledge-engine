@@ -1,7 +1,7 @@
 """
 Production Chonkie-Powered Chunking Engine.
-Primary Engine: chonkie (RecursiveChunker, SemanticChunker, SentenceChunker).
-Resilient Fallback: AST Heading-aware Markdown Chunker.
+Primary Engine: chonkie (RecursiveChunker, SemanticChunker, SentenceChunker, TableChunker).
+Resilient Fallback: AST Heading-aware Markdown Chunker with Table header preservation.
 Output: Strict Pydantic v2 ChunkPayload objects preserving hierarchy & 5-Pillar Trust metadata.
 """
 
@@ -32,6 +32,7 @@ class ChunkingStrategy(str, Enum):
     SENTENCE = "sentence"
     SEMANTIC = "semantic"
     HIERARCHICAL = "hierarchical"
+    TABLE = "table"
 
 
 class ChunkPayload(BaseModel):
@@ -39,6 +40,7 @@ class ChunkPayload(BaseModel):
     chunk_index: int = Field(..., description="0-indexed position in document")
     content: str = Field(..., description="Raw text body of the chunk")
     doc_title: str = Field(default="Document", description="Title or basename of parent document")
+    filepath: str = Field(default="", description="Source file path or canonical URL")
     parent_id: Optional[Union[str, int]] = Field(default=None, description="Identifier of parent section")
     parent_header: str = Field(default="General", description="Immediate section header")
     header_breadcrumb: str = Field(default="Root", description="Full hierarchical path (e.g. Doc > Section > Sub)")
@@ -52,6 +54,107 @@ class ChunkPayload(BaseModel):
     def to_dict(self) -> Dict[str, Any]:
         """Converts model to serializable dictionary."""
         return self.model_dump()
+
+
+class TableChunker:
+    """
+    Dedicated chunker for tabular markdown data preserving column headers across chunk splits.
+    """
+
+    @staticmethod
+    def chunk_table(
+        table_text: str,
+        doc_title: str = "Table Document",
+        filepath: str = "",
+        max_rows_per_chunk: int = 15
+    ) -> List[ChunkPayload]:
+        """
+        Chunks markdown tables ensuring header rows (| Col 1 | Col 2 | and | --- | --- |) are repeated on each chunk.
+        """
+        lines = [line.strip() for line in table_text.strip().splitlines() if line.strip()]
+        if not lines:
+            return []
+
+        # Find header and separator
+        header_lines: List[str] = []
+        data_rows: List[str] = []
+
+        for idx, line in enumerate(lines):
+            if "|" in line:
+                if len(header_lines) < 2:
+                    header_lines.append(line)
+                else:
+                    data_rows.append(line)
+            else:
+                if not header_lines:
+                    header_lines.append(line)
+                else:
+                    data_rows.append(line)
+
+        if not data_rows:
+            # Entire table fits in one chunk
+            return [
+                ChunkPayload(
+                    chunk_index=0,
+                    content=table_text.strip(),
+                    doc_title=doc_title,
+                    filepath=filepath,
+                    parent_header="Table",
+                    header_breadcrumb=f"{doc_title} > Table",
+                    trust_type="pricing" if "price" in table_text.lower() or "cost" in table_text.lower() else "general",
+                    token_count=len(table_text.split())
+                )
+            ]
+
+        header_prefix = "\n".join(header_lines)
+        chunks: List[ChunkPayload] = []
+
+        for i in range(0, len(data_rows), max_rows_per_chunk):
+            batch_rows = data_rows[i:i + max_rows_per_chunk]
+            chunk_content = f"{header_prefix}\n" + "\n".join(batch_rows)
+            chunks.append(
+                ChunkPayload(
+                    chunk_index=len(chunks),
+                    content=chunk_content.strip(),
+                    doc_title=doc_title,
+                    filepath=filepath,
+                    parent_header="Table",
+                    header_breadcrumb=f"{doc_title} > Table (Rows {i+1}-{i+len(batch_rows)})",
+                    trust_type="pricing" if "price" in chunk_content.lower() or "cost" in chunk_content.lower() else "general",
+                    token_count=len(chunk_content.split())
+                )
+            )
+
+        return chunks
+
+
+class UniversalChunker:
+    """
+    Universal Chunker orchestrator configurable for Recursive, Semantic, Sentence, and Table chunking.
+    """
+
+    def __init__(
+        self,
+        strategy: ChunkingStrategy = ChunkingStrategy.RECURSIVE,
+        chunk_size: int = 512,
+        chunk_overlap: int = 64,
+        semantic_threshold: float = 0.75
+    ):
+        self.strategy = strategy
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+        self.semantic_threshold = semantic_threshold
+
+    def chunk(self, text: str, doc_title: str = "Document", filepath: str = "") -> List[ChunkPayload]:
+        """Chunks text using configured strategy."""
+        return ProductionChunker.chunk_document(
+            text=text,
+            doc_title=doc_title,
+            filepath=filepath,
+            strategy=self.strategy,
+            chunk_size=self.chunk_size,
+            overlap=self.chunk_overlap
+        )
 
 
 class ProductionChunker:
@@ -75,20 +178,13 @@ class ProductionChunker:
     ) -> List[ChunkPayload]:
         """
         Chunks input document text into structured ChunkPayload objects.
-        
-        Args:
-            text: Markdown or plain text document.
-            doc_title: Document title or filename.
-            filepath: Source filesystem path for attribution.
-            strategy: Chunking strategy (recursive, sentence, semantic, hierarchical).
-            chunk_size: Maximum token/character chunk size.
-            overlap: Overlap size between adjacent chunks.
-            
-        Returns:
-            List of validated ChunkPayload models.
         """
         if not text or not str(text).strip():
             return []
+
+        # Table strategy routing
+        if strategy == ChunkingStrategy.TABLE or (isinstance(strategy, str) and strategy.lower() == "table"):
+            return TableChunker.chunk_table(table_text=text, doc_title=doc_title, filepath=filepath)
 
         # 1. Primary Engine: Chonkie Chunker
         if HAS_CHONKIE:
@@ -122,42 +218,39 @@ class ProductionChunker:
         chunk_size: int,
         overlap: int
     ) -> List[ChunkPayload]:
-        """Delegates to native Chonkie chunker instance."""
-        if strategy == ChunkingStrategy.SENTENCE:
-            chunker_inst = SentenceChunker(chunk_size=chunk_size, chunk_overlap=overlap)
-        elif strategy == ChunkingStrategy.SEMANTIC:
-            try:
-                chunker_inst = SemanticChunker(chunk_size=chunk_size)
-            except Exception:
-                chunker_inst = RecursiveChunker(chunk_size=chunk_size, chunk_overlap=overlap)
-        else:
-            chunker_inst = RecursiveChunker(chunk_size=chunk_size, chunk_overlap=overlap)
+        """Executes native Chonkie recursive, semantic, or sentence chunking."""
+        strategy_str = strategy.value if isinstance(strategy, ChunkingStrategy) else str(strategy).lower()
 
-        chonkie_chunks = chunker_inst.chunk(text)
+        if strategy_str == "semantic":
+            chunker = SemanticChunker(threshold=0.75, chunk_size=chunk_size)
+        elif strategy_str == "sentence":
+            chunker = SentenceChunker(chunk_size=chunk_size, chunk_overlap=overlap)
+        else:
+            chunker = RecursiveChunker(chunk_size=chunk_size, chunk_overlap=overlap)
+
+        raw_chunks = chunker.chunk(text)
         payloads: List[ChunkPayload] = []
 
-        from src.core.domain.services import extract_chunk_attributes
+        for idx, rc in enumerate(raw_chunks):
+            content = rc.text if hasattr(rc, "text") else str(rc)
+            token_cnt = rc.token_count if hasattr(rc, "token_count") else len(content.split())
 
-        for idx, c in enumerate(chonkie_chunks):
-            content_str = c.text if hasattr(c, "text") else str(c)
-            attrs = extract_chunk_attributes(content_str, doc_title=doc_title, filepath=filepath)
-            
-            tok_count = getattr(c, "token_count", len(content_str.split()))
+            trust_type = ProductionChunker._classify_trust_pillar(content)
+            intent_type = ProductionChunker._classify_micro_moment(content)
 
-            payloads.append(ChunkPayload(
-                chunk_index=idx,
-                content=content_str,
-                doc_title=doc_title,
-                parent_id=f"p_{idx // 3}",
-                parent_header="General",
-                header_breadcrumb=f"{doc_title} > Chunk {idx+1}",
-                trust_type=attrs.get("trust_type", "general"),
-                intent_type=attrs.get("intent_type", "general"),
-                source_type=attrs.get("source_type", "primary_doc"),
-                token_count=tok_count,
-                entities=attrs.get("entities", []),
-                attributes=attrs.get("attributes_json", {})
-            ))
+            payloads.append(
+                ChunkPayload(
+                    chunk_index=idx,
+                    content=content,
+                    doc_title=doc_title,
+                    filepath=filepath,
+                    parent_header=ProductionChunker._extract_primary_header(content),
+                    header_breadcrumb=f"{doc_title} > Chunk {idx+1}",
+                    trust_type=trust_type,
+                    intent_type=intent_type,
+                    token_count=token_cnt
+                )
+            )
 
         return payloads
 
@@ -170,51 +263,107 @@ class ProductionChunker:
         overlap: int
     ) -> List[ChunkPayload]:
         """
-        Built-in AST markdown heading and paragraph preserving chunker.
+        Deterministic AST heading-aware Markdown chunker.
+        Preserves Markdown heading hierarchies and attaches 5-Pillar Trust taxonomy.
         """
-        from src.core.domain.services import semantic_markdown_chunker_hierarchical, extract_chunk_attributes
+        sections = re.split(r'(?=(?:^|\n)#{1,6}\s+)', text)
+        sections = [s.strip() for s in sections if s.strip()]
 
-        hierarchy = semantic_markdown_chunker_hierarchical(
-            text=text,
-            filepath=filepath,
-            parent_size=max(chunk_size * 2, 800),
-            child_size=chunk_size,
-            child_overlap=overlap
-        )
-
-        raw_children = hierarchy.get("child_chunks", [])
         payloads: List[ChunkPayload] = []
+        current_breadcrumb: List[str] = [doc_title]
+        global_chunk_idx = 0
 
-        for idx, raw in enumerate(raw_children):
-            c_text = raw.get("raw_content") or raw.get("content") or ""
-            p_hdr = raw.get("parent_header") or "General"
-            d_title = raw.get("doc_title") or doc_title
+        for sec in sections:
+            header_match = re.match(r'^(#{1,6})\s+(.+?)(?:\n|$)', sec)
+            if header_match:
+                level = len(header_match.group(1))
+                h_text = header_match.group(2).strip()
 
-            attrs = extract_chunk_attributes(c_text, doc_title=d_title, parent_headers=p_hdr, filepath=filepath)
-            attrs_val = attrs.get("attributes_json")
-            if isinstance(attrs_val, str):
-                try:
-                    parsed_attrs = json.loads(attrs_val)
-                except Exception:
-                    parsed_attrs = {}
-            elif isinstance(attrs_val, dict):
-                parsed_attrs = attrs_val
+                while len(current_breadcrumb) > level:
+                    current_breadcrumb.pop()
+                if len(current_breadcrumb) == level:
+                    current_breadcrumb[-1] = h_text
+                else:
+                    current_breadcrumb.append(h_text)
+
+                parent_header = h_text
             else:
-                parsed_attrs = {}
+                parent_header = current_breadcrumb[-1] if len(current_breadcrumb) > 1 else "General"
 
-            payloads.append(ChunkPayload(
-                chunk_index=idx,
-                content=c_text,
-                doc_title=d_title,
-                parent_id=raw.get("parent_id"),
-                parent_header=p_hdr,
-                header_breadcrumb=f"{d_title} > {p_hdr}",
-                trust_type=attrs.get("trust_type", "general"),
-                intent_type=attrs.get("intent_type", "general"),
-                source_type=attrs.get("source_type", "primary_doc"),
-                token_count=len(c_text.split()),
-                entities=attrs.get("entities", []),
-                attributes=parsed_attrs
-            ))
+            words = sec.split()
+            if len(words) <= chunk_size or chunk_size <= 0:
+                trust_type = ProductionChunker._classify_trust_pillar(sec)
+                intent_type = ProductionChunker._classify_micro_moment(sec)
+
+                payloads.append(
+                    ChunkPayload(
+                        chunk_index=global_chunk_idx,
+                        content=sec,
+                        doc_title=doc_title,
+                        filepath=filepath,
+                        parent_header=parent_header,
+                        header_breadcrumb=" > ".join(current_breadcrumb),
+                        trust_type=trust_type,
+                        intent_type=intent_type,
+                        token_count=len(words)
+                    )
+                )
+                global_chunk_idx += 1
+            else:
+                step = max(1, chunk_size - overlap)
+                for w_idx in range(0, len(words), step):
+                    chunk_words = words[w_idx:w_idx + chunk_size]
+                    sub_content = " ".join(chunk_words)
+                    trust_type = ProductionChunker._classify_trust_pillar(sub_content)
+                    intent_type = ProductionChunker._classify_micro_moment(sub_content)
+
+                    payloads.append(
+                        ChunkPayload(
+                            chunk_index=global_chunk_idx,
+                            content=sub_content,
+                            doc_title=doc_title,
+                            filepath=filepath,
+                            parent_header=parent_header,
+                            header_breadcrumb=" > ".join(current_breadcrumb),
+                            trust_type=trust_type,
+                            intent_type=intent_type,
+                            token_count=len(chunk_words)
+                        )
+                    )
+                    global_chunk_idx += 1
 
         return payloads
+
+    @staticmethod
+    def _classify_trust_pillar(content: str) -> str:
+        """Categorizes chunk into 5-Pillar Trust Taxonomy."""
+        lower = content.lower()
+        if any(w in lower for w in ["price", "pricing", "cost", "tier", "quote", "$", "usd", "license"]):
+            return "pricing"
+        if any(w in lower for w in ["problem", "issue", "bug", "error", "failure", "crash", "outage", "fault"]):
+            return "problems"
+        if any(w in lower for w in ["not a fit", "incompatible", "unsupported", "limitation", "deprecated", "cannot"]):
+            return "not_a_fit"
+        if any(w in lower for w in ["repair", "replace", "fix", "recover", "maintenance", "troubleshoot", "restore"]):
+            return "repair_vs_replace"
+        if any(w in lower for w in ["windows", "linux", "gpu", "vram", "ram", "cpu", "memory", "storage", "environment"]):
+            return "environment_constraints"
+        return "general"
+
+    @staticmethod
+    def _classify_micro_moment(content: str) -> str:
+        """Categorizes chunk into 4 Micro-Moments Intent."""
+        lower = content.lower()
+        if any(w in lower for w in ["how to", "guide", "step", "install", "configure", "run", "execute"]):
+            return "WANT_TO_DO"
+        if any(w in lower for w in ["where", "near", "location", "address", "provider", "find"]):
+            return "WANT_TO_GO_LOCATE"
+        if any(w in lower for w in ["buy", "purchase", "order", "subscribe", "tier", "plan"]):
+            return "WANT_TO_BUY_DECIDE"
+        return "WANT_TO_KNOW"
+
+    @staticmethod
+    def _extract_primary_header(content: str) -> str:
+        """Extracts first markdown heading or default."""
+        m = re.search(r'^#{1,6}\s+(.+?)$', content, re.MULTILINE)
+        return m.group(1).strip() if m else "General"

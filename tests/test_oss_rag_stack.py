@@ -117,7 +117,7 @@ class TestOSSRAGInfrastructureStack(unittest.TestCase):
             self.assertIsInstance(c, ChunkPayload)
             self.assertIn(c.doc_title, ["rag_spec.md", "High-Performance RAG Architecture"])
             self.assertTrue(len(c.content) > 0)
-            self.assertIn(c.trust_type, ["pricing", "environment_context", "general", "problems", "not_a_fit", "repair_vs_replace"])
+            self.assertIn(c.trust_type, ["pricing", "environment_context", "environment_constraints", "general", "problems", "not_a_fit", "repair_vs_replace"])
 
     def test_04_qdrant_vector_store_payload_filtering(self):
         """Test 4: Verify QdrantVectorEngine vector indexing and deterministic payload pre-filtering."""

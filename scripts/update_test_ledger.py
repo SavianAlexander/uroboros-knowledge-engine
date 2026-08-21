@@ -139,7 +139,13 @@ FILE_DOMAIN_MAPPING = {
     "src/domain/generation/outlines_generator.py": ["DomainPromptEngineeringStack"],
     "tests/test_prompt_engineering_stack.py": ["DomainPromptEngineeringStack"],
     "src/domain/ingestion/crawlers/web_crawler.py": ["DomainWebIngestionCrawler", "DomainOSSRAGStack"],
-    "tests/test_web_ingestion_crawler.py": ["DomainWebIngestionCrawler"]
+    "tests/test_web_ingestion_crawler.py": ["DomainWebIngestionCrawler"],
+    "src/infrastructure/storage/vector_store.py": ["DomainTenToolStack"],
+    "src/core/gateway/gateway_router.py": ["DomainTenToolStack"],
+    "src/core/structured_engine.py": ["DomainTenToolStack"],
+    "src/domain/optimization/dspy_rag.py": ["DomainTenToolStack"],
+    "src/infrastructure/observability/tracer.py": ["DomainTenToolStack"],
+    "tests/test_ten_tool_stack.py": ["DomainTenToolStack"]
 }
 
 DOMAIN_TEST_MODULES = [
@@ -206,10 +212,23 @@ DOMAIN_TEST_MODULES = [
     "tests.test_enterprise_resilience_pillars",
     "tests.test_oss_rag_stack",
     "tests.test_prompt_engineering_stack",
-    "tests.test_web_ingestion_crawler"
+    "tests.test_web_ingestion_crawler",
+    "tests.test_ten_tool_stack"
 ]
 
 BUG_RELATION_TAXONOMY = {
+    "DomainTenToolStack": [
+        {"test": "test_01_crawl4ai_web_crawler", "component": "src/domain/ingestion/crawlers/web_crawler.py", "prevents": "Web crawl failure and table preservation regression"},
+        {"test": "test_02_marker_pdf_parser", "component": "src/domain/ingestion/parsers/pdf_parser.py", "prevents": "Layout-aware PDF parsing corruption"},
+        {"test": "test_03_chonkie_universal_chunker", "component": "src/domain/ingestion/chunker.py", "prevents": "Universal and table chunking delimiter errors"},
+        {"test": "test_04_qdrant_vector_store", "component": "src/infrastructure/storage/vector_store.py", "prevents": "Qdrant HNSW and payload pre-filter failure"},
+        {"test": "test_05_ollama_local_execution", "component": "src/core/gateway/gateway_router.py", "prevents": "Local Ollama model failover breakdown"},
+        {"test": "test_06_litellm_model_gateway", "component": "src/core/gateway/gateway_router.py", "prevents": "Universal gateway routing and embedding failure"},
+        {"test": "test_07_outlines_constrained_generation", "component": "src/core/structured_engine.py", "prevents": "Token-level logit masking grammar violation"},
+        {"test": "test_08_instructor_structured_extraction", "component": "src/core/structured_engine.py", "prevents": "Cloud structured Pydantic schema validation failure"},
+        {"test": "test_09_dspy_programmatic_optimization", "component": "src/domain/optimization/dspy_rag.py", "prevents": "Programmatic DSPy RAG pipeline decomposition failure"},
+        {"test": "test_10_langfuse_observability_tracer", "component": "src/infrastructure/observability/tracer.py", "prevents": "Observability span and telemetry trace dropout"}
+    ],
     "DomainWebIngestionCrawler": [
         {"test": "test_01_crawled_document_schema_and_hashing", "component": "src/domain/ingestion/crawlers/web_crawler.py", "prevents": "Schema invalidity and corrupted delta hash in web ingestion"},
         {"test": "test_02_async_multi_url_crawl", "component": "src/domain/ingestion/crawlers/web_crawler.py", "prevents": "Concurrency deadlock or blocking I/O during multi-URL crawl"},

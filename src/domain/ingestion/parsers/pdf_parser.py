@@ -80,6 +80,26 @@ class LayoutAwarePDFParser:
         return LayoutAwarePDFParser._fallback_structured_parse(pdf_path)
 
     @staticmethod
+    def parse_pdf_bytes(pdf_bytes: bytes, filename: str = "document.pdf", extract_images: bool = False) -> Dict[str, Any]:
+        """Parses in-memory PDF byte buffer."""
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            tmp.write(pdf_bytes)
+            tmp_path = tmp.name
+        try:
+            res = LayoutAwarePDFParser.parse_pdf_to_markdown(tmp_path, extract_images=extract_images)
+            if "metadata" not in res:
+                res["metadata"] = {}
+            res["metadata"]["filename"] = filename
+            return res
+        finally:
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+
+    @staticmethod
     async def parse_pdf_to_markdown_async(pdf_path: str, extract_images: bool = False) -> Dict[str, Any]:
         """Non-blocking asynchronous wrapper for layout-aware PDF parsing."""
         return await asyncio.to_thread(
