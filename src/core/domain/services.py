@@ -351,8 +351,9 @@ def semantic_markdown_chunker_hierarchical(
                 header_stack.append((header_level, header_text))
                 active_breadcrumb = " > ".join(h[1] for h in header_stack)
 
+        has_content_before_header = bool(curr_lines and any(not l.strip().startswith('#') and l.strip() for l in curr_lines))
         should_split = (
-            (is_header and curr_lines and not in_code_block) or
+            (is_header and has_content_before_header and not in_code_block) or
             (curr_size >= parent_size and not in_code_block and not in_table)
         )
 

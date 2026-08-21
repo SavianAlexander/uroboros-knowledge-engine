@@ -68,6 +68,25 @@ class ParentResolver:
             except Exception as e:
                 logger.error(f"Failed to resolve parent chunks: {e}")
 
+        # Also resolve missing parent IDs by file_id if parent_chunks exist for that file
+        missing_file_ids = [h.get("id") for h in missing_parent_hits if h.get("id")]
+        file_parents_map: Dict[int, List[Dict[str, Any]]] = {}
+        if missing_file_ids:
+            try:
+                with get_db_connection(db_file) as conn:
+                    conn.row_factory = sqlite3.Row
+                    cursor = conn.cursor()
+                    placeholders = ",".join(["?"] * len(missing_file_ids))
+                    cursor.execute(f"""
+                        SELECT id, file_id, section_header, content, doc_title, domain_scope
+                        FROM parent_chunks
+                        WHERE file_id IN ({placeholders})
+                    """, missing_file_ids)
+                    for r in cursor.fetchall():
+                        file_parents_map.setdefault(r["file_id"], []).append(dict(r))
+            except Exception:
+                pass
+
         # Construct deduplicated ranked parent list
         for hit in child_hits:
             p_id = hit.get("parent_id")
@@ -79,6 +98,28 @@ class ParentResolver:
                 resolved_parents.append({
                     "id": p_data.get("file_id", hit.get("id")),
                     "parent_id": p_id,
+                    "chunk_id": hit.get("chunk_id"),
+                    "filename": hit.get("filename", ""),
+                    "filepath": hit.get("filepath", ""),
+                    "doc_title": p_data.get("doc_title") or hit.get("doc_title", ""),
+                    "section_header": p_data.get("section_header") or hit.get("parent_header", ""),
+                    "content": p_data.get("content", hit.get("content", "")),
+                    "domain_scope": p_data.get("domain_scope") or hit.get("domain_scope", "general"),
+                    "score": hit.get("score", 0.0),
+                    "cross_score": hit.get("cross_score", hit.get("score", 0.0)),
+                    "rrf_score": hit.get("rrf_score", 0.0),
+                    "is_parent": True
+                })
+            elif hit.get("id") in file_parents_map and file_parents_map[hit["id"]]:
+                p_list = file_parents_map[hit["id"]]
+                p_data = p_list[0]
+                p_id_resolved = p_data["id"]
+                if p_id_resolved in seen_parent_ids:
+                    continue
+                seen_parent_ids.add(p_id_resolved)
+                resolved_parents.append({
+                    "id": p_data.get("file_id", hit.get("id")),
+                    "parent_id": p_id_resolved,
                     "chunk_id": hit.get("chunk_id"),
                     "filename": hit.get("filename", ""),
                     "filepath": hit.get("filepath", ""),

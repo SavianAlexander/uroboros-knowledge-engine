@@ -406,27 +406,56 @@ def extract_advanced_rag_context(
                 conn = get_db()
                 cursor = conn.cursor()
 
-                # Build SQL filter pushdown constraints
-                sql_where = ["fts_files MATCH ?"]
-                sql_params = [sanitized_q]
-
+                # 1. Search granular child chunks first for precise Parent-Child linking
+                sql_where_chunk = ["fts_file_chunks MATCH ?"]
+                sql_params_chunk = [sanitized_q]
                 if "ext" in filters:
-                    sql_where.append("files.filename LIKE ?")
-                    sql_params.append(f"%.{filters['ext']}")
+                    sql_where_chunk.append("f.filename LIKE ?")
+                    sql_params_chunk.append(f"%.{filters['ext']}")
                 if "env" in filters:
-                    sql_where.append("files.content LIKE ?")
-                    sql_params.append(f"%{filters['env']}%")
+                    sql_where_chunk.append("(c.content LIKE ? OR c.parent_header LIKE ?)")
+                    sql_params_chunk.extend([f"%{filters['env']}%", f"%{filters['env']}%"])
                 if "tech" in filters:
-                    sql_where.append("files.content LIKE ?")
-                    sql_params.append(f"%{filters['tech']}%")
+                    sql_where_chunk.append("(c.content LIKE ? OR c.parent_header LIKE ?)")
+                    sql_params_chunk.extend([f"%{filters['tech']}%", f"%{filters['tech']}%"])
 
-                query_sql = (
-                    "SELECT files.id, files.filepath, files.filename, files.content, files.modified_at "
-                    "FROM fts_files JOIN files ON fts_files.filepath = files.filepath "
-                    f"WHERE {' AND '.join(sql_where)} ORDER BY bm25(fts_files) ASC LIMIT 10"
+                chunk_sql = (
+                    "SELECT c.id as chunk_id, c.file_id as id, c.parent_id, c.content, c.parent_header, "
+                    "c.doc_title, c.intent_type, c.entities_json, c.domain_scope, c.attributes_json, "
+                    "f.filepath, f.filename, f.modified_at "
+                    "FROM fts_file_chunks fts "
+                    "JOIN file_chunks c ON fts.chunk_id = c.id "
+                    "JOIN files f ON c.file_id = f.id "
+                    f"WHERE {' AND '.join(sql_where_chunk)} ORDER BY bm25(fts_file_chunks) ASC LIMIT 10"
                 )
-                cursor.execute(query_sql, sql_params)
-                fts_hits = [dict(row) for row in cursor.fetchall()]
+                try:
+                    cursor.execute(chunk_sql, sql_params_chunk)
+                    fts_hits = [dict(row) for row in cursor.fetchall()]
+                except Exception:
+                    fts_hits = []
+
+                if not fts_hits:
+                    # Build SQL filter pushdown constraints on fts_files
+                    sql_where = ["fts_files MATCH ?"]
+                    sql_params = [sanitized_q]
+
+                    if "ext" in filters:
+                        sql_where.append("files.filename LIKE ?")
+                        sql_params.append(f"%.{filters['ext']}")
+                    if "env" in filters:
+                        sql_where.append("files.content LIKE ?")
+                        sql_params.append(f"%{filters['env']}%")
+                    if "tech" in filters:
+                        sql_where.append("files.content LIKE ?")
+                        sql_params.append(f"%{filters['tech']}%")
+
+                    query_sql = (
+                        "SELECT files.id, files.filepath, files.filename, files.content, files.modified_at "
+                        "FROM fts_files JOIN files ON fts_files.filepath = files.filepath "
+                        f"WHERE {' AND '.join(sql_where)} ORDER BY bm25(fts_files) ASC LIMIT 10"
+                    )
+                    cursor.execute(query_sql, sql_params)
+                    fts_hits = [dict(row) for row in cursor.fetchall()]
             except (KeyboardInterrupt, MemoryError, SystemExit):
                 raise
             except Exception as e:
