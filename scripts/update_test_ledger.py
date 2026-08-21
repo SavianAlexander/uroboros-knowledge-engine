@@ -123,9 +123,17 @@ FILE_DOMAIN_MAPPING = {
     "src/domain/privacy/context_sanitizer.py": ["DomainEnterpriseResilience"],
     "src/domain/synthesis/merkle_provenance.py": ["DomainEnterpriseResilience"],
     "src/core/voice_vad_interrupter.py": ["DomainEnterpriseResilience", "DomainVoiceNormalization"],
-    "tests/test_enterprise_resilience_pillars.py": ["DomainEnterpriseResilience"]
+    "tests/test_enterprise_resilience_pillars.py": ["DomainEnterpriseResilience"],
+    "src/domain/ingestion/parsers/pdf_parser.py": ["DomainOSSRAGStack"],
+    "src/domain/ingestion/crawlers/web_crawler.py": ["DomainOSSRAGStack"],
+    "src/domain/ingestion/chunker.py": ["DomainOSSRAGStack"],
+    "src/infrastructure/storage/qdrant_store.py": ["DomainOSSRAGStack"],
+    "src/core/gateway/litellm_gateway.py": ["DomainOSSRAGStack"],
+    "src/domain/extraction/instructor_extractor.py": ["DomainOSSRAGStack"],
+    "src/infrastructure/observability/langfuse_tracer.py": ["DomainOSSRAGStack"],
+    "src/domain/optimization/dspy_optimizer.py": ["DomainOSSRAGStack"],
+    "tests/test_oss_rag_stack.py": ["DomainOSSRAGStack"]
 }
-
 
 DOMAIN_TEST_MODULES = [
     "tests.test_domain_db",
@@ -188,11 +196,21 @@ DOMAIN_TEST_MODULES = [
     "tests.test_audio_hardware_calibration",
     "tests.test_large_scale_stress",
     "tests.test_windows_dist_packaging",
-    "tests.test_enterprise_resilience_pillars"
+    "tests.test_enterprise_resilience_pillars",
+    "tests.test_oss_rag_stack"
 ]
 
-
 BUG_RELATION_TAXONOMY = {
+    "DomainOSSRAGStack": [
+        {"test": "test_01_marker_pdf_ingestion", "component": "src/domain/ingestion/parsers/pdf_parser.py", "prevents": "Layout loss in complex PDF parsing"},
+        {"test": "test_02_crawl4ai_web_ingestion", "component": "src/domain/ingestion/crawlers/web_crawler.py", "prevents": "Unsanitized boilerplate in web crawl extraction"},
+        {"test": "test_03_chonkie_semantic_chunking", "component": "src/domain/ingestion/chunker.py", "prevents": "Header and 5-Pillar metadata loss during semantic token chunking"},
+        {"test": "test_04_qdrant_vector_store_payload_filtering", "component": "src/infrastructure/storage/qdrant_store.py", "prevents": "Cross-tenant and invalid trust type vector leakage"},
+        {"test": "test_05_litellm_gateway_completions", "component": "src/core/gateway/litellm_gateway.py", "prevents": "Vendor lock-in and unhandled completion timeouts"},
+        {"test": "test_06_instructor_pydantic_extraction", "component": "src/domain/extraction/instructor_extractor.py", "prevents": "Unstructured or schema-violating LLM extraction output"},
+        {"test": "test_07_langfuse_observability_tracing", "component": "src/infrastructure/observability/langfuse_tracer.py", "prevents": "Silent RAG latency degradation and untracked token spend"},
+        {"test": "test_08_dspy_programmatic_prompt_module", "component": "src/domain/optimization/dspy_optimizer.py", "prevents": "Multi-hop query decomposition and grounding failure"}
+    ],
     "DomainCatastrophicRecovery": [
         {"test": "test_01_corrupted_sqlite_header_detection_and_recovery", "component": "src/infrastructure/database.py", "prevents": "Unrecoverable crash on corrupted SQLite database header"},
         {"test": "test_02_orphaned_chunks_pruning", "component": "src/domain/knowledge_self_healing.py", "prevents": "Orphaned database chunk bloat and ghost search hits"},
