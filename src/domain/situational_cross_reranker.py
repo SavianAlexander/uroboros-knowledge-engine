@@ -101,7 +101,7 @@ class SituationalCrossReranker:
             is_doubt_eval = any(w in q_lower for w in ["avoid", "why shouldn't", "not a fit", "drawback", "limitation", "freezing climate", "climate", "worth", "cost", "problem"])
             
             if is_doubt_eval:
-                if trust_type in ["not_a_fit", "environment_context", "problems"]:
+                if trust_type in ["not_a_fit", "environment_context", "environment_constraints", "problems"]:
                     attr_score += 0.50  # Strong boost for disqualifier and environmental constraints
                 elif trust_type in ["pricing", "repair_vs_replace"]:
                     attr_score += 0.35

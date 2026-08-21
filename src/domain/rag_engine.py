@@ -497,6 +497,32 @@ def extract_advanced_rag_context(
             logger.warning("Semantic vector search failed for sub-query '%s': %s", sq, e)
             vec_hits = []
 
+        # Federate Qdrant dense vector store if available
+        try:
+            from src.infrastructure.storage.vector_store import QdrantVectorStore
+            from src.core.embeddings import generate_embedding
+            qdrant_client = QdrantVectorStore()
+            q_vec = generate_embedding(expanded_q or sq)
+            q_hits = qdrant_client.search_similarity(
+                query_vector=q_vec,
+                top_k=5,
+                tenant_id=auth_obj.user_id if auth_obj and hasattr(auth_obj, "user_id") else None
+            )
+            for qh in q_hits:
+                vec_hits.append({
+                    "id": qh.id,
+                    "chunk_id": qh.id,
+                    "score": qh.score,
+                    "content": qh.content,
+                    "filename": qh.doc_title,
+                    "doc_title": qh.doc_title,
+                    "filepath": qh.payload.get("filepath") or qh.payload.get("source_url", ""),
+                    "trust_type": qh.trust_type,
+                    "source_type": qh.payload.get("source_type", "primary_doc")
+                })
+        except Exception as q_err:
+            logger.debug("Qdrant federation search skipped/failed: %s", q_err)
+
         all_fts_hits.extend(fts_hits)
         all_vec_hits.extend(vec_hits)
 

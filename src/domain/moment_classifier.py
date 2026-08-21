@@ -118,7 +118,7 @@ class MicroMomentClassifier:
                 retrieval_strategy={
                     "mode": "procedural_prioritized",
                     "prefer_procedural_chunks": True,
-                    "boost_trust_pillars": ["problems", "environment_context"],
+                    "boost_trust_pillars": ["problems", "environment_context", "environment_constraints"],
                     "boost_factor": 1.25
                 },
                 matched_patterns=do_matches

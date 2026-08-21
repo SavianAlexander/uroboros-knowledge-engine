@@ -52,7 +52,9 @@ class DenseVectorStore:
                 doc_id, blob, meta_json = row
                 if blob:
                     try:
-                        vec = struct.unpack(self._pack_format, blob)
+                        blob_dim = len(blob) // 4
+                        fmt = f"{blob_dim}f"
+                        vec = struct.unpack(fmt, blob)
                         self.vectors[doc_id] = vec
                         self.metadata[doc_id] = json.loads(meta_json) if meta_json else {}
                     except (KeyboardInterrupt, MemoryError, SystemExit):

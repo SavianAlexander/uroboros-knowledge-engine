@@ -126,7 +126,7 @@ def extract_top_keywords(text: str, top_k: int = 5, max_chars: int = 50000) -> L
 
 
 def build_token_budget_context(chunks: List[str], max_tokens: int = 2000) -> str:
-    """Packs text chunks into a single concatenated string strictly respecting token budget."""
+    """Packs text chunks into a single concatenated string strictly respecting token budget and protecting against table overflow."""
     if not chunks:
         return ""
     packed: List[str] = []
@@ -134,14 +134,22 @@ def build_token_budget_context(chunks: List[str], max_tokens: int = 2000) -> str
     for chunk in chunks:
         if not chunk or not chunk.strip():
             continue
-        c_tokens = estimate_tokens(chunk)
+
+        c_text = chunk.strip()
+        # Tabular protection: if a table chunk is exceedingly long, cap data rows
+        if "|" in c_text and c_text.count("\n") > 25:
+            table_lines = c_text.splitlines()
+            if len(table_lines) > 25:
+                c_text = "\n".join(table_lines[:20]) + "\n| ... (remaining table rows truncated for context budget) |"
+
+        c_tokens = estimate_tokens(c_text)
         if c_tokens <= budget:
-            packed.append(chunk.strip())
+            packed.append(c_text)
             budget -= c_tokens
         else:
             char_allowance = max(0, budget * 4)
             if char_allowance > 50:
-                packed.append(chunk[:char_allowance].strip() + "...")
+                packed.append(c_text[:char_allowance].strip() + "...")
             break
     return "\n\n".join(packed)
 
