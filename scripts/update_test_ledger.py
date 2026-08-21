@@ -132,7 +132,12 @@ FILE_DOMAIN_MAPPING = {
     "src/domain/extraction/instructor_extractor.py": ["DomainOSSRAGStack"],
     "src/infrastructure/observability/langfuse_tracer.py": ["DomainOSSRAGStack"],
     "src/domain/optimization/dspy_optimizer.py": ["DomainOSSRAGStack"],
-    "tests/test_oss_rag_stack.py": ["DomainOSSRAGStack"]
+    "tests/test_oss_rag_stack.py": ["DomainOSSRAGStack"],
+    "src/domain/pipeline/dspy_modules.py": ["DomainPromptEngineeringStack"],
+    "src/domain/optimization/compile_prompts.py": ["DomainPromptEngineeringStack"],
+    "src/domain/retrieval/structured_extractor.py": ["DomainPromptEngineeringStack"],
+    "src/domain/generation/outlines_generator.py": ["DomainPromptEngineeringStack"],
+    "tests/test_prompt_engineering_stack.py": ["DomainPromptEngineeringStack"]
 }
 
 DOMAIN_TEST_MODULES = [
@@ -197,10 +202,19 @@ DOMAIN_TEST_MODULES = [
     "tests.test_large_scale_stress",
     "tests.test_windows_dist_packaging",
     "tests.test_enterprise_resilience_pillars",
-    "tests.test_oss_rag_stack"
+    "tests.test_oss_rag_stack",
+    "tests.test_prompt_engineering_stack"
 ]
 
 BUG_RELATION_TAXONOMY = {
+    "DomainPromptEngineeringStack": [
+        {"test": "test_01_dspy_signatures_and_programmatic_module", "component": "src/domain/pipeline/dspy_modules.py", "prevents": "Brittle string template prompt regression and missing sub-queries"},
+        {"test": "test_02_offline_prompt_compiler_and_citation_metric", "component": "src/domain/optimization/compile_prompts.py", "prevents": "Hallucinated citation anchors and metric degradation"},
+        {"test": "test_03_instructor_structured_extractor_attributes", "component": "src/domain/retrieval/structured_extractor.py", "prevents": "Schema invalidity in query attribute parsing"},
+        {"test": "test_04_instructor_crag_and_trust_extraction", "component": "src/domain/retrieval/structured_extractor.py", "prevents": "Unstructured CRAG and trust corroboration evaluation"},
+        {"test": "test_05_outlines_constrained_json_generation", "component": "src/domain/generation/outlines_generator.py", "prevents": "Local model JSON grammar and regex syntax violations"},
+        {"test": "test_06_end_to_end_programmatic_flow", "component": "src/domain/pipeline/dspy_modules.py", "prevents": "End-to-end programmatic pipeline breakdown"}
+    ],
     "DomainOSSRAGStack": [
         {"test": "test_01_marker_pdf_ingestion", "component": "src/domain/ingestion/parsers/pdf_parser.py", "prevents": "Layout loss in complex PDF parsing"},
         {"test": "test_02_crawl4ai_web_ingestion", "component": "src/domain/ingestion/crawlers/web_crawler.py", "prevents": "Unsanitized boilerplate in web crawl extraction"},
